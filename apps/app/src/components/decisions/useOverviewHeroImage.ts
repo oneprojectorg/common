@@ -32,10 +32,10 @@ const formatFileSize = (bytes: number): string => {
  * Shared upload/remove logic for the decision overview hero background image.
  * Used by the Process Builder Overview tab and the live overview's "Edit
  * banner" modal. The upload mutation persists the storage path into
- * `instanceData.overview.backgroundImage`; `onChange` lets the live page
+ * `instanceData.overview.heroImage`; `onChange` lets the live page
  * refresh its RSC-fed hero after a change.
  */
-export function useOverviewBackgroundImage({
+export function useOverviewHeroImage({
   instanceId,
   initialPath,
   onChange,
@@ -111,7 +111,7 @@ export function useOverviewBackgroundImage({
     try {
       await updateInstance.mutateAsync({
         instanceId,
-        overview: { backgroundImage: '' },
+        overview: { heroImage: '' },
       });
       setPreviewUrl(undefined);
       setFileName(undefined);

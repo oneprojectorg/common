@@ -113,13 +113,13 @@ function DecisionHeaderView({
   title,
   phases,
   currentStateId,
-  backgroundImagePath,
+  heroImagePath,
 }: StandardDecisionHeaderProps & {
   title: string;
   phases: ProcessPhase[];
   currentStateId: string;
-  /** Stored overview banner path, for the admin Edit-banner controls. */
-  backgroundImagePath?: string;
+  /** Stored overview hero image path, for the admin Edit-banner controls. */
+  heroImagePath?: string;
 }) {
   // Admin banner controls live in the header so they persist across the
   // overview/current-phase tabs: a desktop "Edit banner" button and, on mobile,
@@ -141,7 +141,7 @@ function DecisionHeaderView({
             <AdminOverviewBar
               instanceId={instanceId}
               decisionSlug={decisionSlug}
-              backgroundImagePath={backgroundImagePath}
+              heroImagePath={heroImagePath}
               phaseName={currentPhase?.name || undefined}
               phaseEndDate={currentPhase?.phase?.endDate}
             />
@@ -179,7 +179,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
       }
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
-      backgroundImagePath={instance.instanceData?.overview?.backgroundImage}
+      heroImagePath={instance.instanceData?.overview?.heroImage}
     />
   );
 }
@@ -203,7 +203,7 @@ function DecisionHeaderFromProps(
       }
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
-      backgroundImagePath={instance.instanceData?.overview?.backgroundImage}
+      heroImagePath={instance.instanceData?.overview?.heroImage}
     />
   );
 }

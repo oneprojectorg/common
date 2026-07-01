@@ -6,7 +6,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { useOverviewBackgroundImage } from './useOverviewBackgroundImage';
+import { useOverviewHeroImage } from './useOverviewHeroImage';
 
 /**
  * Controlled modal for uploading/removing the overview hero background image.
@@ -15,13 +15,13 @@ import { useOverviewBackgroundImage } from './useOverviewBackgroundImage';
  */
 export function BannerUploadModal({
   instanceId,
-  backgroundImagePath,
+  heroImagePath,
   isOpen,
   onOpenChange,
 }: {
   instanceId: string;
-  /** Stored storage path of the current background, if any. */
-  backgroundImagePath?: string;
+  /** Stored storage path of the current hero image, if any. */
+  heroImagePath?: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -36,9 +36,9 @@ export function BannerUploadModal({
     isUploading,
     isRemoving,
     uploadError,
-  } = useOverviewBackgroundImage({
+  } = useOverviewHeroImage({
     instanceId,
-    initialPath: backgroundImagePath,
+    initialPath: heroImagePath,
     onChange: () => router.refresh(),
   });
 

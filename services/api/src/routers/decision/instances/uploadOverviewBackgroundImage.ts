@@ -22,7 +22,7 @@ import { sanitizeS3Filename } from '../../../utils';
  * Uploads a hero background image for a decision overview. Admin-only: the
  * caller must have decisions ADMIN on the instance's profile. The image bytes
  * land in the `assets` bucket and the resulting storage path is persisted into
- * `instanceData.overview.backgroundImage` (cleared by sending an empty string
+ * `instanceData.overview.heroImage` (cleared by sending an empty string
  * to updateDecisionInstance instead).
  */
 export const uploadOverviewBackgroundImageRouter = router({
@@ -122,7 +122,7 @@ export const uploadOverviewBackgroundImageRouter = router({
         await Promise.all([
           updateDecisionInstance({
             instanceId,
-            overview: { backgroundImage: filePath },
+            overview: { heroImage: filePath },
             user,
           }),
           supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60),

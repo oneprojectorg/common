@@ -14,11 +14,11 @@ import { BannerUploadModal } from './BannerUploadModal';
  */
 export function EditBannerModal({
   instanceId,
-  backgroundImagePath,
+  heroImagePath,
 }: {
   instanceId: string;
-  /** Stored storage path of the current background, if any. */
-  backgroundImagePath?: string;
+  /** Stored storage path of the current hero image, if any. */
+  heroImagePath?: string;
 }) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
@@ -36,7 +36,7 @@ export function EditBannerModal({
       </Button>
       <BannerUploadModal
         instanceId={instanceId}
-        backgroundImagePath={backgroundImagePath}
+        heroImagePath={heroImagePath}
         isOpen={isOpen}
         onOpenChange={setIsOpen}
       />

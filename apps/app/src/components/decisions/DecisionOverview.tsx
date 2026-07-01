@@ -177,7 +177,7 @@ function DecisionOverviewContent({
         instanceId={instanceId}
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
-        backgroundImagePath={overview?.backgroundImage}
+        heroImagePath={overview?.heroImage}
         isAdmin={instance.access?.admin === true}
         // Hidden until the first phase begins (computed server-side).
         showCtas={isActive}
@@ -255,7 +255,7 @@ const OverviewHero = ({
   instanceId,
   decisionSlug,
   canSubmitProposal,
-  backgroundImagePath,
+  heroImagePath,
   isAdmin,
   showCtas,
 }: {
@@ -266,8 +266,8 @@ const OverviewHero = ({
   instanceId: string;
   decisionSlug: string;
   canSubmitProposal: boolean;
-  /** Stored storage path of the admin-uploaded hero background, if any. */
-  backgroundImagePath?: string;
+  /** Stored storage path of the admin-uploaded hero image, if any. */
+  heroImagePath?: string;
   /** Admins see the desktop "Edit banner" control on the hero. */
   isAdmin: boolean;
   showCtas: boolean;
@@ -275,11 +275,11 @@ const OverviewHero = ({
   const t = useTranslations();
   const stewardName = steward?.name;
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
-  const backgroundImageUrl = getPublicUrl(backgroundImagePath);
+  const heroImageUrl = getPublicUrl(heroImagePath);
   // With a photo behind it, the clipped teal→green title and charcoal body lose
   // contrast — switch the hero text to white over a darker scrim. Buttons keep
   // their own colors.
-  const hasImage = Boolean(backgroundImageUrl);
+  const hasImage = Boolean(heroImageUrl);
   const { createProposal, isCreating, isReady } = useCreateProposal({
     instanceId,
     navigateTo: (proposal) =>
@@ -291,10 +291,10 @@ const OverviewHero = ({
     // Admin-uploaded background sits behind the content as an <Image fill>; the
     // offWhite gradient is the empty-state fallback when no image is set.
     <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-neutral-offWhite md:grid-cols-12">
-      {backgroundImageUrl ? (
+      {heroImageUrl ? (
         <>
           <Image
-            src={backgroundImageUrl}
+            src={heroImageUrl}
             alt=""
             fill
             // 6px blur per design; scale-105 hides the translucent rim the blur
@@ -314,7 +314,7 @@ const OverviewHero = ({
       {isAdmin ? (
         <EditBannerModal
           instanceId={instanceId}
-          backgroundImagePath={backgroundImagePath}
+          heroImagePath={heroImagePath}
         />
       ) : null}
       <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">

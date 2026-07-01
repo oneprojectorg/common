@@ -19,7 +19,7 @@ import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
-import { useOverviewBackgroundImage } from '@/components/decisions/useOverviewBackgroundImage';
+import { useOverviewHeroImage } from '@/components/decisions/useOverviewHeroImage';
 
 import { OverviewTextField } from './OverviewTextField';
 
@@ -82,11 +82,10 @@ function OverviewSectionContent({
     isUploading,
     isRemoving,
     uploadError,
-  } = useOverviewBackgroundImage({
+  } = useOverviewHeroImage({
     instanceId,
     initialPath:
-      storeOverview?.backgroundImage ??
-      instance.instanceData?.overview?.backgroundImage,
+      storeOverview?.heroImage ?? instance.instanceData?.overview?.heroImage,
   });
 
   // The editor owns body state; track the latest JSON doc so headline/description

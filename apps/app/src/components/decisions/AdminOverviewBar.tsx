@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { useLocale } from 'next-intl';
@@ -18,13 +19,13 @@ import { BannerUploadModal } from './BannerUploadModal';
 export function AdminOverviewBar({
   instanceId,
   decisionSlug,
-  backgroundImagePath,
+  heroImagePath,
   phaseName,
   phaseEndDate,
 }: {
   instanceId: string;
   decisionSlug: string;
-  backgroundImagePath?: string;
+  heroImagePath?: string;
   /** Current phase name, e.g. "Collect Ideas". */
   phaseName?: string;
   /** Current phase end date (ISO string), shown as "ends {date}". */
@@ -47,9 +48,11 @@ export function AdminOverviewBar({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setSheetOpen(true)}
+      {/* Bespoke full-width tinted admin bar — no Button variant matches this
+          shape, so render an unstyled Button for RAC press/focus a11y. */}
+      <Button
+        unstyled
+        onPress={() => setSheetOpen(true)}
         className="flex w-full items-center justify-center gap-2 bg-primary-tealWhite px-4 py-2 text-base md:hidden"
       >
         <span className="flex items-center gap-1.5 text-neutral-charcoal">
@@ -69,7 +72,7 @@ export function AdminOverviewBar({
             </span>
           </>
         ) : null}
-      </button>
+      </Button>
 
       <Sheet
         isOpen={sheetOpen}
@@ -105,7 +108,7 @@ export function AdminOverviewBar({
 
       <BannerUploadModal
         instanceId={instanceId}
-        backgroundImagePath={backgroundImagePath}
+        heroImagePath={heroImagePath}
         isOpen={bannerOpen}
         onOpenChange={setBannerOpen}
       />

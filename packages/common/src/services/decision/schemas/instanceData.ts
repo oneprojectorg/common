@@ -59,7 +59,7 @@ export interface InstanceOverview {
    * resolved to a URL via `getPublicUrl`. Empty/undefined falls back to the
    * gradient banner. Admins upload it from the Process Builder Overview tab.
    */
-  backgroundImage?: string;
+  heroImage?: string;
 }
 
 /**
