@@ -112,6 +112,37 @@ describe.concurrent('process survey submission', () => {
     expect(submitters).toHaveLength(1);
   });
 
+  it('persists the optional additionalComments free-text field', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { instance } = setup.instance;
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitProcessSurveyResponse({
+      processInstanceId: instance.id,
+      internalData: {
+        ...sampleInternalData,
+        additionalComments: 'Please add a dark mode.',
+      },
+      locale: 'en',
+    });
+
+    const [response] = await db
+      .select({ internalData: decisionProcessSurveyResponses.internalData })
+      .from(decisionProcessSurveyResponses)
+      .where(eq(decisionProcessSurveyResponses.processInstanceId, instance.id))
+      .limit(1);
+    expect(response?.internalData).toMatchObject({
+      additionalComments: 'Please add a dark mode.',
+    });
+  });
+
   it('stores response with no submitter FK on the response row', async ({
     task,
     onTestFinished,
