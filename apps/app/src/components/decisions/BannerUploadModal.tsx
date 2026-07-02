@@ -3,14 +3,14 @@
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 
-import { useRouter, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { OverviewHeroImageField } from './OverviewHeroImageField';
 
 /**
  * Controlled modal for uploading/removing the overview hero image. Shared by
  * the desktop "Edit banner" button and the mobile admin bottom sheet. The
- * overview page is RSC-fed, so a change triggers router.refresh().
+ * overview page is RSC-fed, so a change reloads to pull the new hero.
  */
 export function BannerUploadModal({
   instanceId,
@@ -25,7 +25,6 @@ export function BannerUploadModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations();
-  const router = useRouter();
 
   return (
     <Modal isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -34,7 +33,15 @@ export function BannerUploadModal({
         <OverviewHeroImageField
           instanceId={instanceId}
           initialPath={heroImagePath}
-          onChange={() => router.refresh()}
+          // Hard reload rather than the client router. This modal opens on the
+          // live overview, which is often viewed at a vanity URL (e.g.
+          // `/columbus`) that only exists as a next.config rewrite to
+          // `/decisions/columbus`. A client-side refresh re-fetches the RSC for
+          // the rewrite-only path, which falls into the walled `(main)` group
+          // and 404s (prod only; dev re-applies rewrites per request). A full
+          // load lets the server resolve the rewrite — same as a manual
+          // refresh. Banner edits are rare, so the reload cost is negligible.
+          onChange={() => window.location.reload()}
         />
       </ModalBody>
       <ModalFooter>
