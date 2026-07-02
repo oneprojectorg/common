@@ -21,6 +21,29 @@ export type LinkPreviewResult = {
 // Iframely is per-request billed.
 const LINK_PREVIEW_TTL_MS = 60 * 60 * 1000;
 
+const DEFAULT_IFRAMELY_API_URL = 'https://iframe.ly/api/iframely';
+
+// Matches absolute and protocol-relative references to iframely's embed CDN
+// inside the returned embed HTML (iframe srcs, lazy `data-iframely-url`
+// attributes, inline embed.js script tags).
+const IFRAMELY_CDN_RE = /(?:https?:)?\/\/cdn\.iframe\.ly/g;
+
+// Embed views served from cdn.iframe.ly are billed too, so pointing only the
+// API at a caching proxy is not enough — the iframe/script URLs baked into
+// the embed HTML must be rewritten to the proxy as well.
+const rewriteEmbedCdn = (html: unknown): string | undefined => {
+  if (typeof html !== 'string') {
+    return undefined;
+  }
+
+  const cdnUrl = process.env.IFRAMELY_CDN_URL;
+  if (!cdnUrl) {
+    return html;
+  }
+
+  return html.replace(IFRAMELY_CDN_RE, cdnUrl.replace(/\/+$/, ''));
+};
+
 // Iframely-returned URLs are user-influenced (the destination URL the user
 // submitted controls what their site advertises in meta tags). Strip
 // anything that isn't a plain http(s) absolute URL before it leaves this
@@ -58,16 +81,22 @@ export const getLinkPreview = async (
 
 const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
   try {
+    const apiUrl = process.env.IFRAMELY_API_URL;
     const iframelyKey = process.env.IFRAMELY_KEY;
-    if (!iframelyKey) {
+
+    // A self-hosted proxy (IFRAMELY_API_URL) may hold the key itself; only
+    // the direct iframe.ly endpoint requires one on our side.
+    if (!apiUrl && !iframelyKey) {
       return { url, error: 'Iframely key not configured' };
     }
+
+    const keyParam = iframelyKey ? `&key=${iframelyKey}` : '';
 
     // Cap upstream latency: an authenticated user can DoS the API by
     // submitting URLs that iframely is slow to resolve. 5s is a reasonable
     // ceiling; the user gets {error: 'timeout'} on cache miss.
     const response = await fetch(
-      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}`,
+      `${apiUrl ?? DEFAULT_IFRAMELY_API_URL}?url=${encodeURIComponent(url)}${keyParam}`,
       { signal: AbortSignal.timeout(5000) },
     );
 
@@ -95,7 +124,7 @@ const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
             site: data.meta.site,
           }
         : undefined,
-      html: data.html,
+      html: rewriteEmbedCdn(data.html),
       thumbnail_url: sanitizeExternalUrl(thumbnailHref ?? data.thumbnail_url),
       provider_name: data.provider_name ?? data.meta?.site,
       provider_url: sanitizeExternalUrl(

@@ -4,6 +4,16 @@ import { getLinkPreview } from './getLinkPreview';
 
 const ORIGINAL_FETCH = globalThis.fetch;
 const ORIGINAL_KEY = process.env.IFRAMELY_KEY;
+const ORIGINAL_API_URL = process.env.IFRAMELY_API_URL;
+const ORIGINAL_CDN_URL = process.env.IFRAMELY_CDN_URL;
+
+const restoreEnv = (name: string, original: string | undefined) => {
+  if (original === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = original;
+  }
+};
 
 const uniqueUrl = (slug: string) =>
   `https://example.com/${slug}-${Date.now()}-${Math.random()}`;
@@ -11,15 +21,15 @@ const uniqueUrl = (slug: string) =>
 describe('getLinkPreview', () => {
   beforeEach(() => {
     process.env.IFRAMELY_KEY = 'test-secret-key-do-not-leak';
+    delete process.env.IFRAMELY_API_URL;
+    delete process.env.IFRAMELY_CDN_URL;
   });
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
-    if (ORIGINAL_KEY === undefined) {
-      delete process.env.IFRAMELY_KEY;
-    } else {
-      process.env.IFRAMELY_KEY = ORIGINAL_KEY;
-    }
+    restoreEnv('IFRAMELY_KEY', ORIGINAL_KEY);
+    restoreEnv('IFRAMELY_API_URL', ORIGINAL_API_URL);
+    restoreEnv('IFRAMELY_CDN_URL', ORIGINAL_CDN_URL);
   });
 
   it('returns a generic error when fetch throws — no upstream message echo', async () => {
@@ -98,6 +108,7 @@ describe('getLinkPreview', () => {
 
     expect(result.error).toBeUndefined();
     expect(result.meta?.title).toBe('A Title');
+    expect(result.html).toBe('<iframe src="https://example.com"></iframe>');
     expect(result.thumbnail_url).toBe('https://cdn.example.com/thumb.png');
     expect(result.provider_name).toBe('example.com');
     expect(result.provider_url).toBe('https://example.com/canonical');
@@ -128,6 +139,85 @@ describe('getLinkPreview', () => {
 
     expect(result.error).toBeUndefined();
     expect(result.thumbnail_url).toBeUndefined();
+  });
+
+  it('fetches from IFRAMELY_API_URL without a key when only the proxy is configured', async () => {
+    delete process.env.IFRAMELY_KEY;
+    process.env.IFRAMELY_API_URL = 'https://embeds.example.org/api/iframely';
+    const url = uniqueUrl('proxy');
+    const fetchSpy = vi.fn(async () => {
+      return new Response(JSON.stringify({ meta: { title: 'Proxied' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    globalThis.fetch = fetchSpy;
+
+    const result = await getLinkPreview(url);
+
+    expect(result.error).toBeUndefined();
+    expect(result.meta?.title).toBe('Proxied');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [calledUrl] = fetchSpy.mock.calls[0] as [string];
+    expect(calledUrl).toContain(
+      `https://embeds.example.org/api/iframely?url=${encodeURIComponent(url)}`,
+    );
+    expect(calledUrl).not.toContain('key=');
+  });
+
+  it('still appends the key to IFRAMELY_API_URL when both are configured', async () => {
+    process.env.IFRAMELY_API_URL = 'https://embeds.example.org/api/iframely';
+    const url = uniqueUrl('proxy-with-key');
+    const fetchSpy = vi.fn(async () => {
+      return new Response(JSON.stringify({ meta: { title: 'Proxied' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    globalThis.fetch = fetchSpy;
+
+    await getLinkPreview(url);
+
+    const [calledUrl] = fetchSpy.mock.calls[0] as [string];
+    expect(calledUrl).toContain('https://embeds.example.org/api/iframely?url=');
+    expect(calledUrl).toContain('key=test-secret-key-do-not-leak');
+  });
+
+  it('rewrites cdn.iframe.ly references in embed html to IFRAMELY_CDN_URL', async () => {
+    // Trailing slash must be stripped so the rewrite doesn't produce `//api/...`.
+    process.env.IFRAMELY_CDN_URL = 'https://embeds.example.org/';
+    const url = uniqueUrl('cdn-rewrite');
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          html: '<a data-iframely-url="//cdn.iframe.ly/api/iframe?url=x"></a><iframe src="https://cdn.iframe.ly/api/iframe?url=x"></iframe><script src="//cdn.iframe.ly/embed.js"></script><img src="https://other.example.com/pic.png">',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+
+    const result = await getLinkPreview(url);
+
+    expect(result.error).toBeUndefined();
+    expect(result.html).toBe(
+      '<a data-iframely-url="https://embeds.example.org/api/iframe?url=x"></a><iframe src="https://embeds.example.org/api/iframe?url=x"></iframe><script src="https://embeds.example.org/embed.js"></script><img src="https://other.example.com/pic.png">',
+    );
+  });
+
+  it('leaves embed html untouched when IFRAMELY_CDN_URL is not set', async () => {
+    const url = uniqueUrl('cdn-passthrough');
+    const html =
+      '<iframe src="https://cdn.iframe.ly/api/iframe?url=x"></iframe>';
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ html }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+
+    const result = await getLinkPreview(url);
+
+    expect(result.html).toBe(html);
   });
 
   it('falls back to top-level thumbnail_url/provider_name/provider_url when links.thumbnail and meta canonical/site are absent', async () => {
