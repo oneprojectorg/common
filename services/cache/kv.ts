@@ -84,13 +84,17 @@ const TypeMap = {
 type CacheParam = string | number | boolean | undefined | null | string[];
 type CacheParams = CacheParam[];
 
-// Types whose first param contains '/' as meaningful structure (URLs, file
-// paths) and must NOT be collapsed to the last segment. The default slug
-// collapse exists so CMS pages can move without a 404, but it would cause
-// cross-key collisions for URLs / paths.
+// Types whose first param is an exact identifier (URL, file path, id, or a
+// caller-supplied slug) and must NOT be collapsed to the last '/'-segment.
+// The default slug collapse exists so CMS pages can move without a 404, but
+// for these types it would cause cross-key collisions — and for keys built
+// from request input (e.g. decision slugs) it would let a crafted value like
+// "x/victim-slug" alias another entry's key.
 const FULL_KEY_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
   'linkPreview',
   'resourceSignedUrl',
+  'decision',
+  'resources',
 ]);
 
 const getCacheKey = (

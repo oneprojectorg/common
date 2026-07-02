@@ -148,6 +148,34 @@ describe('cache() — Redis tier metrics', () => {
     expect(recordTimeout).not.toHaveBeenCalled();
   });
 
+  it('does not collapse "/" in exact-identifier keys (decision slug aliasing)', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+    fakeRedis.setEx.mockResolvedValue('OK');
+
+    const fetcher = vi.fn().mockResolvedValue('row');
+    // A crafted slug like "crafted/victim-slug" must NOT read/write the same
+    // key as "victim-slug" — 'decision' is a FULL_KEY_TYPES member because its
+    // first param can be caller-supplied request input.
+    await cache({
+      type: 'decision',
+      params: ['crafted/victim-slug', 'slugProfile'],
+      options: { skipMemCache: true },
+      fetch: fetcher,
+    });
+    await cache({
+      type: 'decision',
+      params: ['victim-slug', 'slugProfile'],
+      options: { skipMemCache: true },
+      fetch: fetcher,
+    });
+
+    const requestedKeys = fakeRedis.get.mock.calls.map(([key]) => key);
+    expect(requestedKeys).toEqual([
+      'dev/v1/common/decision/crafted/victim-slug:slugProfile',
+      'dev/v1/common/decision/victim-slug:slugProfile',
+    ]);
+  });
+
   it('records a command timeout (not a miss) when Redis is too slow', async () => {
     // A redis.get that never resolves forces the per-command AbortSignal
     // (REDIS_COMMAND_TIMEOUT_MS = 50ms) to fire. The cache layer should
