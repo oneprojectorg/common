@@ -18,8 +18,11 @@ export type LinkPreviewResult = {
   error?: string;
 };
 
-// Iframely is per-request billed.
-const LINK_PREVIEW_TTL_MS = 60 * 60 * 1000;
+// Iframely is per-request billed, so this cache is the API-side cost lever:
+// each embed URL bills once per TTL window for as long as anyone views it.
+// Link metadata rarely changes; 7 days trades staleness for ~168x fewer
+// billed calls vs the old 1-hour TTL.
+const LINK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const DEFAULT_IFRAMELY_API_URL = 'https://iframe.ly/api/iframely';
 
