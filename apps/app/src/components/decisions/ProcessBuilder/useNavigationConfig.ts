@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { useMemo } from 'react';
 
@@ -38,11 +37,6 @@ export function useNavigationConfig(
     (p) => p.rules?.proposals?.review === true,
   );
 
-  // Gate the new Overview tab behind the same flag as the participant-facing
-  // overview page (decision-view layout). Drops it from the sidebar and, since
-  // navigation derives from this config, redirects a direct ?section=overview.
-  const overviewEnabled = useFeatureFlag('decision_overview');
-
   return useMemo(
     () => ({
       ...DEFAULT_NAVIGATION_CONFIG,
@@ -53,14 +47,11 @@ export function useNavigationConfig(
           if (s === 'proposalCategories' && !organizeByCategories) {
             return false;
           }
-          if (s === 'overview' && !overviewEnabled) {
-            return false;
-          }
           return true;
         }),
         reviews: ['reviewSettings', 'reviewRubric'],
       },
     }),
-    [hasReviewPhase, organizeByCategories, overviewEnabled],
+    [hasReviewPhase, organizeByCategories],
   );
 }
