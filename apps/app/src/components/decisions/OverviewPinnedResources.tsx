@@ -24,7 +24,7 @@ export const OverviewPinnedResourcesSuspense = ({
   profileId: string;
 }) => {
   const t = useTranslations();
-  const [{ items }] = trpc.resources.listAcrossCollections.useSuspenseQuery({
+  const [{ items }] = trpc.resources.list.useSuspenseQuery({
     profileId,
   });
 

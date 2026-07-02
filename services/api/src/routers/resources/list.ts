@@ -1,25 +1,39 @@
-import { Channels, RESOURCE_LIST_MAX_LIMIT, listResources } from '@op/common';
+import { Channels, listResources } from '@op/common';
 import { z } from 'zod';
 
-import { resourceListEncoder } from '../../encoders/resources';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { resourceInCollectionEncoder } from '../../encoders/resources';
+import { openProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string().uuid(),
-  limit: z.number().int().positive().max(RESOURCE_LIST_MAX_LIMIT).optional(),
-  cursor: z.string().nullish(),
+});
+
+// Flattened across the profile's collections, so no top-level
+// collectionId/cursor — each item carries its own collectionId (see
+// resourceInCollectionEncoder).
+const profileResourceListEncoder = z.object({
+  items: z.array(resourceInCollectionEncoder),
 });
 
 export const list = router({
-  list: networkAuthenticatedProcedure()
+  // openProcedure (not networkAuthenticated): the decision overview reads this
+  // anonymously; the service fail-closes on a decisions READ grant, same as
+  // collections.list / listByCollection.
+  list: openProcedure()
     .input(inputSchema)
-    .output(resourceListEncoder)
+    .output(profileResourceListEncoder)
     .query(async ({ input, ctx }) => {
       const result = await listResources({
         ...input,
-        authUserId: ctx.user.id,
+        user: ctx.user,
       });
-      ctx.registerQueryChannels([Channels.profileResources(input.profileId)]);
-      return resourceListEncoder.parse(result);
+      // Resource mutations broadcast profileResources:<profileId> for every
+      // profile sharing the collection; collection-level mutations broadcast
+      // profileCollections. Registering both keeps the flattened list live.
+      ctx.registerQueryChannels([
+        Channels.profileResources(input.profileId),
+        Channels.profileCollections(input.profileId),
+      ]);
+      return profileResourceListEncoder.parse(result);
     }),
 });

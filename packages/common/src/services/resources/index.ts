@@ -10,7 +10,6 @@ export * from './deleteResource';
 export * from './detachResourceFromCollection';
 export * from './listCollections';
 export * from './listResources';
-export * from './listResourcesAcrossCollections';
 export * from './listResourcesByCollection';
 export * from './ordering';
 export * from './reorderCollection';

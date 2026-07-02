@@ -1,3 +1,6 @@
+import { db } from '@op/db/client';
+import { resourceCollectionProfiles } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -9,8 +12,8 @@ const FIRST_URL = 'https://example.com/first';
 const SECOND_URL = 'https://example.org/second';
 const THIRD_URL = 'https://example.net/third';
 
-describe('resources.listAcrossCollections', () => {
-  it('returns an empty list when the profile has no collections', async ({
+describe('resources.list', () => {
+  it('returns an empty list WITHOUT creating a collection when the profile has none', async ({
     task,
     onTestFinished,
   }) => {
@@ -19,11 +22,19 @@ describe('resources.listAcrossCollections', () => {
       onTestFinished,
     });
 
-    const result = await adminCaller.resources.listAcrossCollections({
+    const result = await adminCaller.resources.list({
       profileId: instance.profileId,
     });
 
     expect(result.items).toEqual([]);
+
+    // Listing is a pure read: it must not lazily create a Default collection.
+    // The collection is only created on the first upload.
+    const collections = await db
+      .select({ id: resourceCollectionProfiles.collectionId })
+      .from(resourceCollectionProfiles)
+      .where(eq(resourceCollectionProfiles.profileId, instance.profileId));
+    expect(collections).toHaveLength(0);
   });
 
   it('flattens resources across collections in (collection, item) order', async ({
@@ -74,7 +85,7 @@ describe('resources.listAcrossCollections', () => {
       (collection) => expectedIdsByCollection.get(collection.id) ?? [],
     );
 
-    const result = await adminCaller.resources.listAcrossCollections({
+    const result = await adminCaller.resources.list({
       profileId: instance.profileId,
     });
 
@@ -98,7 +109,7 @@ describe('resources.listAcrossCollections', () => {
     const { caller: outsiderCaller } = await createOutsiderCaller(testData);
 
     await expect(
-      outsiderCaller.resources.listAcrossCollections({
+      outsiderCaller.resources.list({
         profileId: instance.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
