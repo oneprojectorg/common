@@ -1,4 +1,9 @@
-import { Channels, collectionSchema, reorderCollection } from '@op/common';
+import {
+  Channels,
+  collectionSchema,
+  invalidateProfileResources,
+  reorderCollection,
+} from '@op/common';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -18,6 +23,8 @@ export const collectionsReorder = router({
         id: input.id,
         upperNeighborId: input.upperNeighborId,
       });
+      // Collection order drives the flattened resources.list order.
+      await invalidateProfileResources([profileId]);
       ctx.registerMutationChannels([Channels.profileCollections(profileId)]);
       return collectionSchema.parse(collection);
     }),

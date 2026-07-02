@@ -4,6 +4,7 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   getScopesForResource,
   httpUrlSchema,
+  invalidateProfileResources,
   updateResource,
 } from '@op/common';
 import { z } from 'zod';
@@ -36,6 +37,7 @@ export const update = router({
         data: input.data,
       });
       const scopes = await getScopesForResource(input.id);
+      await invalidateProfileResources(scopes.profileIds);
       ctx.registerMutationChannels([
         ...scopes.collectionIds.map((id) => Channels.collectionResources(id)),
         ...scopes.profileIds.map((id) => Channels.profileResources(id)),

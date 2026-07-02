@@ -1,4 +1,8 @@
-import { Channels, deleteCollection } from '@op/common';
+import {
+  Channels,
+  deleteCollection,
+  invalidateProfileResources,
+} from '@op/common';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -16,6 +20,7 @@ export const collectionsDelete = router({
         authUserId: ctx.user.id,
         id: input.collectionId,
       });
+      await invalidateProfileResources(profileIds);
       ctx.registerMutationChannels(collectionChannels(profileIds));
     }),
 });

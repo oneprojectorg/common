@@ -96,6 +96,35 @@ describe('resources.list', () => {
     ).toBe(beta.id);
   });
 
+  it('reflects mutations immediately (cache invalidation)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    // Warm the cache with the empty list, then mutate: the mutation must bust
+    // the cached rows so the next read sees the new resource, not the warm
+    // empty entry.
+    const before = await adminCaller.resources.list({
+      profileId: instance.profileId,
+    });
+    expect(before.items).toEqual([]);
+
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Freshly added',
+      linkUrl: FIRST_URL,
+    });
+
+    const after = await adminCaller.resources.list({
+      profileId: instance.profileId,
+    });
+    expect(after.items.map((item) => item.id)).toContain(created.id);
+  });
+
   it('rejects an outsider', async ({ task, onTestFinished }) => {
     const { testData, instance, adminCaller } = await setupInstance({
       task,

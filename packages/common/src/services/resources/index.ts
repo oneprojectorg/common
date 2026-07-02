@@ -16,6 +16,7 @@ export * from './reorderCollection';
 export * from './reorderResource';
 export * from './resolveOrCreateDefaultCollection';
 export * from './resourceAuth';
+export * from './resourcesCache';
 export * from './getResourceById';
 export * from './getResourcesInCollection';
 export * from './resolveTargetCollection';

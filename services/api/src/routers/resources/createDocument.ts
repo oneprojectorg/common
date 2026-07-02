@@ -5,6 +5,7 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   createDocumentResource,
   getProfileIdsForCollection,
+  invalidateProfileResources,
 } from '@op/common';
 import type { ChannelName } from '@op/common/realtime';
 import { z } from 'zod';
@@ -64,6 +65,7 @@ export const createDocument = router({
         target.kind === 'profile'
           ? [target.profileId]
           : await getProfileIdsForCollection(row.collectionId);
+      await invalidateProfileResources(profileIds);
       const channels: ChannelName[] = [
         Channels.collectionResources(row.collectionId),
         ...profileIds.map((id) => Channels.profileResources(id)),

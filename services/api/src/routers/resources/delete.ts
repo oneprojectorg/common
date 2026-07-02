@@ -1,4 +1,9 @@
-import { Channels, deleteResource, getScopesForResource } from '@op/common';
+import {
+  Channels,
+  deleteResource,
+  getScopesForResource,
+  invalidateProfileResources,
+} from '@op/common';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
@@ -13,6 +18,7 @@ export const deleteResourceRouter = router({
         authUserId: ctx.user.id,
         id: input.id,
       });
+      await invalidateProfileResources(scopes.profileIds);
       ctx.registerMutationChannels([
         ...scopes.collectionIds.map((id) => Channels.collectionResources(id)),
         ...scopes.profileIds.map((id) => Channels.profileResources(id)),

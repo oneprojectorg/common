@@ -2,6 +2,7 @@ import {
   Channels,
   attachResourceToCollection,
   getProfileIdsForCollection,
+  invalidateProfileResources,
 } from '@op/common';
 import { z } from 'zod';
 
@@ -24,6 +25,7 @@ export const attachToCollection = router({
         collectionId: input.collectionId,
       });
       const profileIds = await getProfileIdsForCollection(input.collectionId);
+      await invalidateProfileResources(profileIds);
       ctx.registerMutationChannels([
         Channels.collectionResources(input.collectionId),
         ...profileIds.map((id) => Channels.profileResources(id)),

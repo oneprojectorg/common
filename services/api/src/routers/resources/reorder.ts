@@ -1,6 +1,7 @@
 import {
   Channels,
   getProfileIdsForCollection,
+  invalidateProfileResources,
   reorderResource,
 } from '@op/common';
 import { z } from 'zod';
@@ -26,6 +27,7 @@ export const reorder = router({
         upperNeighborId: input.upperNeighborId,
       });
       const profileIds = await getProfileIdsForCollection(input.collectionId);
+      await invalidateProfileResources(profileIds);
       ctx.registerMutationChannels([
         Channels.collectionResources(input.collectionId),
         ...profileIds.map((id) => Channels.profileResources(id)),
