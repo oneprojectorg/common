@@ -6,6 +6,7 @@ import { createLink } from './createLink';
 import { deleteResourceRouter } from './delete';
 import { detachFromCollection } from './detachFromCollection';
 import { list } from './list';
+import { listAcrossCollections } from './listAcrossCollections';
 import { listByCollection } from './listByCollection';
 import { reorder } from './reorder';
 import { update } from './update';
@@ -14,6 +15,7 @@ import { uploadFile } from './uploadFile';
 export const resourcesRouter = mergeRouters(
   collectionsRouter,
   list,
+  listAcrossCollections,
   listByCollection,
   createLink,
   createDocument,

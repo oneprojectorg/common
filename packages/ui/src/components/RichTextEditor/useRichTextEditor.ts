@@ -5,7 +5,8 @@ import { useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
 
 import { cn } from '../../lib/utils';
-import { baseEditorStyles, defaultEditorExtensions } from './editorConfig';
+import { defaultEditorExtensions } from './editorConfig';
+import { baseEditorStyles } from './viewerStyles';
 
 export function useRichTextEditor({
   extensions = defaultEditorExtensions,

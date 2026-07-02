@@ -1,16 +1,19 @@
 'use client';
 
-import { trpc } from '@op/api/client';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Sheet, SheetBody } from '@op/ui/Sheet';
-import { toast } from '@op/ui/Toast';
+import dynamic from 'next/dynamic';
 import { usePostHog } from 'posthog-js/react';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 
-import { useRouter, useTranslations } from '@/lib/i18n';
+// Loaded on the first advance request, never at page load: the confirm dialog
+// (Modal/Sheet/Toast + the mutation) is admin-only, so the non-admin viewers
+// who make up nearly all decision-page traffic never fetch this chunk.
+const AdvancePhaseConfirm = dynamic(
+  () =>
+    import('./AdvancePhaseConfirm').then(
+      (module) => module.AdvancePhaseConfirm,
+    ),
+  { ssr: false },
+);
 
 interface UseAdvancePhaseArgs {
   instanceId?: string;
@@ -30,14 +33,13 @@ interface UseAdvancePhaseResult {
   requestAdvance: () => void;
   /** The confirmation Modal/Sheet to render somewhere in the tree. */
   advanceConfirm: ReactNode;
-  isAdvancing: boolean;
 }
 
 /**
  * Owns the "advance to the next phase" flow shared by the phase stepper and the
- * overview phase timeline: the `transitionFromPhase` mutation, the
- * confirm Modal (desktop) / Sheet (mobile), PostHog tracking, and the toast +
- * refresh on success. Consumers render `advanceConfirm` and call
+ * overview phase timeline: PostHog tracking plus the lazily-loaded confirm
+ * dialog (which owns the `transitionFromPhase` mutation and the toast +
+ * refresh on success). Consumers render `advanceConfirm` and call
  * `requestAdvance` from whatever affordance triggers the advance.
  */
 export function useAdvancePhase({
@@ -48,26 +50,13 @@ export function useAdvancePhase({
   nextPhaseName,
   currentPhaseEndDate,
 }: UseAdvancePhaseArgs): UseAdvancePhaseResult {
-  const t = useTranslations();
-  const router = useRouter();
   const posthog = usePostHog();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const transitionInitiatedRef = useRef(false);
-
-  const transitionMutation = trpc.decision.transitionFromPhase.useMutation({
-    onSuccess: () => {
-      setShowConfirmModal(false);
-      toast.success({ message: t('Phase advanced successfully') });
-      router.refresh();
-    },
-    onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to advance phase'),
-      });
-    },
-  });
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // Mount gate for the lazy chunk: stays false until the first advance
+  // request, so `advanceConfirm` renders null (and nothing is fetched) for
+  // viewers who never see an advance affordance.
+  const [hasRequestedAdvance, setHasRequestedAdvance] = useState(false);
 
   const getTrackingProps = useCallback(
     () => ({
@@ -82,110 +71,26 @@ export function useAdvancePhase({
   );
 
   const requestAdvance = useCallback(() => {
-    transitionInitiatedRef.current = false;
     posthog.capture('manual_transition_initiated', getTrackingProps());
-    setShowConfirmModal(true);
+    setHasRequestedAdvance(true);
+    setIsConfirmOpen(true);
   }, [posthog, getTrackingProps]);
 
-  const handleAdvancePhase = () => {
-    if (!instanceId || transitionMutation.isPending) {
-      return;
-    }
-    transitionInitiatedRef.current = true;
-    transitionMutation.mutate({
-      instanceId,
-      fromPhaseId: currentPhaseId,
-    });
-  };
-
-  const handleDismiss = (open: boolean) => {
-    if (!open && !transitionMutation.isPending) {
-      if (!transitionInitiatedRef.current) {
-        posthog.capture('manual_transition_dismissed', getTrackingProps());
+  const advanceConfirm = hasRequestedAdvance ? (
+    <AdvancePhaseConfirm
+      instanceId={instanceId}
+      currentPhaseId={currentPhaseId}
+      currentPhaseName={currentPhaseName}
+      nextPhaseName={nextPhaseName}
+      isOpen={isConfirmOpen}
+      onClose={() => setIsConfirmOpen(false)}
+      onDismissWithoutAdvance={() =>
+        posthog.capture('manual_transition_dismissed', getTrackingProps())
       }
-      setShowConfirmModal(false);
-    }
-  };
+    />
+  ) : null;
 
-  const title = t('Advance to {phaseName}?', { phaseName: nextPhaseName });
-  const body = t(
-    'This will end the {currentPhase} phase and move to {nextPhase}.',
-    { currentPhase: currentPhaseName, nextPhase: nextPhaseName },
-  );
-
-  const advanceConfirm = isMobile ? (
-    <Sheet
-      isOpen={showConfirmModal}
-      onOpenChange={handleDismiss}
-      isDismissable={!transitionMutation.isPending}
-      side="bottom"
-    >
-      <SheetBody className="flex flex-col gap-4 p-4 text-start">
-        <div className="font-serif text-title-sm">
-          <bdi>{title}</bdi>
-        </div>
-        <p dir="auto" className="text-sm text-neutral-charcoal">
-          {body}
-        </p>
-        <div className="flex flex-col gap-4">
-          <Button
-            color="primary"
-            isLoading={transitionMutation.isPending}
-            onPress={handleAdvancePhase}
-            className="w-full"
-          >
-            {t('Advance Phase')}
-          </Button>
-          <Button
-            color="secondary"
-            isDisabled={transitionMutation.isPending}
-            onPress={() => setShowConfirmModal(false)}
-            className="w-full"
-          >
-            {t('Cancel')}
-          </Button>
-        </div>
-      </SheetBody>
-    </Sheet>
-  ) : (
-    <Modal
-      isOpen={showConfirmModal}
-      onOpenChange={handleDismiss}
-      isDismissable={false}
-      surface="flat"
-    >
-      <ModalHeader className="px-6 pb-6 text-start">
-        <bdi>{title}</bdi>
-      </ModalHeader>
-      <ModalBody className="px-6 py-6">
-        <p dir="auto" className="text-sm text-neutral-charcoal">
-          {body}
-        </p>
-      </ModalBody>
-      <ModalFooter className="px-6 py-6">
-        <Button
-          color="secondary"
-          isDisabled={transitionMutation.isPending}
-          onPress={() => setShowConfirmModal(false)}
-        >
-          {t('Cancel')}
-        </Button>
-        <Button
-          color="primary"
-          isLoading={transitionMutation.isPending}
-          onPress={handleAdvancePhase}
-        >
-          {t('Advance Phase')}
-        </Button>
-      </ModalFooter>
-    </Modal>
-  );
-
-  return {
-    requestAdvance,
-    advanceConfirm,
-    isAdvancing: transitionMutation.isPending,
-  };
+  return { requestAdvance, advanceConfirm };
 }
 
 // Phase end dates are persisted as ISO datetimes representing local midnight on
