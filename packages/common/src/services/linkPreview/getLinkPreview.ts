@@ -18,8 +18,32 @@ export type LinkPreviewResult = {
   error?: string;
 };
 
-// Iframely is per-request billed.
-const LINK_PREVIEW_TTL_MS = 60 * 60 * 1000;
+// Iframely is per-request billed, so this cache is the API-side cost lever:
+// each embed URL bills once per TTL window for as long as anyone views it.
+// Link metadata rarely changes; 7 days trades staleness for ~168x fewer
+// billed calls vs the old 1-hour TTL.
+const LINK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Matches absolute and protocol-relative references to iframely's embed CDN
+// inside the returned embed HTML (iframe srcs, lazy `data-iframely-url`
+// attributes, inline embed.js script tags).
+const IFRAMELY_CDN_RE = /(?:https?:)?\/\/cdn\.iframe\.ly/g;
+
+// The app's in-service, edge-cached, CSP-sandboxed proxy for embed views
+// (apps/app/src/app/api/embeds). Path-relative so the browser resolves it
+// against the app origin in every environment.
+const EMBED_PROXY_PATH = '/api/embeds';
+
+// Embed views served from cdn.iframe.ly are billed too, so caching only the
+// API responses is not enough — the iframe/script URLs baked into the embed
+// HTML must be routed through the proxy as well.
+const rewriteEmbedCdn = (html: unknown): string | undefined => {
+  if (typeof html !== 'string') {
+    return undefined;
+  }
+
+  return html.replace(IFRAMELY_CDN_RE, EMBED_PROXY_PATH);
+};
 
 // Iframely-returned URLs are user-influenced (the destination URL the user
 // submitted controls what their site advertises in meta tags). Strip
@@ -95,7 +119,7 @@ const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
             site: data.meta.site,
           }
         : undefined,
-      html: data.html,
+      html: rewriteEmbedCdn(data.html),
       thumbnail_url: sanitizeExternalUrl(thumbnailHref ?? data.thumbnail_url),
       provider_name: data.provider_name ?? data.meta?.site,
       provider_url: sanitizeExternalUrl(

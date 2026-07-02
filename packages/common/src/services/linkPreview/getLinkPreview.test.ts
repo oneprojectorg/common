@@ -98,6 +98,7 @@ describe('getLinkPreview', () => {
 
     expect(result.error).toBeUndefined();
     expect(result.meta?.title).toBe('A Title');
+    expect(result.html).toBe('<iframe src="https://example.com"></iframe>');
     expect(result.thumbnail_url).toBe('https://cdn.example.com/thumb.png');
     expect(result.provider_name).toBe('example.com');
     expect(result.provider_url).toBe('https://example.com/canonical');
@@ -128,6 +129,25 @@ describe('getLinkPreview', () => {
 
     expect(result.error).toBeUndefined();
     expect(result.thumbnail_url).toBeUndefined();
+  });
+
+  it('rewrites cdn.iframe.ly references in embed html to the in-service proxy', async () => {
+    const url = uniqueUrl('cdn-rewrite');
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          html: '<a data-iframely-url="//cdn.iframe.ly/api/iframe?url=x"></a><iframe src="https://cdn.iframe.ly/api/iframe?url=x"></iframe><script src="//cdn.iframe.ly/embed.js"></script><img src="https://other.example.com/pic.png">',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+
+    const result = await getLinkPreview(url);
+
+    expect(result.error).toBeUndefined();
+    expect(result.html).toBe(
+      '<a data-iframely-url="/api/embeds/api/iframe?url=x"></a><iframe src="/api/embeds/api/iframe?url=x"></iframe><script src="/api/embeds/embed.js"></script><img src="https://other.example.com/pic.png">',
+    );
   });
 
   it('falls back to top-level thumbnail_url/provider_name/provider_url when links.thumbnail and meta canonical/site are absent', async () => {

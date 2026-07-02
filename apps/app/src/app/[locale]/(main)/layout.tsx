@@ -36,7 +36,9 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
           </SidebarLayout>
         </SidebarProvider>
       </UserProvider>
-      <Script async src="//cdn.iframe.ly/embed.js"></Script>
+      {/* Served by our own edge-cached proxy (app/api/embeds) instead of
+          cdn.iframe.ly, so embed loads don't hit iframely's billed CDN. */}
+      <Script async src="/api/embeds/embed.js"></Script>
     </div>
   );
 };
