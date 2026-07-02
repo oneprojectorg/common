@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -32,6 +33,37 @@ type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
   processInstance: NonNullable<LoadedDecisionProfile['processInstance']>;
 };
 
+// Short TTL on purpose (mirrors the resources list cache): @op/cache
+// invalidation is best-effort, so a lost invalidation — or a writer that
+// bypasses invalidateDecisionInstance — must self-heal in minutes. Unknown
+// slugs are never negatively cached (cache() skips null results), so a miss
+// can't pin a 404.
+const DECISION_SLUG_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Viewer-independent decision-profile snapshot for the overview's slug fetch,
+ * cached under `['decision', slug, 'slugProfile']` (cf. getInstance's
+ * `[instanceId, 'instance']`). Busted by invalidateDecisionInstance, which
+ * resolves the instance's slug. skipMemCache for the same reason as the
+ * resources list: mutation-driven client refetches must not read another
+ * instance's stale local LRU — Redis is the shared layer the invalidate
+ * clears.
+ */
+const getDecisionProfileSnapshot = (slug: string) =>
+  cache({
+    type: 'decision',
+    params: [slug, 'slugProfile'],
+    fetch: () =>
+      db.query.profiles.findFirst({
+        where: { slug, type: EntityType.DECISION },
+        ...decisionProfileQueryConfig,
+      }),
+    options: {
+      skipMemCache: true,
+      ttl: DECISION_SLUG_CACHE_TTL_MS,
+    },
+  });
+
 export const getDecisionBySlug = async ({
   user,
   slug,
@@ -39,10 +71,10 @@ export const getDecisionBySlug = async ({
   user: User | undefined;
   slug: string;
 }): Promise<DecisionProfileItem> => {
-  const profile = await db.query.profiles.findFirst({
-    where: { slug, type: EntityType.DECISION },
-    ...decisionProfileQueryConfig,
-  });
+  // The DB load is viewer-independent, so it's cached; the access check below
+  // runs on every call, outside the cache, so a hit can never bypass
+  // authorization (same split as getInstance).
+  const profile = await getDecisionProfileSnapshot(slug);
 
   if (!profile?.processInstance) {
     // No readable decision with this slug. Don't distinguish "missing" from

@@ -114,6 +114,36 @@ describe.concurrent('getDecisionBySlug', () => {
     expect(result.processInstance.owner).toBeDefined();
     expect(result.processInstance.owner?.id).toBe(setup.organization.profileId);
   });
+
+  it('reflects instance updates immediately (slug-snapshot cache invalidation)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const { slug } = setup.instance;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Warm the slug-keyed snapshot cache, then mutate: the mutation's
+    // invalidateDecisionInstance must bust the snapshot so the next read
+    // serves the new name, not the warm entry.
+    const before = await caller.decision.getDecisionBySlug({ slug });
+    expect(before.processInstance.name).not.toBeNull();
+
+    const newName = `Renamed ${task.id}`;
+    await caller.decision.updateDecisionInstance({
+      instanceId: setup.instance.instance.id,
+      name: newName,
+    });
+
+    const after = await caller.decision.getDecisionBySlug({ slug });
+    expect(after.processInstance.name).toBe(newName);
+  });
 });
 
 describeDecisionAccessTierGating('getDecisionBySlug', {
