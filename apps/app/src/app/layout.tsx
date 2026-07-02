@@ -65,11 +65,13 @@ export const viewport: Viewport = {
 };
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  const [ssrCookies, locale] = await Promise.all([
+  // getMessages() with no locale argument shares getLocale()'s memoized
+  // request config, so all three can resolve in parallel.
+  const [ssrCookies, locale, messages] = await Promise.all([
     getSSRCookies(),
     getLocale(),
+    getMessages(),
   ]);
-  const messages = await getMessages({ locale });
   const dir = getLocaleDirection(locale);
 
   return (
@@ -94,9 +96,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
               </PostHogProvider>
             </OTelBrowserProvider>
           </I18nProvider>
-          {process.env.NODE_ENV === 'development' && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
+          <ReactQueryDevtools initialIsOpen={false} />
           <Toast />
         </body>
       </TRPCProvider>
