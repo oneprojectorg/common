@@ -1,18 +1,11 @@
 import { Channels, listResources } from '@op/common';
 import { z } from 'zod';
 
-import { resourceInCollectionEncoder } from '../../encoders/resources';
+import { profileResourceListEncoder } from '../../encoders/resources';
 import { openProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string().uuid(),
-});
-
-// Flattened across the profile's collections, so no top-level
-// collectionId/cursor — each item carries its own collectionId (see
-// resourceInCollectionEncoder).
-const profileResourceListEncoder = z.object({
-  items: z.array(resourceInCollectionEncoder),
 });
 
 export const list = router({

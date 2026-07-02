@@ -71,15 +71,19 @@ export function AdvancePhaseConfirm({
     });
   };
 
+  // Every close path resets the ref so the next open starts a fresh "was the
+  // advance initiated?" cycle — the component stays mounted between opens.
+  const closeAndReset = () => {
+    advanceInitiatedRef.current = false;
+    onClose();
+  };
+
   const handleDismiss = (open: boolean) => {
     if (!open && !transitionMutation.isPending) {
       if (!advanceInitiatedRef.current) {
         onDismissWithoutAdvance();
       }
-      // Reset so the next open starts a fresh "was the advance initiated?"
-      // cycle — the component stays mounted between opens.
-      advanceInitiatedRef.current = false;
-      onClose();
+      closeAndReset();
     }
   };
 
@@ -115,7 +119,7 @@ export function AdvancePhaseConfirm({
           <Button
             color="secondary"
             isDisabled={transitionMutation.isPending}
-            onPress={onClose}
+            onPress={closeAndReset}
             className="w-full"
           >
             {t('Cancel')}

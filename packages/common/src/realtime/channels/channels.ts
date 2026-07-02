@@ -72,7 +72,8 @@ export const Channels = {
 
   /**
    * Channel for the collections list of a profile. Subscribed to by
-   * collections.list and broadcast to by collection-level mutations.
+   * collections.list and resources.list (collection order drives the
+   * flattened list's order), broadcast to by collection-level mutations.
    */
   profileCollections: (profileId: string) =>
     `profileCollections:${profileId}` as const,

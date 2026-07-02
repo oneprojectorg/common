@@ -123,6 +123,37 @@ describe('resources.list', () => {
       profileId: instance.profileId,
     });
     expect(after.items.map((item) => item.id)).toContain(created.id);
+
+    // Order-only mutations must bust the warm cache too: a missed reorder
+    // invalidation serves a stale ORDER (not stale membership), which no
+    // membership assertion would catch. New resources land at the top, so
+    // after this create the order is [second, created].
+    const second = await adminCaller.resources.createLink({
+      target: { kind: 'collection', collectionId: created.collectionId },
+      title: 'Second',
+      linkUrl: SECOND_URL,
+    });
+    const beforeReorder = await adminCaller.resources.list({
+      profileId: instance.profileId,
+    });
+    expect(beforeReorder.items.map((item) => item.id)).toEqual([
+      second.id,
+      created.id,
+    ]);
+
+    // Move `created` back to the top (upperNeighborId: null = top slot).
+    await adminCaller.resources.reorder({
+      id: created.id,
+      collectionId: created.collectionId,
+      upperNeighborId: null,
+    });
+    const afterReorder = await adminCaller.resources.list({
+      profileId: instance.profileId,
+    });
+    expect(afterReorder.items.map((item) => item.id)).toEqual([
+      created.id,
+      second.id,
+    ]);
   });
 
   it('rejects an outsider', async ({ task, onTestFinished }) => {

@@ -2,7 +2,9 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
-import { viewerProseStyles } from '@op/ui/RichTextEditor';
+// viewerStyles subpath, not the barrel: keeps the TipTap editor machinery out
+// of this viewer-only component's bundle graph.
+import { viewerProseStyles } from '@op/ui/RichTextEditor/viewerStyles';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';

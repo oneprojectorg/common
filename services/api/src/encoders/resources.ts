@@ -84,6 +84,13 @@ export const resourceListEncoder = z.object({
 });
 export type ResourceList = z.infer<typeof resourceListEncoder>;
 
+// Flattened across a profile's collections (resources.list), so no top-level
+// collectionId/cursor — each item carries its own collectionId.
+export const profileResourceListEncoder = z.object({
+  items: z.array(resourceInCollectionEncoder),
+});
+export type ProfileResourceList = z.infer<typeof profileResourceListEncoder>;
+
 export const collectionEncoder = z.object({
   id: z.string().uuid(),
   name: z.string(),
