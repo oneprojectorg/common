@@ -1,6 +1,8 @@
 'use client';
 
-import { viewerProseStyles } from '@op/ui/RichTextEditor/editorConfig';
+// viewerStyles subpath, not editorConfig or the barrel: keeps the TipTap
+// editor machinery out of this client component's bundle graph.
+import { viewerProseStyles } from '@op/ui/RichTextEditor/viewerStyles';
 import { useMemo } from 'react';
 
 import { LinkPreview } from '../LinkPreview';

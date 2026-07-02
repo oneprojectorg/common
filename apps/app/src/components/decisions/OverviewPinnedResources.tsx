@@ -13,8 +13,10 @@ import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
  * Read-only "Pinned Resources" list for the decision overview sidebar. There is
  * no dedicated pin flag — this surfaces the decision profile's resource
  * collection(s), the same data the side-panel Resources manager edits. Multiple
- * collections are flattened into one list (collections come back in sortKey
- * order, each list in item-sortKey order), with no headings to match the design.
+ * collections come back flattened into one list (collection sortKey order, then
+ * item-sortKey order), with no headings to match the design. One query — the
+ * server does the cross-collection read, replacing the old
+ * collections.list + per-collection listByCollection fan-out.
  */
 export const OverviewPinnedResourcesSuspense = ({
   profileId,
@@ -22,17 +24,9 @@ export const OverviewPinnedResourcesSuspense = ({
   profileId: string;
 }) => {
   const t = useTranslations();
-  const [collections] = trpc.resources.collections.list.useSuspenseQuery({
+  const [{ items }] = trpc.resources.list.useSuspenseQuery({
     profileId,
   });
-
-  const [lists] = trpc.useSuspenseQueries((tq) =>
-    collections.items.map((collection) =>
-      tq.resources.listByCollection({ collectionId: collection.id }),
-    ),
-  );
-
-  const items = lists.flatMap((list) => list.items);
 
   if (items.length === 0) {
     return null;

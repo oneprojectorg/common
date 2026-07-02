@@ -10,6 +10,53 @@ import { setupInstance } from '../../test/helpers/resourcesTestUtils';
 // access. A regression to networkAuthenticatedProcedure would fail the first
 // three cells.
 
+describeAccessTierGating('resources.list', {
+  noJwt: accessTierGatingCell(
+    'admits no-JWT past the tier gate',
+    async ({ task, onTestFinished, callers }) => {
+      const { instance } = await setupInstance({ task, onTestFinished });
+      const caller = await callers.noJwt();
+
+      await expectPassesAccessTierGate(
+        caller.resources.list({ profileId: instance.profileId }),
+      );
+    },
+  ),
+  anonJwt: accessTierGatingCell(
+    'admits anon-JWT past the tier gate',
+    async ({ task, onTestFinished, callers }) => {
+      const { instance } = await setupInstance({ task, onTestFinished });
+      const caller = await callers.anonJwt();
+
+      await expectPassesAccessTierGate(
+        caller.resources.list({ profileId: instance.profileId }),
+      );
+    },
+  ),
+  userJwt: accessTierGatingCell(
+    'admits out-of-network user-JWT past the tier gate',
+    async ({ task, onTestFinished, callers }) => {
+      const { instance } = await setupInstance({ task, onTestFinished });
+      const caller = await callers.userJwt();
+
+      await expectPassesAccessTierGate(
+        caller.resources.list({ profileId: instance.profileId }),
+      );
+    },
+  ),
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT past the tier gate',
+    async ({ task, onTestFinished, callers }) => {
+      const { instance, setup } = await setupInstance({ task, onTestFinished });
+      const caller = await callers.networkJwt(setup.userEmail);
+
+      await expectPassesAccessTierGate(
+        caller.resources.list({ profileId: instance.profileId }),
+      );
+    },
+  ),
+});
+
 describeAccessTierGating('resources.collections.list', {
   noJwt: accessTierGatingCell(
     'admits no-JWT past the tier gate',

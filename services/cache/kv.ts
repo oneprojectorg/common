@@ -70,6 +70,7 @@ const TypeMap = {
   allowList: 'allowList',
   linkPreview: 'linkPreview',
   resourceSignedUrl: 'resourceSignedUrl',
+  resources: 'resources',
   user: 'user',
   orgUser: 'orgUser',
   profileUser: 'profileUser',

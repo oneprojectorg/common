@@ -55,9 +55,9 @@ export const Channels = {
   postComments: (postId: string) => `postComments:${postId}` as const,
 
   /**
-   * Channel for the list of resources owned by a profile (sourced from the
-   * pinned collection). Subscribed to by resources.list and broadcast to
-   * by any resource mutation affecting the profile.
+   * Channel for the flattened list of resources across a profile's
+   * collections. Subscribed to by resources.list and broadcast to by any
+   * resource mutation affecting the profile.
    */
   profileResources: (profileId: string) =>
     `profileResources:${profileId}` as const,
@@ -72,7 +72,8 @@ export const Channels = {
 
   /**
    * Channel for the collections list of a profile. Subscribed to by
-   * collections.list and broadcast to by collection-level mutations.
+   * collections.list and resources.list (collection order drives the
+   * flattened list's order), broadcast to by collection-level mutations.
    */
   profileCollections: (profileId: string) =>
     `profileCollections:${profileId}` as const,

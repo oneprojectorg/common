@@ -1,8 +1,5 @@
 import { and, db, eq } from '@op/db/client';
-import {
-  resourceCollectionItems,
-  resourceCollectionProfiles,
-} from '@op/db/schema';
+import { resourceCollectionItems } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -243,56 +240,8 @@ describe('resources.createLink', () => {
   });
 });
 
-describe('resources.list / listByCollection', () => {
-  it('list returns resources in the lazily-created Default collection', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instance, adminCaller } = await setupInstance({
-      task,
-      onTestFinished,
-    });
-    const created = await adminCaller.resources.createLink({
-      target: { kind: 'profile', profileId: instance.profileId },
-      title: 'Listed',
-      linkUrl: PUBLIC_URL,
-    });
-
-    const result = await adminCaller.resources.list({
-      profileId: instance.profileId,
-    });
-    expect(result.collectionId).toBe(created.collectionId);
-    expect(result.items.map((r: ResourceInCollectionDTO) => r.id)).toContain(
-      created.id,
-    );
-  });
-
-  it('list returns empty WITHOUT creating a collection when the profile has no resources', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instance, adminCaller } = await setupInstance({
-      task,
-      onTestFinished,
-    });
-
-    const result = await adminCaller.resources.list({
-      profileId: instance.profileId,
-    });
-
-    expect(result.collectionId).toBeNull();
-    expect(result.items).toEqual([]);
-    expect(result.next).toBeNull();
-
-    // Listing is a pure read: it must not lazily create a Default collection.
-    // The collection is only created on the first upload.
-    const collections = await db
-      .select({ id: resourceCollectionProfiles.collectionId })
-      .from(resourceCollectionProfiles)
-      .where(eq(resourceCollectionProfiles.profileId, instance.profileId));
-    expect(collections).toHaveLength(0);
-  });
-
+// resources.list coverage lives in list.test.ts.
+describe('resources.listByCollection', () => {
   it('listByCollection rejects an outsider', async ({
     task,
     onTestFinished,
@@ -846,7 +795,7 @@ describe('resources.delete', () => {
   });
 });
 
-describe('resources.list pagination', () => {
+describe('resources.listByCollection pagination', () => {
   it('paginates via the cursor: limit yields a next cursor, the second page returns the rest', async ({
     task,
     onTestFinished,

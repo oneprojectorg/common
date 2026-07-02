@@ -1,5 +1,5 @@
-import { and, countDistinct, db, eq, ne } from '@op/db/client';
-import { EntityType, ProposalStatus, proposals } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { EntityType } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -29,10 +29,7 @@ type LoadedDecisionProfile = NonNullable<
 >;
 
 type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
-  processInstance: NonNullable<LoadedDecisionProfile['processInstance']> & {
-    proposalCount: number;
-    participantCount: number;
-  };
+  processInstance: NonNullable<LoadedDecisionProfile['processInstance']>;
 };
 
 export const getDecisionBySlug = async ({
@@ -55,39 +52,22 @@ export const getDecisionBySlug = async ({
 
   const instance = profile.processInstance;
 
-  // Read-access gate alongside the proposal aggregates. A rejected caller never
-  // sees the aggregates: the assert and the query share one Promise.all, so a
-  // failed assert rejects the whole thing.
-  const [, statsRows] = await Promise.all([
-    assertProfileAccess({
-      user,
-      profileId: profile.id,
-      permissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-      notMemberMessage: 'User does not have access to this process',
-    }),
-    db
-      .select({
-        proposalCount: countDistinct(proposals.id),
-        participantCount: countDistinct(proposals.submittedByProfileId),
-      })
-      .from(proposals)
-      .where(
-        and(
-          eq(proposals.processInstanceId, instance.id),
-          ne(proposals.status, ProposalStatus.DRAFT),
-        ),
-      ),
-  ]);
+  // Proposal/participant aggregates are intentionally NOT computed here: the
+  // overview route (this endpoint's only consumer) never renders them, and
+  // list views get their counts from listDecisionProfiles. Keeping the
+  // hot-path slug fetch aggregate-free saves a proposals table scan per view.
+  await assertProfileAccess({
+    user,
+    profileId: profile.id,
+    permissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+    notMemberMessage: 'User does not have access to this process',
+  });
 
   return {
     ...profile,
-    processInstance: {
-      ...instance,
-      proposalCount: statsRows[0]?.proposalCount ?? 0,
-      participantCount: statsRows[0]?.participantCount ?? 0,
-    },
+    processInstance: instance,
   };
 };

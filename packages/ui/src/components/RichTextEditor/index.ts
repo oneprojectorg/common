@@ -4,9 +4,8 @@ export { RichTextEditorSkeleton } from './RichTextEditorSkeleton';
 export { StyledRichTextContent } from './StyledRichTextContent';
 export { useRichTextEditor } from './useRichTextEditor';
 export {
-  baseEditorStyles,
-  viewerProseStyles,
   defaultEditorExtensions,
   defaultViewerExtensions,
   StyledHeading,
 } from './editorConfig';
+export { baseEditorStyles, viewerProseStyles } from './viewerStyles';
