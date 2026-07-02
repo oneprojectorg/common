@@ -13,6 +13,7 @@
     "./Breadcrumbs": "./src/components/Breadcrumbs.tsx",
     "./FacePile": "./src/components/FacePile.tsx",
     "./GrowingFacePile": "./src/components/GrowingFacePile/index.tsx",
+    "./BannerImageField": "./src/components/BannerImageField.tsx",
     "./BannerUploader": "./src/components/BannerUploader.tsx",
     "./Button": "./src/components/Button.tsx",
     "./ButtonGroup": "./src/components/ButtonGroup.tsx",

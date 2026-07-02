@@ -1365,5 +1365,15 @@
   "With an account": "Con una cuenta",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Edita tu idea antes de que comience la revisión, recibe notificaciones cuando pase a la siguiente fase, y dale me gusta, comenta y sigue otras ideas.",
   "Create account": "Crear cuenta",
-  "Collapsible": "Plegable"
+  "Collapsible": "Plegable",
+  "Banner image": "Imagen del banner",
+  "Upload banner image": "Subir imagen del banner",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG, JPG, WebP o GIF · recomendado 2400×800px · máx. {size} MB",
+  "Choose file": "Elegir archivo",
+  "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "El título aparece centrado sobre una capa oscura. Evita imágenes con elementos importantes en el centro.",
+  "Edit banner": "Editar banner",
+  "Admin options": "Opciones de administrador",
+  "Process settings": "Configuración del proceso",
+  "ends {date}": "finaliza el {date}",
+  "Remove image": "Eliminar imagen"
 }

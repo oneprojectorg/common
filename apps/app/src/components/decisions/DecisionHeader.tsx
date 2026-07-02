@@ -12,6 +12,7 @@ import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { AdminOverviewBar } from '@/components/decisions/AdminOverviewBar';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionStepperBar } from '@/components/decisions/DecisionStepperBar';
 
@@ -112,11 +113,20 @@ function DecisionHeaderView({
   title,
   phases,
   currentStateId,
+  heroImagePath,
 }: StandardDecisionHeaderProps & {
   title: string;
   phases: ProcessPhase[];
   currentStateId: string;
+  /** Stored overview hero image path, for the admin Edit-banner controls. */
+  heroImagePath?: string;
 }) {
+  // Admin banner controls live in the header so they persist across the
+  // overview/current-phase tabs: a desktop "Edit banner" button and, on mobile,
+  // a full-width admin bar that opens a bottom sheet.
+  const currentPhase = phases.find((p) => p.id === currentStateId);
+  const showAdminControls = isAdmin === true && Boolean(decisionSlug);
+
   return (
     <>
       <DecisionInstanceHeader
@@ -126,6 +136,17 @@ function DecisionHeaderView({
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
         centerSlot={centerSlot}
+        mobileAdminBar={
+          showAdminControls && decisionSlug ? (
+            <AdminOverviewBar
+              instanceId={instanceId}
+              decisionSlug={decisionSlug}
+              heroImagePath={heroImagePath}
+              phaseName={currentPhase?.name || undefined}
+              phaseEndDate={currentPhase?.phase?.endDate}
+            />
+          ) : undefined
+        }
       />
       {showStepper ? (
         <DecisionStepperBar
@@ -158,6 +179,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
       }
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
+      heroImagePath={instance.instanceData?.overview?.heroImage}
     />
   );
 }
@@ -181,6 +203,7 @@ function DecisionHeaderFromProps(
       }
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
+      heroImagePath={instance.instanceData?.overview?.heroImage}
     />
   );
 }

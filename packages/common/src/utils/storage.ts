@@ -43,6 +43,12 @@ export const getStorageObjectMimeType = (metadata: unknown): string | null => {
 // 25MB vs 24MB etc.
 export const DEFAULT_UPLOAD_SIZE_LIMIT = 25 * 1024 * 1024;
 
+// Cap for image uploads (banners, hero/header images, avatars). Images don't
+// need the 25MB document default — an optimized wide banner sits well under
+// 5MB — and a lower cap keeps the bytes next/image has to fetch and optimize
+// sane.
+export const IMAGE_UPLOAD_SIZE_LIMIT = 5 * 1024 * 1024;
+
 // Sanitize a user-supplied filename before placing it in a storage key:
 // drop any directory portion, then collapse anything outside the
 // conservative `[A-Za-z0-9._-]` set to underscores and cap the length.

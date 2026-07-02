@@ -10,15 +10,21 @@ import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
 import { listProposalSubmittersRouter } from './listProposalSubmitters';
 import { listSelectionCandidatesRouter } from './listSelectionCandidates';
+import { removeOverviewHeroImageRouter } from './removeOverviewHeroImage';
+import { signOverviewHeroImageUploadUrlRouter } from './signOverviewHeroImageUploadUrl';
 import { submitManualSelectionRouter } from './submitManualSelection';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
+import { updateOverviewHeroImageRouter } from './updateOverviewHeroImage';
 
 export const instancesRouter = mergeRouters(
   createInstanceFromTemplateRouter,
   deleteDecisionRouter,
   duplicateInstanceRouter,
   updateDecisionInstanceRouter,
+  signOverviewHeroImageUploadUrlRouter,
+  updateOverviewHeroImageRouter,
+  removeOverviewHeroImageRouter,
   transitionFromPhaseRouter,
   listLegacyInstancesRouter,
   getInstanceRouter,

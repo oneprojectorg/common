@@ -8,6 +8,12 @@ export * from './listProcesses';
 // Instance cache invalidation
 export * from './decisionCache';
 
+// Overview hero-image signed-URL upload flow
+export * from './overviewHeroImageStorage';
+export * from './removeOverviewHeroImage';
+export * from './signOverviewHeroImageUploadUrl';
+export * from './updateOverviewHeroImage';
+
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
