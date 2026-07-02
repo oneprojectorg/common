@@ -67,7 +67,8 @@ ReactionNotificationEmail.subject = (
 
 ReactionNotificationEmail.PreviewProps = {
   reactorName: 'Jordan Rivera',
-  postContent: 'The proposal outlines a phased rollout for the community garden.',
+  postContent:
+    'The proposal outlines a phased rollout for the community garden.',
   postUrl: 'https://common.oneproject.org/',
   reactionType: '❤️',
   recipientName: 'Alex',

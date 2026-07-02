@@ -70,7 +70,8 @@ CommentNotificationEmail.subject = (
 
 CommentNotificationEmail.PreviewProps = {
   commenterName: 'Jordan Rivera',
-  postContent: 'The proposal outlines a phased rollout for the community garden.',
+  postContent:
+    'The proposal outlines a phased rollout for the community garden.',
   commentContent:
     "This is a thoughtful point — I hadn't considered the downstream effects on the budget timeline. Could we revisit phase two?",
   postUrl: 'https://common.oneproject.org/',
