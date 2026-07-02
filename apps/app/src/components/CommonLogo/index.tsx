@@ -10,6 +10,7 @@ export const CommonLogo = ({ className }: { className?: string }) => {
         src="/Common.png"
         width={260}
         height={48}
+        priority
       />
       <svg
         viewBox="0 0 65 12"

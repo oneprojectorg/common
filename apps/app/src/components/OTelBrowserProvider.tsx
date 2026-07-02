@@ -1,15 +1,5 @@
 'use client';
 
-import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
-import { ZoneContextManager } from '@opentelemetry/context-zone';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { resourceFromAttributes } from '@opentelemetry/resources';
-import {
-  BatchSpanProcessor,
-  WebTracerProvider,
-} from '@opentelemetry/sdk-trace-web';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -30,14 +20,34 @@ export function OTelBrowserProvider({
     }
     initialized.current = true;
 
-    initOTelBrowser();
+    void initOTelBrowser();
   }, []);
 
   return children;
 }
 
-function initOTelBrowser() {
+// The @opentelemetry/* packages are imported dynamically so they land in a
+// lazy chunk loaded after hydration instead of the critical-path bundle.
+async function initOTelBrowser() {
   try {
+    const [
+      { getWebAutoInstrumentations },
+      { ZoneContextManager },
+      { OTLPTraceExporter },
+      { registerInstrumentations },
+      { resourceFromAttributes },
+      { BatchSpanProcessor, WebTracerProvider },
+      { ATTR_SERVICE_NAME },
+    ] = await Promise.all([
+      import('@opentelemetry/auto-instrumentations-web'),
+      import('@opentelemetry/context-zone'),
+      import('@opentelemetry/exporter-trace-otlp-http'),
+      import('@opentelemetry/instrumentation'),
+      import('@opentelemetry/resources'),
+      import('@opentelemetry/sdk-trace-web'),
+      import('@opentelemetry/semantic-conventions'),
+    ]);
+
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'common-browser',
     });

@@ -6,7 +6,7 @@ import { Toast } from '@op/ui/Toast';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';
-import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
+import { Roboto, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
@@ -20,15 +20,8 @@ import { getLocaleDirection } from '../lib/i18n/config';
 
 const roboto = Roboto({
   subsets: ['latin'],
-  weight: ['100', '300', '400', '500', '700', '900'],
+  weight: ['300', '400', '500', '700', '900'],
   variable: '--font-sans',
-  display: 'swap',
-});
-
-const robotoMono = Roboto_Mono({
-  subsets: ['latin'],
-  weight: 'variable',
-  variable: '--font-mono',
   display: 'swap',
 });
 
@@ -72,8 +65,10 @@ export const viewport: Viewport = {
 };
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  const ssrCookies = await getSSRCookies();
-  const locale = await getLocale();
+  const [ssrCookies, locale] = await Promise.all([
+    getSSRCookies(),
+    getLocale(),
+  ]);
   const messages = await getMessages({ locale });
   const dir = getLocaleDirection(locale);
 
@@ -87,7 +82,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <TRPCProvider ssrCookies={ssrCookies}>
         <QueryInvalidationSubscriber />
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
+          className={`${roboto.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
           <FileDropGuard />
           <I18nProvider locale={locale} messages={messages}>
@@ -99,7 +94,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
               </PostHogProvider>
             </OTelBrowserProvider>
           </I18nProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
           <Toast />
         </body>
       </TRPCProvider>
