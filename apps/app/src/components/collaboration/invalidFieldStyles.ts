@@ -5,7 +5,7 @@
  * No padding/size changes here on purpose — the error state must not shift
  * layout, especially since it clears on the user's first keystroke.
  */
-export const INVALID_EDITOR_CLASS = 'rounded-lg bg-functional-red-50';
+export const INVALID_EDITOR_CLASS = 'bg-functional-red-50';
 export const INVALID_PILL_CLASS = 'outline outline-1 outline-functional-red';
 
 /**
