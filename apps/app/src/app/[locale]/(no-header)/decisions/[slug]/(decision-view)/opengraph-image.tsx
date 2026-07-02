@@ -122,9 +122,9 @@ const Image = async ({
 }) => {
   try {
     const { slug, locale } = await params;
-    // satori (next/og's renderer) has no bidi algorithm: RTL runs come out
-    // letter-reversed and mixed RTL/LTR lines scramble. Until the card is
-    // rendered with a bidi-capable stack, RTL locales fall back to
+    // satori (next/og's renderer) doesn't apply Arabic joining: RTL text
+    // renders in disconnected isolated letter forms. Until the card text is
+    // pre-shaped to Unicode presentation forms, RTL locales fall back to
     // default-locale card text — the page's <meta> tags stay localized.
     const cardLocale =
       getLocaleDirection(locale) === 'rtl' ? i18nConfig.defaultLocale : locale;
