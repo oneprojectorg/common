@@ -21,6 +21,7 @@ import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { processResults } from './processResults';
+import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import type {
   ManualSelectionAudit,
@@ -95,6 +96,9 @@ export async function submitManualSelection({
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
   let previousPhaseId: string | null = null;
+  let reviewAssignmentInput:
+    | Parameters<typeof runGenerateReviewAssignments>[0]
+    | null = null;
 
   await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
@@ -254,6 +258,25 @@ export async function submitManualSelection({
       })),
     );
 
+    // Defer review-assignment generation until after the transaction commits:
+    // generateReviewAssignments reads the just-attached decisionTransitionProposals
+    // rows and writes assignments on the pooled `db` connection, which can't see
+    // this transaction's uncommitted writes (mirrors onPhaseAdvanced's ordering).
+    const currentPhase = lockedPhases?.[lockedPhaseIndex];
+    if (lockedPhases && currentPhase?.rules?.proposals?.review) {
+      reviewAssignmentInput = {
+        instanceId: processInstanceId,
+        fromPhaseId: lockedPreviousPhaseId,
+        toPhaseId: currentStateId,
+        phases: lockedPhases,
+        advanceResult: {
+          conflict: false,
+          transitionHistoryId: latestRow.id,
+          selectedProposalIds: uniqueProposalIds,
+        },
+      };
+    }
+
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
     if (isLastPhase(currentStateId, lockedPhases ?? [])) {
@@ -270,6 +293,13 @@ export async function submitManualSelection({
 
     previousPhaseId = lockedPreviousPhaseId;
   });
+
+  // Runs after commit so generateReviewAssignments sees the attached proposals
+  // and its writes aren't orphaned if the transaction had rolled back. Failures
+  // are logged, not thrown.
+  if (reviewAssignmentInput) {
+    await runGenerateReviewAssignments(reviewAssignmentInput);
+  }
 
   if (previousPhaseId) {
     event
