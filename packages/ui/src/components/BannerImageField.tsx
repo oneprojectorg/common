@@ -80,7 +80,13 @@ export const BannerImageField = ({
   const removeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const { buttonProps: removeButtonProps } = useButton(
-    { onPress: () => onRemove?.(), 'aria-label': copy?.remove ?? 'Remove' },
+    {
+      onPress: () => onRemove?.(),
+      // Disabled while a request is in flight so a remove can't race the
+      // in-progress upload/record (or fire a second remove).
+      isDisabled: uploading,
+      'aria-label': copy?.remove ?? 'Remove',
+    },
     removeButtonRef,
   );
 
@@ -129,7 +135,7 @@ export const BannerImageField = ({
             <button
               {...removeButtonProps}
               ref={removeButtonRef}
-              className="absolute top-2 right-2 rounded-md border bg-white p-2 text-neutral-charcoal shadow-sm hover:bg-neutral-gray1"
+              className="absolute top-2 right-2 rounded-md border bg-white p-2 text-neutral-charcoal shadow-sm hover:bg-neutral-gray1 disabled:pointer-events-none disabled:opacity-50"
             >
               <LuTrash2 className="size-4" aria-hidden="true" />
             </button>

@@ -10,6 +10,7 @@ export * from './decisionCache';
 
 // Overview hero-image signed-URL upload flow
 export * from './overviewHeroImageStorage';
+export * from './removeOverviewHeroImage';
 export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 

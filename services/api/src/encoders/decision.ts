@@ -260,8 +260,11 @@ const instanceOverviewInputEncoder = z.object({
   headline: z.string().max(50).optional(),
   description: z.string().max(500).optional(),
   body: overviewBodyInputEncoder.optional(),
-  // Empty string clears the image (getPublicUrl treats it as no image).
-  heroImage: z.string().optional(),
+  // `heroImage` is intentionally NOT accepted here: it's a storage path that
+  // must pass the trust-boundary check (prefix/stored-MIME/image-only/size),
+  // so it can only be set/cleared via the dedicated updateOverviewHeroImage /
+  // removeOverviewHeroImage endpoints. Accepting it on the generic update
+  // would let a client persist an arbitrary or foreign path unchecked.
 });
 
 /** Instance data encoder for new schema format */

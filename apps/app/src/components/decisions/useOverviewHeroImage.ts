@@ -8,7 +8,7 @@ import {
   isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -71,10 +71,15 @@ export function useOverviewHeroImage({
   // stored path on reload.
   const [fileSizeLabel, setFileSizeLabel] = useState<string | undefined>();
   const [isUploading, setIsUploading] = useState(false);
+  // Monotonic id of the latest upload/remove. Async completions check it and
+  // bail if a newer request superseded them, so a slow upload landing after a
+  // remove (or after a second upload) can't revert the preview to a stale
+  // image or clobber `isUploading`.
+  const latestRequestRef = useRef(0);
   const signMutation =
     trpc.decision.signOverviewHeroImageUploadUrl.useMutation();
   const recordMutation = trpc.decision.updateOverviewHeroImage.useMutation();
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  const removeMutation = trpc.decision.removeOverviewHeroImage.useMutation();
 
   const upload = async (file: File) => {
     if (
@@ -97,6 +102,7 @@ export function useOverviewHeroImage({
       return;
     }
 
+    const requestId = ++latestRequestRef.current;
     // Optimistic local preview (object URL) while sign → PUT → record runs.
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
@@ -121,32 +127,43 @@ export function useOverviewHeroImage({
         storagePath: signed.storagePath,
         mimeType: file.type,
       });
+      // A newer upload/remove superseded this one — don't touch shared state.
+      if (latestRequestRef.current !== requestId) {
+        return;
+      }
       setPreviewUrl(getPublicUrl(signed.storagePath));
       setFileName(fileNameFromPath(signed.storagePath));
       onChange?.();
     } catch {
-      toast.error({ message: t('Something went wrong') });
-      setPreviewUrl(getPublicUrl(initialPath));
-      setFileName(fileNameFromPath(initialPath));
-      setFileSizeLabel(undefined);
+      if (latestRequestRef.current === requestId) {
+        toast.error({ message: t('Something went wrong') });
+        setPreviewUrl(getPublicUrl(initialPath));
+        setFileName(fileNameFromPath(initialPath));
+        setFileSizeLabel(undefined);
+      }
     } finally {
-      setIsUploading(false);
+      if (latestRequestRef.current === requestId) {
+        setIsUploading(false);
+      }
       URL.revokeObjectURL(objectUrl);
     }
   };
 
   const remove = async () => {
+    const requestId = ++latestRequestRef.current;
     try {
-      await updateInstance.mutateAsync({
-        instanceId,
-        overview: { heroImage: '' },
-      });
+      await removeMutation.mutateAsync({ instanceId });
+      if (latestRequestRef.current !== requestId) {
+        return;
+      }
       setPreviewUrl(undefined);
       setFileName(undefined);
       setFileSizeLabel(undefined);
       onChange?.();
     } catch {
-      toast.error({ message: t('Something went wrong') });
+      if (latestRequestRef.current === requestId) {
+        toast.error({ message: t('Something went wrong') });
+      }
     }
   };
 
@@ -157,7 +174,7 @@ export function useOverviewHeroImage({
     upload,
     remove,
     isUploading,
-    isRemoving: updateInstance.isPending,
+    isRemoving: removeMutation.isPending,
     uploadError:
       signMutation.error?.message ?? recordMutation.error?.message ?? undefined,
   };

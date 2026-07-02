@@ -3,6 +3,7 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { deleteStorageObject } from '../../utils/deleteStorageObject';
 import {
   IMAGE_UPLOAD_SIZE_LIMIT,
   assertUploadedStorageObject,
@@ -11,6 +12,7 @@ import { getStorageObjectByPath } from '../../utils/storageObject';
 import { assertProfileAccess } from '../assert';
 import { invalidateDecisionInstance } from './decisionCache';
 import { overviewHeroImagePathPrefix } from './overviewHeroImageStorage';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { updateDecisionInstance } from './updateDecisionInstance';
 
 export interface UpdateOverviewHeroImageInput {
@@ -45,7 +47,7 @@ export async function updateOverviewHeroImage({
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
-    columns: { profileId: true },
+    columns: { profileId: true, instanceData: true },
   });
   if (!instance?.profileId) {
     throw new NotFoundError('Process instance', instanceId);
@@ -71,12 +73,21 @@ export async function updateOverviewHeroImage({
     throw new ValidationError('Hero image must be an image file');
   }
 
+  // Previous object, so we can drop it once the new path is persisted (a
+  // replaced hero image would otherwise leak in the shared assets bucket).
+  const previousPath = (instance.instanceData as DecisionInstanceData)?.overview
+    ?.heroImage;
+
   await updateDecisionInstance({
     instanceId,
     overview: { heroImage: storagePath },
     user,
   });
   await invalidateDecisionInstance(instanceId);
+
+  if (previousPath && previousPath !== storagePath) {
+    await deleteStorageObject({ path: previousPath });
+  }
 
   return { heroImage: storagePath };
 }

@@ -1,3 +1,5 @@
+import { IMAGE_UPLOAD_SIZE_LIMIT } from '@op/common';
+import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -11,6 +13,7 @@ import {
 import {
   createIsolatedSession,
   createTestContextWithSession,
+  supabaseTestAdminClient,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
@@ -22,6 +25,48 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+type AuthenticatedCaller = Awaited<
+  ReturnType<typeof createAuthenticatedCaller>
+>;
+
+// 1x1 PNG; small enough to keep tests cheap, still a valid image.
+const TEST_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+const TEST_PNG_BUFFER = Buffer.from(TEST_PNG_BASE64, 'base64');
+
+/**
+ * Runs the production hero-image upload sequence end-to-end via a tRPC caller:
+ * sign URL, PUT to storage (service-role admin client), record. Returns the
+ * signed path so callers can assert on it.
+ */
+async function uploadHeroImageForTest({
+  caller,
+  instanceId,
+  fileName = 'hero.png',
+  mimeType = 'image/png',
+  body = TEST_PNG_BUFFER,
+}: {
+  caller: AuthenticatedCaller;
+  instanceId: string;
+  fileName?: string;
+  mimeType?: string;
+  body?: Buffer;
+}) {
+  const signed = await caller.decision.signOverviewHeroImageUploadUrl({
+    instanceId,
+    fileName,
+  });
+
+  const { error } = await supabaseTestAdminClient.storage
+    .from('assets')
+    .upload(signed.storagePath, body, { contentType: mimeType, upsert: false });
+  if (error) {
+    throw new Error(`hero image test upload failed: ${error.message}`);
+  }
+
+  return signed;
+}
 
 describe.concurrent('signOverviewHeroImageUploadUrl', () => {
   it('should reject a non-admin caller before signing', async ({
@@ -147,6 +192,173 @@ describe.concurrent('updateOverviewHeroImage', () => {
         mimeType: 'image/png',
       }),
     ).rejects.toThrow();
+  });
+
+  it('should record a validly uploaded image and persist its path', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const signed = await uploadHeroImageForTest({
+      caller: adminCaller,
+      instanceId,
+    });
+
+    const result = await adminCaller.decision.updateOverviewHeroImage({
+      instanceId,
+      storagePath: signed.storagePath,
+      mimeType: 'image/png',
+    });
+    expect(result.heroImage).toBe(signed.storagePath);
+
+    // Round-trips through getInstance so the persisted path is visible to the
+    // overview page.
+    const fetched = await adminCaller.decision.getInstance({ instanceId });
+    expect(fetched.instanceData?.overview?.heroImage).toBe(signed.storagePath);
+  });
+
+  it('should reject a non-image upload even though PDF is on the allowlist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    // A PDF passes the shared allowlist + prefix + declared==stored checks, so
+    // this proves the image-only guard specifically (not the generic
+    // allowlist) rejects it.
+    const signed = await uploadHeroImageForTest({
+      caller: adminCaller,
+      instanceId,
+      fileName: 'hero.pdf',
+      mimeType: 'application/pdf',
+      body: Buffer.from('%PDF-1.4 not really a pdf'),
+    });
+
+    await expect(
+      adminCaller.decision.updateOverviewHeroImage({
+        instanceId,
+        storagePath: signed.storagePath,
+        mimeType: 'application/pdf',
+      }),
+    ).rejects.toThrow(/image/i);
+  });
+
+  it('should reject an upload over the image size cap', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const signed = await uploadHeroImageForTest({
+      caller: adminCaller,
+      instanceId,
+      body: Buffer.alloc(IMAGE_UPLOAD_SIZE_LIMIT + 1),
+    });
+
+    await expect(
+      adminCaller.decision.updateOverviewHeroImage({
+        instanceId,
+        storagePath: signed.storagePath,
+        mimeType: 'image/png',
+      }),
+    ).rejects.toThrow(/size/i);
+  });
+});
+
+describe.concurrent('removeOverviewHeroImage', () => {
+  it('should reject a non-admin caller', async ({ task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const nonAdminCaller = await createAuthenticatedCaller(memberUser.email);
+
+    await expect(
+      nonAdminCaller.decision.removeOverviewHeroImage({
+        instanceId: instance.instance.id,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('should return 404 for a non-existent instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.removeOverviewHeroImage({ instanceId: NIL_UUID }),
+    ).rejects.toThrow(/not found/i);
+  });
+
+  it('should clear the hero image while preserving other overview fields', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const headline = `Overview headline ${task.id}`;
+    await adminCaller.decision.updateDecisionInstance({
+      instanceId,
+      overview: { headline },
+    });
+
+    const signed = await uploadHeroImageForTest({
+      caller: adminCaller,
+      instanceId,
+    });
+    await adminCaller.decision.updateOverviewHeroImage({
+      instanceId,
+      storagePath: signed.storagePath,
+      mimeType: 'image/png',
+    });
+
+    const result = await adminCaller.decision.removeOverviewHeroImage({
+      instanceId,
+    });
+    expect(result.heroImage).toBe('');
+
+    // The partial-overview merge must clear only heroImage, not the headline.
+    const fetched = await adminCaller.decision.getInstance({ instanceId });
+    expect(fetched.instanceData?.overview?.heroImage).toBe('');
+    expect(fetched.instanceData?.overview?.headline).toBe(headline);
   });
 });
 
