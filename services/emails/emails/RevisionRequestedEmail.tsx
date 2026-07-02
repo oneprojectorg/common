@@ -1,6 +1,7 @@
-import { Button, Heading, Section, Text } from 'react-email';
+import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Header } from '../components/Header';
 
 export const RevisionRequestedEmail = ({
   proposalName,
@@ -15,9 +16,7 @@ export const RevisionRequestedEmail = ({
     <EmailTemplate
       previewText={`A reviewer has requested changes to "${proposalName}"`}
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Revision Requested
-      </Heading>
+      <Header>Revision Requested</Header>
       <Text className="my-8 text-lg">
         A reviewer has requested changes to your proposal{' '}
         <strong>{proposalName}</strong> in <strong>{processTitle}</strong>.
@@ -47,5 +46,11 @@ export const RevisionRequestedEmail = ({
 
 RevisionRequestedEmail.subject = (proposalName: string) =>
   `A reviewer has requested changes to "${proposalName}"`;
+
+RevisionRequestedEmail.PreviewProps = {
+  proposalName: 'Community Garden Revamp',
+  processTitle: 'Participatory Budgeting 2026',
+  proposalUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof RevisionRequestedEmail>[0];
 
 export default RevisionRequestedEmail;

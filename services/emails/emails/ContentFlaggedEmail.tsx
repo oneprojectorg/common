@@ -43,4 +43,10 @@ export const ContentFlaggedEmail = ({
   );
 };
 
+ContentFlaggedEmail.PreviewProps = {
+  recipientName: 'Alex',
+  contentType: 'proposal',
+  disputeUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof ContentFlaggedEmail>[0];
+
 export default ContentFlaggedEmail;

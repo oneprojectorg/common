@@ -18,13 +18,13 @@ export const OPRelationshipRequestEmail = ({
   approvalUrl,
   requesterMessage,
 }: OPRelationshipRequestEmailProps) => {
-  const relationshipLabels = relationshipTypes?.map(
+  const relationshipLabels = relationshipTypes.map(
     (type) => relationshipMap[type]?.noun || type,
   );
   const relationshipText =
-    relationshipLabels?.length === 1
+    relationshipLabels.length === 1
       ? relationshipLabels[0]
-      : relationshipLabels?.join('/');
+      : relationshipLabels.join('/');
 
   return (
     <EmailTemplate
@@ -68,5 +68,13 @@ export const OPRelationshipRequestEmail = ({
 };
 
 OPRelationshipRequestEmail.subject = `Action Required: Accept request for {{requesterOrgName}} to add {{targetOrgName}} as a/an {{relationshipTypes}} on Common`;
+
+OPRelationshipRequestEmail.PreviewProps = {
+  requesterOrgName: 'One Project',
+  targetOrgName: 'Community Fund',
+  relationshipTypes: ['partner'],
+  approvalUrl: 'https://common.oneproject.org/',
+  requesterMessage: 'Looking forward to collaborating with your team.',
+} satisfies Parameters<typeof OPRelationshipRequestEmail>[0];
 
 export default OPRelationshipRequestEmail;

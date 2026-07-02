@@ -14,7 +14,7 @@ export const DecisionUpdateNotificationEmail = ({
   updateUrl: string;
 }) => {
   const previewSnippet =
-    updateContent?.length > 50
+    updateContent.length > 50
       ? `${updateContent.slice(0, 50)}...`
       : updateContent;
 
@@ -58,5 +58,13 @@ DecisionUpdateNotificationEmail.subject = (
   authorName: string,
   processTitle: string,
 ) => `${authorName} posted an update in ${processTitle}`;
+
+DecisionUpdateNotificationEmail.PreviewProps = {
+  authorName: 'Jordan Rivera',
+  processTitle: 'Participatory Budgeting 2026',
+  updateContent:
+    "We've reviewed all submitted proposals and shortlisted twelve for the voting phase. Voting opens Monday.",
+  updateUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof DecisionUpdateNotificationEmail>[0];
 
 export default DecisionUpdateNotificationEmail;

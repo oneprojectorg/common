@@ -23,7 +23,7 @@ export const CommentNotificationEmail = ({
 }) => {
   return (
     <EmailTemplate
-      previewText={`${commenterName} commented on your ${contentType}: "${commentContent?.slice(0, 50)}${commentContent?.length > 50 ? '...' : ''}"`}
+      previewText={`${commenterName} commented on your ${contentType}: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`}
     >
       <Text className="my-8 text-lg">
         <strong>{commenterName}</strong> commented on your {contentType}.
@@ -50,12 +50,12 @@ export const CommentNotificationEmail = ({
       </Section>
 
       {contextName && (
-        <Text className="mb-0 text-xs text-neutral-500">
+        <Text className="mb-0 text-sm text-neutral-500">
           Context: {contextName}
         </Text>
       )}
       {postedIn && (
-        <Text className="mt-1 mb-0 text-xs text-neutral-500">
+        <Text className="mt-1 mb-0 text-sm text-neutral-500">
           Posted in: {postedIn}
         </Text>
       )}
@@ -67,5 +67,17 @@ CommentNotificationEmail.subject = (
   commenterName: string,
   contentType: 'post' | 'proposal' = 'post',
 ) => `${commenterName} commented on your ${contentType}`;
+
+CommentNotificationEmail.PreviewProps = {
+  commenterName: 'Jordan Rivera',
+  postContent: 'The proposal outlines a phased rollout for the community garden.',
+  commentContent:
+    "This is a thoughtful point — I hadn't considered the downstream effects on the budget timeline. Could we revisit phase two?",
+  postUrl: 'https://common.oneproject.org/',
+  recipientName: 'Alex',
+  contentType: 'proposal',
+  contextName: 'Participatory Budgeting 2026',
+  postedIn: 'Community Fund',
+} satisfies Parameters<typeof CommentNotificationEmail>[0];
 
 export default CommentNotificationEmail;

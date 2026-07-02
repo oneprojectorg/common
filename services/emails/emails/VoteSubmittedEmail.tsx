@@ -25,9 +25,7 @@ export const VoteSubmittedEmail = ({
           : 'Your ballot is in!'
       }
     >
-      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Your ballot is in!
-      </Header>
+      <Header>Your ballot is in!</Header>
       <Text className="my-8 text-lg">
         {processTitle ? (
           <>
@@ -75,5 +73,14 @@ VoteSubmittedEmail.subject = (processTitle?: string | null) => {
   }
   return 'Your ballot is in!';
 };
+
+VoteSubmittedEmail.PreviewProps = {
+  processTitle: 'Participatory Budgeting 2026',
+  decisionUrl: 'https://common.oneproject.org/',
+  nextSteps: [
+    { name: 'Results announced', date: 'March 15' },
+    { name: 'Funding disbursed', date: 'April 1' },
+  ],
+} satisfies Parameters<typeof VoteSubmittedEmail>[0];
 
 export default VoteSubmittedEmail;

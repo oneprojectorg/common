@@ -20,9 +20,7 @@ export const OPInvitationEmail = ({
     <EmailTemplate
       previewText={`${inviterName} invited you to join ${organizationName ? `${organizationName} on ` : ''} Common! 🎉`}
     >
-      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Join {organizationName ?? 'Common'}!
-      </Header>
+      <Header>Join {organizationName ?? 'Common'}!</Header>
       <Text className="my-8 text-lg">
         <strong>{inviterName}</strong> invited you to Common.
       </Text>
@@ -50,5 +48,12 @@ export const OPInvitationEmail = ({
 };
 
 OPInvitationEmail.subject = `Action Required: You've been invited to join Common`;
+
+OPInvitationEmail.PreviewProps = {
+  inviterName: 'Jordan Rivera',
+  organizationName: 'One Project',
+  inviteUrl: 'https://common.oneproject.org/',
+  message: "We'd love to have you in our decision-making community.",
+} satisfies Parameters<typeof OPInvitationEmail>[0];
 
 export default OPInvitationEmail;

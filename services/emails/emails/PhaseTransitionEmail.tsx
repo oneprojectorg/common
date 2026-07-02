@@ -48,4 +48,12 @@ export const PhaseTransitionEmail = ({
 PhaseTransitionEmail.subject = (processTitle: string, toPhaseName: string) =>
   `${processTitle} — now in ${toPhaseName}`;
 
+PhaseTransitionEmail.PreviewProps = {
+  processTitle: 'Participatory Budgeting 2026',
+  toPhaseName: 'Voting',
+  phaseNumber: 3,
+  totalPhases: 5,
+  processUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof PhaseTransitionEmail>[0];
+
 export default PhaseTransitionEmail;

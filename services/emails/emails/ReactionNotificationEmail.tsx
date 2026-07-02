@@ -65,4 +65,16 @@ ReactionNotificationEmail.subject = (
   contentType: 'post' | 'proposal' = 'post',
 ) => `${reactorName} reacted to your ${contentType}`;
 
+ReactionNotificationEmail.PreviewProps = {
+  reactorName: 'Jordan Rivera',
+  postContent: 'The proposal outlines a phased rollout for the community garden.',
+  postUrl: 'https://common.oneproject.org/',
+  reactionType: '❤️',
+  recipientName: 'Alex',
+  contentType: 'proposal',
+  content:
+    'Here is the proposal text that received a reaction. It spans a few lines so the preview truncation is visible in the rendered email.',
+  postedIn: 'Community Fund',
+} satisfies Parameters<typeof ReactionNotificationEmail>[0];
+
 export default ReactionNotificationEmail;
