@@ -31,12 +31,6 @@ const fonts = [
     style: 'normal',
   },
   {
-    name: 'Roboto',
-    data: readFileSync(join(PUBLIC, 'og/Roboto-Bold.ttf')),
-    weight: 700,
-    style: 'normal',
-  },
-  {
     name: 'Roboto Serif',
     data: readFileSync(join(PUBLIC, 'og/RobotoSerif-Light.ttf')),
     weight: 300,

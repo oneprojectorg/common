@@ -6,7 +6,7 @@ import { DecisionOverview } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
-import { loadDecision } from './loadDecision';
+import { getDecisionAttributionName, loadDecision } from './loadDecision';
 import { truncateDescription } from './metaDescription';
 
 export async function generateMetadata({
@@ -22,13 +22,11 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const name = decisionProfile.name || t('Decision');
-    const instance = decisionProfile.processInstance;
-    // Same rule as DecisionListItem: prefer the steward, fall back to the
-    // owner (steward is nullable, owner is not).
-    const steward = (instance?.steward ?? instance?.owner)?.name;
-    const description = truncateDescription(
-      decisionProfile.bio ?? decisionProfile.mission ?? '',
-    );
+    const steward = getDecisionAttributionName(decisionProfile.processInstance);
+    const description =
+      truncateDescription(
+        decisionProfile.bio ?? decisionProfile.mission ?? '',
+      ) || undefined;
 
     // robots is set only here, in the publicly-readable path, and only in
     // production — staging/preview keep the global noindex from the root
@@ -37,19 +35,19 @@ export async function generateMetadata({
     // page; /current re-exports it for its own segment.
     return {
       title: steward ? `${name} | ${steward}` : name,
-      description: description || undefined,
+      description,
       ...(OPURLConfig('APP').IS_PRODUCTION
         ? { robots: { index: true, follow: true } }
         : {}),
       openGraph: {
         title: name,
-        description: description || undefined,
+        description,
         type: 'article',
       },
       twitter: {
         card: 'summary_large_image',
         title: name,
-        description: description || undefined,
+        description,
       },
     };
   } catch {

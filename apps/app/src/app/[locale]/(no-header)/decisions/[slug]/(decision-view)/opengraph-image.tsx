@@ -4,7 +4,7 @@ import { getAvatarColorForString } from '@op/ui/utils';
 import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 
-import { loadDecision } from './loadDecision';
+import { getDecisionAttributionName, loadDecision } from './loadDecision';
 import { truncateDescription } from './metaDescription';
 
 // A plain `export const alt` is static. Localizing it would require switching
@@ -45,6 +45,14 @@ const GRADIENT_CSS: Record<AvatarGradientClass, string> = {
 const gradientForName = (name: string) =>
   GRADIENT_CSS[getAvatarColorForString(name).gradient];
 
+const FULL_BLEED = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+} as const;
+
 // Assets are fetched over HTTP from /public rather than via
 // `new URL(..., import.meta.url)`: that pattern resolves to a file:// URL the
 // Node runtime's fetch can't read, which threw and 500'd the whole route.
@@ -53,45 +61,27 @@ const ASSET_BASE = OPURLConfig('APP').ENV_URL;
 const logoUrl = `${ASSET_BASE}/Common-logo-white.png`;
 
 // Roboto TTFs (satori can't use the app's woff2). Loaded once per runtime.
-let fontsPromise:
-  | Promise<
-      {
-        name: string;
-        data: ArrayBuffer;
-        weight: 300 | 400 | 700;
-        style: 'normal';
-      }[]
-    >
-  | undefined;
+// The card only renders weight 400 (Roboto) and 300 (Roboto Serif) — add a
+// weight here only when the markup actually uses it.
+type OGFont = {
+  name: string;
+  data: ArrayBuffer;
+  weight: 300 | 400;
+  style: 'normal';
+};
+let fontsPromise: Promise<OGFont[]> | undefined;
 const loadFonts = () => {
   fontsPromise ??= Promise.all([
     fetch(`${ASSET_BASE}/og/Roboto-Regular.ttf`).then((res) =>
       res.arrayBuffer(),
     ),
-    fetch(`${ASSET_BASE}/og/Roboto-Bold.ttf`).then((res) => res.arrayBuffer()),
     fetch(`${ASSET_BASE}/og/RobotoSerif-Light.ttf`).then((res) =>
       res.arrayBuffer(),
     ),
   ])
-    .then(([regular, bold, serif]) => [
-      {
-        name: 'Roboto',
-        data: regular,
-        weight: 400 as const,
-        style: 'normal' as const,
-      },
-      {
-        name: 'Roboto',
-        data: bold,
-        weight: 700 as const,
-        style: 'normal' as const,
-      },
-      {
-        name: 'Roboto Serif',
-        data: serif,
-        weight: 300 as const,
-        style: 'normal' as const,
-      },
+    .then(([regular, serif]): OGFont[] => [
+      { name: 'Roboto', data: regular, weight: 400, style: 'normal' },
+      { name: 'Roboto Serif', data: serif, weight: 300, style: 'normal' },
     ])
     .catch((error) => {
       // Don't cache a transient failure — let the next request retry.
@@ -137,9 +127,7 @@ const Image = async ({
       loadLogo(),
     ]);
     const instance = decisionProfile.processInstance;
-    // Same rule as DecisionListItem: prefer the steward, fall back to the
-    // owner (steward is nullable, owner is not).
-    const byName = (instance.steward ?? instance.owner)?.name;
+    const byName = getDecisionAttributionName(instance);
     const headerKey = decisionProfile.headerImage?.name;
     const headerUrl =
       headerKey && process.env.S3_ASSET_ROOT
@@ -240,23 +228,12 @@ const Card = ({
             src={headerUrl}
             width={size.width}
             height={size.height}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
+            style={{ ...FULL_BLEED, objectFit: 'cover' }}
           />
           {/* Darken the photo so foreground text stays legible. */}
           <div
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
+              ...FULL_BLEED,
               background:
                 'linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.75) 100%)',
             }}
