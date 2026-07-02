@@ -1346,6 +1346,7 @@
   "I could not find help when I had issues": "সমস্যা হলে আমি সাহায্য খুঁজে পাইনি",
   "It feels like it's built for a different type of organization than mine": "মনে হয় এটি আমার সংস্থার চেয়ে ভিন্ন ধরনের সংস্থার জন্য তৈরি",
   "Any specific features we should fix, improve or keep? Any features we should add? We actually read these!": "আমাদের কোন বৈশিষ্ট্য ঠিক করা, উন্নত করা বা রাখা উচিত? কোন বৈশিষ্ট্য যোগ করা উচিত? আমরা সত্যিই এগুলো পড়ি!",
+  "Anything else you'd like to share?": "আপনি আর কিছু শেয়ার করতে চান?",
   "Go to the platform": "প্ল্যাটফর্মে যান",
   "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {১ অনুসরণকারী} other {# অনুসরণকারী}}",
   "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =1 {১টি সম্পর্ক} other {#টি সম্পর্ক}}",

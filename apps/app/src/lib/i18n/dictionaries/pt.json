@@ -1345,6 +1345,7 @@
   "I could not find help when I had issues": "Não consegui encontrar ajuda quando tive problemas",
   "It feels like it's built for a different type of organization than mine": "Parece que foi feita para um tipo diferente de organização que a minha",
   "Any specific features we should fix, improve or keep? Any features we should add? We actually read these!": "Alguma funcionalidade específica que devemos corrigir, melhorar ou manter? Alguma para adicionar? Nós realmente lemos isso!",
+  "Anything else you'd like to share?": "Mais alguma coisa que gostaria de compartilhar?",
   "Go to the platform": "Ir para a plataforma",
   "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {1 seguidor} other {# seguidores}}",
   "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =1 {1 relacionamento} other {# relacionamentos}}",
