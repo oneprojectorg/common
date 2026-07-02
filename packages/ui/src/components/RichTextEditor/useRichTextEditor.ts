@@ -84,17 +84,22 @@ export function useRichTextEditor({
     ];
   }, [extensions, placeholder, summaryPlaceholder]);
 
-  const editorAttributes = useMemo(
+  // Memoized so `useEditor`'s per-render options diff only applies changes
+  // (e.g. aria-invalid toggling after a failed submit) when the attributes
+  // actually change — a fresh literal would trigger setOptions every render.
+  const editorProps = useMemo(
     () => ({
-      class: cn(
-        baseEditorStyles,
-        editorClassName || (editable ? 'min-h-96' : ''),
-      ),
-      ...(required ? { 'aria-required': 'true' } : {}),
-      ...(isInvalid ? { 'aria-invalid': 'true' } : {}),
-      ...(isInvalid && errorMessageId
-        ? { 'aria-describedby': errorMessageId }
-        : {}),
+      attributes: {
+        class: cn(
+          baseEditorStyles,
+          editorClassName || (editable ? 'min-h-96' : ''),
+        ),
+        ...(required ? { 'aria-required': 'true' } : {}),
+        ...(isInvalid ? { 'aria-invalid': 'true' } : {}),
+        ...(isInvalid && errorMessageId
+          ? { 'aria-describedby': errorMessageId }
+          : {}),
+      },
     }),
     [editorClassName, editable, required, isInvalid, errorMessageId],
   );
@@ -103,9 +108,7 @@ export function useRichTextEditor({
     extensions: resolvedExtensions,
     content,
     editable,
-    editorProps: {
-      attributes: editorAttributes,
-    },
+    editorProps,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onUpdate?.(html);
@@ -114,12 +117,6 @@ export function useRichTextEditor({
     },
     immediatelyRender: false,
   });
-
-  // `useEditor` captures options at creation — push attribute changes (e.g.
-  // aria-invalid toggling after a failed submit) into the live editor.
-  useEffect(() => {
-    editor?.setOptions({ editorProps: { attributes: editorAttributes } });
-  }, [editor, editorAttributes]);
 
   // Set initial content only once when editor is first created
   useEffect(() => {

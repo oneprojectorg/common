@@ -33,6 +33,7 @@ import {
   useCollaborativeDoc,
   useOptionalCollaborativeDoc,
 } from '../../collaboration';
+import { FIELD_ANCHOR_ATTR } from '../../collaboration/invalidFieldStyles';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
@@ -40,10 +41,7 @@ import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
-import {
-  FIELD_ANCHOR_ATTR,
-  ProposalFormRenderer,
-} from './ProposalFormRenderer';
+import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { RevisionFeedbackPanel } from './RevisionFeedbackPanel';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
@@ -81,33 +79,33 @@ function scrollToFirstInvalidField(invalidKeys: string[]): boolean {
     return false;
   }
 
-  const keySet = new Set(invalidKeys);
-  const anchors = Array.from(
-    document.querySelectorAll(`[${FIELD_ANCHOR_ATTR}]`),
+  // Comma-joined selector: querySelector returns the first match in DOM order.
+  const anchor = document.querySelector(
+    invalidKeys
+      .map((key) => `[${FIELD_ANCHOR_ATTR}="${CSS.escape(key)}"]`)
+      .join(', '),
   );
 
-  for (const anchor of anchors) {
-    const key = anchor.getAttribute(FIELD_ANCHOR_ATTR);
-    if (key && keySet.has(key)) {
-      const prefersReducedMotion = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches;
-      anchor.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'center',
-      });
-      // Move keyboard/screen-reader focus to the invalid field, not just the
-      // viewport.
-      anchor
-        .querySelector<HTMLElement>(
-          '[contenteditable="true"], button, input, [tabindex]',
-        )
-        ?.focus({ preventScroll: true });
-      return true;
-    }
+  if (!anchor) {
+    return false;
   }
 
-  return false;
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches;
+  anchor.scrollIntoView({
+    behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    block: 'center',
+  });
+  // Move keyboard/screen-reader focus to the invalid field, not just the
+  // viewport.
+  anchor
+    .querySelector<HTMLElement>(
+      '[contenteditable="true"], button, input, [tabindex]',
+    )
+    ?.focus({ preventScroll: true });
+
+  return true;
 }
 
 /**
@@ -334,16 +332,26 @@ function ProposalEditorInner({
 
   const { validate } = useProposalValidation(ydoc, proposalTemplate);
 
-  // Server-side validation rejections get the same field-level highlighting
-  // as client-side ones (the server is authoritative — e.g. it enforces the
-  // category requirement the client relaxes for location templates).
-  const handleServerFieldErrors = useCallback(
-    (serverFieldErrors: Record<string, string>) => {
-      const errors = normalizeFieldErrors(serverFieldErrors);
+  // Shared failure path for client- and server-side validation: highlight the
+  // fields, scroll to the first one, and toast. Falls back to listing the
+  // messages when no invalid field is actually rendered (e.g. a required
+  // location field behind a disabled feature flag), so the user isn't left
+  // with a toast pointing at nothing.
+  const reportFieldErrors = useCallback(
+    (rawErrors: Record<string, string>) => {
+      const errors = normalizeFieldErrors(rawErrors);
       setFieldErrors(errors);
-      return scrollToFirstInvalidField(Object.keys(errors));
+      const didHighlight = scrollToFirstInvalidField(Object.keys(errors));
+      toast.error(
+        didHighlight
+          ? { title: t('Please fix the highlighted fields') }
+          : {
+              title: t('Please fix the following issues:'),
+              message: Object.values(rawErrors).join(', '),
+            },
+      );
     },
-    [],
+    [t],
   );
 
   // -- Mutations -------------------------------------------------------------
@@ -351,14 +359,14 @@ function ProposalEditorInner({
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onError: (error) =>
       handleMutationError(error, 'submit', t, {
-        onFieldErrors: handleServerFieldErrors,
+        onFieldErrors: reportFieldErrors,
       }),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) =>
       handleMutationError(error, 'update', t, {
-        onFieldErrors: handleServerFieldErrors,
+        onFieldErrors: reportFieldErrors,
       }),
   });
 
@@ -439,20 +447,7 @@ function ProposalEditorInner({
     // -- Client-side schema validation (validates ALL template fields) --------
     const result = validate();
     if (!result.valid) {
-      const errors = normalizeFieldErrors(result.errors);
-      setFieldErrors(errors);
-      const didHighlight = scrollToFirstInvalidField(Object.keys(errors));
-      // When no invalid field is actually rendered (e.g. a required location
-      // field behind a disabled feature flag), highlighting alone would leave
-      // the user with no clue — fall back to listing the errors.
-      toast.error(
-        didHighlight
-          ? { title: t('Please fix the highlighted fields') }
-          : {
-              title: t('Please fix the following issues:'),
-              message: Object.values(result.errors).join(', '),
-            },
-      );
+      reportFieldErrors(result.errors);
       return;
     }
 
@@ -519,6 +514,7 @@ function ProposalEditorInner({
     draftRef,
     validate,
     finalizeSubmit,
+    reportFieldErrors,
   ]);
 
   const handleCustomFormSubmit = useCallback(

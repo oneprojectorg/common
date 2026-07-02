@@ -14,6 +14,11 @@ import { useEffect, useMemo } from 'react';
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 import { INVALID_EDITOR_CLASS, getFieldErrorId } from './invalidFieldStyles';
 
+/** Titles are single-line — swallow Enter instead of inserting a paragraph. */
+function suppressEnterKey(_view: unknown, event: KeyboardEvent): boolean {
+  return event.key === 'Enter';
+}
+
 interface CollaborativeTitleFieldProps {
   placeholder?: string;
   /** When true, renders the field in its validation-error state. */
@@ -54,44 +59,30 @@ export function CollaborativeTitleField({
     [ydoc, provider, user, placeholder],
   );
 
-  const editorAttributes = useMemo(
+  // Memoized so `useEditor`'s per-render options diff only applies changes
+  // (aria-invalid toggling after a failed submit) when they actually change.
+  const editorProps = useMemo(
     () => ({
-      class:
-        'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
-      ...(isInvalid
-        ? {
-            'aria-invalid': 'true',
-            'aria-describedby': getFieldErrorId('title'),
-          }
-        : {}),
+      attributes: {
+        class:
+          'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
+        ...(isInvalid
+          ? {
+              'aria-invalid': 'true',
+              'aria-describedby': getFieldErrorId('title'),
+            }
+          : {}),
+      },
+      handleKeyDown: suppressEnterKey,
     }),
     [isInvalid],
   );
 
   const editor = useEditor({
     extensions,
-    editorProps: {
-      attributes: editorAttributes,
-      handleKeyDown: (_view, event) => {
-        if (event.key === 'Enter') {
-          return true;
-        }
-        return false;
-      },
-    },
+    editorProps,
     immediatelyRender: false,
   });
-
-  // `useEditor` captures options at creation — push aria attribute changes
-  // (invalid toggling after a failed submit) into the live editor.
-  useEffect(() => {
-    editor?.setOptions({
-      editorProps: {
-        attributes: editorAttributes,
-        handleKeyDown: (_view, event) => event.key === 'Enter',
-      },
-    });
-  }, [editor, editorAttributes]);
 
   useEffect(() => {
     if (!editor || !onChange) {

@@ -22,7 +22,10 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
-import { getFieldErrorId } from '../../collaboration/invalidFieldStyles';
+import {
+  FIELD_ANCHOR_ATTR,
+  getFieldErrorId,
+} from '../../collaboration/invalidFieldStyles';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
@@ -71,16 +74,6 @@ interface ProposalFormRendererProps {
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
 }
-
-/** Stable empty object so an omitted `fieldErrors` prop doesn't churn renders. */
-const EMPTY_FIELD_ERRORS: Record<string, string> = {};
-
-/**
- * DOM attribute carrying each field's key, used by the editor to locate and
- * scroll to invalid fields after a failed submit. The anchor also exposes
- * `data-invalid` for tests.
- */
-export const FIELD_ANCHOR_ATTR = 'data-field-anchor';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -197,7 +190,7 @@ function renderField({
   t,
   mode,
   previewVersionFragmentContents,
-  fieldErrors,
+  isInvalid,
   onEditorFocus,
   onEditorBlur,
 }: {
@@ -208,14 +201,13 @@ function renderField({
   t: TranslateFn;
   mode: 'edit-collaborative' | 'preview-version' | 'preview-template';
   previewVersionFragmentContents: Record<string, JSONContent | null>;
-  fieldErrors: Record<string, string>;
+  isInvalid: boolean;
   onEditorFocus?: (editor: Editor) => void;
   onEditorBlur?: (editor: Editor) => void;
 }): React.ReactNode {
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
-  const isInvalid = key in fieldErrors;
 
   // -- Title ------------------------------------------------------------------
 
@@ -510,7 +502,7 @@ export function ProposalFormRenderer({
   draft,
   decisionProfileId,
   onFieldChange,
-  fieldErrors = EMPTY_FIELD_ERRORS,
+  fieldErrors = {},
   onEditorFocus,
   onEditorBlur,
   mode = 'edit-collaborative',
@@ -545,7 +537,7 @@ export function ProposalFormRenderer({
           t,
           mode,
           previewVersionFragmentContents,
-          fieldErrors,
+          isInvalid: errorMessage != null,
           onEditorFocus,
           onEditorBlur,
         })}
