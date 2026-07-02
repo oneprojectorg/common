@@ -59,7 +59,7 @@ export const OPRelationshipRequestEmail = ({
         </Button>
       </Section>
 
-      <Text className="mb-0 text-xs text-neutral-gray4">
+      <Text className="mb-0 text-sm text-neutral-gray4">
         Once you accept their request, <strong>{requesterOrgName}</strong> will
         appear in your relationships on Common.
       </Text>

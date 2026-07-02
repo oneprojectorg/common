@@ -42,7 +42,7 @@ export const OPInvitationEmail = ({
         {message ? <Text>{message}</Text> : null}
       </Section>
 
-      <Text className="mb-0 text-xs text-neutral-gray4">
+      <Text className="mb-0 text-sm text-neutral-gray4">
         This invite will expire after 1 week
       </Text>
     </EmailTemplate>

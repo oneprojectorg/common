@@ -38,7 +38,7 @@ export const PhaseTransitionEmail = ({
         </Button>
       </Section>
 
-      <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
+      <Text className="mt-8 mb-0 text-sm text-neutral-gray4">
         You're receiving this because you're a participant in {processTitle}.
       </Text>
     </EmailTemplate>

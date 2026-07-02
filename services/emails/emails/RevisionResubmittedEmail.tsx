@@ -38,7 +38,7 @@ export const RevisionResubmittedEmail = ({
         </Button>
       </Section>
 
-      <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
+      <Text className="mt-8 mb-0 text-sm text-neutral-gray4">
         You're receiving this because you requested changes to this proposal.
       </Text>
     </EmailTemplate>

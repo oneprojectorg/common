@@ -52,7 +52,7 @@ export const ReactionNotificationEmail = ({
       </Section>
 
       {postedIn && (
-        <Text className="mt-1 mb-0 text-xs text-neutral-gray4">
+        <Text className="mt-1 mb-0 text-sm text-neutral-gray4">
           Posted in: {postedIn}
         </Text>
       )}
