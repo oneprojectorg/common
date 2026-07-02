@@ -53,9 +53,9 @@ const EmailTemplate = ({
         </Head>
         <Preview>{previewText}</Preview>
 
-        <Body className="m-auto rounded-[16px] bg-[#FAFBFB] p-8 font-sans text-sm text-neutral-charcoal">
-          <Container className="mt-4 max-w-[648px] p-12 md:mt-10">
-            <Container className="mx-auto w-full rounded-lg border border-solid border-neutral-200 bg-white p-12 md:max-w-[600px]">
+        <Body className="m-auto rounded-[16px] bg-[#FAFBFB] p-4 font-sans text-sm leading-[150%] text-neutral-charcoal">
+          <Container className="mt-4 max-w-[648px] md:mt-10">
+            <Container className="mx-auto w-full rounded-lg border border-solid border-neutral-200 bg-white p-8 md:max-w-[600px] md:p-12">
               <Section>
                 <Row>
                   <Column align="left">
@@ -76,7 +76,7 @@ const EmailTemplate = ({
 
               <Container className="mt-8">{children}</Container>
             </Container>
-            <Container className="mx-auto mb-0 max-w-[600px] px-12 py-8 font-sans font-normal">
+            <Container className="mx-auto mb-0 max-w-[600px] px-8 py-8 font-sans font-normal">
               <Text className="mt-0 mb-0 text-sm">
                 Common is maintained by One Project.
               </Text>
