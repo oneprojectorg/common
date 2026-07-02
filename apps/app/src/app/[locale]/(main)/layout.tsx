@@ -12,11 +12,6 @@ import { AppLayout } from '@/components/layout/split/AppLayout';
 
 export const dynamic = 'force-dynamic';
 
-// Must match the API's IFRAMELY_CDN_URL so embed.js and the iframe URLs it
-// upgrades come from the same host (our caching proxy instead of iframely).
-const iframelyCdnUrl =
-  process.env.NEXT_PUBLIC_IFRAMELY_CDN_URL ?? '//cdn.iframe.ly';
-
 /**
  * Main app layout — the front door for the walled garden. This route group is
  * closed-network only; public surfaces live in `(no-header)`.
@@ -41,7 +36,9 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
           </SidebarLayout>
         </SidebarProvider>
       </UserProvider>
-      <Script async src={`${iframelyCdnUrl}/embed.js`}></Script>
+      {/* Served by our own edge-cached proxy (app/api/embeds) instead of
+          cdn.iframe.ly, so embed loads don't hit iframely's billed CDN. */}
+      <Script async src="/api/embeds/embed.js"></Script>
     </div>
   );
 };

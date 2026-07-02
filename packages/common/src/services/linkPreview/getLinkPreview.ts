@@ -24,27 +24,25 @@ export type LinkPreviewResult = {
 // billed calls vs the old 1-hour TTL.
 const LINK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-const DEFAULT_IFRAMELY_API_URL = 'https://iframe.ly/api/iframely';
-
 // Matches absolute and protocol-relative references to iframely's embed CDN
 // inside the returned embed HTML (iframe srcs, lazy `data-iframely-url`
 // attributes, inline embed.js script tags).
 const IFRAMELY_CDN_RE = /(?:https?:)?\/\/cdn\.iframe\.ly/g;
 
-// Embed views served from cdn.iframe.ly are billed too, so pointing only the
-// API at a caching proxy is not enough — the iframe/script URLs baked into
-// the embed HTML must be rewritten to the proxy as well.
+// The app's in-service, edge-cached, CSP-sandboxed proxy for embed views
+// (apps/app/src/app/api/embeds). Path-relative so the browser resolves it
+// against the app origin in every environment.
+const EMBED_PROXY_PATH = '/api/embeds';
+
+// Embed views served from cdn.iframe.ly are billed too, so caching only the
+// API responses is not enough — the iframe/script URLs baked into the embed
+// HTML must be routed through the proxy as well.
 const rewriteEmbedCdn = (html: unknown): string | undefined => {
   if (typeof html !== 'string') {
     return undefined;
   }
 
-  const cdnUrl = process.env.IFRAMELY_CDN_URL;
-  if (!cdnUrl) {
-    return html;
-  }
-
-  return html.replace(IFRAMELY_CDN_RE, cdnUrl.replace(/\/+$/, ''));
+  return html.replace(IFRAMELY_CDN_RE, EMBED_PROXY_PATH);
 };
 
 // Iframely-returned URLs are user-influenced (the destination URL the user
@@ -84,22 +82,16 @@ export const getLinkPreview = async (
 
 const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
   try {
-    const apiUrl = process.env.IFRAMELY_API_URL;
     const iframelyKey = process.env.IFRAMELY_KEY;
-
-    // A self-hosted proxy (IFRAMELY_API_URL) may hold the key itself; only
-    // the direct iframe.ly endpoint requires one on our side.
-    if (!apiUrl && !iframelyKey) {
+    if (!iframelyKey) {
       return { url, error: 'Iframely key not configured' };
     }
-
-    const keyParam = iframelyKey ? `&key=${iframelyKey}` : '';
 
     // Cap upstream latency: an authenticated user can DoS the API by
     // submitting URLs that iframely is slow to resolve. 5s is a reasonable
     // ceiling; the user gets {error: 'timeout'} on cache miss.
     const response = await fetch(
-      `${apiUrl ?? DEFAULT_IFRAMELY_API_URL}?url=${encodeURIComponent(url)}${keyParam}`,
+      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}`,
       { signal: AbortSignal.timeout(5000) },
     );
 
