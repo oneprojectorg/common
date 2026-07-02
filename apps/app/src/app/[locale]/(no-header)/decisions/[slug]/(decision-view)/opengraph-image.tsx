@@ -1,4 +1,4 @@
-import { OPURLConfig } from '@op/core';
+import { OPURLConfig, getTextPreview } from '@op/core';
 import { logger } from '@op/logging';
 import { getAvatarColorForString } from '@op/ui/utils';
 import { getTranslations } from 'next-intl/server';
@@ -6,8 +6,7 @@ import { ImageResponse } from 'next/og';
 
 import { getLocaleDirection, i18nConfig } from '@/lib/i18n/config';
 
-import { getDecisionAttributionName, loadDecision } from './loadDecision';
-import { truncateDescription } from './metaDescription';
+import { loadDecision } from './loadDecision';
 
 // A plain `export const alt` is static. Localizing it would require switching
 // to generateImageMetadata's id/URL machinery — not worth it for an
@@ -111,9 +110,9 @@ const loadLogo = () => {
 
 /**
  * Dynamic OG card for the canonical public decision page. Renders the decision
- * name, steward (or owner) byline, and participation stats over the decision's
- * header image when it has one, otherwise over a gradient hashed from the
- * decision name.
+ * name, steward byline, and participation stats over the decision's header
+ * image when it has one, otherwise over a gradient hashed from the decision
+ * name.
  */
 const Image = async ({
   params,
@@ -135,7 +134,7 @@ const Image = async ({
       loadLogo(),
     ]);
     const instance = decisionProfile.processInstance;
-    const byName = getDecisionAttributionName(instance);
+    const byName = instance.steward?.name;
     const headerKey = decisionProfile.headerImage?.name;
     const headerUrl =
       headerKey && process.env.S3_ASSET_ROOT
@@ -160,7 +159,10 @@ const Image = async ({
 
     return new ImageResponse(
       <Card
-        title={truncateDescription(decisionProfile.name || t('Decision'), 80)}
+        title={getTextPreview({
+          content: decisionProfile.name || t('Decision'),
+          maxLength: 80,
+        })}
         byline={byName ? t('by {name}', { name: byName }) : undefined}
         stats={stats}
         headerUrl={headerUrl}

@@ -1,4 +1,4 @@
-import { OPURLConfig } from '@op/core';
+import { OPURLConfig, getTextPreview } from '@op/core';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -6,8 +6,7 @@ import { DecisionOverview } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
-import { getDecisionAttributionName, loadDecision } from './loadDecision';
-import { truncateDescription } from './metaDescription';
+import { loadDecision } from './loadDecision';
 
 export async function generateMetadata({
   params,
@@ -22,11 +21,13 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const name = decisionProfile.name || t('Decision');
-    const steward = getDecisionAttributionName(decisionProfile.processInstance);
+    const steward = decisionProfile.processInstance?.steward?.name;
     const description =
-      truncateDescription(
-        decisionProfile.bio ?? decisionProfile.mission ?? '',
-      ) || undefined;
+      getTextPreview({
+        content: decisionProfile.bio ?? decisionProfile.mission ?? '',
+        maxLines: 3,
+        maxLength: 155,
+      }) || undefined;
 
     // robots is set only here, in the publicly-readable path, and only in
     // production — staging/preview keep the global noindex from the root

@@ -4,7 +4,7 @@ import { ImageResponse } from 'next/og.js';
 //   node scripts/og-preview.mjs <outDir>
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { createElement as h } from 'react';
+import { createElement } from 'react';
 
 const PUBLIC = join(process.cwd(), 'public');
 const outDir = process.argv[2] || join(process.cwd(), 'og-previews');
@@ -40,7 +40,7 @@ const fonts = [
 const logoSrc = `data:image/png;base64,${readFileSync(join(PUBLIC, 'Common-logo-white.png')).toString('base64')}`;
 
 const card = (background) =>
-  h(
+  createElement(
     'div',
     {
       style: {
@@ -54,7 +54,7 @@ const card = (background) =>
         fontFamily: 'Roboto',
       },
     },
-    h(
+    createElement(
       'div',
       {
         style: {
@@ -66,16 +66,16 @@ const card = (background) =>
           padding: 96,
         },
       },
-      h('img', {
+      createElement('img', {
         src: logoSrc,
         width: 134,
         height: 28,
         style: { display: 'flex' },
       }),
-      h(
+      createElement(
         'div',
         { style: { display: 'flex', flexDirection: 'column' } },
-        h(
+        createElement(
           'div',
           {
             style: {
@@ -88,12 +88,12 @@ const card = (background) =>
           },
           'Participatory Budgeting 2026',
         ),
-        h(
+        createElement(
           'div',
           { style: { display: 'flex', fontSize: 32, marginTop: 16 } },
           'by Maria Fund',
         ),
-        h(
+        createElement(
           'div',
           {
             style: {
