@@ -1,3 +1,4 @@
+import { OPURLConfig, getTextPreview } from '@op/core';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -19,11 +20,36 @@ export async function generateMetadata({
       loadDecision(slug),
       getTranslations({ locale }),
     ]);
-    const label = t('Overview');
+    const name = decisionProfile.name || t('Decision');
+    const steward = decisionProfile.processInstance?.steward?.name;
+    const description =
+      getTextPreview({
+        content: decisionProfile.bio ?? decisionProfile.mission ?? '',
+        maxLines: 3,
+        maxLength: 155,
+      }) || undefined;
+
+    // robots is set only here, in the publicly-readable path, and only in
+    // production — staging/preview keep the global noindex from the root
+    // layout, as does a private decision (loadDecision throws into the catch
+    // below). The colocated opengraph-image route supplies og:image for this
+    // page; /current re-exports it for its own segment.
     return {
-      title: decisionProfile.name
-        ? `${label} | ${decisionProfile.name}`
-        : label,
+      title: steward ? `${name} | ${steward}` : name,
+      description,
+      ...(OPURLConfig('APP').IS_PRODUCTION
+        ? { robots: { index: true, follow: true } }
+        : {}),
+      openGraph: {
+        title: name,
+        description,
+        type: 'article',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: name,
+        description,
+      },
     };
   } catch {
     return {};

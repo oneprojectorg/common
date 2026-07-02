@@ -34,11 +34,15 @@ export async function generateMetadata({
       (phase) => phase.phaseId === currentStateId,
     );
     const label = currentPhase?.name || t('Current Phase');
+    const name = decisionProfile.name;
 
+    // openGraph is redefined here (without images) so the root layout's static
+    // LinkPreview image doesn't cascade alongside the colocated dynamic
+    // opengraph-image, which would emit two og:image tags. This phase tab stays
+    // noindex (global default) — the canonical decision page is the indexed URL.
     return {
-      title: decisionProfile.name
-        ? `${label} | ${decisionProfile.name}`
-        : label,
+      title: name ? `${label} | ${name}` : label,
+      openGraph: { title: name || label, type: 'article' },
     };
   } catch {
     return {};
