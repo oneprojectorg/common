@@ -4,6 +4,8 @@ import { getAvatarColorForString } from '@op/ui/utils';
 import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 
+import { getLocaleDirection, i18nConfig } from '@/lib/i18n/config';
+
 import { getDecisionAttributionName, loadDecision } from './loadDecision';
 import { truncateDescription } from './metaDescription';
 
@@ -120,9 +122,15 @@ const Image = async ({
 }) => {
   try {
     const { slug, locale } = await params;
+    // satori (next/og's renderer) has no bidi algorithm: RTL runs come out
+    // letter-reversed and mixed RTL/LTR lines scramble. Until the card is
+    // rendered with a bidi-capable stack, RTL locales fall back to
+    // default-locale card text — the page's <meta> tags stay localized.
+    const cardLocale =
+      getLocaleDirection(locale) === 'rtl' ? i18nConfig.defaultLocale : locale;
     const [{ decisionProfile }, t, fonts, logoSrc] = await Promise.all([
       loadDecision(slug),
-      getTranslations({ locale }),
+      getTranslations({ locale: cardLocale }),
       loadFonts(),
       loadLogo(),
     ]);
