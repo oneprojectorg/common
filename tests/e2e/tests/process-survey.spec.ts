@@ -52,16 +52,22 @@ test.describe('Process survey modal', () => {
       timeout: 15_000,
     });
 
-    await dialog.getByRole('radio', { name: 'No', exact: true }).click();
+    // force: true bypasses React Aria's styled-div overlay, which otherwise
+    // intercepts pointer events on the underlying radio/checkbox inputs.
+    await dialog
+      .getByRole('radio', { name: 'No', exact: true })
+      .click({ force: true });
 
     // Desktop viewport renders the NPS scale as a RadioGroup (0-10). Score 9
     // puts the respondent in the promoter cohort, which requires a reason.
-    await dialog.getByRole('radio', { name: '9', exact: true }).click();
+    await dialog
+      .getByRole('radio', { name: '9', exact: true })
+      .click({ force: true });
 
     // Reason labels are shuffled on mount, so select by accessible name.
     await dialog
       .getByRole('checkbox', { name: 'I had no technical issues' })
-      .click();
+      .click({ force: true });
 
     const comments = 'The public results page could show a timeline.';
     await dialog
