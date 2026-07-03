@@ -70,9 +70,6 @@ export function getTextPreview({
   maxLines?: number;
   maxLength?: number;
 }): string {
-  if (!content) {
-    return '';
-  }
   // First decode HTML entities (e.g., &lt;p&gt; becomes <p>)
   const decodedHtml = he.decode(content);
 
