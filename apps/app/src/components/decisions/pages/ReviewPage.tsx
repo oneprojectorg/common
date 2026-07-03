@@ -14,6 +14,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
@@ -60,43 +61,49 @@ export function ReviewPage({
   const actionBarLabel = phaseAdditionalInfo
     ? t('About this phase')
     : undefined;
+  const heroImagePath = instance.instanceData?.overview?.heroImage;
+  const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
-        <DecisionHero
-          title={
-            isAdmin ? (
-              <TranslatedText text="Review Progress" />
+      <DecisionHeroBanner heroImagePath={heroImagePath}>
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
+          <DecisionHero
+            title={
+              isAdmin ? (
+                <TranslatedText text="Review Progress" />
+              ) : (
+                (currentPhase.headline ?? (
+                  <TranslatedText text="REVIEW PROPOSALS." />
+                ))
+              )
+            }
+            description={
+              !isAdmin && currentPhase.description ? (
+                <p>{currentPhase.description}</p>
+              ) : undefined
+            }
+            variant="standard"
+            hasImage={hasHeroImage}
+          >
+            {isAdmin ? (
+              <ReviewProgressStats
+                processInstanceId={instance.id}
+                phaseId={currentPhase.phaseId}
+                hasImage={hasHeroImage}
+              />
             ) : (
-              (currentPhase.headline ?? (
-                <TranslatedText text="REVIEW PROPOSALS." />
-              ))
-            )
-          }
-          description={
-            !isAdmin && currentPhase.description ? (
-              <p>{currentPhase.description}</p>
-            ) : undefined
-          }
-          variant="standard"
-        >
-          {isAdmin ? (
-            <ReviewProgressStats
-              processInstanceId={instance.id}
-              phaseId={currentPhase.phaseId}
-            />
-          ) : (
-            <DecisionActionBar
-              instanceId={instance.id}
-              description={actionBarDescription}
-              label={actionBarLabel}
-              markup={!!translation?.additionalInfo}
-              showSubmitButton={false}
-            />
-          )}
-        </DecisionHero>
-      </div>
+              <DecisionActionBar
+                instanceId={instance.id}
+                description={actionBarDescription}
+                label={actionBarLabel}
+                markup={!!translation?.additionalInfo}
+                showSubmitButton={false}
+              />
+            )}
+          </DecisionHero>
+        </div>
+      </DecisionHeroBanner>
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">

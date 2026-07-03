@@ -19,6 +19,7 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
 import { EditBannerModal } from './EditBannerModal';
@@ -292,24 +293,7 @@ const OverviewHero = ({
     // offWhite gradient is the empty-state fallback when no image is set.
     <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-neutral-offWhite md:grid-cols-12">
       {heroImageUrl ? (
-        <>
-          <Image
-            src={heroImageUrl}
-            alt=""
-            fill
-            // 6px blur per design; scale-105 hides the translucent rim the blur
-            // pulls in at the edges (section clips the overflow).
-            className="scale-105 object-cover blur-[6px]"
-            // Hero is above the fold — opt out of lazy-loading.
-            priority
-          />
-          {/* Dark scrim so the white hero text stays legible over arbitrary
-              photos. */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-neutral-black/50"
-          />
-        </>
+        <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />
       ) : null}
       {isAdmin ? (
         <EditBannerModal
@@ -317,7 +301,7 @@ const OverviewHero = ({
           heroImagePath={heroImagePath}
         />
       ) : null}
-      <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
+      <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex flex-col items-center gap-3">
           {/* Brand teal→green gradient clipped to the title text. This hero is
               the page's <h1>; the sticky DecisionInstanceHeader carries a
@@ -326,9 +310,14 @@ const OverviewHero = ({
               Over a banner image the clipped gradient loses contrast against
               the dark scrim, so switch to plain white text instead. */}
           {hasImage ? (
-            <Header1 className="text-white md:text-title-xxl">
-              <bdi>{headline}</bdi>
-            </Header1>
+            // White comes from the wrapper, not Header1's className: twMerge
+            // misreads the custom text-title-lg size as a color and drops it
+            // when text-white is merged in, leaving the h1 unsized on mobile.
+            <div className="text-white">
+              <Header1 className="md:text-title-xxl">
+                <bdi>{headline}</bdi>
+              </Header1>
+            </div>
           ) : (
             <GradientHeader>
               <Header1 className="md:text-title-xxl">

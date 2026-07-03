@@ -12,6 +12,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { HiddenProposalsBanner } from '../HiddenProposalsBanner';
 import { ManualSelectionList } from '../ManualSelectionList';
@@ -75,25 +76,34 @@ export function StandardDecisionPage({
     currentPhase?.additionalInfo ??
     translation?.description ??
     description;
+  const heroImagePath = instance.instanceData?.overview?.heroImage;
+  const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
-        <DecisionHero
-          title={heroTitle}
-          description={heroDescription ? <p>{heroDescription}</p> : undefined}
-          variant="standard"
-        />
+      <DecisionHeroBanner heroImagePath={heroImagePath}>
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
+          <DecisionHero
+            title={heroTitle}
+            description={heroDescription ? <p>{heroDescription}</p> : undefined}
+            variant="standard"
+            hasImage={hasHeroImage}
+          />
 
-        <MemberParticipationFacePile submitters={submitters} total={total} />
+          <MemberParticipationFacePile
+            submitters={submitters}
+            total={total}
+            hasImage={hasHeroImage}
+          />
 
-        <DecisionActionBar
-          instanceId={instanceId}
-          description={actionBarDescription}
-          markup={!!translation?.additionalInfo}
-          showSubmitButton={allowProposals && canSubmitProposal}
-        />
-      </div>
+          <DecisionActionBar
+            instanceId={instanceId}
+            description={actionBarDescription}
+            markup={!!translation?.additionalInfo}
+            showSubmitButton={allowProposals && canSubmitProposal}
+          />
+        </div>
+      </DecisionHeroBanner>
 
       <div className="flex w-full flex-col items-center border-t bg-white">
         {proposalsHidden && (
