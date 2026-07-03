@@ -426,19 +426,17 @@ function ProposalEditorInner({
     [customForm, proposal, submitCustomFormMutation, finalizeSubmit],
   );
 
-  // Skipping the form still submits the proposal — the form is optional
-  // extra data, never a gate on the submission itself.
-  const handleCustomFormSkip = useCallback(async () => {
-    setIsSubmitting(true);
-    try {
-      await finalizeSubmit();
-      setShowCustomFormModal(false);
-    } catch (error) {
-      console.error('Failed to submit proposal:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [finalizeSubmit]);
+  // Dismissing the modal cancels the whole submission — the proposal stays
+  // a draft (already saved) and the user remains on the editor. Completing
+  // the form is required to finish submitting.
+  const handleCustomFormOpenChange = useCallback(
+    (open: boolean) => {
+      if (!isSubmitting) {
+        setShowCustomFormModal(open);
+      }
+    },
+    [isSubmitting],
+  );
 
   // -- Render ----------------------------------------------------------------
 
@@ -556,7 +554,8 @@ function ProposalEditorInner({
           schema={customForm.schema}
           isSubmitting={isSubmitting}
           onSubmit={handleCustomFormSubmit}
-          onSkip={handleCustomFormSkip}
+          onOpenChange={handleCustomFormOpenChange}
+          submitLabel={t('Submit my idea')}
         />
       )}
     </ProposalEditorLayout>

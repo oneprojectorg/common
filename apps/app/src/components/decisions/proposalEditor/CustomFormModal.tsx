@@ -32,8 +32,11 @@ interface CustomFormModalProps {
   schema: Record<string, unknown>;
   isSubmitting?: boolean;
   onSubmit: (values: CustomFormValues) => void | Promise<void>;
-  /** Skip without filling in the form (the proposal still submits). */
-  onSkip: () => void;
+  /** Dismissing the modal cancels the whole submission (the proposal stays
+   *  a draft) — completing the form is required to finish submitting. */
+  onOpenChange: (open: boolean) => void;
+  /** Label for the submit button; defaults to a generic "Submit". */
+  submitLabel?: string;
 }
 
 function isCustomFormDefinition(
@@ -70,7 +73,8 @@ export function CustomFormModal({
   schema,
   isSubmitting,
   onSubmit,
-  onSkip,
+  onOpenChange,
+  submitLabel,
 }: CustomFormModalProps) {
   const t = useTranslations();
 
@@ -109,6 +113,8 @@ export function CustomFormModal({
     // Mobile stays full-screen.
     <Modal
       isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      isDismissable
       className="flex flex-col sm:max-h-[calc(100svh-4rem)]"
     >
       <ModalHeader>{definition.title ?? t('Additional details')}</ModalHeader>
@@ -143,22 +149,13 @@ export function CustomFormModal({
         </ModalBody>
         <ModalFooter className="sticky">
           <Button
-            type="button"
-            variant="link"
-            onPress={onSkip}
-            isDisabled={isSubmitting}
-            className="w-full sm:w-auto"
-          >
-            {t('Maybe later')}
-          </Button>
-          <Button
             type="submit"
             color="primary"
-            className="w-full sm:w-auto"
+            className="w-full"
             isDisabled={isSubmitting}
           >
             {isSubmitting ? <LoadingSpinner className="size-4" /> : null}
-            {t('Submit')}
+            {submitLabel ?? t('Submit')}
           </Button>
         </ModalFooter>
       </Form>
