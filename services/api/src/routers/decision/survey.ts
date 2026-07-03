@@ -26,6 +26,7 @@ const surveyInternalDataSchema = z
       .optional(),
     detractorReasonsOther: z.string().max(FREE_TEXT_MAX).optional(),
     additionalFeedback: z.string().max(FREE_TEXT_MAX).optional(),
+    additionalComments: z.string().max(FREE_TEXT_MAX).optional(),
   })
   .strict();
 

@@ -94,6 +94,7 @@ export const ProcessSurveyModal = ({
   const [detractorReasons, setDetractorReasons] = useState<string[]>([]);
   const [detractorReasonsOther, setDetractorReasonsOther] = useState('');
   const [additionalFeedback, setAdditionalFeedback] = useState('');
+  const [additionalComments, setAdditionalComments] = useState('');
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   const promoterLabels: Record<string, string> = {
@@ -212,6 +213,9 @@ export const ProcessSurveyModal = ({
     }
     if (additionalFeedback.trim()) {
       internalData.additionalFeedback = additionalFeedback.trim();
+    }
+    if (additionalComments.trim()) {
+      internalData.additionalComments = additionalComments.trim();
     }
 
     submitSurvey.mutate({
@@ -394,6 +398,14 @@ export const ProcessSurveyModal = ({
             useTextArea
             value={additionalFeedback}
             onChange={setAdditionalFeedback}
+            textareaProps={{ rows: 3 }}
+          />
+
+          <TextField
+            label={t("Anything else you'd like to share?")}
+            useTextArea
+            value={additionalComments}
+            onChange={setAdditionalComments}
             textareaProps={{ rows: 3 }}
           />
         </ModalBody>
