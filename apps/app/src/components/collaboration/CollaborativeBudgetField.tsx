@@ -10,9 +10,25 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-import { INVALID_PILL_CLASS } from './invalidFieldStyles';
+import { INVALID_PILL_CLASS, getFieldErrorId } from './invalidFieldStyles';
 
 const DEFAULT_CURRENCY = 'USD';
+
+/**
+ * Fragment text is legacy/shared collaborative data — a fragment that once
+ * belonged to a non-money field can hold non-JSON text, which must not crash
+ * the editor at render.
+ */
+function parseBudgetText(text: string): BudgetData | null {
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text) as BudgetData;
+  } catch {
+    return null;
+  }
+}
 
 const getCurrencySymbol = (currency: string) =>
   (0)
@@ -73,7 +89,7 @@ export function CollaborativeBudgetField({
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
-  const budget = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+  const budget = parseBudgetText(budgetText);
   const setBudget = (newBudget: BudgetData | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
@@ -138,7 +154,7 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    const emitted = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+    const emitted = parseBudgetText(budgetText);
     const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
 
     if (lastEmittedRef.current === key) {
@@ -186,6 +202,10 @@ export function CollaborativeBudgetField({
           variant="pill"
           color="pill"
           onPress={handleStartEditing}
+          aria-invalid={isInvalid || undefined}
+          aria-describedby={
+            isInvalid ? getFieldErrorId(fragmentName) : undefined
+          }
           className={cn(
             'justify-start text-start',
             isInvalid && INVALID_PILL_CLASS,

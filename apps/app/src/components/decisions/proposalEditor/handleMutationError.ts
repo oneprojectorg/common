@@ -24,9 +24,11 @@ export function handleMutationError(
     | { cause?: { fieldErrors?: Record<string, string> } }
     | undefined;
 
-  if (errorData?.cause?.fieldErrors) {
-    const fieldErrors = errorData.cause.fieldErrors;
+  const fieldErrors = errorData?.cause?.fieldErrors;
 
+  // Empty fieldErrors carries nothing to highlight or list — treat it as a
+  // generic failure rather than toasting an empty message.
+  if (fieldErrors && Object.keys(fieldErrors).length > 0) {
     if (options?.onFieldErrors) {
       options.onFieldErrors(fieldErrors);
       return;

@@ -176,6 +176,20 @@ test.describe('Proposal Submit Validation', () => {
       await expect(invalidField(key)).toBeVisible();
     }
 
+    // The accessible surface of the highlight: inline message rendered, the
+    // first invalid field's editor marked invalid, described by the message,
+    // and holding focus (focus is deferred until the error state commits).
+    await expect(authenticatedPage.locator('#field-error-title')).toBeVisible();
+    const invalidTitleEditor = authenticatedPage.locator(
+      '[data-field-anchor="title"] .ProseMirror',
+    );
+    await expect(invalidTitleEditor).toHaveAttribute('aria-invalid', 'true');
+    await expect(invalidTitleEditor).toHaveAttribute(
+      'aria-describedby',
+      'field-error-title',
+    );
+    await expect(invalidTitleEditor).toBeFocused();
+
     await dismissToasts();
 
     // =========================================================================
@@ -241,11 +255,8 @@ test.describe('Proposal Submit Validation', () => {
     // Step 4: Select Category → re-submit
     //
     // After fixing all 3 system fields, the client-side validation passes.
-    // The form should now also validate dynamic required fields (Summary,
-    // Details, Priority Level, Region) before allowing submission.
-    //
-    // This assertion will FAIL on the current implementation because
-    // client-side validation does not yet check dynamic required fields.
+    // The form now also validates dynamic required fields (Summary, Details,
+    // Priority Level, Region) before allowing submission.
     // =========================================================================
 
     const categoryButton = authenticatedPage.getByRole('button', {

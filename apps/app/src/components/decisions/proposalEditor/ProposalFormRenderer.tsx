@@ -423,6 +423,7 @@ function renderField({
             }
             profileId={decisionProfileId}
             defaultMapView={schema['x-map-default']}
+            isInvalid={isInvalid}
             onChange={(value) => onFieldChange(key, value)}
           />
         </div>
@@ -544,6 +545,9 @@ export function ProposalFormRenderer({
         {errorMessage != null && (
           <p
             id={getFieldErrorId(field.key)}
+            // Announce the error's appearance for fields whose control can't
+            // carry aria-describedby focus semantics (pills, map).
+            role="alert"
             className="text-sm text-functional-red"
           >
             {errorMessage}

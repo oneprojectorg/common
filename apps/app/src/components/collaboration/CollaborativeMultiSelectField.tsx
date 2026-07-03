@@ -17,7 +17,7 @@ import { LuCheck } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-import { INVALID_PILL_CLASS } from './invalidFieldStyles';
+import { INVALID_PILL_CLASS, getFieldErrorId } from './invalidFieldStyles';
 
 interface CollaborativeMultiSelectFieldProps {
   options: Array<{ value: string; label: string }>;
@@ -115,6 +115,10 @@ export function CollaborativeMultiSelectField({
         <Button
           variant="pill"
           color="pill"
+          aria-invalid={isInvalid || undefined}
+          aria-describedby={
+            isInvalid ? getFieldErrorId(fragmentName) : undefined
+          }
           className={cn(
             'w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none',
             isInvalid && INVALID_PILL_CLASS,

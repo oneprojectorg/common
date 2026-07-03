@@ -69,6 +69,19 @@ function normalizeFieldErrors(
 }
 
 /**
+ * Returns the subset of invalid keys that have a rendered field anchor
+ * ({@link FIELD_ANCHOR_ATTR} in {@link ProposalFormRenderer}). Keys without an
+ * anchor (e.g. a field behind a disabled feature flag) can't be highlighted.
+ */
+function getAnchoredFieldKeys(invalidKeys: string[]): string[] {
+  return invalidKeys.filter(
+    (key) =>
+      document.querySelector(`[${FIELD_ANCHOR_ATTR}="${CSS.escape(key)}"]`) !==
+      null,
+  );
+}
+
+/**
  * Scrolls the first invalid field (in visual/DOM order) into view after a
  * failed submit. Fields are anchored via {@link FIELD_ANCHOR_ATTR} in
  * {@link ProposalFormRenderer}. Returns whether an invalid field was found —
@@ -101,7 +114,7 @@ function scrollToFirstInvalidField(invalidKeys: string[]): boolean {
   // viewport.
   anchor
     .querySelector<HTMLElement>(
-      '[contenteditable="true"], button, input, [tabindex]',
+      '[contenteditable="true"], button, input, [tabindex]:not([tabindex="-1"])',
     )
     ?.focus({ preventScroll: true });
 
@@ -333,18 +346,34 @@ function ProposalEditorInner({
   const { validate } = useProposalValidation(ydoc, proposalTemplate);
 
   // Shared failure path for client- and server-side validation: highlight the
-  // fields, scroll to the first one, and toast. Falls back to listing the
-  // messages when no invalid field is actually rendered (e.g. a required
-  // location field behind a disabled feature flag), so the user isn't left
-  // with a toast pointing at nothing.
+  // fields, scroll to the first one, and toast. Errors on fields with no
+  // rendered control (e.g. a required location field behind a disabled feature
+  // flag) are listed in the toast instead, so no message is silently dropped.
   const reportFieldErrors = useCallback(
     (rawErrors: Record<string, string>) => {
       const errors = normalizeFieldErrors(rawErrors);
       setFieldErrors(errors);
-      const didHighlight = scrollToFirstInvalidField(Object.keys(errors));
+
+      const anchoredKeys = getAnchoredFieldKeys(Object.keys(errors));
+      if (anchoredKeys.length > 0) {
+        // Defer until the error state commits, so aria-invalid /
+        // aria-describedby and the inline message exist when focus lands —
+        // screen readers announce them at focus time.
+        requestAnimationFrame(() => scrollToFirstInvalidField(anchoredKeys));
+      }
+
+      const unanchoredMessages = Object.entries(errors)
+        .filter(([key]) => !anchoredKeys.includes(key))
+        .map(([, message]) => message);
+
       toast.error(
-        didHighlight
-          ? { title: t('Please fix the highlighted fields') }
+        anchoredKeys.length > 0
+          ? {
+              title: t('Please fix the highlighted fields'),
+              ...(unanchoredMessages.length > 0
+                ? { message: unanchoredMessages.join(', ') }
+                : {}),
+            }
           : {
               title: t('Please fix the following issues:'),
               message: Object.values(rawErrors).join(', '),

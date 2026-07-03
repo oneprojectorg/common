@@ -27,6 +27,8 @@ interface LocationMapFieldProps {
    * the map before the participant has chosen a location.
    */
   defaultMapView?: MapDefaultView;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
   onChange: (value: LocationData | null) => void;
 }
 
@@ -44,6 +46,7 @@ export function LocationMapField({
   value,
   profileId,
   defaultMapView,
+  isInvalid = false,
   onChange,
 }: LocationMapFieldProps) {
   const t = useTranslations();
@@ -155,7 +158,9 @@ export function LocationMapField({
 
       <div
         className={`overflow-hidden rounded-lg border ${
-          isWithinArea ? 'border-neutral-gray1' : 'border-functional-red'
+          isWithinArea && !isInvalid
+            ? 'border-neutral-gray1'
+            : 'border-functional-red'
         }`}
       >
         <MapCanvas
