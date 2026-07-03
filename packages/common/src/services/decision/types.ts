@@ -16,15 +16,15 @@ export type JsonSchema = JSONSchema7;
  * properties. Describes **how** a field should be presented/coerced, while
  * JSON Schema keywords (`type`, `enum`, etc.) describe the data shape.
  *
- * `scale` renders an enum as a horizontal numeric radio row (the NPS-style
- * control) instead of a dropdown; used by custom form scale questions.
+ * `radio` renders an enum as a horizontal radio row (the NPS-style control)
+ * instead of a dropdown; used by custom form scale questions.
  */
 export type XFormat =
   | 'short-text'
   | 'long-text'
   | 'money'
   | 'dropdown'
-  | 'scale'
+  | 'radio'
   | 'location';
 
 /**

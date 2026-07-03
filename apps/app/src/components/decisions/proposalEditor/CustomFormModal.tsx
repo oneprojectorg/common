@@ -245,7 +245,7 @@ function CustomFormField({
   // NPS-style numeric scale — matches the ProcessSurveyModal control:
   // horizontal radio row with the label under each number on desktop,
   // dropdown on mobile.
-  if (field['x-format'] === 'scale' && enumOptions.length > 0) {
+  if (field['x-format'] === 'radio' && enumOptions.length > 0) {
     const selected = typeof value === 'string' ? value : null;
 
     if (isMobile) {
