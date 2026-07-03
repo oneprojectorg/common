@@ -40,13 +40,11 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 export function ProposalView({
   proposal: initialProposal,
   canSeeRevisions,
-  backHref,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
   canSeeRevisions: boolean;
-  backHref: string;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -121,6 +119,7 @@ export function ProposalView({
   // Check if current user can edit (submitter or org admin)
   const canEdit = currentProposal.isEditable ?? false;
 
+  const backHref = `${decisionRoot}/current`;
   const editHref = canEdit
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;

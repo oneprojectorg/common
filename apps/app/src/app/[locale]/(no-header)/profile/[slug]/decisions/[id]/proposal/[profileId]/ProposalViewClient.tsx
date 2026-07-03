@@ -32,7 +32,6 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       canSeeRevisions={false}
-      backHref={`${decisionRoot}/`}
       decisionRoot={decisionRoot}
       selection={null}
     />
