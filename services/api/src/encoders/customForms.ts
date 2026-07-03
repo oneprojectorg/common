@@ -1,4 +1,7 @@
-import { customFormSchema, customFormSubmissionSchema } from '@op/common';
+import {
+  customFormSchema,
+  customFormSubmissionSchema,
+} from '@op/common/client';
 
 /** Re-export the @op/common wire schemas so the API contract is co-located
  *  with the rest of the encoders the client consumes. */
