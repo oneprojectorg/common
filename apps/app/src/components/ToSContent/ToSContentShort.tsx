@@ -43,7 +43,9 @@ export const ToSContentShort = () => {
       <FormalSection>
         <Header3 className="font-serif">Who Can Use Common</Header3>
         <p className="mb-4">
-          You must be at least 18 years old to use Common. We may require you to
+          You must be at least 13 years old to use Common, and if you are under
+          18 you may use Common only under the supervision of a parent or
+          guardian who agrees to the terms on your behalf. We may require you to
           meet certain criteria to use the platform, and Common is currently
           invite-only.
         </p>
@@ -64,10 +66,16 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Our Code of Conduct</Header3>
+        <Header3 className="font-serif">Our Community Commitments</Header3>
         <p className="mb-4">
-          All users of the Platform must comply with our Code of Conduct,
-          including these core community principles:
+          All users of the Platform must comply with our{' '}
+          <a
+            href="/info/community-commitments"
+            className="text-primary-teal hover:underline"
+          >
+            Community Commitments
+          </a>
+          , including these core community principles:
         </p>
         <ul className="mb-4 list-disc ps-6">
           <li className="mb-2">

@@ -29,8 +29,8 @@ import {
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
-import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
+import { CommunityCommitmentsModal } from '../CommunityCommitmentsModal';
 import { DeleteOrganizationModal } from '../DeleteOrganizationModal';
 import ErrorBoundary from '../ErrorBoundary';
 import { LocaleChooser } from '../LocaleChooser';
@@ -292,7 +292,7 @@ const AvatarMenuContent = ({
           {' • '}
           <ToSModal />
           {' • '}
-          <CoCModal />
+          <CommunityCommitmentsModal />
         </div>
       </MenuItemSimple>
       <MenuItemSimple

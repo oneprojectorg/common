@@ -6,14 +6,17 @@ export const PrivacyPolicyContent = () => {
   return (
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
-        <p>Last Updated June 20, 2025</p>
+        <Header3 className="font-serif">One Project Privacy Notice</Header3>
+        <p>Last Updated: July 2, 2026</p>
+      </FormalSection>
+
+      <FormalSection>
         <Header3 className="font-serif">Who We Are</Header3>
         <p className="mb-4">
           One Project (collectively One Project, we, our, or us) is a non-profit
-          building infrastructure for a new economy where resources serve people
-          and planet, not profit. We partner with the rising global movement for
-          economic democracy to build core technology, mobilize catalytic
-          resources, and show the world that a better system is possible. We
+          building infrastructure for economic democracy. We build the
+          technology, mobilize the resources, and make the case, so communities
+          have real say in the economic decisions that shape their lives. We
           value your privacy and the protection of your Personal Data. This
           Privacy Notice (Notice) explains how we collect, store, use, share,
           transfer, delete, and otherwise process information collected from or
@@ -35,11 +38,15 @@ export const PrivacyPolicyContent = () => {
         </p>
         <p className="mb-4">
           This Notice applies to Personal Data collected or processed by us
-          through the Common Platform (Platform or Services). One Project may
-          provide you with a different privacy notice in certain specific
-          situations, in which case that privacy notice or policy will apply to
-          the Personal Data collected or processed in that specific situation,
-          rather than this one.
+          through our websites, currently located at oneproject.org (including
+          those home pages and all other pages under the same top level domain
+          names, as well as any mobile versions of the websites) (collectively,
+          the Website), as well as the Common Platform (the Platform, and
+          together with the Website, collectively known as the Services). One
+          Project may provide you with a different privacy notice in certain
+          specific situations, in which case that privacy notice or policy will
+          apply to the Personal Data collected or processed in that specific
+          situation, rather than this one.
         </p>
         <p className="mb-4">
           If you provide us with Personal Data related to anyone other than
@@ -60,7 +67,43 @@ export const PrivacyPolicyContent = () => {
           Personal Data to support our mission and deliver related services, not
           for commercial profit. All of the information we collect is in service
           of running the platform and we aim to collect data for the explicit
-          purpose of running the platform.
+          purpose of running the Services and the projects that the Services
+          facilitate..
+        </p>
+      </FormalSection>
+
+      <FormalSection>
+        <Header3 className="font-serif">
+          Special Privacy Standards for Specific Platform Instances
+        </Header3>
+        <p className="mb-4">
+          In some specific deployments of the Platform, we handle the
+          collection, use, and disclosure of Personal Data under different
+          standards than this Notice. This is done when we need to comply with
+          local laws and regulations, to develop new variations of the Services,
+          or as is requested by specific local partners. In those situations, we
+          adopt Special Privacy Standards (Special Standards) that address how
+          such collection, use, or disclosure of information varies from this
+          Privacy Notice.
+        </p>
+        <p className="mb-4">
+          The following Special Standards are currently in use:
+        </p>
+        <ul className="mb-4 list-disc ps-6">
+          <li className="mb-2">
+            <a
+              href="/info/columbus-addendum"
+              className="text-primary-teal hover:underline"
+            >
+              Special Privacy Standards for City of Columbus Participatory
+              Budgeting Project
+            </a>
+          </li>
+        </ul>
+        <p className="mb-4">
+          For those specific deployments, to the extent the Special Standards
+          conflict with this Privacy Notice, those Special Standards will
+          control.
         </p>
       </FormalSection>
 
@@ -83,11 +126,11 @@ export const PrivacyPolicyContent = () => {
           jurisdictions, such as biometric information, genetic information,
           health information, financial account information, specific
           geolocation, ethnic or racial origin, information concerning your sex
-          life or your sexual orientation, social security number, driver's
+          life or your sexual orientation, social security number, driver’s
           license number, state identification card number, passport number, and
-          other similar information. Personal Data that could be considered
-          sensitive Personal Data under any law is indicated with a caret (^) in
-          the chart below.
+          other similar information. Personal Data that we believe could be
+          considered sensitive Personal Data under relevant law is indicated
+          with a caret (^) in the chart below.
         </p>
         <p className="mb-4">
           We will process any Personal Data we collect in accordance with law
@@ -110,7 +153,8 @@ export const PrivacyPolicyContent = () => {
           following charts may apply to you. If the nature of your relationship
           with One Project changes, additional categories of Personal Data may
           also apply. One Project does not use or disclose Personal Data or
-          sensitive Personal Data other than for the purposes specified herein.
+          sensitive Personal Data other than for the purposes specified herein
+          or in any applicable Special Standards.
         </p>
 
         <div className="mb-6 overflow-x-auto">
@@ -171,7 +215,8 @@ export const PrivacyPolicyContent = () => {
                   biography, etc.
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-start">
-                  Data that removes individual personal data
+                  Data that can no longer be linked or associated with a
+                  specific individual.
                 </th>
               </tr>
             </thead>
@@ -203,19 +248,33 @@ export const PrivacyPolicyContent = () => {
                   X
                 </td>
               </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2 font-semibold">
+                  Children*
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+                <td className="border border-gray-300 px-4 py-2 text-center"></td>
+              </tr>
             </tbody>
           </table>
         </div>
 
         <p className="mb-2 text-sm">
-          Personal Data that may be considered sensitive is noted with a "^". If
+          Personal Data that may be considered sensitive is noted with a “^”. If
           required to do so, we will obtain your consent prior to processing
           your sensitive data.
         </p>
         <p className="mb-6 text-sm">
-          *One Project does not knowingly process Personal Data of children
-          below the age of 16 without the permission of their parents or legal
-          guardians.
+          *One Project does not knowingly collect data from children below the
+          age of 13 in the United States, and does not process Personal Data of
+          children below the age of 16 in the European Union or United Kingdom
+          without the permission of their parents or legal guardians
         </p>
       </FormalSection>
 
@@ -232,44 +291,53 @@ export const PrivacyPolicyContent = () => {
 
         <h4 className="mb-2 font-semibold">
           Examples of the types of data we process (Personal Data that may be
-          considered sensitive is noted with a "^")
+          considered sensitive is noted with a “^”)
         </h4>
 
         <h5 className="mb-2 font-semibold">
           Identity and contact information, such as:
         </h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>first and last name or unique pseudonym</li>
-          <li>honorifics and titles, preferred form of address</li>
-          <li>employer / organization</li>
-          <li>email address</li>
-          <li>organization name or identifier</li>
-          <li>phone number username or code and user preferences</li>
+          <li className="mb-2">first and last name or unique pseudonym</li>
+          <li className="mb-2">
+            honorifics and titles, preferred form of address
+          </li>
+          <li className="mb-2">employer / organization</li>
+          <li className="mb-2">email address</li>
+          <li className="mb-2">organization name or identifier</li>
+          <li className="mb-2">
+            phone number username or code and user preferences
+          </li>
         </ul>
 
         <h5 className="mb-2 font-semibold">
           Demographic Information, such as:
         </h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>preferred language</li>
-          <li>approximate location</li>
-          <li>interests</li>
+          <li className="mb-2">preferred language</li>
+          <li className="mb-2">approximate location</li>
+          <li className="mb-2">interests</li>
         </ul>
 
         <h5 className="mb-2 font-semibold">Activity Data</h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>Posts on the platform</li>
-          <li>Relational connections</li>
+          <li className="mb-2">Posts on the platform</li>
+          <li className="mb-2">Relational connections</li>
+          <li className="mb-2">
+            Reactions and votes related to posts on the platform
+          </li>
         </ul>
 
         <h5 className="mb-2 font-semibold">
           Video, Audio, and Recorded Information, such as:
         </h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>Still images^</li>
-          <li>Video (including videos posted on the platform)</li>
-          <li>recordings of online events^</li>
-          <li>
+          <li className="mb-2">Still images^</li>
+          <li className="mb-2">
+            Video (including videos posted on the platform)
+          </li>
+          <li className="mb-2">recordings of online events^</li>
+          <li className="mb-2">
             recordings of your interactions with our Services, whether through
             email or otherwise
           </li>
@@ -279,46 +347,39 @@ export const PrivacyPolicyContent = () => {
           Technical or electronic network activity information, such as:
         </h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>
+          <li className="mb-2">
             Internet Protocol (IP) addresses (which may identify your general
             geographic location or organization)
           </li>
-          <li>browser type and browser language</li>
-          <li>device type and operating system</li>
-          <li>date and time you use our Online Services</li>
-          <li>communications metadata</li>
-          <li>
+          <li className="mb-2">browser type and browser language</li>
+          <li className="mb-2">device type and operating system</li>
+          <li className="mb-2">date and time you use our Online Services</li>
+          <li className="mb-2">communications metadata</li>
+          <li className="mb-2">
             Uniform Resource Locators, or URLs (i.e., website addresses) visited
             prior to arriving and after leaving our Services
           </li>
-          <li>
+          <li className="mb-2">
             Information about how you interact with our Services, including
             analytics information about what pages you visit, where you click,
             videos you watch, the website you came from before ours to
             understand how you were referred to our platform (ie. through social
             media, direct link, or another partner's website, etc.), and any
-            forms of or other details you choose to share with us (As further
-            described below in "Why do we process the data?" We collect this
-            information to better understand how people use our services,
-            improve your experience, fix problems, and show you content that is
-            more relevant to you on the Platform. We do not use this information
-            to track individuals across the Internet for targeted advertising
-            purposes.data collected from cookies or other similar
-            technologies***
+            forms of or other details you choose to share with us
           </li>
         </ul>
 
         <h5 className="mb-2 font-semibold">Financial information, such as:</h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>
-            self-disclosed funding information (example: who funded you,,how
-            much)
+          <li className="mb-2">
+            self-disclosed funding information (example: who funded you, how
+            much funding you received)
           </li>
         </ul>
 
         <h5 className="mb-2 font-semibold">Anonymized / de-identified data:</h5>
         <ul className="mb-4 list-disc ps-6">
-          <li>
+          <li className="mb-2">
             Anonymized and/or de-identified data is data for which your
             individual personal characteristics and information have been
             removed such that you are not identified or identifiable and the
@@ -329,19 +390,21 @@ export const PrivacyPolicyContent = () => {
 
         <h4 className="mb-2 font-semibold">Where do we get the data?</h4>
         <ul className="mb-4 list-disc ps-6">
-          <li>you directly</li>
-          <li>
+          <li className="mb-2">you directly</li>
+          <li className="mb-2">
             those authorized to provide Personal Data on your behalf, such as
             your authorized representative(s)
           </li>
-          <li>our affiliates, consultants, or service providers</li>
-          <li>your devices</li>
-          <li>our security systems</li>
-          <li>
+          <li className="mb-2">
+            our affiliates, consultants, or service providers
+          </li>
+          <li className="mb-2">your devices</li>
+          <li className="mb-2">our security systems</li>
+          <li className="mb-2">
             third parties that provide access to information you make publicly
             available, such as social media
           </li>
-          <li>
+          <li className="mb-2">
             business partners and other third parties that assist us in
             providing and improving our Services
           </li>
@@ -349,70 +412,83 @@ export const PrivacyPolicyContent = () => {
 
         <h4 className="mb-2 font-semibold">Why do we process the data?</h4>
         <ul className="mb-4 list-disc ps-6">
-          <li>to provide you with our Services</li>
-          <li>to facilitate grant making</li>
-          <li>to communicate with you</li>
-          <li>to administer our relationship with your organization</li>
-          <li>
+          <li className="mb-2">to provide you with our Services</li>
+          <li className="mb-2">to facilitate grant making</li>
+          <li className="mb-2">to communicate with you</li>
+          <li className="mb-2">
+            to administer our relationship with your organization
+          </li>
+          <li className="mb-2">
             to send you updates, including about our programs, events, and
             campaigns
           </li>
-          <li>to communicate with you</li>
-          <li>to register you for events</li>
-          <li>to customize content for you</li>
-          <li>to identify and authenticate you</li>
-          <li>to detect security incidents</li>
-          <li>to protect against malicious, fraudulent, or illegal activity</li>
-          <li>to ensure the appropriate use of our Services</li>
-          <li>to improve our Services</li>
-          <li>for short-term, transient use</li>
-          <li>for administrative purposes</li>
-          <li>for marketing, internal research, and development</li>
-          <li>
+          <li className="mb-2">to register you for events</li>
+          <li className="mb-2">to customize content for you</li>
+          <li className="mb-2">to identify and authenticate you</li>
+          <li className="mb-2">to detect security incidents</li>
+          <li className="mb-2">
+            to protect against malicious, fraudulent, or illegal activity
+          </li>
+          <li className="mb-2">
+            to ensure the appropriate use of our Services
+          </li>
+          <li className="mb-2">to improve our Services</li>
+          <li className="mb-2">for short-term, transient use</li>
+          <li className="mb-2">
+            for administrative purposes, including verifying your identity in
+            order to process any exercise of your rights regarding your Personal
+            Data discussed below
+          </li>
+          <li className="mb-2">
+            for marketing, internal research, and development
+          </li>
+          <li className="mb-2">
             to contact you regarding programs, services, and topics that may be
             of interest or useful
           </li>
-          <li>for quality assurance</li>
-          <li>to comply with legal and regulatory obligations</li>
+          <li className="mb-2">for quality assurance</li>
+          <li className="mb-2">
+            to comply with legal and regulatory obligations
+          </li>
         </ul>
 
         <h4 className="mb-2 font-semibold">
           What are the Lawful or Legal Bases of Processing?
         </h4>
         <ul className="mb-4 list-disc ps-6">
-          <li>for the purposes of legitimate interests</li>
-          <li>in preparation for or to perform a contract with you</li>
-          <li>
+          <li className="mb-2">for the purposes of legitimate interests</li>
+          <li className="mb-2">
+            in preparation for or to perform a contract with you
+          </li>
+          <li className="mb-2">
             to comply with legal and regulatory obligations and to establish,
             exercise, or defend our legal claims and rights
           </li>
-          <li>
+          <li className="mb-2">
             in circumstances where we have requested and received consent and
-            for other purposes that may be required or allowed by law*
+            for other purposes that may be required or allowed by law
           </li>
         </ul>
 
         <h4 className="mb-2 font-semibold">Who receives the data?</h4>
         <ul className="mb-4 list-disc ps-6">
-          <li>One Project, and our Affiliates</li>
-          <li>
+          <li className="mb-2">One Project, and our Affiliates**</li>
+          <li className="mb-2">
             individuals or entities that you designate or instruct us to share
             your Personal Data with
           </li>
-          <li>authorized representatives</li>
-          <li>service providers</li>
-          <li>
-            third parties who assist with fraud prevention, detection, and
-            mitigation
+          <li className="mb-2">authorized representatives</li>
+          <li className="mb-2">service providers</li>
+          <li className="mb-2">
+            third parties who assist with provision on the Services and the uses
+            of Personal Data listed above
           </li>
-          <li>
-            third parties who assist with our information technology and
-            security programs
+          <li className="mb-2">
+            One Project’s lawyers, auditors, and consultants
           </li>
-          <li>One Project's lawyers, auditors, and consultants</li>
-          <li>
-            We do not share your personal information with third parties for
-            commercial purposes.
+          <li className="mb-2">
+            We do not sell or license your personal information with third
+            parties for commercial purposes.
           </li>
         </ul>
       </FormalSection>
@@ -420,26 +496,15 @@ export const PrivacyPolicyContent = () => {
       <FormalSection>
         <Header3 className="font-serif">Children</Header3>
         <p className="mb-4">
-          One Project does not knowingly collect, maintain, disclose, or
-          otherwise process Personal Data from minors below the age of 16
-          without the permission of such minor's parents or legal guardians.
+          One Project does not knowingly collect data from children below the
+          age of 13 in the United States, and does not knowingly collect,
+          maintain, disclose, or otherwise process Personal Data from minors
+          below the age of 16 in the European Union or United Kingdom without
+          the permission of such minor’s parents or legal guardians.
         </p>
       </FormalSection>
 
       <div className="mb-6 text-sm">
-        <p className="mb-2">
-          *The legal bases relied upon by One Project include those enumerated
-          in Clause 4.3 of Schedule 1, and Section 7 of the Personal Information
-          Protection and Electronic Documents Act (PIPEDA), as well as within
-          other applicable privacy laws. When required and allowed, we will seek
-          to obtain your consent or authorization to process your Personal Data
-          and only process your Personal Data upon receiving such consent. In
-          such circumstances, your refusal to provide consent or authorization
-          will have no adverse consequence on you. However, in some
-          circumstances where consent is required, it may be impossible for One
-          Project to manage its relationship with you or provide you with the
-          Services absent your consent to process your Personal Data.
-        </p>
         <p className="mb-2">
           **In limited circumstances, recipients may include, (1) in the event
           of a sale, assignment, merger, consolidation, corporate
@@ -456,81 +521,88 @@ export const PrivacyPolicyContent = () => {
         </p>
       </div>
 
-      <FormalSection>
-        <Header3 className="font-serif">Marketing and Cookies</Header3>
-        <p className="mb-4">
-          To the extent permitted by law, including with your consent where
-          required, we may engage in the following activities:
-        </p>
-        <p className="mb-4">
-          We may contact you about mission-related activities, such as Platform
-          updates, organizations that may be of interest, and other related
-          information. You may opt out of these communications at any time
-          without affecting your ability to participate in our services by
-          declining to receive such emails when registering, in our subsequent
-          communications by following opt-out or unsubscribe instructions
-          included in the email, by contacting us, or at other information
-          collection points while using the Services.
-        </p>
-        <p className="mb-4">
-          We also perform statistical analyses of the users of our Services to
-          improve the functionality, content, design, and navigation of our
-          Services.
-        </p>
-        <p className="mb-4">
-          In addition, if you do not want information collected through the use
-          of cookies, there is a simple procedure in most browsers that allows
-          you to automatically decline cookies or be given the choice of
-          declining or accepting the transfer to your computer of a particular
-          cookie (or cookies) from a particular site. Visit{' '}
-          <a
-            href="http://www.allaboutcookies.org/manage-cookies/index.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary-teal hover:underline"
-          >
-            http://www.allaboutcookies.org/manage-cookies/index.html
-          </a>{' '}
-          for more information. If, however, you do not accept these cookies,
-          you may experience some inconvenience in your use of the Services. For
-          example, we may not be able to recognize your computer, and you may
-          need to log in every time you visit.
-        </p>
-        <p className="mb-4">
-          Certain web browsers and other programs may transmit "opt-out"
-          signals, also called a Global Privacy Control (or GPC) signal (we
-          refer to these as "GPC Signals"), to websites with which the browser
-          communicates. You may need to change your web browser's settings or
-          add an application to your web browser to enable your browser to send
-          a GPC Signal. Our Services do not recognize and apply the GPC Signal
-          or other do not track signals.
-        </p>
-      </FormalSection>
+      <div id="marketing-and-cookies">
+        <FormalSection>
+          <Header3 className="font-serif">Marketing and Cookies</Header3>
+          <p className="mb-4">
+            To the extent permitted by law, including with your consent where
+            required, we may engage in the following activities:
+          </p>
+          <ul className="mb-4 list-disc ps-6">
+            <li className="mb-2">
+              We may contact you about mission-related activities, such as
+              Platform updates, organizations that may be of interest, and other
+              related information. You may opt out of these communications at
+              any time without affecting your ability to participate in our
+              services by declining to receive such emails when registering, in
+              our subsequent communications by following opt-out or unsubscribe
+              instructions included in the email, by contacting us, or at other
+              information collection points while using the Services.
+            </li>
+            <li className="mb-2">
+              We also perform statistical analyses of the users of our Services
+              to improve the functionality, content, design, and navigation of
+              our Services.
+            </li>
+          </ul>
+          <p className="mb-4">
+            In addition, if you do not want information collected through the
+            use of cookies, there is a simple procedure in most browsers that
+            allows you to automatically decline cookies or be given the choice
+            of declining or accepting the transfer to your computer of a
+            particular cookie (or cookies) from a particular site. Visit{' '}
+            <a
+              href="http://www.allaboutcookies.org/manage-cookies/index.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-teal hover:underline"
+            >
+              http://www.allaboutcookies.org/manage-cookies/index.html
+            </a>{' '}
+            for more information. If, however, you do not accept these cookies,
+            you may experience some inconvenience in your use of the Services.
+            For example, we may not be able to recognize your computer, and you
+            may need to log in every time you visit.
+          </p>
+          <p className="mb-4">
+            Certain web browsers and other programs may transmit “opt-out”
+            signals, also called a Global Privacy Control (or GPC) signal (we
+            refer to these as “GPC Signals”), to websites with which the browser
+            communicates. You may need to change your web browser’s settings or
+            add an application to your web browser to enable your browser to
+            send a GPC Signal. Our Services do not recognize and apply the GPC
+            Signal or other do not track signals.
+          </p>
+        </FormalSection>
+      </div>
 
       <FormalSection>
         <Header3 className="font-serif">Chat Functions on Our Services</Header3>
         <p className="mb-4">
-          When you interact with our chat functions, you consent to the
-          processing of your Personal Data, including recording your messages,
-          to process your questions and provide you with responses. If you do
-          not consent to this processing, please do not use the chat feature.
+          We may offer a chat feature as a part of our services. If you interact
+          with any chat functions, you consent to the processing of your
+          Personal Data, including recording your messages, to process your
+          questions and provide you with responses. If you do not consent to
+          this processing, please do not use the chat feature.
         </p>
       </FormalSection>
 
-      <FormalSection>
-        <Header3 className="font-serif">
-          Service Providers and Third Parties
-        </Header3>
-        <p className="mb-4">
-          Service providers or vendors (or processors) acting on our behalf must
-          execute agreements requiring them to maintain confidentiality and to
-          process Personal Data only to provide the services to us and in a way
-          that aligns with this Notice, other applicable privacy notices, and as
-          explicitly permitted or required by applicable laws, rules, and
-          regulations. Our processors and subprocessors can be located in the
-          United States, and other jurisdictions.
-        </p>
-      </FormalSection>
+      <div id="service-providers">
+        <FormalSection>
+          <Header3 className="font-serif">
+            Service Providers and Third Parties
+          </Header3>
+          <p className="mb-4">
+            Service providers or vendors (or processors) acting on our behalf
+            must execute agreements requiring them to maintain confidentiality
+            and to process Personal Data only to provide the services to us and
+            in a way that aligns with this Notice, other applicable privacy
+            notices, and as explicitly permitted or required by applicable laws,
+            rules, and regulations. Our processors and subprocessors can be
+            located in the United States, and other jurisdictions.
+          </p>
+        </FormalSection>
+      </div>
 
       <FormalSection>
         <Header3 className="font-serif">
@@ -562,90 +634,96 @@ export const PrivacyPolicyContent = () => {
         </p>
       </FormalSection>
 
-      <FormalSection>
-        <Header3 className="font-serif">
-          Your Rights Regarding Your Personal Data
-        </Header3>
-        <p className="mb-4">
-          Depending on where you live, you may have the following rights with
-          respect to some or all of your Personal Data:
-        </p>
-        <ul className="mb-4 list-disc ps-6">
-          <li>
-            To request information about or explain whether, and how, we process
-            your Personal Data
-          </li>
-          <li>
-            To request access to or to know about the Personal Data we process
-            about you or the third parties to whom we disclose your Personal
-            Data or to request we acknowledge our processing of your Personal
-            Data or a list of the categories of third parties to which your
-            Personal Data has been disclosed
-          </li>
-          <li>To request that we correct or update your Personal Data</li>
-          <li>To request that we delete your Personal Data</li>
-          <li>
-            To request that we restrict, suspend, block, or to object to or
-            opt-out of the processing of your Personal Data, including
-            withdrawing consent
-          </li>
-          <li>
-            To provide your Personal Data directly to another, i.e., a right to
-            data portability;
-          </li>
-          <li>To appeal the denial of a request; and</li>
-          <li>
-            To lodge a complaint with the data protection authority in your
-            jurisdiction.
-          </li>
-        </ul>
-        <p className="mb-4">
-          In the event you wish to make a right request, file a complaint about
-          how we process your Personal Data, or appeal the denial of one of your
-          requests, please contact us. Even if you make a complaint to us, you
-          may also in some jurisdictions lodge a complaint with the relevant
-          privacy or data protection authority in your location. Upon rejection
-          of an individual rights request you may also have the right to file a
-          lawsuit in court in accordance with the law.
-        </p>
-        <p className="mb-4">
-          We will not discriminate against you for exercising any of the rights
-          described above, although we may not be able to continue to provide
-          you with certain Services or it may otherwise affect the way we are
-          able to interact with you.
-        </p>
-        <p className="mb-4">
-          We will make reasonable efforts to respond promptly to your requests.
-          For your protection, and to protect the privacy of others, we may need
-          to verify your identity before completing what you have asked us to
-          do. We will take steps to verify your identity before completing your
-          rights request. We may ask you to provide additional information, such
-          as your name, home address, and email address. We cannot respond to
-          your request if we cannot verify your identity or authority to make
-          the request and confirm that the Personal Data relates to you. We will
-          only use Personal Data collected in connection with a verifiable
-          consumer request to verify the requestor's identity or authority to
-          make the request.
-        </p>
-        <p className="mb-4">
-          You may use an authorized agent to submit a request on your behalf.
-          Your authorized agent must indicate that they are submitting the
-          request as an agent. We may require the agent to provide proof that
-          you gave permission to submit the request and may also require to you
-          to confirm with us that you provided the agent permission to submit
-          the request or to verify your own identity directly with us.
-        </p>
-        <p className="mb-4">
-          Please be aware that we may be unable to afford these rights to you
-          under certain circumstances, such as if we are legally prevented from
-          doing so.
-        </p>
-        <p className="mb-4">
-          We do not sell or share your personal information for monetary or
-          other valuable consideration as these terms are defined under relevant
-          laws.
-        </p>
-      </FormalSection>
+      <div id="your-rights">
+        <FormalSection>
+          <Header3 className="font-serif">
+            Your Rights Regarding Your Personal Data
+          </Header3>
+          <p className="mb-4">
+            Depending on where you live, you may have the following rights with
+            respect to some or all of your Personal Data:
+          </p>
+          <ul className="mb-4 list-disc ps-6">
+            <li className="mb-2">
+              To request information about or explain whether, and how, we
+              process your Personal Data
+            </li>
+            <li className="mb-2">
+              To request access to or to know about the Personal Data we process
+              about you or the third parties to whom we disclose your Personal
+              Data or to request we acknowledge our processing of your Personal
+              Data or a list of the categories of third parties to which your
+              Personal Data has been disclosed
+            </li>
+            <li className="mb-2">
+              To request that we correct or update your Personal Data
+            </li>
+            <li className="mb-2">
+              To request that we delete your Personal Data
+            </li>
+            <li className="mb-2">
+              To request that we restrict, suspend, block, or to object to or
+              opt-out of the processing of your Personal Data, including
+              withdrawing consent
+            </li>
+            <li className="mb-2">
+              To provide your Personal Data directly to another, i.e., a right
+              to data portability;
+            </li>
+            <li className="mb-2">To appeal the denial of a request; and</li>
+            <li className="mb-2">
+              To lodge a complaint with the data protection authority in your
+              jurisdiction.
+            </li>
+          </ul>
+          <p className="mb-4">
+            In the event you wish to make a right request, file a complaint
+            about how we process your Personal Data, or appeal the denial of one
+            of your requests, please contact us. Even if you make a complaint to
+            us, you may also in some jurisdictions lodge a complaint with the
+            relevant privacy or data protection authority in your location. Upon
+            rejection of an individual rights request you may also have the
+            right to file a lawsuit in court in accordance with the law.
+          </p>
+          <p className="mb-4">
+            We will not discriminate against you for exercising any of the
+            rights described above, although we may not be able to continue to
+            provide you with certain Services or it may otherwise affect the way
+            we are able to interact with you.
+          </p>
+          <p className="mb-4">
+            We will make reasonable efforts to respond promptly to your
+            requests. For your protection, and to protect the privacy of others,
+            we may need to verify your identity before completing what you have
+            asked us to do. We will take steps to verify your identity before
+            completing your rights request. We may ask you to provide additional
+            information, such as your name, home address, and email address. We
+            cannot respond to your request if we cannot verify your identity or
+            authority to make the request and confirm that the Personal Data
+            relates to you. We will only use Personal Data collected in
+            connection with a verifiable consumer request to verify the
+            requestor's identity or authority to make the request.
+          </p>
+          <p className="mb-4">
+            You may use an authorized agent to submit a request on your behalf.
+            Your authorized agent must indicate that they are submitting the
+            request as an agent. We may require the agent to provide proof that
+            you gave permission to submit the request and may also require you
+            to confirm with us that you provided the agent permission to submit
+            the request or to verify your own identity directly with us.
+          </p>
+          <p className="mb-4">
+            Please be aware that we may be unable to afford these rights to you
+            under certain circumstances, such as if we are legally prevented
+            from doing so.
+          </p>
+          <p className="mb-4">
+            We do not sell or share your personal information for monetary or
+            other valuable consideration as these terms are defined under
+            relevant laws.
+          </p>
+        </FormalSection>
+      </div>
 
       <FormalSection>
         <Header3 className="font-serif">Safeguarding Personal Data</Header3>

@@ -133,6 +133,16 @@ const PUBLIC_ROUTES: RouteScan[] = [
   { url: '/login', label: 'Login', auth: 'public' },
   { url: '/info/privacy', label: 'Privacy policy', auth: 'public' },
   { url: '/info/tos', label: 'Terms of service', auth: 'public' },
+  {
+    url: '/info/community-commitments',
+    label: 'Community commitments',
+    auth: 'public',
+  },
+  {
+    url: '/info/columbus-addendum',
+    label: 'Columbus addendum',
+    auth: 'public',
+  },
 ];
 
 const STATIC_AUTH_ROUTES: RouteScan[] = [
