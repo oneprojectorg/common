@@ -22,10 +22,15 @@ export const OPInvitationEmail = ({
       previewText={`${inviterName} invited you to join ${organizationName ? `${organizationName} on ` : ''} Common! 🎉`}
     >
       <Header>Join {organizationName ?? 'Common'}!</Header>
-      <Text className="my-8 text-lg">
+      <Text className="mt-8 text-lg">
         <strong>{inviterName}</strong> invited you to Common.
       </Text>
 
+      {message ? (
+        <Text>
+          <em>&ldquo;{message}&rdquo;</em>
+        </Text>
+      ) : null}
       <Section className="pb-0">
         <Button
           href={inviteUrl}
@@ -38,7 +43,6 @@ export const OPInvitationEmail = ({
         >
           Accept invite
         </Button>
-        {message ? <Text>{message}</Text> : null}
       </Section>
 
       <Footnote>This invite will expire after 1 week</Footnote>
