@@ -10,6 +10,7 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Form } from '@op/ui/Form';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -145,7 +146,8 @@ export function CustomFormModal({
             className="w-full"
             isDisabled={isSubmitting}
           >
-            {isSubmitting ? t('Submitting...') : (submitLabel ?? t('Submit'))}
+            {isSubmitting ? <LoadingSpinner className="size-4" /> : null}
+            {submitLabel ?? t('Submit')}
           </Button>
         </ModalFooter>
       </Form>
