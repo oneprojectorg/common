@@ -68,8 +68,11 @@ SELECT
     "x-field-order": ["neighborhood", "estimatedBudget", "additionalNotes", "agreeToTerms"]
   }$JSON$::jsonb
 FROM public.profiles p
+-- slug is unique across profiles, so no entity_type check is needed here.
+-- (Comparing against the 'decision' enum value would also fail on fresh
+-- databases: it's added earlier in the same migration transaction, and
+-- Postgres forbids using an enum value before it commits — 55P04.)
 WHERE p.slug = 'columbus'
-  AND p.entity_type = 'decision'
   AND NOT EXISTS (
     SELECT 1 FROM public.custom_forms cf
     WHERE cf.profile_id = p.id
