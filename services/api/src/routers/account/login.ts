@@ -11,11 +11,15 @@ import {
   allowedEmailDomains,
   genericEmail,
 } from '@op/core';
+import { db, eq } from '@op/db/client';
+import { profiles } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import withRateLimited from '../../middlewares/withRateLimited';
-import { createSBAdminClient } from '../../supabase/server';
+import { createSBAdminClient, getCachedAuthUser } from '../../supabase/server';
 import { commonProcedure, router } from '../../trpcFactory';
+import type { TContext, TContextWithLogger } from '../../types';
 
 const login = router({
   login: commonProcedure
@@ -58,6 +62,14 @@ const login = router({
         !allowedEmailDomains.includes(emailDomain) &&
         !adminEmails.includes(input.email)
       ) {
+        if (input.usingOAuth) {
+          // The OAuth code exchange already created the account (auth.users
+          // plus the trigger-created public.users row and individual profile)
+          // before this gate ran, so remove it again or the rejected visitor
+          // persists as an orphaned user.
+          await deleteRejectedOAuthSignup({ ctx, email: input.email });
+        }
+
         throw new UnauthorizedError(
           `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
         );
@@ -88,5 +100,75 @@ const login = router({
       return true;
     }),
 });
+
+const FIRST_SIGN_IN_WINDOW_MS = 60_000;
+
+/**
+ * Whether this sign-in is the one that created the account. Both timestamps
+ * come from GoTrue, so the check is immune to app-server clock skew. A
+ * pre-existing account (e.g. one whose allow-list entry was later revoked)
+ * has a much older `created_at` and must never be deleted.
+ */
+export const wasCreatedByThisSignIn = (
+  user: Pick<User, 'created_at' | 'last_sign_in_at'>,
+): boolean => {
+  if (!user.last_sign_in_at) {
+    return false;
+  }
+
+  const createdAt = new Date(user.created_at).getTime();
+  const lastSignInAt = new Date(user.last_sign_in_at).getTime();
+
+  return Math.abs(lastSignInAt - createdAt) < FIRST_SIGN_IN_WINDOW_MS;
+};
+
+const deleteRejectedOAuthSignup = async ({
+  ctx,
+  email,
+}: {
+  ctx: TContext & TContextWithLogger;
+  email: string;
+}): Promise<void> => {
+  // Cleanup is best-effort: a failure here must not change the login
+  // response, the caller still throws UnauthorizedError.
+  try {
+    const {
+      data: { user: authUser },
+    } = await getCachedAuthUser(ctx);
+
+    if (
+      !authUser?.email ||
+      authUser.email.toLowerCase() !== email ||
+      !wasCreatedByThisSignIn(authUser)
+    ) {
+      return;
+    }
+
+    const orphanedUser = await db.query.users.findFirst({
+      where: { authUserId: authUser.id },
+    });
+
+    const supabase = createSBAdminClient(ctx);
+    // Cascades to the public.users row created by the signup trigger.
+    const { error } = await supabase.auth.admin.deleteUser(authUser.id);
+    if (error) {
+      throw error;
+    }
+
+    if (orphanedUser?.profileId) {
+      await db.delete(profiles).where(eq(profiles.id, orphanedUser.profileId));
+    }
+
+    ctx.logger.info('Deleted account created by rejected OAuth sign-in', {
+      email,
+      authUserId: authUser.id,
+    });
+  } catch (error) {
+    ctx.logger.error('Failed to clean up rejected OAuth sign-in', {
+      email,
+      error,
+    });
+  }
+};
 
 export default login;
