@@ -33,7 +33,7 @@ function ProposalViewPageContent({
       proposal={proposal}
       canSeeRevisions={false}
       backHref={`${decisionRoot}/`}
-      editHref={`${decisionRoot}/proposal/${profileId}/edit`}
+      decisionRoot={decisionRoot}
       selection={null}
     />
   );

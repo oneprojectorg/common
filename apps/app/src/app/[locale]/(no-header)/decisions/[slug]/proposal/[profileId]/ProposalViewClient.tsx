@@ -57,7 +57,7 @@ function ProposalViewPageContent({
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
       backHref={`/decisions/${slug}/current`}
-      editHref={`/decisions/${slug}/proposal/${profileId}/edit`}
+      decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />
   );
