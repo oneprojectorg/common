@@ -12,11 +12,11 @@ const BREAKPOINT_COLS = { default: 3, [lg - 1]: 2, [md - 1]: 1 };
 
 export function ProposalMasonry({ children }: { children: ReactNode }) {
   return (
-    // -ml-6/pl-6 are the column gutter.
+    // -ms-6/ps-6 are the column gutter (logical, so it flips in RTL).
     <Masonry
       breakpointCols={BREAKPOINT_COLS}
-      className="-ml-6 flex w-auto"
-      columnClassName="flex min-w-0 flex-col gap-6 pl-6"
+      className="-ms-6 flex w-auto"
+      columnClassName="flex min-w-0 flex-col gap-6 ps-6"
     >
       {children}
     </Masonry>
