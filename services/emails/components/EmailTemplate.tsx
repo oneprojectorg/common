@@ -55,7 +55,7 @@ const EmailTemplate = ({
 
         <Body className="m-auto bg-[#FAFBFB] p-4 font-sans text-neutral-charcoal">
           <Container className="mt-4 max-w-[648px] md:mt-10">
-            <Container className="mx-auto w-full rounded-lg border border-solid border-neutral-200 bg-white p-8 md:max-w-[600px]">
+            <Container className="mx-auto w-full max-w-[600px] rounded-lg border border-solid border-neutral-200 bg-white p-8">
               <Section>
                 <Row>
                   <Column align="left">
