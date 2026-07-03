@@ -19,6 +19,7 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
 import { EditBannerModal } from './EditBannerModal';
@@ -292,24 +293,7 @@ const OverviewHero = ({
     // offWhite gradient is the empty-state fallback when no image is set.
     <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-neutral-offWhite md:grid-cols-12">
       {heroImageUrl ? (
-        <>
-          <Image
-            src={heroImageUrl}
-            alt=""
-            fill
-            // 6px blur per design; scale-105 hides the translucent rim the blur
-            // pulls in at the edges (section clips the overflow).
-            className="scale-105 object-cover blur-[6px]"
-            // Hero is above the fold — opt out of lazy-loading.
-            priority
-          />
-          {/* Dark scrim so the white hero text stays legible over arbitrary
-              photos. */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-neutral-black/50"
-          />
-        </>
+        <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />
       ) : null}
       {isAdmin ? (
         <EditBannerModal
