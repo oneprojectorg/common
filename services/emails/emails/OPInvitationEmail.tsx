@@ -1,6 +1,7 @@
 import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
 
 interface OPInvitationEmailProps {
@@ -40,9 +41,7 @@ export const OPInvitationEmail = ({
         {message ? <Text>{message}</Text> : null}
       </Section>
 
-      <Text className="mb-0 text-sm text-neutral-gray4">
-        This invite will expire after 1 week
-      </Text>
+      <Footnote>This invite will expire after 1 week</Footnote>
     </EmailTemplate>
   );
 };

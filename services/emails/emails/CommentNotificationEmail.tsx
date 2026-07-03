@@ -1,6 +1,7 @@
-import { Button, Section, Text } from 'react-email';
+import { Button, Row, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 export const CommentNotificationEmail = ({
   commenterName = 'A Common user',
@@ -26,7 +27,8 @@ export const CommentNotificationEmail = ({
       previewText={`${commenterName} commented on your ${contentType}: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`}
     >
       <Text className="my-8 text-lg">
-        <strong>{commenterName}</strong> commented on your {contentType}.
+        <strong>{commenterName}</strong> commented on your{' '}
+        <strong>{contentType}</strong>.
       </Text>
 
       <Section className="my-6">
@@ -49,16 +51,12 @@ export const CommentNotificationEmail = ({
         </Button>
       </Section>
 
-      {contextName && (
-        <Text className="mb-0 text-sm text-neutral-500">
-          Context: {contextName}
-        </Text>
-      )}
-      {postedIn && (
-        <Text className="mt-1 mb-0 text-sm text-neutral-500">
-          Posted in: {postedIn}
-        </Text>
-      )}
+      <Row>
+        {contextName && <Footnote>Context: {contextName}</Footnote>}
+        {postedIn && (
+          <Footnote className="mt-1">Posted in: {postedIn}</Footnote>
+        )}
+      </Row>
     </EmailTemplate>
   );
 };

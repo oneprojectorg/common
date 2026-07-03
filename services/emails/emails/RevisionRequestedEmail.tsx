@@ -1,6 +1,7 @@
 import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
 
 export const RevisionRequestedEmail = ({
@@ -37,9 +38,9 @@ export const RevisionRequestedEmail = ({
         </Button>
       </Section>
 
-      <Text className="mt-8 mb-0 text-sm text-neutral-gray4">
+      <Footnote>
         You're receiving this because you're the author of this proposal.
-      </Text>
+      </Footnote>
     </EmailTemplate>
   );
 };

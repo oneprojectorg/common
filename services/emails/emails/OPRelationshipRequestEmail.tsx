@@ -2,6 +2,7 @@ import { relationshipMap } from '@op/types';
 import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 interface OPRelationshipRequestEmailProps {
   requesterOrgName: string;
@@ -59,10 +60,10 @@ export const OPRelationshipRequestEmail = ({
         </Button>
       </Section>
 
-      <Text className="mb-0 text-sm text-neutral-gray4">
+      <Footnote>
         Once you accept their request, <strong>{requesterOrgName}</strong> will
         appear in your relationships on Common.
-      </Text>
+      </Footnote>
     </EmailTemplate>
   );
 };

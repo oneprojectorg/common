@@ -2,6 +2,7 @@ import { getTextPreview } from '@op/core';
 import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 export const ReactionNotificationEmail = ({
   reactorName = 'A Common user',
@@ -51,11 +52,7 @@ export const ReactionNotificationEmail = ({
         </Button>
       </Section>
 
-      {postedIn && (
-        <Text className="mt-1 mb-0 text-sm text-neutral-gray4">
-          Posted in: {postedIn}
-        </Text>
-      )}
+      {postedIn && <Footnote>Posted in: {postedIn}</Footnote>}
     </EmailTemplate>
   );
 };

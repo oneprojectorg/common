@@ -1,6 +1,7 @@
 import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 export const PhaseTransitionEmail = ({
   processTitle,
@@ -38,9 +39,9 @@ export const PhaseTransitionEmail = ({
         </Button>
       </Section>
 
-      <Text className="mt-8 mb-0 text-sm text-neutral-gray4">
+      <Footnote>
         You're receiving this because you're a participant in {processTitle}.
-      </Text>
+      </Footnote>
     </EmailTemplate>
   );
 };
