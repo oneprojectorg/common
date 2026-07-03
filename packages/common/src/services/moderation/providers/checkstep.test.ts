@@ -119,12 +119,12 @@ describe('createCheckstepProvider', () => {
   });
 
   it('parseWebhook honours a caller-supplied policyMap when scoring violations', () => {
-    // Simulate a Checkstep account whose violence policy is `VLC` (their own
-    // example code) rather than the adapter default `VIO`. The score must
-    // still land under `violence`, not fall through to `other`.
+    // Simulate a Checkstep account whose violence policy uses a code that is
+    // NOT in the adapter defaults. The score must still land under
+    // `violence`, not fall through to `other`.
     const [verdict] = createCheckstepProvider({
       apiKey: 'k',
-      policyMap: { VLC: 'violence' },
+      policyMap: { CUSTOM_VIOLENCE: 'violence' },
     }).parseWebhook!({
       rawBody: JSON.stringify({
         webhook_type: 'decision',
@@ -133,7 +133,7 @@ describe('createCheckstepProvider', () => {
           id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
           type: 'comment',
         },
-        violations: [{ policy: 'VLC', severity: 'high' }],
+        violations: [{ policy: 'CUSTOM_VIOLENCE', severity: 'high' }],
       }),
       headers: {},
     });
@@ -141,6 +141,34 @@ describe('createCheckstepProvider', () => {
     expect(verdict?.scores?.violence).toBeGreaterThan(0);
     // Nothing leaks into the `other` bucket when the caller's map covers it.
     expect(verdict?.scores?.other).toBeUndefined();
+  });
+
+  it('parseWebhook maps the account taxonomy defaults (VLC/SXC/OBS/TER/CEX)', () => {
+    // Pins the shipped default map to the account's real policy codes so a
+    // regression back to the old guessed codes (VIO/SEX/PRF/CSAM) fails.
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
+        content: {
+          id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [
+          { policy: 'VLC', severity: 'high' },
+          { policy: 'SXC', severity: 'medium' },
+          { policy: 'OBS', severity: 'low' },
+          { policy: 'TER', severity: 'high' },
+          { policy: 'SPM', severity: 'low' },
+        ],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.scores?.violence).toBe(1); // VLC high, TER high
+    expect(verdict?.scores?.sexual).toBeGreaterThan(0); // SXC
+    expect(verdict?.scores?.profanity).toBeGreaterThan(0); // OBS
+    expect(verdict?.scores?.other).toBeGreaterThan(0); // SPM
   });
 
   it('parseWebhook honours a caller-supplied csamPolicies list', () => {
@@ -209,7 +237,7 @@ describe('createCheckstepProvider', () => {
         webhook_type: 'decision',
         decision: 'act',
         content: { id: contentId, type: 'comment' },
-        violations: [{ policy: 'CSAM', severity: 'high' }],
+        violations: [{ policy: 'CEX', severity: 'high' }],
       }),
       headers: {},
     });
@@ -235,7 +263,7 @@ describe('createCheckstepProvider', () => {
           id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
           type: 'comment',
         },
-        violations: [{ policy: 'CSAM', severity: 'high' }],
+        violations: [{ policy: 'CEX', severity: 'high' }],
       }),
       headers: {},
     });
@@ -251,7 +279,7 @@ describe('createCheckstepProvider', () => {
           id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
           type: 'comment',
         },
-        violations: [{ policy: 'CSAM', severity: 'high' }],
+        violations: [{ policy: 'CEX', severity: 'high' }],
       }),
       headers: {},
     });
@@ -295,7 +323,7 @@ describe('createCheckstepProvider', () => {
         },
         violations: [
           { policy: 'HTE', severity: 'medium' },
-          { policy: 'CSEA', severity: 'high' },
+          { policy: 'CEX', severity: 'high' },
         ],
       }),
       headers: {},

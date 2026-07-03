@@ -95,30 +95,41 @@ const verifyCheckstepWebhook = (
   return true;
 };
 
-// Default Checkstep policy → category map. Checkstep policies are configured
-// PER-ACCOUNT (docs.checkstep.com/glossary — "Policies reflect your Trust and
-// Safety guidelines for your community"), so the correct codes for a given
-// deployment can drift from this list. Override the map via the factory's
-// `policyMap` option (wired to the `MODERATION_POLICY_MAP` env var in
-// `provider.ts`); unmatched codes fall through to `other` and log a warning
-// so taxonomy drift surfaces immediately.
+// Default Checkstep policy → category map, mirroring the policies configured
+// on OUR Checkstep account (source: dashboard policy list, ONE-331). Policies
+// are per-account (docs.checkstep.com/glossary), so a different deployment
+// can override via the factory's `policyMap` option (wired to the
+// `MODERATION_POLICY_MAP` env var in `provider.ts`); unmatched codes fall
+// through to `other` and log a warning so taxonomy drift surfaces immediately.
+//
+// Our category union is narrower than the account taxonomy, so several
+// policies intentionally map to broader buckets: terrorism → violence,
+// self-harm / illegal / spam / PII / impersonation / disinformation /
+// coordinated-capture → other. `other` still flags and hides — the category
+// only drives score attribution, not enforcement.
 export const DEFAULT_POLICY_MAP: Record<string, ModerationCategory> = {
-  HTE: 'hate',
-  VIO: 'violence',
-  SEX: 'sexual',
-  HRS: 'harassment',
-  PRF: 'profanity',
-  CSAM: 'csam',
-  CSEA: 'csam',
-  CSA: 'csam',
+  HTE: 'hate', // Hate Speech
+  HRS: 'harassment', // Harassment
+  CEX: 'csam', // Child Exploitation → mandatory-detach path
+  TER: 'violence', // Terrorism
+  SSH: 'other', // Promote suicide, self injury or eating disorder
+  VLC: 'violence', // Violence
+  SXC: 'sexual', // Sexual Content
+  ILL: 'other', // Illegal Activities
+  SPM: 'other', // Spam
+  PII: 'other', // Private Information
+  IMP: 'other', // Impersonation
+  OBS: 'profanity', // Profanity Obscene
+  DIS: 'other', // Voting Disinformation
+  MANIP: 'other', // Process Manipulation via coordinated capture
 };
 
-// Default Checkstep policy codes that indicate CSAM. Same account-level
-// caveat as the map above — override via `csamPolicies` (env
-// `MODERATION_CSAM_POLICIES`). Any violation carrying one of these codes
-// escalates the verdict from `flagged` to `csam`, which fires the
-// mandatory-detach path downstream.
-export const DEFAULT_CSAM_POLICIES: readonly string[] = ['CSAM', 'CSEA', 'CSA'];
+// Default Checkstep policy codes that indicate child exploitation — our
+// account's code is `CEX`. Same account-level caveat as the map above;
+// override via `csamPolicies` (env `MODERATION_CSAM_POLICIES`). Any violation
+// carrying one of these codes escalates the verdict from `flagged` to `csam`,
+// which fires the mandatory-detach path downstream.
+export const DEFAULT_CSAM_POLICIES: readonly string[] = ['CEX'];
 
 // Checkstep severity buckets mapped onto our 0-1 scale.
 const SEVERITY_SCORE: Record<string, number> = {
