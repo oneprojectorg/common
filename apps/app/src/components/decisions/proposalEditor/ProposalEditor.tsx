@@ -212,12 +212,14 @@ function ProposalEditorInner({
 
   // Look up the optional post-submit form attached to this decision profile.
   // The form, not the slug, gates the modal — any decision profile can opt
-  // in by having a `custom_forms` row.
+  // in by having a `custom_forms` row. This subscription renders the modal;
+  // the submit handler decides via `utils.customForm.getForProfile.fetch`
+  // (cache-backed) so a click before this query resolves can't bypass the
+  // required form.
   const { data: customForm } = trpc.customForm.getForProfile.useQuery(
     { profileId: instance.profileId ?? '' },
     { enabled: Boolean(instance.profileId) && isDraft },
   );
-  const customFormEnabled = Boolean(customForm) && isDraft;
 
   // -- Instance config -------------------------------------------------------
 
@@ -265,7 +267,9 @@ function ProposalEditorInner({
     onError: (error) => handleMutationError(error, 'update', t),
   });
 
-  const submitCustomFormMutation = trpc.customForm.submit.useMutation();
+  const submitCustomFormMutation = trpc.customForm.submit.useMutation({
+    onError: (error) => handleMutationError(error, 'submit', t),
+  });
 
   // -- UI state handlers -----------------------------------------------------
 
@@ -379,10 +383,17 @@ function ProposalEditorInner({
       });
 
       // On instances with a post-submit custom form, defer the actual draft
-      // submission until the user fills in (or dismisses) the form.
-      if (customFormEnabled) {
-        setShowCustomFormModal(true);
-        return;
+      // submission until the user completes the form. Resolve the form via
+      // the query cache (fetch, not hook state) so a click before the
+      // subscription resolves still routes through the required form.
+      if (isDraft && instance.profileId) {
+        const form = await utils.customForm.getForProfile.fetch({
+          profileId: instance.profileId,
+        });
+        if (form) {
+          setShowCustomFormModal(true);
+          return;
+        }
       }
 
       await finalizeSubmit();
@@ -396,7 +407,8 @@ function ProposalEditorInner({
     collaborationDocId,
     proposal,
     isDraft,
-    customFormEnabled,
+    instance.profileId,
+    utils,
     updateProposalMutation,
     draftRef,
     validate,
@@ -548,7 +560,7 @@ function ProposalEditorInner({
         />
       )}
 
-      {customFormEnabled && customForm && (
+      {isDraft && customForm && (
         <CustomFormModal
           isOpen={showCustomFormModal}
           schema={customForm.schema}

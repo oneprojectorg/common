@@ -10,7 +10,6 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Form } from '@op/ui/Form';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -37,35 +36,6 @@ interface CustomFormModalProps {
   onOpenChange: (open: boolean) => void;
   /** Label for the submit button; defaults to a generic "Submit". */
   submitLabel?: string;
-}
-
-function isCustomFormDefinition(
-  schema: Record<string, unknown>,
-): schema is CustomFormDefinitionSchema {
-  return (
-    schema.type === 'object' &&
-    typeof schema.properties === 'object' &&
-    schema.properties !== null
-  );
-}
-
-/** Field keys ordered by `x-field-order`, then any remaining properties. */
-function getFieldOrder(definition: CustomFormDefinitionSchema): string[] {
-  const properties = definition.properties ?? {};
-  const ordered = definition['x-field-order'] ?? [];
-  return [
-    ...ordered.filter((key) => properties[key]),
-    ...Object.keys(properties).filter((key) => !ordered.includes(key)),
-  ];
-}
-
-/** Drop unanswered fields so optional empties don't fail type validation. */
-function cleanValues(values: CustomFormValues): CustomFormValues {
-  return Object.fromEntries(
-    Object.entries(values).filter(
-      ([, value]) => value !== undefined && value !== '',
-    ),
-  );
 }
 
 export function CustomFormModal({
@@ -98,6 +68,11 @@ export function CustomFormModal({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // Guard against Enter-key re-fires while a submission is in flight —
+    // only the button is disabled, not the form's onSubmit.
+    if (isSubmitting) {
+      return;
+    }
     const cleaned = cleanValues(values);
     const result = schemaValidator.validate(definition, cleaned);
     if (!result.valid) {
@@ -106,6 +81,13 @@ export function CustomFormModal({
     }
     await onSubmit(cleaned);
   };
+
+  // Validation errors that don't key to a rendered field (root-level or
+  // nested paths from AJV) would otherwise be invisible.
+  const fieldKeys = new Set(Object.keys(definition.properties ?? {}));
+  const formLevelErrors = Object.entries(errors)
+    .filter(([key]) => !fieldKeys.has(key))
+    .map(([, message]) => message);
 
   return (
     // Cap the panel below the viewport so a tall form always leaves 2rem of
@@ -146,6 +128,15 @@ export function CustomFormModal({
               />
             );
           })}
+          {formLevelErrors.length > 0 ? (
+            <div className="flex flex-col gap-1">
+              {formLevelErrors.map((message) => (
+                <p key={message} className="text-sm text-functional-red">
+                  {message}
+                </p>
+              ))}
+            </div>
+          ) : null}
         </ModalBody>
         <ModalFooter className="sticky">
           <Button
@@ -154,8 +145,7 @@ export function CustomFormModal({
             className="w-full"
             isDisabled={isSubmitting}
           >
-            {isSubmitting ? <LoadingSpinner className="size-4" /> : null}
-            {submitLabel ?? t('Submit')}
+            {isSubmitting ? t('Submitting...') : (submitLabel ?? t('Submit'))}
           </Button>
         </ModalFooter>
       </Form>
@@ -361,5 +351,34 @@ function CustomFormField({
       onChange={onChange}
       textareaProps={useTextArea ? { rows: 3 } : undefined}
     />
+  );
+}
+
+function isCustomFormDefinition(
+  schema: Record<string, unknown>,
+): schema is CustomFormDefinitionSchema {
+  return (
+    schema.type === 'object' &&
+    typeof schema.properties === 'object' &&
+    schema.properties !== null
+  );
+}
+
+/** Field keys ordered by `x-field-order`, then any remaining properties. */
+function getFieldOrder(definition: CustomFormDefinitionSchema): string[] {
+  const properties = definition.properties ?? {};
+  const ordered = definition['x-field-order'] ?? [];
+  return [
+    ...ordered.filter((key) => properties[key]),
+    ...Object.keys(properties).filter((key) => !ordered.includes(key)),
+  ];
+}
+
+/** Drop unanswered fields so optional empties don't fail type validation. */
+function cleanValues(values: CustomFormValues): CustomFormValues {
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([, value]) => value !== undefined && value !== '',
+    ),
   );
 }

@@ -88,10 +88,13 @@ export {
   customFormSchema,
   customFormSubmissionSchema,
   createCustomFormSubmissionInputSchema,
+  getCustomFormForProfileInputSchema,
+  CUSTOM_FORM_SUBMISSION_MAX_BYTES,
   type CustomFormDTO,
   type CustomFormSubmissionDTO,
   type CustomFormDefinitionSchema,
   type CreateCustomFormSubmissionInput,
+  type GetCustomFormForProfileInput,
 } from './services/customForms/schemas/customForm';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';
