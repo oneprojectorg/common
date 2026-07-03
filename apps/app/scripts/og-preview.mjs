@@ -14,7 +14,7 @@ const size = { width: 1200, height: 630 };
 const TEAL_GRADIENT = 'linear-gradient(135deg, #387582 0%, #32606C 100%)';
 const GRADIENTS = {
   'bg-gradient':
-    'radial-gradient(154% 99.31% at 0% 0%, #3ec300 0%, #0396a6 51.56%)',
+    'radial-gradient(154% 99.31% at 0% 0%, #7CCC4F 0%, #387582 51.56%)',
   'bg-redTeal':
     'radial-gradient(96.92% 140.1% at 72.02% 100%, #3F8D99 0%, #CC3D31 92%)',
   'bg-blueGreen':

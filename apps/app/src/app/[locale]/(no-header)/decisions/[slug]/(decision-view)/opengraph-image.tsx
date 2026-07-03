@@ -33,7 +33,7 @@ type AvatarGradientClass = ReturnType<
 >['gradient'];
 const GRADIENT_CSS: Record<AvatarGradientClass, string> = {
   'bg-gradient':
-    'radial-gradient(154% 99.31% at 0% 0%, #3ec300 0%, #0396a6 51.56%)',
+    'radial-gradient(154% 99.31% at 0% 0%, #7CCC4F 0%, #387582 51.56%)',
   // redTeal intentionally drops the utility's #fafbfb 100% off-white tail — it
   // reads as a washed-out corner at OG-card scale.
   'bg-redTeal':
