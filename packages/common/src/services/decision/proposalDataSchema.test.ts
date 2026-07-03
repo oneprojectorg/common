@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { assembleProposalData } from './assembleProposalData';
 import {
+  isDistrictCategoryLabel,
   normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
@@ -32,6 +33,25 @@ describe('proposalDataSchema category normalization', () => {
     });
 
     expect(result.category).toEqual(['Housing', 'Public Transit']);
+  });
+});
+
+describe('isDistrictCategoryLabel', () => {
+  it('matches boundary-derived "District N" labels regardless of case or surrounding whitespace', () => {
+    expect(isDistrictCategoryLabel('District 1')).toBe(true);
+    expect(isDistrictCategoryLabel('District 10')).toBe(true);
+    expect(isDistrictCategoryLabel('district 7')).toBe(true);
+    expect(isDistrictCategoryLabel('DISTRICT 3')).toBe(true);
+    expect(isDistrictCategoryLabel('  District 2  ')).toBe(true);
+  });
+
+  it('does not match category labels that merely contain the word district', () => {
+    expect(isDistrictCategoryLabel('Parks')).toBe(false);
+    expect(isDistrictCategoryLabel('District')).toBe(false);
+    expect(isDistrictCategoryLabel('Districts 2')).toBe(false);
+    expect(isDistrictCategoryLabel('District One')).toBe(false);
+    expect(isDistrictCategoryLabel('West District 1')).toBe(false);
+    expect(isDistrictCategoryLabel('District 1 Cleanup')).toBe(false);
   });
 });
 

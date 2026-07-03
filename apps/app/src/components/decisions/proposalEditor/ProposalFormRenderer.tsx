@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   formatProposalCategories,
+  isDistrictCategoryLabel,
   parseCategoryFragmentValue,
   parseSchemaOptions,
   schemaAllowsMultipleSelection,
@@ -238,11 +239,18 @@ function renderField(
       );
     }
 
+    // District categories are auto-assigned from the proposal's location, so
+    // they are hidden from the dropdown but kept in the schema (and in the
+    // readonly display above) so auto-filled values still validate and render.
+    const selectableOptions = options.filter(
+      (opt) => !isDistrictCategoryLabel(opt.label),
+    );
+
     if (isMultipleSelection) {
       return (
         <div className="min-w-0">
           <CollaborativeMultiSelectField
-            options={options}
+            options={selectableOptions}
             initialValue={draft.category}
             onChange={(value) => onFieldChange('category', value)}
             fragmentName="category"
@@ -254,7 +262,7 @@ function renderField(
 
     return (
       <CollaborativeDropdownField
-        options={options}
+        options={selectableOptions}
         initialValue={draft.category[0] ?? null}
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
