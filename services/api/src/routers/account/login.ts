@@ -116,10 +116,14 @@ export const wasCreatedByThisSignIn = (user: {
     return false;
   }
 
-  const createdAt = new Date(user.created_at).getTime();
-  const lastSignInAt = new Date(user.last_sign_in_at).getTime();
+  const msFromCreationToSignIn =
+    new Date(user.last_sign_in_at).getTime() -
+    new Date(user.created_at).getTime();
 
-  return Math.abs(lastSignInAt - createdAt) < FIRST_SIGN_IN_WINDOW_MS;
+  return (
+    msFromCreationToSignIn >= 0 &&
+    msFromCreationToSignIn < FIRST_SIGN_IN_WINDOW_MS
+  );
 };
 
 const deleteRejectedOAuthSignup = async ({
@@ -148,15 +152,38 @@ const deleteRejectedOAuthSignup = async ({
       where: { authUserId: authUser.id },
     });
 
+    // The signup trigger's ON CONFLICT (email) branch can repoint a
+    // pre-existing users row (and its established profile) at the
+    // just-created auth user. The trigger copies created_at from the auth
+    // user on insert, so only a row whose created_at matches this signup is
+    // safe to delete.
+    if (
+      !orphanedUser?.createdAt ||
+      Math.abs(
+        new Date(orphanedUser.createdAt).getTime() -
+          new Date(authUser.created_at).getTime(),
+      ) >= FIRST_SIGN_IN_WINDOW_MS
+    ) {
+      return;
+    }
+
+    // Delete the profile first: if the auth-user deletion below fails, the
+    // leftover is a full account (auditable, same shape as the original bug)
+    // rather than an invisible ownerless profile.
+    if (orphanedUser.profileId) {
+      await db.delete(profiles).where(eq(profiles.id, orphanedUser.profileId));
+    }
+
     const supabase = createSBAdminClient(ctx);
     // Cascades to the public.users row created by the signup trigger.
     const { error } = await supabase.auth.admin.deleteUser(authUser.id);
     if (error) {
-      throw error;
-    }
-
-    if (orphanedUser?.profileId) {
-      await db.delete(profiles).where(eq(profiles.id, orphanedUser.profileId));
+      ctx.logger.error('Failed to delete auth user of rejected OAuth sign-in', {
+        email,
+        authUserId: authUser.id,
+        error,
+      });
+      return;
     }
 
     ctx.logger.info('Deleted account created by rejected OAuth sign-in', {

@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import { randomUUID } from 'crypto';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { appRouter } from '..';
 import {
@@ -19,9 +19,7 @@ const createCaller = createCallerFactory(appRouter);
  * `allowedEmailDomains`, mimicking the account Supabase creates during a
  * Google OAuth code exchange before the allow-list gate runs.
  */
-const signUpNonAllowlistedUser = async (
-  onTestFinished: (fn: () => Promise<void>) => void,
-) => {
+const signUpNonAllowlistedUser = async () => {
   const email = `oauth-orphan-${randomUUID()}@example.com`;
   const { user, session } = await createTestUser(email);
   if (!user || !session) {
@@ -31,29 +29,25 @@ const signUpNonAllowlistedUser = async (
   const userRow = await db.query.users.findFirst({
     where: { authUserId: user.id },
   });
+  if (!userRow?.profileId) {
+    throw new Error(`Signup trigger did not create a profile for ${email}`);
+  }
+  const profileId = userRow.profileId;
 
   onTestFinished(async () => {
-    if (userRow?.profileId) {
-      await db.delete(profiles).where(eq(profiles.id, userRow.profileId));
-    }
+    await db.delete(profiles).where(eq(profiles.id, profileId));
     await supabaseTestAdminClient.auth.admin
       .deleteUser(user.id)
       .catch(() => {});
   });
 
-  return { email, user, session, userRow };
+  return { email, user, session, profileId };
 };
 
 describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
-  it('deletes the just-created account when the allow-list rejects an OAuth sign-in', async ({
-    onTestFinished,
-  }) => {
-    const { email, user, session, userRow } =
-      await signUpNonAllowlistedUser(onTestFinished);
-
-    // The signup trigger created the public.users row and an individual profile.
-    expect(userRow).toBeDefined();
-    expect(userRow?.profileId).toBeTruthy();
+  it('deletes the just-created account when the allow-list rejects an OAuth sign-in', async () => {
+    const { email, user, session, profileId } =
+      await signUpNonAllowlistedUser();
 
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
@@ -62,7 +56,7 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
-    expect(authAfter?.user ?? null).toBeNull();
+    expect(authAfter?.user).toBeFalsy();
 
     const userRowAfter = await db.query.users.findFirst({
       where: { authUserId: user.id },
@@ -70,16 +64,13 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     expect(userRowAfter).toBeUndefined();
 
     const profileAfter = await db.query.profiles.findFirst({
-      where: { id: userRow!.profileId! },
+      where: { id: profileId },
     });
     expect(profileAfter).toBeUndefined();
   });
 
-  it('keeps the account when a rejected login is not OAuth', async ({
-    onTestFinished,
-  }) => {
-    const { email, user, session } =
-      await signUpNonAllowlistedUser(onTestFinished);
+  it('keeps the account when a rejected login is not OAuth', async () => {
+    const { email, user, session } = await signUpNonAllowlistedUser();
 
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
@@ -91,10 +82,8 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     expect(authAfter?.user?.id).toBe(user.id);
   });
 
-  it('keeps the account when the session does not belong to the rejected email', async ({
-    onTestFinished,
-  }) => {
-    const { user, session } = await signUpNonAllowlistedUser(onTestFinished);
+  it('keeps the account when the session does not belong to the rejected email', async () => {
+    const { user, session } = await signUpNonAllowlistedUser();
 
     const caller = createCaller(await createTestContextWithSession(session));
     const otherEmail = `oauth-orphan-${randomUUID()}@example.com`;
@@ -125,6 +114,15 @@ describe('wasCreatedByThisSignIn', () => {
       wasCreatedByThisSignIn({
         created_at: createdAt,
         last_sign_in_at: '2026-01-02T12:00:00.000Z',
+      }),
+    ).toBe(false);
+  });
+
+  it('is false when the last sign-in precedes account creation', () => {
+    expect(
+      wasCreatedByThisSignIn({
+        created_at: createdAt,
+        last_sign_in_at: '2026-01-01T11:59:00.000Z',
       }),
     ).toBe(false);
   });
