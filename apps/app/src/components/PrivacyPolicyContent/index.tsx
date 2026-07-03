@@ -536,8 +536,15 @@ export const PrivacyPolicyContent = () => {
               any time without affecting your ability to participate in our
               services by declining to receive such emails when registering, in
               our subsequent communications by following opt-out or unsubscribe
-              instructions included in the email, by contacting us, or at other
-              information collection points while using the Services.
+              instructions included in the email, by{' '}
+              <a
+                href="#contact-us"
+                className="text-primary-teal hover:underline"
+              >
+                contacting us
+              </a>
+              , or at other information collection points while using the
+              Services.
             </li>
             <li className="mb-2">
               We also perform statistical analyses of the users of our Services
@@ -679,11 +686,15 @@ export const PrivacyPolicyContent = () => {
           <p className="mb-4">
             In the event you wish to make a right request, file a complaint
             about how we process your Personal Data, or appeal the denial of one
-            of your requests, please contact us. Even if you make a complaint to
-            us, you may also in some jurisdictions lodge a complaint with the
-            relevant privacy or data protection authority in your location. Upon
-            rejection of an individual rights request you may also have the
-            right to file a lawsuit in court in accordance with the law.
+            of your requests, please{' '}
+            <a href="#contact-us" className="text-primary-teal hover:underline">
+              contact us
+            </a>
+            . Even if you make a complaint to us, you may also in some
+            jurisdictions lodge a complaint with the relevant privacy or data
+            protection authority in your location. Upon rejection of an
+            individual rights request you may also have the right to file a
+            lawsuit in court in accordance with the law.
           </p>
           <p className="mb-4">
             We will not discriminate against you for exercising any of the
@@ -791,27 +802,30 @@ export const PrivacyPolicyContent = () => {
         </p>
       </FormalSection>
 
-      <FormalSection>
-        <Header3 className="font-serif">Contact Us</Header3>
-        <p className="mb-4">
-          If you have questions or comments about this Notice or about how your
-          Personal Data is processed, or to exercise your privacy rights, please
-          contact us by one of the methods below:
-        </p>
-        <p className="mb-2">
-          Email:{' '}
-          <a
-            href="mailto:privacy@oneproject.org"
-            className="text-primary-teal hover:underline"
-          >
-            privacy@oneproject.org
-          </a>
-        </p>
-        <p className="mb-2">
-          Mail: 548 Market Street, Suite 85871, San Francisco, California 94104
-        </p>
-        <p className="mb-2">Phone: (408) 461-7921‬</p>
-      </FormalSection>
+      <div id="contact-us">
+        <FormalSection>
+          <Header3 className="font-serif">Contact Us</Header3>
+          <p className="mb-4">
+            If you have questions or comments about this Notice or about how
+            your Personal Data is processed, or to exercise your privacy rights,
+            please contact us by one of the methods below:
+          </p>
+          <p className="mb-2">
+            Email:{' '}
+            <a
+              href="mailto:privacy@oneproject.org"
+              className="text-primary-teal hover:underline"
+            >
+              privacy@oneproject.org
+            </a>
+          </p>
+          <p className="mb-2">
+            Mail: 548 Market Street, Suite 85871, San Francisco, California
+            94104
+          </p>
+          <p className="mb-2">Phone: (408) 461-7921‬</p>
+        </FormalSection>
+      </div>
     </div>
   );
 };

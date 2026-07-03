@@ -135,35 +135,37 @@ export const CommunityCommitmentsContent = () => {
         </p>
       </FormalSection>
 
-      <FormalSection>
-        <Header3 className="font-serif">
-          <span id="prohibited-content">What We Don’t Allow on Common</span>
-        </Header3>
-        <p className="mb-4">
-          Common is a space for democratic and participatory processes. To keep
-          it that way, we need to be clear about what’s not welcome here. The
-          Prohibited Content Policy below applies to everyone on Common —
-          organizations, individuals, and process administrators alike. They
-          cover content posted on the platform, how users conduct themselves,
-          and how participatory processes are run. Participatory process
-          administrators may adopt further measures that protect their processes
-          and communities and can enforce their own rules, as long as those
-          rules are not in contradiction with the Prohibited Content Policy,
-          Community Commitments, and{' '}
-          <a href="/info/tos" className="text-primary-teal hover:underline">
-            Terms of Service
-          </a>
-          .
-        </p>
-        <p className="mb-4">
-          Violations can result in content being removed, accounts being
-          suspended or terminated, or processes being paused or invalidated.
-          Serious violations may be referred to law enforcement. If Common users
-          have provided us with contact information, they will be notified why
-          action was taken with regards to their content, account, or process,
-          and have the ability to appeal those decisions.
-        </p>
-      </FormalSection>
+      <div id="prohibited-content">
+        <FormalSection>
+          <Header3 className="font-serif">
+            What We Don’t Allow on Common
+          </Header3>
+          <p className="mb-4">
+            Common is a space for democratic and participatory processes. To
+            keep it that way, we need to be clear about what’s not welcome here.
+            The Prohibited Content Policy below applies to everyone on Common —
+            organizations, individuals, and process administrators alike. They
+            cover content posted on the platform, how users conduct themselves,
+            and how participatory processes are run. Participatory process
+            administrators may adopt further measures that protect their
+            processes and communities and can enforce their own rules, as long
+            as those rules are not in contradiction with the Prohibited Content
+            Policy, Community Commitments, and{' '}
+            <a href="/info/tos" className="text-primary-teal hover:underline">
+              Terms of Service
+            </a>
+            .
+          </p>
+          <p className="mb-4">
+            Violations can result in content being removed, accounts being
+            suspended or terminated, or processes being paused or invalidated.
+            Serious violations may be referred to law enforcement. If Common
+            users have provided us with contact information, they will be
+            notified why action was taken with regards to their content,
+            account, or process, and have the ability to appeal those decisions.
+          </p>
+        </FormalSection>
+      </div>
 
       <FormalSection>
         <Header3 className="font-serif">Prohibited Content:</Header3>

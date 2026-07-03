@@ -71,6 +71,8 @@ export const ToSContentShort = () => {
           All users of the Platform must comply with our{' '}
           <a
             href="/info/community-commitments"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-primary-teal hover:underline"
           >
             Community Commitments
