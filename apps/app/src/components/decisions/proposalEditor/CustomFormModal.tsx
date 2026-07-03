@@ -5,11 +5,14 @@ import type {
   XFormatPropertySchema,
 } from '@op/common/client';
 import { schemaValidator } from '@op/common/client';
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Form } from '@op/ui/Form';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import type { Key } from 'react';
@@ -175,6 +178,9 @@ function CustomFormField({
   onChange,
 }: CustomFormFieldProps) {
   const label = field.title ?? name;
+  // Same breakpoint the NPS survey uses to swap its scale control between
+  // a horizontal radio row (desktop) and a dropdown (mobile).
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   if (field.type === 'boolean') {
     return (
@@ -235,6 +241,59 @@ function CustomFormField({
         return typeof option === 'string';
       })
     : [];
+
+  // NPS-style numeric scale — matches the ProcessSurveyModal control:
+  // horizontal radio row with the label under each number on desktop,
+  // dropdown on mobile.
+  if (field['x-format'] === 'scale' && enumOptions.length > 0) {
+    const selected = typeof value === 'string' ? value : null;
+
+    if (isMobile) {
+      return (
+        <Select
+          label={label}
+          description={field.description}
+          errorMessage={error}
+          isRequired={isRequired}
+          selectedKey={selected}
+          onSelectionChange={(key: Key | null) => {
+            onChange(key == null ? undefined : String(key));
+          }}
+        >
+          {enumOptions.map((option) => (
+            <SelectItem key={option} id={option} textValue={option}>
+              {option}
+            </SelectItem>
+          ))}
+        </Select>
+      );
+    }
+
+    return (
+      <RadioGroup
+        label={label}
+        description={field.description}
+        errorMessage={error}
+        isInvalid={Boolean(error)}
+        isRequired={isRequired}
+        value={selected}
+        onChange={(next) => onChange(next || undefined)}
+        orientation="horizontal"
+        className="[&>div]:w-full [&>div]:justify-between [&>div]:gap-0"
+      >
+        {enumOptions.map((option) => (
+          <Radio
+            key={option}
+            value={option}
+            labelPosition="bottom"
+            className="flex-1"
+          >
+            {option}
+          </Radio>
+        ))}
+      </RadioGroup>
+    );
+  }
 
   if (field['x-format'] === 'dropdown' || enumOptions.length > 0) {
     const selected = typeof value === 'string' ? value : undefined;
