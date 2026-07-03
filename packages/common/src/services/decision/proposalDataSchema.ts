@@ -347,6 +347,19 @@ export function parseSchemaOptions(
   return [];
 }
 
+const DISTRICT_CATEGORY_LABEL_PATTERN = /^district\s*\d+$/i;
+
+/**
+ * Matches boundary-derived "District N" category labels. These categories are
+ * auto-assigned from the proposal's pin location (see `boundaryCategory.ts`),
+ * not user-selected, so the proposal form hides them from the category
+ * dropdown while keeping them in the schema so auto-filled values still
+ * validate.
+ */
+export function isDistrictCategoryLabel(label: string): boolean {
+  return DISTRICT_CATEGORY_LABEL_PATTERN.test(label.trim());
+}
+
 /**
  * Check whether a JSON Schema property has selectable options.
  *
