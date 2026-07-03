@@ -35,8 +35,19 @@ export interface NumberFieldProps extends Omit<
   onInput?: (value: number | null) => void;
 }
 
-const filterNumericInput = (value: string) => {
+// Normalize non-ASCII numerals to ASCII so the field accepts Arabic input.
+// Arabic-Indic (U+0660–0669) and Extended Arabic-Indic/Persian (U+06F0–06F9)
+// digits map to ASCII; Arabic decimal/thousands separators map to `.`/``.
+const normalizeDigits = (value: string) => {
   return value
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/٫/g, '.') // Arabic decimal separator
+    .replace(/٬/g, ''); // Arabic thousands separator
+};
+
+const filterNumericInput = (value: string) => {
+  return normalizeDigits(value)
     .replace(/[^0-9.-]/g, '') // Keep only digits, minus, and decimal
     .replace(/(?!^)-/g, '') // Remove minus signs that aren't at the beginning
     .replace(/\.(?=.*\.)/g, ''); // Remove decimal points except the last one

@@ -83,7 +83,11 @@ export function RichTextRenderer({
       : null;
   }
 
-  return <div className={viewerProseStyles}>{body}</div>;
+  return (
+    <div dir="auto" className={viewerProseStyles}>
+      {body}
+    </div>
+  );
 }
 
 /**

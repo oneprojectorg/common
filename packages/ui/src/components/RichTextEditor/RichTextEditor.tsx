@@ -85,7 +85,10 @@ export const RichTextEditor = forwardRef<
 
     return (
       <div className={className}>
-        <StyledRichTextContent editor={editor} />
+        <StyledRichTextContent
+          dir={editor.isEmpty ? undefined : 'auto'}
+          editor={editor}
+        />
       </div>
     );
   },

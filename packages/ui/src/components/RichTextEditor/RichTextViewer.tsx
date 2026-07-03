@@ -40,7 +40,7 @@ export function RichTextViewer({
 
   return (
     <div className={className}>
-      <StyledRichTextContent editor={editor} />
+      <StyledRichTextContent dir="auto" editor={editor} />
     </div>
   );
 }

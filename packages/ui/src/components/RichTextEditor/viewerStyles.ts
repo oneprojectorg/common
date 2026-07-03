@@ -20,6 +20,10 @@ export const viewerProseStyles = [
   '[&_li_p]:my-0',
   '[&_blockquote]:font-normal',
   '[&_:is(h1,h2,h3)]:my-4',
+  // Per-block bidi: each paragraph/heading/list-item resolves its own
+  // direction from content, so mixed LTR/RTL prose aligns correctly without
+  // a per-element dir attribute (text-align: start follows each block's dir).
+  '[&_:is(p,h1,h2,h3,h4,li,blockquote)]:[unicode-bidi:plaintext]',
   'leading-5 max-w-none break-words overflow-wrap-anywhere',
   // Details/Summary (collapsible) chrome lives in one raw-CSS block in
   // `@op/styles` (`.details` in shared-styles.css), shared by the editor's

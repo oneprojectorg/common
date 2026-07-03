@@ -5,11 +5,11 @@ import { useDebounce } from '@op/hooks';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
-import { Link, useRouter } from '@/lib/i18n';
+import { getLocaleDirection, Link, useRouter } from '@/lib/i18n';
 
 import { ProfileResults } from './ProfileResults';
 import { RecentSearches } from './RecentSearches';
@@ -25,6 +25,8 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const [showResults, setShowResults] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isMobile, setIsMobile] = useState(false);
+  const locale = useLocale();
+  const localeDirection = getLocaleDirection(locale);
 
   // Check if we're on mobile using the same breakpoint as the header
   useEffect(() => {
@@ -169,6 +171,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       <TextField
         ref={inputRef}
         inputProps={{
+          dir: query.length > 0 ? 'auto' : undefined,
           placeholder: t('Search'),
           color: 'muted',
           size: 'small',
@@ -181,6 +184,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             'bg-transparent placeholder:text-neutral-gray4 focus-visible:bg-white active:bg-white active:text-neutral-gray3',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'sm:rounded-b-none',
+            localeDirection === 'rtl' && 'pl-4', // override logical padding property due to dir="auto" in inputProps
           ),
           onKeyDown: handleKeyDown,
           'aria-expanded': dropdownShowing,

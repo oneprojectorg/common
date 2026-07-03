@@ -86,5 +86,7 @@ export function CollaborativeTitleField({
     return <Skeleton className="h-8" />;
   }
 
-  return <EditorContent editor={editor} />;
+  return (
+    <EditorContent dir={editor.isEmpty ? undefined : 'auto'} editor={editor} />
+  );
 }

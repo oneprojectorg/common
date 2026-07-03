@@ -64,7 +64,7 @@ const CompletedPhaseCard = ({
 }: PhaseContentProps) => (
   <li
     className={cn(
-      'flex flex-col gap-2 border-l border-functional-green-100 px-4 py-2',
+      'flex flex-col gap-2 border-s border-functional-green-100 px-4 py-2',
       className,
     )}
   >
@@ -162,7 +162,7 @@ const UpcomingPhaseCard = ({
 }: PhaseContentProps) => (
   <li
     className={cn(
-      'flex flex-col gap-2 border-l border-neutral-gray1 px-4 py-2',
+      'flex flex-col gap-2 border-s border-neutral-gray1 px-4 py-2',
       className,
     )}
   >
