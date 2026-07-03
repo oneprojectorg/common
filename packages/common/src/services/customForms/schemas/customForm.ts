@@ -1,4 +1,20 @@
+import type { JSONSchema7 } from 'json-schema';
 import { z } from 'zod';
+
+import type { XFormatPropertySchema } from '../../decision/types';
+
+/**
+ * Custom form definitions use the same JSON Schema dialect as proposal
+ * templates: standard JSON Schema keywords describe the data shape, and
+ * the `x-format` vendor extension per property plus `x-field-order`
+ * describe presentation. Data is validated with the shared
+ * `schemaValidator` (AJV) on submit.
+ */
+export interface CustomFormDefinitionSchema extends JSONSchema7 {
+  [key: string]: unknown;
+  properties?: Record<string, XFormatPropertySchema>;
+  'x-field-order'?: string[];
+}
 
 /**
  * Wire schema for a `custom_forms` row. The `schema` field intentionally

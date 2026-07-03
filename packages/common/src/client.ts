@@ -84,6 +84,15 @@ export {
   schemaValidator,
   type SchemaValidationResult,
 } from './services/decision/schemaValidator';
+export {
+  customFormSchema,
+  customFormSubmissionSchema,
+  createCustomFormSubmissionInputSchema,
+  type CustomFormDTO,
+  type CustomFormSubmissionDTO,
+  type CustomFormDefinitionSchema,
+  type CreateCustomFormSubmissionInput,
+} from './services/customForms/schemas/customForm';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';
 export { sanitizeTiptapDoc } from './services/decision/sanitizeTiptapDoc';
