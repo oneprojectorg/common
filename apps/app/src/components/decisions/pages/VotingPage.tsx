@@ -86,7 +86,7 @@ export function VotingPage({
   return (
     <div className="min-h-full">
       <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 py-16">
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
             title={heroTitle}
             description={heroDescription ? <p>{heroDescription}</p> : undefined}
