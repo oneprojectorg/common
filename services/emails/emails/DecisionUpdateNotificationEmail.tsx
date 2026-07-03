@@ -30,7 +30,7 @@ export const DecisionUpdateNotificationEmail = ({
       </Text>
 
       <Section className="my-6">
-        <Text className="my-0 text-lg text-neutral-charcoal">
+        <Text className="my-0 text-lg wrap-anywhere text-neutral-charcoal">
           "{updateContent}"
         </Text>
       </Section>
@@ -53,7 +53,7 @@ DecisionUpdateNotificationEmail.PreviewProps = {
   authorName: 'Jordan Rivera',
   processTitle: 'Participatory Budgeting 2026',
   updateContent:
-    "We've reviewed all submitted proposals and shortlisted twelve for the voting phase. Voting opens Monday.",
+    "Don't forget to come to the party! Details here: https://example.com/events/participatory-budgeting-kickoff?utm_source=email&utm_medium=notification&utm_campaign=cityofcolumbus&x_ns_sku_id=87997840130746&gad_campaignid=21075393992&gbraid=0AAAAo4mICF4hxE_DoU0PFAMy32",
   updateUrl: 'https://common.oneproject.org/',
 } satisfies Parameters<typeof DecisionUpdateNotificationEmail>[0];
 
