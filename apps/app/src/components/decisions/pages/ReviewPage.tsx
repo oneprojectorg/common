@@ -67,7 +67,7 @@ export function ReviewPage({
   return (
     <div className="min-h-full">
       <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 py-16">
           <DecisionHero
             title={
               isAdmin ? (
