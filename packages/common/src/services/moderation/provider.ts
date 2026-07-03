@@ -34,7 +34,7 @@ const parsePolicyMap = (
   return parsed.data;
 };
 
-const parseCsamPolicies = (raw: string | undefined): string[] | undefined => {
+const parseDetachPolicies = (raw: string | undefined): string[] | undefined => {
   if (!raw?.trim()) {
     return undefined;
   }
@@ -51,11 +51,12 @@ const parseCsamPolicies = (raw: string | undefined): string[] | undefined => {
  * used to verify inbound webhooks. When set, every callback must present a
  * valid `x-auth-signature`.
  *
- * `MODERATION_POLICY_MAP` (JSON) and `MODERATION_CSAM_POLICIES` (comma list)
- * override the Checkstep policy → category taxonomy and the CSAM code set.
- * Both are optional; without them the adapter falls back to sensible defaults.
- * Because Checkstep policies are configured per-account, keeping these in env
- * lets the deployment's real taxonomy drive detection without a code change.
+ * `MODERATION_POLICY_MAP` (JSON) and `MODERATION_DETACH_POLICIES` (comma
+ * list) override the Checkstep policy → category taxonomy and the
+ * mandatory-detach code set. Both are optional; without them the adapter
+ * falls back to sensible defaults. Because Checkstep policies are configured
+ * per-account, keeping these in env lets the deployment's real taxonomy drive
+ * detection without a code change.
  *
  * Returns `null` when moderation isn't configured (no key) — the feature is
  * simply off. `MODERATION_PROVIDER` is accepted only as `checkstep` (or empty);
@@ -78,6 +79,6 @@ export const getModerationProvider = (): ModerationProvider | null => {
     apiKey,
     webhookSigningKey,
     policyMap: parsePolicyMap(process.env.MODERATION_POLICY_MAP),
-    csamPolicies: parseCsamPolicies(process.env.MODERATION_CSAM_POLICIES),
+    detachPolicies: parseDetachPolicies(process.env.MODERATION_DETACH_POLICIES),
   });
 };

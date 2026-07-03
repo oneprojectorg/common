@@ -247,19 +247,19 @@ describe('applyModerationVerdict', () => {
     expect(result.action).toBe('noop');
   });
 
-  describe('CSAM verdict', () => {
-    const csam: ModerationVerdict = {
+  describe('detach verdict (CEX/TER)', () => {
+    const detachVerdict: ModerationVerdict = {
       itemType: 'proposal',
       itemId: 'p1',
       roundId: ROUND_ID,
-      verdict: 'csam',
+      verdict: 'detach',
       externalRecordId: 'ext-9',
       reason: 'Checkstep decision: act',
     };
 
     it('records the CSAM task as flagged (the submission enum only knows flagged/clear)', async () => {
       const d = deps(undefined, flaggedAgg);
-      await applyModerationVerdict(csam, d);
+      await applyModerationVerdict(detachVerdict, d);
 
       expect(d.recordTaskVerdict).toHaveBeenCalledWith(
         expect.objectContaining({ verdict: 'flagged' }),
@@ -268,7 +268,7 @@ describe('applyModerationVerdict', () => {
 
     it('detaches the content before touching the flag pipeline', async () => {
       const d = deps(undefined, flaggedAgg);
-      const result = await applyModerationVerdict(csam, d);
+      const result = await applyModerationVerdict(detachVerdict, d);
 
       expect(d.detachContent).toHaveBeenCalledWith({
         itemType: 'proposal',
@@ -285,7 +285,7 @@ describe('applyModerationVerdict', () => {
 
     it('detaches even when an already-flagged item receives a duplicate CSAM verdict', async () => {
       const d = deps(flagRow({ id: 'flag-1', status: 'flagged' }), flaggedAgg);
-      const result = await applyModerationVerdict(csam, d);
+      const result = await applyModerationVerdict(detachVerdict, d);
 
       // Duplicate flag decision is a noop, but the detach still fires so the
       // idempotent-detach service can settle the timestamp exactly once.
@@ -296,7 +296,7 @@ describe('applyModerationVerdict', () => {
 
     it('does not detach when the aggregate has nothing to record (forged ref, superseded round)', async () => {
       const d = deps(undefined, null);
-      const result = await applyModerationVerdict(csam, d);
+      const result = await applyModerationVerdict(detachVerdict, d);
 
       expect(d.detachContent).not.toHaveBeenCalled();
       expect(result.action).toBe('noop');

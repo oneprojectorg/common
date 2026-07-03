@@ -15,9 +15,9 @@ export interface RecordTaskVerdictInput {
   /** Which task within the item (`undefined` = the text task). */
   mediaId?: string;
   /**
-   * The DB submission enum values. `csam` is normalised to `flagged` at the
+   * The DB submission enum values. `detach` is normalised to `flagged` at the
    * task-record layer (the submission row only knows pending/flagged/clear);
-   * the CSAM signal is preserved on the incoming verdict and drives the
+   * the detach signal is preserved on the incoming verdict and drives the
    * detach step separately.
    */
   verdict: 'flagged' | 'clear';
@@ -77,12 +77,12 @@ export interface ApplyModerationVerdictDeps {
     moderationFlagId: string;
   }) => Promise<void>;
   /**
-   * Fired when the provider returns a CSAM verdict. Removes the content from
-   * the process so admins can no longer see it — today that means setting
-   * `moderationDetachedAt` on the proposal (see
-   * `detachProposalForModeration`). Item types that have no detach path
-   * short-circuit as a no-op; the flag pipeline still runs so the ordinary
-   * hide + notify happens.
+   * Fired when the provider returns a `detach` verdict (child exploitation or
+   * terrorism by default). Removes the content from the process so admins can
+   * no longer see it — today that means setting `moderationDetachedAt` on the
+   * proposal (see `detachProposalForModeration`). Item types that have no
+   * detach path short-circuit as a no-op; the flag pipeline still runs so the
+   * ordinary hide + notify happens.
    */
   detachContent: (input: {
     itemType: ModerationItemType;
@@ -124,12 +124,12 @@ export const applyModerationVerdict = async (
 ): Promise<ApplyModerationVerdictResult> => {
   const { itemType, itemId } = verdict;
 
-  // CSAM is a `flagged` verdict at the submission-store layer: the DB enum
-  // knows only pending/flagged/clear, and the CSAM discriminator lives on the
-  // in-memory verdict so it can drive the extra detach step below.
-  const isCsam = verdict.verdict === 'csam';
+  // `detach` is a `flagged` verdict at the submission-store layer: the DB
+  // enum knows only pending/flagged/clear, and the detach discriminator lives
+  // on the in-memory verdict so it can drive the extra detach step below.
+  const isDetach = verdict.verdict === 'detach';
   const storedVerdict: 'flagged' | 'clear' =
-    isCsam || verdict.verdict === 'flagged' ? 'flagged' : 'clear';
+    isDetach || verdict.verdict === 'flagged' ? 'flagged' : 'clear';
 
   const aggregate = await deps.recordTaskVerdict({
     itemType,
@@ -149,12 +149,12 @@ export const applyModerationVerdict = async (
     return { action: 'noop', detached: false };
   }
 
-  // CSAM detach runs on the raw verdict, before the flag decision — the
-  // detach must happen even if a duplicate/late CSAM verdict lands on an
-  // already-flagged item, and it must NOT wait for aggregation across tasks
-  // (any CSAM signal from any task is decisive on its own).
+  // The detach runs on the raw verdict, before the flag decision — it must
+  // happen even if a duplicate/late detach verdict lands on an already-flagged
+  // item, and it must NOT wait for aggregation across tasks (any detach signal
+  // from any task is decisive on its own).
   let detached = false;
-  if (isCsam) {
+  if (isDetach) {
     await deps.detachContent({
       itemType,
       itemId,

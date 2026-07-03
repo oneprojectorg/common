@@ -7,7 +7,7 @@ const ENV_KEYS = [
   'MODERATION_PROVIDER',
   'MODERATION_API_KEY',
   'MODERATION_POLICY_MAP',
-  'MODERATION_CSAM_POLICIES',
+  'MODERATION_DETACH_POLICIES',
 ];
 let saved: Record<string, string | undefined>;
 
@@ -56,13 +56,13 @@ describe('getModerationProvider', () => {
     expect(() => getModerationProvider()).toThrow(/MODERATION_POLICY_MAP/);
   });
 
-  it('accepts a well-formed MODERATION_POLICY_MAP + MODERATION_CSAM_POLICIES', () => {
+  it('accepts a well-formed MODERATION_POLICY_MAP + MODERATION_DETACH_POLICIES', () => {
     process.env.MODERATION_API_KEY = 'k';
     process.env.MODERATION_POLICY_MAP = JSON.stringify({
       VLC: 'violence',
       CSE: 'csam',
     });
-    process.env.MODERATION_CSAM_POLICIES = 'CSE, CHILD_ABUSE';
+    process.env.MODERATION_DETACH_POLICIES = 'CSE, CHILD_ABUSE';
     // Wired through to the factory without throwing.
     expect(getModerationProvider()).not.toBeNull();
   });

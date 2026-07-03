@@ -124,12 +124,13 @@ export const DEFAULT_POLICY_MAP: Record<string, ModerationCategory> = {
   MANIP: 'other', // Process Manipulation via coordinated capture
 };
 
-// Default Checkstep policy codes that indicate child exploitation — our
-// account's code is `CEX`. Same account-level caveat as the map above;
-// override via `csamPolicies` (env `MODERATION_CSAM_POLICIES`). Any violation
-// carrying one of these codes escalates the verdict from `flagged` to `csam`,
-// which fires the mandatory-detach path downstream.
-export const DEFAULT_CSAM_POLICIES: readonly string[] = ['CEX'];
+// Default Checkstep policy codes that force a mandatory detach: child
+// exploitation (`CEX`) and terrorism (`TER`) content is removed from the
+// decision process outright — invisible even to admins — instead of the
+// ordinary hide. Same account-level caveat as the map above; override via
+// `detachPolicies` (env `MODERATION_DETACH_POLICIES`). Any violation carrying
+// one of these codes escalates the verdict from `flagged` to `detach`.
+export const DEFAULT_DETACH_POLICIES: readonly string[] = ['CEX', 'TER'];
 
 // Checkstep severity buckets mapped onto our 0-1 scale.
 const SEVERITY_SCORE: Record<string, number> = {
@@ -280,7 +281,7 @@ export const createCheckstepProvider = ({
   apiUrl = DEFAULT_API_URL,
   webhookSigningKey,
   policyMap = DEFAULT_POLICY_MAP,
-  csamPolicies = DEFAULT_CSAM_POLICIES,
+  detachPolicies = DEFAULT_DETACH_POLICIES,
 }: {
   apiKey: string;
   apiUrl?: string;
@@ -289,11 +290,11 @@ export const createCheckstepProvider = ({
   webhookSigningKey?: string;
   /** Checkstep policy code → our category. Defaults to `DEFAULT_POLICY_MAP`. */
   policyMap?: Record<string, ModerationCategory>;
-  /** Policy codes that escalate a verdict to `csam`. Defaults to
-   *  `DEFAULT_CSAM_POLICIES`. */
-  csamPolicies?: readonly string[];
+  /** Policy codes that escalate a verdict to `detach` (mandatory removal from
+   *  the process, admin views included). Defaults to `DEFAULT_DETACH_POLICIES`. */
+  detachPolicies?: readonly string[];
 }): ModerationProvider => {
-  const csamPolicySet: ReadonlySet<string> = new Set(csamPolicies);
+  const detachPolicySet: ReadonlySet<string> = new Set(detachPolicies);
   return {
     ...(webhookSigningKey
       ? {
@@ -357,13 +358,14 @@ export const createCheckstepProvider = ({
       } catch {
         return [];
       }
-      // CSAM is decided BEFORE the decision-parse gate: even an ack/interim
-      // callback with no recognized top-level decision still fires the detach
-      // path if the violations name a CSAM policy. Any presence of CSAM in the
-      // violations wins over both `flag` and `clear`.
-      const isCsam = (payload.violations ?? []).some(
-        (v) => v.policy != null && csamPolicySet.has(v.policy),
+      // Mandatory detach is decided BEFORE the decision-parse gate: even an
+      // ack/interim callback with no recognized top-level decision still
+      // fires the detach path if the violations name a detach policy (CEX,
+      // TER by default). Any detach-policy hit wins over `flag` and `clear`.
+      const detachHits = (payload.violations ?? []).flatMap((v) =>
+        v.policy != null && detachPolicySet.has(v.policy) ? [v.policy] : [],
       );
+      const isDetach = detachHits.length > 0;
 
       const flagged = payload.decision
         ? FLAGGING_DECISIONS.includes(payload.decision)
@@ -371,22 +373,23 @@ export const createCheckstepProvider = ({
       const cleared = payload.decision
         ? CLEARING_DECISIONS.includes(payload.decision)
         : false;
-      // Neither CSAM nor a recognized decision (unknown value, or a
-      // decision-less ack/interim callback with no CSAM violation) → not a
+      // Neither a detach hit nor a recognized decision (unknown value, or a
+      // decision-less ack/interim callback with no detach violation) → not a
       // verdict; emit nothing rather than defaulting to clear and dismissing
       // an open flag.
-      if (!isCsam && !flagged && !cleared) {
+      if (!isDetach && !flagged && !cleared) {
         return [];
       }
-      const verdict: ModerationVerdict['verdict'] = isCsam
-        ? 'csam'
+      const verdict: ModerationVerdict['verdict'] = isDetach
+        ? 'detach'
         : flagged
           ? 'flagged'
           : 'clear';
-      // A `csam` or `flagged` verdict carries evidence; a plain `clear` doesn't.
-      // CSAM without a flagging decision still surfaces the CSAM reason so ops
-      // logs the exact violation instead of an empty explanation.
-      const carriesEvidence = isCsam || flagged;
+      // A `detach` or `flagged` verdict carries evidence; a plain `clear`
+      // doesn't. Detach without a flagging decision still surfaces the
+      // matched policies so ops logs the exact violation instead of an empty
+      // explanation.
+      const carriesEvidence = isDetach || flagged;
       return [
         {
           itemType: ref.itemType,
@@ -396,7 +399,9 @@ export const createCheckstepProvider = ({
           verdict,
           externalRecordId: contentId,
           reason: carriesEvidence
-            ? `Checkstep ${isCsam ? 'CSAM' : 'decision'}: ${payload.decision ?? '(no decision)'}`
+            ? isDetach
+              ? `Checkstep detach (${detachHits.join(', ')}): ${payload.decision ?? '(no decision)'}`
+              : `Checkstep decision: ${payload.decision}`
             : undefined,
           scores: carriesEvidence
             ? scoresFromViolations(payload.violations ?? undefined, policyMap)

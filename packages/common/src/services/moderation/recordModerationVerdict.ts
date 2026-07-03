@@ -17,11 +17,11 @@ import {
 } from './moderationSubmissionStore';
 import type { ModerationItemType, ModerationVerdict } from './types';
 
-// CSAM is only actionable via detach when the item is a proposal — that's the
-// content that owes a decision-process attachment. Post/user detaches would
-// need their own model surface; if Checkstep ever returns CSAM against those,
-// we still create a flag (so the item is hidden and ops is notified), but the
-// detach step is a no-op rather than a silent failure.
+// A detach verdict is only actionable when the item is a proposal — that's
+// the content that owes a decision-process attachment. Post/user detaches
+// would need their own model surface; if Checkstep ever returns a detach
+// policy against those, we still create a flag (so the item is hidden and ops
+// is notified), but the detach step is a no-op rather than a silent failure.
 const detachContentByItemType = async ({
   itemType,
   itemId,
@@ -38,8 +38,9 @@ const detachContentByItemType = async ({
  * Applies a parsed provider verdict against the database. The real wiring of
  * `applyModerationVerdict`: looks up the open flag, creates/confirms/dismisses
  * via the flag store, and emits `content/flagged` so the author notification
- * fires. On a CSAM verdict the item is also detached from its process (today
- * proposals only). Called by the webhook handler.
+ * fires. On a detach verdict (child exploitation / terrorism by default) the
+ * item is also detached from its process (today proposals only). Called by
+ * the webhook handler.
  */
 export const recordModerationVerdict = (
   verdict: ModerationVerdict,

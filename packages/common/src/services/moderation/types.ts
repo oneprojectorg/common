@@ -97,11 +97,12 @@ export interface ModerationVerdict {
   mediaId?: string;
   /**
    * `flagged` = provider deems the content disallowed; `clear` = allowed;
-   * `csam` = the content is child sexual abuse material — a distinct verdict
-   * so the pipeline can trigger the mandatory-detach path (proposal removed
-   * from its process, admin views included) instead of the ordinary hide.
+   * `detach` = the content matched a mandatory-detach policy (child
+   * exploitation or terrorism by default) — a distinct verdict so the
+   * pipeline removes the proposal from its process outright (admin views
+   * included) instead of the ordinary hide.
    */
-  verdict: 'flagged' | 'clear' | 'csam';
+  verdict: 'flagged' | 'clear' | 'detach';
   /** The provider's record/task id, for dispute/review links. */
   externalRecordId?: string;
   /** Human-readable reason (matched rule/policy names). */

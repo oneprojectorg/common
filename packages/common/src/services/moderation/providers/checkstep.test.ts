@@ -171,7 +171,27 @@ describe('createCheckstepProvider', () => {
     expect(verdict?.scores?.other).toBeGreaterThan(0); // SPM
   });
 
-  it('parseWebhook honours a caller-supplied csamPolicies list', () => {
+  it('parseWebhook escalates a TER (terrorism) violation to a `detach` verdict by default', () => {
+    // Terrorism is a mandatory-detach policy alongside child exploitation —
+    // pins the shipped DEFAULT_DETACH_POLICIES = [CEX, TER].
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
+        content: {
+          id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [{ policy: 'TER', severity: 'high' }],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.verdict).toBe('detach');
+    expect(verdict?.reason).toContain('TER');
+  });
+
+  it('parseWebhook honours a caller-supplied detachPolicies list', () => {
     // A deployment whose CSAM policy is named `CSE` (not one of the adapter
     // defaults) still fires the detach path when the config names it. Also
     // map `CSE` in the policyMap so the score attribution stays under `csam`
@@ -179,7 +199,7 @@ describe('createCheckstepProvider', () => {
     const [verdict] = createCheckstepProvider({
       apiKey: 'k',
       policyMap: { CSE: 'csam' },
-      csamPolicies: ['CSE'],
+      detachPolicies: ['CSE'],
     }).parseWebhook!({
       rawBody: JSON.stringify({
         webhook_type: 'decision',
@@ -193,7 +213,7 @@ describe('createCheckstepProvider', () => {
       headers: {},
     });
 
-    expect(verdict?.verdict).toBe('csam');
+    expect(verdict?.verdict).toBe('detach');
   });
 
   it('parseWebhook warns once (and falls through to `other`) when a policy code is unknown', () => {
@@ -245,7 +265,7 @@ describe('createCheckstepProvider', () => {
     // The verdict must NOT be `flagged` — CSAM is its own decision so the
     // downstream pipeline routes to the mandatory-detach path instead of an
     // ordinary hide.
-    expect(verdict?.verdict).toBe('csam');
+    expect(verdict?.verdict).toBe('detach');
     expect(verdict?.itemType).toBe('proposal');
     expect(verdict?.itemId).toBe('33333333-3333-4333-8333-333333333333');
     expect(verdict?.scores?.csam).toBeGreaterThan(0);
@@ -268,7 +288,7 @@ describe('createCheckstepProvider', () => {
       headers: {},
     });
 
-    expect(verdict?.verdict).toBe('csam');
+    expect(verdict?.verdict).toBe('detach');
   });
 
   it('parseWebhook escalates CSAM even with no top-level decision (interim callback)', () => {
@@ -284,7 +304,7 @@ describe('createCheckstepProvider', () => {
       headers: {},
     });
 
-    expect(verdict?.verdict).toBe('csam');
+    expect(verdict?.verdict).toBe('detach');
   });
 
   it('parseWebhook rejects a violations array over the 1000-entry cap', () => {
@@ -329,7 +349,7 @@ describe('createCheckstepProvider', () => {
       headers: {},
     });
 
-    expect(verdict?.verdict).toBe('csam');
+    expect(verdict?.verdict).toBe('detach');
   });
 
   it('parseWebhook maps a dismiss decision to a clear verdict', () => {
