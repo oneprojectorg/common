@@ -145,6 +145,7 @@ const deleteRejectedOAuthSignup = async ({
       authUser.email.toLowerCase() !== email ||
       !wasCreatedByThisSignIn(authUser)
     ) {
+      ctx.logger.warn('Skipped cleanup of rejected OAuth sign-in', { email });
       return;
     }
 
@@ -156,26 +157,26 @@ const deleteRejectedOAuthSignup = async ({
     // pre-existing users row (and its established profile) at the
     // just-created auth user. The trigger copies created_at from the auth
     // user on insert, so only a row whose created_at matches this signup is
-    // safe to delete.
-    if (
-      !orphanedUser?.createdAt ||
-      Math.abs(
-        new Date(orphanedUser.createdAt).getTime() -
-          new Date(authUser.created_at).getTime(),
-      ) >= FIRST_SIGN_IN_WINDOW_MS
-    ) {
+    // safe to delete. The comparison is written to fail closed: an
+    // unparseable timestamp yields NaN, which never satisfies `<`.
+    const usersRowAgeMs = Math.abs(
+      new Date(orphanedUser?.createdAt ?? NaN).getTime() -
+        new Date(authUser.created_at).getTime(),
+    );
+    if (!(usersRowAgeMs < FIRST_SIGN_IN_WINDOW_MS)) {
+      ctx.logger.warn('Skipped cleanup of rejected OAuth sign-in', {
+        email,
+        authUserId: authUser.id,
+      });
       return;
     }
 
-    // Delete the profile first: if the auth-user deletion below fails, the
-    // leftover is a full account (auditable, same shape as the original bug)
-    // rather than an invisible ownerless profile.
-    if (orphanedUser.profileId) {
-      await db.delete(profiles).where(eq(profiles.id, orphanedUser.profileId));
-    }
-
     const supabase = createSBAdminClient(ctx);
-    // Cascades to the public.users row created by the signup trigger.
+    // Cascades to the public.users row created by the signup trigger. The
+    // auth user goes first: if the profile deletion below fails, the
+    // leftover is a dead profile row nobody owns, whereas the reverse order
+    // would strand a real account without a profile (the trigger only fires
+    // on auth.users INSERT, so it would never be recreated).
     const { error } = await supabase.auth.admin.deleteUser(authUser.id);
     if (error) {
       ctx.logger.error('Failed to delete auth user of rejected OAuth sign-in', {
@@ -184,6 +185,10 @@ const deleteRejectedOAuthSignup = async ({
         error,
       });
       return;
+    }
+
+    if (orphanedUser?.profileId) {
+      await db.delete(profiles).where(eq(profiles.id, orphanedUser.profileId));
     }
 
     ctx.logger.info('Deleted account created by rejected OAuth sign-in', {

@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { profiles } from '@op/db/schema';
+import { profiles, users } from '@op/db/schema';
 import { randomUUID } from 'crypto';
 import { describe, expect, it, onTestFinished } from 'vitest';
 
@@ -80,6 +80,32 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
     expect(authAfter?.user?.id).toBe(user.id);
+  });
+
+  it('keeps a users row that predates this sign-in (trigger ON CONFLICT repoint)', async () => {
+    const { email, user, session, profileId } =
+      await signUpNonAllowlistedUser();
+
+    // Simulate the signup trigger's ON CONFLICT (email) branch having
+    // repointed a pre-existing users row at the just-created auth user.
+    await db
+      .update(users)
+      .set({ createdAt: '2020-01-01T00:00:00.000Z' })
+      .where(eq(users.authUserId, user.id));
+
+    const caller = createCaller(await createTestContextWithSession(session));
+    await expect(
+      caller.account.login({ email, usingOAuth: true }),
+    ).rejects.toThrow(/invite-only/);
+
+    const { data: authAfter } =
+      await supabaseTestAdminClient.auth.admin.getUserById(user.id);
+    expect(authAfter?.user?.id).toBe(user.id);
+
+    const profileAfter = await db.query.profiles.findFirst({
+      where: { id: profileId },
+    });
+    expect(profileAfter).toBeDefined();
   });
 
   it('keeps the account when the session does not belong to the rejected email', async () => {
