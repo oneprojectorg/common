@@ -589,6 +589,78 @@ describe('translation.translateProposal', () => {
     expect(result.targetLocale).toBe('es');
   });
 
+  // Regression for a production OOM: generated template field keys can be
+  // all digits (e.g. "77963788"). Keys like "field_title:77963788" were
+  // misread as array-index encoding, allocating a ~78M-slot array that hung
+  // the endpoint. They must come back as plain string entries.
+  it('should translate template fields whose keys are all digits', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const proposalTemplate = {
+      type: 'object',
+      properties: {
+        '77963788': {
+          type: 'string',
+          title: 'Why is this project important?',
+          description: 'Tell us why this matters',
+          'x-format': 'short-text',
+        },
+      },
+    };
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Numeric Field Key Test' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Body content' }],
+        },
+      ],
+    });
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.translated['field_title:77963788']).toBe(
+      '[ES] Why is this project important?',
+    );
+    expect(result.translated['field_desc:77963788']).toBe(
+      '[ES] Tell us why this matters',
+    );
+    expect(result.translated['field_title']).toBeUndefined();
+  });
+
   it('should preserve multi-category structure when translating categories', async ({
     task,
     onTestFinished,

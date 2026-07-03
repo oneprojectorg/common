@@ -8,6 +8,15 @@ export type TranslatableFields = Record<
 >;
 
 /**
+ * Array entries are encoded as `field[index]` rather than `field:index`:
+ * scalar content keys built elsewhere (e.g. `field_title:<fieldKey>`) can end
+ * in an all-digit segment when a template field key happens to be numeric,
+ * and a colon-based encoding misread those as array indices — allocating
+ * arrays with tens of millions of slots and OOMing the API process.
+ */
+const ARRAY_INDEX_PATTERN = /^(?<field>.+)\[(?<index>\d{1,4})\]$/;
+
+/**
  * Flattens string and string[] fields into translation entries while keeping a
  * reversible content-key structure for arrays.
  */
@@ -36,7 +45,7 @@ export function flattenTranslatableFields(
       }
 
       entries.push({
-        contentKey: `${prefix}${fieldName}:${index}`,
+        contentKey: `${prefix}${fieldName}[${index}]`,
         text: item,
       });
     });
@@ -47,7 +56,7 @@ export function flattenTranslatableFields(
 
 /**
  * Reconstructs flattened translation results back into the original field
- * shape, preserving arrays for fields encoded as `field:index`.
+ * shape, preserving arrays for fields encoded as `field[index]`.
  */
 export function unflattenTranslatedFields(
   prefix: string,
@@ -65,7 +74,7 @@ export function unflattenTranslatedFields(
     }
 
     const fieldKey = result.contentKey.slice(prefix.length);
-    const arrayMatch = /^(?<field>.+):(?<index>\d+)$/.exec(fieldKey);
+    const arrayMatch = ARRAY_INDEX_PATTERN.exec(fieldKey);
     const fieldName = arrayMatch?.groups?.field;
     const indexValue = arrayMatch?.groups?.index;
 

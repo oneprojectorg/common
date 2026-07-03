@@ -12,6 +12,7 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { SplitPane } from '@op/ui/SplitPane';
+import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
@@ -183,6 +184,9 @@ export function ProposalView({
         translated: data.translated,
         sourceLocale: data.sourceLocale,
       });
+    },
+    onError: () => {
+      toast.error({ message: t('Failed to translate content') });
     },
   });
 
