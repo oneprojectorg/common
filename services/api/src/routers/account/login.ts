@@ -13,7 +13,6 @@ import {
 } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -65,7 +64,7 @@ const login = router({
         if (input.usingOAuth) {
           // The OAuth code exchange already created the account (auth.users
           // plus the trigger-created public.users row and individual profile)
-          // before this gate ran, so remove it again or the rejected visitor
+          // before this gate ran, so remove it or the rejected visitor
           // persists as an orphaned user.
           await deleteRejectedOAuthSignup({ ctx, email: input.email });
         }
@@ -109,9 +108,10 @@ const FIRST_SIGN_IN_WINDOW_MS = 60_000;
  * pre-existing account (e.g. one whose allow-list entry was later revoked)
  * has a much older `created_at` and must never be deleted.
  */
-export const wasCreatedByThisSignIn = (
-  user: Pick<User, 'created_at' | 'last_sign_in_at'>,
-): boolean => {
+export const wasCreatedByThisSignIn = (user: {
+  created_at: string;
+  last_sign_in_at?: string;
+}): boolean => {
   if (!user.last_sign_in_at) {
     return false;
   }
