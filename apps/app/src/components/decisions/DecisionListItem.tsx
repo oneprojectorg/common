@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
@@ -118,33 +118,28 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
               className="rounded bg-white shadow-light"
               size="medium"
             >
-              <Menu className="min-w-28 p-2">
-                {canManage && (
-                  <MenuItem
-                    key="settings"
-                    href={`/decisions/${item.slug}/edit`}
-                  >
-                    {t('Settings')}
-                  </MenuItem>
-                )}
-                {canManage && (
-                  <MenuItem
-                    key="duplicate"
-                    onAction={() => setShowDuplicateModal(true)}
-                  >
-                    {t('Duplicate')}
-                  </MenuItem>
-                )}
-                {canDelete && (
-                  <MenuItem
-                    key="delete"
-                    onAction={() => setShowDeleteModal(true)}
-                    className="text-functional-red"
-                  >
-                    {t('Delete')}
-                  </MenuItem>
-                )}
-              </Menu>
+              {canManage && (
+                <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
+                  {t('Settings')}
+                </MenuItem>
+              )}
+              {canManage && (
+                <MenuItem
+                  key="duplicate"
+                  onAction={() => setShowDuplicateModal(true)}
+                >
+                  {t('Duplicate')}
+                </MenuItem>
+              )}
+              {canDelete && (
+                <MenuItem
+                  key="delete"
+                  onAction={() => setShowDeleteModal(true)}
+                  className="text-functional-red"
+                >
+                  {t('Delete')}
+                </MenuItem>
+              )}
             </OptionMenu>
           </div>
         )}

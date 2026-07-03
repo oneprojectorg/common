@@ -41,7 +41,9 @@ export const FeedHeader = ({
   className?: string;
 }) => {
   return (
-    <span className={cn('flex items-center gap-2 align-baseline', className)}>
+    <span
+      className={cn('flex items-center gap-2 pt-1 align-baseline', className)}
+    >
       {children}
     </span>
   );
@@ -66,7 +68,7 @@ export const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col items-start justify-start gap-2 overflow-hidden',
+        'flex w-full flex-col items-start justify-start gap-0.5 overflow-hidden',
         className,
       )}
       {...props}

@@ -34,7 +34,7 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { DeletePost } from './DeletePost';
+import { DeletePostMenuItem } from './DeletePostMenuItem';
 
 const PostDisplayName = ({
   displayName,
@@ -257,7 +257,7 @@ const PostMenu = ({
 
   return (
     <OptionMenu aria-label={t('Post options')} className="absolute end-0 top-0">
-      <DeletePost post={post} />
+      <DeletePostMenuItem post={post} />
     </OptionMenu>
   );
 };

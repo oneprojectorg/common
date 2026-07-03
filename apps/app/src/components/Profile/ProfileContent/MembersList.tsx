@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
-import { Popover } from '@op/ui/Popover';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
@@ -163,24 +162,22 @@ const MemberMenu = ({
       >
         <LuEllipsis className="size-4" />
       </IconButton>
-      <Popover placement="bottom end">
-        <Menu className="min-w-48 p-2">
-          <MenuItem
-            key="toggle-role"
-            onAction={handleRoleToggle}
-            className="px-3 py-1"
-          >
-            {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
-          </MenuItem>
-          <MenuItem
-            key="remove-from-org"
-            onAction={handleRemoveFromOrganization}
-            className="px-3 py-1 text-functional-red"
-          >
-            {t('Remove from organization')}
-          </MenuItem>
-        </Menu>
-      </Popover>
+      <Menu className="min-w-48 p-2" placement="bottom end">
+        <MenuItem
+          key="toggle-role"
+          onAction={handleRoleToggle}
+          className="px-3 py-1"
+        >
+          {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
+        </MenuItem>
+        <MenuItem
+          key="remove-from-org"
+          onAction={handleRemoveFromOrganization}
+          className="px-3 py-1 text-functional-red"
+        >
+          {t('Remove from organization')}
+        </MenuItem>
+      </Menu>
     </MenuTrigger>
   );
 };
