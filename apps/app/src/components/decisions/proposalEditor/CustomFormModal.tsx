@@ -6,7 +6,7 @@ import type {
 } from '@op/common/client';
 import { schemaValidator } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
+import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Form } from '@op/ui/Form';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -192,6 +192,41 @@ function CustomFormField({
           <span className="text-sm text-functional-red">{error}</span>
         ) : null}
       </div>
+    );
+  }
+
+  // Multi-select ("choose all that apply"): array of enum strings rendered
+  // as a checkbox group. An empty selection is stored as absent so JSON
+  // Schema `required` treats it as missing.
+  if (field.type === 'array') {
+    const itemSchema =
+      typeof field.items === 'object' && !Array.isArray(field.items)
+        ? field.items
+        : undefined;
+    const multiOptions = Array.isArray(itemSchema?.enum)
+      ? itemSchema.enum.filter((option): option is string => {
+          return typeof option === 'string';
+        })
+      : [];
+    const selected = Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+    return (
+      <CheckboxGroup
+        label={label}
+        description={field.description}
+        errorMessage={error}
+        isInvalid={Boolean(error)}
+        isRequired={isRequired}
+        value={selected}
+        onChange={(next) => onChange(next.length > 0 ? next : undefined)}
+      >
+        {multiOptions.map((option) => (
+          <Checkbox key={option} value={option} size="small">
+            {option}
+          </Checkbox>
+        ))}
+      </CheckboxGroup>
     );
   }
 
