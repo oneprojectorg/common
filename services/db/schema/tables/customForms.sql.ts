@@ -31,10 +31,7 @@ export const customForms = pgTable(
 
     ...timestamps,
   },
-  (table) => [
-    ...serviceRolePolicies,
-    index().on(table.profileId).concurrently(),
-  ],
+  (table) => [...serviceRolePolicies, index().on(table.profileId)],
 );
 
 export type CustomForm = typeof customForms.$inferSelect;

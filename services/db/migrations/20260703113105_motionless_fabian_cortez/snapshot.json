@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "e36fe4ff-8bc8-47a6-b689-485f4309dd8a",
+  "id": "df812153-943f-4ea6-8112-fd701b243c97",
   "prevIds": [
     "0536d298-7b61-4c84-b109-bed083f83a23"
   ],
@@ -7559,7 +7559,7 @@
       "where": null,
       "with": "",
       "method": "btree",
-      "concurrently": true,
+      "concurrently": false,
       "name": "custom_form_submissions_custom_form_id_index",
       "entityType": "indexes",
       "schema": "public",
@@ -7580,7 +7580,7 @@
       "where": null,
       "with": "",
       "method": "btree",
-      "concurrently": true,
+      "concurrently": false,
       "name": "custom_form_submissions_profile_id_index",
       "entityType": "indexes",
       "schema": "public",
@@ -7601,7 +7601,7 @@
       "where": null,
       "with": "",
       "method": "btree",
-      "concurrently": true,
+      "concurrently": false,
       "name": "custom_forms_profile_id_index",
       "entityType": "indexes",
       "schema": "public",

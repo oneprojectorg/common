@@ -20,9 +20,9 @@ CREATE TABLE "custom_forms" (
 );
 --> statement-breakpoint
 ALTER TABLE "custom_forms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "custom_form_submissions_custom_form_id_index" ON "custom_form_submissions" ("custom_form_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "custom_form_submissions_profile_id_index" ON "custom_form_submissions" ("profile_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "custom_forms_profile_id_index" ON "custom_forms" ("profile_id");--> statement-breakpoint
+CREATE INDEX "custom_form_submissions_custom_form_id_index" ON "custom_form_submissions" ("custom_form_id");--> statement-breakpoint
+CREATE INDEX "custom_form_submissions_profile_id_index" ON "custom_form_submissions" ("profile_id");--> statement-breakpoint
+CREATE INDEX "custom_forms_profile_id_index" ON "custom_forms" ("profile_id");--> statement-breakpoint
 ALTER TABLE "custom_form_submissions" ADD CONSTRAINT "custom_form_submissions_custom_form_id_custom_forms_id_fkey" FOREIGN KEY ("custom_form_id") REFERENCES "custom_forms"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "custom_form_submissions" ADD CONSTRAINT "custom_form_submissions_profile_id_profiles_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "custom_forms" ADD CONSTRAINT "custom_forms_profile_id_profiles_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint

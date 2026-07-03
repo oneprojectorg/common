@@ -38,8 +38,8 @@ export const customFormSubmissions = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.customFormId).concurrently(),
-    index().on(table.profileId).concurrently(),
+    index().on(table.customFormId),
+    index().on(table.profileId),
   ],
 );
 
