@@ -1,6 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { Avatar } from '@op/ui/Avatar';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
+import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 
 import { Link, useTranslations } from '@/lib/i18n/routing';
@@ -16,9 +17,12 @@ type Submitter = {
 export const MemberParticipationFacePile = ({
   submitters,
   total,
+  hasImage = false,
 }: {
   submitters: Submitter[];
   total: number;
+  /** Over a banner image the charcoal label loses contrast — use white. */
+  hasImage?: boolean;
 }) => {
   const t = useTranslations();
 
@@ -54,7 +58,12 @@ export const MemberParticipationFacePile = ({
           </Link>
         ))}
       >
-        <span className="w-fit text-sm text-neutral-charcoal">
+        <span
+          className={cn(
+            'w-fit text-sm',
+            hasImage ? 'text-white' : 'text-neutral-charcoal',
+          )}
+        >
           {t(
             '{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}',
             { count: total },

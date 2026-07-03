@@ -9,6 +9,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
@@ -79,25 +80,34 @@ export function VotingPage({
     currentPhase?.additionalInfo ??
     translation?.description ??
     description;
+  const heroImagePath = instance.instanceData?.overview?.heroImage;
+  const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
-        <DecisionHero
-          title={heroTitle}
-          description={heroDescription ? <p>{heroDescription}</p> : undefined}
-          variant="standard"
-        />
+      <DecisionHeroBanner heroImagePath={heroImagePath}>
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
+          <DecisionHero
+            title={heroTitle}
+            description={heroDescription ? <p>{heroDescription}</p> : undefined}
+            variant="standard"
+            hasImage={hasHeroImage}
+          />
 
-        <MemberParticipationFacePile submitters={submitters} total={total} />
+          <MemberParticipationFacePile
+            submitters={submitters}
+            total={total}
+            hasImage={hasHeroImage}
+          />
 
-        <DecisionActionBar
-          instanceId={instanceId}
-          markup={!!translation?.additionalInfo}
-          description={actionBarDescription}
-          showSubmitButton={false}
-        />
-      </div>
+          <DecisionActionBar
+            instanceId={instanceId}
+            markup={!!translation?.additionalInfo}
+            description={actionBarDescription}
+            showSubmitButton={false}
+          />
+        </div>
+      </DecisionHeroBanner>
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">

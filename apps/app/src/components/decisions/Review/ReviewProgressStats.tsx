@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/ui/Skeleton';
+import { cn } from '@op/ui/utils';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -10,9 +11,12 @@ import { useTranslations } from '@/lib/i18n';
 export function ReviewProgressStats({
   processInstanceId,
   phaseId,
+  hasImage = false,
 }: {
   processInstanceId: string;
   phaseId: string;
+  /** Over a banner image the charcoal stats lose contrast — use white. */
+  hasImage?: boolean;
 }) {
   return (
     <APIErrorBoundary fallbacks={{ default: () => null }}>
@@ -20,6 +24,7 @@ export function ReviewProgressStats({
         <ReviewProgressStatsContent
           processInstanceId={processInstanceId}
           phaseId={phaseId}
+          hasImage={hasImage}
         />
       </Suspense>
     </APIErrorBoundary>
@@ -29,9 +34,11 @@ export function ReviewProgressStats({
 function ReviewProgressStatsContent({
   processInstanceId,
   phaseId,
+  hasImage,
 }: {
   processInstanceId: string;
   phaseId: string;
+  hasImage?: boolean;
 }) {
   const t = useTranslations();
 
@@ -45,11 +52,13 @@ function ReviewProgressStatsContent({
       <ReviewProgressStat
         value={`${progress.proposalsReviewedCount}/${progress.proposalsTotalCount}`}
         label={t('Proposals Reviewed')}
+        hasImage={hasImage}
       />
       <Divider />
       <ReviewProgressStat
         value={`${progress.activeReviewersCount}/${progress.reviewersTotalCount}`}
         label={t('Active Reviewers')}
+        hasImage={hasImage}
       />
       {progress.daysLeft !== null ? (
         <>
@@ -57,6 +66,7 @@ function ReviewProgressStatsContent({
           <ReviewProgressStat
             value={String(progress.daysLeft)}
             label={t('Days left')}
+            hasImage={hasImage}
           />
         </>
       ) : null}
@@ -88,12 +98,19 @@ function StatsRow({ children }: { children: React.ReactNode }) {
 function ReviewProgressStat({
   value,
   label,
+  hasImage,
 }: {
   value: string;
   label: string;
+  hasImage?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center text-neutral-charcoal">
+    <div
+      className={cn(
+        'flex flex-col items-center',
+        hasImage ? 'text-white' : 'text-neutral-charcoal',
+      )}
+    >
       <span className="font-serif text-title-lg">{value}</span>
       <span className="text-sm whitespace-nowrap">{label}</span>
     </div>

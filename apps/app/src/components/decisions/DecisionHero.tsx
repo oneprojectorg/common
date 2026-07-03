@@ -7,6 +7,7 @@ export function DecisionHero({
   description,
   variant = 'standard',
   gradient,
+  hasImage = false,
   children,
 }: {
   title: string | ReactNode;
@@ -14,12 +15,22 @@ export function DecisionHero({
   variant?: 'standard' | 'results';
   /** Override the default teal/green gradient on the gradient-style header. */
   gradient?: string;
+  /**
+   * Whether the hero sits over a banner image (DecisionHeroBanner). The
+   * clipped gradient title and charcoal body lose contrast over the dark
+   * scrim, so switch the text to white — same rule as the overview hero.
+   */
+  hasImage?: boolean;
   children?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 text-center">
       {variant === 'results' ? (
         <Header1 className="font-serif font-light uppercase md:text-title-xxl">
+          <bdi>{title}</bdi>
+        </Header1>
+      ) : hasImage ? (
+        <Header1 className="text-white uppercase md:text-title-xxl">
           <bdi>{title}</bdi>
         </Header1>
       ) : (
@@ -34,7 +45,8 @@ export function DecisionHero({
         <div
           className={cn(
             'flex flex-col gap-2 text-base',
-            variant !== 'results' && 'text-neutral-charcoal',
+            variant !== 'results' &&
+              (hasImage ? 'text-white' : 'text-neutral-charcoal'),
           )}
         >
           {typeof description === 'string' ? (
