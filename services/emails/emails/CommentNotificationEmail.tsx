@@ -1,4 +1,4 @@
-import { Row, Section, Text } from 'react-email';
+import { Section, Text } from 'react-email';
 
 import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
@@ -40,12 +40,8 @@ export const CommentNotificationEmail = ({
 
       <CtaButton href={postUrl}>View comment</CtaButton>
 
-      <Row>
-        {contextName && <Footnote>Context: {contextName}</Footnote>}
-        {postedIn && (
-          <Footnote className="mt-1">Posted in: {postedIn}</Footnote>
-        )}
-      </Row>
+      {contextName && <Footnote>Context: {contextName}</Footnote>}
+      {postedIn && <Footnote className="mt-1">Posted in: {postedIn}</Footnote>}
     </EmailTemplate>
   );
 };
