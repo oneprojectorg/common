@@ -1,5 +1,6 @@
-import { Button, Section, Text } from 'react-email';
+import { Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 
 export const ContentFlaggedEmail = ({
@@ -24,21 +25,7 @@ export const ContentFlaggedEmail = ({
           : ''}
       </Text>
 
-      {disputeUrl && (
-        <Section className="pb-0">
-          <Button
-            href={disputeUrl}
-            className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-            style={{
-              fontSize: '0.875rem',
-              textAlign: 'center',
-              textDecoration: 'none',
-            }}
-          >
-            Review or dispute
-          </Button>
-        </Section>
-      )}
+      {disputeUrl && <CtaButton href={disputeUrl}>Review or dispute</CtaButton>}
     </EmailTemplate>
   );
 };

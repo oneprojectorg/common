@@ -1,6 +1,7 @@
 import { getTextPreview } from '@op/core';
-import { Button, Section, Text } from 'react-email';
+import { Section, Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Footnote } from '../components/Footnote';
 
@@ -38,19 +39,7 @@ export const ReactionNotificationEmail = ({
         </Text>
       </Section>
 
-      <Section className="pb-0">
-        <Button
-          href={postUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          View {contentType}
-        </Button>
-      </Section>
+      <CtaButton href={postUrl}>View {contentType}</CtaButton>
 
       {postedIn && <Footnote>Posted in: {postedIn}</Footnote>}
     </EmailTemplate>

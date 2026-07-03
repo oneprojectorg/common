@@ -1,5 +1,6 @@
-import { Button, Section, Text } from 'react-email';
+import { Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
@@ -31,19 +32,7 @@ export const OPInvitationEmail = ({
           <em>&ldquo;{message}&rdquo;</em>
         </Text>
       ) : null}
-      <Section className="pb-0">
-        <Button
-          href={inviteUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          Accept invite
-        </Button>
-      </Section>
+      <CtaButton href={inviteUrl}>Accept invite</CtaButton>
 
       <Footnote>This invite will expire after 1 week</Footnote>
     </EmailTemplate>

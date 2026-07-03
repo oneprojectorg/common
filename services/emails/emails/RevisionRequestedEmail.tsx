@@ -1,5 +1,6 @@
-import { Button, Section, Text } from 'react-email';
+import { Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
@@ -24,19 +25,7 @@ export const RevisionRequestedEmail = ({
         Review their feedback and submit your revision.
       </Text>
 
-      <Section className="pb-0">
-        <Button
-          href={proposalUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          Revise proposal
-        </Button>
-      </Section>
+      <CtaButton href={proposalUrl}>Revise proposal</CtaButton>
 
       <Footnote>
         You're receiving this because you're the author of this proposal.
