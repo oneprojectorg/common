@@ -16,7 +16,7 @@ export const FacePile = forwardRef<
   ) => {
     return (
       <div
-        className="flex w-full max-w-fit flex-wrap items-center gap-2"
+        className="flex w-full max-w-fit flex-wrap items-center justify-center gap-2"
         ref={ref}
       >
         <ul className={cn('-gap-2 flex', className)}>

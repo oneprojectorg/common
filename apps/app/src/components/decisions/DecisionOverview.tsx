@@ -310,9 +310,14 @@ const OverviewHero = ({
               Over a banner image the clipped gradient loses contrast against
               the dark scrim, so switch to plain white text instead. */}
           {hasImage ? (
-            <Header1 className="text-white md:text-title-xxl">
-              <bdi>{headline}</bdi>
-            </Header1>
+            // White comes from the wrapper, not Header1's className: twMerge
+            // misreads the custom text-title-lg size as a color and drops it
+            // when text-white is merged in, leaving the h1 unsized on mobile.
+            <div className="text-white">
+              <Header1 className="md:text-title-xxl">
+                <bdi>{headline}</bdi>
+              </Header1>
+            </div>
           ) : (
             <GradientHeader>
               <Header1 className="md:text-title-xxl">

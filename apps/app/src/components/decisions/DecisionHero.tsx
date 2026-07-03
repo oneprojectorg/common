@@ -30,9 +30,14 @@ export function DecisionHero({
           <bdi>{title}</bdi>
         </Header1>
       ) : hasImage ? (
-        <Header1 className="text-white uppercase md:text-title-xxl">
-          <bdi>{title}</bdi>
-        </Header1>
+        // White comes from the wrapper, not Header1's className: twMerge
+        // misreads the custom text-title-lg size as a color and drops it
+        // when text-white is merged in, leaving the h1 unsized on mobile.
+        <div className="text-white">
+          <Header1 className="uppercase md:text-title-xxl">
+            <bdi>{title}</bdi>
+          </Header1>
+        </div>
       ) : (
         <GradientHeader className="uppercase" gradient={gradient}>
           <Header1 className="md:text-title-xxl">
