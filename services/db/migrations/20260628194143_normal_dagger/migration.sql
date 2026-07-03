@@ -47,6 +47,7 @@ SELECT
       "neighborhood": {
         "type": "string",
         "title": "Which neighborhood does this idea help?",
+        "x-format": "dropdown",
         "enum": ["Downtown", "Franklinton", "Linden", "Hilltop", "South Side", "Other"]
       },
       "estimatedBudget": {
@@ -57,13 +58,14 @@ SELECT
       "additionalNotes": {
         "type": "string",
         "title": "Anything else we should know?",
-        "format": "textarea"
+        "x-format": "long-text"
       },
       "agreeToTerms": {
         "type": "boolean",
         "title": "I confirm the information above is accurate."
       }
-    }
+    },
+    "x-field-order": ["neighborhood", "estimatedBudget", "additionalNotes", "agreeToTerms"]
   }$JSON$::jsonb
 FROM public.profiles p
 WHERE p.slug = 'columbus'
