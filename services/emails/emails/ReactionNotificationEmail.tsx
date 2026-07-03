@@ -1,7 +1,9 @@
 import { getTextPreview } from '@op/core';
-import { Button, Section, Text } from '@react-email/components';
+import { Section, Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 export const ReactionNotificationEmail = ({
   reactorName = 'A Common user',
@@ -37,25 +39,9 @@ export const ReactionNotificationEmail = ({
         </Text>
       </Section>
 
-      <Section className="pb-0">
-        <Button
-          href={postUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          View {contentType}
-        </Button>
-      </Section>
+      <CtaButton href={postUrl}>View {contentType}</CtaButton>
 
-      {postedIn && (
-        <Text className="mt-1 mb-0 text-xs text-neutral-gray4">
-          Posted in: {postedIn}
-        </Text>
-      )}
+      {postedIn && <Footnote>Posted in: {postedIn}</Footnote>}
     </EmailTemplate>
   );
 };
@@ -64,5 +50,18 @@ ReactionNotificationEmail.subject = (
   reactorName: string,
   contentType: 'post' | 'proposal' = 'post',
 ) => `${reactorName} reacted to your ${contentType}`;
+
+ReactionNotificationEmail.PreviewProps = {
+  reactorName: 'Jordan Rivera',
+  postContent:
+    'The proposal outlines a phased rollout for the community garden.',
+  postUrl: 'https://common.oneproject.org/',
+  reactionType: '❤️',
+  recipientName: 'Alex',
+  contentType: 'proposal',
+  content:
+    'Here is the proposal text that received a reaction. It spans a few lines so the preview truncation is visible in the rendered email.',
+  postedIn: 'Community Fund',
+} satisfies Parameters<typeof ReactionNotificationEmail>[0];
 
 export default ReactionNotificationEmail;

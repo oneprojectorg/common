@@ -1,6 +1,8 @@
-import { Button, Section, Text } from '@react-email/components';
+import { Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 export const PhaseTransitionEmail = ({
   processTitle,
@@ -24,28 +26,24 @@ export const PhaseTransitionEmail = ({
         {totalPhases}: <strong>{toPhaseName}</strong>.
       </Text>
 
-      <Section className="pb-0">
-        <Button
-          href={processUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          View process
-        </Button>
-      </Section>
+      <CtaButton href={processUrl}>View process</CtaButton>
 
-      <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
+      <Footnote>
         You're receiving this because you're a participant in {processTitle}.
-      </Text>
+      </Footnote>
     </EmailTemplate>
   );
 };
 
 PhaseTransitionEmail.subject = (processTitle: string, toPhaseName: string) =>
   `${processTitle} — now in ${toPhaseName}`;
+
+PhaseTransitionEmail.PreviewProps = {
+  processTitle: 'Participatory Budgeting 2026',
+  toPhaseName: 'Voting',
+  phaseNumber: 3,
+  totalPhases: 5,
+  processUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof PhaseTransitionEmail>[0];
 
 export default PhaseTransitionEmail;

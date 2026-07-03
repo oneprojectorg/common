@@ -1,6 +1,8 @@
-import { Button, Section, Text } from '@react-email/components';
+import { Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
 
 interface OPInvitationEmailProps {
@@ -20,35 +22,30 @@ export const OPInvitationEmail = ({
     <EmailTemplate
       previewText={`${inviterName} invited you to join ${organizationName ? `${organizationName} on ` : ''} Common! 🎉`}
     >
-      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Join {organizationName ?? 'Common'}!
-      </Header>
-      <Text className="my-8 text-lg">
+      <Header>Join {organizationName ?? 'Common'}!</Header>
+      <Text className="mt-8 text-lg">
         <strong>{inviterName}</strong> invited you to Common.
       </Text>
 
-      <Section className="pb-0">
-        <Button
-          href={inviteUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          Accept invite
-        </Button>
-        {message ? <Text>{message}</Text> : null}
-      </Section>
+      {message ? (
+        <Text>
+          <em>&ldquo;{message}&rdquo;</em>
+        </Text>
+      ) : null}
+      <CtaButton href={inviteUrl}>Accept invite</CtaButton>
 
-      <Text className="mb-0 text-xs text-neutral-gray4">
-        This invite will expire after 1 week
-      </Text>
+      <Footnote>This invite will expire after 1 week</Footnote>
     </EmailTemplate>
   );
 };
 
 OPInvitationEmail.subject = `Action Required: You've been invited to join Common`;
+
+OPInvitationEmail.PreviewProps = {
+  inviterName: 'Jordan Rivera',
+  organizationName: 'One Project',
+  inviteUrl: 'https://common.oneproject.org/',
+  message: "We'd love to have you in our decision-making community.",
+} satisfies Parameters<typeof OPInvitationEmail>[0];
 
 export default OPInvitationEmail;

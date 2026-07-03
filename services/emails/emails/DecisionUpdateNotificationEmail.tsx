@@ -1,6 +1,8 @@
-import { Button, Section, Text } from '@react-email/components';
+import { Section, Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 export const DecisionUpdateNotificationEmail = ({
   authorName = 'A Common user',
@@ -28,28 +30,16 @@ export const DecisionUpdateNotificationEmail = ({
       </Text>
 
       <Section className="my-6">
-        <Text className="my-0 text-lg text-neutral-charcoal">
+        <Text className="my-0 text-lg wrap-anywhere text-neutral-charcoal">
           "{updateContent}"
         </Text>
       </Section>
 
-      <Section className="pb-0">
-        <Button
-          href={updateUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          View update
-        </Button>
-      </Section>
+      <CtaButton href={updateUrl}>View update</CtaButton>
 
-      <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
+      <Footnote>
         You're receiving this because you're a participant in {processTitle}.
-      </Text>
+      </Footnote>
     </EmailTemplate>
   );
 };
@@ -58,5 +48,13 @@ DecisionUpdateNotificationEmail.subject = (
   authorName: string,
   processTitle: string,
 ) => `${authorName} posted an update in ${processTitle}`;
+
+DecisionUpdateNotificationEmail.PreviewProps = {
+  authorName: 'Jordan Rivera',
+  processTitle: 'Participatory Budgeting 2026',
+  updateContent:
+    "Don't forget to come to the party! Details here: https://example.com/events/participatory-budgeting-kickoff?utm_source=email&utm_medium=notification&utm_campaign=cityofcolumbus&x_ns_sku_id=87997840130746&gad_campaignid=21075393992&gbraid=0AAAAo4mICF4hxE_DoU0PFAMy32",
+  updateUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof DecisionUpdateNotificationEmail>[0];
 
 export default DecisionUpdateNotificationEmail;

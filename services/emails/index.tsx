@@ -1,6 +1,6 @@
 import { APP_NAME, genericEmail } from '@op/core';
-import { render } from '@react-email/render';
 import nodemailer from 'nodemailer';
+import { render } from 'react-email';
 import { Resend } from 'resend';
 import z from 'zod';
 

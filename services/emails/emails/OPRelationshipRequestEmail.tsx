@@ -1,7 +1,9 @@
 import { relationshipMap } from '@op/types';
-import { Button, Section, Text } from '@react-email/components';
+import { Section, Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
+import { Footnote } from '../components/Footnote';
 
 interface OPRelationshipRequestEmailProps {
   requesterOrgName: string;
@@ -45,28 +47,24 @@ export const OPRelationshipRequestEmail = ({
         </Section>
       )}
 
-      <Section className="pb-0">
-        <Button
-          href={approvalUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          Accept now
-        </Button>
-      </Section>
+      <CtaButton href={approvalUrl}>Accept now</CtaButton>
 
-      <Text className="mb-0 text-xs text-neutral-gray4">
+      <Footnote>
         Once you accept their request, <strong>{requesterOrgName}</strong> will
         appear in your relationships on Common.
-      </Text>
+      </Footnote>
     </EmailTemplate>
   );
 };
 
 OPRelationshipRequestEmail.subject = `Action Required: Accept request for {{requesterOrgName}} to add {{targetOrgName}} as a/an {{relationshipTypes}} on Common`;
+
+OPRelationshipRequestEmail.PreviewProps = {
+  requesterOrgName: 'One Project',
+  targetOrgName: 'Community Fund',
+  relationshipTypes: ['partner'],
+  approvalUrl: 'https://common.oneproject.org/',
+  requesterMessage: 'Looking forward to collaborating with your team.',
+} satisfies Parameters<typeof OPRelationshipRequestEmail>[0];
 
 export default OPRelationshipRequestEmail;

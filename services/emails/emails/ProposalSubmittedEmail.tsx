@@ -1,6 +1,8 @@
-import { Button, Heading, Section, Text } from '@react-email/components';
+import { Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
+import { Header } from '../components/Header';
 
 export const ProposalSubmittedEmail = ({
   proposalName,
@@ -21,9 +23,7 @@ export const ProposalSubmittedEmail = ({
           : `Your proposal "${displayName}" has been submitted`
       }
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Proposal Submitted
-      </Heading>
+      <Header>Proposal Submitted</Header>
       <Text className="my-8 text-lg">
         Your proposal <strong>{displayName}</strong> has been submitted
         {processTitle ? (
@@ -35,19 +35,7 @@ export const ProposalSubmittedEmail = ({
         .
       </Text>
 
-      <Section className="pb-0">
-        <Button
-          href={proposalUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          View proposal
-        </Button>
-      </Section>
+      <CtaButton href={proposalUrl}>View proposal</CtaButton>
     </EmailTemplate>
   );
 };
@@ -62,5 +50,11 @@ ProposalSubmittedEmail.subject = (
   }
   return `Your proposal "${displayName}" has been submitted`;
 };
+
+ProposalSubmittedEmail.PreviewProps = {
+  proposalName: 'Community Garden Revamp',
+  processTitle: 'Participatory Budgeting 2026',
+  proposalUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof ProposalSubmittedEmail>[0];
 
 export default ProposalSubmittedEmail;

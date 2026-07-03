@@ -1,5 +1,6 @@
-import { Button, Section, Text } from '@react-email/components';
+import { Section, Text } from 'react-email';
 
+import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Header } from '../components/Header';
 
@@ -25,9 +26,7 @@ export const VoteSubmittedEmail = ({
           : 'Your ballot is in!'
       }
     >
-      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Your ballot is in!
-      </Header>
+      <Header>Your ballot is in!</Header>
       <Text className="my-8 text-lg">
         {processTitle ? (
           <>
@@ -52,19 +51,7 @@ export const VoteSubmittedEmail = ({
         </Section>
       )}
 
-      <Section className="pb-0">
-        <Button
-          href={decisionUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
-          style={{
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          View all proposals
-        </Button>
-      </Section>
+      <CtaButton href={decisionUrl}>View all proposals</CtaButton>
     </EmailTemplate>
   );
 };
@@ -75,5 +62,14 @@ VoteSubmittedEmail.subject = (processTitle?: string | null) => {
   }
   return 'Your ballot is in!';
 };
+
+VoteSubmittedEmail.PreviewProps = {
+  processTitle: 'Participatory Budgeting 2026',
+  decisionUrl: 'https://common.oneproject.org/',
+  nextSteps: [
+    { name: 'Results announced', date: 'March 15' },
+    { name: 'Funding disbursed', date: 'April 1' },
+  ],
+} satisfies Parameters<typeof VoteSubmittedEmail>[0];
 
 export default VoteSubmittedEmail;
