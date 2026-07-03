@@ -104,7 +104,12 @@ export function CustomFormModal({
   };
 
   return (
-    <Modal isOpen={isOpen} className="flex flex-col">
+    // my-8 keeps 2rem of breathing room above and below the panel (4rem
+    // total), so the max-height shrinks to match; mobile stays full-screen.
+    <Modal
+      isOpen={isOpen}
+      className="flex flex-col sm:my-8 sm:max-h-[calc(100svh-4rem)]"
+    >
       <ModalHeader>{definition.title ?? t('Additional details')}</ModalHeader>
       <Form
         onSubmit={handleSubmit}
