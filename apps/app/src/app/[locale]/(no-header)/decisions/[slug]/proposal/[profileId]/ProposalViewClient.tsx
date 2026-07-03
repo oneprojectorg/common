@@ -56,7 +56,7 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
-      backHref={`/decisions/${slug}`}
+      decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />
   );

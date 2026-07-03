@@ -26,13 +26,13 @@ function ProposalViewPageContent({
     notFound();
   }
 
-  const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
+  const decisionRoot = `/profile/${orgSlug}/decisions/${instanceId}`;
 
   return (
     <ProposalView
       proposal={proposal}
       canSeeRevisions={false}
-      backHref={backHref}
+      decisionRoot={decisionRoot}
       selection={null}
     />
   );
