@@ -25,7 +25,17 @@ const parsePolicyMap = (
   if (!raw?.trim()) {
     return undefined;
   }
-  const parsed = policyMapSchema.safeParse(JSON.parse(raw));
+  // Malformed JSON must produce the same named error as a bad shape — a raw
+  // SyntaxError from JSON.parse would surface as a cryptic 500 on every
+  // webhook (getModerationProvider runs per-request), hiding which env var
+  // is at fault.
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    throw new Error('Invalid MODERATION_POLICY_MAP: malformed JSON');
+  }
+  const parsed = policyMapSchema.safeParse(json);
   if (!parsed.success) {
     throw new Error(
       `Invalid MODERATION_POLICY_MAP: ${parsed.error.issues[0]?.message ?? 'bad shape'}`,

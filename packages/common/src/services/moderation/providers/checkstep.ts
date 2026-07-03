@@ -228,13 +228,13 @@ const CLEARING_DECISIONS: readonly string[] = [
   'clear',
 ];
 
-// Per-process memo so the same drift-warning doesn't spam the log for every
-// downstream verdict — one unknown code fires once per lifetime.
-const warnedUnknownPolicies = new Set<string>();
-
 const scoresFromViolations = (
   violations: CheckstepViolation[] | undefined,
   policyMap: Record<string, ModerationCategory>,
+  // Memo so the same drift-warning doesn't spam the log for every downstream
+  // verdict — one unknown code fires once. Owned by the provider instance so
+  // two providers with different maps (e.g. in tests) warn independently.
+  warnedUnknownPolicies: Set<string>,
 ): ModerationScores => {
   if (!Array.isArray(violations)) {
     return {};
@@ -271,10 +271,12 @@ const scoresFromViolations = (
  * a dashboard, and native appeals — implements `submitForReview` for the async
  * path. Key/URL never leak in errors.
  *
- * `policyMap` / `csamPolicies` are account-scoped (Checkstep policies are
+ * `policyMap` / `detachPolicies` are account-scoped (Checkstep policies are
  * configured per-account, not baked into the platform), so the caller wires
- * them from env / config. When omitted, the defaults above act as a
- * reasonable seed until the deployment's real taxonomy is known.
+ * them from env / config. When omitted, the defaults above mirror our
+ * account's dashboard taxonomy. Note `detachPolicies` REPLACES the default
+ * list — an override of just `CEX` disables the TER detach; include every
+ * code the deployment wants detached.
  */
 export const createCheckstepProvider = ({
   apiKey,
@@ -295,6 +297,7 @@ export const createCheckstepProvider = ({
   detachPolicies?: readonly string[];
 }): ModerationProvider => {
   const detachPolicySet: ReadonlySet<string> = new Set(detachPolicies);
+  const warnedUnknownPolicies = new Set<string>();
   return {
     ...(webhookSigningKey
       ? {
@@ -362,9 +365,15 @@ export const createCheckstepProvider = ({
       // ack/interim callback with no recognized top-level decision still
       // fires the detach path if the violations name a detach policy (CEX,
       // TER by default). Any detach-policy hit wins over `flag` and `clear`.
-      const detachHits = (payload.violations ?? []).flatMap((v) =>
-        v.policy != null && detachPolicySet.has(v.policy) ? [v.policy] : [],
-      );
+      // Deduped so repeated violations of one policy don't render as
+      // "CEX, CEX" in the audit reason.
+      const detachHits = [
+        ...new Set(
+          (payload.violations ?? []).flatMap((v) =>
+            v.policy != null && detachPolicySet.has(v.policy) ? [v.policy] : [],
+          ),
+        ),
+      ];
       const isDetach = detachHits.length > 0;
 
       const flagged = payload.decision
@@ -404,7 +413,11 @@ export const createCheckstepProvider = ({
               : `Checkstep decision: ${payload.decision}`
             : undefined,
           scores: carriesEvidence
-            ? scoresFromViolations(payload.violations ?? undefined, policyMap)
+            ? scoresFromViolations(
+                payload.violations ?? undefined,
+                policyMap,
+                warnedUnknownPolicies,
+              )
             : undefined,
         },
       ];

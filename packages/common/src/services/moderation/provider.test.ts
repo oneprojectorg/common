@@ -56,6 +56,14 @@ describe('getModerationProvider', () => {
     expect(() => getModerationProvider()).toThrow(/MODERATION_POLICY_MAP/);
   });
 
+  it('names the env var on malformed MODERATION_POLICY_MAP JSON (not a raw SyntaxError)', () => {
+    process.env.MODERATION_API_KEY = 'k';
+    process.env.MODERATION_POLICY_MAP = '{not json';
+    expect(() => getModerationProvider()).toThrow(
+      /MODERATION_POLICY_MAP.*malformed JSON/,
+    );
+  });
+
   it('accepts a well-formed MODERATION_POLICY_MAP + MODERATION_DETACH_POLICIES', () => {
     process.env.MODERATION_API_KEY = 'k';
     process.env.MODERATION_POLICY_MAP = JSON.stringify({

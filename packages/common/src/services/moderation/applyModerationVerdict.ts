@@ -145,7 +145,18 @@ export const applyModerationVerdict = async (
   // Unknown task: nothing we submitted is waiting on this verdict — a forged
   // ref, a task from a superseded round, or a redelivery after the flag was
   // resolved and its submissions cleared. Recording nothing, deciding nothing.
+  // The round-match deliberately gates the detach too: honouring a detach on
+  // an unmatched ref would let anyone holding the callback URL detach
+  // arbitrary content. A superseded round isn't a coverage hole — the
+  // superseding round reviews the item's CURRENT content and delivers its own
+  // verdict. Still, a dropped detach is worth an ops-visible line: if these
+  // ever appear outside an edit race, something upstream is wrong.
   if (!aggregate) {
+    if (isDetach) {
+      console.warn(
+        `[moderation] detach verdict dropped (round mismatch) for ${itemType}:${itemId} — superseded round or unmatched ref; current round carries its own verdict`,
+      );
+    }
     return { action: 'noop', detached: false };
   }
 
