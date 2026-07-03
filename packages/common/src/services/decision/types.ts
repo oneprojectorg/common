@@ -15,12 +15,16 @@ export type JsonSchema = JSONSchema7;
  * Supported values for the `x-format` vendor extension on proposal template
  * properties. Describes **how** a field should be presented/coerced, while
  * JSON Schema keywords (`type`, `enum`, etc.) describe the data shape.
+ *
+ * `radio` renders an enum as a horizontal radio row (the NPS-style control)
+ * instead of a dropdown; used by custom form scale questions.
  */
 export type XFormat =
   | 'short-text'
   | 'long-text'
   | 'money'
   | 'dropdown'
+  | 'radio'
   | 'location';
 
 /**
