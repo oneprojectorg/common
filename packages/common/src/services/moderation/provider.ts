@@ -1,45 +1,94 @@
+import { z } from 'zod';
+
 import { createCheckstepProvider } from './providers/checkstep';
-import { createHiveProvider } from './providers/hive';
-import { createLassoProvider } from './providers/lasso';
-import type { ModerationProvider } from './types';
+import type { ModerationCategory, ModerationProvider } from './types';
+
+const MODERATION_CATEGORIES = [
+  'profanity',
+  'sexual',
+  'hate',
+  'violence',
+  'harassment',
+  'csam',
+  'other',
+] as const satisfies readonly ModerationCategory[];
+
+// `MODERATION_POLICY_MAP` is a JSON object: `{ "HTE": "hate", ... }`. The
+// value must be one of our `ModerationCategory` union members; anything else
+// fails validation so a typo in ops config fails loudly at startup instead of
+// silently miscategorising violations.
+const policyMapSchema = z.record(z.string(), z.enum(MODERATION_CATEGORIES));
+
+const parsePolicyMap = (
+  raw: string | undefined,
+): Record<string, ModerationCategory> | undefined => {
+  if (!raw?.trim()) {
+    return undefined;
+  }
+  // Malformed JSON must produce the same named error as a bad shape — a raw
+  // SyntaxError from JSON.parse would surface as a cryptic 500 on every
+  // webhook (getModerationProvider runs per-request), hiding which env var
+  // is at fault.
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    throw new Error('Invalid MODERATION_POLICY_MAP: malformed JSON');
+  }
+  const parsed = policyMapSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid MODERATION_POLICY_MAP: ${parsed.error.issues[0]?.message ?? 'bad shape'}`,
+    );
+  }
+  return parsed.data;
+};
+
+const parseDetachPolicies = (raw: string | undefined): string[] | undefined => {
+  if (!raw?.trim()) {
+    return undefined;
+  }
+  const codes = raw
+    .split(',')
+    .map((code) => code.trim())
+    .filter((code) => code.length > 0);
+  return codes.length > 0 ? codes : undefined;
+};
 
 /**
- * Resolves the moderation provider for the vendor named by `MODERATION_PROVIDER`
- * (`hive` | `lasso` | `checkstep`), keyed by the single `MODERATION_API_KEY`.
- * One vendor is active at a time, so one key suffices — swap the key value when
- * switching vendors. The vendor serves the async review path.
+ * Resolves the Checkstep moderation provider. Keyed by `MODERATION_API_KEY`;
+ * `MODERATION_WEBHOOK_SIGNING_KEY` carries the Checkstep platform signing key
+ * used to verify inbound webhooks. When set, every callback must present a
+ * valid `x-auth-signature`.
  *
- * `MODERATION_WEBHOOK_SIGNING_KEY` carries the vendor's webhook signing secret
- * (Checkstep: the platform signing key; Lasso: the dashboard webhook secret).
- * When set, the vendor adapter verifies the signature on every inbound webhook.
- * Hive documents no signing for async callbacks, so its callbacks are gated by
- * the shared-secret callback URL alone.
+ * `MODERATION_POLICY_MAP` (JSON) and `MODERATION_DETACH_POLICIES` (comma
+ * list) override the Checkstep policy → category taxonomy and the
+ * mandatory-detach code set. Both are optional; without them the adapter
+ * falls back to sensible defaults. Because Checkstep policies are configured
+ * per-account, keeping these in env lets the deployment's real taxonomy drive
+ * detection without a code change.
  *
- * Returns `null` when moderation isn't configured (no vendor selected, or no
- * key) — the feature is simply off. Throws on an unrecognized vendor value so a
- * typo fails loudly rather than silently disabling moderation.
+ * Returns `null` when moderation isn't configured (no key) — the feature is
+ * simply off. `MODERATION_PROVIDER` is accepted only as `checkstep` (or empty);
+ * a non-empty value that isn't `checkstep` throws so a stale config fails
+ * loudly rather than silently disabling moderation.
  */
 export const getModerationProvider = (): ModerationProvider | null => {
   const vendor = process.env.MODERATION_PROVIDER;
   const apiKey = process.env.MODERATION_API_KEY;
   const webhookSigningKey = process.env.MODERATION_WEBHOOK_SIGNING_KEY;
-  if (!vendor || !apiKey) {
+  if (!apiKey) {
     return null;
   }
 
-  switch (vendor) {
-    case 'hive':
-      // MODERATION_HIVE_PUBLISHER_ID overrides the `user_id` Hive requires on
-      // every submission; falls back to the adapter's default when unset.
-      return createHiveProvider({
-        apiKey,
-        publisherId: process.env.MODERATION_HIVE_PUBLISHER_ID,
-      });
-    case 'lasso':
-      return createLassoProvider({ apiToken: apiKey, webhookSigningKey });
-    case 'checkstep':
-      return createCheckstepProvider({ apiKey, webhookSigningKey });
-    default:
-      throw new Error(`Unknown MODERATION_PROVIDER: ${vendor}`);
+  if (vendor && vendor !== 'checkstep') {
+    throw new Error(`Unknown MODERATION_PROVIDER: ${vendor}`);
   }
+
+  return createCheckstepProvider({
+    apiKey,
+    webhookSigningKey,
+    policyMap: parsePolicyMap(process.env.MODERATION_POLICY_MAP),
+    detachPolicies: parseDetachPolicies(process.env.MODERATION_DETACH_POLICIES),
+  });
 };

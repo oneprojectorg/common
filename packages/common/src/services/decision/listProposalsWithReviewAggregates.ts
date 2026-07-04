@@ -1,4 +1,4 @@
-import { db, eq, inArray } from '@op/db/client';
+import { and, db, eq, inArray, isNull } from '@op/db/client';
 import {
   ProposalReviewState,
   proposalCategories,
@@ -136,7 +136,16 @@ async function listProposalsFiltered({
 
   const [proposalsFull, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findMany({
-      where: { id: { in: filteredProposalIds } },
+      // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
+      // re-apply the filter here so a bug upstream can't leak a CSAM row to
+      // the review UI.
+      where: {
+        RAW: (table) =>
+          and(
+            inArray(table.id, filteredProposalIds),
+            isNull(table.moderationDetachedAt),
+          )!,
+      },
       with: proposalRelations({ processInstanceId, phaseId }),
     }),
     getCategoriesByProposalIds(filteredProposalIds),
@@ -185,17 +194,23 @@ async function listProposalsPaginated({
 
   const [pageRowsRaw, totalRows] = await Promise.all([
     db.query.proposals.findMany({
+      // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
+      // getProposalsForPhase, but the extra `moderationDetachedAt IS NULL`
+      // guards against a future caller / bug slipping a detached ID in.
       where: {
-        id: { in: phaseProposalIds },
-        ...(decodedCursor && {
-          RAW: (table) =>
-            getCursorCondition({
-              column: table.createdAt,
-              tieBreakerColumn: table.id,
-              cursor: decodedCursor,
-              direction: 'desc',
-            }),
-        }),
+        RAW: (table) =>
+          and(
+            inArray(table.id, phaseProposalIds),
+            isNull(table.moderationDetachedAt),
+            decodedCursor
+              ? getCursorCondition({
+                  column: table.createdAt,
+                  tieBreakerColumn: table.id,
+                  cursor: decodedCursor,
+                  direction: 'desc',
+                })
+              : undefined,
+          )!,
       },
       with: proposalRelations({ processInstanceId, phaseId }),
       orderBy: { createdAt: 'desc', id: 'desc' },
@@ -204,7 +219,12 @@ async function listProposalsPaginated({
     db
       .select({ count: countFn() })
       .from(proposals)
-      .where(inArray(proposals.id, phaseProposalIds)),
+      .where(
+        and(
+          inArray(proposals.id, phaseProposalIds),
+          isNull(proposals.moderationDetachedAt),
+        ),
+      ),
   ]);
 
   const hasMore = pageRowsRaw.length > limit;

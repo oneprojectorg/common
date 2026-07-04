@@ -102,6 +102,16 @@ export const proposalColumns = {
     withTimezone: true,
     mode: 'string',
   }),
+
+  // Moderation-driven detach. Set when Checkstep returns a CSAM verdict; the
+  // proposal is then invisible to everyone including decision admins. Distinct
+  // from `deletedAt` (which is user/admin-initiated) so the audit trail
+  // preserves the reason, and so we never conflate a routine soft-delete with
+  // a mandatory takedown.
+  moderationDetachedAt: timestamp('moderation_detached_at', {
+    withTimezone: true,
+    mode: 'string',
+  }),
 } as const;
 
 export const proposals = pgTable(

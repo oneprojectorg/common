@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import type { ProposalReviewRequestState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -31,7 +31,12 @@ export async function listProposalRevisionRequests({
   }
 
   const proposal = await db.query.proposals.findFirst({
-    where: { id: proposalId },
+    // Detached (CSAM) proposals return 404 — authors and reviewers alike
+    // should not see revision history on a taken-down row.
+    where: {
+      RAW: (table) =>
+        and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+    },
     with: proposalWithRevisionRequestsConfig(states),
   });
 

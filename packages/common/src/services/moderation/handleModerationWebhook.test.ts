@@ -104,8 +104,9 @@ describe('handleModerationWebhook', () => {
   });
 
   it('acknowledges a delivery carrying no verdicts without applying anything', async () => {
-    // e.g. Lasso's dashboard webhook also delivers tag/strike/list actions —
-    // a 200 stops the vendor from retrying them forever.
+    // Non-decision Checkstep webhook types (author-decision, incident-closed,
+    // analysed-content) reach us but carry no verdicts — a 200 stops the
+    // vendor from retrying them forever.
     const applyVerdict = vi.fn();
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',

@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
@@ -54,7 +54,12 @@ export async function getProposalWithReviewAggregates(
 
   const [proposal, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findFirst({
-      where: { id: proposalId },
+      // Moderation-detached (CSAM) proposals are treated as not-found even
+      // for admins — same 404 the endpoint returns for a plain missing row.
+      where: {
+        RAW: (table) =>
+          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+      },
       with: proposalRelations({ processInstanceId, phaseId }),
     }),
     getCategoriesByProposalIds([proposalId]),

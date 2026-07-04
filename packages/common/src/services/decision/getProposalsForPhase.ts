@@ -171,6 +171,10 @@ async function getIdsCreatedDuringWindow({
     eq(proposals.processInstanceId, instanceId),
     predicate,
     isNull(proposals.deletedAt),
+    // Moderation-detached (CSAM) rows are invisible to every downstream
+    // caller — including trusted admin views — so the ID set can never
+    // surface them via a phase-scoped lookup.
+    isNull(proposals.moderationDetachedAt),
   ];
   if (inboundAt) {
     const comparator = inboundComparator === 'gte' ? gte : gt;
@@ -204,6 +208,7 @@ async function getActiveIdsByPredicate({
         eq(proposals.processInstanceId, instanceId),
         predicate,
         isNull(proposals.deletedAt),
+        isNull(proposals.moderationDetachedAt),
       ),
     );
   return rows.map((r) => r.id);

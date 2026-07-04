@@ -41,7 +41,10 @@ export const handleModerationWebhookRequest = (
       // retry, and the now-idempotent verdict would no-op — permanently
       // losing the invalidation while the flag is correct in the DB. Clients
       // would keep their stale view until a manual reload.
-      if (result.action !== 'noop') {
+      // Detach on a `flagged`-already row lands as `action: 'noop'`, but the
+      // proposal did change (moderation_detached_at just flipped). Invalidate
+      // on `detached` too so admin lists refetch and drop the item.
+      if (result.action !== 'noop' || result.detached) {
         try {
           const channels = await getModerationItemChannels(
             verdict.itemType,

@@ -38,6 +38,11 @@ const checkstepWebhookSchema = z.object({
         severity: z.string().nullish(),
       }),
     )
+    // Hard cap: bounds worst-case scan cost + memory on a hostile / replayed
+    // payload without hitting realistic Checkstep responses (their moderation
+    // taxonomy is well under this bound). Exceeding it fails validation and
+    // is acknowledged with 200 upstream.
+    .max(1000)
     .nullish(),
 });
 
@@ -90,14 +95,42 @@ const verifyCheckstepWebhook = (
   return true;
 };
 
-// Checkstep policy codes mapped onto our categories; anything unmapped is `other`.
-const POLICY_MAP: Record<string, ModerationCategory> = {
-  HTE: 'hate',
-  VIO: 'violence',
-  SEX: 'sexual',
-  HRS: 'harassment',
-  PRF: 'profanity',
+// Default Checkstep policy → category map, mirroring the policies configured
+// on OUR Checkstep account (source: dashboard policy list, ONE-331). Policies
+// are per-account (docs.checkstep.com/glossary), so a different deployment
+// can override via the factory's `policyMap` option (wired to the
+// `MODERATION_POLICY_MAP` env var in `provider.ts`); unmatched codes fall
+// through to `other` and log a warning so taxonomy drift surfaces immediately.
+//
+// Our category union is narrower than the account taxonomy, so several
+// policies intentionally map to broader buckets: terrorism → violence,
+// self-harm / illegal / spam / PII / impersonation / disinformation /
+// coordinated-capture → other. `other` still flags and hides — the category
+// only drives score attribution, not enforcement.
+export const DEFAULT_POLICY_MAP: Record<string, ModerationCategory> = {
+  HTE: 'hate', // Hate Speech
+  HRS: 'harassment', // Harassment
+  CEX: 'csam', // Child Exploitation → mandatory-detach path
+  TER: 'violence', // Terrorism
+  SSH: 'other', // Promote suicide, self injury or eating disorder
+  VLC: 'violence', // Violence
+  SXC: 'sexual', // Sexual Content
+  ILL: 'other', // Illegal Activities
+  SPM: 'other', // Spam
+  PII: 'other', // Private Information
+  IMP: 'other', // Impersonation
+  OBS: 'profanity', // Profanity Obscene
+  DIS: 'other', // Voting Disinformation
+  MANIP: 'other', // Process Manipulation via coordinated capture
 };
+
+// Default Checkstep policy codes that force a mandatory detach: child
+// exploitation (`CEX`) and terrorism (`TER`) content is removed from the
+// decision process outright — invisible even to admins — instead of the
+// ordinary hide. Same account-level caveat as the map above; override via
+// `detachPolicies` (env `MODERATION_DETACH_POLICIES`). Any violation carrying
+// one of these codes escalates the verdict from `flagged` to `detach`.
+export const DEFAULT_DETACH_POLICIES: readonly string[] = ['CEX', 'TER'];
 
 // Checkstep severity buckets mapped onto our 0-1 scale.
 const SEVERITY_SCORE: Record<string, number> = {
@@ -140,15 +173,19 @@ const post = async (
   return JSON.parse(text);
 };
 
-// Checkstep field types we can express per media kind. `other` (PDFs/docs)
-// has no reviewable field type, so it's dropped rather than mislabeled as an
-// image — the text still covers it.
-const CHECKSTEP_FIELD_TYPE: Partial<
-  Record<ModerationMediaItem['kind'], string>
-> = {
+// Checkstep field types we express per media kind. The six simple types
+// documented in `docs.checkstep.com/glossary` are text, image, audio, video,
+// uri, file — so anything non-media (PDFs, DOCX, arbitrary attachments) rides
+// on the generic `file` type rather than being dropped. Checkstep's exact
+// analysis behaviour on `file` isn't spelled out in their public docs (past
+// listing it as a valid field type); on a rejection the submit call throws
+// and the round is retried, so a bad mapping fails loudly rather than
+// silently under-moderating.
+const CHECKSTEP_FIELD_TYPE: Record<ModerationMediaItem['kind'], string> = {
   image: 'image',
   video: 'video',
   audio: 'audio',
+  other: 'file',
 };
 
 // Checkstep requires a top-level `type` (its "complex type") on every content
@@ -169,12 +206,11 @@ const contentBody = (
   type: COMPLEX_TYPE,
   fields: [
     { id: 'text', type: 'text', src: content },
-    ...media.flatMap((item, index) => {
-      const fieldType = CHECKSTEP_FIELD_TYPE[item.kind];
-      return fieldType
-        ? [{ id: `media-${index}`, type: fieldType, src: item.url }]
-        : [];
-    }),
+    ...media.map((item, index) => ({
+      id: `media-${index}`,
+      type: CHECKSTEP_FIELD_TYPE[item.kind],
+      src: item.url,
+    })),
   ],
   ...(callbackUrl ? { callback_url: callbackUrl } : {}),
 });
@@ -194,14 +230,34 @@ const CLEARING_DECISIONS: readonly string[] = [
 
 const scoresFromViolations = (
   violations: CheckstepViolation[] | undefined,
+  policyMap: Record<string, ModerationCategory>,
+  // Memo so the same drift-warning doesn't spam the log for every downstream
+  // verdict — one unknown code fires once. Owned by the provider instance so
+  // two providers with different maps (e.g. in tests) warn independently.
+  warnedUnknownPolicies: Set<string>,
 ): ModerationScores => {
   if (!Array.isArray(violations)) {
     return {};
   }
   const scores: ModerationScores = {};
   for (const violation of violations) {
-    const category: ModerationCategory =
-      (violation.policy ? POLICY_MAP[violation.policy] : undefined) ?? 'other';
+    const rawPolicy = violation.policy ?? undefined;
+    let category: ModerationCategory = 'other';
+    if (rawPolicy) {
+      const mapped = policyMap[rawPolicy];
+      if (mapped) {
+        category = mapped;
+      } else if (!warnedUnknownPolicies.has(rawPolicy)) {
+        // Log-once alert on Checkstep taxonomy drift: an unknown policy code
+        // still falls through to `other` (so the flag pipeline runs), but ops
+        // is notified so the map can be updated in config before scoring goes
+        // stale on a whole class of violations.
+        warnedUnknownPolicies.add(rawPolicy);
+        console.warn(
+          `[moderation] unknown Checkstep policy code "${rawPolicy}" — extend MODERATION_POLICY_MAP to categorise it`,
+        );
+      }
+    }
     const score = violation.severity
       ? (SEVERITY_SCORE[violation.severity] ?? 0.5)
       : 0.5;
@@ -214,104 +270,157 @@ const scoresFromViolations = (
  * Checkstep moderation adapter. A platform vendor with policy-based violations,
  * a dashboard, and native appeals — implements `submitForReview` for the async
  * path. Key/URL never leak in errors.
+ *
+ * `policyMap` / `detachPolicies` are account-scoped (Checkstep policies are
+ * configured per-account, not baked into the platform), so the caller wires
+ * them from env / config. When omitted, the defaults above mirror our
+ * account's dashboard taxonomy. Note `detachPolicies` REPLACES the default
+ * list — an override of just `CEX` disables the TER detach; include every
+ * code the deployment wants detached.
  */
 export const createCheckstepProvider = ({
   apiKey,
   apiUrl = DEFAULT_API_URL,
   webhookSigningKey,
+  policyMap = DEFAULT_POLICY_MAP,
+  detachPolicies = DEFAULT_DETACH_POLICIES,
 }: {
   apiKey: string;
   apiUrl?: string;
   /** Platform signing key from Checkstep settings; when set, inbound webhooks
    *  must carry a valid `x-auth-signature`. */
   webhookSigningKey?: string;
-}): ModerationProvider => ({
-  ...(webhookSigningKey
-    ? {
-        verifyWebhook: (input: ModerationWebhookInput) =>
-          verifyCheckstepWebhook(input, webhookSigningKey),
+  /** Checkstep policy code → our category. Defaults to `DEFAULT_POLICY_MAP`. */
+  policyMap?: Record<string, ModerationCategory>;
+  /** Policy codes that escalate a verdict to `detach` (mandatory removal from
+   *  the process, admin views included). Defaults to `DEFAULT_DETACH_POLICIES`. */
+  detachPolicies?: readonly string[];
+}): ModerationProvider => {
+  const detachPolicySet: ReadonlySet<string> = new Set(detachPolicies);
+  const warnedUnknownPolicies = new Set<string>();
+  return {
+    ...(webhookSigningKey
+      ? {
+          verifyWebhook: (input: ModerationWebhookInput) =>
+            verifyCheckstepWebhook(input, webhookSigningKey),
+        }
+      : {}),
+
+    // Checkstep takes one combined task (text + media fields), so it's a
+    // single ref — unless there's nothing to review (no text, no media, e.g. a
+    // `user` flag), in which case no task is planned and the flag stays pending
+    // for manual handling rather than being auto-cleared by an empty submission.
+    planReviewRefs: ({ itemType, itemId, roundId, content, media }) =>
+      content.trim() || (media?.length ?? 0) > 0
+        ? [encodeContentRef(itemType, itemId, roundId)]
+        : [],
+
+    submitForReview: async ({
+      itemType,
+      itemId,
+      roundId,
+      content,
+      media,
+      callbackUrl,
+    }) => {
+      const contentId = encodeContentRef(itemType, itemId, roundId);
+      const result = await post(
+        `${apiUrl}/content`,
+        apiKey,
+        contentBody(contentId, content, media, callbackUrl),
+      );
+      const reference: ModerationProviderReference = {
+        providerRecordId: result.id ?? contentId,
+        submittedRefs: [contentId],
+      };
+      return reference;
+    },
+
+    // One verdict per callback (one combined task per submission). Checkstep
+    // sends four documented webhook_type values; only `decision` carries a
+    // content verdict for us — the other kinds (author-decision, incident-closed,
+    // analysed-content) are acknowledged without action.
+    parseWebhook: ({
+      rawBody,
+    }: ModerationWebhookInput): ModerationVerdict[] => {
+      const payload = checkstepWebhookSchema.parse(JSON.parse(rawBody));
+      if (payload.webhook_type !== 'decision') {
+        return [];
       }
-    : {}),
+      const contentId = payload.content?.id;
+      if (!contentId) {
+        return [];
+      }
+      // A delivery for content not ingested through this integration (dashboard
+      // test payloads, sync-gate items under a bare uuid, pre-deploy content)
+      // carries an id that isn't our ref — skip it and acknowledge with 200
+      // rather than throwing into a 400 + retries.
+      let ref;
+      try {
+        ref = decodeContentRef(contentId);
+      } catch {
+        return [];
+      }
+      // Mandatory detach is decided BEFORE the decision-parse gate: even an
+      // ack/interim callback with no recognized top-level decision still
+      // fires the detach path if the violations name a detach policy (CEX,
+      // TER by default). Any detach-policy hit wins over `flag` and `clear`.
+      // Deduped so repeated violations of one policy don't render as
+      // "CEX, CEX" in the audit reason.
+      const detachHits = [
+        ...new Set(
+          (payload.violations ?? []).flatMap((v) =>
+            v.policy != null && detachPolicySet.has(v.policy) ? [v.policy] : [],
+          ),
+        ),
+      ];
+      const isDetach = detachHits.length > 0;
 
-  // Checkstep takes one combined task (text + media fields), so it's a
-  // single ref — unless there's nothing to review (no text, no media, e.g. a
-  // `user` flag), in which case no task is planned and the flag stays pending
-  // for manual handling rather than being auto-cleared by an empty submission
-  // (matches Hive's behavior).
-  planReviewRefs: ({ itemType, itemId, roundId, content, media }) =>
-    content.trim() || (media?.length ?? 0) > 0
-      ? [encodeContentRef(itemType, itemId, roundId)]
-      : [],
-
-  submitForReview: async ({
-    itemType,
-    itemId,
-    roundId,
-    content,
-    media,
-    callbackUrl,
-  }) => {
-    const contentId = encodeContentRef(itemType, itemId, roundId);
-    const result = await post(
-      `${apiUrl}/content`,
-      apiKey,
-      contentBody(contentId, content, media, callbackUrl),
-    );
-    const reference: ModerationProviderReference = {
-      providerRecordId: result.id ?? contentId,
-      submittedRefs: [contentId],
-    };
-    return reference;
-  },
-
-  // One verdict per callback (one combined task per submission). Checkstep
-  // sends four documented webhook_type values; only `decision` carries a
-  // content verdict for us — the other kinds (author-decision, incident-closed,
-  // analysed-content) are acknowledged without action.
-  parseWebhook: ({ rawBody }: ModerationWebhookInput): ModerationVerdict[] => {
-    const payload = checkstepWebhookSchema.parse(JSON.parse(rawBody));
-    if (payload.webhook_type !== 'decision') {
-      return [];
-    }
-    const contentId = payload.content?.id;
-    if (!contentId) {
-      return [];
-    }
-    // A delivery for content not ingested through this integration (dashboard
-    // test payloads, sync-gate items under a bare uuid, pre-deploy content)
-    // carries an id that isn't our ref — skip it and acknowledge with 200,
-    // matching the Lasso adapter, rather than throwing into a 400 + retries.
-    let ref;
-    try {
-      ref = decodeContentRef(contentId);
-    } catch {
-      return [];
-    }
-    const flagged = payload.decision
-      ? FLAGGING_DECISIONS.includes(payload.decision)
-      : false;
-    const cleared = payload.decision
-      ? CLEARING_DECISIONS.includes(payload.decision)
-      : false;
-    // Neither a flagging nor a recognized clearing decision (unknown value, or
-    // a decision-less ack/interim callback) → not a verdict; emit nothing
-    // rather than defaulting to clear and dismissing an open flag.
-    if (!flagged && !cleared) {
-      return [];
-    }
-    return [
-      {
-        itemType: ref.itemType,
-        itemId: ref.itemId,
-        roundId: ref.roundId,
-        mediaId: ref.mediaId,
-        verdict: flagged ? 'flagged' : 'clear',
-        externalRecordId: contentId,
-        reason: flagged ? `Checkstep decision: ${payload.decision}` : undefined,
-        scores: flagged
-          ? scoresFromViolations(payload.violations ?? undefined)
-          : undefined,
-      },
-    ];
-  },
-});
+      const flagged = payload.decision
+        ? FLAGGING_DECISIONS.includes(payload.decision)
+        : false;
+      const cleared = payload.decision
+        ? CLEARING_DECISIONS.includes(payload.decision)
+        : false;
+      // Neither a detach hit nor a recognized decision (unknown value, or a
+      // decision-less ack/interim callback with no detach violation) → not a
+      // verdict; emit nothing rather than defaulting to clear and dismissing
+      // an open flag.
+      if (!isDetach && !flagged && !cleared) {
+        return [];
+      }
+      const verdict: ModerationVerdict['verdict'] = isDetach
+        ? 'detach'
+        : flagged
+          ? 'flagged'
+          : 'clear';
+      // A `detach` or `flagged` verdict carries evidence; a plain `clear`
+      // doesn't. Detach without a flagging decision still surfaces the
+      // matched policies so ops logs the exact violation instead of an empty
+      // explanation.
+      const carriesEvidence = isDetach || flagged;
+      return [
+        {
+          itemType: ref.itemType,
+          itemId: ref.itemId,
+          roundId: ref.roundId,
+          mediaId: ref.mediaId,
+          verdict,
+          externalRecordId: contentId,
+          reason: carriesEvidence
+            ? isDetach
+              ? `Checkstep detach (${detachHits.join(', ')}): ${payload.decision ?? '(no decision)'}`
+              : `Checkstep decision: ${payload.decision}`
+            : undefined,
+          scores: carriesEvidence
+            ? scoresFromViolations(
+                payload.violations ?? undefined,
+                policyMap,
+                warnedUnknownPolicies,
+              )
+            : undefined,
+        },
+      ];
+    },
+  };
+};

@@ -1,5 +1,5 @@
 import { trackUserVoted } from '@op/analytics';
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
@@ -223,9 +223,16 @@ export const submitVote = async ({
       );
     }
 
-    // Get available proposals for this process instance
+    // Get available proposals for this process instance. Moderation-detached
+    // (CSAM) rows must never be votable, so we require both
+    // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
+    // filtering post-fetch would still leak the row to the eligibility check.
     const availableProposals = await db._query.proposals.findMany({
-      where: eq(proposals.processInstanceId, data.processInstanceId),
+      where: and(
+        eq(proposals.processInstanceId, data.processInstanceId),
+        isNull(proposals.deletedAt),
+        isNull(proposals.moderationDetachedAt),
+      ),
     });
 
     // Filter to eligible proposals for voting

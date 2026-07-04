@@ -80,6 +80,7 @@ export * from './saveReviewDraft';
 export * from './requestRevision';
 export * from './cancelRevisionRequest';
 export * from './deleteProposal';
+export * from './detachProposalForModeration';
 export * from './deleteDecision';
 export * from './getProcessCategories';
 export * from './exportProposals';

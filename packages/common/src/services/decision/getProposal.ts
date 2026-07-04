@@ -1,4 +1,4 @@
-import { and, count, db, eq } from '@op/db/client';
+import { and, count, db, eq, isNull } from '@op/db/client';
 import type {
   ObjectsInStorage,
   ProcessInstance,
@@ -79,8 +79,14 @@ export const getProposal = async ({
   }
 > => {
   const proposal = await db.query.proposals.findFirst({
+    // Moderation-detached (CSAM) proposals are treated as not-found even for
+    // admins — same 404 the endpoint returns for a plain missing row.
     where: {
-      profileId,
+      RAW: (table) =>
+        and(
+          eq(table.profileId, profileId),
+          isNull(table.moderationDetachedAt),
+        )!,
     },
     with: {
       processInstance: true,
