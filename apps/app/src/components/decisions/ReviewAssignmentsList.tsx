@@ -63,6 +63,9 @@ export function ReviewAssignmentsList({
       assignmentsQuery.data?.pages.flatMap((page) => page.assignments) ?? [],
     [assignmentsQuery.data],
   );
+  // Full match count from the server — assignments.length only counts loaded pages.
+  const totalAssignments =
+    assignmentsQuery.data?.pages[0]?.total ?? assignments.length;
   const isLoading = assignmentsQuery.isLoading;
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
 
@@ -87,7 +90,7 @@ export function ReviewAssignmentsList({
           </span>
           <Bullet />
           <span className="font-serif text-title-base text-neutral-black">
-            {assignments.length}
+            {totalAssignments}
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end">

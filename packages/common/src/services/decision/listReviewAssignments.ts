@@ -1,5 +1,7 @@
 import { and, db, eq } from '@op/db/client';
+import { proposalReviewAssignments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { count as countFn } from 'drizzle-orm';
 
 import {
   UnauthorizedError,
@@ -8,7 +10,10 @@ import {
   getCursorCondition,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   getActiveRevisionRequest,
   resolveAssignmentProposal,
@@ -31,16 +36,10 @@ interface ListReviewAssignmentsInput {
 }
 
 /**
- * Returns all authorized review assignments for the current reviewer in a
- * process instance. The response uses the lean
- * {@link ReviewAssignmentList} shape: the embedded proposal snapshot omits the
- * per-row TipTap doc payload (`documentContent` / `htmlContent`) and the
- * resolved `proposalTemplate`. The single-assignment endpoint
- * (`getReviewAssignment`) still returns the full proposal when the reviewer
- * opens an individual card.
- *
- * Pagination: keyset on `assignedAt + id` so a reviewer with hundreds of
- * assignments can page through them without loading the full set per request.
+ * Returns the current reviewer's authorized review assignments in a process
+ * instance, keyset-paginated on `assignedAt + id`. The per-row TipTap doc
+ * hydration that used to run over the reviewer's entire assignment set now
+ * only runs over one page, which is what keeps large queues from timing out.
  */
 export async function listReviewAssignments({
   processInstanceId,
@@ -68,43 +67,101 @@ export async function listReviewAssignments({
     ? decodeCursor<{ value: string | Date; id: string }>(cursor)
     : undefined;
 
-  const rawAssignments = await db.query.proposalReviewAssignments.findMany({
-    where: {
-      RAW: (table) =>
+  // Cursor lives only on the data query so `total` stays the full match count.
+  const [rawAssignments, countResult] = await Promise.all([
+    db.query.proposalReviewAssignments.findMany({
+      where: {
+        RAW: (table) =>
+          and(
+            eq(table.processInstanceId, processInstanceId),
+            eq(table.reviewerProfileId, reviewerProfileId),
+            status ? eq(table.status, status) : undefined,
+            getCursorCondition({
+              column: table.assignedAt,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: dir,
+            }),
+          )!,
+      },
+      with: reviewAssignmentWithConfig,
+      orderBy: (table, { asc, desc }) =>
+        dir === 'asc'
+          ? [asc(table.assignedAt), asc(table.id)]
+          : [desc(table.assignedAt), desc(table.id)],
+      // Fetch one extra to detect whether a next page exists.
+      limit: limit + 1,
+    }),
+    db
+      .select({ count: countFn() })
+      .from(proposalReviewAssignments)
+      .where(
         and(
-          eq(table.processInstanceId, processInstanceId),
-          eq(table.reviewerProfileId, reviewerProfileId),
-          status ? eq(table.status, status) : undefined,
-          getCursorCondition({
-            column: table.assignedAt,
-            tieBreakerColumn: table.id,
-            cursor: decodedCursor,
-            direction: dir,
-          }),
-        )!,
-    },
-    with: reviewAssignmentWithConfig,
-    orderBy: (table, { asc, desc }) =>
-      dir === 'asc'
-        ? [asc(table.assignedAt), asc(table.id)]
-        : [desc(table.assignedAt), desc(table.id)],
-    // Fetch one extra to detect whether a next page exists.
-    limit: limit + 1,
-  });
+          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+          eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
+          status ? eq(proposalReviewAssignments.status, status) : undefined,
+        ),
+      ),
+  ]);
 
+  const total = Number(countResult[0]?.count ?? 0);
   const hasMore = rawAssignments.length > limit;
   const pageAssignments = hasMore
     ? rawAssignments.slice(0, limit)
     : rawAssignments;
+
+  const proposalTemplate = await resolveProposalTemplate(
+    instance.instanceData,
+    instance.process.id,
+  );
   const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
+
+  const docContentInputs: Array<{
+    id: string;
+    proposalData: unknown;
+    proposalTemplate: typeof proposalTemplate;
+    collaborationDocVersionId?: number;
+  }> = [];
+
+  for (const assignment of pageAssignments) {
+    const proposalSnapshot = resolveAssignmentProposal(assignment);
+
+    docContentInputs.push({
+      id: proposalSnapshot.id,
+      proposalData: proposalSnapshot.proposalData,
+      proposalTemplate,
+      collaborationDocVersionId:
+        proposalSnapshot.proposalData.collaborationDocVersionId,
+    });
+  }
+
+  const documentContentMap = await getProposalDocumentsContent(
+    docContentInputs,
+    // A single unavailable document must not break the whole list.
+    { onFetchError: 'omit' },
+  );
 
   const assignmentList = pageAssignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
 
+    const documentContent = documentContentMap.get(proposalSnapshot.id);
+
+    let htmlContent: Record<string, string> | undefined;
+    if (documentContent?.type === 'json') {
+      htmlContent = generateProposalHtml(documentContent.fragments);
+    } else if (documentContent?.type === 'html') {
+      htmlContent = { default: documentContent.content };
+    }
+
     return {
       assignment: {
         ...assignment,
-        proposal: proposalSnapshot,
+        proposal: {
+          ...proposalSnapshot,
+          proposalTemplate,
+          documentContent,
+          htmlContent,
+        },
       },
       rubricTemplate,
       review: assignment.reviews[0] ?? null,
@@ -113,16 +170,20 @@ export async function listReviewAssignments({
   });
 
   const lastAssignment = pageAssignments[pageAssignments.length - 1];
+  const cursorValue = lastAssignment?.assignedAt;
+  // `!= null` (not a truthy check) so a falsy-but-valid sort value still
+  // produces a cursor instead of silently ending pagination.
   const next =
-    hasMore && lastAssignment?.assignedAt
+    hasMore && lastAssignment && cursorValue != null
       ? encodeCursor<{ value: string | Date; id: string }>({
-          value: lastAssignment.assignedAt,
+          value: cursorValue,
           id: lastAssignment.id,
         })
       : null;
 
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
+    total,
     next,
   });
 }

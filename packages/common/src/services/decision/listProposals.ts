@@ -48,6 +48,7 @@ import {
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { buildVoteCountSql } from './voteCountSql';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -456,17 +457,11 @@ export const listProposals = async ({
   // Vote-count correlated subquery factory. Called by both the `extras`
   // callback and the `orderBy` callback so each receives the v2-aliased
   // `table` and embeds the correct outer-column reference.
-  //
-  // Scoping the join to `processInstanceId` ensures cross-instance ballots
-  // can't inflate counts.
   const voteCountExpr = (t: typeof proposals) =>
-    sql<number>`(
-      SELECT COUNT(*)::int FROM ${decisionsVoteSubmissions}
-      INNER JOIN ${decisionsVoteProposals}
-        ON ${decisionsVoteProposals.voteSubmissionId} = ${decisionsVoteSubmissions.id}
-      WHERE ${decisionsVoteProposals.proposalId} = ${t.id}
-      AND ${decisionsVoteSubmissions.processInstanceId} = ${input.processInstanceId}
-    )`;
+    buildVoteCountSql({
+      proposalsTable: t,
+      processInstanceId: input.processInstanceId,
+    });
 
   const [rawProposalList, countResult] = await Promise.all([
     db.query.proposals.findMany({

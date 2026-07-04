@@ -198,11 +198,12 @@ export const allProposalsListSchema = z.object({
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
 
 /**
- * Leaner proposal shape for admin selection / reviewer queues — list views
- * that render hundreds to thousands of rows. Drops the per-row TipTap doc
- * payload (`documentContent` / `htmlContent`) and the resolved
- * `proposalTemplate`; the detail / single-proposal endpoints still hydrate
- * those when the user opens an individual proposal.
+ * Leaner proposal shape for the admin manual-selection list — a view that can
+ * hold thousands of rows. Drops the per-row TipTap doc payload
+ * (`documentContent` / `htmlContent`), the resolved `proposalTemplate`, and
+ * the engagement metrics the selection table never renders; the
+ * single-proposal endpoints still hydrate the full shape when the admin opens
+ * an individual proposal.
  */
 export const selectionCandidateSchema = proposalSchema.omit({
   decisionCount: true,
@@ -214,16 +215,21 @@ export const selectionCandidateSchema = proposalSchema.omit({
   documentContent: true,
   htmlContent: true,
   proposalTemplate: true,
+  likesCount: true,
+  followersCount: true,
+  commentsCount: true,
+  isLikedByUser: true,
+  isFollowedByUser: true,
 });
 
 export type SelectionCandidate = z.infer<typeof selectionCandidateSchema>;
 
 /**
- * Input schema for `decision.listSelectionCandidates`. Cursor pagination
- * mirrors `listAllProposals`: pass `cursor` from the previous page's `next`.
- * `votes` sort is a single page (the vote count is a correlated subquery so
- * the cursor can't keyset it), so paginate with `newest` / `oldest` when an
- * admin needs to walk past the top-voted slice.
+ * Input schema for `decision.listSelectionCandidates`. Pass `cursor` from the
+ * previous page's `next`. `newest` / `oldest` keyset on `createdAt + id`;
+ * `votes` pages by offset because the vote count is a correlated aggregate
+ * that can't keyset (the candidate set is phase-bounded, so offset stays
+ * cheap).
  */
 export const selectionCandidatesFilterSchema = z.object({
   processInstanceId: z.uuid(),

@@ -1,9 +1,11 @@
 import { mockCollab } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
+import { db, inArray } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalReviewState,
+  proposalReviewAssignments,
 } from '@op/db/schema';
 import { createProposalReview, createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
@@ -226,6 +228,77 @@ describe.concurrent('listReviewAssignments', () => {
         requestComment: 'Missing budget breakdown.',
       },
     });
+  });
+
+  it('paginates with a cursor across identical assignedAt timestamps and reports the full total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const first = await testData.createReviewAssignment({
+      title: 'Pagination A',
+    });
+    const second = await testData.createReviewAssignment({
+      context: first.context,
+      reviewer: first.reviewer,
+      title: 'Pagination B',
+    });
+    const third = await testData.createReviewAssignment({
+      context: first.context,
+      reviewer: first.reviewer,
+      title: 'Pagination C',
+    });
+
+    for (const created of [first, second, third]) {
+      const { collaborationDocId } = created.proposal.proposalData as {
+        collaborationDocId: string;
+      };
+      seedMockCollab(collaborationDocId);
+    }
+
+    const assignmentIds = [
+      first.assignment.id,
+      second.assignment.id,
+      third.assignment.id,
+    ];
+
+    // Identical assignedAt across the page boundary makes the `id`
+    // tie-breaker load-bearing: without it, rows would be skipped or
+    // duplicated between pages.
+    await db
+      .update(proposalReviewAssignments)
+      .set({ assignedAt: '2026-01-01 00:00:00+00' })
+      .where(inArray(proposalReviewAssignments.id, assignmentIds));
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      first.reviewer.email,
+    );
+    const processInstanceId = first.context.instance.instance.id;
+
+    const firstPage = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId,
+      limit: 2,
+    });
+
+    expect(firstPage.assignments).toHaveLength(2);
+    expect(firstPage.total).toBe(3);
+    expect(firstPage.next).not.toBeNull();
+
+    const secondPage = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId,
+      limit: 2,
+      cursor: firstPage.next,
+    });
+
+    expect(secondPage.assignments).toHaveLength(1);
+    expect(secondPage.total).toBe(3);
+    expect(secondPage.next).toBeNull();
+
+    const pagedIds = [...firstPage.assignments, ...secondPage.assignments].map(
+      (item) => item.assignment.id,
+    );
+    expect(new Set(pagedIds).size).toBe(3);
+    expect(pagedIds.sort()).toEqual([...assignmentIds].sort());
   });
 
   it('returns empty list when reviewer has no assignments', async ({

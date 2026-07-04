@@ -71,8 +71,7 @@ export const ManualSelectionList = ({
 
   // useInfiniteQuery so category/sort changes don't blank the table while the
   // server re-fetches, and so admins can page past the lean default page size
-  // (50). `votes` sort returns a single page — the vote count is a correlated
-  // subquery and can't keyset.
+  // (50). All sorts paginate: `newest`/`oldest` keyset, `votes` by offset.
   const candidatesQuery =
     trpc.decision.listSelectionCandidates.useInfiniteQuery(
       { processInstanceId: instanceId, categoryId, sortOrder },
@@ -184,16 +183,22 @@ export const ManualSelectionList = ({
     [setProposalFilter],
   );
 
+  // Submit only cache-resolved picks so the confirm dialog and the submission
+  // always agree (WYSIWYG). A persisted id that never resolved (stale
+  // localStorage from a proposal no longer in the candidate set, or a page the
+  // admin hasn't loaded this session) is excluded from both the dialog and the
+  // mutation rather than being funded/advanced sight-unseen.
   const handleConfirmSelection = useCallback(() => {
+    const resolvedIds = selectedProposals.map((proposal) => proposal.id);
     posthog.capture('manual_selection_dialog_confirmed', {
       process_instance_id: instanceId,
-      proposal_count: selectedIds.length,
+      proposal_count: resolvedIds.length,
     });
     submitMutation.mutate({
       processInstanceId: instanceId,
-      proposalIds: selectedIds,
+      proposalIds: resolvedIds,
     });
-  }, [instanceId, selectedIds, submitMutation, posthog]);
+  }, [instanceId, selectedProposals, submitMutation, posthog]);
 
   if (candidatesQuery.isError) {
     return (
@@ -241,7 +246,9 @@ export const ManualSelectionList = ({
   };
 
   const proposals = filteredProposals;
-  const numSelected = selectedIds.length;
+  // Count the resolved picks (what the dialog lists and the mutation submits),
+  // not raw selectedIds, so the footer never over-promises.
+  const numSelected = selectedProposals.length;
   const currentPhaseName =
     instance.instanceData?.phases?.find(
       (p) => p.phaseId === instance.currentStateId,
@@ -264,32 +271,33 @@ export const ManualSelectionList = ({
           </Header3>
         </EmptyState>
       ) : (
-        <>
-          <SelectableProposalsTable
-            proposals={proposals}
-            selectedIds={selectedIds}
-            onToggle={toggleProposal}
-            getProposalHref={(p) =>
-              `/decisions/${decisionSlug}/proposal/${p.profileId}`
-            }
-            showVotes={isFinalPhase}
-          />
-          {candidatesQuery.hasNextPage ? (
-            <div className="flex justify-center">
-              <Button
-                color="secondary"
-                size="small"
-                onPress={() => candidatesQuery.fetchNextPage()}
-                isDisabled={candidatesQuery.isFetchingNextPage}
-              >
-                {candidatesQuery.isFetchingNextPage
-                  ? t('Loading...')
-                  : t('Load More')}
-              </Button>
-            </div>
-          ) : null}
-        </>
+        <SelectableProposalsTable
+          proposals={proposals}
+          selectedIds={selectedIds}
+          onToggle={toggleProposal}
+          getProposalHref={(p) =>
+            `/decisions/${decisionSlug}/proposal/${p.profileId}`
+          }
+          showVotes={isFinalPhase}
+        />
       )}
+
+      {/* Rendered even when the client-side filter empties the loaded pages —
+          matching rows may exist on unfetched pages. */}
+      {candidatesQuery.hasNextPage ? (
+        <div className="flex justify-center">
+          <Button
+            color="secondary"
+            size="small"
+            onPress={() => candidatesQuery.fetchNextPage()}
+            isDisabled={candidatesQuery.isFetchingNextPage}
+          >
+            {candidatesQuery.isFetchingNextPage
+              ? t('Loading...')
+              : t('Load More')}
+          </Button>
+        </div>
+      ) : null}
 
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter

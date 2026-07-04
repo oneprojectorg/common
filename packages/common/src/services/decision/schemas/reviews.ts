@@ -6,11 +6,7 @@ import {
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
-import {
-  proposalProfileSchema,
-  proposalSchema,
-  selectionCandidateSchema,
-} from './proposal';
+import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -85,20 +81,20 @@ export const proposalReviewAssignmentSchema = z.object({
 });
 
 /**
- * Leaner review-assignment shape used by `listReviewAssignments`. The reviewer
- * queue can have hundreds of assignments, and the per-row TipTap fetch that
- * hydrates `documentContent` / `htmlContent` on the full proposal shape
- * dominated the response time. The single-assignment endpoint
- * (`getReviewAssignment`) still returns the full {@link proposalSchema} shape
- * when the reviewer opens an individual assignment.
+ * Input schema for `decision.listReviewAssignments`. Pass `cursor` from the
+ * previous page's `next`; pages keyset on `assignedAt + id`.
  */
-export const proposalReviewAssignmentListItemSchema = z.object({
-  id: z.uuid(),
+export const reviewAssignmentsFilterSchema = z.object({
   processInstanceId: z.uuid(),
-  phaseId: z.string(),
-  status: z.enum(ProposalReviewAssignmentStatus),
-  proposal: selectionCandidateSchema,
+  status: z.enum(ProposalReviewAssignmentStatus).optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(50),
 });
+
+export type ReviewAssignmentsFilter = z.infer<
+  typeof reviewAssignmentsFilterSchema
+>;
 
 // ── Revision request schemas ───────────────────────────────────────────
 
@@ -135,19 +131,10 @@ export const reviewAssignmentExtendedSchema = z.object({
   revisionRequest: proposalReviewRequestSchema.nullable(),
 });
 
-/**
- * Wrapper around {@link proposalReviewAssignmentListItemSchema}; same shape as
- * {@link reviewAssignmentExtendedSchema} but with the lean proposal payload.
- */
-export const reviewAssignmentListItemSchema = z.object({
-  assignment: proposalReviewAssignmentListItemSchema,
-  rubricTemplate: rubricTemplateSchema.nullable(),
-  review: proposalReviewSchema.nullable(),
-  revisionRequest: proposalReviewRequestSchema.nullable(),
-});
-
 export const reviewAssignmentListSchema = z.object({
-  assignments: z.array(reviewAssignmentListItemSchema),
+  assignments: z.array(reviewAssignmentExtendedSchema),
+  // Full count of the reviewer's matching assignments, independent of cursor.
+  total: z.number(),
   next: z.string().nullable(),
 });
 
@@ -253,16 +240,10 @@ export type PhaseReviewProgress = z.infer<typeof phaseReviewProgressSchema>;
 export type ProposalReviewAssignment = z.infer<
   typeof proposalReviewAssignmentSchema
 >;
-export type ProposalReviewAssignmentListItem = z.infer<
-  typeof proposalReviewAssignmentListItemSchema
->;
 export type ProposalReviewRequest = z.infer<typeof proposalReviewRequestSchema>;
 export type ProposalReview = z.infer<typeof proposalReviewSchema>;
 export type ReviewAssignmentExtended = z.infer<
   typeof reviewAssignmentExtendedSchema
->;
-export type ReviewAssignmentListItem = z.infer<
-  typeof reviewAssignmentListItemSchema
 >;
 export type ReviewAssignmentList = z.infer<typeof reviewAssignmentListSchema>;
 export type ProposalRevisionRequestItem = z.infer<

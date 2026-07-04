@@ -4,17 +4,10 @@ import {
   db as defaultDb,
   eq,
   inArray,
-  sql,
 } from '@op/db/client';
-import {
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
-  proposalCategories,
-  proposals,
-} from '@op/db/schema';
+import { proposalCategories } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
-import { count as countFn } from 'drizzle-orm';
 
 import {
   CommonError,
@@ -25,7 +18,6 @@ import {
 } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
-import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { isLegacyInstanceData } from './isLegacyInstance';
@@ -35,6 +27,7 @@ import type {
   SelectionCandidate,
   SelectionCandidatesList,
 } from './schemas/proposal';
+import { buildVoteCountSql } from './voteCountSql';
 
 interface ListSelectionCandidatesInput {
   processInstanceId: string;
@@ -60,15 +53,17 @@ interface ListSelectionCandidatesInput {
  * Returns an empty list when there is no previous phase (initial or legacy).
  *
  * The response uses the lean {@link SelectionCandidate} schema: it omits the
- * per-row TipTap doc payload (`documentContent` / `htmlContent`) and the
- * resolved `proposalTemplate`. A 5k-candidate set used to fan out 500
- * concurrency-10 TipTap fetches here and time out before the admin saw a
- * row; the selection UI only needs the proposal-data fields (title, budget,
- * category) plus the engagement metrics it already shows.
+ * per-row TipTap doc payload (`documentContent` / `htmlContent`), the resolved
+ * `proposalTemplate`, and the engagement metrics the selection UI never
+ * renders. A 5k-candidate set used to fan out 500 concurrency-10 TipTap
+ * fetches here and time out before the admin saw a row; the selection table
+ * only needs the proposal-data fields (title, budget, category) plus the vote
+ * count.
  *
- * Pagination: keyset on `createdAt + id` for the `newest` / `oldest` sorts.
- * `votes` is single-page because the per-proposal vote count is a correlated
- * subquery — it can drive the sort but it can't keyset.
+ * Pagination: `newest` / `oldest` keyset on `createdAt + id`. `votes` sorts by
+ * a correlated aggregate that can't keyset, so it pages by offset instead —
+ * the candidate set is phase-bounded, and manual selection happens after
+ * voting closes, so the ordering is stable across pages.
  */
 export async function listSelectionCandidates({
   processInstanceId,
@@ -126,93 +121,80 @@ export async function listSelectionCandidates({
     ? phaseCandidateIds.filter((id) => categoryProposalIds.has(id))
     : phaseCandidateIds;
 
-  if (candidateIds.length === 0) {
+  const total = candidateIds.length;
+  if (total === 0) {
     return { items: [], total: 0, next: null };
   }
 
-  // The cursor encodes the createdAt + id of the last row from the previous
-  // page; `getCursorCondition` turns that into the next-page predicate. Votes
-  // is a correlated subquery so it can drive the sort but can't keyset — we
-  // return a single page for that mode (next: null).
-  const decodedCursor = cursor
-    ? decodeCursor<{ value: string | Date; id: string }>(cursor)
-    : undefined;
+  // Two cursor modes share the opaque `cursor` string: keyset ({ value, id })
+  // for the createdAt sorts, offset ({ offset }) for votes. A sort switch on
+  // the client changes the query key, so a cursor never crosses modes.
+  const decodedKeysetCursor =
+    cursor && sortOrder !== 'votes'
+      ? decodeCursor<{ value: string | Date; id: string }>(cursor)
+      : undefined;
+  const offset =
+    cursor && sortOrder === 'votes'
+      ? decodeCursor<{ offset: number }>(cursor).offset
+      : 0;
 
   const dir: 'asc' | 'desc' = sortOrder === 'oldest' ? 'asc' : 'desc';
 
-  // Vote-count correlated subquery: scoped to `processInstanceId` so
-  // cross-instance ballots can't inflate counts.
-  const voteCountExpr = (t: typeof proposals) =>
-    sql<number>`(
-      SELECT COUNT(*)::int FROM ${decisionsVoteSubmissions}
-      INNER JOIN ${decisionsVoteProposals}
-        ON ${decisionsVoteProposals.voteSubmissionId} = ${decisionsVoteSubmissions.id}
-      WHERE ${decisionsVoteProposals.proposalId} = ${t.id}
-      AND ${decisionsVoteSubmissions.processInstanceId} = ${processInstanceId}
-    )`;
-
-  const [rawRows, countResult] = await Promise.all([
-    db.query.proposals.findMany({
-      where: {
-        RAW: (table) =>
-          and(
-            inArray(table.id, candidateIds),
-            sortOrder === 'votes'
-              ? undefined
-              : getCursorCondition({
-                  column: table.createdAt,
-                  tieBreakerColumn: table.id,
-                  cursor: decodedCursor,
-                  direction: dir,
-                }),
-          )!,
-      },
-      with: {
-        submittedBy: {
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
-            },
+  const rawRows = await db.query.proposals.findMany({
+    where: {
+      RAW: (table) =>
+        and(
+          inArray(table.id, candidateIds),
+          sortOrder === 'votes'
+            ? undefined
+            : getCursorCondition({
+                column: table.createdAt,
+                tieBreakerColumn: table.id,
+                cursor: decodedKeysetCursor,
+                direction: dir,
+              }),
+        )!,
+    },
+    with: {
+      submittedBy: {
+        with: {
+          avatarImage: true,
+          profileUsers: {
+            columns: {},
+            with: { authUser: { columns: { isAnonymous: true } } },
           },
         },
-        profile: true,
       },
-      // Fetch one extra to detect whether a next page exists.
-      limit: limit + 1,
-      extras: {
-        voteCount: (table, { sql: sqlOp }) =>
-          sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
-      },
-      orderBy: (table, { asc: ascOp, desc: descOp }) => {
-        if (sortOrder === 'votes') {
-          return [
-            descOp(voteCountExpr(table)),
-            descOp(table.createdAt),
-            descOp(table.id),
-          ];
-        }
-        const directional = dir === 'asc' ? ascOp : descOp;
-        return [directional(table.createdAt), directional(table.id)];
-      },
-    }),
-    db
-      .select({ count: countFn() })
-      .from(proposals)
-      .where(inArray(proposals.id, candidateIds)),
-  ]);
+      profile: true,
+    },
+    // Fetch one extra to detect whether a next page exists.
+    limit: limit + 1,
+    ...(sortOrder === 'votes' && offset > 0 && { offset }),
+    extras: {
+      voteCount: (table, { sql: sqlOp }) =>
+        sqlOp<number>`${buildVoteCountSql({ proposalsTable: table, processInstanceId })}`.as(
+          'vote_count',
+        ),
+    },
+    orderBy: (table, { asc: ascOp, desc: descOp }) => {
+      if (sortOrder === 'votes') {
+        return [
+          descOp(
+            buildVoteCountSql({ proposalsTable: table, processInstanceId }),
+          ),
+          descOp(table.createdAt),
+          descOp(table.id),
+        ];
+      }
+      const directional = dir === 'asc' ? ascOp : descOp;
+      return [directional(table.createdAt), directional(table.id)];
+    },
+  });
 
-  const total = Number(countResult[0]?.count ?? 0);
   const hasMore = rawRows.length > limit;
   const pageRows = hasMore ? rawRows.slice(0, limit) : rawRows;
 
-  const profileIds = pageRows
-    .map((p) => p.profileId)
-    .filter((id): id is string => Boolean(id));
-
-  const [relationshipData, selectedIds, flaggedIds] = await Promise.all([
-    getProposalRelationshipData({ profileIds }),
+  const [selectedIds, flaggedIds] = await Promise.all([
     getSelectedProposalIds(processInstanceId),
     getActivelyFlaggedItemIds(
       'proposal',
@@ -239,7 +221,6 @@ export async function listSelectionCandidates({
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
-    const relationshipInfo = relationshipData.get(row.profileId);
 
     return {
       id: row.id,
@@ -252,29 +233,46 @@ export async function listSelectionCandidates({
       profileId: row.profileId,
       submittedBy,
       profile,
-      likesCount: relationshipInfo?.likesCount || 0,
-      followersCount: relationshipInfo?.followersCount || 0,
-      isLikedByUser: relationshipInfo?.isLikedByUser || false,
-      isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
-      commentsCount: relationshipInfo?.commentsCount || 0,
       isSelected: selectedIds.has(row.id),
       isFlagged: flaggedIds.has(row.id),
       voteCount: Number(row.voteCount ?? 0),
     };
   });
 
-  // Votes is single-page (correlated subquery can't keyset); for the other
-  // sorts, emit the cursor of the last row when there's another page.
-  const lastItem = items[items.length - 1];
-  const next =
-    sortOrder !== 'votes' && hasMore && lastItem?.createdAt
-      ? encodeCursor<{ value: string | Date; id: string }>({
-          value: lastItem.createdAt,
-          id: lastItem.id,
-        })
-      : null;
+  const next = hasMore
+    ? encodeNextCursor({ sortOrder, offset, limit, items })
+    : null;
 
   return { items, total, next };
+}
+
+function encodeNextCursor({
+  sortOrder,
+  offset,
+  limit,
+  items,
+}: {
+  sortOrder: 'votes' | 'newest' | 'oldest';
+  offset: number;
+  limit: number;
+  items: SelectionCandidate[];
+}): string | null {
+  if (sortOrder === 'votes') {
+    return encodeCursor<{ offset: number }>({ offset: offset + limit });
+  }
+
+  const lastItem = items[items.length - 1];
+  const cursorValue = lastItem?.createdAt;
+  // `!= null` (not a truthy check) so a falsy-but-valid sort value still
+  // produces a cursor instead of silently ending pagination.
+  if (!lastItem || cursorValue == null) {
+    return null;
+  }
+
+  return encodeCursor<{ value: string | Date; id: string }>({
+    value: cursorValue,
+    id: lastItem.id,
+  });
 }
 
 function resolvePreviousPhaseId(instance: {
