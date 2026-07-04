@@ -251,7 +251,9 @@ export const listProposals = async ({
       return {
         isEmpty: ids.length === 0,
         buildNonDraftFilter: (t) =>
-          ids.length > 0 ? inArray(t.id, ids) : sql`false`,
+          ids.length > 0
+            ? and(isNull(t.deletedAt), inArray(t.id, ids))!
+            : sql`false`,
         buildDraftFilter: () => sql`false`,
       };
     }
@@ -371,10 +373,9 @@ export const listProposals = async ({
     // Phase scoping is composed in SQL: non-drafts match the attachment
     // snapshot ∪ a strict `(inboundAt, outboundAt)` `createdAt` window, while
     // drafts match the half-open `[inboundAt, outboundAt)` window AND the
-    // caller's `profileUsers` access set. Both predicates carry the
-    // `isNull(deletedAt)` filter the helpers used to apply pre-IN-list, so
-    // the outer query stays soft-delete-safe even though it omits its own
-    // `deletedAt` check on the explicit-scope path.
+    // caller's `profileUsers` access set. Every scope predicate (including
+    // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
+    // so the outer query stays soft-delete-safe without its own check.
     const phaseScopedNonDraftIdFilter = and(
       ne(proposalsTable.status, ProposalStatus.DRAFT),
       phaseScope.buildNonDraftFilter(proposalsTable),

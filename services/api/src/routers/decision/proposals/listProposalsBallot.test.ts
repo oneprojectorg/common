@@ -1,8 +1,9 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  proposals,
 } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { describe, expect, it } from 'vitest';
@@ -218,6 +219,64 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     const ids = result.proposals.map((p) => p.id);
     expect(ids).toContain(submittedProposal.id);
     expect(ids).not.toContain(draftProposal.id);
+    expect(result.total).toBe(1);
+  });
+
+  it('excludes a soft-deleted proposal from ballot results', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const voter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const voterCaller = await createAuthenticatedCaller(voter.email);
+
+    const [keptProposal, deletedProposal] = await Promise.all([
+      testData.createProposal({
+        userEmail: voter.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `Kept ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: voter.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `Deleted after vote ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await seedBallot({
+      processInstanceId: instance.instance.id,
+      voterProfileId: voter.profileId,
+      proposalIds: [keptProposal.id, deletedProposal.id],
+    });
+
+    // Soft-delete one voted-on proposal after the ballot was cast.
+    await db
+      .update(proposals)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(proposals.id, deletedProposal.id));
+
+    const result = await voterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+    });
+
+    const ids = result.proposals.map((p) => p.id);
+    expect(ids).toContain(keptProposal.id);
+    expect(ids).not.toContain(deletedProposal.id);
     expect(result.total).toBe(1);
   });
 
