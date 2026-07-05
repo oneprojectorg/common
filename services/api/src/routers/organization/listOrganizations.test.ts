@@ -1,3 +1,6 @@
+import { db } from '@op/db/client';
+import { links, organizations, projects } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
@@ -144,6 +147,107 @@ describe.concurrent('organization.list', () => {
     }
 
     expect(reachedEnd).toBe(true);
+  });
+
+  it('returns organizations in the requested sort order after the two-step hydration', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    const [orgA, orgB, orgC] = await Promise.all([
+      testData.createOrganization({ users: { admin: 1 } }),
+      testData.createOrganization({ users: { admin: 1 } }),
+      testData.createOrganization({ users: { admin: 1 } }),
+    ]);
+
+    // Pin distinct, far-future createdAt values so these three sort to the top
+    // regardless of other concurrent test data, giving a known expected order.
+    await Promise.all([
+      db
+        .update(organizations)
+        .set({ createdAt: '2999-01-01T00:00:00.000Z' })
+        .where(eq(organizations.id, orgA.organization.id)),
+      db
+        .update(organizations)
+        .set({ createdAt: '2999-01-02T00:00:00.000Z' })
+        .where(eq(organizations.id, orgB.organization.id)),
+      db
+        .update(organizations)
+        .set({ createdAt: '2999-01-03T00:00:00.000Z' })
+        .where(eq(organizations.id, orgC.organization.id)),
+    ]);
+
+    const { session } = await createIsolatedSession(orgA.adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.list({
+      limit: 100,
+      orderBy: 'createdAt',
+      dir: 'desc',
+    });
+
+    const ourIds = new Set([
+      orgA.organization.id,
+      orgB.organization.id,
+      orgC.organization.id,
+    ]);
+    const orderedOurIds = result.items
+      .map((item) => item.id)
+      .filter((id) => ourIds.has(id));
+
+    // Newest createdAt first; the second-stage `in` hydration must be re-ordered
+    // back to the paged order, not left in arbitrary DB order.
+    expect(orderedOurIds).toEqual([
+      orgC.organization.id,
+      orgB.organization.id,
+      orgA.organization.id,
+    ]);
+  });
+
+  it('preserves the nested relation shape (projects, links, whereWeWork, profile) after hydration', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { organization, adminUser } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+
+    const [project] = await db
+      .insert(projects)
+      .values({
+        name: 'Two-step project',
+        slug: `two-step-project-${organization.id}`,
+        organizationId: organization.id,
+      })
+      .returning({ id: projects.id });
+    const [link] = await db
+      .insert(links)
+      .values({
+        href: 'https://example.com/two-step',
+        organizationId: organization.id,
+      })
+      .returning({ id: links.id });
+
+    // projects FK is ON DELETE SET NULL, so the org cascade won't remove it —
+    // clean it up explicitly. links cascade with the org.
+    onTestFinished(async () => {
+      await db.delete(projects).where(eq(projects.id, project!.id));
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.list({ limit: 1000 });
+    const found = result.items.find((item) => item.id === organization.id);
+
+    expect(found).toBeDefined();
+    expect(found?.projects?.some((p) => p.id === project!.id)).toBe(true);
+    expect(found?.links.some((l) => l.id === link!.id)).toBe(true);
+    // whereWeWork must be flattened to a locations array, never undefined.
+    expect(Array.isArray(found?.whereWeWork)).toBe(true);
+    expect(found?.profile).toBeDefined();
   });
 });
 
