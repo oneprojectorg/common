@@ -1,9 +1,21 @@
-import { type DbClient, db as defaultDb, eq, inArray } from '@op/db/client';
+import {
+  type DbClient,
+  and,
+  db as defaultDb,
+  eq,
+  inArray,
+} from '@op/db/client';
 import { proposalCategories } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
@@ -28,7 +40,9 @@ interface ListSelectionCandidatesInput {
    * for callers that still want a createdAt sort.
    */
   sortOrder?: 'votes' | 'newest' | 'oldest';
-  /** Max rows to return (1–100, default 50). */
+  /** Cursor returned by a prior page's `next`; opaque to callers. */
+  cursor?: string | null;
+  /** Max items in this page (1–100, default 50). */
   limit?: number;
   db?: DbClient;
 }
@@ -38,11 +52,6 @@ interface ListSelectionCandidatesInput {
  * phase — i.e. the proposals that belong to the previous phase's membership.
  * Returns an empty list when there is no previous phase (initial or legacy).
  *
- * Returns a single capped page plus the full candidate `total`. The manual
- * selection UI only ever renders the first page, so there's no cursor — the
- * `total` lets the frontend show how many candidates exist without loading
- * them all.
- *
  * The response uses the lean {@link SelectionCandidate} schema: it omits the
  * per-row TipTap doc payload (`documentContent` / `htmlContent`), the resolved
  * `proposalTemplate`, and the engagement metrics the selection UI never
@@ -50,12 +59,18 @@ interface ListSelectionCandidatesInput {
  * fetches here and time out before the admin saw a row; the selection table
  * only needs the proposal-data fields (title, budget, category) plus the vote
  * count.
+ *
+ * Pagination: `newest` / `oldest` keyset on `createdAt + id`. `votes` sorts by
+ * a correlated aggregate that can't keyset, so it pages by offset instead —
+ * the candidate set is phase-bounded, and manual selection happens after
+ * voting closes, so the ordering is stable across pages.
  */
 export async function listSelectionCandidates({
   processInstanceId,
   user,
   categoryId,
   sortOrder = 'votes',
+  cursor,
   limit = 50,
   db = defaultDb,
 }: ListSelectionCandidatesInput): Promise<SelectionCandidatesList> {
@@ -81,7 +96,7 @@ export async function listSelectionCandidates({
 
   const previousPhaseId = resolvePreviousPhaseId(instance);
   if (!previousPhaseId) {
-    return { items: [], total: 0 };
+    return { items: [], total: 0, next: null };
   }
 
   let categoryProposalIds: Set<string> | undefined;
@@ -91,7 +106,7 @@ export async function listSelectionCandidates({
       .from(proposalCategories)
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
     if (rows.length === 0) {
-      return { items: [], total: 0 };
+      return { items: [], total: 0, next: null };
     }
     categoryProposalIds = new Set(rows.map((r) => r.proposalId));
   }
@@ -108,14 +123,37 @@ export async function listSelectionCandidates({
 
   const total = candidateIds.length;
   if (total === 0) {
-    return { items: [], total: 0 };
+    return { items: [], total: 0, next: null };
   }
+
+  // Two cursor modes share the opaque `cursor` string: keyset ({ value, id })
+  // for the createdAt sorts, offset ({ offset }) for votes. A sort switch on
+  // the client changes the query key, so a cursor never crosses modes.
+  const decodedKeysetCursor =
+    cursor && sortOrder !== 'votes'
+      ? decodeCursor<{ value: string | Date; id: string }>(cursor)
+      : undefined;
+  const offset =
+    cursor && sortOrder === 'votes'
+      ? decodeCursor<{ offset: number }>(cursor).offset
+      : 0;
 
   const dir: 'asc' | 'desc' = sortOrder === 'oldest' ? 'asc' : 'desc';
 
   const rawRows = await db.query.proposals.findMany({
     where: {
-      RAW: (table) => inArray(table.id, candidateIds),
+      RAW: (table) =>
+        and(
+          inArray(table.id, candidateIds),
+          sortOrder === 'votes'
+            ? undefined
+            : getCursorCondition({
+                column: table.createdAt,
+                tieBreakerColumn: table.id,
+                cursor: decodedKeysetCursor,
+                direction: dir,
+              }),
+        )!,
     },
     with: {
       submittedBy: {
@@ -129,7 +167,9 @@ export async function listSelectionCandidates({
       },
       profile: true,
     },
-    limit,
+    // Fetch one extra to detect whether a next page exists.
+    limit: limit + 1,
+    ...(sortOrder === 'votes' && offset > 0 && { offset }),
     extras: {
       voteCount: (table, { sql: sqlOp }) =>
         sqlOp<number>`${buildVoteCountSql({ proposalsTable: table, processInstanceId })}`.as(
@@ -151,15 +191,18 @@ export async function listSelectionCandidates({
     },
   });
 
+  const hasMore = rawRows.length > limit;
+  const pageRows = hasMore ? rawRows.slice(0, limit) : rawRows;
+
   const [selectedIds, flaggedIds] = await Promise.all([
     getSelectedProposalIds(processInstanceId),
     getActivelyFlaggedItemIds(
       'proposal',
-      rawRows.map((p) => p.id),
+      pageRows.map((p) => p.id),
     ),
   ]);
 
-  const items: SelectionCandidate[] = rawRows.map((row) => {
+  const items: SelectionCandidate[] = pageRows.map((row) => {
     const rawSubmittedBy = Array.isArray(row.submittedBy)
       ? row.submittedBy[0]
       : row.submittedBy;
@@ -196,7 +239,40 @@ export async function listSelectionCandidates({
     };
   });
 
-  return { items, total };
+  const next = hasMore
+    ? encodeNextCursor({ sortOrder, offset, limit, items })
+    : null;
+
+  return { items, total, next };
+}
+
+function encodeNextCursor({
+  sortOrder,
+  offset,
+  limit,
+  items,
+}: {
+  sortOrder: 'votes' | 'newest' | 'oldest';
+  offset: number;
+  limit: number;
+  items: SelectionCandidate[];
+}): string | null {
+  if (sortOrder === 'votes') {
+    return encodeCursor<{ offset: number }>({ offset: offset + limit });
+  }
+
+  const lastItem = items[items.length - 1];
+  const cursorValue = lastItem?.createdAt;
+  // `!= null` (not a truthy check) so a falsy-but-valid sort value still
+  // produces a cursor instead of silently ending pagination.
+  if (!lastItem || cursorValue == null) {
+    return null;
+  }
+
+  return encodeCursor<{ value: string | Date; id: string }>({
+    value: cursorValue,
+    id: lastItem.id,
+  });
 }
 
 function resolvePreviousPhaseId(instance: {

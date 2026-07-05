@@ -19,6 +19,7 @@ export const listSelectionCandidatesRouter = router({
         processInstanceId: input.processInstanceId,
         categoryId: input.categoryId,
         sortOrder: input.sortOrder,
+        cursor: input.cursor,
         limit: input.limit,
         user: ctx.user,
       });

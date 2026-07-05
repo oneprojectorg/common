@@ -1,4 +1,4 @@
-import { db, eq, sql } from '@op/db/client';
+import { db, eq, inArray, sql } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -6,6 +6,7 @@ import {
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
+  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -191,6 +192,7 @@ describe.concurrent('listSelectionCandidates', () => {
 
     expect(result.items).toEqual([]);
     expect(result.total).toBe(0);
+    expect(result.next).toBeNull();
   });
 
   it('returns empty for a legacy instance (no phase model)', async ({
@@ -241,23 +243,32 @@ describe.concurrent('listSelectionCandidates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('caps items at the limit while reporting the full candidate total', async ({
+  it('paginates the newest sort without skipping rows that share a boundary timestamp', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, userEmail, caller } = await seedInstance(testData);
 
-    await Promise.all(
+    const seeded = await Promise.all(
       Array.from({ length: 5 }, (_, index) =>
         testData.createProposal({
           userEmail,
           processInstanceId: instanceId,
-          proposalData: { title: `Capped ${index} ${task.id}` },
+          proposalData: { title: `Paged ${index} ${task.id}` },
           status: ProposalStatus.SUBMITTED,
         }),
       ),
     );
+    const seededIds = seeded.map((p) => p.id);
+
+    // Identical createdAt across the page boundary makes the `id` tie-breaker
+    // load-bearing: without it, rows would be skipped or duplicated between
+    // pages.
+    await db
+      .update(proposals)
+      .set({ createdAt: '2026-01-01 00:00:00+00' })
+      .where(inArray(proposals.id, seededIds));
 
     await testData.advancePhase({
       instanceId,
@@ -265,15 +276,119 @@ describe.concurrent('listSelectionCandidates', () => {
       toPhaseId: 'review',
     });
 
-    const result = await caller.decision.listSelectionCandidates({
+    const pagedIds: string[] = [];
+    let cursor: string | null | undefined;
+    let pages = 0;
+    let total = 0;
+    do {
+      const page = await caller.decision.listSelectionCandidates({
+        processInstanceId: instanceId,
+        sortOrder: 'newest',
+        limit: 2,
+        cursor,
+      });
+      pagedIds.push(...page.items.map((p) => p.id));
+      total = page.total;
+      cursor = page.next;
+      pages += 1;
+    } while (cursor && pages < 10);
+
+    expect(new Set(pagedIds).size).toBe(pagedIds.length);
+    expect(pagedIds.length).toBe(total);
+    for (const id of seededIds) {
+      expect(pagedIds.filter((pagedId) => pagedId === id)).toHaveLength(1);
+    }
+  });
+
+  it('paginates the votes sort via offset so candidates past the first page stay reachable', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, instanceProfileId, userEmail, organization, caller } =
+      await seedInstance(testData);
+
+    const [high, mid, zero] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `High ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Mid ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Zero ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const [voterA, voterB] = await Promise.all([
+      testData.createMemberUser({
+        organization,
+        instanceProfileIds: [instanceProfileId],
+      }),
+      testData.createMemberUser({
+        organization,
+        instanceProfileIds: [instanceProfileId],
+      }),
+    ]);
+
+    await Promise.all([
+      seedBallot({
+        processInstanceId: instanceId,
+        voterProfileId: voterA.profileId,
+        proposalIds: [high.id],
+      }),
+      seedBallot({
+        processInstanceId: instanceId,
+        voterProfileId: voterB.profileId,
+        proposalIds: [high.id, mid.id],
+      }),
+    ]);
+
+    const firstPage = await caller.decision.listSelectionCandidates({
       processInstanceId: instanceId,
-      sortOrder: 'newest',
+      sortOrder: 'votes',
       limit: 2,
     });
 
-    // First page only; `total` still reflects the full candidate set.
-    expect(result.items).toHaveLength(2);
-    expect(result.total).toBe(5);
+    expect(firstPage.items).toHaveLength(2);
+    expect(firstPage.total).toBeGreaterThanOrEqual(3);
+    expect(firstPage.next).not.toBeNull();
+
+    const pagedIds = [...firstPage.items.map((p) => p.id)];
+    let cursor = firstPage.next;
+    let pages = 1;
+    while (cursor && pages < 10) {
+      const page = await caller.decision.listSelectionCandidates({
+        processInstanceId: instanceId,
+        sortOrder: 'votes',
+        limit: 2,
+        cursor,
+      });
+      pagedIds.push(...page.items.map((p) => p.id));
+      cursor = page.next;
+      pages += 1;
+    }
+
+    expect(new Set(pagedIds).size).toBe(pagedIds.length);
+    expect(pagedIds.length).toBe(firstPage.total);
+    // Vote ordering holds across page boundaries: high (2) → mid (1) → zero (0).
+    expect(pagedIds.indexOf(high.id)).toBeLessThan(pagedIds.indexOf(mid.id));
+    expect(pagedIds.indexOf(mid.id)).toBeLessThan(pagedIds.indexOf(zero.id));
   });
 
   it('orders candidates by descending vote count when sortOrder is "votes"', async ({
