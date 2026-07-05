@@ -17,6 +17,18 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useSetDecisionTranslation } from './DecisionTranslationContext';
 
+// Mirrors the `profileIds` cap on the translation.translateProposals endpoint
+// (services/api). Longer proposal lists are split into chunks of this size.
+const MAX_PROPOSALS_PER_TRANSLATE = 100;
+
+const chunk = <T>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+};
+
 type DecisionTranslationPatch = Partial<{
   headline: string;
   phaseDescription: string;
@@ -98,14 +110,16 @@ export const useTranslateDecision = ({
 
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
+      // Merge rather than replace: long lists are sent as several chunks, and
+      // each chunk's response only carries its own proposals' translations.
       onSuccess: (data) => {
         if (!translatingRef.current) {
           return;
         }
-        setTranslationState({
-          translations: data.translations,
-          sourceLocale: data.sourceLocale,
-        });
+        setTranslationState((prev) => ({
+          translations: { ...(prev?.translations ?? {}), ...data.translations },
+          sourceLocale: prev?.sourceLocale || data.sourceLocale,
+        }));
       },
       onError: onTranslateError,
     });
@@ -178,9 +192,9 @@ export const useTranslateDecision = ({
     }
     translatingRef.current = true;
     const profileIds = proposals.map((p) => p.profileId);
-    if (profileIds.length) {
+    for (const batch of chunk(profileIds, MAX_PROPOSALS_PER_TRANSLATE)) {
       translateBatchMutation.mutate({
-        profileIds,
+        profileIds: batch,
         targetLocale: supportedLocale,
       });
     }
