@@ -140,6 +140,15 @@ export const proposals = pgTable(
     index('proposals_process_status_idx')
       .on(table.processInstanceId, table.status)
       .concurrently(),
+    // Serves the listProposals hot path: filter by processInstanceId, then the
+    // createdAt phase-window range and the `created_at DESC, id DESC` keyset
+    // ordering. Postgres reads this index backward to satisfy the DESC sort
+    // (and forward for asc), so the top-N page needs no separate sort step.
+    index('proposals_process_created_at_id_idx').on(
+      table.processInstanceId,
+      table.createdAt,
+      table.id,
+    ),
   ],
 );
 

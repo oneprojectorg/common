@@ -12,6 +12,8 @@ import {
   isNull,
   lt,
   ne,
+  or,
+  sql,
 } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
@@ -419,6 +421,165 @@ export async function getPhaseProposalAndDraftIds({
       ]),
     ],
     draftIds: draftProposalIdsCreatedInPhase,
+  };
+}
+
+/**
+ * SQL-side equivalent of `getPhaseProposalAndDraftIds` for hot-path callers
+ * (notably `listProposals`) that want to avoid materializing two large JS
+ * arrays of proposal IDs and bouncing them back into the database as bound
+ * params. Returns builder functions that produce SQL predicates against the
+ * outer `proposals` row (aliased or not), so the attachment-snapshot lookup
+ * and the created-in-window predicate become inline subqueries / OR fragments
+ * inside the caller's query instead of standalone round-trips.
+ *
+ * The phase-window resolution itself still runs in JS (one or two
+ * `stateTransitionHistory` reads on indexed columns — bounded and cheap), so
+ * `decisionTransitionProposals` and the per-instance `profileUsers` access
+ * subquery are the only joins pushed down.
+ *
+ * Semantics match `getPhaseProposalAndDraftIds`:
+ * - Legacy / no-current-phase: predicates allow all non-drafts and all
+ *   accessible drafts for the instance (phase scoping disabled).
+ * - Unreached phase: both predicates short-circuit to `sql\`false\`` and
+ *   `isEmpty` is true so callers can skip the query entirely.
+ * - Otherwise: non-drafts match the attachment snapshot ∪ a strict
+ *   `(inboundAt, outboundAt)` `createdAt` window; drafts match the half-open
+ *   `[inboundAt, outboundAt)` window AND the caller's `profileUsers`
+ *   access set.
+ *
+ * Soft-deleted proposals (`deletedAt IS NOT NULL`) are excluded by every
+ * predicate this returns, matching the helpers it replaces — so callers do
+ * not need to add their own `isNull(deletedAt)` filter when consuming these
+ * predicates.
+ */
+export type PhaseProposalSqlScope = {
+  /**
+   * True iff the phase is unreached on a non-legacy instance — both
+   * predicates resolve to `sql\`false\`` and the caller can return an empty
+   * result without running the main query.
+   */
+  isEmpty: boolean;
+  /**
+   * Predicate matching non-draft proposals visible in this phase. Composes
+   * with the outer query's `processInstanceId = X` and `status != 'draft'`
+   * filters.
+   */
+  buildNonDraftFilter: (t: typeof proposals) => SQL;
+  /**
+   * Predicate matching draft proposals visible to the caller in this phase.
+   * Composes with the outer query's `processInstanceId = X` filter — the
+   * predicate itself adds the `profileUsers` access subquery and the
+   * draft-side half-open `createdAt` window.
+   */
+  buildDraftFilter: (t: typeof proposals) => SQL;
+};
+
+export async function getPhaseProposalSqlScope({
+  instance,
+  phaseId,
+  authUserIds,
+  db = defaultDb,
+}: {
+  instance: PhaseScopedInstance;
+  phaseId?: string;
+  authUserIds: string[];
+  db?: DbClient;
+}): Promise<PhaseProposalSqlScope> {
+  const ctx = deriveInstanceContext(instance);
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
+
+  const buildDraftAccessFilter = (t: typeof proposals): SQL =>
+    inArray(
+      t.profileId,
+      db
+        .select({ profileId: profileUsers.profileId })
+        .from(profileUsers)
+        .where(inArray(profileUsers.authUserId, authUserIds)),
+    );
+
+  if (!resolvedPhaseId) {
+    // Legacy / no-current-phase: no phase scoping. Match all in-instance,
+    // non-deleted rows on each side. The outer query already constrains
+    // `processInstanceId`, so the predicates only add the deletion filter
+    // (plus access scoping for drafts).
+    return {
+      isEmpty: false,
+      buildNonDraftFilter: (t) => isNull(t.deletedAt),
+      buildDraftFilter: (t) =>
+        and(isNull(t.deletedAt), buildDraftAccessFilter(t))!,
+    };
+  }
+
+  const phaseWindow = await resolvePhaseWindow(
+    instance.id,
+    resolvedPhaseId,
+    ctx.currentPhaseId,
+    db,
+  );
+
+  if (phaseWindow.kind === 'unreached') {
+    return {
+      isEmpty: true,
+      buildNonDraftFilter: () => sql`false`,
+      buildDraftFilter: () => sql`false`,
+    };
+  }
+
+  const inboundTransitionId = phaseWindow.inbound?.id;
+  const inboundAt = phaseWindow.inbound?.transitionedAt;
+  const outboundAt = phaseWindow.outboundTransitionedAt;
+
+  const buildNonDraftWindowFilter = (t: typeof proposals): SQL | undefined =>
+    inboundAt || outboundAt
+      ? and(
+          inboundAt ? gt(t.createdAt, inboundAt.toISOString()) : undefined,
+          outboundAt ? lt(t.createdAt, outboundAt.toISOString()) : undefined,
+        )!
+      : undefined;
+
+  // Attachment-snapshot membership is delegated to a subquery so the outer
+  // query doesn't have to materialize the (potentially hundreds of) IDs from
+  // `decision_transition_proposals`. `transition_history_id` is indexed, so
+  // the lookup is a single index scan per query.
+  const buildAttachmentInFilter = (t: typeof proposals): SQL | undefined =>
+    inboundTransitionId
+      ? inArray(
+          t.id,
+          db
+            .select({ id: decisionTransitionProposals.proposalId })
+            .from(decisionTransitionProposals)
+            .where(
+              eq(
+                decisionTransitionProposals.transitionHistoryId,
+                inboundTransitionId,
+              ),
+            ),
+        )
+      : undefined;
+
+  return {
+    isEmpty: false,
+    buildNonDraftFilter: (t) =>
+      and(
+        // Soft-deleted rows are excluded from both the attachment-snapshot
+        // branch and the window branch (the helpers we used to call applied
+        // this filter pre-IN-list).
+        isNull(t.deletedAt),
+        // `or(...)` filters out undefined; when both branches are undefined
+        // (initial phase with no transitions) the predicate reduces to just
+        // the deletion filter — matching every in-instance non-deleted row.
+        or(buildAttachmentInFilter(t), buildNonDraftWindowFilter(t)),
+      )!,
+    buildDraftFilter: (t) =>
+      and(
+        isNull(t.deletedAt),
+        buildDraftAccessFilter(t),
+        inboundAt ? gte(t.createdAt, inboundAt.toISOString()) : undefined,
+        outboundAt ? lt(t.createdAt, outboundAt.toISOString()) : undefined,
+      )!,
   };
 }
 
