@@ -42,7 +42,10 @@ export const detectLanguages = async (text: string): Promise<string[]> => {
 
   try {
     const identifier = await getIdentifier();
-    const results = identifier.findMostFrequentLanguages(trimmed, MAX_LANGUAGES);
+    const results = identifier.findMostFrequentLanguages(
+      trimmed,
+      MAX_LANGUAGES,
+    );
     const languages = results
       .filter((result) => result.is_reliable)
       .map((result) => baseLanguage(result.language))

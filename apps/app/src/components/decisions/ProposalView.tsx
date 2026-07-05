@@ -1,5 +1,6 @@
 'use client';
 
+import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
@@ -14,9 +15,14 @@ import {
 import { SplitPane } from '@op/ui/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalComments } from './ProposalComments';

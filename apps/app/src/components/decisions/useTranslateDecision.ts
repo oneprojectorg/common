@@ -1,5 +1,6 @@
 'use client';
 
+import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { trpc } from '@op/api/client';
 import {
   type PostTranslation,
@@ -13,7 +14,6 @@ import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useTranslations } from '@/lib/i18n';
 
 import { useSetDecisionTranslation } from './DecisionTranslationContext';
