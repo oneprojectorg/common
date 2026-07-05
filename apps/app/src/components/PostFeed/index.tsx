@@ -17,6 +17,7 @@ import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
 import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
+import { MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
@@ -35,6 +36,7 @@ import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { DeletePostMenuItem } from './DeletePostMenuItem';
+import { ReportPostModal } from './ReportPostModal';
 
 const PostDisplayName = ({
   displayName,
@@ -240,25 +242,40 @@ const PostMenu = ({
 }) => {
   const t = useTranslations();
   const { getPermissionsForProfile } = useUser();
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Author, current org context owner, or a profile admin on the post's
-  // root profile (mirrors deletePostById's server-side auth).
+  // root profile (mirrors deletePostById's server-side auth) — only these
+  // callers get the moderation options like Delete.
   const isProfileAdmin = post.rootProfileId
     ? getPermissionsForProfile(post.rootProfileId).profile.admin
     : false;
-  const canShowMenu =
+  const canModerate =
     post.profileId === user?.currentProfileId ||
     (organization && organization.profile.id === user?.currentProfileId) ||
     isProfileAdmin;
 
-  if (!canShowMenu) {
+  if (!post.id) {
     return null;
   }
 
   return (
-    <OptionMenu aria-label={t('Post options')} className="absolute end-0 top-0">
-      <DeletePostMenuItem post={post} />
-    </OptionMenu>
+    <>
+      <OptionMenu
+        aria-label={t('Post options')}
+        className="absolute end-0 top-0"
+      >
+        {canModerate ? <DeletePostMenuItem post={post} /> : null}
+        <MenuItem className="px-3 py-1" onAction={() => setIsReportOpen(true)}>
+          {t('Report')}
+        </MenuItem>
+      </OptionMenu>
+      <ReportPostModal
+        postId={post.id}
+        isOpen={isReportOpen}
+        onOpenChange={setIsReportOpen}
+      />
+    </>
   );
 };
 
