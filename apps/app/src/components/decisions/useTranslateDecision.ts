@@ -13,6 +13,7 @@ import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useTranslations } from '@/lib/i18n';
 
 import { useSetDecisionTranslation } from './DecisionTranslationContext';
@@ -34,12 +35,16 @@ type DecisionTranslationPatch = Partial<{
 export const useTranslateDecision = ({
   proposals,
   decisionProfileId,
+  contentText,
 }: {
   proposals: Proposal[];
   decisionProfileId?: string | null;
+  /** Plain-text sample of the content, used to decide whether to offer translation. */
+  contentText: string;
 }) => {
   const t = useTranslations();
   const locale = useLocale();
+  const needsTranslation = useContentNeedsTranslation(contentText);
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
     locale,
   )
@@ -218,7 +223,11 @@ export const useTranslateDecision = ({
     : '';
   const targetLanguageName = languageNames.of(locale) ?? locale;
 
-  const showBanner = !!supportedLocale && !bannerDismissed && !translationState;
+  const showBanner =
+    !!supportedLocale &&
+    needsTranslation &&
+    !bannerDismissed &&
+    !translationState;
 
   return {
     translationState,

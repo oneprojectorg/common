@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { cn } from '@op/ui/utils';
 import he from 'he';
 import Image from 'next/image';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, type ReactNode, useMemo } from 'react';
 import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,6 +30,7 @@ import {
 } from './OverviewPinnedResources';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslateBanner } from './TranslateBanner';
+import { getOverviewDetectionText } from './translationDetectionText';
 import { useCreateProposal } from './useCreateProposal';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -123,12 +124,27 @@ function DecisionOverviewContent({
   // prefer over the source content once present. Empty proposals here — the
   // overview has none; handleTranslate skips the proposal batch.
   const translation = useDecisionTranslation();
+
+  const overview = instance.instanceData?.overview;
+
+  // Detection sample from the authored overview so the banner only appears when
+  // the content is in a language other than the reader's locale.
+  const detectionText = useMemo(
+    () =>
+      getOverviewDetectionText({
+        headline: overview?.headline ?? instance.name,
+        description: overview?.description ?? instance.description ?? undefined,
+        body: overview?.body,
+      }),
+    [overview, instance.name, instance.description],
+  );
+
   const decisionTranslation = useTranslateDecision({
     proposals: NO_PROPOSALS,
     decisionProfileId: instance.profileId,
+    contentText: detectionText,
   });
 
-  const overview = instance.instanceData?.overview;
   const headline =
     translation?.overviewHeadline ?? overview?.headline ?? instance.name;
   const subhead = translation?.overviewDescription ?? overview?.description;

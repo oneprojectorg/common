@@ -83,6 +83,7 @@
     "access-zones": "catalog:",
     "ajv-errors": "^3.0.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "cld3-asm": "^4.0.0",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.7",
     "he": "^1.2.0",

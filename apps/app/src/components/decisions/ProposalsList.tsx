@@ -30,6 +30,7 @@ import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
 import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
+import { getProposalsDetectionText } from './translationDetectionText';
 import { useProposalExport } from './useProposalExport';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -389,9 +390,15 @@ const ProposalsListContent = ({
     [revisionRequestsData],
   );
 
+  const detectionText = useMemo(
+    () => getProposalsDetectionText(allProposals),
+    [allProposals],
+  );
+
   const translation = useTranslateDecision({
     proposals: allProposals,
     decisionProfileId,
+    contentText: detectionText,
   });
 
   const handleExport = () => {
