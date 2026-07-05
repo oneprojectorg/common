@@ -10,7 +10,7 @@ const InfoLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="relative flex h-svh w-full flex-col font-sans">
       <div id="top-slot" className="absolute top-0 w-full" />
       <main className="relative flex size-full flex-col overflow-y-scroll p-4 md:p-8">
-        <section className="sticky top-0 hidden lg:block">
+        <section className="sticky top-0">
           <Link href="/" className="flex items-center gap-2 hover:no-underline">
             <span className="sr-only">
               <TranslatedText text="Home" />
