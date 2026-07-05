@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "279e965b-1321-4747-82c9-f81f69844bb7",
+  "id": "9bd0c08a-3e70-4308-b68b-d53e167754c8",
   "prevIds": [
-    "0536d298-7b61-4c84-b109-bed083f83a23"
+    "2adb6b50-9a8e-4688-9992-1730d536d134"
   ],
   "ddl": [
     {
@@ -200,6 +200,18 @@
     {
       "isRlsEnabled": true,
       "name": "content_translations",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "custom_form_submissions",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "custom_forms",
       "entityType": "tables",
       "schema": "public"
     },
@@ -1144,6 +1156,188 @@
       "entityType": "columns",
       "schema": "public",
       "table": "content_translations"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "custom_form_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "data",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "type": "varchar(256)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "schema",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_forms"
     },
     {
       "type": "uuid",
@@ -7377,6 +7571,69 @@
       "table": "content_translations"
     },
     {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "custom_form_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "custom_form_submissions_custom_form_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "custom_form_submissions_profile_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "custom_forms_profile_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
       "nameExplicit": true,
       "columns": [
         {
@@ -11697,6 +11954,57 @@
     {
       "nameExplicit": false,
       "columns": [
+        "custom_form_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "custom_forms",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "custom_form_submissions_custom_form_id_custom_forms_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "custom_form_submissions_profile_id_profiles_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "custom_forms_profile_id_profiles_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "custom_forms"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "profile_id"
       ],
       "schemaTo": "public",
@@ -13807,6 +14115,26 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "custom_form_submissions_pkey",
+      "schema": "public",
+      "table": "custom_form_submissions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "custom_forms_pkey",
+      "schema": "public",
+      "table": "custom_forms",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "decision_boundaries_pkey",
       "schema": "public",
       "table": "decision_boundaries",
@@ -14520,6 +14848,32 @@
       "entityType": "policies",
       "schema": "public",
       "table": "content_translations"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "custom_form_submissions"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "custom_forms"
     },
     {
       "as": "PERMISSIVE",
