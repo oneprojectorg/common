@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "b6b11ff1-dbf6-43a1-95ac-79ea0e9ab770",
+  "id": "f9d655c5-9dd4-4a97-ae8c-fc5e6932b0c4",
   "prevIds": [
     "9bd0c08a-3e70-4308-b68b-d53e167754c8"
   ],
@@ -11183,7 +11183,7 @@
       "where": null,
       "with": "",
       "method": "btree",
-      "concurrently": true,
+      "concurrently": false,
       "name": "proposals_process_created_at_id_idx",
       "entityType": "indexes",
       "schema": "public",

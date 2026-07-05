@@ -1,1 +1,0 @@
-CREATE INDEX CONCURRENTLY "proposals_process_created_at_id_idx" ON "decision_proposals" ("process_instance_id","created_at","id");
