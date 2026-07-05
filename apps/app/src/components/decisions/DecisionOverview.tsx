@@ -1,5 +1,6 @@
 'use client';
 
+import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
@@ -16,7 +17,6 @@ import Image from 'next/image';
 import { Suspense, type ReactNode, useMemo } from 'react';
 import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';

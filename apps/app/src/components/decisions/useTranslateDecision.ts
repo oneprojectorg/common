@@ -1,6 +1,5 @@
 'use client';
 
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { trpc } from '@op/api/client';
 import {
   type PostTranslation,
