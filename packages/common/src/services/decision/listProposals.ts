@@ -308,20 +308,31 @@ export const listProposals = async ({
   // main query. For authenticated callers there's no draft "may still
   // surface" carve-out — the helper already collapses both predicates to
   // `false` when the phase is unreached.
-  if (phaseScope.isEmpty) {
-    return {
-      proposals: [],
-      total: 0,
-      hasMore: false,
-      canManageProposals,
-      next: null,
-    };
+  //
+  // The empty short-circuit is split around the cursor decode to preserve
+  // pre-existing error semantics: trusted contexts always exited before
+  // decoding, while authenticated callers decoded first — so a malformed
+  // cursor still throws for them even when the result set is empty.
+  const emptyResult = {
+    proposals: [],
+    total: 0,
+    hasMore: false,
+    canManageProposals,
+    next: null,
+  };
+
+  if (phaseScope.isEmpty && skipAccessCheck) {
+    return emptyResult;
   }
 
   const { limit = 20, orderBy = 'createdAt', dir = 'desc' } = input;
   const decodedCursor = input.cursor
     ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
     : undefined;
+
+  if (phaseScope.isEmpty) {
+    return emptyResult;
+  }
 
   // Resolve category-scoped proposal IDs up front so the same ID set is
   // available to both the count and data queries when assembling conditions.
