@@ -7,6 +7,8 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
+const MAX_INVALIDATED_IDS = 500;
+
 /**
  * Returns the QueryClient if inside a QueryClientProvider, throws a descriptive error otherwise.
  */
@@ -70,13 +72,15 @@ export function QueryInvalidationSubscriber() {
  *
  * Listens to the queryChannelRegistry for:
  * - query:added: Subscribes to WebSocket channels when queries register
+ * - channel:removed: Unsubscribes WebSocket channels when the last query drops
  * - mutation:added: Invalidates queries when mutations occur
  *
- * Also handles WebSocket messages for server-initiated invalidations.
+ * Also forwards TanStack QueryCache 'removed' events to the registry so
+ * per-channel refcounts decrement, and bounds the mutation-id dedup cache.
  */
 function useInvalidateQueries(enabled: boolean): void {
   const queryClient = useRequiredQueryClient();
-  const invalidatedMutationIds = useRef(new Set<string>());
+  const invalidatedMutationIds = useRef<Map<string, true>>(new Map());
   const unsubscribersRef = useRef<Map<ChannelName, () => void>>(new Map());
   const initializedRef = useRef(false);
 
@@ -86,10 +90,17 @@ function useInvalidateQueries(enabled: boolean): void {
 
   const handleInvalidation = useCallback(
     async ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
-      if (invalidatedMutationIds.current.has(mutationId)) {
+      const seen = invalidatedMutationIds.current;
+      if (seen.has(mutationId)) {
         return;
       }
-      invalidatedMutationIds.current.add(mutationId);
+      seen.set(mutationId, true);
+      if (seen.size > MAX_INVALIDATED_IDS) {
+        const oldest = seen.keys().next().value;
+        if (oldest !== undefined) {
+          seen.delete(oldest);
+        }
+      }
 
       const queryKeys = queryChannelRegistry.getQueryKeysForChannels(channels);
 
@@ -117,7 +128,27 @@ function useInvalidateQueries(enabled: boolean): void {
   }, [handleInvalidation]);
 
   /**
-   * Subscribe to WebSocket channel when a query registers interest in channels
+   * Forward QueryCache 'removed' events to the registry so per-channel
+   * refcounts decrement when TanStack garbage-collects a query.
+   */
+  useEffect(() => {
+    const cache = queryClient.getQueryCache();
+    const unsubscribeCache = cache.subscribe((event) => {
+      if (event.type === 'removed') {
+        queryChannelRegistry.unregisterQuery({
+          queryKey: event.query.queryKey,
+        });
+      }
+    });
+
+    return () => {
+      unsubscribeCache();
+    };
+  }, [queryClient]);
+
+  /**
+   * Subscribe to WebSocket channel when a query registers interest in channels,
+   * and tear it down when the registry reports the channel has no more queries.
    */
   useEffect(() => {
     if (!enabled) {
@@ -164,8 +195,20 @@ function useInvalidateQueries(enabled: boolean): void {
       },
     );
 
+    const unsubscribeChannelRemoved = queryChannelRegistry.on(
+      'channel:removed',
+      ({ channel }: RegistryEvents['channel:removed']) => {
+        const unsubscribe = unsubscribersRef.current.get(channel);
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribersRef.current.delete(channel);
+        }
+      },
+    );
+
     return () => {
       unsubscribeQueryAdded();
+      unsubscribeChannelRemoved();
 
       // Clean up all WebSocket subscriptions
       for (const unsubscribe of unsubscribersRef.current.values()) {
