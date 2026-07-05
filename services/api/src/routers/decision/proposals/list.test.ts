@@ -2154,6 +2154,74 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
   });
 
+  it('hides a HIDDEN proposal from a non-admin viewing a later phase (visibility + phaseId)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const instanceId = instance.instance.id;
+
+    // Non-admin member with instance-level access but no proposal-level access.
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Admin creates and submits two proposals in the submission phase.
+    const [visibleProposal, hiddenProposal] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Visible ${task.id}` },
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Hidden ${task.id}` },
+      }),
+    ]);
+
+    await Promise.all([
+      adminCaller.decision.submitProposal({ proposalId: visibleProposal.id }),
+      adminCaller.decision.submitProposal({ proposalId: hiddenProposal.id }),
+    ]);
+
+    // Hide one, then advance the instance so both submitted proposals are
+    // carried into the review phase (no pipeline → nothing is dropped).
+    await adminCaller.decision.updateProposal({
+      proposalId: hiddenProposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    // The HIDDEN filter must still apply when the query runs through the
+    // phase-scoped path: the non-admin sees the visible proposal but not the
+    // hidden one, even though both are in the review phase's scope.
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+
+    const ids = result.proposals.map((p) => p.id);
+    expect(ids).toContain(visibleProposal.id);
+    expect(ids).not.toContain(hiddenProposal.id);
+  });
+
   it('orders proposals deterministically when createdAt values tie', async ({
     task,
     onTestFinished,
