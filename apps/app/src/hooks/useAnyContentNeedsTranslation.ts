@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { baseLanguage, detectLanguages } from '@/lib/languageDetection';
 
@@ -10,50 +10,35 @@ import { baseLanguage, detectLanguages } from '@/lib/languageDetection';
  * the active locale — the list counterpart to {@link useContentNeedsTranslation}.
  *
  * Each distinct sample is detected once and cached, so as more items stream in
- * (e.g. paginating a proposals list) only the newly added samples are checked.
- * The result is sticky: once a foreign-language sample is seen it stays `true`,
- * and detection short-circuits. A locale change resets the cache and re-checks.
+ * (e.g. paginating a proposals list) only the newly added samples are detected;
+ * detection short-circuits as soon as a foreign-language sample is found. A
+ * locale change clears the cache so verdicts are recomputed against it.
  */
 export const useAnyContentNeedsTranslation = (samples: string[]): boolean => {
   const locale = useLocale();
-  const [needsTranslation, setNeedsTranslation] = useState(false);
-  const checkedRef = useRef<Set<string>>(new Set());
+  const cacheRef = useRef<Map<string, string[]>>(new Map());
+  const localeRef = useRef(locale);
 
-  useEffect(() => {
-    // A new locale invalidates every prior verdict.
-    checkedRef.current = new Set();
-    setNeedsTranslation(false);
-  }, [locale]);
+  if (localeRef.current !== locale) {
+    localeRef.current = locale;
+    cacheRef.current = new Map();
+  }
 
-  useEffect(() => {
-    let cancelled = false;
+  return useMemo(() => {
     const localeLanguage = baseLanguage(locale);
-    const pending = samples
-      .map((sample) => sample.trim())
-      .filter((sample) => sample && !checkedRef.current.has(sample));
+    const cache = cacheRef.current;
 
-    if (pending.length === 0) {
-      return;
-    }
-
-    void (async () => {
-      for (const sample of pending) {
-        checkedRef.current.add(sample);
-        const languages = await detectLanguages(sample);
-        if (cancelled) {
-          return;
-        }
-        if (languages.some((language) => language !== localeLanguage)) {
-          setNeedsTranslation(true);
-          return;
-        }
+    return samples.some((raw) => {
+      const sample = raw.trim();
+      if (!sample) {
+        return false;
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+      let languages = cache.get(sample);
+      if (!languages) {
+        languages = detectLanguages(sample);
+        cache.set(sample, languages);
+      }
+      return languages.some((language) => language !== localeLanguage);
+    });
   }, [samples, locale]);
-
-  return needsTranslation;
 };

@@ -11,24 +11,23 @@ describe('baseLanguage', () => {
 });
 
 describe('detectLanguages', () => {
-  it('returns an empty array for blank text', async () => {
-    expect(await detectLanguages('   ')).toEqual([]);
+  it('returns an empty array for blank text', () => {
+    expect(detectLanguages('   ')).toEqual([]);
   });
 
-  it('detects English content', async () => {
-    const languages = await detectLanguages(
-      'This is a fairly long English sentence that the detector should recognize clearly.',
-    );
-
-    expect(languages).toContain('en');
+  it('detects English content', () => {
+    expect(
+      detectLanguages(
+        'This is a fairly long English sentence that the detector should recognize clearly.',
+      ),
+    ).toEqual(['en']);
   });
 
-  it('detects non-English content', async () => {
-    const languages = await detectLanguages(
-      'Esta es una frase bastante larga en español que el detector debería reconocer con claridad.',
-    );
-
-    expect(languages).toContain('es');
-    expect(languages).not.toContain('en');
+  it('detects non-English content in a supported language', () => {
+    expect(
+      detectLanguages(
+        'Esta es una frase bastante larga en español que el detector debería reconocer con claridad.',
+      ),
+    ).toEqual(['es']);
   });
 });

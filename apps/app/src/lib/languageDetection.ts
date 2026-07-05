@@ -1,58 +1,40 @@
-import type { LanguageIdentifier } from 'cld3-asm';
+import { type SupportedLocale } from '@op/common/client';
+import { franc } from 'franc';
 
-// CLD3 needs a reasonable byte sample to make a reliable call; below the
-// minimum it always returns `und` (undetermined), and it only inspects the
-// first `MAX_DETECTION_BYTES` of the input.
-const MIN_DETECTION_BYTES = 20;
-const MAX_DETECTION_BYTES = 2000;
-const MAX_LANGUAGES = 3;
-
-/** CLD3's sentinel code for "couldn't tell". */
-const UNDETERMINED = 'und';
-
-// The CLD3 WASM binary is ~1MB, so load it once on first use and reuse the same
-// identifier instance across every detection call.
-let identifierPromise: Promise<LanguageIdentifier> | null = null;
-
-const getIdentifier = (): Promise<LanguageIdentifier> => {
-  if (!identifierPromise) {
-    identifierPromise = import('cld3-asm').then(({ loadModule }) =>
-      loadModule().then((factory) =>
-        factory.create(MIN_DETECTION_BYTES, MAX_DETECTION_BYTES),
-      ),
-    );
-  }
-  return identifierPromise;
+// franc reports languages as ISO 639-3; map the ones we support back to the
+// app's locale codes (ISO 639-1). Restricting franc to just these via `only`
+// is important: unconstrained, it likes to pick near-neighbours (e.g. Scots
+// for English), which would wrongly flag same-language content as translatable.
+const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
+  eng: 'en',
+  spa: 'es',
+  fra: 'fr',
+  por: 'pt',
+  ben: 'bn',
+  som: 'so',
+  arb: 'ar',
 };
 
-/** The base language subtag, lowercased — e.g. `en` from `en-US`, `zh` from `zh-Latn`. */
+const FRANC_ONLY = Object.keys(SUPPORTED_LANGUAGE_CODES);
+
+/** The base language subtag, lowercased — e.g. `en` from `en-US`. */
 export const baseLanguage = (code: string): string =>
   code.toLowerCase().split('-')[0] ?? code;
 
 /**
- * Detects which languages appear in `text` using CLD (Compact Language
- * Detector v3). Returns the reliably-detected base language codes, or an empty
- * array when the text is too short to judge, undetermined, or detection fails.
+ * Detects the language of `text` using franc (pure-JS trigram detection),
+ * restricted to the platform's supported locales. Returns the matching locale
+ * code, or an empty array when the text is too short to judge or its language
+ * isn't one we support.
  */
-export const detectLanguages = async (text: string): Promise<string[]> => {
+export const detectLanguages = (text: string): string[] => {
   const trimmed = text.trim();
   if (!trimmed) {
     return [];
   }
 
-  try {
-    const identifier = await getIdentifier();
-    const results = identifier.findMostFrequentLanguages(
-      trimmed,
-      MAX_LANGUAGES,
-    );
-    const languages = results
-      .filter((result) => result.is_reliable)
-      .map((result) => baseLanguage(result.language))
-      .filter((language) => language !== UNDETERMINED);
+  const code = franc(trimmed, { only: FRANC_ONLY });
+  const locale = SUPPORTED_LANGUAGE_CODES[code];
 
-    return Array.from(new Set(languages));
-  } catch {
-    return [];
-  }
+  return locale ? [locale] : [];
 };
