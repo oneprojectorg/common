@@ -3,6 +3,8 @@ import { Link } from '@/lib/i18n/routing';
 import { CommonLogo } from '@/components/CommonLogo';
 import { TranslatedText } from '@/components/TranslatedText';
 
+export const dynamic = 'force-static';
+
 const InfoLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="relative flex h-svh w-full flex-col font-sans">
