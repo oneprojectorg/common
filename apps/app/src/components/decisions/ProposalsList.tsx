@@ -1,5 +1,6 @@
 'use client';
 
+import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
@@ -30,7 +31,7 @@ import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
 import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
-import { getProposalsDetectionText } from './translationDetectionText';
+import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalExport } from './useProposalExport';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -390,15 +391,19 @@ const ProposalsListContent = ({
     [revisionRequestsData],
   );
 
-  const detectionText = useMemo(
-    () => getProposalsDetectionText(allProposals),
+  // Detect per proposal (not one concatenated sample) so proposals that
+  // paginate in later are each checked — the badge can appear once a
+  // different-language proposal loads further down the list.
+  const proposalSamples = useMemo(
+    () => allProposals.map(getProposalDetectionText),
     [allProposals],
   );
+  const needsTranslation = useAnyContentNeedsTranslation(proposalSamples);
 
   const translation = useTranslateDecision({
     proposals: allProposals,
     decisionProfileId,
-    contentText: detectionText,
+    needsTranslation,
   });
 
   const handleExport = () => {

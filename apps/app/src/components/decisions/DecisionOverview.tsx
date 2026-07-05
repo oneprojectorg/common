@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { Suspense, type ReactNode, useMemo } from 'react';
 import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
+import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
@@ -139,10 +140,12 @@ function DecisionOverviewContent({
     [overview, instance.name, instance.description],
   );
 
+  const needsTranslation = useContentNeedsTranslation(detectionText);
+
   const decisionTranslation = useTranslateDecision({
     proposals: NO_PROPOSALS,
     decisionProfileId: instance.profileId,
-    contentText: detectionText,
+    needsTranslation,
   });
 
   const headline =

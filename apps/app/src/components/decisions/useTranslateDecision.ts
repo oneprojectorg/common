@@ -35,16 +35,19 @@ type DecisionTranslationPatch = Partial<{
 export const useTranslateDecision = ({
   proposals,
   decisionProfileId,
-  contentText,
+  needsTranslation,
 }: {
   proposals: Proposal[];
   decisionProfileId?: string | null;
-  /** Plain-text sample of the content, used to decide whether to offer translation. */
-  contentText: string;
+  /**
+   * Whether the content is in a language other than the reader's locale. The
+   * caller owns detection so it can pick the right strategy — a single sample
+   * for the overview, per-proposal (pagination-aware) for the list.
+   */
+  needsTranslation: boolean;
 }) => {
   const t = useTranslations();
   const locale = useLocale();
-  const needsTranslation = useContentNeedsTranslation(contentText);
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
     locale,
   )

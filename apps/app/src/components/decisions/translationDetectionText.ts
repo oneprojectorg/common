@@ -21,20 +21,6 @@ export const getProposalDetectionText = (
   return values.map(htmlToText).join('\n').slice(0, MAX_SAMPLE_LENGTH);
 };
 
-/** Combined plain-text sample across a list of proposals, capped in length. */
-export const getProposalsDetectionText = (
-  proposals: ProposalTextSource[],
-): string => {
-  let sample = '';
-  for (const proposal of proposals) {
-    sample += `${getProposalDetectionText(proposal)}\n`;
-    if (sample.length >= MAX_SAMPLE_LENGTH) {
-      break;
-    }
-  }
-  return sample.slice(0, MAX_SAMPLE_LENGTH);
-};
-
 /** Plain-text sample of a decision overview (headline + description + body). */
 export const getOverviewDetectionText = ({
   headline,

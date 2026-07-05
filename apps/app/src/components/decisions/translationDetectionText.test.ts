@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   getOverviewDetectionText,
   getProposalDetectionText,
-  getProposalsDetectionText,
 } from './translationDetectionText';
 
 describe('getProposalDetectionText', () => {
@@ -22,18 +21,6 @@ describe('getProposalDetectionText', () => {
 
   it('returns an empty string when there is no content', () => {
     expect(getProposalDetectionText({ htmlContent: undefined })).toBe('');
-  });
-});
-
-describe('getProposalsDetectionText', () => {
-  it('combines samples across proposals', () => {
-    const text = getProposalsDetectionText([
-      { htmlContent: { title: '<p>First</p>' } },
-      { htmlContent: { title: '<p>Second</p>' } },
-    ]);
-
-    expect(text).toContain('First');
-    expect(text).toContain('Second');
   });
 });
 
