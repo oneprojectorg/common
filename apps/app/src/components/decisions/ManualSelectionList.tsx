@@ -27,6 +27,8 @@ import { useProposalFilters } from './useProposalFilters';
 
 // Stable reference: useProposalFilters memoizes on `votedProposalIds`.
 const EMPTY_VOTED_IDS: string[] = [];
+// Stable reference so downstream memos don't re-run while the query is pending.
+const EMPTY_CANDIDATES: SelectionCandidate[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -69,21 +71,14 @@ export const ManualSelectionList = ({
     throw new Error('ManualSelectionList: instance has no currentStateId');
   }
 
-  // useInfiniteQuery so category/sort changes don't blank the table while the
-  // server re-fetches, and so admins can page past the lean default page size
-  // (50). All sorts paginate: `newest`/`oldest` keyset, `votes` by offset.
-  const candidatesQuery =
-    trpc.decision.listSelectionCandidates.useInfiniteQuery(
-      { processInstanceId: instanceId, categoryId, sortOrder },
-      {
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-        placeholderData: (prev) => prev,
-      },
-    );
-  const loadedProposals = useMemo<SelectionCandidate[]>(
-    () => candidatesQuery.data?.pages.flatMap((page) => page.items) ?? [],
-    [candidatesQuery.data],
+  // Single capped page — the manual selection UI only renders the first page
+  // and shows `total` for the count. placeholderData keeps the table from
+  // blanking while a category/sort change re-fetches.
+  const candidatesQuery = trpc.decision.listSelectionCandidates.useQuery(
+    { processInstanceId: instanceId, categoryId, sortOrder },
+    { placeholderData: (prev) => prev },
   );
+  const loadedProposals = candidatesQuery.data?.items ?? EMPTY_CANDIDATES;
 
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
@@ -281,23 +276,6 @@ export const ManualSelectionList = ({
           showVotes={isFinalPhase}
         />
       )}
-
-      {/* Rendered even when the client-side filter empties the loaded pages —
-          matching rows may exist on unfetched pages. */}
-      {candidatesQuery.hasNextPage ? (
-        <div className="flex justify-center">
-          <Button
-            color="secondary"
-            size="small"
-            onPress={() => candidatesQuery.fetchNextPage()}
-            isDisabled={candidatesQuery.isFetchingNextPage}
-          >
-            {candidatesQuery.isFetchingNextPage
-              ? t('Loading...')
-              : t('Load More')}
-          </Button>
-        </div>
-      ) : null}
 
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter

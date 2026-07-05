@@ -225,17 +225,14 @@ export const selectionCandidateSchema = proposalSchema.omit({
 export type SelectionCandidate = z.infer<typeof selectionCandidateSchema>;
 
 /**
- * Input schema for `decision.listSelectionCandidates`. Pass `cursor` from the
- * previous page's `next`. `newest` / `oldest` keyset on `createdAt + id`;
- * `votes` pages by offset because the vote count is a correlated aggregate
- * that can't keyset (the candidate set is phase-bounded, so offset stays
- * cheap).
+ * Input schema for `decision.listSelectionCandidates`. Returns a single capped
+ * page — the manual selection UI only renders the first page and reads `total`
+ * for the count, so there's no cursor.
  */
 export const selectionCandidatesFilterSchema = z.object({
   processInstanceId: z.uuid(),
   categoryId: z.uuid().optional(),
   sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
-  cursor: z.string().nullish(),
   limit: z.number().min(1).max(100).prefault(50),
 });
 
@@ -246,8 +243,8 @@ export type SelectionCandidatesFilter = z.infer<
 /** Response from `decision.listSelectionCandidates`. */
 export const selectionCandidatesListSchema = z.object({
   items: z.array(selectionCandidateSchema),
+  // Full candidate count, independent of the capped page.
   total: z.number(),
-  next: z.string().nullable(),
 });
 
 export type SelectionCandidatesList = z.infer<
