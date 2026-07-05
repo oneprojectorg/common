@@ -1,17 +1,21 @@
--- Re-issue of 20260701122045_loving_champions with a fresh timestamp.
+-- Adds moderation_detached_at (the CSAM/terrorism detach column) + refreshes
+-- the proposal_history_trigger to snapshot it.
 --
--- That migration was generated on Jul 1 but merged to dev AFTER
--- 20260703121100_quick_grey_gargoyle had already been applied there. Drizzle's
--- migrator only applies migrations newer than the last applied timestamp, so
--- the out-of-order file was silently skipped on dev — the API shipped code
--- referencing moderation_detached_at against a database that never got the
--- column. Fresh databases (CI/e2e) applied the chain from scratch in order,
--- which is why tests passed while dev broke.
+-- Timestamped 2026-07-05 on purpose. The original migration for this change
+-- (20260701122045_loving_champions) carried a Jul 1 timestamp but only merged
+-- to dev AFTER 20260703121100_quick_grey_gargoyle had already been applied.
+-- The migrator tracks a high-water mark by the folder-name timestamp, so a
+-- migration older than the last-applied one is silently skipped — the API
+-- shipped code querying moderation_detached_at against a DB that never got the
+-- column. Prod would have hit the identical skip (quick_grey_gargoyle is
+-- already on main). This migration's timestamp sits after quick_grey_gargoyle,
+-- so it applies everywhere; the original loving_champions folder was deleted
+-- (it was never applied to any real database — dev skipped it, main never had
+-- it — and its snapshot was a dead branch nothing referenced).
 --
--- Everything here is idempotent (IF NOT EXISTS / DROP IF EXISTS / CREATE OR
--- REPLACE) so databases that DID apply the original migration — fresh local
--- and ephemeral CI databases — converge to the identical end state without
--- erroring.
+-- Kept idempotent (IF NOT EXISTS / DROP IF EXISTS / CREATE OR REPLACE) so a
+-- disposable local DB that happened to apply loving_champions before it was
+-- deleted still converges without erroring.
 
 ALTER TABLE "decision_proposal_history" ADD COLUMN IF NOT EXISTS "moderation_detached_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "decision_proposals" ADD COLUMN IF NOT EXISTS "moderation_detached_at" timestamp with time zone;--> statement-breakpoint
