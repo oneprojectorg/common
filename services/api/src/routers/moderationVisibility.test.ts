@@ -266,6 +266,76 @@ describe.concurrent('moderation read visibility', () => {
     });
   });
 
+  describe('comment thread (getPosts)', () => {
+    it('hides a flagged comment from other members in the thread but keeps it visible to the author and admin with isFlagged', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instance;
+
+      // The instance admin owns the thread root; the comment hangs off it and
+      // resolves to the instance (DECISION) profile as its moderation gate.
+      const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+      const root = await adminCaller.posts.createPost({
+        content: 'Thread root.',
+        profileId: instance.profileId,
+      });
+
+      const [author, otherMember] = await Promise.all([
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+      ]);
+
+      const authorCaller = await createAuthenticatedCaller(author.email);
+      const comment = await authorCaller.posts.createPost({
+        content: 'Comment that will be flagged.',
+        parentPostId: root.id,
+      });
+
+      // Another member with thread access sees the comment before the flag.
+      const otherCaller = await createAuthenticatedCaller(otherMember.email);
+      const before = await otherCaller.posts.getPosts({
+        parentPostId: root.id,
+      });
+      expect(before.map((post) => post.id)).toContain(comment.id);
+
+      await flagItem(onTestFinished, ModerationItemType.POST, comment.id);
+
+      // The other member no longer sees the flagged comment in the thread.
+      const otherAfter = await otherCaller.posts.getPosts({
+        parentPostId: root.id,
+      });
+      expect(otherAfter.map((post) => post.id)).not.toContain(comment.id);
+
+      // The author still sees their own flagged comment, marked flagged.
+      const authorAfter = await authorCaller.posts.getPosts({
+        parentPostId: root.id,
+      });
+      const authorComment = authorAfter.find((post) => post.id === comment.id);
+      expect(authorComment).toBeDefined();
+      expect(authorComment?.isFlagged).toBe(true);
+
+      // The instance admin still sees it, marked flagged.
+      const adminAfter = await adminCaller.posts.getPosts({
+        parentPostId: root.id,
+      });
+      const adminComment = adminAfter.find((post) => post.id === comment.id);
+      expect(adminComment).toBeDefined();
+      expect(adminComment?.isFlagged).toBe(true);
+    });
+  });
+
   describe('proposal (getProposal)', () => {
     it('hides a flagged proposal from a non-owner member but keeps it visible to the author and admin with isFlagged', async ({
       task,
