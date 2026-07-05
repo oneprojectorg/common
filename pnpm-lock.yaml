@@ -631,6 +631,9 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      franc:
+        specifier: ^6.2.0
+        version: 6.2.0
       he:
         specifier: ^1.2.0
         version: 1.2.0
@@ -9889,6 +9892,18 @@ packages:
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
+  collapse-white-space@2.1.0:
+    resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
+
+  franc@6.2.0:
+    resolution: {integrity: sha512-rcAewP7PSHvjq7Kgd7dhj82zE071kX5B4W1M4ewYMf/P+i6YsDQmj62Xz3VQm9zyUzUXwhIde/wHLGCMrM+yGg==}
+
+  n-gram@2.0.2:
+    resolution: {integrity: sha512-S24aGsn+HLBxUGVAUFOwGpKs7LBcG4RudKU//eWzt/mQ97/NMKQxDWHyHx63UNWk/OOdihgmzoETn1tf5nQDzQ==}
+
+  trigram-utils@2.0.1:
+    resolution: {integrity: sha512-nfWIXHEaB+HdyslAfMxSqWKDdmqY9I32jS7GnqpdWQnLH89r6A5sdk3fDVYqGAZ0CrT8ovAFSAo6HRiWcWNIGQ==}
+
 snapshots:
 
   '@acemir/cssom@0.9.30':
@@ -18249,3 +18264,16 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.2.1)
 
   zwitch@2.0.4: {}
+
+  collapse-white-space@2.1.0: {}
+
+  franc@6.2.0:
+    dependencies:
+      trigram-utils: 2.0.1
+
+  n-gram@2.0.2: {}
+
+  trigram-utils@2.0.1:
+    dependencies:
+      collapse-white-space: 2.1.0
+      n-gram: 2.0.2

@@ -1,5 +1,6 @@
 'use client';
 
+import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
@@ -14,7 +15,13 @@ import {
 import { SplitPane } from '@op/ui/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,6 +32,7 @@ import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
 import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
+import { getProposalDetectionText } from './translationDetectionText';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
 const DOCUMENT_POLL_INTERVAL_MS = 2500;
@@ -208,7 +216,16 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  const showBanner = !bannerDismissed && !translatedHtmlContent;
+  // Only offer translation when the proposal's own content is in a language
+  // other than the reader's locale — no badge for same-language proposals.
+  const detectionText = useMemo(
+    () => getProposalDetectionText(currentProposal),
+    [currentProposal],
+  );
+  const needsTranslation = useContentNeedsTranslation(detectionText);
+
+  const showBanner =
+    needsTranslation && !bannerDismissed && !translatedHtmlContent;
 
   // Most recently responded revision (if any) — drives the "Revised on"
   // badge shown inline in the submitter metadata row.
