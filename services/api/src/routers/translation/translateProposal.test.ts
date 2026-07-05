@@ -267,6 +267,68 @@ describe('translation.translateProposal', () => {
     );
   });
 
+  it('strips the XHTML paragraph wrapper DeepL adds to plain-text fields', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Proposal for Community Garden Space' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'A proposal for a garden' }],
+        },
+      ],
+    });
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    // Simulate DeepL under tagHandling: 'html' wrapping every input in a
+    // namespaced paragraph — the exact artifact reported for plain-text titles.
+    mockTranslateText.mockImplementationOnce((texts: string[]) =>
+      texts.map((t) => ({
+        text: `<p xmlns="http://www.w3.org/1999/xhtml">[ES] ${t}</p>`,
+        detectedSourceLang: 'en',
+      })),
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    // The plain-text title comes back unwrapped; the HTML body keeps its markup.
+    expect(result.translated.title).toBe(
+      '[ES] Proposal for Community Garden Space',
+    );
+    expect(result.translated.default).toContain('A proposal for a garden');
+  });
+
   it('should return cached title without calling DeepL for it', async ({
     task,
     onTestFinished,

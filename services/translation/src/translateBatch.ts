@@ -20,6 +20,33 @@ export type TranslationResult = {
 
 type HashedEntry = TranslatableEntry & { hash: string };
 
+// Matches any opening/closing HTML tag, used to tell HTML fragments (TipTap
+// content) apart from plain-text fields (titles, categories, labels).
+const HTML_TAG = /<\/?[a-z][^>]*>/i;
+
+// DeepL, when given plain text under `tagHandling: 'html'`, treats it as an
+// HTML document and wraps the loose text in a namespaced paragraph, e.g.
+// `<p xmlns="http://www.w3.org/1999/xhtml">Proposal…</p>`. Matches a single
+// outer <p> wrapper so we can peel it off plain-text results.
+const PARAGRAPH_WRAPPER = /^\s*<p\b[^>]*>([\s\S]*)<\/p>\s*$/i;
+
+function isHtml(text: string): boolean {
+  return HTML_TAG.test(text);
+}
+
+/**
+ * Peel DeepL's spurious `<p xmlns="…xhtml">…</p>` wrapper off a translated
+ * value when the *source* was plain text. Idempotent, and a no-op for genuine
+ * HTML fragments (whose source already contains tags).
+ */
+function unwrapPlainText(sourceText: string, translatedText: string): string {
+  if (isHtml(sourceText)) {
+    return translatedText;
+  }
+  const match = PARAGRAPH_WRAPPER.exec(translatedText);
+  return match?.[1] ?? translatedText;
+}
+
 /**
  * Translate a batch of text entries with cache-through semantics.
  *
@@ -129,7 +156,7 @@ async function translateCacheMisses(
       contentHash: miss.hash,
       sourceLocale: result.detectedSourceLang,
       targetLocale,
-      translatedText: result.translatedText,
+      translatedText: unwrapPlainText(miss.text, result.translatedText),
     };
   });
 }
@@ -193,6 +220,11 @@ function mergeResults(
       );
     }
 
-    return result;
+    // Heal stale cache entries that stored DeepL's paragraph-wrapped output for
+    // a plain-text field; fresh translations are already unwrapped upstream.
+    return {
+      ...result,
+      translatedText: unwrapPlainText(entry.text, result.translatedText),
+    };
   });
 }
