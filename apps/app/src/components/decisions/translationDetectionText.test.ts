@@ -19,6 +19,18 @@ describe('getProposalDetectionText', () => {
     expect(text).not.toContain('<');
   });
 
+  it('reads text from documentContent (the list payload has no htmlContent)', () => {
+    const text = getProposalDetectionText({
+      documentContent: {
+        type: 'html',
+        content: '<p>We should plant more trees in the park.</p>',
+      },
+    });
+
+    expect(text).toContain('We should plant more trees in the park.');
+    expect(text).not.toContain('<');
+  });
+
   it('returns an empty string when there is no content', () => {
     expect(getProposalDetectionText({ htmlContent: undefined })).toBe('');
   });
