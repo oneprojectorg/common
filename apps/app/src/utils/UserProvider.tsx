@@ -139,6 +139,16 @@ export function useUser() {
 }
 
 /**
+ * Non-throwing user accessor. Returns undefined when no `UserProvider` is
+ * mounted (e.g. the onboarding `start/` tree) instead of throwing like
+ * `useUser`. Use on shared components that may render both inside and outside
+ * a provider, where the absence of a user is a valid state, not a bug.
+ */
+export function useMaybeUser(): CommonUser | undefined {
+  return useContext(UserContext)?.user;
+}
+
+/**
  * For components that only render in auth-gated trees (the middleware or a
  * server layout has already redirected signed-out visitors). Throwing here
  * means an auth-only component leaked onto a public surface — a bug, not a

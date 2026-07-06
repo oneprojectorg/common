@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -29,22 +30,28 @@ export const ProfileAvatar = ({
   profile: RelationshipListItem;
   className?: string;
 }) => {
+  const canLinkToProfile = useCanLinkToProfile();
   const avatarUrl = profile.avatarImage?.name
     ? getPublicUrl(profile.avatarImage.name)
     : null;
   const gradientBg = getGradientForString(profile.name || 'Profile');
+  const wrapperClassName = cn(
+    'relative block overflow-hidden rounded-full',
+    className,
+  );
+  const avatarImage = avatarUrl ? (
+    <Image src={avatarUrl} alt="" fill className="object-cover" />
+  ) : (
+    <div className={cn('h-full w-full', gradientBg)} />
+  );
 
-  return (
-    <Link
-      href={`/profile/${profile.slug}`}
-      className={cn('relative block overflow-hidden rounded-full', className)}
-    >
-      {avatarUrl ? (
-        <Image src={avatarUrl} alt="" fill className="object-cover" />
-      ) : (
-        <div className={cn('h-full w-full', gradientBg)} />
-      )}
+  // Public/non-member viewers can't reach the profile page, so drop the link.
+  return canLinkToProfile ? (
+    <Link href={`/profile/${profile.slug}`} className={wrapperClassName}>
+      {avatarImage}
     </Link>
+  ) : (
+    <div className={wrapperClassName}>{avatarImage}</div>
   );
 };
 
@@ -58,6 +65,7 @@ const RelationshipListContent = ({
   children?: React.ReactNode;
 }) => {
   const t = useTranslations();
+  const canLinkToProfile = useCanLinkToProfile();
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {children ||
@@ -72,16 +80,23 @@ const RelationshipListContent = ({
             <div className="min-w-0 flex-1">
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-2">
-                  <Link
-                    className="truncate font-semibold text-neutral-black"
-                    href={
-                      profile.type === 'org'
-                        ? `/org/${profile.slug}`
-                        : `/profile/${profile.slug}`
-                    }
-                  >
-                    <bdi>{profile.name}</bdi>
-                  </Link>
+                  {/* Public/non-member viewers can't reach the profile page. */}
+                  {canLinkToProfile ? (
+                    <Link
+                      className="truncate font-semibold text-neutral-black"
+                      href={
+                        profile.type === 'org'
+                          ? `/org/${profile.slug}`
+                          : `/profile/${profile.slug}`
+                      }
+                    >
+                      <bdi>{profile.name}</bdi>
+                    </Link>
+                  ) : (
+                    <span className="truncate font-semibold text-neutral-black">
+                      <bdi>{profile.name}</bdi>
+                    </span>
+                  )}
 
                   {/* Show relationship types if available */}
                   {profile.relationships && relationshipMap ? (

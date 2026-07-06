@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';
 import type { ProfileUser } from '@op/common/client';
@@ -389,6 +390,7 @@ const MobileProfileUserCard = ({
   roles: { id: string; name: string }[];
   processName?: string;
 }) => {
+  const canLinkToProfile = useCanLinkToProfile();
   const displayName =
     profileUser.profile?.name ||
     profileUser.name ||
@@ -404,7 +406,7 @@ const MobileProfileUserCard = ({
         <ProfileAvatar profile={profileUser.profile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
-            {profileSlug ? (
+            {profileSlug && canLinkToProfile ? (
               <Link
                 href={`/profile/${profileSlug}`}
                 className="text-base text-neutral-black hover:underline"
@@ -555,6 +557,7 @@ const ProfileUsersAccessTableContent = ({
   isDraft: boolean;
 }) => {
   const t = useTranslations();
+  const canLinkToProfile = useCanLinkToProfile();
 
   return (
     <div className="relative">
@@ -635,7 +638,7 @@ const ProfileUsersAccessTableContent = ({
                   <div className="flex items-center gap-2">
                     <ProfileAvatar profile={profileUser.profile} />
                     <div className="flex flex-col">
-                      {profileSlug ? (
+                      {profileSlug && canLinkToProfile ? (
                         <Link
                           href={`/profile/${profileSlug}`}
                           className="text-base text-neutral-black hover:underline"

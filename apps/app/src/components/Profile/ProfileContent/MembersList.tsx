@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
@@ -192,6 +193,7 @@ const MembersListContent = ({
   profileId: string;
 }) => {
   const t = useTranslations();
+  const canLinkToProfile = useCanLinkToProfile();
 
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
@@ -238,8 +240,9 @@ const MembersListContent = ({
             <div className="min-w-0 flex-1">
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-2">
-                  {/* Show name as link if profile exists, otherwise plain text */}
-                  {profile ? (
+                  {/* Show name as link if profile exists and the viewer can
+                      reach it (walled garden), otherwise plain text. */}
+                  {profile && canLinkToProfile ? (
                     <Link
                       className="truncate font-semibold text-neutral-black"
                       href={
