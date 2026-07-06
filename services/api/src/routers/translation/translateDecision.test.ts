@@ -22,12 +22,15 @@ process.env.DEEPL_API_KEY = 'test-fake-key';
 
 // Mock DeepL's translateText — prefixes each text with [ES] so we can
 // distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string[]) =>
-  texts.map((t) => ({
+const mockTranslateText = vi.fn((texts: string | string[]) => {
+  const arr = Array.isArray(texts) ? texts : [texts];
+  const results = arr.map((t) => ({
     text: `[ES] ${t}`,
     detectedSourceLang: 'en',
-  })),
-);
+  }));
+  // Mirror deepl-node: a single-string input returns a single result object.
+  return Array.isArray(texts) ? results : results[0];
+});
 
 // Mock deepl-node so we never hit the real API
 vi.mock('deepl-node', () => ({
@@ -229,7 +232,7 @@ describe('translation.translateDecision', () => {
 
     // DeepL should have received HTML, not raw TipTap JSON
     expect(mockTranslateText).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.stringContaining('<p')]),
+      expect.stringContaining('<p'),
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),

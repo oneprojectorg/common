@@ -20,12 +20,15 @@ import { createCallerFactory } from '../../trpcFactory';
 // Set a fake API key so the endpoint doesn't throw before reaching the mock.
 process.env.DEEPL_API_KEY = 'test-fake-key';
 
-const mockTranslateText = vi.fn((texts: string[]) =>
-  texts.map((t) => ({
+const mockTranslateText = vi.fn((texts: string | string[]) => {
+  const arr = Array.isArray(texts) ? texts : [texts];
+  const results = arr.map((t) => ({
     text: `[ES] ${t}`,
     detectedSourceLang: 'en',
-  })),
-);
+  }));
+  // Mirror deepl-node: a single-string input returns a single result object.
+  return Array.isArray(texts) ? results : results[0];
+});
 
 vi.mock('deepl-node', () => ({
   DeepLClient: class {
