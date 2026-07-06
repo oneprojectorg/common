@@ -1,5 +1,5 @@
 import { headingClasses } from '@op/styles/constants';
-import { Extension, mergeAttributes } from '@tiptap/core';
+import { type AnyExtension, Extension, mergeAttributes } from '@tiptap/core';
 import {
   Details,
   DetailsContent,
@@ -71,53 +71,69 @@ const DetailsFocus = Extension.create({
   },
 });
 
+export interface BaseExtensionOptions {
+  /** Disables local undo/redo so Yjs collaboration can own history. */
+  collaborative?: boolean;
+  link?: {
+    openOnClick?: boolean;
+    linkOnPaste?: boolean;
+  };
+}
+
 /**
- * Base extensions shared by both editor and viewer
+ * The single source for the shared editor/viewer extension set. Every
+ * extension (including StarterKit and Link) is registered exactly once —
+ * consumers layer their own extensions on top of the returned array instead
+ * of filtering or re-registering, which is how duplicate-extension bugs
+ * happen.
  */
-const baseExtensions = [
-  // StarterKit already bundles underline, strike, blockquote and
-  // horizontalRule — don't re-add them or tiptap warns about duplicate
-  // extension names. heading/link are disabled because we register our own
-  // configured versions below.
-  StarterKit.configure({
-    heading: false,
-    link: false,
-  }),
-  DetailsFocus,
-  TextAlign.configure({
-    types: ['heading', 'paragraph'],
-  }),
-  Image.configure({
-    inline: true,
-    allowBase64: true,
-  }),
-  StyledHeading.configure({
-    levels: [1, 2, 3, 4],
-  }),
-  // Vanilla Details extension — its built-in node view provides the toggle
-  // button + `is-open` class; all chrome is styled via `.details` CSS in
-  // @op/styles. `persist` stores the open state in the doc.
-  Details.configure({ persist: true, HTMLAttributes: { class: 'details' } }),
-  DetailsSummary,
-  DetailsContent,
-];
+export function buildBaseExtensions(
+  options: BaseExtensionOptions = {},
+): AnyExtension[] {
+  const { collaborative = false, link } = options;
+
+  return [
+    // StarterKit already bundles underline, strike, blockquote and
+    // horizontalRule — don't re-add them or tiptap warns about duplicate
+    // extension names. heading/link are disabled because we register our own
+    // configured versions below.
+    StarterKit.configure({
+      heading: false,
+      link: false,
+      undoRedo: collaborative ? false : undefined,
+    }),
+    DetailsFocus,
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+    }),
+    Image.configure({
+      inline: true,
+      allowBase64: true,
+    }),
+    StyledHeading.configure({
+      levels: [1, 2, 3, 4],
+    }),
+    // Vanilla Details extension — its built-in node view provides the toggle
+    // button + `is-open` class; all chrome is styled via `.details` CSS in
+    // @op/styles. `persist` stores the open state in the doc.
+    Details.configure({ persist: true, HTMLAttributes: { class: 'details' } }),
+    DetailsSummary,
+    DetailsContent,
+    Link.configure({
+      openOnClick: false,
+      ...link,
+    }),
+  ];
+}
 
 /**
  * Default editor extensions for editable content
  */
-export const defaultEditorExtensions = [
-  ...baseExtensions,
-  Link.configure({
-    openOnClick: false,
-  }),
-];
+export const defaultEditorExtensions = buildBaseExtensions();
 
 /**
  * Default viewer extensions for read-only content (links open on click)
  */
-export const defaultViewerExtensions = [
-  ...baseExtensions,
-  Link.configure({
-    openOnClick: true, // Allow clicking links in view mode
-  }),
-];
+export const defaultViewerExtensions = buildBaseExtensions({
+  link: { openOnClick: true },
+});
