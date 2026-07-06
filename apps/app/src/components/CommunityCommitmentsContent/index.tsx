@@ -12,10 +12,7 @@ export const CommunityCommitmentsContent = () => {
           funders, and municipalities to democratically allocate resources—
           transparently, in any language, at any scale. Common’s users and
           community share these 10 core commitments and agree to abide by the{' '}
-          <a
-            href="#prohibited-content"
-            className="text-primary-teal hover:underline"
-          >
+          <a href="#prohibited-content" className="text-primary-teal underline">
             prohibited content policy
           </a>{' '}
           below.
@@ -151,7 +148,7 @@ export const CommunityCommitmentsContent = () => {
             processes and communities and can enforce their own rules, as long
             as those rules are not in contradiction with the Prohibited Content
             Policy, Community Commitments, and{' '}
-            <a href="/info/tos" className="text-primary-teal hover:underline">
+            <a href="/info/tos" className="text-primary-teal underline">
               Terms of Service
             </a>
             .
@@ -410,7 +407,7 @@ export const CommunityCommitmentsContent = () => {
           a user about an action and should be sent to{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal hover:underline"
+            className="text-primary-teal underline"
           >
             support@oneproject.org
           </a>
