@@ -160,6 +160,11 @@ const DetailsContentServerNode = Node.create({
 export const serverExtensions = [
   StarterKit.configure({
     heading: false,
+    // StarterKit v3 bundles Link and Underline; disable them here so the
+    // explicitly-configured versions below are the only ones registered.
+    // Otherwise both are added twice ("Duplicate extension names" warning).
+    link: false,
+    underline: false,
   }),
   // Must match the editor (@op/ui editorConfig allows 1-4). TipTap's
   // Heading.renderHTML falls back to levels[0] for any out-of-range level, so a
