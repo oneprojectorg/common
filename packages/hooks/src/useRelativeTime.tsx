@@ -22,6 +22,14 @@ export function useRelativeTime(
 
   const format = useFormatter();
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  // Relative time depends on the wall clock, which differs between the server
+  // render and client hydration (React #418). Until mounted, render a
+  // deterministic absolute date instead; the relative string applies after.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const adaptiveInterval =
     updateInterval ?? getAdaptiveUpdateInterval(dateTime);
@@ -41,6 +49,17 @@ export function useRelativeTime(
 
   return useMemo(() => {
     const date = new Date(dateTime);
+
+    if (!mounted) {
+      // Compact fallback keeps the width close to the post-mount relative
+      // string ("2m", "3d") to minimize layout shift when it swaps in.
+      return format.dateTime(date, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      });
+    }
+
     let now = new Date();
 
     const diffMs = now.getTime() - date.getTime();
@@ -51,7 +70,7 @@ export function useRelativeTime(
     }
 
     return format.relativeTime(date, { now, style });
-  }, [dateTime, updateTrigger, format, style]);
+  }, [dateTime, updateTrigger, format, style, mounted]);
 }
 
 /**
