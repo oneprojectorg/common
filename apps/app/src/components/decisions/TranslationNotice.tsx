@@ -24,7 +24,7 @@ export const TranslationNotice = ({
   const t = useTranslations();
 
   return (
-    <div className="flex gap-1">
+    <div className="flex items-center gap-1">
       <p className={cn('text-sm text-neutral-gray4', className)}>
         {t('Translated from {language}', { language: sourceLanguageName })}
       </p>
