@@ -224,7 +224,7 @@ function ProposalEditorInner({
       phaseId: instance.currentStateId ?? undefined,
       initialPhaseId,
     },
-    { enabled: Boolean(instance.profileId) && isEditMode },
+    { enabled: Boolean(instance.profileId) && isDraft },
   );
 
   // -- Instance config -------------------------------------------------------
@@ -388,12 +388,12 @@ function ProposalEditorInner({
         },
       });
 
-      // When the current phase has a custom form, defer finalizing (draft
-      // submission, or navigation for a later-phase edit) until the user
-      // completes the form. Resolve the form via the query cache (fetch, not
-      // hook state) so a click before the subscription resolves still routes
-      // through the required form.
-      if (instance.profileId) {
+      // The custom form gates proposal submission only (the draft -> submit
+      // transition). The phase params select the form tied to the current
+      // phase; voting-phase forms are gated separately on the voting page.
+      // Resolve via the query cache (fetch, not hook state) so a click before
+      // the subscription resolves still routes through the required form.
+      if (isDraft && instance.profileId) {
         const form = await utils.customForm.getForProfile.fetch({
           profileId: instance.profileId,
           phaseId: instance.currentStateId ?? undefined,
@@ -578,7 +578,7 @@ function ProposalEditorInner({
           isSubmitting={isSubmitting}
           onSubmit={handleCustomFormSubmit}
           onOpenChange={handleCustomFormOpenChange}
-          submitLabel={isDraft ? t('Submit my idea') : undefined}
+          submitLabel={t('Submit my idea')}
         />
       )}
     </ProposalEditorLayout>
