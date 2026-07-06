@@ -23,12 +23,15 @@ process.env.DEEPL_API_KEY = 'test-fake-key';
 
 // Mock DeepL's translateText — prefixes each text with [ES] so we can
 // distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string[]) =>
-  texts.map((t) => ({
+const mockTranslateText = vi.fn((texts: string | string[]) => {
+  const arr = Array.isArray(texts) ? texts : [texts];
+  const results = arr.map((t) => ({
     text: `[ES] ${t}`,
     detectedSourceLang: 'en',
-  })),
-);
+  }));
+  // Mirror deepl-node: a single-string input returns a single result object.
+  return Array.isArray(texts) ? results : results[0];
+});
 
 // Mock deepl-node so we never hit the real API
 vi.mock('deepl-node', () => ({
@@ -255,12 +258,16 @@ describe('translation.translateProposal', () => {
       },
     });
 
-    // Verify what was sent to DeepL (mapped from 'es' → 'ES')
+    // Verify what was sent to DeepL (mapped from 'es' → 'ES'). DeepL is called
+    // once per text so batch size can't exceed its per-request cap.
     expect(mockTranslateText).toHaveBeenCalledWith(
-      [
-        'Community Garden Project',
-        '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
-      ],
+      'Community Garden Project',
+      null,
+      'ES',
+      expect.objectContaining({ tagHandling: 'html' }),
+    );
+    expect(mockTranslateText).toHaveBeenCalledWith(
+      '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
@@ -338,7 +345,7 @@ describe('translation.translateProposal', () => {
 
     // Only the body (cache miss) should have been sent to DeepL
     expect(mockTranslateText).toHaveBeenCalledWith(
-      ['<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>'],
+      '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
@@ -477,7 +484,13 @@ describe('translation.translateProposal', () => {
     });
 
     expect(mockTranslateText).toHaveBeenCalledWith(
-      ['Legacy Proposal', '<p>Old-style HTML content</p>'],
+      'Legacy Proposal',
+      null,
+      'ES',
+      expect.objectContaining({ tagHandling: 'html' }),
+    );
+    expect(mockTranslateText).toHaveBeenCalledWith(
+      '<p>Old-style HTML content</p>',
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),

@@ -19,6 +19,9 @@ export interface TranslationProvider {
   translate(texts: string[]): Promise<TranslationProviderResult[]>;
 }
 
+/** Max DeepL requests in flight at once, to stay under DeepL's rate limits. */
+const DEEPL_REQUEST_CONCURRENCY = 10;
+
 /** DeepL-backed provider. Handles most languages. */
 export class DeepLTranslationProvider implements TranslationProvider {
   constructor(
@@ -28,19 +31,34 @@ export class DeepLTranslationProvider implements TranslationProvider {
   ) {}
 
   async translate(texts: string[]): Promise<TranslationProviderResult[]> {
-    const results = await this.client.translateText(
-      texts,
+    // DeepL rejects any request carrying more than 50 text parameters, so
+    // sending a whole proposal list in one call started failing once lists grew
+    // past that cap. Translate each text in its own request (with bounded
+    // concurrency) so batch size can never exceed DeepL's limit. pMap preserves
+    // input order, so results line up 1:1 with the input.
+    return pMap(texts, (text) => this.translateOne(text), {
+      concurrency: DEEPL_REQUEST_CONCURRENCY,
+    });
+  }
+
+  private async translateOne(text: string): Promise<TranslationProviderResult> {
+    const result = await this.client.translateText(
+      text,
       null,
       this.targetLang as TargetLanguageCode,
       { tagHandling: 'html' },
     );
 
-    const arr = Array.isArray(results) ? results : [results];
+    // A single-text input yields a single result object.
+    const single = Array.isArray(result) ? result[0] : result;
+    if (!single) {
+      throw new Error('DeepL returned no translation for the submitted text.');
+    }
 
-    return arr.map((result) => ({
-      translatedText: he.decode(result.text),
-      detectedSourceLang: result.detectedSourceLang.toUpperCase(),
-    }));
+    return {
+      translatedText: he.decode(single.text),
+      detectedSourceLang: single.detectedSourceLang.toUpperCase(),
+    };
   }
 }
 
