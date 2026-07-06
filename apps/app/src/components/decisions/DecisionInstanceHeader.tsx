@@ -124,8 +124,8 @@ export const DecisionInstanceHeader = ({
               <LuSettings className="size-4" />
             </ButtonLink>
           )}
-          <LocaleChooser />
           <SupportLink />
+          <LocaleChooser />
           <HeaderUserMenu />
         </div>
       </div>
