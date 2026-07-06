@@ -381,6 +381,7 @@
   "Failed to create proposal": "Error al crear la propuesta",
   "Failed to update proposal": "Error al actualizar la propuesta",
   "Failed to submit proposal": "Error al enviar la propuesta",
+  "Failed to submit form": "Error al enviar el formulario",
   "Please fix the following issues:": "Por favor corrija los siguientes problemas:",
   "An unexpected error occurred": "Ocurrió un error inesperado",
   "Anonymous": "Anónimo",

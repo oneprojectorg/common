@@ -32,6 +32,8 @@ export class SchemaValidator {
     this.ajv.addKeyword('x-field-order');
     this.ajv.addKeyword('x-format');
     this.ajv.addKeyword('x-map-default');
+    // Phase designation on custom forms (see CustomFormDefinitionSchema).
+    this.ajv.addKeyword('x-phase');
   }
 
   /**

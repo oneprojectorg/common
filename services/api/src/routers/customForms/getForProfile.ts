@@ -16,6 +16,8 @@ export const getForProfile = router({
     .query(async ({ input }) => {
       const form = await getCustomFormForProfile({
         profileId: input.profileId,
+        phaseId: input.phaseId,
+        initialPhaseId: input.initialPhaseId,
       });
 
       return form ? customFormEncoder.parse(form) : null;

@@ -14,6 +14,12 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
   [key: string]: unknown;
   properties?: Record<string, XFormatPropertySchema>;
   'x-field-order'?: string[];
+  /**
+   * The decision phase this form applies to, identified by a
+   * `PhaseDefinition.id`. When absent, the form applies to the process's
+   * initial (submission) phase. Used to decide which phase surfaces the form.
+   */
+  'x-phase'?: string;
 }
 
 /**
@@ -85,6 +91,12 @@ export type CreateCustomFormSubmissionInput = z.infer<
 /** Input for `getCustomFormForProfile`. */
 export const getCustomFormForProfileInputSchema = z.object({
   profileId: z.uuid(),
+  // The phase to resolve a form for. When omitted, the first form attached to
+  // the profile is returned (legacy, phase-agnostic behavior).
+  phaseId: z.string().optional(),
+  // The process's initial phase id. A form with no `x-phase` is treated as
+  // belonging to this phase, so legacy forms keep gating submission.
+  initialPhaseId: z.string().optional(),
 });
 
 export type GetCustomFormForProfileInput = z.infer<
