@@ -4,7 +4,7 @@ import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
 
-import { cn } from '../../lib/utils';
+import { cn, getInvalidAriaAttributes } from '../../lib/utils';
 import { defaultEditorExtensions } from './editorConfig';
 import { baseEditorStyles } from './viewerStyles';
 
@@ -95,10 +95,7 @@ export function useRichTextEditor({
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
         ...(required ? { 'aria-required': 'true' } : {}),
-        ...(isInvalid ? { 'aria-invalid': 'true' } : {}),
-        ...(isInvalid && errorMessageId
-          ? { 'aria-describedby': errorMessageId }
-          : {}),
+        ...getInvalidAriaAttributes({ isInvalid, errorMessageId }),
       },
     }),
     [editorClassName, editable, required, isInvalid, errorMessageId],

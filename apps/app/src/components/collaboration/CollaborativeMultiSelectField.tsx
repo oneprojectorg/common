@@ -7,7 +7,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { ListBox } from '@op/ui/ListBox';
 import { Popover } from '@op/ui/Popover';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { cn } from '@op/ui/utils';
+import { cn, getInvalidAriaAttributes } from '@op/ui/utils';
 import { useEffect, useMemo, useRef } from 'react';
 import type { Key } from 'react';
 import { Dialog, ListBoxItem } from 'react-aria-components';
@@ -115,10 +115,10 @@ export function CollaborativeMultiSelectField({
         <Button
           variant="pill"
           color="pill"
-          aria-invalid={isInvalid || undefined}
-          aria-describedby={
-            isInvalid ? getFieldErrorId(fragmentName) : undefined
-          }
+          {...getInvalidAriaAttributes({
+            isInvalid,
+            errorMessageId: getFieldErrorId(fragmentName),
+          })}
           className={cn(
             'w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none',
             isInvalid && INVALID_PILL_CLASS,

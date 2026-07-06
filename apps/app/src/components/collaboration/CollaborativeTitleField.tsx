@@ -1,7 +1,7 @@
 'use client';
 
 import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import { cn, getInvalidAriaAttributes } from '@op/ui/utils';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Document from '@tiptap/extension-document';
@@ -66,12 +66,10 @@ export function CollaborativeTitleField({
       attributes: {
         class:
           'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
-        ...(isInvalid
-          ? {
-              'aria-invalid': 'true',
-              'aria-describedby': getFieldErrorId('title'),
-            }
-          : {}),
+        ...getInvalidAriaAttributes({
+          isInvalid,
+          errorMessageId: getFieldErrorId('title'),
+        }),
       },
       handleKeyDown: suppressEnterKey,
     }),

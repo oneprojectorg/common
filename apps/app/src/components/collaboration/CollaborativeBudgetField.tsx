@@ -4,7 +4,7 @@ import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
-import { cn } from '@op/ui/utils';
+import { cn, getInvalidAriaAttributes } from '@op/ui/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -202,10 +202,10 @@ export function CollaborativeBudgetField({
           variant="pill"
           color="pill"
           onPress={handleStartEditing}
-          aria-invalid={isInvalid || undefined}
-          aria-describedby={
-            isInvalid ? getFieldErrorId(fragmentName) : undefined
-          }
+          {...getInvalidAriaAttributes({
+            isInvalid,
+            errorMessageId: getFieldErrorId(fragmentName),
+          })}
           className={cn(
             'justify-start text-start',
             isInvalid && INVALID_PILL_CLASS,
