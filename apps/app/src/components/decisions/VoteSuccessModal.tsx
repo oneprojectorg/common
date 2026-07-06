@@ -7,6 +7,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
+import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,6 +27,7 @@ const VoteSuccessModalSuspense = ({
   instanceId,
 }: VoteSuccessModalProps) => {
   const t = useTranslations();
+  const locale = useLocale();
 
   const [processInstance] = trpc.decision.getInstance.useSuspenseQuery({
     instanceId,
@@ -75,7 +77,7 @@ const VoteSuccessModalSuspense = ({
                     {nextSteps.map((step) => (
                       <li key={step.id} className="flex items-start gap-2">
                         <span>•</span>
-                        <span>{formatStepForDisplay(step)}</span>
+                        <span>{formatStepForDisplay(step, locale)}</span>
                       </li>
                     ))}
                   </ul>

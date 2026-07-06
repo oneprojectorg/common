@@ -3,6 +3,7 @@
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
+import { formatPhaseDate } from '@op/ui/utils/formatting';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuEye } from 'react-icons/lu';
@@ -39,10 +40,11 @@ export function AdminOverviewBar({
 
   const endsLabel = phaseEndDate
     ? t('ends {date}', {
-        date: new Date(phaseEndDate).toLocaleDateString(locale, {
-          month: 'long',
-          day: 'numeric',
-        }),
+        date: formatPhaseDate(
+          phaseEndDate,
+          { month: 'long', day: 'numeric' },
+          locale,
+        ),
       })
     : null;
 
