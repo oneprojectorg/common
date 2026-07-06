@@ -1,6 +1,17 @@
 import type { TranslatableEntry, TranslationResult } from '@op/translation';
 
 export type TranslatedFieldValue = string | string[];
+
+/**
+ * Upper bound on a reconstructed array index. Genuine translatable arrays (e.g.
+ * multi-select categories) have small, dense indices starting at 0. A key whose
+ * trailing `:<digits>` segment exceeds this is not an array element — it's a
+ * field whose id happens to be numeric (e.g. `field_title:77963788`, where the
+ * proposal template's field id is all digits). Treating that id as an array
+ * index makes `items[77963788] = …` allocate a ~78-million-element sparse array,
+ * which OOMs the process (ONE-401). Above the cap we fall back to a scalar key.
+ */
+const MAX_ARRAY_INDEX = 10_000;
 export type TranslatedFields = Record<string, TranslatedFieldValue>;
 export type TranslatableFields = Record<
   string,
@@ -69,16 +80,16 @@ export function unflattenTranslatedFields(
     const fieldName = arrayMatch?.groups?.field;
     const indexValue = arrayMatch?.groups?.index;
 
-    if (fieldName && indexValue) {
-      const index = Number.parseInt(indexValue, 10);
+    const index = indexValue ? Number.parseInt(indexValue, 10) : NaN;
 
-      if (!Number.isNaN(index)) {
-        const currentValue = translated[fieldName];
-        const items = Array.isArray(currentValue) ? currentValue.slice() : [];
-        items[index] = result.translatedText;
-        translated[fieldName] = items;
-      }
+    if (fieldName && !Number.isNaN(index) && index <= MAX_ARRAY_INDEX) {
+      const currentValue = translated[fieldName];
+      const items = Array.isArray(currentValue) ? currentValue.slice() : [];
+      items[index] = result.translatedText;
+      translated[fieldName] = items;
     } else {
+      // Not an array element (no `:<index>` suffix, or the suffix is a numeric
+      // field id above MAX_ARRAY_INDEX) — store under the full key as a scalar.
       translated[fieldKey] = result.translatedText;
     }
 
