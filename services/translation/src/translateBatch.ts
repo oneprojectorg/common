@@ -20,18 +20,22 @@ export type TranslationResult = {
 
 type HashedEntry = TranslatableEntry & { hash: string };
 
-// Matches any opening/closing HTML tag, used to tell HTML fragments (TipTap
-// content) apart from plain-text fields (titles, categories, labels).
-const HTML_TAG = /<\/?[a-z][^>]*>/i;
+// Detects the start of an HTML tag (`<tag` or `</tag`), used to tell HTML
+// fragments (TipTap content) apart from plain-text fields (titles, categories,
+// labels). Deliberately anchored to the `<` + letter prefix only — matching a
+// full `<...>` with `[^>]*>` would rescan to end at every offset on input with
+// no closing `>`, which is O(n²) backtracking on hostile strings like `<a<a…`.
+const HTML_TAG_START = /<\/?[a-z]/i;
 
 // DeepL, when given plain text under `tagHandling: 'html'`, treats it as an
 // HTML document and wraps the loose text in a namespaced paragraph, e.g.
 // `<p xmlns="http://www.w3.org/1999/xhtml">Proposal…</p>`. Matches a single
-// outer <p> wrapper so we can peel it off plain-text results.
-const PARAGRAPH_WRAPPER = /^\s*<p\b[^>]*>([\s\S]*)<\/p>\s*$/i;
+// outer <p> wrapper so we can peel it off plain-text results. Lazy capture +
+// end anchor keep the match linear.
+const PARAGRAPH_WRAPPER = /^\s*<p\b[^>]*>([\s\S]*?)<\/p>\s*$/i;
 
 function isHtml(text: string): boolean {
-  return HTML_TAG.test(text);
+  return HTML_TAG_START.test(text);
 }
 
 /**
