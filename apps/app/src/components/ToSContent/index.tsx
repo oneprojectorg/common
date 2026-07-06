@@ -10,7 +10,7 @@ export const ToSContent = () => {
           TERMS OF SERVICE FOR COMMON PLATFORM AND ONE PROJECT SERVICES
         </Header3>
         <p className="mb-4">
-          These Terms of Service were last revised on July 2, 2026
+          <i>Last Updated: July 2, 2026</i>
         </p>
         <p className="mb-4">
           These terms and conditions (“Terms of Service”) are entered into by

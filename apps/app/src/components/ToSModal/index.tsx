@@ -12,7 +12,7 @@ export const ToSModal = () => {
   return (
     <DialogTrigger>
       <Button unstyled className="text-primary-teal hover:underline">
-        {t('Terms of Use')}
+        {t('Terms of Service')}
       </Button>
 
       <Modal
@@ -20,7 +20,7 @@ export const ToSModal = () => {
         isDismissable
       >
         <Dialog>
-          <ModalHeader>{t('Terms of Use')}</ModalHeader>
+          <ModalHeader>{t('Terms of Service')}</ModalHeader>
           <ModalBody>
             <ToSContent />
           </ModalBody>

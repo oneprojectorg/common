@@ -41,14 +41,14 @@ export const ToSForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Terms of Use Overview')}></FormHeader>
+        <FormHeader text={t('Terms of Service Overview')}></FormHeader>
         <span className="text-neutral-charcoal">
           {t('Effective Date: March 15, 2025')}
         </span>
 
         <ToSContentShort />
 
-        <FormHeader text={t('Terms of Use')}></FormHeader>
+        <FormHeader text={t('Terms of Service')}></FormHeader>
         <ToSContent />
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">

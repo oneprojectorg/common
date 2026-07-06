@@ -7,7 +7,9 @@ export const PrivacyPolicyContent = () => {
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <Header3 className="font-serif">One Project Privacy Notice</Header3>
-        <p>Last Updated: July 2, 2026</p>
+        <p>
+          <i>Last Updated: July 2, 2026</i>
+        </p>
       </FormalSection>
 
       <FormalSection>
