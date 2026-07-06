@@ -20,7 +20,6 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
 import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
@@ -32,6 +31,7 @@ import {
 } from './OverviewPinnedResources';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslateBanner } from './TranslateBanner';
+import { TranslationNotice } from './TranslationNotice';
 import { getOverviewDetectionText } from './translationDetectionText';
 import { useCreateProposal } from './useCreateProposal';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -234,19 +234,11 @@ function DecisionOverviewContent({
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           {decisionTranslation.translationState ? (
-            <p className="mb-4 text-sm text-neutral-gray4">
-              {t('Translated from {language}', {
-                language: decisionTranslation.sourceLanguageName,
-              })}
-              <Bullet />{' '}
-              <Button
-                variant="link"
-                onPress={decisionTranslation.handleViewOriginal}
-                className="inline h-auto p-0 text-sm sm:text-sm"
-              >
-                {t('View original')}
-              </Button>
-            </p>
+            <TranslationNotice
+              sourceLanguageName={decisionTranslation.sourceLanguageName}
+              onViewOriginal={decisionTranslation.handleViewOriginal}
+              className="mb-4"
+            />
           ) : null}
           <OverviewAbout
             bodySlot={translatedAbout ?? aboutSlot}
