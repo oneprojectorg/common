@@ -13,7 +13,11 @@ const AppLayout = async ({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) => {
-  setupSSR({ params });
+  // Must be awaited: setupSSR calls notFound() for an unknown locale (e.g. a
+  // bogus top-level path like /info.php resolves the [locale] segment to
+  // "info.php"). Without awaiting, execution falls through to getMessages()
+  // below and throws → a 500 instead of the intended 404.
+  await setupSSR({ params });
   const { locale } = await params;
 
   const messages = await getMessages({ locale });

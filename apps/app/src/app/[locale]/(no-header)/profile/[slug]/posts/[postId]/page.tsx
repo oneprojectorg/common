@@ -1,3 +1,4 @@
+import { handleServerError } from '@/utils/handleServerError';
 import {
   HydrationBoundary,
   createServerUtils,
@@ -60,8 +61,14 @@ const PostDetailPage = async ({
   const { queryClient } = await createServerUtils();
 
   // Shares the cache()-wrapped fetches with generateMetadata above, so each
-  // resolver runs once and the data hydrates into HydrationBoundary.
-  await Promise.all([fetchPost(postId), fetchOrganizationBySlug(slug)]);
+  // resolver runs once and the data hydrates into HydrationBoundary. A missing
+  // post/org throws NotFoundError here; translate it to a 404 instead of
+  // letting it bubble to error.tsx as a 500.
+  try {
+    await Promise.all([fetchPost(postId), fetchOrganizationBySlug(slug)]);
+  } catch (error) {
+    handleServerError(error);
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

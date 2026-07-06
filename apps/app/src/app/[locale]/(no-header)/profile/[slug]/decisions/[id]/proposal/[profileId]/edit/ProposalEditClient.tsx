@@ -1,5 +1,6 @@
 'use client';
 
+import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { trpc } from '@op/api/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -76,11 +77,15 @@ export const LegacyProposalEditClient = ({
   return (
     <ErrorBoundary fallback={<DocumentNotAvailable />}>
       <Suspense fallback={<ProposalEditPageSkeleton />}>
-        <ProposalEditPageContent
-          profileId={profileId}
-          instanceId={instanceId}
-          decisionSlug={decisionSlug}
-        />
+        {/* Intercept 404/403 first (missing/forbidden proposal → accurate
+            status page); any other error falls through to DocumentNotAvailable. */}
+        <ResourceErrorBoundary>
+          <ProposalEditPageContent
+            profileId={profileId}
+            instanceId={instanceId}
+            decisionSlug={decisionSlug}
+          />
+        </ResourceErrorBoundary>
       </Suspense>
     </ErrorBoundary>
   );
