@@ -1,5 +1,6 @@
 import type { DeepLClient, TargetLanguageCode } from 'deepl-node';
 import he from 'he';
+import pMap from 'p-map';
 
 /** A single translated text plus the source language the provider detected. */
 export type TranslationProviderResult = {
@@ -47,6 +48,10 @@ const OPENL_ENDPOINT = 'https://openl-translate.p.rapidapi.com/translate/bulk';
 const OPENL_HOST = 'openl-translate.p.rapidapi.com';
 /** Total attempts before giving up; RapidAPI's gateway returns sporadic 5xx. */
 const OPENL_MAX_ATTEMPTS = 3;
+/** OpenL's PRO plan rejects requests with more than this many texts. */
+const OPENL_MAX_TEXTS_PER_REQUEST = 20;
+/** Max chunk requests in flight at once, to stay under OpenL's rate limits. */
+const OPENL_REQUEST_CONCURRENCY = 4;
 
 /**
  * OpenL-backed provider accessed via RapidAPI. Used for languages DeepL does
@@ -60,7 +65,17 @@ export class OpenLTranslationProvider implements TranslationProvider {
   ) {}
 
   async translate(texts: string[]): Promise<TranslationProviderResult[]> {
-    const translatedTexts = await this.requestWithRetry(texts);
+    // OpenL caps texts per request, so split into chunks and translate them
+    // with bounded concurrency (pMap preserves input order, so the reassembled
+    // array lines up 1:1 with the input — translateBatch maps results back to
+    // entries by index).
+    const chunks = chunk(texts, OPENL_MAX_TEXTS_PER_REQUEST);
+    const chunkResults = await pMap(
+      chunks,
+      (chunkTexts) => this.requestWithRetry(chunkTexts),
+      { concurrency: OPENL_REQUEST_CONCURRENCY },
+    );
+    const translatedTexts = chunkResults.flat();
 
     if (translatedTexts.length !== texts.length) {
       throw new Error(
@@ -79,8 +94,9 @@ export class OpenLTranslationProvider implements TranslationProvider {
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= OPENL_MAX_ATTEMPTS; attempt++) {
+      let response: Response;
       try {
-        const response = await fetch(OPENL_ENDPOINT, {
+        response = await fetch(OPENL_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -94,21 +110,28 @@ export class OpenLTranslationProvider implements TranslationProvider {
           },
           body: JSON.stringify({ target_lang: this.targetLang, text: texts }),
         });
-
-        if (response.ok) {
-          return parseOpenLResponse(await response.json());
-        }
-
-        const body = await response.text();
-        lastError = new Error(
-          `OpenL translation request failed (${response.status}): ${body}`,
-        );
-        // 4xx (other than rate limiting) won't succeed on retry — fail fast.
-        if (response.status < 500 && response.status !== 429) {
-          break;
-        }
       } catch (error) {
+        // Network-level failure — worth retrying.
         lastError = error;
+        if (attempt < OPENL_MAX_ATTEMPTS) {
+          await delay(attempt * 500);
+        }
+        continue;
+      }
+
+      // A 2xx means the request reached OpenL; parsing failures are
+      // deterministic, so let them throw immediately rather than retry.
+      if (response.ok) {
+        return parseOpenLResponse(await response.json());
+      }
+
+      const body = await response.text();
+      lastError = new Error(
+        `OpenL translation request failed (${response.status}): ${body}`,
+      );
+      // 4xx (other than rate limiting) won't succeed on retry — fail fast.
+      if (response.status < 500 && response.status !== 429) {
+        break;
       }
 
       if (attempt < OPENL_MAX_ATTEMPTS) {
@@ -124,6 +147,15 @@ export class OpenLTranslationProvider implements TranslationProvider {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Split an array into consecutive chunks of at most `size` items. */
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
 }
 
 /** Validate the OpenL bulk-translate response shape without unsafe casts. */
