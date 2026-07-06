@@ -263,7 +263,7 @@ const AvatarMenuContent = ({
         className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
         onAction={() => {
           window.open(
-            'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
+            'https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b',
             '_blank',
             'noopener,noreferrer',
           );
