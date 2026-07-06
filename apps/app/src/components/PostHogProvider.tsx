@@ -14,6 +14,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_pageview: false, // We capture pageviews manually
       capture_pageleave: true,
       capture_exceptions: true,
+      // Capture Core Web Vitals (LCP/CLS/INP/FCP). Off by default in posthog-js;
+      // the web-vitals collection lib ships transitively with posthog-js.
+      capture_performance: { web_vitals: true },
       // Tracing headers set to `false` because it breaks CORS requests
       __add_tracing_headers: false,
     });
