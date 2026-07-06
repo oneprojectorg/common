@@ -37,6 +37,9 @@ const DecisionViewLayout = ({
           and confines the scrollbar to the content row. The content row is the
           scroll container the proposals filter bar pins inside. */}
       <div className="grid h-dvh grid-rows-[auto_1fr]">
+        {/* Grid contract: this Suspense (and the resolved header) must stay a
+            single grid item — a second top-level element (e.g. flipping
+            showStepper back on) would steal the 1fr row from the content. */}
         <Suspense fallback={<DecisionHeaderBarSkeleton />}>
           <DecisionViewHeader params={params} />
         </Suspense>

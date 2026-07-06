@@ -85,11 +85,14 @@ export const DecisionHeaderBarSkeleton = () => {
           <Skeleton className="size-6 rounded md:size-4" />
           <Skeleton className="hidden h-5 w-24 md:block" />
         </div>
+        {/* Mobile centers the decision title (the toggle floats below the bar);
+            md+ shows the view-toggle pill in the center column. */}
         <div className="flex justify-center">
-          <Skeleton className="h-8 w-44 rounded-full" />
+          <Skeleton className="h-5 w-32 rounded md:h-8 md:w-44 md:rounded-full" />
         </div>
         <div className="flex items-center justify-end gap-2 md:gap-4">
-          <Skeleton className="h-7 w-7 rounded" />
+          <Skeleton className="h-8 w-8 rounded-md" />
+          <Skeleton className="h-8 w-8 rounded-md" />
           <Skeleton className="h-8 w-8 rounded-full" />
         </div>
       </div>
@@ -106,11 +109,12 @@ export const DecisionHeaderBarSkeleton = () => {
 export const OverviewSkeleton = () => {
   return (
     <div className="flex w-full flex-col">
-      {/* Hero band: title, meta row, subhead, CTA chips */}
-      <div className="border-b bg-neutral-offWhite">
-        <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:px-6 md:pb-16">
+      {/* Hero band: same 12-col grid as OverviewHero so the content column
+          width (and therefore text wrap + band height) matches on resolve. */}
+      <div className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+        <div className="mx-auto flex w-full flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
           <div className="flex w-full flex-col items-center gap-3">
-            <Skeleton className="h-12 w-3/4 sm:h-14" />
+            <Skeleton className="h-8 w-3/4 md:h-14" />
             <Skeleton className="h-5 w-40" />
             <Skeleton className="h-5 w-1/2" />
           </div>
@@ -124,15 +128,16 @@ export const OverviewSkeleton = () => {
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
         <div className="flex flex-col gap-4 md:col-span-4">
           <Skeleton className="h-4 w-32" />
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="size-5 shrink-0 rounded-full" />
-              <div className="flex w-full flex-col gap-2">
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-3 w-1/2" />
+          {/* Mirrors DecisionPhaseTimeline: a gap-6 list of left-bordered
+              PhaseCards (date row + serif name), not dot rows. */}
+          <div className="flex flex-col gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex flex-col gap-2 border-s px-4 py-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-6 w-2/3" />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
         <div className="flex min-w-0 flex-col gap-3 md:col-span-7 md:col-start-6">
           <Skeleton className="h-4 w-full" />
