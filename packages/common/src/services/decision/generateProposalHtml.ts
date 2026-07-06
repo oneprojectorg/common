@@ -24,27 +24,6 @@ export function generateProposalHtml(
       continue;
     }
 
-    // TEMP instrumentation (ONE-401): pinpoint which fragment sends
-    // server-side HTML generation into a runaway (OOM/SIGKILL on prod). If the
-    // process dies mid-render, the "begin" line prints without a matching
-    // "end" line, naming the culprit fragment. We also dump the raw fragment
-    // JSON (capped) so the exact structure can be reproduced locally without
-    // another deploy, and report the full memory breakdown (heap vs
-    // external/arrayBuffers) so we can tell where the memory actually goes.
-    // Remove once diagnosed.
-    const formatMem = () => {
-      const m = process.memoryUsage();
-      return `rssMB=${Math.round(m.rss / 1e6)} heapMB=${Math.round(m.heapUsed / 1e6)} extMB=${Math.round(m.external / 1e6)} abMB=${Math.round((m.arrayBuffers ?? 0) / 1e6)}`;
-    };
-    const inputJson = JSON.stringify(fragment.content);
-    const startedAt = Date.now();
-    console.warn(
-      `[ONE-401] generateProposalHtml begin fragment="${fragmentName}" nodes=${fragment.content.length} inputBytes=${inputJson.length} ${formatMem()}`,
-    );
-    console.warn(
-      `[ONE-401] fragment="${fragmentName}" json(capped20k)=${inputJson.slice(0, 20_000)}`,
-    );
-
     try {
       const doc: JSONContent = {
         type: 'doc',
@@ -52,10 +31,6 @@ export function generateProposalHtml(
       };
 
       result[fragmentName] = generateHTML(doc, serverExtensions);
-
-      console.warn(
-        `[ONE-401] generateProposalHtml end fragment="${fragmentName}" outputBytes=${result[fragmentName].length} ms=${Date.now() - startedAt} ${formatMem()}`,
-      );
     } catch (error) {
       console.warn('Failed to generate HTML for fragment', {
         fragmentName,

@@ -95,22 +95,8 @@ export async function translateProposal({
     return { translated: {}, sourceLocale: '', targetLocale };
   }
 
-  // TEMP instrumentation (ONE-401): localize the prod OOM. A huge entry count
-  // points at template option/field explosion; a heap spike across the
-  // runTranslateBatch call points at the DeepL/render step. Remove once
-  // diagnosed.
-  const totalTextBytes = entries.reduce((sum, e) => sum + e.text.length, 0);
-  const startedAt = Date.now();
-  console.warn(
-    `[ONE-401] translateProposal proposalId=${proposalId} entries=${entries.length} totalTextBytes=${totalTextBytes} heapMB=${Math.round(process.memoryUsage().heapUsed / 1_000_000)}`,
-  );
-
   // 3. Translate via DeepL with cache-through
   const results = await runTranslateBatch(entries, targetLocale);
-
-  console.warn(
-    `[ONE-401] translateProposal done proposalId=${proposalId} results=${results.length} ms=${Date.now() - startedAt} heapMB=${Math.round(process.memoryUsage().heapUsed / 1_000_000)}`,
-  );
 
   // 4. Build response — strip the "proposal:<id>:" prefix to get the field name back
   const { translated, sourceLocale } = unflattenTranslatedFields(
