@@ -42,6 +42,14 @@ export interface PhaseInstanceData {
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
+  /**
+   * Storage object path (bucket-relative) of the phase's hero background image,
+   * resolved to a URL via `getPublicUrl`. Empty/undefined falls back to the
+   * gradient banner. Admins upload it from the Process Builder phase editor.
+   * Set/cleared only via the dedicated updatePhaseHeroImage/removePhaseHeroImage
+   * services, never through the generic updateDecisionInstance mutation.
+   */
+  heroImage?: string;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */

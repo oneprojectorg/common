@@ -11,11 +11,14 @@ import { listLegacyInstancesRouter } from './listLegacyInstances';
 import { listProposalSubmittersRouter } from './listProposalSubmitters';
 import { listSelectionCandidatesRouter } from './listSelectionCandidates';
 import { removeOverviewHeroImageRouter } from './removeOverviewHeroImage';
+import { removePhaseHeroImageRouter } from './removePhaseHeroImage';
 import { signOverviewHeroImageUploadUrlRouter } from './signOverviewHeroImageUploadUrl';
+import { signPhaseHeroImageUploadUrlRouter } from './signPhaseHeroImageUploadUrl';
 import { submitManualSelectionRouter } from './submitManualSelection';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
 import { updateOverviewHeroImageRouter } from './updateOverviewHeroImage';
+import { updatePhaseHeroImageRouter } from './updatePhaseHeroImage';
 
 export const instancesRouter = mergeRouters(
   createInstanceFromTemplateRouter,
@@ -25,6 +28,9 @@ export const instancesRouter = mergeRouters(
   signOverviewHeroImageUploadUrlRouter,
   updateOverviewHeroImageRouter,
   removeOverviewHeroImageRouter,
+  signPhaseHeroImageUploadUrlRouter,
+  updatePhaseHeroImageRouter,
+  removePhaseHeroImageRouter,
   transitionFromPhaseRouter,
   listLegacyInstancesRouter,
   getInstanceRouter,
