@@ -15,7 +15,8 @@
     "@op/db": "workspace:*",
     "deepl-node": "^1.24.0",
     "drizzle-orm": "catalog:",
-    "he": "^1.2.0"
+    "he": "^1.2.0",
+    "p-map": "^7.0.3"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

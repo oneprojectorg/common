@@ -156,6 +156,87 @@ describe('translation.translateResources', () => {
     expect(result.translations[second.id]?.description).toBeUndefined();
   });
 
+  it('routes Somali through OpenL instead of DeepL', async ({
+    task,
+    onTestFinished,
+  }) => {
+    process.env.OPENL_RAPIDAPI_KEY = 'test-openl-key';
+
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    registerResourcesCleanup(onTestFinished, [instance.profileId]);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const link = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'City Hall',
+      description: 'Local government office',
+      linkUrl: 'https://example.com/city-hall',
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(like(contentTranslations.contentKey, `resource:${link.id}:%`));
+    });
+
+    // Only intercept the OpenL endpoint; delegate every other request (e.g.
+    // Supabase auth used to resolve the caller's roles) to the real fetch, or
+    // the access check would fail before translation runs.
+    const realFetch = globalThis.fetch;
+    const openlRequests: Array<{ url: string; init: RequestInit }> = [];
+    const mockFetch = vi.fn(
+      (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (!url.includes('openl-translate.p.rapidapi.com')) {
+          return realFetch(input, init);
+        }
+        openlRequests.push({ url, init: init ?? {} });
+        const body = JSON.parse(String(init?.body));
+        return Promise.resolve(
+          Response.json({
+            translatedTexts: (body.text as string[]).map((t) => `[SO] ${t}`),
+          }),
+        );
+      },
+    );
+    vi.stubGlobal('fetch', mockFetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const result = await adminCaller.translation.translateResources({
+      profileId: instance.profileId,
+      targetLocale: 'so',
+    });
+
+    expect(result.targetLocale).toBe('so');
+    expect(result.translations[link.id]?.title).toBe('[SO] City Hall');
+    expect(result.translations[link.id]?.description).toBe(
+      '[SO] Local government office',
+    );
+
+    // DeepL must never be called for Somali.
+    expect(mockTranslateText).not.toHaveBeenCalled();
+
+    // OpenL was called with the RapidAPI key and the Somali target code.
+    expect(openlRequests).toHaveLength(1);
+    const openlRequest = openlRequests[0];
+    expect(openlRequest?.init.method).toBe('POST');
+    expect(openlRequest?.init.headers).toMatchObject({
+      'x-rapidapi-key': 'test-openl-key',
+      'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
+    });
+    const sentBody = JSON.parse(String(openlRequest?.init.body));
+    expect(sentBody.target_lang).toBe('so');
+  });
+
   it('returns an empty result when the decision has no resources', async ({
     task,
     onTestFinished,
