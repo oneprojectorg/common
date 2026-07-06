@@ -1,7 +1,9 @@
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -21,6 +23,9 @@ export const ProfileSummaryList = ({
 }: {
   profiles: Profiles | ProfileItem[];
 }) => {
+  // Public/non-member viewers can't reach profile pages, so render names and
+  // avatars as plain text/images without links.
+  const canLinkToProfile = useCanLinkToProfile();
   return (
     <div className="flex flex-col gap-6">
       {profiles.map((profile) => {
@@ -34,40 +39,55 @@ export const ProfileSummaryList = ({
             ? `${profile.bio.slice(0, 325)}...`
             : profile.bio;
 
+        const profileHref =
+          profile.type === EntityType.INDIVIDUAL
+            ? `/profile/${profile.slug}`
+            : `/org/${profile.slug}`;
+
+        const avatar = (
+          <Avatar
+            placeholder={profile.name}
+            className={cn(
+              'size-8 sm:size-12',
+              canLinkToProfile && 'hover:opacity-80',
+            )}
+          >
+            {profile.avatarImage?.name ? (
+              <Image
+                src={getPublicUrl(profile.avatarImage.name) ?? ''}
+                alt={`${profile.name} avatar`}
+                fill
+                className="object-cover"
+              />
+            ) : null}
+          </Avatar>
+        );
+
         return (
           <div key={profile.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
-              <Link
-                href={
-                  profile.type === EntityType.INDIVIDUAL
-                    ? `/profile/${profile.slug}`
-                    : `/org/${profile.slug}`
-                }
-                className="hover:no-underline"
-              >
-                <Avatar
-                  placeholder={profile.name}
-                  className="size-8 hover:opacity-80 sm:size-12"
-                >
-                  {profile.avatarImage?.name ? (
-                    <Image
-                      src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                      alt={`${profile.name} avatar`}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : null}
-                </Avatar>
-              </Link>
+              {canLinkToProfile ? (
+                <Link href={profileHref} className="hover:no-underline">
+                  {avatar}
+                </Link>
+              ) : (
+                avatar
+              )}
 
               <div className="flex flex-col gap-3 text-neutral-black">
                 <div className="flex flex-col gap-2">
-                  <Link
-                    href={`/profile/${profile.slug}`}
-                    className="leading-base font-semibold"
-                  >
-                    <bdi>{profile.name}</bdi>
-                  </Link>
+                  {canLinkToProfile ? (
+                    <Link
+                      href={`/profile/${profile.slug}`}
+                      className="leading-base font-semibold"
+                    >
+                      <bdi>{profile.name}</bdi>
+                    </Link>
+                  ) : (
+                    <span className="leading-base font-semibold">
+                      <bdi>{profile.name}</bdi>
+                    </span>
+                  )}
                   {whereWeWork?.length > 0 ? (
                     <span
                       dir="auto"

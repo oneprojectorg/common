@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { formatDate } from '@/utils/formatting';
 import { ProposalStatus } from '@op/api/encoders';
 import {
@@ -69,6 +70,7 @@ export function ProposalPreview({
   documentState = 'ready',
 }: ProposalPreviewProps) {
   const t = useTranslations();
+  const canLinkToProfile = useCanLinkToProfile();
 
   const proposalTemplate =
     (proposal.proposalTemplate as ProposalTemplateSchema) ?? null;
@@ -198,7 +200,7 @@ export function ProposalPreview({
                   className="size-8"
                 />
                 <div className="flex flex-col">
-                  {proposal.submittedBy.isAnonymous ? (
+                  {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
                     <span className="text-base text-neutral-black">
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </span>

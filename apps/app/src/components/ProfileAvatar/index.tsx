@@ -1,3 +1,4 @@
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
 import { cn } from '@op/ui/utils';
@@ -21,6 +22,7 @@ export const ProfileAvatar = ({
   withLink = true,
   className,
 }: ProfileAvatarProps) => {
+  const canLinkToProfile = useCanLinkToProfile();
   const name = profile?.name ?? '';
   const email = profile?.email ?? '';
   const placeholderSeed = name || email;
@@ -31,14 +33,12 @@ export const ProfileAvatar = ({
 
   const avatarImage = profile?.avatarImage;
   const slug = profile?.slug;
+  // Public/non-member viewers can't reach the profile page, so drop the link.
+  const linked = withLink && canLinkToProfile && Boolean(slug);
 
   const avatar = (
     <Avatar
-      className={cn(
-        'size-6',
-        withLink && slug && 'hover:opacity-80',
-        className,
-      )}
+      className={cn('size-6', linked && 'hover:opacity-80', className)}
       placeholder={placeholderSeed}
     >
       {avatarImage?.name ? (
@@ -52,7 +52,7 @@ export const ProfileAvatar = ({
     </Avatar>
   );
 
-  return withLink && slug ? (
+  return linked ? (
     <Link href={`/profile/${slug}`} className="hover:no-underline">
       {avatar}
     </Link>

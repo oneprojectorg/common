@@ -1,3 +1,4 @@
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { EntityType, ProfileSearchResult } from '@op/api/encoders';
 import { match } from '@op/core';
@@ -21,6 +22,7 @@ export const ProfileResults = ({
   selectedIndex,
   onSearch,
 }: ProfileResultsProps) => {
+  const canLinkToProfile = useCanLinkToProfile();
   return (
     <div>
       {profileResults.map((profile, index) => {
@@ -71,44 +73,57 @@ export const ProfileResults = ({
             <bdi>{profile.name}</bdi>
           );
 
+        const resultInner = (
+          <>
+            <Avatar
+              placeholder={profile.name}
+              className="aspect-square size-8 shrink-0 group-hover/result:no-underline"
+            >
+              {profile.avatarImage?.name ? (
+                <Image
+                  src={getPublicUrl(profile.avatarImage.name) ?? ''}
+                  alt={`${profile.name} avatar`}
+                  fill
+                  className="object-cover"
+                />
+              ) : null}
+            </Avatar>
+
+            <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
+              {styledName}
+              <span
+                dir="auto"
+                className="text-sm text-neutral-gray4 capitalize"
+              >
+                {subtitle}
+              </span>
+            </div>
+          </>
+        );
+
         return (
           <SearchResultItem
             key={profile.id}
             selected={selectedIndex === index + 1}
           >
-            <Link
-              className="group/result flex w-full items-center gap-4 hover:no-underline"
-              href={
-                isIndividual
-                  ? `/profile/${profile.slug}`
-                  : `/org/${profile.slug}`
-              }
-              onClick={() => onSearch(query)}
-            >
-              <Avatar
-                placeholder={profile.name}
-                className="aspect-square size-8 shrink-0 group-hover/result:no-underline"
+            {/* Public/non-member viewers can't reach the profile page. */}
+            {canLinkToProfile ? (
+              <Link
+                className="group/result flex w-full items-center gap-4 hover:no-underline"
+                href={
+                  isIndividual
+                    ? `/profile/${profile.slug}`
+                    : `/org/${profile.slug}`
+                }
+                onClick={() => onSearch(query)}
               >
-                {profile.avatarImage?.name ? (
-                  <Image
-                    src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                    alt={`${profile.name} avatar`}
-                    fill
-                    className="object-cover"
-                  />
-                ) : null}
-              </Avatar>
-
-              <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
-                {styledName}
-                <span
-                  dir="auto"
-                  className="text-sm text-neutral-gray4 capitalize"
-                >
-                  {subtitle}
-                </span>
+                {resultInner}
+              </Link>
+            ) : (
+              <div className="group/result flex w-full items-center gap-4">
+                {resultInner}
               </div>
-            </Link>
+            )}
           </SearchResultItem>
         );
       })}

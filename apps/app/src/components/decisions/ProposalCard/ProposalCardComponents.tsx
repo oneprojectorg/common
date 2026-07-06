@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
@@ -234,11 +235,14 @@ export function ProposalCardAuthor({
 }: BaseProposalCardProps & {
   className?: string;
 }) {
+  const canLinkToProfile = useCanLinkToProfile();
+
   if (!proposal.submittedBy) {
     return null;
   }
 
-  const linkToProfile = withLink && !proposal.submittedBy.isAnonymous;
+  const linkToProfile =
+    withLink && canLinkToProfile && !proposal.submittedBy.isAnonymous;
 
   return (
     <>

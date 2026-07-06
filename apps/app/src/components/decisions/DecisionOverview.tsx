@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
@@ -293,7 +294,11 @@ const OverviewHero = ({
   showCtas: boolean;
 }) => {
   const t = useTranslations();
+  const canLinkToProfile = useCanLinkToProfile();
   const stewardName = steward?.name;
+  // Only link out to the steward's profile inside the walled garden — public
+  // (non-network-member) viewers can't reach /profile, so render plain text.
+  const canLinkToSteward = canLinkToProfile && Boolean(steward?.slug);
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
   const heroImageUrl = getPublicUrl(heroImagePath);
   // With a photo behind it, the clipped teal→green title and charcoal body lose
@@ -365,7 +370,7 @@ const OverviewHero = ({
                   </Avatar>
                   <span>
                     {t('Stewarded by')}{' '}
-                    {steward?.slug ? (
+                    {canLinkToSteward ? (
                       // Underline keeps the link distinguishable from
                       // surrounding text without relying on color alone —
                       // axe's `link-in-text-block` flags color-only cues.
