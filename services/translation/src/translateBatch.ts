@@ -1,9 +1,8 @@
 import { and, db, eq, or, sql } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
-import type { DeepLClient, TargetLanguageCode } from 'deepl-node';
-import he from 'he';
 
 import { hashContent } from './hashContent';
+import type { TranslationProvider } from './providers';
 
 export type TranslatableEntry = {
   /** Identifies the content source, e.g. "proposal:abc123:default" */
@@ -26,18 +25,18 @@ type HashedEntry = TranslatableEntry & { hash: string };
  *
  * 1. Hash each entry's source text
  * 2. Batch cache lookup
- * 3. Call DeepL for cache misses
+ * 3. Call the translation provider for cache misses
  * 4. Write new translations to cache
  * 5. Return results in the same order as input
  */
 export async function translateBatch({
   entries,
   targetLocale,
-  client,
+  provider,
 }: {
   entries: TranslatableEntry[];
   targetLocale: string;
-  client: DeepLClient;
+  provider: TranslationProvider;
 }): Promise<TranslationResult[]> {
   if (entries.length === 0) {
     return [];
@@ -59,7 +58,7 @@ export async function translateBatch({
     freshTranslations = await translateCacheMisses(
       misses,
       targetLocale,
-      client,
+      provider,
     );
     await writeCacheEntries(freshTranslations);
   }
@@ -108,36 +107,29 @@ async function lookupCached(
   );
 }
 
-/** Call DeepL for entries that had no cache hit. */
+/** Call the translation provider for entries that had no cache hit. */
 async function translateCacheMisses(
   misses: HashedEntry[],
   targetLocale: string,
-  client: DeepLClient,
+  provider: TranslationProvider,
 ): Promise<FreshTranslation[]> {
   const texts = misses.map((m) => m.text);
 
-  const deeplResults = await client.translateText(
-    texts,
-    null,
-    targetLocale as TargetLanguageCode,
-    { tagHandling: 'html' },
-  );
-
-  const results = Array.isArray(deeplResults) ? deeplResults : [deeplResults];
+  const results = await provider.translate(texts);
 
   return results.map((result, i) => {
     const miss = misses[i];
     if (!miss) {
       throw new Error(
-        `DeepL returned more results than entries — index ${i} out of bounds.`,
+        `Translation provider returned more results than entries — index ${i} out of bounds.`,
       );
     }
     return {
       contentKey: miss.contentKey,
       contentHash: miss.hash,
-      sourceLocale: result.detectedSourceLang.toUpperCase(),
+      sourceLocale: result.detectedSourceLang,
       targetLocale,
-      translatedText: he.decode(result.text),
+      translatedText: result.translatedText,
     };
   });
 }

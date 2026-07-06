@@ -156,6 +156,81 @@ describe('translation.translateResources', () => {
     expect(result.translations[second.id]?.description).toBeUndefined();
   });
 
+  it('routes Somali through OpenL instead of DeepL', async ({
+    task,
+    onTestFinished,
+  }) => {
+    process.env.OPENL_RAPIDAPI_KEY = 'test-openl-key';
+
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    registerResourcesCleanup(onTestFinished, [instance.profileId]);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const link = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'City Hall',
+      description: 'Local government office',
+      linkUrl: 'https://example.com/city-hall',
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(like(contentTranslations.contentKey, `resource:${link.id}:%`));
+    });
+
+    // Mock the OpenL bulk endpoint: echo each input with a [SO] prefix.
+    const mockFetch = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          translatedTexts: (body.text as string[]).map((t) => `[SO] ${t}`),
+        }),
+      };
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const result = await adminCaller.translation.translateResources({
+      profileId: instance.profileId,
+      targetLocale: 'so',
+    });
+
+    expect(result.targetLocale).toBe('so');
+    expect(result.translations[link.id]?.title).toBe('[SO] City Hall');
+    expect(result.translations[link.id]?.description).toBe(
+      '[SO] Local government office',
+    );
+
+    // DeepL must never be called for Somali.
+    expect(mockTranslateText).not.toHaveBeenCalled();
+
+    // OpenL was called with the RapidAPI key and the Somali target code.
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://openl-translate.p.rapidapi.com/translate/bulk',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'x-rapidapi-key': 'test-openl-key',
+          'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
+        }),
+      }),
+    );
+    const sentBody = JSON.parse(String(mockFetch.mock.calls[0]?.[1]?.body));
+    expect(sentBody.target_lang).toBe('so');
+  });
+
   it('returns an empty result when the decision has no resources', async ({
     task,
     onTestFinished,

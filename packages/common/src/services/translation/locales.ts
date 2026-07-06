@@ -17,3 +17,18 @@ export const LOCALE_TO_DEEPL: Record<SupportedLocale, string> = {
   so: 'SO',
   ar: 'AR',
 } as const;
+
+/**
+ * Locales that DeepL does not support and must be routed to OpenL (via
+ * RapidAPI) instead. The value is OpenL's target language code.
+ */
+export const LOCALE_TO_OPENL = {
+  so: 'so',
+} as const satisfies Partial<Record<SupportedLocale, string>>;
+
+/** True when a locale must be translated by OpenL rather than DeepL. */
+export function usesOpenL(
+  locale: SupportedLocale,
+): locale is keyof typeof LOCALE_TO_OPENL {
+  return locale in LOCALE_TO_OPENL;
+}
