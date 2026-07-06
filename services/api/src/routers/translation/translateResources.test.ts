@@ -186,17 +186,26 @@ describe('translation.translateResources', () => {
         .where(like(contentTranslations.contentKey, `resource:${link.id}:%`));
     });
 
-    // Mock the OpenL bulk endpoint: echo each input with a [SO] prefix.
-    const mockFetch = vi.fn(async (_url: string, init: RequestInit) => {
-      const body = JSON.parse(String(init.body));
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({
-          translatedTexts: (body.text as string[]).map((t) => `[SO] ${t}`),
-        }),
-      };
-    });
+    // Only intercept the OpenL endpoint; delegate every other request (e.g.
+    // Supabase auth used to resolve the caller's roles) to the real fetch, or
+    // the access check would fail before translation runs.
+    const realFetch = globalThis.fetch;
+    const openlRequests: Array<{ url: string; init: RequestInit }> = [];
+    const mockFetch = vi.fn(
+      (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (!url.includes('openl-translate.p.rapidapi.com')) {
+          return realFetch(input, init);
+        }
+        openlRequests.push({ url, init: init ?? {} });
+        const body = JSON.parse(String(init?.body));
+        return Promise.resolve(
+          Response.json({
+            translatedTexts: (body.text as string[]).map((t) => `[SO] ${t}`),
+          }),
+        );
+      },
+    );
     vi.stubGlobal('fetch', mockFetch);
     onTestFinished(() => {
       vi.unstubAllGlobals();
@@ -217,17 +226,14 @@ describe('translation.translateResources', () => {
     expect(mockTranslateText).not.toHaveBeenCalled();
 
     // OpenL was called with the RapidAPI key and the Somali target code.
-    expect(mockFetch).toHaveBeenCalledWith(
-      'https://openl-translate.p.rapidapi.com/translate/bulk',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          'x-rapidapi-key': 'test-openl-key',
-          'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
-        }),
-      }),
-    );
-    const sentBody = JSON.parse(String(mockFetch.mock.calls[0]?.[1]?.body));
+    expect(openlRequests).toHaveLength(1);
+    const openlRequest = openlRequests[0];
+    expect(openlRequest?.init.method).toBe('POST');
+    expect(openlRequest?.init.headers).toMatchObject({
+      'x-rapidapi-key': 'test-openl-key',
+      'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
+    });
+    const sentBody = JSON.parse(String(openlRequest?.init.body));
     expect(sentBody.target_lang).toBe('so');
   });
 
