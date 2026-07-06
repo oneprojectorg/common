@@ -16,6 +16,7 @@ import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { HeaderUserMenu } from '../SiteHeader';
+import { SupportLink } from '../SupportLink';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
@@ -124,6 +125,7 @@ export const DecisionInstanceHeader = ({
             </ButtonLink>
           )}
           <LocaleChooser />
+          <SupportLink />
           <HeaderUserMenu />
         </div>
       </div>
