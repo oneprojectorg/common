@@ -14,7 +14,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
 import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
-import { OverviewHeroImageField } from '@/components/decisions/OverviewHeroImageField';
+import { HeroImageField } from '@/components/decisions/HeroImageField';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
@@ -109,7 +109,7 @@ function OverviewSectionContent({
           />
         </div>
 
-        <OverviewHeroImageField
+        <HeroImageField
           instanceId={instanceId}
           initialPath={
             storeOverview?.heroImage ??

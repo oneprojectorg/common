@@ -19,12 +19,15 @@ import { BannerUploadModal } from './BannerUploadModal';
 export function AdminOverviewBar({
   instanceId,
   decisionSlug,
+  phaseId,
   heroImagePath,
   phaseName,
   phaseEndDate,
 }: {
   instanceId: string;
   decisionSlug: string;
+  /** When set, the banner action targets that phase; otherwise the overview. */
+  phaseId?: string;
   heroImagePath?: string;
   /** Current phase name, e.g. "Collect Ideas". */
   phaseName?: string;
@@ -36,6 +39,7 @@ export function AdminOverviewBar({
   const locale = useLocale();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [bannerOpen, setBannerOpen] = useState(false);
+  const bannerLabel = heroImagePath ? t('Edit banner') : t('Add banner');
 
   const endsLabel = phaseEndDate
     ? t('ends {date}', {
@@ -93,7 +97,7 @@ export function AdminOverviewBar({
                 setBannerOpen(true);
               }}
             >
-              {t('Edit banner')}
+              {bannerLabel}
             </MenuItem>
             <MenuItem
               id="process-settings"
@@ -108,6 +112,7 @@ export function AdminOverviewBar({
 
       <BannerUploadModal
         instanceId={instanceId}
+        phaseId={phaseId}
         heroImagePath={heroImagePath}
         isOpen={bannerOpen}
         onOpenChange={setBannerOpen}

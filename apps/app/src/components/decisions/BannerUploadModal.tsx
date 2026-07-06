@@ -5,42 +5,41 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { OverviewHeroImageField } from './OverviewHeroImageField';
+import { HeroImageField } from './HeroImageField';
 
 /**
- * Controlled modal for uploading/removing the overview hero image. Shared by
- * the desktop "Edit banner" button and the mobile admin bottom sheet. The
- * overview page is RSC-fed, so a change reloads to pull the new hero.
+ * Controlled modal for uploading/removing a decision hero image, scoped to the
+ * overview (no `phaseId`) or a single phase (`phaseId`). Used by the "Edit
+ * banner" button and the mobile admin bottom sheet. Live pages are RSC-fed and
+ * often viewed at vanity-URL rewrites, so a change hard-reloads to pull the new
+ * hero (a client refresh of a rewrite-only path 404s in prod).
  */
 export function BannerUploadModal({
   instanceId,
+  phaseId,
   heroImagePath,
   isOpen,
   onOpenChange,
 }: {
   instanceId: string;
+  /** When set, targets that phase's banner; otherwise the overview banner. */
+  phaseId?: string;
   /** Stored storage path of the current hero image, if any. */
   heroImagePath?: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations();
+  const label = heroImagePath ? t('Edit banner') : t('Add banner');
 
   return (
     <Modal isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>
-      <ModalHeader>{t('Edit banner')}</ModalHeader>
+      <ModalHeader>{label}</ModalHeader>
       <ModalBody>
-        <OverviewHeroImageField
+        <HeroImageField
           instanceId={instanceId}
+          phaseId={phaseId}
           initialPath={heroImagePath}
-          // Hard reload rather than the client router. This modal opens on the
-          // live overview, which is often viewed at a vanity URL (e.g.
-          // `/columbus`) that only exists as a next.config rewrite to
-          // `/decisions/columbus`. A client-side refresh re-fetches the RSC for
-          // the rewrite-only path, which falls into the walled `(main)` group
-          // and 404s (prod only; dev re-applies rewrites per request). A full
-          // load lets the server resolve the rewrite — same as a manual
-          // refresh. Banner edits are rare, so the reload cost is negligible.
           onChange={() => window.location.reload()}
         />
       </ModalBody>
