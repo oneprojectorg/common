@@ -10,6 +10,7 @@
     "./validation": "./src/utils/validation.ts",
     "./realtime": "./src/realtime/index.ts",
     "./client": "./src/client.ts",
+    "./tiptap": "./src/services/decision/tiptapBase.ts",
     "./src/services/access": "./src/services/access/index.ts",
     "./src/services/decision": "./src/services/decision/index.ts",
     "./locales": "./src/services/translation/locales.ts",
