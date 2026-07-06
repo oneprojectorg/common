@@ -16,7 +16,7 @@ export const ColumbusAddendumContent = () => {
         <p className="mb-4">
           These Special Privacy Standards (Special Standards) supplement One
           Project’s{' '}
-          <a href="/info/privacy" className="text-primary-teal hover:underline">
+          <a href="/info/privacy" className="text-primary-teal underline">
             Privacy Notice
           </a>{' '}
           (the Privacy Notice or Notice), and dictate how One Project (One
@@ -28,7 +28,7 @@ export const ColumbusAddendumContent = () => {
         <p className="mb-4">
           These Special Standards accompany, modify, and expand on the
           information in the{' '}
-          <a href="/info/privacy" className="text-primary-teal hover:underline">
+          <a href="/info/privacy" className="text-primary-teal underline">
             Privacy Notice
           </a>
           . Unless otherwise noted, the terms in these Special Standards have
@@ -105,7 +105,7 @@ export const ColumbusAddendumContent = () => {
           See the{' '}
           <a
             href="/info/privacy#marketing-and-cookies"
-            className="text-primary-teal hover:underline"
+            className="text-primary-teal underline"
           >
             Privacy Notice
           </a>{' '}
@@ -120,7 +120,7 @@ export const ColumbusAddendumContent = () => {
         </Header3>
         <p className="mb-4">
           Our reasons for processing the data are listed in our{' '}
-          <a href="/info/privacy" className="text-primary-teal hover:underline">
+          <a href="/info/privacy" className="text-primary-teal underline">
             Privacy Notice
           </a>
           . We may also use this information for any other purpose to which you
@@ -191,7 +191,7 @@ export const ColumbusAddendumContent = () => {
           processing data contemplated in the{' '}
           <a
             href="/info/privacy#service-providers"
-            className="text-primary-teal hover:underline"
+            className="text-primary-teal underline"
           >
             Privacy Notice
           </a>
@@ -205,7 +205,7 @@ export const ColumbusAddendumContent = () => {
             see the{' '}
             <a
               href="https://supabase.com/privacy"
-              className="text-primary-teal hover:underline"
+              className="text-primary-teal underline"
             >
               https://supabase.com/privacy
             </a>
@@ -216,7 +216,7 @@ export const ColumbusAddendumContent = () => {
             how Vercel handles customer data, see the{' '}
             <a
               href="https://vercel.com/legal/dpa-sitecore"
-              className="text-primary-teal hover:underline"
+              className="text-primary-teal underline"
             >
               https://vercel.com/legal/dpa-sitecore
             </a>
@@ -252,7 +252,7 @@ export const ColumbusAddendumContent = () => {
         <p className="mb-4">
           We may also share information if we believe such disclosure is
           necessary to enforce or apply our{' '}
-          <a href="/info/tos" className="text-primary-teal hover:underline">
+          <a href="/info/tos" className="text-primary-teal underline">
             Terms of Service
           </a>
           , or if we believe disclosure is necessary or appropriate to protect
@@ -283,7 +283,7 @@ export const ColumbusAddendumContent = () => {
           Please see our{' '}
           <a
             href="/info/privacy#your-rights"
-            className="text-primary-teal hover:underline"
+            className="text-primary-teal underline"
           >
             Privacy Notice
           </a>{' '}
@@ -322,7 +322,7 @@ export const ColumbusAddendumContent = () => {
           or the Services more generally, please contact{' '}
           <a
             href="mailto:privacy@oneproject.org"
-            className="text-primary-teal hover:underline"
+            className="text-primary-teal underline"
           >
             privacy@oneproject.org
           </a>
