@@ -210,15 +210,21 @@ function ProposalEditorInner({
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
-  // Look up the optional post-submit form attached to this decision profile.
-  // The form, not the slug, gates the modal — any decision profile can opt
-  // in by having a `custom_forms` row. This subscription renders the modal;
-  // the submit handler decides via `utils.customForm.getForProfile.fetch`
+  // Look up the optional form attached to this decision profile for the
+  // current phase. A profile can attach a form per phase (tagged with
+  // `x-phase`); a form with no `x-phase` applies to the initial/submission
+  // phase. The form, not the slug, gates the modal. This subscription renders
+  // the modal; the submit handler decides via `utils.customForm.getForProfile.fetch`
   // (cache-backed) so a click before this query resolves can't bypass the
   // required form.
+  const initialPhaseId = instance.instanceData?.phases?.[0]?.phaseId;
   const { data: customForm } = trpc.customForm.getForProfile.useQuery(
-    { profileId: instance.profileId ?? '' },
-    { enabled: Boolean(instance.profileId) && isDraft },
+    {
+      profileId: instance.profileId ?? '',
+      phaseId: instance.currentStateId ?? undefined,
+      initialPhaseId,
+    },
+    { enabled: Boolean(instance.profileId) && isEditMode },
   );
 
   // -- Instance config -------------------------------------------------------
@@ -382,13 +388,16 @@ function ProposalEditorInner({
         },
       });
 
-      // On instances with a post-submit custom form, defer the actual draft
-      // submission until the user completes the form. Resolve the form via
-      // the query cache (fetch, not hook state) so a click before the
-      // subscription resolves still routes through the required form.
-      if (isDraft && instance.profileId) {
+      // When the current phase has a custom form, defer finalizing (draft
+      // submission, or navigation for a later-phase edit) until the user
+      // completes the form. Resolve the form via the query cache (fetch, not
+      // hook state) so a click before the subscription resolves still routes
+      // through the required form.
+      if (instance.profileId) {
         const form = await utils.customForm.getForProfile.fetch({
           profileId: instance.profileId,
+          phaseId: instance.currentStateId ?? undefined,
+          initialPhaseId,
         });
         if (form) {
           setShowCustomFormModal(true);
@@ -408,6 +417,8 @@ function ProposalEditorInner({
     proposal,
     isDraft,
     instance.profileId,
+    instance.currentStateId,
+    initialPhaseId,
     utils,
     updateProposalMutation,
     draftRef,
@@ -560,14 +571,14 @@ function ProposalEditorInner({
         />
       )}
 
-      {isDraft && customForm && (
+      {customForm && (
         <CustomFormModal
           isOpen={showCustomFormModal}
           schema={customForm.schema}
           isSubmitting={isSubmitting}
           onSubmit={handleCustomFormSubmit}
           onOpenChange={handleCustomFormOpenChange}
-          submitLabel={t('Submit my idea')}
+          submitLabel={isDraft ? t('Submit my idea') : undefined}
         />
       )}
     </ProposalEditorLayout>

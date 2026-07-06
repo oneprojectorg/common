@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
@@ -10,6 +11,7 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
+import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -32,6 +34,10 @@ import { ProposalMasonry } from './ProposalMasonry';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
+import {
+  CustomFormModal,
+  type CustomFormValues,
+} from './proposalEditor/CustomFormModal';
 
 export interface ProposalsProps {
   proposals?: Proposal[];
@@ -123,6 +129,7 @@ const VotingProposalsList = ({
   const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
   const t = useTranslations();
 
   const numSelected = selectedProposalIds.length;
@@ -131,6 +138,28 @@ const VotingProposalsList = ({
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
     processInstanceId: instanceId,
   });
+
+  // Instance context for resolving the current phase's optional custom form.
+  const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
+  const decisionProfileId = instance?.profileId ?? undefined;
+  const currentPhaseId = instance?.currentStateId ?? undefined;
+  const initialPhaseId = instance?.instanceData?.phases?.[0]?.phaseId;
+
+  // A form tagged for the current (voting) phase, attached to the decision
+  // profile — same lookup the proposal editor uses, scoped by phase.
+  const { data: phaseForm } = trpc.customForm.getForProfile.useQuery(
+    {
+      profileId: decisionProfileId ?? '',
+      phaseId: currentPhaseId,
+      initialPhaseId,
+    },
+    { enabled: Boolean(decisionProfileId) && Boolean(currentPhaseId) },
+  );
+
+  const { user } = useUser();
+  const voterProfileId = user?.profileId;
+
+  const submitPhaseFormMutation = trpc.customForm.submit.useMutation();
 
   const utils = trpc.useUtils();
 
@@ -163,10 +192,48 @@ const VotingProposalsList = ({
   // Handle successful vote submission
   const handleVoteSuccess = () => {
     setSelectedProposalIds([]);
-    setShowSuccessModal(true); // Show success modal
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
     });
+    // When the voting phase has a custom form, collect it before the success
+    // confirmation; otherwise show the confirmation directly.
+    if (phaseForm && voterProfileId) {
+      setShowPhaseFormModal(true);
+    } else {
+      setShowSuccessModal(true);
+    }
+  };
+
+  // Store the post-vote form submission (attached to the voter's own profile),
+  // then continue to the success confirmation.
+  const handlePhaseFormSubmit = async (values: CustomFormValues) => {
+    if (!phaseForm || !voterProfileId) {
+      return;
+    }
+    try {
+      await submitPhaseFormMutation.mutateAsync({
+        customFormId: phaseForm.id,
+        profileId: voterProfileId,
+        data: values,
+      });
+    } catch (error) {
+      console.error('Failed to submit phase form:', error);
+      toast.error({ message: t('Failed to submit form') });
+      return; // Keep the modal open so the user can retry.
+    }
+    setShowPhaseFormModal(false);
+    setShowSuccessModal(true);
+  };
+
+  // The form is optional — dismissing it still confirms the vote.
+  const handlePhaseFormOpenChange = (open: boolean) => {
+    if (submitPhaseFormMutation.isPending) {
+      return;
+    }
+    setShowPhaseFormModal(open);
+    if (!open) {
+      setShowSuccessModal(true);
+    }
   };
 
   if (!proposals || proposals.length === 0) {
@@ -365,6 +432,16 @@ const VotingProposalsList = ({
             </DialogTrigger>
           </FooterBar.End>
         </FooterBar>
+      )}
+
+      {phaseForm && (
+        <CustomFormModal
+          isOpen={showPhaseFormModal}
+          schema={phaseForm.schema}
+          isSubmitting={submitPhaseFormMutation.isPending}
+          onSubmit={handlePhaseFormSubmit}
+          onOpenChange={handlePhaseFormOpenChange}
+        />
       )}
 
       <VoteSuccessModal

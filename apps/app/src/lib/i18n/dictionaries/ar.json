@@ -326,6 +326,7 @@
   "Failed to create proposal": "فشل إنشاء المقترح",
   "Failed to update proposal": "فشل تحديث المقترح",
   "Failed to submit proposal": "فشل تقديم المقترح",
+  "Failed to submit form": "فشل تقديم النموذج",
   "Please fix the following issues:": "يرجى إصلاح المشكلات التالية:",
   "An unexpected error occurred": "حدث خطأ غير متوقع",
   "Anonymous": "مجهول",
