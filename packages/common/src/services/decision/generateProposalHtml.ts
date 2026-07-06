@@ -24,6 +24,18 @@ export function generateProposalHtml(
       continue;
     }
 
+    // TEMP instrumentation (ONE-401): pinpoint which fragment sends
+    // server-side HTML generation into a runaway (OOM/SIGKILL on prod). If the
+    // process dies mid-render, the "before" line prints without a matching
+    // "after" line, naming the culprit fragment. Remove once diagnosed.
+    const inputNodeCount = fragment.content.length;
+    const inputBytes = JSON.stringify(fragment.content).length;
+    const startedAt = Date.now();
+    const heapBeforeMb = Math.round(process.memoryUsage().heapUsed / 1_000_000);
+    console.warn(
+      `[ONE-401] generateProposalHtml begin fragment="${fragmentName}" nodes=${inputNodeCount} inputBytes=${inputBytes} heapMB=${heapBeforeMb}`,
+    );
+
     try {
       const doc: JSONContent = {
         type: 'doc',
@@ -31,6 +43,13 @@ export function generateProposalHtml(
       };
 
       result[fragmentName] = generateHTML(doc, serverExtensions);
+
+      const heapAfterMb = Math.round(
+        process.memoryUsage().heapUsed / 1_000_000,
+      );
+      console.warn(
+        `[ONE-401] generateProposalHtml end fragment="${fragmentName}" outputBytes=${result[fragmentName].length} ms=${Date.now() - startedAt} heapMB=${heapAfterMb}`,
+      );
     } catch (error) {
       console.warn('Failed to generate HTML for fragment', {
         fragmentName,
