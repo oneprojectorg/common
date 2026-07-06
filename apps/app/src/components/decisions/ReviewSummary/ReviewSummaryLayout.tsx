@@ -56,8 +56,16 @@ export async function ReviewSummaryLayout({
         });
       } catch (error) {
         const cause = error instanceof Error ? error.cause : null;
-        if (cause instanceof CommonError && cause.statusCode === 404) {
+        // A missing proposal (404) or a malformed proposal id (400) is an
+        // unresolvable path → 404; a genuine access denial → 403.
+        if (
+          cause instanceof CommonError &&
+          (cause.statusCode === 404 || cause.statusCode === 400)
+        ) {
           notFound();
+        }
+        if (cause instanceof CommonError && cause.statusCode === 403) {
+          forbidden();
         }
         throw error;
       }

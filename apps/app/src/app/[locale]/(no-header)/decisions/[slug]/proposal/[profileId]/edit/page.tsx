@@ -1,5 +1,6 @@
 'use client';
 
+import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
@@ -51,6 +52,17 @@ import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor
  * query string (nuqs shallow updates don't remount this tree).
  */
 export default function EditProposalPage() {
+  // The suspense queries below throw NOT_FOUND (missing/malformed proposal) or
+  // FORBIDDEN (no access); translate those to accurate 404/403 pages instead of
+  // letting them bubble to error.tsx as a 500.
+  return (
+    <ResourceErrorBoundary>
+      <EditProposalPageContent />
+    </ResourceErrorBoundary>
+  );
+}
+
+function EditProposalPageContent() {
   const { profileId, slug } = useParams<{
     profileId: string;
     slug: string;

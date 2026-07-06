@@ -1,6 +1,6 @@
 'use client';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
@@ -70,14 +70,10 @@ export const ProposalViewClient = ({
   slug: string;
 }) => {
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        404: () => notFound(),
-      }}
-    >
+    <ResourceErrorBoundary>
       <Suspense fallback={<ProposalViewSkeleton />}>
         <ProposalViewPageContent profileId={profileId} slug={slug} />
       </Suspense>
-    </APIErrorBoundary>
+    </ResourceErrorBoundary>
   );
 };

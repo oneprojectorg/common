@@ -1,4 +1,4 @@
-import { NotFoundErrorBoundary } from '@/utils/NotFoundErrorBoundary';
+import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import {
   HydrationBoundary,
   createServerUtils,
@@ -81,7 +81,7 @@ const DecisionInstancePageContent = async ({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NotFoundErrorBoundary>
+      <ResourceErrorBoundary>
         <Suspense fallback={<DecisionHeaderSkeleton />}>
           <div className="bg-neutral-offWhite text-gray-700">
             <DecisionTranslationProvider>
@@ -96,7 +96,7 @@ const DecisionInstancePageContent = async ({
             </DecisionTranslationProvider>
           </div>
         </Suspense>
-      </NotFoundErrorBoundary>
+      </ResourceErrorBoundary>
     </HydrationBoundary>
   );
 };

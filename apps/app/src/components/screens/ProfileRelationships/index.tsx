@@ -1,6 +1,6 @@
 'use client';
 
-import { NotFoundErrorBoundary } from '@/utils/NotFoundErrorBoundary';
+import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
@@ -158,11 +158,11 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
           </Suspense>
         </ErrorBoundary>
       </header>
-      <NotFoundErrorBoundary>
+      <ResourceErrorBoundary>
         <ProfileOrganizations>
           <ProfileRelationshipsSuspense slug={slug} />
         </ProfileOrganizations>
-      </NotFoundErrorBoundary>
+      </ResourceErrorBoundary>
     </>
   );
 };

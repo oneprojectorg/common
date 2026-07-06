@@ -1,6 +1,6 @@
 'use client';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { trpc } from '@op/api/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -48,11 +48,7 @@ export const LegacyProposalViewClient = ({
   instanceId: string;
 }) => {
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        404: () => notFound(),
-      }}
-    >
+    <ResourceErrorBoundary>
       <Suspense fallback={<ProposalViewSkeleton />}>
         <ProposalViewPageContent
           profileId={profileId}
@@ -60,6 +56,6 @@ export const LegacyProposalViewClient = ({
           instanceId={instanceId}
         />
       </Suspense>
-    </APIErrorBoundary>
+    </ResourceErrorBoundary>
   );
 };
