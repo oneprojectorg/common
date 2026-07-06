@@ -6,10 +6,13 @@ import StarterKit from '@tiptap/starter-kit';
 import { IframelyExtension } from '../decisions/IframelyExtension';
 import { SlashCommands } from '../decisions/SlashCommands';
 
-/** Base extensions from @op/ui, minus StarterKit (we configure it ourselves) */
+/**
+ * Base extensions from @op/ui, minus StarterKit and Link (we configure both
+ * ourselves — leaving the base Link in would register the extension twice).
+ */
 function getBaseExtensions(): AnyExtension[] {
   return defaultEditorExtensions.filter(
-    (ext) => ext.name !== 'starterKit',
+    (ext) => ext.name !== 'starterKit' && ext.name !== 'link',
   ) as AnyExtension[];
 }
 
@@ -31,8 +34,12 @@ export function getProposalExtensions(
   } = options;
 
   const extensions: AnyExtension[] = [
+    // heading/link disabled to match @op/ui's base config — StyledHeading and
+    // our own Link.configure below take their place.
     StarterKit.configure({
       undoRedo: collaborative ? false : undefined,
+      heading: false,
+      link: false,
     }),
     ...getBaseExtensions(),
     Link.configure({
@@ -54,7 +61,10 @@ export function getProposalExtensions(
 /** Viewer extensions for read-only proposal display */
 export function getViewerExtensions(): AnyExtension[] {
   return [
-    StarterKit,
+    StarterKit.configure({
+      heading: false,
+      link: false,
+    }),
     ...getBaseExtensions(),
     Link.configure({
       openOnClick: true,

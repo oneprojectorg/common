@@ -1,18 +1,14 @@
 import { headingClasses } from '@op/styles/constants';
 import { Extension, mergeAttributes } from '@tiptap/core';
-import Blockquote from '@tiptap/extension-blockquote';
 import {
   Details,
   DetailsContent,
   DetailsSummary,
 } from '@tiptap/extension-details';
 import Heading from '@tiptap/extension-heading';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import Strike from '@tiptap/extension-strike';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import StarterKit from '@tiptap/starter-kit';
@@ -79,7 +75,14 @@ const DetailsFocus = Extension.create({
  * Base extensions shared by both editor and viewer
  */
 const baseExtensions = [
-  StarterKit,
+  // StarterKit already bundles underline, strike, blockquote and
+  // horizontalRule — don't re-add them or tiptap warns about duplicate
+  // extension names. heading/link are disabled because we register our own
+  // configured versions below.
+  StarterKit.configure({
+    heading: false,
+    link: false,
+  }),
   DetailsFocus,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
@@ -91,10 +94,6 @@ const baseExtensions = [
   StyledHeading.configure({
     levels: [1, 2, 3, 4],
   }),
-  Underline,
-  Strike,
-  Blockquote,
-  HorizontalRule,
   // Vanilla Details extension — its built-in node view provides the toggle
   // button + `is-open` class; all chrome is styled via `.details` CSS in
   // @op/styles. `persist` stores the open state in the doc.

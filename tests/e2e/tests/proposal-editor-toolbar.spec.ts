@@ -81,6 +81,16 @@ test.describe('Proposal Editor Toolbar', () => {
 
     // -- Navigate to editor --------------------------------------------------
 
+    // Guard against duplicate tiptap extension registrations (e.g. StarterKit
+    // majors bundling extensions we also add explicitly). Duplicates register
+    // their ProseMirror plugins/keymaps twice and tiptap warns on the console.
+    const tiptapWarnings: string[] = [];
+    authenticatedPage.on('console', (message) => {
+      if (message.text().includes('[tiptap warn]')) {
+        tiptapWarnings.push(message.text());
+      }
+    });
+
     await authenticatedPage.goto(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
       { waitUntil: 'domcontentloaded' },
@@ -175,5 +185,9 @@ test.describe('Proposal Editor Toolbar', () => {
     await expect(
       summarySection.locator('strong', { hasText: 'Summary bold text' }),
     ).toBeVisible();
+
+    // -- No duplicate tiptap extension registrations --------------------------
+
+    expect(tiptapWarnings).toEqual([]);
   });
 });

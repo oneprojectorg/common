@@ -2,7 +2,6 @@
 
 import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
 import { cn } from '@op/ui/utils';
-import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
@@ -57,16 +56,11 @@ export function CollaborativeTextField({
 }: CollaborativeTextFieldProps) {
   const [charCount, setCharCount] = useState(0);
 
+  // No Placeholder extension here — useRichTextEditor registers one from the
+  // `placeholder` prop below; adding our own would duplicate the extension.
   const extensions = useMemo(
-    () => [
-      ...getProposalExtensions({ collaborative: true }),
-      Placeholder.configure({
-        placeholder,
-        emptyEditorClass:
-          'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-start before:h-0 before:pointer-events-none',
-      }),
-    ],
-    [placeholder],
+    () => getProposalExtensions({ collaborative: true }),
+    [],
   );
 
   // Stable refs so the onEditorReady callback doesn't re-trigger on identity changes

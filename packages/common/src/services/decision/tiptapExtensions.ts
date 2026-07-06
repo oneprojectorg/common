@@ -4,7 +4,6 @@ import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
@@ -158,8 +157,11 @@ const DetailsContentServerNode = Node.create({
  * @see apps/app/src/components/decisions/IframelyExtension.tsx (client version)
  */
 export const serverExtensions = [
+  // StarterKit bundles underline; link is disabled so our configured Link
+  // below is the only registration (duplicate names trigger a tiptap warning).
   StarterKit.configure({
     heading: false,
+    link: false,
   }),
   // Must match the editor (@op/ui editorConfig allows 1-4). TipTap's
   // Heading.renderHTML falls back to levels[0] for any out-of-range level, so a
@@ -174,7 +176,6 @@ export const serverExtensions = [
     inline: true,
     allowBase64: true,
   }),
-  Underline,
   Link.configure({
     openOnClick: false,
   }),
