@@ -1,40 +1,17 @@
-import { headingClasses } from '@op/styles/constants';
-import { type AnyExtension, Extension, mergeAttributes } from '@tiptap/core';
+import {
+  type SharedTiptapBaseOptions,
+  buildSharedTiptapBase,
+} from '@op/common/tiptap';
+import { type AnyExtension, Extension } from '@tiptap/core';
 import {
   Details,
   DetailsContent,
   DetailsSummary,
 } from '@tiptap/extension-details';
-import Heading from '@tiptap/extension-heading';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import TextAlign from '@tiptap/extension-text-align';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import StarterKit from '@tiptap/starter-kit';
 
-/**
- * TipTap heading extension that bakes the design-system `headingClasses` onto
- * each rendered `<h1>`–`<h4>` tag, keeping editor output visually identical to
- * the `Header1/2/3/4` components in `@op/ui`. Any level without a mapped class
- * renders without a baked class.
- */
-export const StyledHeading = Heading.extend({
-  renderHTML({ node, HTMLAttributes }) {
-    const level = node.attrs.level as 1 | 2 | 3 | 4;
-    const className =
-      headingClasses[`h${level}` as keyof typeof headingClasses];
-    return [
-      `h${level}`,
-      mergeAttributes(
-        this.options.HTMLAttributes,
-        HTMLAttributes,
-        className ? { class: className } : {},
-      ),
-      0,
-    ];
-  },
-});
+export { StyledHeading } from '@op/common/tiptap';
 
 /**
  * Adds an `is-focused` class to the `details` node that currently contains the
@@ -71,58 +48,28 @@ const DetailsFocus = Extension.create({
   },
 });
 
-export interface BaseExtensionOptions {
-  /** Disables local undo/redo so Yjs collaboration can own history. */
-  collaborative?: boolean;
-  link?: {
-    openOnClick?: boolean;
-    linkOnPaste?: boolean;
-  };
-}
+export type BaseExtensionOptions = SharedTiptapBaseOptions;
 
 /**
- * The single source for the shared editor/viewer extension set. Every
- * extension (including StarterKit and Link) is registered exactly once —
- * consumers layer their own extensions on top of the returned array instead
- * of filtering or re-registering, which is how duplicate-extension bugs
- * happen.
+ * The shared editor/viewer extension set: the canonical base from
+ * `@op/common/tiptap` (the same base `serverExtensions` renders with) plus
+ * the client-only extensions that need a live editor. Every extension is
+ * registered exactly once — consumers layer their own extensions on top of
+ * the returned array instead of filtering or re-registering, which is how
+ * duplicate-extension bugs happen.
  */
 export function buildBaseExtensions(
   options: BaseExtensionOptions = {},
 ): AnyExtension[] {
-  const { collaborative = false, link } = options;
-
   return [
-    // StarterKit already bundles underline, strike, blockquote and
-    // horizontalRule — don't re-add them or tiptap warns about duplicate
-    // extension names. heading/link are disabled because we register our own
-    // configured versions below.
-    StarterKit.configure({
-      heading: false,
-      link: false,
-      undoRedo: collaborative ? false : undefined,
-    }),
+    ...buildSharedTiptapBase(options),
     DetailsFocus,
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-    }),
-    Image.configure({
-      inline: true,
-      allowBase64: true,
-    }),
-    StyledHeading.configure({
-      levels: [1, 2, 3, 4],
-    }),
     // Vanilla Details extension — its built-in node view provides the toggle
     // button + `is-open` class; all chrome is styled via `.details` CSS in
     // @op/styles. `persist` stores the open state in the doc.
     Details.configure({ persist: true, HTMLAttributes: { class: 'details' } }),
     DetailsSummary,
     DetailsContent,
-    Link.configure({
-      openOnClick: false,
-      ...link,
-    }),
   ];
 }
 

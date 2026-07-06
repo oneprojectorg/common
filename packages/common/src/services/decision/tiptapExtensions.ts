@@ -1,31 +1,6 @@
-import { headingClasses } from '@op/styles/constants';
 import { Node, mergeAttributes } from '@tiptap/core';
-import Heading from '@tiptap/extension-heading';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import TextAlign from '@tiptap/extension-text-align';
-import StarterKit from '@tiptap/starter-kit';
 
-/**
- * Server-side mirror of the `StyledHeading` extension in `@op/ui`. Bakes the
- * shared `headingClasses` onto each rendered heading tag so `generateHTML()`
- * output matches the live editor and the `Header1/2/3` design-system
- * components exactly.
- */
-const StyledHeading = Heading.extend({
-  renderHTML({ node, HTMLAttributes }) {
-    const level = node.attrs.level as 1 | 2 | 3;
-    const className =
-      headingClasses[`h${level}` as keyof typeof headingClasses];
-    return [
-      `h${level}`,
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: className,
-      }),
-      0,
-    ];
-  },
-});
+import { buildSharedTiptapBase } from './tiptapBase';
 
 /**
  * Server-safe Iframely node extension for `generateHTML()`.
@@ -157,28 +132,9 @@ const DetailsContentServerNode = Node.create({
  * @see apps/app/src/components/decisions/IframelyExtension.tsx (client version)
  */
 export const serverExtensions = [
-  // StarterKit bundles underline; link is disabled so our configured Link
-  // below is the only registration (duplicate names trigger a tiptap warning).
-  StarterKit.configure({
-    heading: false,
-    link: false,
-  }),
-  // Must match the editor (@op/ui editorConfig allows 1-4). TipTap's
-  // Heading.renderHTML falls back to levels[0] for any out-of-range level, so a
-  // narrower list here silently renders a stored H4 as H1.
-  StyledHeading.configure({
-    levels: [1, 2, 3, 4],
-  }),
-  TextAlign.configure({
-    types: ['heading', 'paragraph'],
-  }),
-  Image.configure({
-    inline: true,
-    allowBase64: true,
-  }),
-  Link.configure({
-    openOnClick: false,
-  }),
+  // The shared base (`tiptapBase.ts`) is the same set the live editors build
+  // on, so the schema here can't drift from what the editor can produce.
+  ...buildSharedTiptapBase(),
   IframelyServerNode,
   DetailsServerNode,
   DetailsSummaryServerNode,
