@@ -8,11 +8,17 @@ import {
 // since the overview is the canonical tab. Direct loads of /current briefly
 // show this overview shape too; tab switches use the per-tab loading files
 // inside (decision-view), which the persisted layout keeps mounted.
+//
+// The shell mirrors the (decision-view) layout's grid — h-dvh with scroll
+// confined to the content row — so the scrollbar lives in the same place
+// during load and after resolve (no gutter shift, no scroll-position reset).
 export default function Loading() {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="grid h-dvh grid-rows-[auto_1fr]">
       <DecisionHeaderBarSkeleton />
-      <OverviewSkeleton />
+      <div className="overflow-x-clip overflow-y-auto">
+        <OverviewSkeleton />
+      </div>
     </div>
   );
 }
