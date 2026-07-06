@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
+import { handleServerError } from '@/utils/handleServerError';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -125,9 +125,10 @@ const ProfileWithData = async ({
         />
       </>
     );
-  } catch (e) {
-    console.error(e);
-    notFound();
+  } catch (error) {
+    // A missing/forbidden profile becomes a 404/403; anything else is a
+    // genuine failure and should surface as a 500 rather than a misleading 404.
+    handleServerError(error);
   }
 };
 

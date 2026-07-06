@@ -1,3 +1,4 @@
+import { NotFoundErrorBoundary } from '@/utils/NotFoundErrorBoundary';
 import {
   HydrationBoundary,
   createServerUtils,
@@ -80,20 +81,22 @@ const DecisionInstancePageContent = async ({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<DecisionHeaderSkeleton />}>
-        <div className="bg-neutral-offWhite text-gray-700">
-          <DecisionTranslationProvider>
-            <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
-            <Suspense fallback={<Skeleton className="h-96" />}>
-              <DecisionStateRouter
-                instanceId={instanceId}
-                slug={slug}
-                useLegacy
-              />
-            </Suspense>
-          </DecisionTranslationProvider>
-        </div>
-      </Suspense>
+      <NotFoundErrorBoundary>
+        <Suspense fallback={<DecisionHeaderSkeleton />}>
+          <div className="bg-neutral-offWhite text-gray-700">
+            <DecisionTranslationProvider>
+              <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
+              <Suspense fallback={<Skeleton className="h-96" />}>
+                <DecisionStateRouter
+                  instanceId={instanceId}
+                  slug={slug}
+                  useLegacy
+                />
+              </Suspense>
+            </DecisionTranslationProvider>
+          </div>
+        </Suspense>
+      </NotFoundErrorBoundary>
     </HydrationBoundary>
   );
 };
