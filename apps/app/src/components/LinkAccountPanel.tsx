@@ -1,5 +1,6 @@
 'use client';
 
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { isSafeRedirectPath } from '@op/common/client';
 import { useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
@@ -7,7 +8,7 @@ import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,6 +41,14 @@ export const LinkAccountPanel = () => {
   // Guards against double-submit and drives the button loading state (link mode
   // doesn't run the login query LoginPanel relies on for this).
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // hCaptcha guards this anonymous-account signup against automated abuse. It's
+  // optional: with no site key configured (local/test) the challenge is skipped
+  // so those environments aren't blocked. Enable hCaptcha in the Supabase
+  // dashboard with the matching secret for server-side enforcement.
+  const captchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
+  const captchaRef = useRef<HCaptcha>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   const {
     email,
@@ -77,6 +86,10 @@ export const LinkAccountPanel = () => {
     if (isSubmitting) {
       return;
     }
+    // Require a solved captcha before attempting signup when one is configured.
+    if (captchaSiteKey && !captchaToken) {
+      return;
+    }
 
     setIsSubmitting(true);
     setLinkError(undefined);
@@ -100,6 +113,11 @@ export const LinkAccountPanel = () => {
       setLoginSuccess(true);
     } finally {
       setIsSubmitting(false);
+      // hCaptcha tokens are single-use; clear and reset so any retry re-solves.
+      if (captchaSiteKey) {
+        setCaptchaToken(undefined);
+        captchaRef.current?.resetCaptcha();
+      }
     }
   };
 
@@ -259,10 +277,28 @@ export const LinkAccountPanel = () => {
             void requestEmailCode();
           }}
         />
+        {captchaSiteKey ? (
+          <div className="flex justify-center">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={captchaSiteKey}
+              onVerify={(newToken) => setCaptchaToken(newToken)}
+              onExpire={() => setCaptchaToken(undefined)}
+              onError={() => {
+                setCaptchaToken(undefined);
+                captchaRef.current?.resetCaptcha();
+              }}
+            />
+          </div>
+        ) : null}
         <Button
           type="button"
           className="flex w-full items-center justify-center"
-          isDisabled={isSubmitting || !emailIsValid}
+          isDisabled={
+            isSubmitting ||
+            !emailIsValid ||
+            (Boolean(captchaSiteKey) && !captchaToken)
+          }
           onPress={() => {
             void requestEmailCode();
           }}
