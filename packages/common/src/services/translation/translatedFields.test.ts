@@ -28,13 +28,13 @@ describe('flattenTranslatableFields / unflattenTranslatedFields', () => {
     expect(translated.title).toBe('Hello');
   });
 
-  it('round-trips a real array field via dense indices', () => {
+  it('round-trips a real array field via bracketed indices', () => {
     const entries = flattenTranslatableFields('p:', {
       category: ['Housing', 'Transit'],
     });
     expect(entries.map((e) => e.contentKey)).toEqual([
-      'p:category:0',
-      'p:category:1',
+      'p:category[0]',
+      'p:category[1]',
     ]);
 
     const { translated } = unflattenTranslatedFields(
@@ -44,11 +44,12 @@ describe('flattenTranslatableFields / unflattenTranslatedFields', () => {
     expect(translated.category).toEqual(['Housing', 'Transit']);
   });
 
-  // ONE-401: a proposal template field id can be all digits (e.g. "77963788").
-  // Its entry key is `field_title:77963788`, which must NOT be read as
-  // array index 77_963_788 — that allocated a ~78M-element sparse array and
-  // OOM'd the process. It must be stored as a scalar key instead.
-  it('treats a large numeric field-id suffix as a scalar key, not a giant array', () => {
+  // ONE-401: a proposal template field id can be all digits (e.g. "77963788"),
+  // so its entry key is `field_title:77963788`. With the old `field:index`
+  // encoding that parsed as array index 77_963_788 and `items[index] = …`
+  // allocated a ~78M-element sparse array, OOM-killing the process. The
+  // `field[index]` marker means a digit-suffixed id is never read as an index.
+  it('keeps a digit-suffixed field id as a scalar key, never an array index', () => {
     const { translated } = unflattenTranslatedFields('p:', [
       result('p:field_title:77963788', 'Question title'),
       result('p:field_desc:77963788', 'Question description'),
@@ -56,15 +57,14 @@ describe('flattenTranslatableFields / unflattenTranslatedFields', () => {
 
     expect(translated['field_title:77963788']).toBe('Question title');
     expect(translated['field_desc:77963788']).toBe('Question description');
-    // Must not have been coerced into an array under the base field name.
     expect(translated.field_title).toBeUndefined();
     expect(Array.isArray(translated.field_title)).toBe(false);
   });
 
-  it('still reconstructs small numeric array indices at the cap boundary', () => {
+  it('reconstructs sparse array indices in order', () => {
     const { translated } = unflattenTranslatedFields('p:', [
-      result('p:tags:0', 'a'),
-      result('p:tags:2', 'c'),
+      result('p:tags[0]', 'a'),
+      result('p:tags[2]', 'c'),
     ]);
     expect(translated.tags).toEqual(['a', undefined, 'c']);
   });
