@@ -80,7 +80,7 @@ const buttonStyle = tv({
       variant: 'link',
       unstyled: false,
       className:
-        'bg-transparent text-primary-teal shadow-none hover:bg-transparent pressed:bg-transparent pressed:text-primary-teal pressed:!shadow-none',
+        'bg-transparent text-primary-teal shadow-none hover:bg-transparent hover:underline pressed:bg-transparent pressed:text-primary-teal pressed:!shadow-none',
     },
   ],
 

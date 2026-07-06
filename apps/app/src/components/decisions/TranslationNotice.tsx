@@ -24,9 +24,11 @@ export const TranslationNotice = ({
   const t = useTranslations();
 
   return (
-    <p className={cn('text-sm text-neutral-gray4', className)}>
-      {t('Translated from {language}', { language: sourceLanguageName })}
-      <Bullet />{' '}
+    <div className="flex gap-1">
+      <p className={cn('text-sm text-neutral-gray4', className)}>
+        {t('Translated from {language}', { language: sourceLanguageName })}
+      </p>
+      <Bullet />
       <Button
         variant="link"
         onPress={onViewOriginal}
@@ -34,6 +36,6 @@ export const TranslationNotice = ({
       >
         {t('View original')}
       </Button>
-    </p>
+    </div>
   );
 };
