@@ -8,6 +8,7 @@ import {
   type ProcessInstance,
   type ProcessPhase,
 } from '@op/api/encoders';
+import { usePathname } from 'next/navigation';
 import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -114,18 +115,25 @@ function DecisionHeaderView({
   phases,
   currentStateId,
   heroImagePath,
+  phaseHeroImagePath,
 }: StandardDecisionHeaderProps & {
   title: string;
   phases: ProcessPhase[];
   currentStateId: string;
   /** Stored overview hero image path, for the admin Edit-banner controls. */
   heroImagePath?: string;
+  /** Stored hero image path of the current phase, for the phase tab's control. */
+  phaseHeroImagePath?: string;
 }) {
   // Admin banner controls live in the header so they persist across the
   // overview/current-phase tabs: a desktop "Edit banner" button and, on mobile,
   // a full-width admin bar that opens a bottom sheet.
   const currentPhase = phases.find((p) => p.id === currentStateId);
   const showAdminControls = isAdmin === true && Boolean(decisionSlug);
+  // One shared header spans both tabs; scope the mobile bar's banner action to
+  // whichever tab is active. The current-phase tab lives at `/…/current`.
+  const pathname = usePathname();
+  const isPhaseView = pathname.includes('/current');
 
   return (
     <>
@@ -141,7 +149,8 @@ function DecisionHeaderView({
             <AdminOverviewBar
               instanceId={instanceId}
               decisionSlug={decisionSlug}
-              heroImagePath={heroImagePath}
+              phaseId={isPhaseView ? currentStateId : undefined}
+              heroImagePath={isPhaseView ? phaseHeroImagePath : heroImagePath}
               phaseName={currentPhase?.name || undefined}
               phaseEndDate={currentPhase?.phase?.endDate}
             />
@@ -180,6 +189,11 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
       heroImagePath={instance.instanceData?.overview?.heroImage}
+      phaseHeroImagePath={
+        instance.instanceData?.phases?.find(
+          (p) => p.phaseId === instance.currentStateId,
+        )?.heroImage
+      }
     />
   );
 }
@@ -204,6 +218,11 @@ function DecisionHeaderFromProps(
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
       heroImagePath={instance.instanceData?.overview?.heroImage}
+      phaseHeroImagePath={
+        instance.instanceData?.phases?.find(
+          (p) => p.phaseId === instance.currentStateId,
+        )?.heroImage
+      }
     />
   );
 }

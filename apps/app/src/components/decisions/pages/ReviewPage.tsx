@@ -16,6 +16,7 @@ import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
+import { EditBannerModal } from '../EditBannerModal';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
@@ -61,49 +62,62 @@ export function ReviewPage({
   const actionBarLabel = phaseAdditionalInfo
     ? t('About this phase')
     : undefined;
-  const heroImagePath = instance.instanceData?.overview?.heroImage;
+  // Per-phase banner, falling back to the decision's overview banner.
+  const phaseImagePath = currentPhase.heroImage;
+  const heroImagePath =
+    phaseImagePath ?? instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
-          <DecisionHero
-            title={
-              isAdmin ? (
-                <TranslatedText text="Review Progress" />
+      <div className="relative">
+        {isAdmin ? (
+          <EditBannerModal
+            instanceId={instance.id}
+            phaseId={currentPhase.phaseId}
+            heroImagePath={phaseImagePath}
+            hideOnMobile
+          />
+        ) : null}
+        <DecisionHeroBanner heroImagePath={heroImagePath}>
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
+            <DecisionHero
+              title={
+                isAdmin ? (
+                  <TranslatedText text="Review Progress" />
+                ) : (
+                  (currentPhase.headline ?? (
+                    <TranslatedText text="REVIEW PROPOSALS." />
+                  ))
+                )
+              }
+              description={
+                !isAdmin && currentPhase.description ? (
+                  <p>{currentPhase.description}</p>
+                ) : undefined
+              }
+              variant="standard"
+              hasImage={hasHeroImage}
+            >
+              {isAdmin ? (
+                <ReviewProgressStats
+                  processInstanceId={instance.id}
+                  phaseId={currentPhase.phaseId}
+                  hasImage={hasHeroImage}
+                />
               ) : (
-                (currentPhase.headline ?? (
-                  <TranslatedText text="REVIEW PROPOSALS." />
-                ))
-              )
-            }
-            description={
-              !isAdmin && currentPhase.description ? (
-                <p>{currentPhase.description}</p>
-              ) : undefined
-            }
-            variant="standard"
-            hasImage={hasHeroImage}
-          >
-            {isAdmin ? (
-              <ReviewProgressStats
-                processInstanceId={instance.id}
-                phaseId={currentPhase.phaseId}
-                hasImage={hasHeroImage}
-              />
-            ) : (
-              <DecisionActionBar
-                instanceId={instance.id}
-                description={actionBarDescription}
-                label={actionBarLabel}
-                markup={!!translation?.additionalInfo}
-                showSubmitButton={false}
-              />
-            )}
-          </DecisionHero>
-        </div>
-      </DecisionHeroBanner>
+                <DecisionActionBar
+                  instanceId={instance.id}
+                  description={actionBarDescription}
+                  label={actionBarLabel}
+                  markup={!!translation?.additionalInfo}
+                  showSubmitButton={false}
+                />
+              )}
+            </DecisionHero>
+          </div>
+        </DecisionHeroBanner>
+      </div>
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">
