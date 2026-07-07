@@ -9,10 +9,9 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
-import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
-import { EditBannerModal } from '../EditBannerModal';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
+import { PhaseHeroBanner } from '../PhaseHeroBanner';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 
@@ -82,37 +81,30 @@ export function VotingPage({
     translation?.description ??
     description;
   const isAdmin = Boolean(instance.access?.admin);
-  // Per-phase banner, falling back to the decision's overview banner.
-  const phaseImagePath = currentPhase?.heroImage;
-  const heroImagePath =
-    phaseImagePath ?? instance.instanceData?.overview?.heroImage;
-  const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <div className="relative">
-        {isAdmin && currentPhase?.phaseId ? (
-          <EditBannerModal
-            instanceId={instanceId}
-            phaseId={currentPhase.phaseId}
-            heroImagePath={phaseImagePath}
-          />
-        ) : null}
-        <DecisionHeroBanner heroImagePath={heroImagePath}>
-          <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
+      <PhaseHeroBanner
+        instanceId={instanceId}
+        phase={currentPhase}
+        overviewImagePath={instance.instanceData?.overview?.heroImage}
+        isAdmin={isAdmin}
+      >
+        {(hasImage) => (
+          <>
             <DecisionHero
               title={heroTitle}
               description={
                 heroDescription ? <p>{heroDescription}</p> : undefined
               }
               variant="standard"
-              hasImage={hasHeroImage}
+              hasImage={hasImage}
             />
 
             <MemberParticipationFacePile
               submitters={submitters}
               total={total}
-              hasImage={hasHeroImage}
+              hasImage={hasImage}
             />
 
             <DecisionActionBar
@@ -121,9 +113,9 @@ export function VotingPage({
               description={actionBarDescription}
               showSubmitButton={false}
             />
-          </div>
-        </DecisionHeroBanner>
-      </div>
+          </>
+        )}
+      </PhaseHeroBanner>
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">

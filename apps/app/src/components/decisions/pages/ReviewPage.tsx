@@ -14,9 +14,8 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
-import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
-import { EditBannerModal } from '../EditBannerModal';
+import { PhaseHeroBanner } from '../PhaseHeroBanner';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
@@ -62,61 +61,53 @@ export function ReviewPage({
   const actionBarLabel = phaseAdditionalInfo
     ? t('About this phase')
     : undefined;
-  // Per-phase banner, falling back to the decision's overview banner.
-  const phaseImagePath = currentPhase.heroImage;
-  const heroImagePath =
-    phaseImagePath ?? instance.instanceData?.overview?.heroImage;
-  const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <div className="relative">
-        {isAdmin ? (
-          <EditBannerModal
-            instanceId={instance.id}
-            phaseId={currentPhase.phaseId}
-            heroImagePath={phaseImagePath}
-          />
-        ) : null}
-        <DecisionHeroBanner heroImagePath={heroImagePath}>
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
-            <DecisionHero
-              title={
-                isAdmin ? (
-                  <TranslatedText text="Review Progress" />
-                ) : (
-                  (currentPhase.headline ?? (
-                    <TranslatedText text="REVIEW PROPOSALS." />
-                  ))
-                )
-              }
-              description={
-                !isAdmin && currentPhase.description ? (
-                  <p>{currentPhase.description}</p>
-                ) : undefined
-              }
-              variant="standard"
-              hasImage={hasHeroImage}
-            >
-              {isAdmin ? (
-                <ReviewProgressStats
-                  processInstanceId={instance.id}
-                  phaseId={currentPhase.phaseId}
-                  hasImage={hasHeroImage}
-                />
+      <PhaseHeroBanner
+        instanceId={instance.id}
+        phase={currentPhase}
+        overviewImagePath={instance.instanceData?.overview?.heroImage}
+        isAdmin={isAdmin}
+        className="items-center"
+      >
+        {(hasImage) => (
+          <DecisionHero
+            title={
+              isAdmin ? (
+                <TranslatedText text="Review Progress" />
               ) : (
-                <DecisionActionBar
-                  instanceId={instance.id}
-                  description={actionBarDescription}
-                  label={actionBarLabel}
-                  markup={!!translation?.additionalInfo}
-                  showSubmitButton={false}
-                />
-              )}
-            </DecisionHero>
-          </div>
-        </DecisionHeroBanner>
-      </div>
+                (currentPhase.headline ?? (
+                  <TranslatedText text="REVIEW PROPOSALS." />
+                ))
+              )
+            }
+            description={
+              !isAdmin && currentPhase.description ? (
+                <p>{currentPhase.description}</p>
+              ) : undefined
+            }
+            variant="standard"
+            hasImage={hasImage}
+          >
+            {isAdmin ? (
+              <ReviewProgressStats
+                processInstanceId={instance.id}
+                phaseId={currentPhase.phaseId}
+                hasImage={hasImage}
+              />
+            ) : (
+              <DecisionActionBar
+                instanceId={instance.id}
+                description={actionBarDescription}
+                label={actionBarLabel}
+                markup={!!translation?.additionalInfo}
+                showSubmitButton={false}
+              />
+            )}
+          </DecisionHero>
+        )}
+      </PhaseHeroBanner>
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">

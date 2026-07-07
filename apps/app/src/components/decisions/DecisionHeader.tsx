@@ -103,6 +103,15 @@ function toProcessPhases(
   }));
 }
 
+/** Hero image path of the instance's current phase, if any. */
+function currentPhaseHeroImage(
+  instanceData: InstanceData | undefined,
+  currentStateId: string | null | undefined,
+): string | undefined {
+  return instanceData?.phases?.find((p) => p.phaseId === currentStateId)
+    ?.heroImage;
+}
+
 /** Presentational header bar + optional stepper, fed by either variant below. */
 function DecisionHeaderView({
   instanceId,
@@ -189,11 +198,10 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
       heroImagePath={instance.instanceData?.overview?.heroImage}
-      phaseHeroImagePath={
-        instance.instanceData?.phases?.find(
-          (p) => p.phaseId === instance.currentStateId,
-        )?.heroImage
-      }
+      phaseHeroImagePath={currentPhaseHeroImage(
+        instance.instanceData,
+        instance.currentStateId,
+      )}
     />
   );
 }
@@ -218,11 +226,10 @@ function DecisionHeaderFromProps(
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
       heroImagePath={instance.instanceData?.overview?.heroImage}
-      phaseHeroImagePath={
-        instance.instanceData?.phases?.find(
-          (p) => p.phaseId === instance.currentStateId,
-        )?.heroImage
-      }
+      phaseHeroImagePath={currentPhaseHeroImage(
+        instance.instanceData,
+        instance.currentStateId,
+      )}
     />
   );
 }
