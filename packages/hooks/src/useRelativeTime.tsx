@@ -3,6 +3,8 @@
 import { useFormatter } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
+import useMount from './useMount';
+
 /**
  * Returns a locale-aware relative time string with adaptive auto-updates.
  * Shows "now" for timestamps within ±5 seconds.
@@ -25,11 +27,7 @@ export function useRelativeTime(
   // Relative time depends on the wall clock, which differs between the server
   // render and client hydration (React #418). Until mounted, render a
   // deterministic absolute date instead; the relative string applies after.
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { mounted } = useMount();
 
   const adaptiveInterval =
     updateInterval ?? getAdaptiveUpdateInterval(dateTime);
