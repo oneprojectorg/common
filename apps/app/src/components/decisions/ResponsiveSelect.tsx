@@ -64,11 +64,11 @@ export function ResponsiveSelect<T extends string>({
         <Button
           color="secondary"
           size={size}
-          className={`${className} justify-between shadow-none`}
+          className={`${className} max-w-48 justify-between shadow-none`}
           onPress={() => setIsOpen(true)}
         >
-          {displayLabel}
-          <LuChevronDown className="size-4" />
+          <span className="min-w-0 truncate">{displayLabel}</span>
+          <LuChevronDown className="size-4 shrink-0" />
         </Button>
         <Modal
           isOpen={isOpen}
