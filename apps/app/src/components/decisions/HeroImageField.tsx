@@ -6,22 +6,26 @@ import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useOverviewHeroImage } from './useOverviewHeroImage';
+import { useHeroImage } from './useHeroImage';
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
 /**
- * App-side wrapper around the @op/ui BannerImageField for a decision overview's
- * hero image. Owns the upload hook, the translated copy, and the optimized
- * `next/image` preview so call sites stay a two/three-prop affair. Shared by
- * the Process Builder Overview tab and the live overview's "Edit banner" modal.
+ * App-side wrapper around the @op/ui BannerImageField for a decision hero image,
+ * scoped to the overview (no `phaseId`) or a single phase (`phaseId`). Owns the
+ * upload hook, translated copy, and the optimized `next/image` preview. Used by
+ * the Process Builder (overview + phase editors) and the live "Edit banner"
+ * modal.
  */
-export function OverviewHeroImageField({
+export function HeroImageField({
   instanceId,
+  phaseId,
   initialPath,
   onChange,
 }: {
   instanceId: string;
+  /** When set, targets that phase's banner; otherwise the overview banner. */
+  phaseId?: string;
   /** Stored storage path of the current hero image, if any. */
   initialPath?: string;
   /** Fires after a successful upload/remove (e.g. to refresh an RSC page). */
@@ -37,7 +41,7 @@ export function OverviewHeroImageField({
     isUploading,
     isRemoving,
     uploadError,
-  } = useOverviewHeroImage({ instanceId, initialPath, onChange });
+  } = useHeroImage({ instanceId, phaseId, initialPath, onChange });
 
   return (
     <BannerImageField

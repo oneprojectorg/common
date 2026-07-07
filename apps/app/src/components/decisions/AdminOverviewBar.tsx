@@ -19,12 +19,15 @@ import { BannerUploadModal } from './BannerUploadModal';
 export function AdminOverviewBar({
   instanceId,
   decisionSlug,
+  phaseId,
   heroImagePath,
   phaseName,
   phaseEndDate,
 }: {
   instanceId: string;
   decisionSlug: string;
+  /** When set, the banner action targets that phase; otherwise the overview. */
+  phaseId?: string;
   heroImagePath?: string;
   /** Current phase name, e.g. "Collect Ideas". */
   phaseName?: string;
@@ -108,6 +111,7 @@ export function AdminOverviewBar({
 
       <BannerUploadModal
         instanceId={instanceId}
+        phaseId={phaseId}
         heroImagePath={heroImagePath}
         isOpen={bannerOpen}
         onOpenChange={setBannerOpen}
