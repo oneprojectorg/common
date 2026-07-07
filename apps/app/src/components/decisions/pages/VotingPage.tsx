@@ -96,7 +96,6 @@ export function VotingPage({
             instanceId={instanceId}
             phaseId={currentPhase.phaseId}
             heroImagePath={phaseImagePath}
-            hideOnMobile
           />
         ) : null}
         <DecisionHeroBanner heroImagePath={heroImagePath}>

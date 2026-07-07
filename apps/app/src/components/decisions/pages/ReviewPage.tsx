@@ -76,7 +76,6 @@ export function ReviewPage({
             instanceId={instance.id}
             phaseId={currentPhase.phaseId}
             heroImagePath={phaseImagePath}
-            hideOnMobile
           />
         ) : null}
         <DecisionHeroBanner heroImagePath={heroImagePath}>

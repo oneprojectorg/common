@@ -91,7 +91,6 @@ export function StandardDecisionPage({
             instanceId={instanceId}
             phaseId={currentPhase.phaseId}
             heroImagePath={phaseImagePath}
-            hideOnMobile
           />
         ) : null}
         <DecisionHeroBanner heroImagePath={heroImagePath}>
