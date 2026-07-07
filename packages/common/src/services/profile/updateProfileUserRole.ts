@@ -10,6 +10,7 @@ import {
   getNormalizedRoles,
   getProfileAccessUser,
   getUserSession,
+  profileUserCacheKey,
 } from '../access';
 import { assertProfileAdmin } from '../assert';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
@@ -130,7 +131,10 @@ export const updateProfileUserRoles = async ({
   await Promise.all([
     invalidate({
       type: 'profileUser',
-      params: [targetProfileId, targetProfileUser.authUserId],
+      params: profileUserCacheKey({
+        user: { id: targetProfileUser.authUserId },
+        profileId: targetProfileId,
+      }),
     }),
     invalidate({
       type: 'user',
