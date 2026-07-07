@@ -1,17 +1,15 @@
-import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { deleteStorageObject } from '../../utils/deleteStorageObject';
+import { NotFoundError, ValidationError } from '../../utils';
 import {
   IMAGE_UPLOAD_SIZE_LIMIT,
   assertUploadedStorageObject,
 } from '../../utils/storage';
 import { getStorageObjectByPath } from '../../utils/storageObject';
 import { assertProfileAccess } from '../assert';
-import { invalidateDecisionInstance } from './decisionCache';
+import { applyPhaseHeroImage } from './applyPhaseHeroImage';
 import { phaseHeroImagePathPrefix } from './phaseHeroImageStorage';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -87,31 +85,14 @@ export async function updatePhaseHeroImage({
     throw new ValidationError('Hero image must be an image file');
   }
 
-  // Previous object, so we can drop it once the new path is persisted (a
-  // replaced hero image would otherwise leak in the shared assets bucket).
-  const previousPath = targetPhase.heroImage;
-
-  const updatedInstanceData: DecisionInstanceData = {
-    ...instanceData,
-    phases: phases.map((phase) =>
-      phase.phaseId === phaseId ? { ...phase, heroImage: storagePath } : phase,
-    ),
-  };
-
-  const [updated] = await db
-    .update(processInstances)
-    .set({ instanceData: updatedInstanceData })
-    .where(eq(processInstances.id, instanceId))
-    .returning({ id: processInstances.id });
-  if (!updated) {
-    throw new CommonError('Failed to update decision process instance');
-  }
-
-  await invalidateDecisionInstance(instanceId);
-
-  if (previousPath && previousPath !== storagePath) {
-    await deleteStorageObject({ path: previousPath });
-  }
+  await applyPhaseHeroImage({
+    instanceId,
+    instanceData,
+    phaseId,
+    heroImage: storagePath,
+    // Drop the replaced object so it doesn't leak in the shared assets bucket.
+    previousPath: targetPhase.heroImage,
+  });
 
   return { heroImage: storagePath };
 }

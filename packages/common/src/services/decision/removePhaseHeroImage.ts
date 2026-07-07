@@ -1,12 +1,10 @@
-import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError } from '../../utils';
-import { deleteStorageObject } from '../../utils/deleteStorageObject';
+import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { invalidateDecisionInstance } from './decisionCache';
+import { applyPhaseHeroImage } from './applyPhaseHeroImage';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface RemovePhaseHeroImageInput {
@@ -56,31 +54,18 @@ export async function removePhaseHeroImage({
     throw new NotFoundError('Phase', phaseId);
   }
 
-  const previousPath = targetPhase.heroImage;
-
   // Nothing stored — no write or cleanup needed.
-  if (!previousPath) {
+  if (!targetPhase.heroImage) {
     return { heroImage: '' };
   }
 
-  const updatedInstanceData: DecisionInstanceData = {
-    ...instanceData,
-    phases: phases.map((phase) =>
-      phase.phaseId === phaseId ? { ...phase, heroImage: '' } : phase,
-    ),
-  };
-
-  const [updated] = await db
-    .update(processInstances)
-    .set({ instanceData: updatedInstanceData })
-    .where(eq(processInstances.id, instanceId))
-    .returning({ id: processInstances.id });
-  if (!updated) {
-    throw new CommonError('Failed to update decision process instance');
-  }
-
-  await invalidateDecisionInstance(instanceId);
-  await deleteStorageObject({ path: previousPath });
+  await applyPhaseHeroImage({
+    instanceId,
+    instanceData,
+    phaseId,
+    heroImage: '',
+    previousPath: targetPhase.heroImage,
+  });
 
   return { heroImage: '' };
 }
