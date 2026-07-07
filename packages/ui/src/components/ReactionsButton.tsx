@@ -6,7 +6,6 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 import { Menu, MenuItem, MenuTrigger } from './Menu';
-import type { PopoverProps } from './Popover';
 import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
@@ -118,12 +117,10 @@ const ReactionPicker = ({
   reactionOptions = DEFAULT_REACTION_OPTIONS,
   onReactionSelect,
   existingReactions = [],
-  placement,
 }: {
   reactionOptions?: readonly ReactionOption[];
   onReactionSelect: (emoji: string) => void;
   existingReactions?: Reaction[];
-  placement: PopoverProps['placement'];
 }) => {
   // Filter out emojis that the current user has already reacted with (isActive = true)
   const userReactedEmojis = new Set(
@@ -134,11 +131,7 @@ const ReactionPicker = ({
   );
 
   return (
-    <Menu
-      className="flex"
-      placement={placement}
-      onAction={(key) => onReactionSelect(key as string)}
-    >
+    <Menu className="flex" onAction={(key) => onReactionSelect(key as string)}>
       {availableOptions.map((option) => (
         <MenuItem
           unstyled
@@ -160,12 +153,10 @@ const AddReactionMenu = ({
   reactionOptions,
   onAddReaction,
   existingReactions,
-  placement,
 }: {
   reactionOptions?: readonly ReactionOption[];
   onAddReaction?: (emoji: string) => void;
   existingReactions: Reaction[];
-  placement: PopoverProps['placement'];
 }) => (
   <MenuTrigger>
     <ReactionButton size="icon" aria-label="Add reaction" />
@@ -173,7 +164,6 @@ const AddReactionMenu = ({
       reactionOptions={reactionOptions}
       onReactionSelect={(emoji) => onAddReaction?.(emoji)}
       existingReactions={existingReactions}
-      placement={placement}
     />
   </MenuTrigger>
 );
@@ -197,7 +187,6 @@ export const ReactionsButton = ({
           reactionOptions={reactionOptions}
           onAddReaction={onAddReaction}
           existingReactions={reactions}
-          placement="bottom left"
         />
       </div>
     );
@@ -224,7 +213,6 @@ export const ReactionsButton = ({
           reactionOptions={reactionOptions}
           onAddReaction={onAddReaction}
           existingReactions={reactions}
-          placement="top left"
         />
       ) : null}
     </div>
