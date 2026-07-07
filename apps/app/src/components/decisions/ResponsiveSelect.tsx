@@ -64,7 +64,7 @@ export function ResponsiveSelect<T extends string>({
         <Button
           color="secondary"
           size={size}
-          className={`${className} max-w-54 justify-between shadow-none`}
+          className={`${className} max-w-48 shrink-0 justify-between shadow-none`}
           onPress={() => setIsOpen(true)}
         >
           <span className="min-w-0 overflow-hidden whitespace-nowrap">
