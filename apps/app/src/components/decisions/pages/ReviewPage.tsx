@@ -14,8 +14,8 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
-import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
+import { PhaseHeroBanner } from '../PhaseHeroBanner';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
@@ -61,13 +61,17 @@ export function ReviewPage({
   const actionBarLabel = phaseAdditionalInfo
     ? t('About this phase')
     : undefined;
-  const heroImagePath = instance.instanceData?.overview?.heroImage;
-  const hasHeroImage = Boolean(heroImagePath);
 
   return (
     <div className="min-h-full">
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
+      <PhaseHeroBanner
+        instanceId={instance.id}
+        phase={currentPhase}
+        overviewImagePath={instance.instanceData?.overview?.heroImage}
+        isAdmin={isAdmin}
+        className="items-center"
+      >
+        {(hasImage) => (
           <DecisionHero
             title={
               isAdmin ? (
@@ -84,13 +88,13 @@ export function ReviewPage({
               ) : undefined
             }
             variant="standard"
-            hasImage={hasHeroImage}
+            hasImage={hasImage}
           >
             {isAdmin ? (
               <ReviewProgressStats
                 processInstanceId={instance.id}
                 phaseId={currentPhase.phaseId}
-                hasImage={hasHeroImage}
+                hasImage={hasImage}
               />
             ) : (
               <DecisionActionBar
@@ -102,8 +106,8 @@ export function ReviewPage({
               />
             )}
           </DecisionHero>
-        </div>
-      </DecisionHeroBanner>
+        )}
+      </PhaseHeroBanner>
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">

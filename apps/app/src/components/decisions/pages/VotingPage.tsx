@@ -9,9 +9,9 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
-import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
+import { PhaseHeroBanner } from '../PhaseHeroBanner';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 
@@ -80,34 +80,42 @@ export function VotingPage({
     currentPhase?.additionalInfo ??
     translation?.description ??
     description;
-  const heroImagePath = instance.instanceData?.overview?.heroImage;
-  const hasHeroImage = Boolean(heroImagePath);
+  const isAdmin = Boolean(instance.access?.admin);
 
   return (
     <div className="min-h-full">
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
-          <DecisionHero
-            title={heroTitle}
-            description={heroDescription ? <p>{heroDescription}</p> : undefined}
-            variant="standard"
-            hasImage={hasHeroImage}
-          />
+      <PhaseHeroBanner
+        instanceId={instanceId}
+        phase={currentPhase}
+        overviewImagePath={instance.instanceData?.overview?.heroImage}
+        isAdmin={isAdmin}
+      >
+        {(hasImage) => (
+          <>
+            <DecisionHero
+              title={heroTitle}
+              description={
+                heroDescription ? <p>{heroDescription}</p> : undefined
+              }
+              variant="standard"
+              hasImage={hasImage}
+            />
 
-          <MemberParticipationFacePile
-            submitters={submitters}
-            total={total}
-            hasImage={hasHeroImage}
-          />
+            <MemberParticipationFacePile
+              submitters={submitters}
+              total={total}
+              hasImage={hasImage}
+            />
 
-          <DecisionActionBar
-            instanceId={instanceId}
-            markup={!!translation?.additionalInfo}
-            description={actionBarDescription}
-            showSubmitButton={false}
-          />
-        </div>
-      </DecisionHeroBanner>
+            <DecisionActionBar
+              instanceId={instanceId}
+              markup={!!translation?.additionalInfo}
+              description={actionBarDescription}
+              showSubmitButton={false}
+            />
+          </>
+        )}
+      </PhaseHeroBanner>
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">

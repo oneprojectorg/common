@@ -17,6 +17,7 @@ import { LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
+import { HeroImageField } from '@/components/decisions/HeroImageField';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
@@ -110,6 +111,13 @@ function PhaseDetailForm({
 
   const initialPhase = allPhases.find((p) => p.id === phaseId);
   const [phase, setPhase] = useState<PhaseDefinition | undefined>(initialPhase);
+
+  // Hero image is owned by the dedicated upload endpoints (not the phase
+  // autosave), so read its stored path straight from instanceData rather than
+  // the local phase state.
+  const heroImagePath = instancePhases?.find(
+    (p) => p.phaseId === phaseId,
+  )?.heroImage;
 
   const allPhasesRef = useRef(allPhases);
   allPhasesRef.current = allPhases;
@@ -271,6 +279,11 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('headline')}
           description={t('This text appears as the header of the page.')}
           maxLength={50}
+        />
+        <HeroImageField
+          instanceId={instanceId}
+          phaseId={phaseId}
+          initialPath={heroImagePath}
         />
         <TextField
           label={t('Description')}
