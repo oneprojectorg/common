@@ -6,6 +6,7 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 import { Menu, MenuItem, MenuTrigger } from './Menu';
+import type { PopoverProps } from './Popover';
 import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
@@ -122,7 +123,7 @@ const ReactionPicker = ({
   reactionOptions?: readonly ReactionOption[];
   onReactionSelect: (emoji: string) => void;
   existingReactions?: Reaction[];
-  placement: 'top left' | 'bottom left';
+  placement: PopoverProps['placement'];
 }) => {
   // Filter out emojis that the current user has already reacted with (isActive = true)
   const userReactedEmojis = new Set(
@@ -146,7 +147,9 @@ const ReactionPicker = ({
           id={option.emoji}
           textValue={option.label}
         >
-          <span className="text-lg">{option.emoji}</span>
+          <span className="flex size-6 items-center justify-center text-lg leading-none">
+            {option.emoji}
+          </span>
         </MenuItem>
       ))}
     </Menu>
@@ -162,7 +165,7 @@ const AddReactionMenu = ({
   reactionOptions?: readonly ReactionOption[];
   onAddReaction?: (emoji: string) => void;
   existingReactions: Reaction[];
-  placement: 'top left' | 'bottom left';
+  placement: PopoverProps['placement'];
 }) => (
   <MenuTrigger>
     <ReactionButton size="icon" aria-label="Add reaction" />
