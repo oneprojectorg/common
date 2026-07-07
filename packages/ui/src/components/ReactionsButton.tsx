@@ -6,7 +6,6 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 import { Menu, MenuItem, MenuTrigger } from './Menu';
-import { Popover } from './Popover';
 import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
@@ -141,7 +140,9 @@ const ReactionPicker = ({
           id={option.emoji}
           textValue={option.label}
         >
-          <span className="text-lg">{option.emoji}</span>
+          <span className="flex size-5 items-center justify-center text-lg leading-none">
+            {option.emoji}
+          </span>
         </MenuItem>
       ))}
     </Menu>
@@ -152,22 +153,18 @@ const AddReactionMenu = ({
   reactionOptions,
   onAddReaction,
   existingReactions,
-  placement,
 }: {
   reactionOptions?: readonly ReactionOption[];
   onAddReaction?: (emoji: string) => void;
   existingReactions: Reaction[];
-  placement: 'top left' | 'bottom left';
 }) => (
   <MenuTrigger>
     <ReactionButton size="icon" aria-label="Add reaction" />
-    <Popover placement={placement}>
-      <ReactionPicker
-        reactionOptions={reactionOptions}
-        onReactionSelect={(emoji) => onAddReaction?.(emoji)}
-        existingReactions={existingReactions}
-      />
-    </Popover>
+    <ReactionPicker
+      reactionOptions={reactionOptions}
+      onReactionSelect={(emoji) => onAddReaction?.(emoji)}
+      existingReactions={existingReactions}
+    />
   </MenuTrigger>
 );
 
@@ -190,7 +187,6 @@ export const ReactionsButton = ({
           reactionOptions={reactionOptions}
           onAddReaction={onAddReaction}
           existingReactions={reactions}
-          placement="bottom left"
         />
       </div>
     );
@@ -217,7 +213,6 @@ export const ReactionsButton = ({
           reactionOptions={reactionOptions}
           onAddReaction={onAddReaction}
           existingReactions={reactions}
-          placement="top left"
         />
       ) : null}
     </div>
