@@ -124,7 +124,7 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
           <span className="flex h-full w-full flex-1 items-center justify-between gap-1">
             <SelectValue
               className={cn(
-                'min-w-0 flex-1 truncate text-start data-[placeholder]:text-neutral-gray4',
+                'min-w-0 flex-1 truncate text-start leading-normal data-[placeholder]:text-neutral-gray4',
                 props.selectValueClassName,
               )}
             >
