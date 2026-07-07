@@ -39,7 +39,6 @@ export function AdminOverviewBar({
   const locale = useLocale();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [bannerOpen, setBannerOpen] = useState(false);
-  const bannerLabel = heroImagePath ? t('Edit banner') : t('Add banner');
 
   const endsLabel = phaseEndDate
     ? t('ends {date}', {
@@ -97,7 +96,7 @@ export function AdminOverviewBar({
                 setBannerOpen(true);
               }}
             >
-              {bannerLabel}
+              {t('Edit banner')}
             </MenuItem>
             <MenuItem
               id="process-settings"

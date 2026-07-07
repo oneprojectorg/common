@@ -323,7 +323,6 @@ const OverviewHero = ({
         <EditBannerModal
           instanceId={instanceId}
           heroImagePath={heroImagePath}
-          hideOnMobile
         />
       ) : null}
       <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">

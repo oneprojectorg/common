@@ -30,11 +30,10 @@ export function BannerUploadModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations();
-  const label = heroImagePath ? t('Edit banner') : t('Add banner');
 
   return (
     <Modal isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>
-      <ModalHeader>{label}</ModalHeader>
+      <ModalHeader>{t('Edit banner')}</ModalHeader>
       <ModalBody>
         <HeroImageField
           instanceId={instanceId}
