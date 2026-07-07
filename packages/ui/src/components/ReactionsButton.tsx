@@ -147,7 +147,7 @@ const ReactionPicker = ({
           id={option.emoji}
           textValue={option.label}
         >
-          <span className="flex size-6 items-center justify-center text-lg leading-none">
+          <span className="flex size-5 items-center justify-center text-lg leading-none">
             {option.emoji}
           </span>
         </MenuItem>
