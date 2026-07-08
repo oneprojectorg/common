@@ -437,6 +437,7 @@ const ProposalsListContent = ({
         setProposalFilter={setProposalFilter}
         hasVoted={hasVoted}
         currentProfileId={currentProfileId}
+        slug={slug}
         categories={categories}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
