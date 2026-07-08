@@ -1,47 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 /**
  * Hook that returns true if the media query matches the current window state
  * @param query CSS media query string (e.g. '(max-width: 768px)')
  * @returns boolean indicating if the media query matches
+ *
+ * Implemented with useSyncExternalStore: the server snapshot is always false,
+ * so SSR HTML and the hydration render match (React #418), while components
+ * mounted after hydration read the real value synchronously — no false-frame
+ * flash on client-side navigations.
  */
 const useMediaQuery = (query: string): boolean => {
-  // Initialize with the current match state
-  const [matches, setMatches] = useState<boolean>(() => {
-    // Check if window is defined (client-side)
-    if (typeof window !== 'undefined') {
-      return window.matchMedia(query).matches;
-    }
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const mediaQuery = window.matchMedia(query);
+      mediaQuery.addEventListener('change', onStoreChange);
+      return () => mediaQuery.removeEventListener('change', onStoreChange);
+    },
+    [query],
+  );
 
-    return false; // Default to false on server-side
-  });
-
-  useEffect(() => {
-    // Return early if window is not defined (server-side)
-    if (typeof window === 'undefined') return () => {};
-
-    const mediaQuery = window.matchMedia(query);
-
-    // Update matches when the media query status changes
-    const updateMatches = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
-    };
-
-    // Set initial value
-    setMatches(mediaQuery.matches);
-
-    // Add event listener
-    mediaQuery.addEventListener('change', updateMatches);
-
-    // Cleanup
-    return () => {
-      mediaQuery.removeEventListener('change', updateMatches);
-    };
-  }, [query]);
-
-  return matches;
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
 };
 
 export default useMediaQuery;
