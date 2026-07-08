@@ -128,6 +128,15 @@ test.describe('Proposal View', () => {
       },
     });
 
+    // Guard against duplicate tiptap extension registrations in the viewer /
+    // RichTextRenderer path (serverExtensions) — tiptap warns on the console.
+    const tiptapWarnings: string[] = [];
+    authenticatedPage.on('console', (message) => {
+      if (message.text().includes('[tiptap warn]')) {
+        tiptapWarnings.push(message.text());
+      }
+    });
+
     await authenticatedPage.goto(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
     );
@@ -186,6 +195,9 @@ test.describe('Proposal View', () => {
     await expect(
       authenticatedPage.getByText('Region', { exact: true }).first(),
     ).toBeVisible();
+
+    // No duplicate tiptap extension registrations.
+    expect(tiptapWarnings).toEqual([]);
   });
 
   test('renders legacy HTML description when no collaborationDocId exists', async ({
