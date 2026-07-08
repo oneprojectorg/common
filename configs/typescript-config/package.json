@@ -2,7 +2,7 @@
   "name": "@op/typescript-config",
   "version": "0.0.0",
   "private": true,
-  "license": "SEE LICENSE in /LICENSE",
+  "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
   }
