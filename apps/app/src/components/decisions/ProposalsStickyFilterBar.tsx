@@ -15,6 +15,7 @@ export interface ProposalsStickyFilterBarProps {
   setProposalFilter: (filter: ProposalFilter) => void;
   hasVoted: boolean;
   currentProfileId: string | undefined;
+  decisionSlug: string | undefined;
   categories: { id: string; name: string }[];
   selectedCategory: string;
   setSelectedCategory: (value: string) => void;
@@ -66,6 +67,7 @@ export const ProposalsStickyFilterBar = ({
   setProposalFilter,
   hasVoted,
   currentProfileId,
+  decisionSlug,
   categories,
   selectedCategory,
   setSelectedCategory,
@@ -156,6 +158,7 @@ export const ProposalsStickyFilterBar = ({
               currentProfileId={currentProfileId}
               proposalFilter={proposalFilter}
               setProposalFilter={setProposalFilter}
+              decisionSlug={decisionSlug}
               categories={categories}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}

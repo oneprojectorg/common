@@ -41,6 +41,7 @@ export const ProposalsFilterBar = ({
   currentProfileId,
   proposalFilter,
   setProposalFilter,
+  decisionSlug,
   categories,
   selectedCategory,
   onSelectCategory,
@@ -57,6 +58,7 @@ export const ProposalsFilterBar = ({
   currentProfileId: string | undefined;
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
+  decisionSlug: string | undefined;
   categories: { id: string; name: string }[];
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
@@ -71,6 +73,13 @@ export const ProposalsFilterBar = ({
 }) => {
   const t = useTranslations();
   const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
+
+  // TODO: This is a hardcoded, per-decision copy override — the Columbus
+  // decision refers to its categories as "districts", matched here on its
+  // decision slug. Replace this with a proper configurable terminology/labeling
+  // mechanism (e.g. per-process category term settings) instead of matching on
+  // a hardcoded slug so we don't accrue more of these.
+  const usesDistricts = decisionSlug === 'columbus';
 
   return (
     <>
@@ -88,9 +97,16 @@ export const ProposalsFilterBar = ({
       <ResponsiveSelect
         selectedKey={selectedCategory}
         onSelectionChange={onSelectCategory}
-        aria-label={t('Filter proposals by category')}
+        aria-label={
+          usesDistricts
+            ? t('Filter proposals by district')
+            : t('Filter proposals by category')
+        }
         items={[
-          { id: 'all-categories', label: t('All categories') },
+          {
+            id: 'all-categories',
+            label: usesDistricts ? t('All districts') : t('All categories'),
+          },
           ...categories.map((category) => ({
             id: category.id,
             label: category.name,
