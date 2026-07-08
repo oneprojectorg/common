@@ -41,7 +41,7 @@ export const ProposalsFilterBar = ({
   currentProfileId,
   proposalFilter,
   setProposalFilter,
-  slug,
+  decisionSlug,
   categories,
   selectedCategory,
   onSelectCategory,
@@ -58,7 +58,7 @@ export const ProposalsFilterBar = ({
   currentProfileId: string | undefined;
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
-  slug: string;
+  decisionSlug: string | undefined;
   categories: { id: string; name: string }[];
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
@@ -74,11 +74,12 @@ export const ProposalsFilterBar = ({
   const t = useTranslations();
   const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
 
-  // TODO: This is a hardcoded, per-process copy override — Columbus refers to
-  // its categories as "districts". Replace this with a proper configurable
-  // terminology/labeling mechanism (e.g. per-process category term settings)
-  // instead of matching on a hardcoded slug so we don't accrue more of these.
-  const usesDistricts = slug === 'columbus';
+  // TODO: This is a hardcoded, per-decision copy override — the Columbus
+  // decision refers to its categories as "districts", matched here on its
+  // decision slug. Replace this with a proper configurable terminology/labeling
+  // mechanism (e.g. per-process category term settings) instead of matching on
+  // a hardcoded slug so we don't accrue more of these.
+  const usesDistricts = decisionSlug === 'columbus';
 
   return (
     <>
