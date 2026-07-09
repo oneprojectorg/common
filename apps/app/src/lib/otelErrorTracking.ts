@@ -25,7 +25,7 @@ export function setErrorSpanFlusher(flush: () => void) {
 /**
  * posthog-js `before_send` hook: records every `$exception` event on an OTel
  * span and stamps the event with `trace_id`/`span_id`, so a PostHog error can
- * be joined to its SigNoz trace. Covers both autocaptured exceptions and
+ * be joined to its OTel trace. Covers both autocaptured exceptions and
  * explicit `posthog.captureException` calls. No-ops (event passes through
  * unstamped) while the browser tracer provider is not yet registered.
  */

@@ -2,7 +2,7 @@ import { logger } from '@op/logging';
 import { NextResponse } from 'next/server';
 
 /**
- * Proxy browser OTLP traces to SigNoz.
+ * Proxy browser OTLP traces to the configured OTel backend.
  * This avoids CORS issues and keeps API keys server-side.
  */
 export async function POST(request: Request) {
