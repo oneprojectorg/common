@@ -155,6 +155,19 @@ export const proposalListSchema = z.object({
 export type ProposalList = z.infer<typeof proposalListSchema>;
 
 /**
+ * Response from `decision.listProposalLocations`. Every located proposal in the
+ * instance (not just the loaded list page) so the map can plot all pins. Reuses
+ * the full `proposalSchema` shape — the heavy fields (documents, counts) are
+ * simply left unset — so the map's marker + hovercard render the same
+ * `Proposal` type the paginated list produces.
+ */
+export const proposalLocationsSchema = z.object({
+  proposals: z.array(proposalSchema),
+});
+
+export type ProposalLocations = z.infer<typeof proposalLocationsSchema>;
+
+/**
  * Input schema for `decision.listAllProposals`. Returns every valid submission
  * regardless of phase scoping, so there are no phase/voting filters. Uses
  * cursor pagination — pass `cursor` from the previous response's `next`.

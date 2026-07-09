@@ -63,6 +63,7 @@ export * from './updateProposal';
 export * from './getProposal';
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
+export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';

@@ -1,6 +1,7 @@
 'use client';
 
-import type { DecisionAccess } from '@op/api/encoders';
+import { trpc } from '@op/api/client';
+import type { DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
@@ -14,7 +15,19 @@ import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
 
+/** Filter for the all-locations pin query — shared with the list, minus the
+ * list-only pagination fields (the map returns every located proposal). */
+interface ProposalLocationFilter {
+  processInstanceId: string;
+  categoryId?: string;
+  submittedByProfileId?: string;
+  votedByProfileId?: string;
+  status?: ProposalStatus;
+  phase?: 'results';
+}
+
 interface ProposalsMapViewProps {
+  /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
   instanceId: string;
   slug: string;
@@ -26,6 +39,9 @@ interface ProposalsMapViewProps {
   /** Fallback camera — the process's default view, used only when no proposal
    * has a location to fit. */
   mapView: MapDefaultView;
+  /** Filter for the pin query — the map plots every located proposal in scope,
+   * independent of how many list pages have loaded. */
+  locationFilter: ProposalLocationFilter;
 }
 
 /**
@@ -44,12 +60,24 @@ export function ProposalsMapView({
   decisionSlug,
   permissions,
   mapView,
+  locationFilter,
 }: ProposalsMapViewProps) {
   const canManageProposals = permissions?.admin ?? false;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
+
+  // Pins come from every located proposal in scope, not just the loaded list
+  // pages — otherwise the map is capped at the list's page size. The desktop
+  // list column below still renders from the paginated `proposals` prop.
+  const [{ proposals: locatedProposals }] =
+    trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
+      staleTime: 30 * 1000,
+      // Force a client-side fetch so the query registers its invalidation
+      // channel via the client link (same pattern as the list query).
+      refetchOnMount: 'always',
+    });
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -61,22 +89,25 @@ export function ProposalsMapView({
     [decisionSlug, slug, instanceId],
   );
 
-  // One marker per proposal with coordinates (drafts may lack one).
+  // One marker per located proposal (the query already drops those without
+  // coordinates).
   const points = useMemo(
     () =>
-      proposals.flatMap((proposal) => {
+      locatedProposals.flatMap((proposal) => {
         const location = parseProposalData(proposal.proposalData).location;
         return location
           ? [{ id: proposal.id, lng: location.lng, lat: location.lat }]
           : [];
       }),
-    [proposals],
+    [locatedProposals],
   );
 
   // O(1) lookup so the click handler + hovercard renderer don't scan per call.
+  // Keyed off the full located set so pins beyond the loaded list pages still
+  // resolve a proposal for navigation and their hovercard.
   const proposalsById = useMemo(
-    () => new Map(proposals.map((proposal) => [proposal.id, proposal])),
-    [proposals],
+    () => new Map(locatedProposals.map((proposal) => [proposal.id, proposal])),
+    [locatedProposals],
   );
 
   // Desktop: tap navigates immediately. Mobile: first tap shows the

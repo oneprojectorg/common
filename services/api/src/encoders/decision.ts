@@ -668,6 +668,21 @@ export const proposalFilterSchema = z.object({
   limit: z.number().min(1).max(100).prefault(20),
 });
 
+/**
+ * Input for `decision.listProposalLocations` — the map's pin source. Mirrors
+ * `proposalFilterSchema` minus pagination (the endpoint returns every located
+ * proposal in scope) so the map applies the same filters as the list.
+ */
+export const proposalLocationsFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  submittedByProfileId: z.uuid().optional(),
+  status: z.enum(ProposalStatus).optional(),
+  categoryId: z.string().optional(),
+  phaseId: z.string().optional(),
+  votedByProfileId: z.uuid().optional(),
+  phase: z.enum(['results']).optional(),
+});
+
 // Decision Profile Encoder (profile with processInstance)
 export const decisionProfileEncoder = baseProfileEncoder.extend({
   processInstance: processInstanceEncoder,

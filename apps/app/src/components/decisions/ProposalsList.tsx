@@ -254,6 +254,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     <ProposalsListContent
       {...props}
       {...data}
+      queryParams={queryParams}
       proposalFilter={proposalFilter}
       setProposalFilter={setProposalFilter}
       selectedCategory={selectedCategory}
@@ -281,6 +282,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
 // TODO: trim props — move filter state to a shared nuqs hook + extract an export button (follow-up).
 type ProposalsListContentProps = ProposalsListProps &
   ProposalsLoaderRenderProps & {
+    queryParams: ProposalQueryParams;
     proposalFilter: ProposalFilter;
     setProposalFilter: (filter: ProposalFilter) => void;
     selectedCategory: string;
@@ -299,6 +301,7 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   pinOffset,
+  queryParams,
   allProposals,
   total,
   isFetchingNextPage,
@@ -472,6 +475,17 @@ const ProposalsListContent = ({
             decisionSlug={decisionSlug}
             permissions={permissions}
             mapView={mapView}
+            // Pins come from a dedicated all-locations query (not the loaded
+            // list pages) so the map isn't capped by the page size. Strip the
+            // list-only pagination fields from the shared filter.
+            locationFilter={{
+              processInstanceId: queryParams.processInstanceId,
+              categoryId: queryParams.categoryId,
+              submittedByProfileId: queryParams.submittedByProfileId,
+              votedByProfileId: queryParams.votedByProfileId,
+              status: queryParams.status,
+              phase: queryParams.phase,
+            }}
           />
         ) : (
           <ProposalsGrid
