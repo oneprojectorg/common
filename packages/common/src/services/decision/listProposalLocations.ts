@@ -63,8 +63,8 @@ export const listProposalLocations = async ({
 
   const proposals = rows.flatMap((proposal) => {
     // Drafts and any proposal without coordinates never render a pin.
-    const location = parseProposalData(proposal.proposalData).location;
-    if (!location) {
+    const proposalData = parseProposalData(proposal.proposalData);
+    if (!proposalData.location) {
       return [];
     }
 
@@ -93,7 +93,7 @@ export const listProposalLocations = async ({
       {
         id: proposal.id,
         processInstanceId: proposal.processInstanceId,
-        proposalData: parseProposalData(proposal.proposalData),
+        proposalData,
         status: proposal.status,
         visibility: proposal.visibility,
         profileId: proposal.profileId,

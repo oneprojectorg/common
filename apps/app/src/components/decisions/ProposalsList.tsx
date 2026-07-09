@@ -2,6 +2,7 @@
 
 import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
@@ -19,14 +20,19 @@ import {
 import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/ui/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
-import { type RefObject, useCallback, useMemo } from 'react';
+import { type RefObject, Suspense, useCallback, useMemo } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalListSkeletonGrid } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { ProposalsGrid } from './ProposalsGrid';
-import { ProposalsMapView } from './ProposalsMapView';
+import {
+  ProposalsMapView,
+  ProposalsMapWithLocations,
+} from './ProposalsMapView';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
@@ -301,6 +307,7 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   pinOffset,
+  phase,
   queryParams,
   allProposals,
   total,
@@ -316,6 +323,7 @@ const ProposalsListContent = ({
 }: ProposalsListContentProps) => {
   const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
   const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
+  const t = useTranslations();
   const { user } = useUser();
 
   const currentProfileId = user?.currentProfile?.id;
@@ -468,25 +476,52 @@ const ProposalsListContent = ({
         translations={translation.translationState?.translations ?? {}}
       >
         {isMapMode ? (
-          <ProposalsMapView
-            proposals={allProposals}
-            instanceId={instanceId}
-            slug={slug}
-            decisionSlug={decisionSlug}
-            permissions={permissions}
-            mapView={mapView}
-            // Pins come from a dedicated all-locations query (not the loaded
-            // list pages) so the map isn't capped by the page size. Strip the
-            // list-only pagination fields from the shared filter.
-            locationFilter={{
-              processInstanceId: queryParams.processInstanceId,
-              categoryId: queryParams.categoryId,
-              submittedByProfileId: queryParams.submittedByProfileId,
-              votedByProfileId: queryParams.votedByProfileId,
-              status: queryParams.status,
-              phase: queryParams.phase,
-            }}
-          />
+          phase === 'results' ? (
+            // Results uses the phase-agnostic `listAllProposals` set; source
+            // pins from that same loaded data so pins match the results list.
+            <ProposalsMapView
+              proposals={allProposals}
+              pinProposals={allProposals}
+              instanceId={instanceId}
+              slug={slug}
+              decisionSlug={decisionSlug}
+              permissions={permissions}
+              mapView={mapView}
+            />
+          ) : (
+            // Local boundaries keep the pin query from suspending / erroring
+            // the whole list subtree (filter bar + view toggle stay mounted).
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <div className="py-8 text-center text-sm text-neutral-charcoal">
+                    {t("Couldn't load the map. Refresh to try again.")}
+                  </div>
+                ),
+              }}
+            >
+              <Suspense fallback={<ProposalListSkeletonGrid />}>
+                <ProposalsMapWithLocations
+                  proposals={allProposals}
+                  instanceId={instanceId}
+                  slug={slug}
+                  decisionSlug={decisionSlug}
+                  permissions={permissions}
+                  mapView={mapView}
+                  // Pins come from a dedicated all-locations query (not the
+                  // loaded list pages) so the map isn't capped by the page
+                  // size. Strip the list-only pagination fields from the filter.
+                  locationFilter={{
+                    processInstanceId: queryParams.processInstanceId,
+                    categoryId: queryParams.categoryId,
+                    submittedByProfileId: queryParams.submittedByProfileId,
+                    votedByProfileId: queryParams.votedByProfileId,
+                    status: queryParams.status,
+                  }}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          )
         ) : (
           <ProposalsGrid
             proposals={allProposals}

@@ -29,6 +29,9 @@ interface ProposalLocationFilter {
 interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
+  /** Marker source. Every located proposal the pins should plot, which can be
+   * a wider set than `proposals` (the loaded list pages). */
+  pinProposals: Proposal[];
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links. */
@@ -39,9 +42,6 @@ interface ProposalsMapViewProps {
   /** Fallback camera — the process's default view, used only when no proposal
    * has a location to fit. */
   mapView: MapDefaultView;
-  /** Filter for the pin query — the map plots every located proposal in scope,
-   * independent of how many list pages have loaded. */
-  locationFilter: ProposalLocationFilter;
 }
 
 /**
@@ -55,29 +55,18 @@ interface ProposalsMapViewProps {
 // fallow-ignore-next-line complexity
 export function ProposalsMapView({
   proposals,
+  pinProposals,
   instanceId,
   slug,
   decisionSlug,
   permissions,
   mapView,
-  locationFilter,
 }: ProposalsMapViewProps) {
   const canManageProposals = permissions?.admin ?? false;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
-
-  // Pins come from every located proposal in scope, not just the loaded list
-  // pages — otherwise the map is capped at the list's page size. The desktop
-  // list column below still renders from the paginated `proposals` prop.
-  const [{ proposals: locatedProposals }] =
-    trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
-      staleTime: 30 * 1000,
-      // Force a client-side fetch so the query registers its invalidation
-      // channel via the client link (same pattern as the list query).
-      refetchOnMount: 'always',
-    });
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -89,25 +78,24 @@ export function ProposalsMapView({
     [decisionSlug, slug, instanceId],
   );
 
-  // One marker per located proposal (the query already drops those without
-  // coordinates).
+  // One marker per proposal with coordinates (drafts may lack one).
   const points = useMemo(
     () =>
-      locatedProposals.flatMap((proposal) => {
+      pinProposals.flatMap((proposal) => {
         const location = parseProposalData(proposal.proposalData).location;
         return location
           ? [{ id: proposal.id, lng: location.lng, lat: location.lat }]
           : [];
       }),
-    [locatedProposals],
+    [pinProposals],
   );
 
   // O(1) lookup so the click handler + hovercard renderer don't scan per call.
-  // Keyed off the full located set so pins beyond the loaded list pages still
+  // Keyed off the full pin set so pins beyond the loaded list pages still
   // resolve a proposal for navigation and their hovercard.
   const proposalsById = useMemo(
-    () => new Map(locatedProposals.map((proposal) => [proposal.id, proposal])),
-    [locatedProposals],
+    () => new Map(pinProposals.map((proposal) => [proposal.id, proposal])),
+    [pinProposals],
   );
 
   // Desktop: tap navigates immediately. Mobile: first tap shows the
@@ -211,4 +199,28 @@ export function ProposalsMapView({
       </aside>
     </div>
   );
+}
+
+/**
+ * Loads every located proposal in scope from `listProposalLocations` and feeds
+ * them to the map as pins, so the map isn't capped by the list's page size.
+ * Used for the phase-scoped browse map; the results phase renders
+ * `ProposalsMapView` directly with its `listAllProposals` data so the pins
+ * match that list's (phase-agnostic) scope.
+ */
+export function ProposalsMapWithLocations({
+  locationFilter,
+  ...props
+}: Omit<ProposalsMapViewProps, 'pinProposals'> & {
+  locationFilter: ProposalLocationFilter;
+}) {
+  const [{ proposals: pinProposals }] =
+    trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
+      staleTime: 30 * 1000,
+      // Force a client-side fetch so the query registers its invalidation
+      // channel via the client link (same pattern as the list query).
+      refetchOnMount: 'always',
+    });
+
+  return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
