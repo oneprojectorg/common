@@ -26,6 +26,10 @@ export function formatDate(
  * middle of the stored day before formatting in UTC recovers the intended
  * day for any author timezone within UTC±12, while staying deterministic
  * across SSR and hydration (React #418).
+ *
+ * TODO: store a timezone at the process level (or store phase dates as plain
+ * calendar dates) so display doesn't rely on this ±12h heuristic — authors at
+ * UTC+13/+14 (e.g. New Zealand during DST) still see the previous day.
  */
 const HALF_DAY_MS = 12 * 60 * 60 * 1000;
 

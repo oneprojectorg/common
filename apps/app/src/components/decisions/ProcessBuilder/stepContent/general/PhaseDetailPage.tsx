@@ -217,6 +217,11 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
+  // Serializes the picked calendar day as the author's local midnight, which
+  // discards the author's timezone. Display sides compensate with the ±12h
+  // heuristic in formatPhaseDate (@op/ui/utils/formatting).
+  // TODO: store a timezone at the process level (or store phase dates as plain
+  // calendar dates) so the picked day survives without that heuristic.
   const formatDateValue = (date: {
     year: number;
     month: number;
