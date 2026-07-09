@@ -15,10 +15,7 @@ interface LogContext {
  */
 export function withLogContext<T>(fn: () => T): T {
   const holder: LogContext = {};
-  return context.with(
-    context.active().setValue(LOG_CONTEXT_KEY, holder),
-    fn,
-  );
+  return context.with(context.active().setValue(LOG_CONTEXT_KEY, holder), fn);
 }
 
 /**
