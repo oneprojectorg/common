@@ -94,13 +94,22 @@ export function buildProposalListPreview({
     textContent.push(...fragments.default.content);
   }
 
-  // Empty doc (e.g. unedited draft) — preview nothing, not an error.
-  const previewText =
-    textContent.length === 0
-      ? ''
-      : tiptapDocToPlainText(toTipTapDoc(textContent))
+  // Empty doc (e.g. unedited draft) — preview nothing, not an error. A
+  // malformed fragment must not break the whole list (same try/catch parity
+  // as the client walk this replaces, getProposalContentPreview).
+  let previewText: string | null;
+  if (textContent.length === 0) {
+    previewText = '';
+  } else {
+    try {
+      previewText =
+        tiptapDocToPlainText(toTipTapDoc(textContent))
           .trim()
           .slice(0, PROPOSAL_PREVIEW_MAX_LENGTH) || null;
+    } catch {
+      previewText = null;
+    }
+  }
 
   const systemFieldOverrides: ProposalListPreview['systemFieldOverrides'] = {};
   if (proposalTemplate) {
@@ -111,9 +120,13 @@ export function buildProposalListPreview({
         continue;
       }
 
-      const text = getFragmentTextFromTipTapDoc(toTipTapDoc(content)).trim();
-      if (text) {
-        fragmentTexts[key] = text;
+      try {
+        const text = getFragmentTextFromTipTapDoc(toTipTapDoc(content)).trim();
+        if (text) {
+          fragmentTexts[key] = text;
+        }
+      } catch {
+        // Skip malformed fragments — same as the client-side walk.
       }
     }
 

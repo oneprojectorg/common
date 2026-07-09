@@ -110,8 +110,9 @@ export const listProposals = async ({
     instance.processId,
   );
   // Backstop: if this function throws or early-returns before the template is
-  // awaited (empty phase window, malformed cursor), a rejection here must not
-  // surface as an unhandled promise rejection. The later `await` still rethrows.
+  // awaited (auth failure, bad cursor, empty phase window), a rejection here
+  // must not surface as an unhandled promise rejection. The later `await`
+  // still rethrows.
   proposalTemplatePromise.catch(() => {});
 
   // The empty short-circuit is split around the cursor decode to preserve

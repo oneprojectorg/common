@@ -92,6 +92,11 @@ export const listAllProposals = async ({
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
   );
+  // Backstop: if this function throws before the template is awaited (the
+  // access assert below rejects for every unauthorized caller), a rejection
+  // here must not surface as an unhandled promise rejection. The later
+  // `await` still rethrows.
+  proposalTemplatePromise.catch(() => {});
 
   const profileRoles = await assertInstanceProfileAccess({
     user,
