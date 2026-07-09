@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import type { NextRequest } from 'next/server';
 import { createHash } from 'node:crypto';
 
@@ -49,7 +50,9 @@ export async function POST(req: NextRequest) {
     );
 
     if (subscribeUserResponse.status >= 400) {
-      console.error(subscribeUserResponse);
+      logger.error('Waitlist newsletter subscribe failed', {
+        response: subscribeUserResponse,
+      });
       return Response.json(
         {
           error: `There was an error subscribing to the newsletter.`,
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     return new Response(null, { status: 201 });
   } catch (error) {
-    console.error(error);
+    logger.error('Waitlist signup failed', { error });
     return Response.json(
       { error: (error as Error).message || (error as Error).toString() },
       { status: 500 },

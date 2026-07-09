@@ -1,3 +1,5 @@
+import { logger } from '@op/logging';
+
 import {
   normalizeLocation,
   normalizeProposalCategories,
@@ -41,7 +43,7 @@ export async function resolveBoundaryCategoryLabel(
 
     return boundary?.taxonomyTermId ? boundary.name : null;
   } catch (error) {
-    console.error('Error resolving boundary category:', error);
+    logger.error('Error resolving boundary category', { error });
     return null;
   }
 }

@@ -1,6 +1,7 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
 import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 
 export interface AddReactionOptions {
@@ -45,10 +46,9 @@ export const addReaction = async (options: AddReactionOptions) => {
         },
       })
       .catch((error) => {
-        console.error(
-          '[addReaction] Failed to emit postReactionAdded event',
+        logger.error('[addReaction] Failed to emit postReactionAdded event', {
           error,
-        );
+        });
       }),
   );
 };

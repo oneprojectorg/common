@@ -29,6 +29,9 @@ function toAnyValueMap(
       value === null
     ) {
       result[key] = value as AnyValue;
+    } else if (value instanceof Error) {
+      // JSON.stringify(Error) yields "{}" — keep name/message/stack instead
+      result[key] = value.stack ?? `${value.name}: ${value.message}`;
     } else {
       try {
         // Convert complex types to string

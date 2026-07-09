@@ -1,6 +1,7 @@
 import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { organizations, users } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
 import { checkPermission } from 'access-zones';
 import { z } from 'zod';
@@ -338,7 +339,7 @@ export const getCurrentProfileId = memoize(
           return org.profileId;
         }
       } catch (error) {
-        console.error('Error converting lastOrgId to profileId:', error);
+        logger.error('Error converting lastOrgId to profileId', { error });
       }
     }
 
@@ -475,7 +476,7 @@ export const getUserSession = memoize(
           return { user: { ...dbUser, currentProfileId: org.profileId } };
         }
       } catch (migrationError) {
-        console.error('Migration error:', migrationError);
+        logger.error('Migration error', { error: migrationError });
         // Continue with the original user object if migration fails
       }
     }

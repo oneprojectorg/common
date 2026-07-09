@@ -3,6 +3,7 @@ import { db } from '@op/db/client';
 import { posts, profiles } from '@op/db/schema';
 import { CommentNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
 const key = 'event.data.authorProfileId + "-" + event.data.proposalId';
@@ -86,8 +87,9 @@ export const sendProposalCommentNotification = inngest.createFunction(
 
     const decisionSlug = proposal.processInstance?.profile?.slug;
     if (!decisionSlug) {
-      console.error(
-        `Cannot build proposal comment URL: proposal ${proposalId} has no process instance or decision profile`,
+      logger.error(
+        'Cannot build proposal comment URL: proposal has no process instance or decision profile',
+        { proposalId },
       );
       return;
     }

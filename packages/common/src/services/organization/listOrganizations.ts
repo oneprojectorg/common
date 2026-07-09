@@ -1,4 +1,5 @@
 import { db } from '@op/db/client';
+import { logger } from '@op/logging';
 
 import {
   NotFoundError,
@@ -93,7 +94,7 @@ export const listOrganizations = async ({
 
     return { items, next: nextCursor };
   } catch (error) {
-    console.error(error);
+    logger.error('Error listing organizations', { error });
     throw error;
   }
 };

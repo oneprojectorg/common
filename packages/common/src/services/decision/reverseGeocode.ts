@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { logger } from '@op/logging';
 
 /**
  * A single reverse-geocoded place. Mirrors the `getGeoNames` result shape so the
@@ -63,7 +64,7 @@ const reverseGeocodePoint = async ({
       countryName: countryComponent?.long_name,
     };
   } catch (e) {
-    console.error('Reverse geocoding error', e);
+    logger.error('Reverse geocoding error', { error: e });
     return null;
   }
 };

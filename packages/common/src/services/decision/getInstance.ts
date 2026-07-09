@@ -1,6 +1,7 @@
 import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { checkPermission, collapseRoles, permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
@@ -172,7 +173,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
       throw error;
     }
-    console.error('Error fetching process instance:', error);
+    logger.error('Error fetching process instance', { error });
     throw new NotFoundError('Process instance', instanceId);
   }
 };

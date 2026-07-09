@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -117,7 +118,7 @@ export const updateProcess = async ({
     if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
       throw error;
     }
-    console.error('Error updating decision process:', error);
+    logger.error('Error updating decision process', { error });
     throw new CommonError('Failed to update decision process');
   }
 };

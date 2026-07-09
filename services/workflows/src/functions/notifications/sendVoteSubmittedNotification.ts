@@ -8,6 +8,7 @@ import {
 } from '@op/db/schema';
 import { OPNodemailer, VoteSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
@@ -127,7 +128,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
             }),
         });
       } catch (error) {
-        console.error('Failed to send vote submitted notification:', {
+        logger.error('Failed to send vote submitted notification', {
           error,
           voteSubmissionId,
           processInstanceId,

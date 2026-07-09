@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
@@ -39,7 +40,7 @@ export const createPostOnProfile = async (input: CreatePostOnProfileInput) => {
 
     return post;
   } catch (error) {
-    console.error('Error creating post on profile:', error);
+    logger.error('Error creating post on profile', { error });
     throw error;
   }
 };

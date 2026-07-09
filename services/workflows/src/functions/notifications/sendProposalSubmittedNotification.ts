@@ -9,6 +9,7 @@ import {
 } from '@op/db/schema';
 import { OPBatchSend, ProposalSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
@@ -111,7 +112,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
           sent: data.length,
         };
       } catch (error) {
-        console.error('Failed to send proposal submitted notifications:', {
+        logger.error('Failed to send proposal submitted notifications', {
           error,
           proposalId,
         });

@@ -4,6 +4,7 @@
 import { createClient } from '@op/api/serverClient';
 import { getSafeRedirectPath } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
+import { logger } from '@op/logging';
 import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -26,7 +27,7 @@ export const GET = async (request: NextRequest) => {
       await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error(error);
+      logger.error('OAuth code exchange failed', { error });
 
       // return the user to an error page with some instructions
       return NextResponse.redirect(

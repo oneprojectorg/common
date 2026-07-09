@@ -5,6 +5,7 @@ import {
   handleModerationWebhook,
   recordModerationVerdict,
 } from '@op/common';
+import { logger } from '@op/logging';
 import { realtime } from '@op/realtime/server';
 import { randomUUID } from 'node:crypto';
 
@@ -57,10 +58,9 @@ export const handleModerationWebhookRequest = (
             ),
           );
         } catch (error) {
-          console.error(
-            '[moderation-webhook] realtime invalidation failed:',
+          logger.error('[moderation-webhook] realtime invalidation failed', {
             error,
-          );
+          });
         }
       }
 

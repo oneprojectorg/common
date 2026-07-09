@@ -2,6 +2,7 @@ import { invalidate } from '@op/cache';
 import { db } from '@op/db/client';
 import { attachments, posts, postsToProfiles } from '@op/db/schema';
 import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 import { eq } from 'drizzle-orm';
@@ -159,7 +160,7 @@ export const createPost = async (input: CreatePostServiceInput) => {
           },
         });
       } catch (error) {
-        console.error('Failed to submit post for moderation review:', error);
+        logger.error('Failed to submit post for moderation review', { error });
       }
 
       try {
@@ -196,7 +197,7 @@ export const createPost = async (input: CreatePostServiceInput) => {
             break;
         }
       } catch (error) {
-        console.error('Failed to enqueue notification event:', error);
+        logger.error('Failed to enqueue notification event', { error });
       }
     })(),
   );

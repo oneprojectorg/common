@@ -6,6 +6,7 @@ import {
   profiles,
   proposals,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { checkPermission, permission } from 'access-zones';
@@ -276,10 +277,10 @@ async function createCheckpointVersion(
     .createVersion(parsed.collaborationDocId, { name: 'Updated' })
     .then((v) => v?.version ?? null)
     .catch((error: unknown) => {
-      console.error(
-        `[updateProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+      logger.error('[updateProposal] Failed to create TipTap version', {
+        collaborationDocId: parsed.collaborationDocId,
         error,
-      );
+      });
       return null;
     });
 

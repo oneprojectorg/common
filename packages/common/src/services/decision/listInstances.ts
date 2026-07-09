@@ -1,5 +1,6 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -134,7 +135,7 @@ export const listInstances = async ({
     if (error instanceof UnauthorizedError) {
       throw error;
     }
-    console.error('Error listing process instances:', error);
+    logger.error('Error listing process instances', { error });
     throw new UnauthorizedError('Failed to list process instances');
   }
 };

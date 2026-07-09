@@ -8,6 +8,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { REACTION_OPTIONS } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -140,7 +141,7 @@ export const sendReactionNotification = inngest.createFunction(
         });
       } catch (error) {
         // Log error and re-throw for retries
-        console.error('Failed to send reaction notification:', {
+        logger.error('Failed to send reaction notification', {
           error,
           sourceProfileId,
           postId,

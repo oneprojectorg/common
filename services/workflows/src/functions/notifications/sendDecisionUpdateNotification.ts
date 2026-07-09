@@ -10,6 +10,7 @@ import {
 } from '@op/db/schema';
 import { DecisionUpdateNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { and, eq, isNotNull } from 'drizzle-orm';
 
 const key = 'event.data.authorProfileId + "-" + event.data.targetProfileId';
@@ -83,7 +84,7 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
     }
 
     if (!post) {
-      console.error('No post found for update notification', {
+      logger.error('No post found for update notification', {
         postId,
         targetProfileId,
       });

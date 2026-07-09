@@ -7,6 +7,7 @@ import {
   organizationRelationships,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { relationshipMap } from '@op/types';
 
@@ -150,7 +151,9 @@ export const sendRelationshipNotification = async ({
       }),
     );
   } catch (emailError) {
-    console.error('Failed to send relationship request emails:', emailError);
+    logger.error('Failed to send relationship request emails', {
+      error: emailError,
+    });
   }
 };
 
