@@ -175,7 +175,7 @@ export function ProposalsMapView({
           />
         ))}
       </ul>
-      <aside className="sticky top-20 hidden h-[calc(100dvh_-_9rem)] overflow-hidden rounded-lg border border-neutral-gray1 sm:block">
+      <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-neutral-gray1 sm:block">
         {map}
       </aside>
     </div>
