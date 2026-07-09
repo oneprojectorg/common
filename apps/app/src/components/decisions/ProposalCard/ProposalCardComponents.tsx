@@ -414,12 +414,16 @@ export function ProposalCardPreview({
   const cardTranslation = useCardTranslation(proposal.profileId);
   const translatedPreview = cardTranslation?.preview;
 
+  // List payloads carry a server-computed `previewText`; other payloads
+  // (e.g. the single-proposal view) still ship the full documentContent,
+  // so fall back to the client-side fragment walk for those.
   const previewText =
     translatedPreview === undefined
-      ? getProposalContentPreview(
+      ? (proposal.previewText ??
+        getProposalContentPreview(
           proposal.documentContent,
           (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
-        )
+        ))
       : undefined;
 
   const displayText = translatedPreview ?? previewText;

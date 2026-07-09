@@ -142,6 +142,12 @@ export const proposalSchema = z.object({
   voteCount: z.number().optional(),
   allocated: z.string().nullable().optional(),
   proposalTemplate: z.record(z.string(), z.unknown()).nullable().optional(),
+  /**
+   * Server-computed plain-text preview of the document body. List reads ship
+   * this instead of the full `documentContent` fragments — the card's 3-line
+   * excerpt and the language-detection sample both read from it.
+   */
+  previewText: z.string().optional(),
   documentContent: documentContentSchema.optional(),
   htmlContent: z.record(z.string(), z.string()).optional(),
 });

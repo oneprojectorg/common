@@ -14,7 +14,7 @@ const MAX_SAMPLE_LENGTH = 2000;
 /** The proposal fields language detection reads. */
 type ProposalTextSource = Pick<
   Proposal,
-  'documentContent' | 'proposalTemplate' | 'htmlContent'
+  'previewText' | 'documentContent' | 'proposalTemplate' | 'htmlContent'
 >;
 
 const htmlToText = (html: string): string =>
@@ -23,14 +23,21 @@ const htmlToText = (html: string): string =>
 /**
  * Plain-text sample of a proposal's body, for language detection.
  *
- * Prefers `documentContent` (present on both the list and single-proposal
- * payloads, and what the cards render from) so the proposals list — which
- * doesn't carry `htmlContent` — is detected too. Falls back to the rendered
- * `htmlContent` when the collaboration document isn't available yet.
+ * Prefers the server-computed `previewText` (list payloads), then
+ * `documentContent` (single-proposal payloads, what the cards render from),
+ * and finally the rendered `htmlContent` when the collaboration document
+ * isn't available yet.
  */
 export const getProposalDetectionText = (
   proposal: ProposalTextSource,
 ): string => {
+  // List payloads carry the server-computed preview (already capped) —
+  // prefer it so no client-side fragment walk is needed.
+  const fromPreview = proposal.previewText?.trim() ?? '';
+  if (fromPreview) {
+    return fromPreview.slice(0, MAX_SAMPLE_LENGTH);
+  }
+
   const template =
     (proposal.proposalTemplate as ProposalTemplateSchema | null) ?? undefined;
   const fromDocument =

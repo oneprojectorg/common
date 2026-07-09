@@ -41,7 +41,9 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import { proposalProfileColumns } from './listProposals';
 import { parseProposalData } from './proposalDataSchema';
+import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
@@ -82,6 +84,14 @@ export const listAllProposals = async ({
   if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
+
+  // Template resolution depends only on the instance row — start it now so
+  // its (occasional) fallback DB read overlaps the access check and the main
+  // query instead of adding a serial barrier afterwards.
+  const proposalTemplatePromise = resolveProposalTemplate(
+    instance.instanceData as Record<string, unknown> | null,
+    instance.processId,
+  );
 
   const profileRoles = await assertInstanceProfileAccess({
     user,
@@ -201,6 +211,7 @@ export const listAllProposals = async ({
       },
       with: {
         submittedBy: {
+          columns: proposalProfileColumns,
           with: {
             avatarImage: true,
             profileUsers: {
@@ -209,7 +220,7 @@ export const listAllProposals = async ({
             },
           },
         },
-        profile: true,
+        profile: { columns: proposalProfileColumns },
       },
       limit: limit + 1, // Fetch one extra to check whether there's a next page.
       // `id` tie-break: without it, rows sharing the sort value are skipped at page boundaries.
@@ -228,10 +239,9 @@ export const listAllProposals = async ({
   const hasMore = proposalList.length > limit;
   const pageItems = hasMore ? proposalList.slice(0, limit) : proposalList;
 
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
-    instance.processId,
-  );
+  // Resolved from instanceData (falling back to processSchema) — the promise
+  // was started right after the instance fetch, so this await is usually free.
+  const proposalTemplate = await proposalTemplatePromise;
 
   const profileIds = pageItems
     .map((proposal) => proposal.profileId)
@@ -245,6 +255,10 @@ export const listAllProposals = async ({
           id: proposal.id,
           proposalData: proposal.proposalData,
           proposalTemplate,
+          // Everything here is submitted (drafts are excluded above), so the
+          // pinned version keys the immutable collab-doc cache.
+          collaborationDocVersionId: parseProposalData(proposal.proposalData)
+            .collaborationDocVersionId,
         })),
         // A single unavailable document must not break the whole list.
         { onFetchError: 'omit' },
@@ -281,10 +295,20 @@ export const listAllProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
+    // List rows ship a precomputed plain-text preview plus fragment-resolved
+    // system fields instead of the full document fragments.
+    const { previewText, systemFieldOverrides } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate,
+    });
+
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
-      proposalData: parseProposalData(proposal.proposalData),
+      proposalData: {
+        ...parseProposalData(proposal.proposalData),
+        ...systemFieldOverrides,
+      },
       status: proposal.status,
       visibility: proposal.visibility,
       createdAt: proposal.createdAt,
@@ -299,7 +323,7 @@ export const listAllProposals = async ({
       commentsCount: relationshipInfo?.commentsCount || 0,
       isSelected: selectedIds.has(proposal.id),
       isFlagged: flaggedIds.has(proposal.id),
-      documentContent: documentContentMap.get(proposal.id),
+      previewText: previewText ?? undefined,
       proposalTemplate,
     };
   });
