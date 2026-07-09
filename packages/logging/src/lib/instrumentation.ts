@@ -31,26 +31,14 @@ export function registerObservability({
   const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
   const isEdgeRuntime = process.env.NEXT_RUNTIME === 'edge';
 
-  // Per the OTel spec, the signal-specific vars take precedence over the
-  // generic ones and their endpoint is used verbatim (no /v1/logs appended).
-  // This lets logs ship to a different backend than traces/metrics — e.g.
-  // PostHog Logs (https://eu.i.posthog.com/i/v1/logs with an
-  // Authorization=Bearer <project-api-key> header) while traces/metrics stay
-  // on OTEL_EXPORTER_OTLP_ENDPOINT.
-  const logsEndpoint =
-    process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ??
-    (otelEndpoint ? `${otelEndpoint}/v1/logs` : undefined);
-  const logsHeaders =
-    parseHeaders(process.env.OTEL_EXPORTER_OTLP_LOGS_HEADERS) ?? headers;
-
   // Configure log export with edge runtime workaround
   // See: https://github.com/vercel/otel/issues/104
   // The workaround is to create our own LoggerProvider with empty logRecordLimits
   // to avoid "Cannot read properties of undefined (reading 'attributeCountLimit')" error
-  if (logsEndpoint) {
+  if (otelEndpoint) {
     const logExporter = new OTLPLogExporter({
-      url: logsEndpoint,
-      headers: logsHeaders,
+      url: `${otelEndpoint}/v1/logs`,
+      headers,
     });
 
     // Use SimpleLogRecordProcessor for edge (more compatible), BatchLogRecordProcessor for Node.js
