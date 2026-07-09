@@ -8,7 +8,7 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { OTLPHttpJsonTraceExporter, registerOTel } from '@vercel/otel';
+import { OTLPHttpProtoTraceExporter, registerOTel } from '@vercel/otel';
 import type { Instrumentation } from 'next';
 
 import { logger } from './logger';
@@ -54,9 +54,10 @@ export function registerObservability({
     logs.setGlobalLoggerProvider(loggerProvider);
   }
 
-  // Configure trace exporter
+  // Configure trace exporter. http/protobuf is the protocol PostHog's
+  // tracing docs specify (JSON is also documented as accepted).
   const traceExporter = otelEndpoint
-    ? new OTLPHttpJsonTraceExporter({
+    ? new OTLPHttpProtoTraceExporter({
         url: `${otelEndpoint}/v1/traces`,
         headers,
       })
