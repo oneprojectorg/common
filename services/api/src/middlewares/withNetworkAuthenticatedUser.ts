@@ -1,4 +1,5 @@
 import { AccessTierError, getNetworkMembership } from '@op/common';
+import { setLogDistinctId } from '@op/logging';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -17,6 +18,8 @@ const withNetworkAuthenticatedUser: MiddlewareBuilderBase<
   const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data);
+
+  setLogDistinctId(user.id);
 
   const isMember = await getNetworkMembership(user.email);
 

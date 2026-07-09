@@ -1,15 +1,18 @@
 // import type { User } from '@op/supabase/lib';
-import { logger as opLogger } from '@op/logging';
+import { logger as opLogger, withLogContext } from '@op/logging';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
+// withLogContext opens the request-scoped log context that the auth
+// middlewares later stamp with the caller's PostHog distinct id — wrapping
+// the whole body keeps even the post-`next()` failure logs person-linked.
 const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   ctx,
   path,
   type,
   next,
-}) => {
+}) => withLogContext(async () => {
   const start = Date.now();
   const logger = {
     debug: (message: string, data?: Record<string, unknown>) => {
@@ -96,6 +99,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   }
 
   return result;
-};
+});
 
 export default withLogger;
