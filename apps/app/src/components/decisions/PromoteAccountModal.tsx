@@ -72,7 +72,9 @@ const PromoteAccountModalContent = ({
   // abandoned anon draft.
   const goToLogin = () => {
     // Proposal routes hang off /decisions/[slug], not the /current tab.
-    const base = window.location.pathname.replace(/\/current$/, '');
+    const base = window.location.pathname
+      .replace(/\/+$/, '')
+      .replace(/\/current$/, '');
     const redirect = proposalId ? `${base}/proposal/${proposalId}` : base;
     window.location.assign(
       `/login?link=1&redirect=${encodeURIComponent(redirect)}`,
