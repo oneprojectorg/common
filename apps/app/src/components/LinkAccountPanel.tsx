@@ -79,10 +79,17 @@ export const LinkAccountPanel = () => {
     setIsSubmitting(true);
     setLinkError(undefined);
 
+    // isSubmitting stays true through goAfterLink so the form can't be
+    // re-submitted while window.location is unloading the page.
     try {
       const result = await requestEmailCode(email);
       if (!result.ok) {
-        setLinkError(result.message);
+        setLinkError(
+          result.alreadySignedIn
+            ? t("You're already signed in. Reload the page to continue.")
+            : (result.message ?? t("That didn't work")),
+        );
+        setIsSubmitting(false);
         return;
       }
       if (!result.needsOtp) {
@@ -90,7 +97,9 @@ export const LinkAccountPanel = () => {
         return;
       }
       setLoginSuccess(true);
-    } finally {
+      setIsSubmitting(false);
+    } catch {
+      setLinkError(t("That didn't work"));
       setIsSubmitting(false);
     }
   };
@@ -105,13 +114,15 @@ export const LinkAccountPanel = () => {
       const result = await verifyEmailCode({ email, token });
       if (result.ok) {
         // Freshly upgraded from anonymous — send them through onboarding.
+        // isSubmitting stays true while the page unloads.
         goAfterLink();
         return;
       }
       setTokenError(result.message ?? t('Failed to verify code'));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      setTokenError(t('Failed to verify code'));
     }
+    setIsSubmitting(false);
   }, [
     email,
     token,

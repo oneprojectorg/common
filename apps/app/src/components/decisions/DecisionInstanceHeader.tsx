@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
@@ -17,7 +17,10 @@ import { Link } from '@/lib/i18n/routing';
 import { LocaleChooser } from '../LocaleChooser';
 import { HeaderUserMenu } from '../SiteHeader';
 import { SupportLink } from '../SupportLink';
-import { JoinDecisionButton } from './JoinAccountModal';
+import {
+  JoinDecisionButton,
+  JoinDecisionButtonFallback,
+} from './JoinAccountModal';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
@@ -136,15 +139,7 @@ export const DecisionInstanceHeader = ({
           {canJoin && (!user || user.isAnonymous) ? (
             // The button reads/writes `?join` via nuqs (useSearchParams), so it
             // needs the same Suspense treatment as the updates toggle above.
-            // The fallback is an inert copy so the static shell shows the same
-            // button.
-            <Suspense
-              fallback={
-                <Button color="primary" size="small">
-                  {t('Join')}
-                </Button>
-              }
-            >
+            <Suspense fallback={<JoinDecisionButtonFallback />}>
               <JoinDecisionButton />
             </Suspense>
           ) : (

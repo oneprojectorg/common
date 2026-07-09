@@ -2,13 +2,15 @@
 
 import { useClaimAccount } from '@/hooks/useClaimAccount';
 import { useUser } from '@/utils/UserProvider';
-import { Button } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
+import { headingClasses } from '@op/styles/constants';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal } from '@op/ui/Modal';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
+import { Heading } from 'react-aria-components';
+import { LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,16 +42,17 @@ export const JoinAccountModal = ({ canJoin }: { canJoin: boolean }) => {
     <Modal
       isOpen={isOpen}
       onOpenChange={(open) => (open ? null : close())}
+      isDismissable
       className="sm:max-w-[29rem]"
     >
-      <JoinAccountModalContent />
+      <JoinAccountModalContent onClose={close} />
     </Modal>
   );
 };
 
 /** Header button that opens the modal. Reads/writes `?join` via nuqs, so any
  * mount point must sit under a Suspense boundary (useSearchParams). */
-export const JoinDecisionButton = ({ className }: { className?: string }) => {
+export const JoinDecisionButton = () => {
   const t = useTranslations();
   const [, setJoin] = useQueryState('join');
 
@@ -57,7 +60,6 @@ export const JoinDecisionButton = ({ className }: { className?: string }) => {
     <Button
       color="primary"
       size="small"
-      className={className}
       onPress={() => {
         void setJoin('1');
       }}
@@ -67,9 +69,23 @@ export const JoinDecisionButton = ({ className }: { className?: string }) => {
   );
 };
 
+/**
+ * Suspense fallback for JoinDecisionButton in the prerendered shell: a plain
+ * link so the button works even before hydration (nuqs takes over after).
+ */
+export const JoinDecisionButtonFallback = () => {
+  const t = useTranslations();
+
+  return (
+    <ButtonLink href="?join=1" color="primary" size="small">
+      {t('Join')}
+    </ButtonLink>
+  );
+};
+
 const emailParser = z.email();
 
-const JoinAccountModalContent = () => {
+const JoinAccountModalContent = ({ onClose }: { onClose: () => void }) => {
   const t = useTranslations();
   const { requestEmailCode, verifyEmailCode, goToOnboarding } =
     useClaimAccount();
@@ -98,10 +114,17 @@ const JoinAccountModalContent = () => {
     setIsSubmitting(true);
     setError(undefined);
 
+    // Deliberately left submitting through the success-navigation path so the
+    // form can't be re-submitted while window.location is unloading the page.
     try {
-      const result = await requestEmailCode(email);
+      const result = await requestEmailCode(email, { mintAnonSession: true });
       if (!result.ok) {
-        setError(result.message);
+        setError(
+          result.alreadySignedIn
+            ? t("You're already signed in. Reload the page to continue.")
+            : (result.message ?? t("That didn't work")),
+        );
+        setIsSubmitting(false);
         return;
       }
       if (!result.needsOtp) {
@@ -109,7 +132,9 @@ const JoinAccountModalContent = () => {
         return;
       }
       setOtpSent(true);
-    } finally {
+      setIsSubmitting(false);
+    } catch {
+      setError(t("That didn't work"));
       setIsSubmitting(false);
     }
   };
@@ -129,9 +154,10 @@ const JoinAccountModalContent = () => {
         return;
       }
       setError(result.message ?? t('Failed to verify code'));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      setError(t('Failed to verify code'));
     }
+    setIsSubmitting(false);
   };
 
   const goBack = () => {
@@ -145,11 +171,26 @@ const JoinAccountModalContent = () => {
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
 
   return (
-    <div className="flex flex-col gap-6 p-8 text-center sm:px-12 sm:py-12">
+    <div className="relative flex flex-col gap-6 p-8 text-center sm:px-12 sm:py-12">
+      <button
+        type="button"
+        aria-label={t('Close')}
+        onClick={onClose}
+        className="absolute end-4 top-4 flex size-6 cursor-pointer items-center justify-center rounded-md text-neutral-charcoal outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+      >
+        <LuX className="size-5" aria-hidden />
+      </button>
+
       <div className="flex flex-col gap-2">
-        <Header1>
+        {/* RAC Heading wires the dialog's accessible name (aria-labelledby);
+            level 2 avoids a second h1 on the page. */}
+        <Heading
+          slot="title"
+          level={2}
+          className={`${headingClasses.h1} text-neutral-black`}
+        >
           {otpSent ? t('Email sent!') : t('Claim your account')}
-        </Header1>
+        </Heading>
         <p className="text-base text-neutral-charcoal">
           {otpSent
             ? t(
@@ -162,7 +203,13 @@ const JoinAccountModalContent = () => {
         </p>
       </div>
 
-      {error ? <p className="text-sm text-functional-red">{error}</p> : null}
+      {/* role="alert" so async claim errors are announced while focus stays on
+          the submit button. */}
+      {error ? (
+        <p role="alert" className="text-sm text-functional-red">
+          {error}
+        </p>
+      ) : null}
 
       {otpSent ? (
         <div className="flex flex-col gap-3 text-start">
@@ -194,6 +241,7 @@ const JoinAccountModalContent = () => {
           <div className="text-start">
             <AuthEmailField
               label={t('Email')}
+              // Example-email placeholders are deliberately untranslated.
               placeholder="your@email.com"
               value={email}
               isDisabled={isSubmitting}
