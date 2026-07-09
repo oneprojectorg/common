@@ -71,7 +71,8 @@ const PromoteAccountModalContent = ({
   // collision error in LinkAccountPanel — route "Log in" to /login and handle the
   // abandoned anon draft.
   const goToLogin = () => {
-    const base = window.location.pathname;
+    // Proposal routes hang off /decisions/[slug], not the /current tab.
+    const base = window.location.pathname.replace(/\/current$/, '');
     const redirect = proposalId ? `${base}/proposal/${proposalId}` : base;
     window.location.assign(
       `/login?link=1&redirect=${encodeURIComponent(redirect)}`,
