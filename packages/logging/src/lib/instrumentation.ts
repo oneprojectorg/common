@@ -3,11 +3,16 @@ import { logs } from '@opentelemetry/api-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
+import {
   BatchLogRecordProcessor,
   LoggerProvider,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { OTLPHttpProtoTraceExporter, registerOTel } from '@vercel/otel';
 import type { Instrumentation } from 'next';
 
@@ -30,6 +35,7 @@ export function registerObservability({
   const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
   const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
   const isEdgeRuntime = process.env.NEXT_RUNTIME === 'edge';
+  const serviceName = process.env.OTEL_SERVICE_NAME || defaultServiceName;
 
   // Configure log export with edge runtime workaround
   // See: https://github.com/vercel/otel/issues/104
@@ -50,6 +56,11 @@ export function registerObservability({
       // Empty logRecordLimits is the workaround for edge runtime bug
       logRecordLimits: {},
       processors: [logProcessor],
+      // registerOTel only sets the resource on its own trace/metric
+      // providers; without this, log records ship as `unknown_service:node`
+      resource: defaultResource().merge(
+        resourceFromAttributes({ [ATTR_SERVICE_NAME]: serviceName }),
+      ),
     });
     logs.setGlobalLoggerProvider(loggerProvider);
   }
@@ -78,7 +89,7 @@ export function registerObservability({
       : undefined;
 
   registerOTel({
-    serviceName: process.env.OTEL_SERVICE_NAME || defaultServiceName,
+    serviceName,
     // Don't pass logRecordProcessors - we've already set up our own LoggerProvider above
     traceExporter,
     metricReaders,
