@@ -228,6 +228,9 @@ const legacyProposalEncoder = createSelectSchema(proposals)
     voteCount: z.number().optional(),
     // Allocated amount (for results)
     allocated: z.string().nullable().optional(),
+    // Server-computed plain-text preview — list-shaped reads (getInstanceResults
+    // flows through listProposals) ship this instead of documentContent.
+    previewText: z.string().optional(),
     // Document content (TipTap JSON or legacy HTML)
     documentContent: documentContentSchema.optional(),
   });
