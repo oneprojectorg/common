@@ -36,6 +36,9 @@ const DecisionViewLayout = async ({
   // loadDecision already returned (no separate getInstance fetch).
   const isActive = hasFirstPhaseStarted(instance?.instanceData?.phases);
   const access = instance?.access;
+  // A viewer who can submit proposals without an account is on a "public"
+  // process — the header offers Join (account claim) instead of Log in.
+  const canJoin = access?.submitProposals === true;
 
   return (
     <DecisionTranslationProvider>
@@ -48,10 +51,7 @@ const DecisionViewLayout = async ({
           decisionSlug={slug}
           isAdmin={access?.admin}
           canReadUpdates={access?.admin === true || access?.read === true}
-          // A viewer who can submit proposals without an account is on a
-          // "public" process — the header offers Join (account claim) instead
-          // of Log in. Full accounts still get the avatar menu.
-          canJoin={access?.submitProposals === true}
+          canJoin={canJoin}
           profileName={decisionProfile.name}
           // Pass the instance so the header renders from props (no client
           // getInstance query on this route).
@@ -96,7 +96,7 @@ const DecisionViewLayout = async ({
        * the param via nuqs, hence the Suspense (see the side panel comment).
        */}
       <Suspense fallback={null}>
-        <JoinAccountModal canJoin={access?.submitProposals === true} />
+        <JoinAccountModal canJoin={canJoin} />
       </Suspense>
     </DecisionTranslationProvider>
   );
