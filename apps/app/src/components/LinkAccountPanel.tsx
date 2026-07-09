@@ -1,8 +1,8 @@
 'use client';
 
+import { useClaimAccount } from '@/hooks/useClaimAccount';
 import { isSafeRedirectPath } from '@op/common/client';
 import { useMount } from '@op/hooks';
-import { createSBBrowserClient } from '@op/supabase/client';
 import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -29,8 +29,9 @@ import {
  * TODO(anon-upgrade): Google identity linking is deferred; email + OTP only.
  */
 export const LinkAccountPanel = () => {
-  const supabase = createSBBrowserClient();
   const t = useTranslations();
+  const { requestEmailCode, verifyEmailCode, goToOnboarding } =
+    useClaimAccount();
 
   const { mounted } = useMount();
   const searchParams = useSearchParams();
@@ -65,15 +66,12 @@ export const LinkAccountPanel = () => {
   // After linking, route through onboarding with the page to return to.
   // `redirectParam` carries the locale prefix the locale-less /login route lacks.
   const goAfterLink = useCallback(() => {
-    const dest = isSafeRedirectPath(redirectParam) ? redirectParam : '/';
-    const locale = dest.split('/')[1] || 'en';
-    window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(dest)}`;
-  }, [redirectParam]);
+    goToOnboarding(redirectParam);
+  }, [goToOnboarding, redirectParam]);
 
-  // `updateUser({ email })` attaches the email to the anon user. With email
-  // confirmations on it sends an OTP (→ code screen); with them off the change
-  // applies immediately, so we refresh the session and continue.
-  const requestEmailCode = async () => {
+  // Attach the email to the anon user (see useClaimAccount). OTP sent → code
+  // screen; applied immediately (confirmations off) → straight to onboarding.
+  const submitEmail = async () => {
     if (isSubmitting) {
       return;
     }
@@ -82,18 +80,12 @@ export const LinkAccountPanel = () => {
     setLinkError(undefined);
 
     try {
-      // TODO(anon-upgrade): updateUser fails if this email already belongs to
-      // another account; we surface the raw Supabase error for now.
-      // Productionize with a friendly "that account already exists" path.
-      const { data, error } = await supabase.auth.updateUser({ email });
-      if (error) {
-        setLinkError(error.message);
+      const result = await requestEmailCode(email);
+      if (!result.ok) {
+        setLinkError(result.message);
         return;
       }
-      // No pending change + email already set ⇒ applied immediately (no OTP).
-      if (data.user?.email === email && !data.user?.new_email) {
-        // Refresh so the token drops its stale anonymous claims before we nav.
-        await supabase.auth.refreshSession();
+      if (!result.needsOtp) {
         goAfterLink();
         return;
       }
@@ -110,23 +102,25 @@ export const LinkAccountPanel = () => {
 
     setIsSubmitting(true);
     try {
-      // Link mode confirms an email *change* on the anon user.
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email_change',
-      });
-
-      if (data.user && data.session && data.user.role === 'authenticated') {
+      const result = await verifyEmailCode({ email, token });
+      if (result.ok) {
         // Freshly upgraded from anonymous — send them through onboarding.
         goAfterLink();
         return;
       }
-      setTokenError(error?.message ?? t('Failed to verify code'));
+      setTokenError(result.message ?? t('Failed to verify code'));
     } finally {
       setIsSubmitting(false);
     }
-  }, [email, token, isSubmitting, goAfterLink, setTokenError, supabase, t]);
+  }, [
+    email,
+    token,
+    isSubmitting,
+    goAfterLink,
+    setTokenError,
+    verifyEmailCode,
+    t,
+  ]);
 
   // "Go back" from the code screen returns to email entry without losing the
   // anon session (only the success/token state is cleared).
@@ -256,7 +250,7 @@ export const LinkAccountPanel = () => {
             setEmail(val);
           }}
           onSubmit={() => {
-            void requestEmailCode();
+            void submitEmail();
           }}
         />
         <Button
@@ -264,7 +258,7 @@ export const LinkAccountPanel = () => {
           className="flex w-full items-center justify-center"
           isDisabled={isSubmitting || !emailIsValid}
           onPress={() => {
-            void requestEmailCode();
+            void submitEmail();
           }}
         >
           {isSubmitting ? <LoadingSpinner /> : t('Continue')}

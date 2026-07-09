@@ -1396,5 +1396,8 @@
   "Already have an account? <login>Log in</login>": "Already have an account? <login>Log in</login>",
   "A code was sent to {email}. Type the code below to create your profile.": "A code was sent to {email}. Type the code below to create your profile.",
   "Create profile": "Create profile",
-  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>."
+  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.",
+  "Claim your account": "Claim your account",
+  "Join": "Join",
+  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions."
 }

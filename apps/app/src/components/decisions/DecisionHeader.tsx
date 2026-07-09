@@ -30,6 +30,12 @@ interface StandardDecisionHeaderProps extends DecisionHeaderBaseProps {
   useLegacy?: false;
   /** Whether the current user can read decision updates */
   canReadUpdates?: boolean;
+  /**
+   * Public process (viewer can submit proposals without an account): the
+   * header offers "Join" (account claim) instead of "Log in" to logged-out
+   * and anonymous visitors.
+   */
+  canJoin?: boolean;
   /** Center-column content, e.g. the Overview / Current Phase toggle */
   centerSlot?: ReactNode;
   /** Whether to render the phase stepper below the header bar (default true) */
@@ -108,6 +114,7 @@ function DecisionHeaderView({
   decisionSlug,
   isAdmin,
   canReadUpdates,
+  canJoin,
   centerSlot,
   showStepper = true,
   title,
@@ -135,6 +142,7 @@ function DecisionHeaderView({
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
+        canJoin={canJoin}
         centerSlot={centerSlot}
         mobileAdminBar={
           showAdminControls && decisionSlug ? (
@@ -170,6 +178,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   return (
     <DecisionHeaderView
       {...props}
+      canJoin={props.canJoin ?? instance.access?.submitProposals === true}
       title={
         props.profileName ||
         instance.name ||

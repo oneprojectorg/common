@@ -4,6 +4,7 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
+import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
@@ -47,6 +48,10 @@ const DecisionViewLayout = async ({
           decisionSlug={slug}
           isAdmin={access?.admin}
           canReadUpdates={access?.admin === true || access?.read === true}
+          // A viewer who can submit proposals without an account is on a
+          // "public" process — the header offers Join (account claim) instead
+          // of Log in. Full accounts still get the avatar menu.
+          canJoin={access?.submitProposals === true}
           profileName={decisionProfile.name}
           // Pass the instance so the header renders from props (no client
           // getInstance query on this route).
@@ -84,6 +89,14 @@ const DecisionViewLayout = async ({
        */}
       <Suspense fallback={null}>
         <PromoteAccountModal />
+      </Suspense>
+      {/*
+       * Header "Join" modal (account claim on public processes). Mounted in the
+       * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
+       * the param via nuqs, hence the Suspense (see the side panel comment).
+       */}
+      <Suspense fallback={null}>
+        <JoinAccountModal canJoin={access?.submitProposals === true} />
       </Suspense>
     </DecisionTranslationProvider>
   );
