@@ -157,10 +157,11 @@
    * the Tailwind `--color-*` layer), so sense needs them declared regardless
    * of what shared-styles/intent-ui-theme also declares.
    * Values track the Common Sense Figma library: border = gray-1,
-   * input (form control borders) = gray-2. */
+   * input (form control borders) = gray-2, focus border/ring = gray-3
+   * (components apply the ring at 50% opacity). */
   --border: var(--color-neutral-gray-1);
   --input: var(--color-neutral-gray-2);
-  --ring: var(--color-primary);
+  --ring: var(--color-neutral-gray-3);
 
   /* `--radius` is the base radius shadcn primitives derive their scale from
    * (and consume directly, e.g. `rounded-[var(--radius)]`). Safe to declare
