@@ -25,7 +25,10 @@ import { type RefObject, Suspense, useCallback, useMemo } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { MobileViewSwitch } from './MobileViewSwitch';
-import { ProposalListSkeletonGrid } from './ProposalListSkeleton';
+import {
+  ProposalListSkeletonGrid,
+  ProposalMapListSkeleton,
+} from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { ProposalsGrid } from './ProposalsGrid';
@@ -543,13 +546,21 @@ const ProposalsListContent = ({
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && shouldShowTrigger && (
+      {shouldShowTrigger && (
         <div
           ref={infiniteScrollRef}
-          className="py-4"
+          // Mobile map view is a fullscreen map with no list — hide the
+          // sentinel there so it can't add stray space or fetch unseen pages.
+          className={cn('py-4', isMapMode && 'max-sm:hidden')}
           data-testid="proposals-infinite-scroll-sentinel"
         >
-          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
+          {isFetchingNextPage ? (
+            isMapMode ? (
+              <ProposalMapListSkeleton />
+            ) : (
+              <ProposalListSkeletonGrid />
+            )
+          ) : null}
         </div>
       )}
 
