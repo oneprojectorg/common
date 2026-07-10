@@ -435,6 +435,20 @@ const ProposalsListContent = ({
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
+  // One sentinel definition for both views — map mode renders it inside the
+  // list column (via listFooter), grid mode below the grid. Only the loading
+  // skeleton differs.
+  const renderScrollSentinel = (skeleton: React.ReactNode) =>
+    shouldShowTrigger ? (
+      <div
+        ref={infiniteScrollRef}
+        className="py-4"
+        data-testid="proposals-infinite-scroll-sentinel"
+      >
+        {isFetchingNextPage ? skeleton : null}
+      </div>
+    ) : null;
+
   return (
     <div
       className={cn(
@@ -490,17 +504,7 @@ const ProposalsListContent = ({
               decisionSlug={decisionSlug}
               permissions={permissions}
               mapView={mapView}
-              listFooter={
-                shouldShowTrigger ? (
-                  <div
-                    ref={infiniteScrollRef}
-                    className="py-4"
-                    data-testid="proposals-infinite-scroll-sentinel"
-                  >
-                    {isFetchingNextPage ? <ProposalCardSkeleton /> : null}
-                  </div>
-                ) : null
-              }
+              listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
             />
           ) : (
             // Local boundaries keep the pin query from suspending / erroring
@@ -532,17 +536,7 @@ const ProposalsListContent = ({
                     votedByProfileId: queryParams.votedByProfileId,
                     status: queryParams.status,
                   }}
-                  listFooter={
-                    shouldShowTrigger ? (
-                      <div
-                        ref={infiniteScrollRef}
-                        className="py-4"
-                        data-testid="proposals-infinite-scroll-sentinel"
-                      >
-                        {isFetchingNextPage ? <ProposalCardSkeleton /> : null}
-                      </div>
-                    ) : null
-                  }
+                  listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -568,15 +562,7 @@ const ProposalsListContent = ({
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && shouldShowTrigger && (
-        <div
-          ref={infiniteScrollRef}
-          className="py-4"
-          data-testid="proposals-infinite-scroll-sentinel"
-        >
-          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
-        </div>
-      )}
+      {!isMapMode && renderScrollSentinel(<ProposalListSkeletonGrid />)}
 
       {translation.showBanner && (
         <TranslateBanner

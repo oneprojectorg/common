@@ -198,7 +198,7 @@ export function ProposalsMapView({
             onDeactivate={() => setActiveId(null)}
           />
         ))}
-        {listFooter && <li className="list-none">{listFooter}</li>}
+        {listFooter && <li>{listFooter}</li>}
       </ul>
       <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-neutral-gray1 sm:block">
         {map}
