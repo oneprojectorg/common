@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type RefCallback, useEffect, useState } from 'react';
 
 interface UseIntersectionObserverOptions {
   threshold?: number;
@@ -33,7 +33,9 @@ export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
     if (!enabled || !node) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        // Entries are chronological; only the newest reflects current state.
+        const entry = entries[entries.length - 1];
         if (entry) {
           setIsIntersecting(entry.isIntersecting);
         }
@@ -48,8 +50,16 @@ export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
 
     return () => {
       observer.disconnect();
+      // Without a live observer nothing can correct a frozen `true`, and a
+      // stale intersecting state re-triggers consumers (e.g. a spurious
+      // fetchNextPage) the moment they re-enable.
+      setIsIntersecting(initialIsIntersecting);
     };
-  }, [node, threshold, rootMargin, enabled]);
+  }, [node, threshold, rootMargin, enabled, initialIsIntersecting]);
 
-  return { ref: setNode, isIntersecting };
+  // Typed as a plain callback ref so the state-setter implementation detail
+  // doesn't leak into consumers' prop types.
+  const ref: RefCallback<T> = setNode;
+
+  return { ref, isIntersecting };
 };
