@@ -20,7 +20,7 @@ import {
 import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/ui/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
-import { type RefObject, Suspense, useCallback, useMemo } from 'react';
+import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -90,7 +90,7 @@ type ProposalsLoaderRenderProps = {
   total: number;
   isFetchingNextPage: boolean;
   shouldShowTrigger: boolean;
-  infiniteScrollRef: RefObject<HTMLDivElement | null>;
+  infiniteScrollRef: RefCallback<HTMLDivElement>;
 };
 
 const useProposalsLoaderRenderProps = (

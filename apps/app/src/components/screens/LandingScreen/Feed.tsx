@@ -90,7 +90,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
       ))}
 
       {allPosts.length > 0 && shouldShowTrigger && (
-        <div ref={ref as React.RefObject<HTMLDivElement>}>
+        <div ref={ref}>
           {isFetchingNextPage && <PostFeedSkeleton numPosts={1} />}
         </div>
       )}

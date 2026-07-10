@@ -57,10 +57,7 @@ export const AllOrganizationsSuspense = ({
     <div className="flex flex-col gap-4">
       <ProfileSummaryList profiles={allProfiles} />
       {shouldShowTrigger && (
-        <div
-          ref={ref as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
+        <div ref={ref} className="flex justify-center py-4">
           {isFetchingNextPage ? (
             <div className="text-sm text-neutral-gray4">
               <SkeletonLine lines={3} />
