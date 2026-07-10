@@ -96,4 +96,105 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
       })
       .toBe(TOTAL_PROPOSALS);
   });
+
+  /**
+   * Map browse mode renders the sentinel inside the list column, and that
+   * column mounts late — behind the Suspense boundary around the map's pin
+   * query — so this guards the callback-ref observer attach in
+   * `useIntersectionObserver` (a ref-object observer set up before the
+   * sentinel mounts never fires; see the map-view infinite scroll fix).
+   */
+  test('map view list column loads remaining proposals when scrolling', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    test.setTimeout(120_000);
+
+    const process = await createDecisionProcess({
+      createdByProfileId: org.organizationProfile.id,
+      name: `Infinite Scroll Map Listing ${Date.now()}`,
+    });
+
+    // A template with a location field puts the process in map browse mode
+    // (map is the default view when the template collects a location).
+    const { instance, slug, name } = await createDecisionInstance({
+      processId: process.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: process.processSchema,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title', 'location'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          location: {
+            type: 'object',
+            title: 'Location',
+            'x-format': 'location',
+          },
+        },
+      },
+    });
+
+    // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
+    const PAGE_LIMIT = 51;
+    const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
+
+    for (let i = 1; i <= TOTAL_PROPOSALS; i++) {
+      await createProposal({
+        processInstanceId: instance.id,
+        submittedByProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          title: `Proposal ${i}`,
+          collaborationDocId: MOCK_DOC_ID,
+        },
+      });
+    }
+
+    await authenticatedPage.goto(
+      `/en/decisions/${slug}/current?filter=all&view=map`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
+    ).toBeVisible({
+      timeout: 30_000,
+    });
+
+    const proposalLink = authenticatedPage.getByRole('link', {
+      name: MOCK_PROPOSAL_TITLE,
+    });
+
+    // First page lands at PAGE_LIMIT — proving the list column is paginated,
+    // not the full set.
+    await expect(proposalLink.first()).toBeVisible({ timeout: 30_000 });
+    await expect
+      .poll(() => proposalLink.count(), {
+        timeout: 30_000,
+        message: 'first page should load PAGE_LIMIT proposals',
+      })
+      .toBe(PAGE_LIMIT);
+
+    // The map column is sticky; the list column drives page height, so pulling
+    // the last card into view brings the in-column sentinel into the viewport.
+    await proposalLink.last().scrollIntoViewIfNeeded();
+
+    await expect
+      .poll(() => proposalLink.count(), {
+        timeout: 30_000,
+        message:
+          'after scrolling the list column, all proposals across pages should render',
+      })
+      .toBe(TOTAL_PROPOSALS);
+  });
 });
