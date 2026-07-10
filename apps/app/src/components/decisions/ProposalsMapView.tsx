@@ -1,6 +1,7 @@
 'use client';
 
-import type { DecisionAccess } from '@op/api/encoders';
+import { trpc } from '@op/api/client';
+import type { DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
@@ -14,8 +15,23 @@ import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
 
+/** Filter for the all-locations pin query — shared with the list, minus the
+ * list-only pagination fields (the map returns every located proposal). */
+interface ProposalLocationFilter {
+  processInstanceId: string;
+  categoryId?: string;
+  submittedByProfileId?: string;
+  votedByProfileId?: string;
+  status?: ProposalStatus;
+  phase?: 'results';
+}
+
 interface ProposalsMapViewProps {
+  /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
+  /** Marker source. Every located proposal the pins should plot, which can be
+   * a wider set than `proposals` (the loaded list pages). */
+  pinProposals: Proposal[];
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links. */
@@ -39,6 +55,7 @@ interface ProposalsMapViewProps {
 // fallow-ignore-next-line complexity
 export function ProposalsMapView({
   proposals,
+  pinProposals,
   instanceId,
   slug,
   decisionSlug,
@@ -64,19 +81,21 @@ export function ProposalsMapView({
   // One marker per proposal with coordinates (drafts may lack one).
   const points = useMemo(
     () =>
-      proposals.flatMap((proposal) => {
+      pinProposals.flatMap((proposal) => {
         const location = parseProposalData(proposal.proposalData).location;
         return location
           ? [{ id: proposal.id, lng: location.lng, lat: location.lat }]
           : [];
       }),
-    [proposals],
+    [pinProposals],
   );
 
   // O(1) lookup so the click handler + hovercard renderer don't scan per call.
+  // Keyed off the full pin set so pins beyond the loaded list pages still
+  // resolve a proposal for navigation and their hovercard.
   const proposalsById = useMemo(
-    () => new Map(proposals.map((proposal) => [proposal.id, proposal])),
-    [proposals],
+    () => new Map(pinProposals.map((proposal) => [proposal.id, proposal])),
+    [pinProposals],
   );
 
   // Desktop: tap navigates immediately. Mobile: first tap shows the
@@ -180,4 +199,28 @@ export function ProposalsMapView({
       </aside>
     </div>
   );
+}
+
+/**
+ * Loads every located proposal in scope from `listProposalLocations` and feeds
+ * them to the map as pins, so the map isn't capped by the list's page size.
+ * Used for the phase-scoped browse map; the results phase renders
+ * `ProposalsMapView` directly with its `listAllProposals` data so the pins
+ * match that list's (phase-agnostic) scope.
+ */
+export function ProposalsMapWithLocations({
+  locationFilter,
+  ...props
+}: Omit<ProposalsMapViewProps, 'pinProposals'> & {
+  locationFilter: ProposalLocationFilter;
+}) {
+  const [{ proposals: pinProposals }] =
+    trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
+      staleTime: 30 * 1000,
+      // Force a client-side fetch so the query registers its invalidation
+      // channel via the client link (same pattern as the list query).
+      refetchOnMount: 'always',
+    });
+
+  return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
