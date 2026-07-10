@@ -42,6 +42,10 @@ interface ProposalsMapViewProps {
   /** Fallback camera — the process's default view, used only when no proposal
    * has a location to fit. */
   mapView: MapDefaultView;
+  /** Rendered after the last list item on desktop — hosts the infinite-scroll
+   * sentinel inside the list column so loading more never adds space below
+   * the sticky map. Mobile (map only, no list) never renders it. */
+  listFooter?: React.ReactNode;
 }
 
 /**
@@ -61,6 +65,7 @@ export function ProposalsMapView({
   decisionSlug,
   permissions,
   mapView,
+  listFooter,
 }: ProposalsMapViewProps) {
   const canManageProposals = permissions?.admin ?? false;
   const t = useTranslations();
@@ -193,6 +198,7 @@ export function ProposalsMapView({
             onDeactivate={() => setActiveId(null)}
           />
         ))}
+        {listFooter && <li className="list-none">{listFooter}</li>}
       </ul>
       <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-neutral-gray1 sm:block">
         {map}

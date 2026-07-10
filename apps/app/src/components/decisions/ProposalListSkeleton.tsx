@@ -1,17 +1,6 @@
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 
-/** Loading state for the map view's list column — mirrors the map view's
- * grid template so the skeleton cards line up under the list, not the map. */
-export const ProposalMapListSkeleton = () => (
-  <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-    <div className="flex min-w-0 flex-col gap-6">
-      <ProposalCardSkeleton />
-      <ProposalCardSkeleton />
-    </div>
-  </div>
-);
-
 export const ProposalListSkeletonGrid = () => (
   <div className="columns-1 gap-6 md:columns-2 lg:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
     {Array.from({ length: 6 }).map((_, index) => (
@@ -40,7 +29,7 @@ export const ProposalListSkeleton = () => {
   );
 };
 
-const ProposalCardSkeleton = () => {
+export const ProposalCardSkeleton = () => {
   return (
     <Surface className="relative w-full space-y-3 p-4 pb-4">
       {/* Header with title and budget skeleton */}

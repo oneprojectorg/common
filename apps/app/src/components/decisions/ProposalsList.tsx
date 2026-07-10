@@ -26,8 +26,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { MobileViewSwitch } from './MobileViewSwitch';
 import {
+  ProposalCardSkeleton,
   ProposalListSkeletonGrid,
-  ProposalMapListSkeleton,
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
@@ -490,6 +490,17 @@ const ProposalsListContent = ({
               decisionSlug={decisionSlug}
               permissions={permissions}
               mapView={mapView}
+              listFooter={
+                shouldShowTrigger ? (
+                  <div
+                    ref={infiniteScrollRef}
+                    className="py-4"
+                    data-testid="proposals-infinite-scroll-sentinel"
+                  >
+                    {isFetchingNextPage ? <ProposalCardSkeleton /> : null}
+                  </div>
+                ) : null
+              }
             />
           ) : (
             // Local boundaries keep the pin query from suspending / erroring
@@ -521,6 +532,17 @@ const ProposalsListContent = ({
                     votedByProfileId: queryParams.votedByProfileId,
                     status: queryParams.status,
                   }}
+                  listFooter={
+                    shouldShowTrigger ? (
+                      <div
+                        ref={infiniteScrollRef}
+                        className="py-4"
+                        data-testid="proposals-infinite-scroll-sentinel"
+                      >
+                        {isFetchingNextPage ? <ProposalCardSkeleton /> : null}
+                      </div>
+                    ) : null
+                  }
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -546,21 +568,13 @@ const ProposalsListContent = ({
         )}
       </ProposalTranslationProvider>
 
-      {shouldShowTrigger && (
+      {!isMapMode && shouldShowTrigger && (
         <div
           ref={infiniteScrollRef}
-          // Mobile map view is a fullscreen map with no list — hide the
-          // sentinel there so it can't add stray space or fetch unseen pages.
-          className={cn('py-4', isMapMode && 'max-sm:hidden')}
+          className="py-4"
           data-testid="proposals-infinite-scroll-sentinel"
         >
-          {isFetchingNextPage ? (
-            isMapMode ? (
-              <ProposalMapListSkeleton />
-            ) : (
-              <ProposalListSkeletonGrid />
-            )
-          ) : null}
+          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
         </div>
       )}
 
