@@ -7,6 +7,7 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { useCallback } from 'react';
 
 import { i18nConfig } from '@/lib/i18n/config';
+import type { TranslateFn } from '@/lib/i18n/routing';
 
 /**
  * Claim a full account by linking an email identity (via OTP) onto the
@@ -25,12 +26,11 @@ export type ClaimEmailResult =
   | { ok: true; needsOtp: boolean }
   | {
       ok: false;
-      message: string | undefined;
+      message?: string;
       /**
        * The current session already belongs to a full account (e.g. the user
        * signed in from another tab while a stale Join button was showing).
-       * Consumers translate this into their own copy — proceeding would have
-       * started a real email change on the full account.
+       * Proceeding would have started a real email change on the full account.
        */
       alreadySignedIn?: boolean;
     };
@@ -38,6 +38,33 @@ export type ClaimEmailResult =
 export type ClaimVerifyResult =
   | { ok: true }
   | { ok: false; message: string | undefined };
+
+/** Shared flag→copy mapping for failed `requestEmailCode` results. */
+export function getClaimEmailErrorMessage(
+  result: Extract<ClaimEmailResult, { ok: false }>,
+  t: TranslateFn,
+): string {
+  if (result.alreadySignedIn) {
+    return t("You're already signed in. Reload the page to continue.");
+  }
+  return result.message ?? t("That didn't work");
+}
+
+/**
+ * After linking, route through promote onboarding (personal details + ToS),
+ * returning to `dest` when done. `dest` must carry the locale prefix — the
+ * locale-less /login route and the modal both pass a localized pathname.
+ */
+export function goToOnboarding(dest: string | null) {
+  const safeDest = dest && isSafeRedirectPath(dest) ? dest : '/';
+  // A safe path isn't necessarily locale-prefixed (e.g. /info/tos), so
+  // validate the first segment before building the /start URL from it.
+  const firstSegment = safeDest.split('/')[1] ?? '';
+  const locale = SUPPORTED_LOCALES.some((l) => l === firstSegment)
+    ? firstSegment
+    : i18nConfig.defaultLocale;
+  window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+}
 
 export function useClaimAccount() {
   const supabase = createSBBrowserClient();
@@ -65,7 +92,7 @@ export function useClaimAccount() {
       // real email change on it. Reachable via a stale-cache Join button
       // (cross-tab sign-in within getMyAccount's staleTime).
       if (sessionData.session && !sessionData.session.user.is_anonymous) {
-        return { ok: false, message: undefined, alreadySignedIn: true };
+        return { ok: false, alreadySignedIn: true };
       }
       if (!sessionData.session && mintAnonSession) {
         // Mint an anonymous user to link onto (same as useCreateProposal
@@ -75,7 +102,9 @@ export function useClaimAccount() {
           return { ok: false, message: error.message };
         }
         // The new session isn't reflected in the cached account query.
-        await utils.account.getMyAccount.invalidate();
+        // Fire-and-forget: the refetch only matters if the modal is abandoned,
+        // and both success paths end in a full navigation anyway.
+        void utils.account.getMyAccount.invalidate();
       }
 
       // TODO(anon-upgrade): updateUser fails if this email already belongs to
@@ -123,21 +152,5 @@ export function useClaimAccount() {
     [supabase],
   );
 
-  /**
-   * After linking, route through promote onboarding (personal details + ToS),
-   * returning to `dest` when done. `dest` must carry the locale prefix — the
-   * locale-less /login route and the modal both pass a localized pathname.
-   */
-  const goToOnboarding = useCallback((dest: string | null) => {
-    const safeDest = dest && isSafeRedirectPath(dest) ? dest : '/';
-    // A safe path isn't necessarily locale-prefixed (e.g. /info/tos), so
-    // validate the first segment before building the /start URL from it.
-    const firstSegment = safeDest.split('/')[1] ?? '';
-    const locale = SUPPORTED_LOCALES.some((l) => l === firstSegment)
-      ? firstSegment
-      : i18nConfig.defaultLocale;
-    window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
-  }, []);
-
-  return { requestEmailCode, verifyEmailCode, goToOnboarding };
+  return { requestEmailCode, verifyEmailCode };
 }

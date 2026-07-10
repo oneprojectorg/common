@@ -1,6 +1,10 @@
 'use client';
 
-import { useClaimAccount } from '@/hooks/useClaimAccount';
+import {
+  getClaimEmailErrorMessage,
+  goToOnboarding,
+  useClaimAccount,
+} from '@/hooks/useClaimAccount';
 import { isSafeRedirectPath } from '@op/common/client';
 import { useMount } from '@op/hooks';
 import { Button } from '@op/ui/Button';
@@ -30,8 +34,7 @@ import {
  */
 export const LinkAccountPanel = () => {
   const t = useTranslations();
-  const { requestEmailCode, verifyEmailCode, goToOnboarding } =
-    useClaimAccount();
+  const { requestEmailCode, verifyEmailCode } = useClaimAccount();
 
   const { mounted } = useMount();
   const searchParams = useSearchParams();
@@ -67,7 +70,7 @@ export const LinkAccountPanel = () => {
   // `redirectParam` carries the locale prefix the locale-less /login route lacks.
   const goAfterLink = useCallback(() => {
     goToOnboarding(redirectParam);
-  }, [goToOnboarding, redirectParam]);
+  }, [redirectParam]);
 
   // Attach the email to the anon user (see useClaimAccount). OTP sent → code
   // screen; applied immediately (confirmations off) → straight to onboarding.
@@ -84,11 +87,7 @@ export const LinkAccountPanel = () => {
     try {
       const result = await requestEmailCode(email);
       if (!result.ok) {
-        setLinkError(
-          result.alreadySignedIn
-            ? t("You're already signed in. Reload the page to continue.")
-            : (result.message ?? t("That didn't work")),
-        );
+        setLinkError(getClaimEmailErrorMessage(result, t));
         setIsSubmitting(false);
         return;
       }

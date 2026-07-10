@@ -1,9 +1,14 @@
 'use client';
 
-import { useClaimAccount } from '@/hooks/useClaimAccount';
+import {
+  getClaimEmailErrorMessage,
+  goToOnboarding,
+  useClaimAccount,
+} from '@/hooks/useClaimAccount';
 import { useUser } from '@/utils/UserProvider';
 import { headingClasses } from '@op/styles/constants';
 import { Button, ButtonLink } from '@op/ui/Button';
+import { IconButton } from '@op/ui/IconButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal } from '@op/ui/Modal';
 import { usePathname } from 'next/navigation';
@@ -11,11 +16,11 @@ import { useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
 import { Heading } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
+import { isValidEmail } from './emailUtils';
 
 /**
  * "Join" flow for public decision processes: claims a full account for the
@@ -23,16 +28,17 @@ import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
  * then the promote onboarding at /start. Opened by JoinDecisionButton (the
  * header's replacement for "Log in" on public processes) via `?join=1`.
  *
- * Only meaningful for logged-out and anonymous visitors; a full account never
- * sees the Join button and the modal won't open for one.
+ * Mounted only on public processes (the decision-view layout gates on the
+ * viewer's submitProposals access) and only meaningful for logged-out and
+ * anonymous visitors; a full account never sees the Join button and the modal
+ * won't open for one.
  */
 
-export const JoinAccountModal = ({ canJoin }: { canJoin: boolean }) => {
+export const JoinAccountModal = () => {
   const { user } = useUser();
   const [join, setJoin] = useQueryState('join');
 
-  const isOpen =
-    canJoin && (!user || Boolean(user.isAnonymous)) && join === '1';
+  const isOpen = (!user || user.isAnonymous) && join === '1';
 
   const close = () => {
     void setJoin(null);
@@ -83,22 +89,20 @@ export const JoinDecisionButtonFallback = () => {
   );
 };
 
-const emailParser = z.email();
-
 const JoinAccountModalContent = ({ onClose }: { onClose: () => void }) => {
   const t = useTranslations();
-  const { requestEmailCode, verifyEmailCode, goToOnboarding } =
-    useClaimAccount();
+  const { requestEmailCode, verifyEmailCode } = useClaimAccount();
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
 
   const [email, setEmail] = useState('');
-  const [emailIsValid, setEmailIsValid] = useState(false);
   const [token, setToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const emailIsValid = isValidEmail(email);
 
   // Return to this decision page after onboarding. Query params are dropped
   // deliberately — `join=1` must not re-open the modal on the way back.
@@ -119,11 +123,7 @@ const JoinAccountModalContent = ({ onClose }: { onClose: () => void }) => {
     try {
       const result = await requestEmailCode(email, { mintAnonSession: true });
       if (!result.ok) {
-        setError(
-          result.alreadySignedIn
-            ? t("You're already signed in. Reload the page to continue.")
-            : (result.message ?? t("That didn't work")),
-        );
+        setError(getClaimEmailErrorMessage(result, t));
         setIsSubmitting(false);
         return;
       }
@@ -172,23 +172,19 @@ const JoinAccountModalContent = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="relative flex flex-col gap-6 p-8 text-center sm:px-12 sm:py-12">
-      <button
-        type="button"
+      <IconButton
+        size="small"
         aria-label={t('Close')}
-        onClick={onClose}
-        className="absolute end-4 top-4 flex size-6 cursor-pointer items-center justify-center rounded-md text-neutral-charcoal outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+        onPress={onClose}
+        className="absolute end-4 top-4"
       >
         <LuX className="size-5" aria-hidden />
-      </button>
+      </IconButton>
 
       <div className="flex flex-col gap-2">
         {/* RAC Heading wires the dialog's accessible name (aria-labelledby);
             level 2 avoids a second h1 on the page. */}
-        <Heading
-          slot="title"
-          level={2}
-          className={`${headingClasses.h1} text-neutral-black`}
-        >
+        <Heading slot="title" level={2} className={headingClasses.h2}>
           {otpSent ? t('Email sent!') : t('Claim your account')}
         </Heading>
         <p className="text-base text-neutral-charcoal">
@@ -245,10 +241,7 @@ const JoinAccountModalContent = ({ onClose }: { onClose: () => void }) => {
               placeholder="your@email.com"
               value={email}
               isDisabled={isSubmitting}
-              onChange={(val) => {
-                setEmailIsValid(emailParser.safeParse(val).success);
-                setEmail(val);
-              }}
+              onChange={setEmail}
               onSubmit={() => {
                 void submitEmail();
               }}

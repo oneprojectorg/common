@@ -94,10 +94,14 @@ const DecisionViewLayout = async ({
        * Header "Join" modal (account claim on public processes). Mounted in the
        * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
        * the param via nuqs, hence the Suspense (see the side panel comment).
+       * Only mounted when the process is public — non-public pages hydrate
+       * nothing.
        */}
-      <Suspense fallback={null}>
-        <JoinAccountModal canJoin={canJoin} />
-      </Suspense>
+      {canJoin ? (
+        <Suspense fallback={null}>
+          <JoinAccountModal />
+        </Suspense>
+      ) : null}
     </DecisionTranslationProvider>
   );
 };
