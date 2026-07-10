@@ -1,0 +1,14 @@
+{
+  "_readme": "Source nodes for the Figma parity screenshots in this directory. To refresh: pull a new screenshot for each entry via the Figma MCP get_screenshot tool (or any Figma image export at 1x) and overwrite the PNG. Keep PNGs at 1x so CSS pixel sizes match the design.",
+  "fileKey": "cjLIVfBJVLadAaigW1hjyG",
+  "fileName": "Common Sense",
+  "screenshots": {
+    "form-inputs-light.png": {
+      "nodeId": "17086:205822",
+      "page": "Input",
+      "frame": "Playground > Preview > Light",
+      "width": 1252,
+      "height": 2372
+    }
+  }
+}
