@@ -98,10 +98,7 @@ const DecisionsListSuspense = ({
         <DecisionListItem key={item.id} item={item} />
       ))}
       {shouldShowTrigger && (
-        <div
-          ref={ref as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
+        <div ref={ref} className="flex justify-center py-4">
           {isFetchingNextPage ? <DecisionListItemSkeleton /> : null}
         </div>
       )}

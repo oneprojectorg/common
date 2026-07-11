@@ -20,12 +20,15 @@ import {
 import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/ui/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
-import { type RefObject, Suspense, useCallback, useMemo } from 'react';
+import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { MobileViewSwitch } from './MobileViewSwitch';
-import { ProposalListSkeletonGrid } from './ProposalListSkeleton';
+import {
+  ProposalCardSkeleton,
+  ProposalListSkeletonGrid,
+} from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { ProposalsGrid } from './ProposalsGrid';
@@ -87,7 +90,7 @@ type ProposalsLoaderRenderProps = {
   total: number;
   isFetchingNextPage: boolean;
   shouldShowTrigger: boolean;
-  infiniteScrollRef: RefObject<HTMLDivElement | null>;
+  infiniteScrollRef: RefCallback<HTMLDivElement>;
 };
 
 const useProposalsLoaderRenderProps = (
@@ -432,6 +435,20 @@ const ProposalsListContent = ({
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
+  // One sentinel definition for both views — map mode renders it inside the
+  // list column (via listFooter), grid mode below the grid. Only the loading
+  // skeleton differs.
+  const renderScrollSentinel = (skeleton: React.ReactNode) =>
+    shouldShowTrigger ? (
+      <div
+        ref={infiniteScrollRef}
+        className="py-4"
+        data-testid="proposals-infinite-scroll-sentinel"
+      >
+        {isFetchingNextPage ? skeleton : null}
+      </div>
+    ) : null;
+
   return (
     <div
       className={cn(
@@ -487,6 +504,7 @@ const ProposalsListContent = ({
               decisionSlug={decisionSlug}
               permissions={permissions}
               mapView={mapView}
+              listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
             />
           ) : (
             // Local boundaries keep the pin query from suspending / erroring
@@ -518,6 +536,7 @@ const ProposalsListContent = ({
                     votedByProfileId: queryParams.votedByProfileId,
                     status: queryParams.status,
                   }}
+                  listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -543,15 +562,7 @@ const ProposalsListContent = ({
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && shouldShowTrigger && (
-        <div
-          ref={infiniteScrollRef}
-          className="py-4"
-          data-testid="proposals-infinite-scroll-sentinel"
-        >
-          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
-        </div>
-      )}
+      {!isMapMode && renderScrollSentinel(<ProposalListSkeletonGrid />)}
 
       {translation.showBanner && (
         <TranslateBanner

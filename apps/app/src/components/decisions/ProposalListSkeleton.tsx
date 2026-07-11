@@ -29,7 +29,7 @@ export const ProposalListSkeleton = () => {
   );
 };
 
-const ProposalCardSkeleton = () => {
+export const ProposalCardSkeleton = () => {
   return (
     <Surface className="relative w-full space-y-3 p-4 pb-4">
       {/* Header with title and budget skeleton */}

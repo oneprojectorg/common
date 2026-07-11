@@ -12,7 +12,7 @@ import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Fragment, type RefObject, useCallback } from 'react';
+import { Fragment, type RefCallback, useCallback } from 'react';
 
 import {
   DiscussionModalContainer,
@@ -32,7 +32,7 @@ export type ProfileFeedRenderProps = {
   posts: PostToOrganization[];
   isEmpty: boolean;
   user: CommonUser;
-  infiniteScrollRef: RefObject<HTMLElement | null>;
+  infiniteScrollRef: RefCallback<HTMLElement>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
   handleReactionClick: (postId: string, emoji: string) => void;
@@ -154,7 +154,7 @@ export const ProfileFeedCards = ({
         )}
         {shouldShowTrigger && (
           <HorizontalListItem>
-            <div ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}>
+            <div ref={infiniteScrollRef}>
               {isFetchingNextPage ? (
                 <div className="text-sm text-neutral-gray4">
                   <SkeletonLine lines={2} />
@@ -211,10 +211,7 @@ export const ProfileFeedList = ({
         />
       </PostFeed>
       {shouldShowTrigger && (
-        <div
-          ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
+        <div ref={infiniteScrollRef} className="flex justify-center py-4">
           {isFetchingNextPage ? (
             <div className="text-sm text-neutral-gray4">
               <SkeletonLine lines={2} />
