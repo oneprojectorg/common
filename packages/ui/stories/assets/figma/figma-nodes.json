@@ -3,5 +3,17 @@
   "fileKey": "cjLIVfBJVLadAaigW1hjyG",
   "fileName": "Common Sense",
   "scale": 2,
-  "screenshots": {}
+  "screenshots": {
+    "input-default.png": { "nodeId": "21147:310021", "page": "Input", "case": "Input, default" },
+    "field-username.png": { "nodeId": "21209:310735", "page": "Input", "case": "Field with label + description" },
+    "field-disabled.png": { "nodeId": "21209:310742", "page": "Input", "case": "Field, disabled" },
+    "field-invalid.png": { "nodeId": "21209:310749", "page": "Input", "case": "Field, invalid (ring bleeds 3px per side)" },
+    "field-file.png": { "nodeId": "21209:310761", "page": "Input", "case": "Field, file input" },
+    "field-group-names.png": { "nodeId": "21209:310770", "page": "Input", "case": "Field group, horizontal pair" },
+    "field-required.png": { "nodeId": "21209:311450", "page": "Input", "case": "Field, required marker" },
+    "field-badge.png": { "nodeId": "21209:322052", "page": "Input", "case": "Field with badge" },
+    "field-website-addon.png": { "nodeId": "21209:320544", "page": "Input", "case": "InputGroup with inline addons" },
+    "field-search-button.png": { "nodeId": "21209:311456", "page": "Input", "case": "InputGroup with button" },
+    "form.png": { "nodeId": "21209:320884", "page": "Input", "case": "Full form example" }
+  }
 }
