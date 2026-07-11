@@ -113,7 +113,10 @@ export const proposalSchema = z.object({
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
   profileId: z.string().uuid(),
+  // The submitter is an individual; never expose their email to proposal
+  // readers (the group `profile` below is a separate, public profile).
   submittedBy: proposalProfileSchema
+    .omit({ email: true })
     .extend({ isAnonymous: z.boolean().optional() })
     .optional(),
   profile: proposalProfileSchema,
