@@ -19,24 +19,31 @@ export const storageItemSchema = z.object({
     .nullish(),
 });
 
-/** Base profile shape as embedded in proposals. */
+/**
+ * An individual embedded in a proposal (submitter, reviewer). Only the fields
+ * the UI actually renders: the avatar, the display name, and the slug used to
+ * link to the profile page. Deliberately excludes email and other profile
+ * detail (bio, location, website, pronouns, etc.) so we neither leak PII nor
+ * ship data the client never reads.
+ */
 export const proposalProfileSchema = z.object({
   id: z.string().uuid(),
-  type: z.string(),
   slug: z.string(),
   name: z.string(),
-  city: z.string().nullable(),
-  state: z.string().nullable(),
-  bio: z.string().nullable(),
-  mission: z.string().nullable(),
-  email: z.string().nullable(),
-  website: z.string().nullable(),
-  headerImage: storageItemSchema.nullish(),
   avatarImage: storageItemSchema.nullish(),
-  individual: z.object({ pronouns: z.string().nullable() }).nullish(),
 });
 
 export type ProposalProfile = z.infer<typeof proposalProfileSchema>;
+
+/**
+ * A proposal's owning group/org profile as embedded in proposals. The UI only
+ * ever renders its display name; navigation uses the sibling `profileId`.
+ */
+export const proposalGroupProfileSchema = z.object({
+  name: z.string(),
+});
+
+export type ProposalGroupProfile = z.infer<typeof proposalGroupProfileSchema>;
 
 export const attachmentSchema = z.object({
   id: z.string(),
@@ -59,7 +66,6 @@ export const proposalAttachmentSchema = z.object({
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
   attachment: attachmentSchema.optional(),
-  uploader: proposalProfileSchema.optional(),
 });
 
 export type ProposalAttachment = z.infer<typeof proposalAttachmentSchema>;
@@ -113,13 +119,10 @@ export const proposalSchema = z.object({
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
   profileId: z.string().uuid(),
-  // The submitter is an individual; never expose their email to proposal
-  // readers (the group `profile` below is a separate, public profile).
   submittedBy: proposalProfileSchema
-    .omit({ email: true })
     .extend({ isAnonymous: z.boolean().optional() })
     .optional(),
-  profile: proposalProfileSchema,
+  profile: proposalGroupProfileSchema,
   decisionCount: z.number().optional(),
   likesCount: z.number().optional(),
   followersCount: z.number().optional(),
