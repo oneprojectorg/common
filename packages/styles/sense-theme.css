@@ -84,6 +84,14 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
+/* Font smoothing — the Common Sense designs assume macOS-style grayscale
+ * antialiasing. Both properties inherit, so this covers the whole `.sense`
+ * subtree (portaled popups excepted — see the portal caveat above). */
+.sense {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Standard 16px-rooted Tailwind text scale that shadcn primitives assume.
  * shared-styles.css declares smaller @op/ui-tuned values in its @theme; we
  * override them here for `.sense` subtrees only.
