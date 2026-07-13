@@ -1,5 +1,5 @@
 import { Button } from '@op/sense/Button';
-import { ButtonGroup } from '@op/sense/ButtonGroup';
+import { ButtonGroup, ButtonGroupSeparator } from '@op/sense/ButtonGroup';
 import { Toggle } from '@op/sense/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -89,12 +89,19 @@ export const ButtonsToggles: Story = {
         img={figmaButtonGroupPrimary}
         imgWidth={449}
       >
+        {/* Figma primary-group separator = white@20% over the primary fill;
+            separators need the opaque mix since they render over the page bg */}
         <ButtonGroup>
           <Button>Button</Button>
+          <PrimaryGroupSeparator />
           <Button>Button</Button>
+          <PrimaryGroupSeparator />
           <Button>Button</Button>
+          <PrimaryGroupSeparator />
           <Button>Button</Button>
+          <PrimaryGroupSeparator />
           <Button>Button</Button>
+          <PrimaryGroupSeparator />
           <Button size="icon" aria-label="Back">
             <LuCircleArrowLeft />
           </Button>
@@ -153,3 +160,7 @@ export const ButtonsToggles: Story = {
     </div>
   ),
 };
+
+const PrimaryGroupSeparator = () => (
+  <ButtonGroupSeparator className="bg-[color-mix(in_oklch,var(--primary),white_20%)]" />
+);
