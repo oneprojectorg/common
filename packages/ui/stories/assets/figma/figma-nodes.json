@@ -93,6 +93,66 @@
       "nodeId": "81:142",
       "page": "Input OTP",
       "case": "OTP with separators"
+    },
+    "button-default.png": {
+      "nodeId": "37:930",
+      "page": "Button",
+      "case": "Button, default"
+    },
+    "button-secondary.png": {
+      "nodeId": "37:932",
+      "page": "Button",
+      "case": "Button, secondary"
+    },
+    "button-destructive.png": {
+      "nodeId": "37:1475",
+      "page": "Button",
+      "case": "Button, destructive (solid)"
+    },
+    "button-outline.png": {
+      "nodeId": "37:1477",
+      "page": "Button",
+      "case": "Button, outline"
+    },
+    "button-ghost.png": {
+      "nodeId": "37:1494",
+      "page": "Button",
+      "case": "Button, ghost"
+    },
+    "button-link.png": {
+      "nodeId": "60:244",
+      "page": "Button",
+      "case": "Button, link"
+    },
+    "button-group-outline.png": {
+      "nodeId": "18672:224263",
+      "page": "Button Group",
+      "case": "Button group, outline"
+    },
+    "button-group-primary.png": {
+      "nodeId": "18672:224276",
+      "page": "Button Group",
+      "case": "Button group, primary"
+    },
+    "toggle-default.png": {
+      "nodeId": "124:26",
+      "page": "Toggle",
+      "case": "Toggle, default"
+    },
+    "toggle-outline.png": {
+      "nodeId": "132:1021",
+      "page": "Toggle",
+      "case": "Toggle, outline"
+    },
+    "toggle-group-joined.png": {
+      "nodeId": "132:946",
+      "page": "Toggle Group",
+      "case": "Toggle group, joined"
+    },
+    "toggle-group-spaced.png": {
+      "nodeId": "21133:12472",
+      "page": "Toggle Group",
+      "case": "Toggle group, spaced"
     }
   }
 }

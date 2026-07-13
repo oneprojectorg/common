@@ -35,10 +35,10 @@ export const parityStatus: Record<
   'input-otp': { family: 'form-inputs', status: 'done' },
 
   // Buttons & toggles
-  button: { family: 'buttons-toggles', status: 'todo' },
-  'button-group': { family: 'buttons-toggles', status: 'todo' },
-  toggle: { family: 'buttons-toggles', status: 'todo' },
-  'toggle-group': { family: 'buttons-toggles', status: 'todo' },
+  button: { family: 'buttons-toggles', status: 'done' },
+  'button-group': { family: 'buttons-toggles', status: 'done' },
+  toggle: { family: 'buttons-toggles', status: 'done' },
+  'toggle-group': { family: 'buttons-toggles', status: 'done' },
 
   // Overlays
   dialog: { family: 'overlays', status: 'todo' },
