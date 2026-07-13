@@ -40,7 +40,7 @@ export const ProfileAvatar = ({
     className,
   );
   const avatarImage = avatarUrl ? (
-    <Image src={avatarUrl} alt="" fill className="object-cover" />
+    <Image src={avatarUrl} alt="" fill sizes="80px" className="object-cover" />
   ) : (
     <div className={cn('h-full w-full', gradientBg)} />
   );
