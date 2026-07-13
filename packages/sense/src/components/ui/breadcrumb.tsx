@@ -1,7 +1,7 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
-import { LuChevronRight, LuEllipsis } from 'react-icons/lu';
 import * as React from 'react';
+import { LuChevronRight, LuEllipsis } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 

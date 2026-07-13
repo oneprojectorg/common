@@ -1,8 +1,8 @@
 'use client';
 
 import { Command as CommandPrimitive } from 'cmdk';
-import { LuSearch, LuCheck } from 'react-icons/lu';
 import * as React from 'react';
+import { LuSearch, LuCheck } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import {

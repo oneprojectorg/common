@@ -2,8 +2,8 @@
 
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { Menubar as MenubarPrimitive } from '@base-ui/react/menubar';
-import { LuCheck } from 'react-icons/lu';
 import * as React from 'react';
+import { LuCheck } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import {

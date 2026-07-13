@@ -1,8 +1,8 @@
 'use client';
 
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu';
-import { LuChevronRight, LuCheck } from 'react-icons/lu';
 import * as React from 'react';
+import { LuChevronRight, LuCheck } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 

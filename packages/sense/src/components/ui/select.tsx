@@ -1,8 +1,8 @@
 'use client';
 
 import { Select as SelectPrimitive } from '@base-ui/react/select';
-import { LuChevronDown, LuCheck, LuChevronUp } from 'react-icons/lu';
 import * as React from 'react';
+import { LuChevronDown, LuCheck, LuChevronUp } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 

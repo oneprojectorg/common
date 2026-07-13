@@ -1,8 +1,8 @@
 'use client';
 
 import { Combobox as ComboboxPrimitive } from '@base-ui/react';
-import { LuChevronDown, LuX, LuCheck } from 'react-icons/lu';
 import * as React from 'react';
+import { LuChevronDown, LuX, LuCheck } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from './button';

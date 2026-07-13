@@ -1,8 +1,8 @@
 'use client';
 
 import { OTPInput, OTPInputContext } from 'input-otp';
-import { LuMinus } from 'react-icons/lu';
 import * as React from 'react';
+import { LuMinus } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 

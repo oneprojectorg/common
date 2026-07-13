@@ -1,8 +1,8 @@
 'use client';
 
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
-import { LuChevronRight, LuCheck } from 'react-icons/lu';
 import * as React from 'react';
+import { LuChevronRight, LuCheck } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 

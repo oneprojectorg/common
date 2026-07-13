@@ -1,10 +1,5 @@
 'use client';
 
-import {
-  LuChevronLeft,
-  LuChevronRight,
-  LuChevronDown,
-} from 'react-icons/lu';
 import * as React from 'react';
 import {
   DayPicker,
@@ -12,6 +7,7 @@ import {
   type DayButton,
   type Locale,
 } from 'react-day-picker';
+import { LuChevronLeft, LuChevronRight, LuChevronDown } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button, buttonVariants } from './button';
@@ -157,10 +153,7 @@ function Calendar({
 
           if (orientation === 'right') {
             return (
-              <LuChevronRight
-                className={cn('size-4', className)}
-                {...props}
-              />
+              <LuChevronRight className={cn('size-4', className)} {...props} />
             );
           }
 

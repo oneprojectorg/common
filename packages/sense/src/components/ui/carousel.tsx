@@ -3,8 +3,8 @@
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from 'embla-carousel-react';
-import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import * as React from 'react';
+import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from './button';
