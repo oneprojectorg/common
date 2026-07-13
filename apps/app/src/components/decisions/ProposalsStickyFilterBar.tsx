@@ -147,7 +147,6 @@ export const ProposalsStickyFilterBar = ({
         />
         <ProposalsListHeader
           hideFilters={hideFilters}
-          proposalFilter={proposalFilter}
           // Server-side filtering makes `total` accurate for the active filter.
           count={total}
         />
