@@ -1,5 +1,6 @@
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
+import { Combobox, ComboboxInput } from '@op/sense/Combobox';
 import {
   Field,
   FieldDescription,
@@ -13,9 +14,19 @@ import {
   InputGroupInput,
   InputGroupText,
 } from '@op/sense/InputGroup';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '@op/sense/InputOTP';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Select, SelectTrigger, SelectValue } from '@op/sense/Select';
+import { Slider } from '@op/sense/Slider';
+import { Switch } from '@op/sense/Switch';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import figmaCombobox from '../assets/figma/combobox.png';
 import figmaFieldBadge from '../assets/figma/field-badge.png';
 import figmaFieldDisabled from '../assets/figma/field-disabled.png';
 import figmaFieldFile from '../assets/figma/field-file.png';
@@ -27,6 +38,11 @@ import figmaFieldUsername from '../assets/figma/field-username.png';
 import figmaFieldWebsiteAddon from '../assets/figma/field-website-addon.png';
 import figmaForm from '../assets/figma/form.png';
 import figmaInputDefault from '../assets/figma/input-default.png';
+import figmaInputOtp from '../assets/figma/input-otp.png';
+import figmaRadioGroup from '../assets/figma/radio-group.png';
+import figmaSelectTrigger from '../assets/figma/select-trigger.png';
+import figmaSlider from '../assets/figma/slider.png';
+import figmaSwitch from '../assets/figma/switch.png';
 import { ParityGridHeader, ParityRow, withDesignScale } from './Parity';
 
 // Figma parity for the form input family (Input page of the Common Sense
@@ -178,6 +194,87 @@ export const FormInputs: Story = {
             <Button variant="outline">Search</Button>
           </div>
         </Field>
+      </ParityRow>
+
+      <ParityRow label="Radio group" img={figmaRadioGroup} imgWidth={371}>
+        <RadioGroup defaultValue="starter" className="gap-3">
+          {[
+            ['starter', 'Starter Plan', 'Perfect for small businesses.'],
+            ['pro', 'Pro Plan', 'Advanced features with more storage.'],
+            ['enterprise', 'Enterprise Plan', 'For large teams.'],
+          ].map(([value, title, description]) => (
+            <div key={value} className="flex items-start gap-2">
+              <RadioGroupItem
+                value={value}
+                id={`parity-radio-${value}`}
+                className="mt-0"
+              />
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor={`parity-radio-${value}`}
+                  className="text-label font-strong"
+                >
+                  {title}
+                </label>
+                <p className="text-sm text-muted-foreground">{description}</p>
+              </div>
+            </div>
+          ))}
+        </RadioGroup>
+      </ParityRow>
+
+      <ParityRow label="Switch" img={figmaSwitch} imgWidth={320}>
+        <div className="flex flex-col gap-4">
+          {[
+            ['on', 'Focus Mode', 'Silence notifications to concentrate.', true],
+            ['off', 'Dark Mode', 'Switch to a darker theme.', false],
+          ].map(([key, title, description, checked]) => (
+            <div key={String(key)} className="flex items-start gap-3">
+              <Switch defaultChecked={Boolean(checked)} />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-base font-strong">{title}</p>
+                <p className="text-sm text-muted-foreground">{description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ParityRow>
+
+      <ParityRow label="Slider" img={figmaSlider} imgWidth={400}>
+        <Slider defaultValue={[62]} />
+      </ParityRow>
+
+      <ParityRow label="Select" img={figmaSelectTrigger} imgWidth={200}>
+        <Select>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select" />
+          </SelectTrigger>
+        </Select>
+      </ParityRow>
+
+      <ParityRow label="Combobox" img={figmaCombobox} imgWidth={228}>
+        <Combobox items={['Next.js', 'SvelteKit', 'Remix']}>
+          <ComboboxInput placeholder="Select framework" className="w-[228px]" />
+        </Combobox>
+      </ParityRow>
+
+      <ParityRow label="Input OTP" img={figmaInputOtp} imgWidth={296}>
+        <InputOTP maxLength={6}>
+          <InputOTPGroup>
+            <InputOTPSlot index={0} />
+            <InputOTPSlot index={1} />
+          </InputOTPGroup>
+          <InputOTPSeparator />
+          <InputOTPGroup>
+            <InputOTPSlot index={2} />
+            <InputOTPSlot index={3} />
+          </InputOTPGroup>
+          <InputOTPSeparator />
+          <InputOTPGroup>
+            <InputOTPSlot index={4} />
+            <InputOTPSlot index={5} />
+          </InputOTPGroup>
+        </InputOTP>
       </ParityRow>
 
       <ParityRow label="Form" img={figmaForm} imgWidth={360}>
