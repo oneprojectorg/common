@@ -5,8 +5,9 @@ import { type TestContext, describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import {
+  TEST_USER_DEFAULT_PASSWORD,
+  createIsolatedTestClient,
   createTestContextWithSession,
-  createTestUser,
   supabaseTestAdminClient,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
@@ -23,15 +24,23 @@ type RegisterCleanup = TestContext['onTestFinished'];
  * Signs up a confirmed user (the signup trigger creates the `public.users` row
  * and individual profile) and registers teardown for the auth user and profile.
  * Mimics the account Supabase creates during a Google OAuth code exchange
- * before the allow-list gate runs.
+ * before the allow-list gate runs. Each user is created on its own isolated
+ * client so concurrent tests never share auth session state.
  */
 const signUpConfirmedUser = async (
   email: string,
   onTestFinished: RegisterCleanup,
 ) => {
-  const { user, session } = await createTestUser(email);
-  if (!user || !session) {
-    throw new Error(`Failed to sign up test user: ${email}`);
+  const { data, error } = await createIsolatedTestClient().auth.signUp({
+    email,
+    password: TEST_USER_DEFAULT_PASSWORD,
+  });
+  const user = data.user;
+  const session = data.session;
+  if (error || !user || !session) {
+    throw new Error(
+      `Failed to sign up test user ${email}: ${error?.message ?? 'no session'}`,
+    );
   }
 
   const userRow = await db.query.users.findFirst({
