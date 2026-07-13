@@ -328,6 +328,31 @@
       "nodeId": "17100:83082",
       "page": "Avatar",
       "case": "Playground example: avatar group"
+    },
+    "alert.png": {
+      "nodeId": "21:986",
+      "page": "Alert",
+      "case": "Alert, Variant=Default"
+    },
+    "sonner.png": {
+      "nodeId": "193:1386",
+      "page": "Sonner",
+      "case": "Toast, State=Default (export includes shadow bleed)"
+    },
+    "skeleton.png": {
+      "nodeId": "64:249",
+      "page": "Skeleton",
+      "case": "Skeleton, Variant=Default (avatar + two lines)"
+    },
+    "spinner.png": {
+      "nodeId": "18672:219158",
+      "page": "Spinner",
+      "case": "Spinner, Size=4"
+    },
+    "progress.png": {
+      "nodeId": "296:4743",
+      "page": "Progress",
+      "case": "Progress, Percent=50%"
     }
   }
 }

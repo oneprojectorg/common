@@ -77,11 +77,11 @@ export const parityStatus: Record<
   chart: { family: 'data-display', status: 'in-progress' },
 
   // Feedback
-  alert: { family: 'feedback', status: 'todo' },
-  sonner: { family: 'feedback', status: 'todo' },
-  skeleton: { family: 'feedback', status: 'todo' },
-  spinner: { family: 'feedback', status: 'todo' },
-  progress: { family: 'feedback', status: 'todo' },
+  alert: { family: 'feedback', status: 'done' },
+  sonner: { family: 'feedback', status: 'done' },
+  skeleton: { family: 'feedback', status: 'done' },
+  spinner: { family: 'feedback', status: 'done' },
+  progress: { family: 'feedback', status: 'done' },
 
   // Date & layout
   calendar: { family: 'date-layout', status: 'todo' },
