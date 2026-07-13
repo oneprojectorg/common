@@ -1,19 +1,98 @@
 {
-  "_readme": "Source nodes for the Figma parity screenshots in this directory. Each family PR adds its PNGs and entries here. To refresh or add: export the node as PNG at 2x — via the Figma MCP download_assets tool with defaultScale: 2, or REST GET api.figma.com/v1/images/:fileKey?ids=<nodeId>&scale=2&format=png (FIGMA_TOKEN in .env.local) — and overwrite/add the file. Keep exports at 2x — parity stories render them at half their pixel width for retina crispness. Page node ids come from REST GET /v1/files/:fileKey?depth=1 (the Figma MCP page listing under-reports).",
+  "_readme": "Source nodes for the Figma parity screenshots in this directory. Each family PR adds its PNGs and entries here. To refresh or add: export the node as PNG at 2x \u2014 via the Figma MCP download_assets tool with defaultScale: 2, or REST GET api.figma.com/v1/images/:fileKey?ids=<nodeId>&scale=2&format=png (FIGMA_TOKEN in .env.local) \u2014 and overwrite/add the file. Keep exports at 2x \u2014 parity stories render them at half their pixel width for retina crispness. Page node ids come from REST GET /v1/files/:fileKey?depth=1 (the Figma MCP page listing under-reports).",
   "fileKey": "cjLIVfBJVLadAaigW1hjyG",
   "fileName": "Common Sense",
   "scale": 2,
   "screenshots": {
-    "input-default.png": { "nodeId": "21147:310021", "page": "Input", "case": "Input, default" },
-    "field-username.png": { "nodeId": "21209:310735", "page": "Input", "case": "Field with label + description" },
-    "field-disabled.png": { "nodeId": "21209:310742", "page": "Input", "case": "Field, disabled" },
-    "field-invalid.png": { "nodeId": "21209:310749", "page": "Input", "case": "Field, invalid (ring bleeds 3px per side)" },
-    "field-file.png": { "nodeId": "21209:310761", "page": "Input", "case": "Field, file input" },
-    "field-group-names.png": { "nodeId": "21209:310770", "page": "Input", "case": "Field group, horizontal pair" },
-    "field-required.png": { "nodeId": "21209:311450", "page": "Input", "case": "Field, required marker" },
-    "field-badge.png": { "nodeId": "21209:322052", "page": "Input", "case": "Field with badge" },
-    "field-website-addon.png": { "nodeId": "21209:320544", "page": "Input", "case": "InputGroup with inline addons" },
-    "field-search-button.png": { "nodeId": "21209:311456", "page": "Input", "case": "InputGroup with button" },
-    "form.png": { "nodeId": "21209:320884", "page": "Input", "case": "Full form example" }
+    "input-default.png": {
+      "nodeId": "21147:310021",
+      "page": "Input",
+      "case": "Input, default"
+    },
+    "field-username.png": {
+      "nodeId": "21209:310735",
+      "page": "Input",
+      "case": "Field with label + description"
+    },
+    "field-disabled.png": {
+      "nodeId": "21209:310742",
+      "page": "Input",
+      "case": "Field, disabled"
+    },
+    "field-invalid.png": {
+      "nodeId": "21209:310749",
+      "page": "Input",
+      "case": "Field, invalid (ring bleeds 3px per side)"
+    },
+    "field-file.png": {
+      "nodeId": "21209:310761",
+      "page": "Input",
+      "case": "Field, file input"
+    },
+    "field-group-names.png": {
+      "nodeId": "21209:310770",
+      "page": "Input",
+      "case": "Field group, horizontal pair"
+    },
+    "field-required.png": {
+      "nodeId": "21209:311450",
+      "page": "Input",
+      "case": "Field, required marker"
+    },
+    "field-badge.png": {
+      "nodeId": "21209:322052",
+      "page": "Input",
+      "case": "Field with badge"
+    },
+    "field-website-addon.png": {
+      "nodeId": "21209:320544",
+      "page": "Input",
+      "case": "InputGroup with inline addons"
+    },
+    "field-search-button.png": {
+      "nodeId": "21209:311456",
+      "page": "Input",
+      "case": "InputGroup with button"
+    },
+    "form.png": {
+      "nodeId": "21209:320884",
+      "page": "Input",
+      "case": "Full form example"
+    },
+    "radio-group.png": {
+      "nodeId": "65:341",
+      "page": "Radio Group",
+      "case": "Radio group with labels + descriptions"
+    },
+    "switch.png": {
+      "nodeId": "18684:180466",
+      "page": "Switch",
+      "case": "Switch group"
+    },
+    "slider.png": {
+      "nodeId": "64:176",
+      "page": "Slider",
+      "case": "Slider, default"
+    },
+    "select-trigger.png": {
+      "nodeId": "345:11529",
+      "page": "Select",
+      "case": "Select trigger, default"
+    },
+    "select-menu.png": {
+      "nodeId": "118:2501",
+      "page": "Select",
+      "case": "Select menu panel (reference, no story row)"
+    },
+    "combobox.png": {
+      "nodeId": "430:4113",
+      "page": "Combobox",
+      "case": "Combobox trigger, default"
+    },
+    "input-otp.png": {
+      "nodeId": "81:142",
+      "page": "Input OTP",
+      "case": "OTP with separators"
+    }
   }
 }

@@ -90,7 +90,7 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="field-content"
       className={cn(
-        'group/field-content flex flex-1 flex-col gap-0.5',
+        'group/field-content flex flex-1 flex-col gap-1.5',
         className,
       )}
       {...props}
@@ -120,7 +120,7 @@ function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="field-label"
       className={cn(
-        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50',
+        'flex w-fit items-center gap-2 text-label font-strong group-data-[disabled=true]/field:opacity-50',
         className,
       )}
       {...props}
