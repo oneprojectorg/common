@@ -188,6 +188,51 @@
       "nodeId": "216:3126",
       "page": "Hover Card",
       "case": "Hover card panel"
+    },
+    "dropdown-menu.png": {
+      "nodeId": "105:55",
+      "page": "Dropdown Menu",
+      "case": "Menu panel, Color=Default, Appearance=Solid"
+    },
+    "context-menu.png": {
+      "nodeId": "249:5013",
+      "page": "Context Menu",
+      "case": "Context menu panel, Color=Default, Appearance=Solid"
+    },
+    "menubar.png": {
+      "nodeId": "216:1522",
+      "page": "Menubar",
+      "case": "Menubar with open menu"
+    },
+    "navigation-menu.png": {
+      "nodeId": "17375:179951",
+      "page": "Navigation Menu",
+      "case": "Popover, Type=Custom"
+    },
+    "breadcrumb.png": {
+      "nodeId": "109:946",
+      "page": "Breadcrumb",
+      "case": "Breadcrumb row, Size=md"
+    },
+    "tabs.png": {
+      "nodeId": "183:539",
+      "page": "Tabs",
+      "case": "Tabs list, Variant=Default, Orientation=Default"
+    },
+    "sidebar.png": {
+      "nodeId": "5198:1787",
+      "page": "Sidebar",
+      "case": "Sidebar 01 example"
+    },
+    "pagination.png": {
+      "nodeId": "208:1701",
+      "page": "Pagination",
+      "case": "Assembled pagination row"
+    },
+    "command.png": {
+      "nodeId": "204:1143",
+      "page": "Command",
+      "case": "Command palette, Variant=Suggestions"
     }
   }
 }
