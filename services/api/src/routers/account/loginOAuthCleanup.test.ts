@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
-import { profiles, users } from '@op/db/schema';
+import { allowList, profiles, users } from '@op/db/schema';
 import { randomUUID } from 'crypto';
-import { describe, expect, it, onTestFinished } from 'vitest';
+import { type TestContext, describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import {
@@ -14,13 +14,21 @@ import { wasCreatedByThisSignIn } from './login';
 
 const createCaller = createCallerFactory(appRouter);
 
+// Teardown is registered through the running test's own context rather than the
+// global `onTestFinished` import: under `describe.concurrent` the global helper
+// can't reliably resolve which concurrent test is current across `await`s.
+type RegisterCleanup = TestContext['onTestFinished'];
+
 /**
- * Signs up a confirmed user whose email clears neither the allow-list nor
- * `allowedEmailDomains`, mimicking the account Supabase creates during a
- * Google OAuth code exchange before the allow-list gate runs.
+ * Signs up a confirmed user (the signup trigger creates the `public.users` row
+ * and individual profile) and registers teardown for the auth user and profile.
+ * Mimics the account Supabase creates during a Google OAuth code exchange
+ * before the allow-list gate runs.
  */
-const signUpNonAllowlistedUser = async () => {
-  const email = `oauth-orphan-${randomUUID()}@example.com`;
+const signUpConfirmedUser = async (
+  email: string,
+  onTestFinished: RegisterCleanup,
+) => {
   const { user, session } = await createTestUser(email);
   if (!user || !session) {
     throw new Error(`Failed to sign up test user: ${email}`);
@@ -44,10 +52,32 @@ const signUpNonAllowlistedUser = async () => {
   return { email, user, session, profileId };
 };
 
+/** A confirmed user whose email clears neither the allow-list nor a network domain. */
+const signUpNonAllowlistedUser = (onTestFinished: RegisterCleanup) =>
+  signUpConfirmedUser(
+    `oauth-orphan-${randomUUID()}@example.com`,
+    onTestFinished,
+  );
+
+/** A confirmed user admitted by an explicit allow-list entry (non-network domain). */
+const signUpAllowlistedUser = async (onTestFinished: RegisterCleanup) => {
+  const result = await signUpConfirmedUser(
+    `allowlisted-${randomUUID()}@example.com`,
+    onTestFinished,
+  );
+  await db.insert(allowList).values({ email: result.email });
+  onTestFinished(async () => {
+    await db.delete(allowList).where(eq(allowList.email, result.email));
+  });
+  return result;
+};
+
 describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
-  it('deletes the just-created account when the allow-list rejects an OAuth sign-in', async () => {
+  it('deletes the just-created account when the allow-list rejects an OAuth sign-in', async ({
+    onTestFinished,
+  }) => {
     const { email, user, session, profileId } =
-      await signUpNonAllowlistedUser();
+      await signUpNonAllowlistedUser(onTestFinished);
 
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
@@ -69,8 +99,11 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     expect(profileAfter).toBeUndefined();
   });
 
-  it('keeps the account when a rejected login is not OAuth', async () => {
-    const { email, user, session } = await signUpNonAllowlistedUser();
+  it('keeps the account when a rejected login is not OAuth', async ({
+    onTestFinished,
+  }) => {
+    const { email, user, session } =
+      await signUpNonAllowlistedUser(onTestFinished);
 
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
@@ -82,9 +115,11 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     expect(authAfter?.user?.id).toBe(user.id);
   });
 
-  it('keeps a users row that predates this sign-in (trigger ON CONFLICT repoint)', async () => {
+  it('keeps a users row that predates this sign-in (trigger ON CONFLICT repoint)', async ({
+    onTestFinished,
+  }) => {
     const { email, user, session, profileId } =
-      await signUpNonAllowlistedUser();
+      await signUpNonAllowlistedUser(onTestFinished);
 
     // Simulate the signup trigger's ON CONFLICT (email) branch having
     // repointed a pre-existing users row at the just-created auth user.
@@ -108,8 +143,10 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     expect(profileAfter).toBeDefined();
   });
 
-  it('keeps the account when the session does not belong to the rejected email', async () => {
-    const { user, session } = await signUpNonAllowlistedUser();
+  it('keeps the account when the session does not belong to the rejected email', async ({
+    onTestFinished,
+  }) => {
+    const { user, session } = await signUpNonAllowlistedUser(onTestFinished);
 
     const caller = createCaller(await createTestContextWithSession(session));
     const otherEmail = `oauth-orphan-${randomUUID()}@example.com`;
@@ -120,6 +157,73 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
     expect(authAfter?.user?.id).toBe(user.id);
+  });
+});
+
+describe.concurrent('account.login: accepted network-member sign-in', () => {
+  it('returns true and keeps the account for an allow-listed OAuth sign-in', async ({
+    onTestFinished,
+  }) => {
+    const { email, user, session, profileId } =
+      await signUpAllowlistedUser(onTestFinished);
+
+    const caller = createCaller(await createTestContextWithSession(session));
+    await expect(
+      caller.account.login({ email, usingOAuth: true }),
+    ).resolves.toBe(true);
+
+    const { data: authAfter } =
+      await supabaseTestAdminClient.auth.admin.getUserById(user.id);
+    expect(authAfter?.user?.id).toBe(user.id);
+
+    const userRowAfter = await db.query.users.findFirst({
+      where: { authUserId: user.id },
+    });
+    expect(userRowAfter).toBeDefined();
+
+    const profileAfter = await db.query.profiles.findFirst({
+      where: { id: profileId },
+    });
+    expect(profileAfter).toBeDefined();
+  });
+
+  it('returns true for an allow-listed email (OTP) sign-in', async ({
+    onTestFinished,
+  }) => {
+    const { email, user, session } =
+      await signUpAllowlistedUser(onTestFinished);
+
+    const caller = createCaller(await createTestContextWithSession(session));
+    await expect(
+      caller.account.login({ email, usingOAuth: false }),
+    ).resolves.toBe(true);
+
+    const { data: authAfter } =
+      await supabaseTestAdminClient.auth.admin.getUserById(user.id);
+    expect(authAfter?.user?.id).toBe(user.id);
+  });
+
+  it('returns true and keeps the account for a network-domain OAuth sign-in', async ({
+    onTestFinished,
+  }) => {
+    const { email, user, session, profileId } = await signUpConfirmedUser(
+      `network-${randomUUID()}@oneproject.org`,
+      onTestFinished,
+    );
+
+    const caller = createCaller(await createTestContextWithSession(session));
+    await expect(
+      caller.account.login({ email, usingOAuth: true }),
+    ).resolves.toBe(true);
+
+    const { data: authAfter } =
+      await supabaseTestAdminClient.auth.admin.getUserById(user.id);
+    expect(authAfter?.user?.id).toBe(user.id);
+
+    const profileAfter = await db.query.profiles.findFirst({
+      where: { id: profileId },
+    });
+    expect(profileAfter).toBeDefined();
   });
 });
 
