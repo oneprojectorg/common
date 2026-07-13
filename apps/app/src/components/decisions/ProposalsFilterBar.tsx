@@ -8,6 +8,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import { getRelevantProposalFilterItems } from './proposalFilterItems';
 import { useProposalFilterItems } from './useProposalFilters';
 
 export const ProposalsListHeader = ({
@@ -39,6 +40,8 @@ export const ProposalsListHeader = ({
 export const ProposalsFilterBar = ({
   hasVoted,
   currentProfileId,
+  hasOwnProposals,
+  hasShortlisted,
   proposalFilter,
   setProposalFilter,
   decisionSlug,
@@ -56,6 +59,8 @@ export const ProposalsFilterBar = ({
 }: {
   hasVoted: boolean;
   currentProfileId: string | undefined;
+  hasOwnProposals: boolean;
+  hasShortlisted: boolean;
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
   decisionSlug: string | undefined;
@@ -72,7 +77,16 @@ export const ProposalsFilterBar = ({
   onExport: () => void;
 }) => {
   const t = useTranslations();
-  const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
+  const allFilterItems = useProposalFilterItems({ hasVoted, currentProfileId });
+  const filterItems = getRelevantProposalFilterItems({
+    items: allFilterItems,
+    currentFilter: proposalFilter,
+    hasOwnProposals,
+    hasShortlisted,
+  });
+  // With only "All proposals" left there is nothing to switch between, so the
+  // proposal-type filter is hidden — the category and sort filters stay.
+  const showProposalTypeFilter = filterItems.length > 1;
 
   // TODO: This is a hardcoded, per-decision copy override — the Columbus
   // decision refers to its categories as "districts", matched here on its
@@ -83,17 +97,19 @@ export const ProposalsFilterBar = ({
 
   return (
     <>
-      <ResponsiveSelect
-        selectedKey={proposalFilter}
-        onSelectionChange={(key) => {
-          if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-            return;
-          }
-          setProposalFilter(key);
-        }}
-        aria-label={t('Filter proposals')}
-        items={filterItems}
-      />
+      {showProposalTypeFilter && (
+        <ResponsiveSelect
+          selectedKey={proposalFilter}
+          onSelectionChange={(key) => {
+            if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
+              return;
+            }
+            setProposalFilter(key);
+          }}
+          aria-label={t('Filter proposals')}
+          items={filterItems}
+        />
+      )}
       <ResponsiveSelect
         selectedKey={selectedCategory}
         onSelectionChange={onSelectCategory}
