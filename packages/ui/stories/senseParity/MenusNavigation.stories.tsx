@@ -21,6 +21,7 @@ import {
 import {
   ContextMenu,
   ContextMenuContent,
+  ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
@@ -30,6 +31,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -107,19 +109,21 @@ export const MenusNavigation: Story = {
             Open menu
           </DropdownMenuTrigger>
           <DropdownMenuContent className="sense w-40">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuItem>
-              Profile
-              <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Billing
-              <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Settings
-              <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuItem>
+                Profile
+                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Billing
+                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Settings
+                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive">
               Log out
@@ -136,15 +140,17 @@ export const MenusNavigation: Story = {
             Right-click here
           </ContextMenuTrigger>
           <ContextMenuContent className="sense w-64">
-            <ContextMenuLabel>Actions</ContextMenuLabel>
-            <ContextMenuItem>
-              Back
-              <ContextMenuShortcut>⌘[</ContextMenuShortcut>
-            </ContextMenuItem>
-            <ContextMenuItem>
-              Reload
-              <ContextMenuShortcut>⌘R</ContextMenuShortcut>
-            </ContextMenuItem>
+            <ContextMenuGroup>
+              <ContextMenuLabel>Actions</ContextMenuLabel>
+              <ContextMenuItem>
+                Back
+                <ContextMenuShortcut>⌘[</ContextMenuShortcut>
+              </ContextMenuItem>
+              <ContextMenuItem>
+                Reload
+                <ContextMenuShortcut>⌘R</ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuGroup>
             <ContextMenuSeparator />
             <ContextMenuItem variant="destructive">Delete</ContextMenuItem>
           </ContextMenuContent>
