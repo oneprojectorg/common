@@ -79,7 +79,7 @@ export const FormInputs: Story = {
           <FieldLabel htmlFor="parity-invalid">Username</FieldLabel>
           <Input
             id="parity-invalid"
-            defaultValue="Matt Wierzbicki"
+            placeholder="Matt Wierzbicki"
             aria-invalid="true"
           />
           <FieldDescription>
