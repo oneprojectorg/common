@@ -41,13 +41,13 @@ export const parityStatus: Record<
   'toggle-group': { family: 'buttons-toggles', status: 'done' },
 
   // Overlays
-  dialog: { family: 'overlays', status: 'todo' },
-  'alert-dialog': { family: 'overlays', status: 'todo' },
-  sheet: { family: 'overlays', status: 'todo' },
-  drawer: { family: 'overlays', status: 'todo' },
-  popover: { family: 'overlays', status: 'todo' },
-  tooltip: { family: 'overlays', status: 'todo' },
-  'hover-card': { family: 'overlays', status: 'todo' },
+  dialog: { family: 'overlays', status: 'done' },
+  'alert-dialog': { family: 'overlays', status: 'done' },
+  sheet: { family: 'overlays', status: 'done' },
+  drawer: { family: 'overlays', status: 'done' },
+  popover: { family: 'overlays', status: 'done' },
+  tooltip: { family: 'overlays', status: 'done' },
+  'hover-card': { family: 'overlays', status: 'done' },
 
   // Menus & navigation
   'dropdown-menu': { family: 'menus-navigation', status: 'todo' },

@@ -153,6 +153,41 @@
       "nodeId": "21133:12472",
       "page": "Toggle Group",
       "case": "Toggle group, spaced"
+    },
+    "dialog.png": {
+      "nodeId": "112:601",
+      "page": "Dialog",
+      "case": "Dialog, default panel"
+    },
+    "alert-dialog.png": {
+      "nodeId": "83:120",
+      "page": "Alert Dialog",
+      "case": "Alert dialog, Size=default, Destructive=No"
+    },
+    "sheet.png": {
+      "nodeId": "220:4632",
+      "page": "Sheet",
+      "case": "Sheet, Position=right (includes scrim)"
+    },
+    "drawer.png": {
+      "nodeId": "244:2829",
+      "page": "Drawer",
+      "case": "Drawer, Direction=bottom (includes scrim)"
+    },
+    "popover.png": {
+      "nodeId": "195:1621",
+      "page": "Popover",
+      "case": "Popover panel, default"
+    },
+    "tooltip.png": {
+      "nodeId": "122:13",
+      "page": "Tooltip",
+      "case": "Tooltip, Side=Top"
+    },
+    "hover-card.png": {
+      "nodeId": "216:3126",
+      "page": "Hover Card",
+      "case": "Hover card panel"
     }
   }
 }
