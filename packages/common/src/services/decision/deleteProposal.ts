@@ -92,7 +92,10 @@ export const deleteProposal = async ({
       throw new CommonError('Failed to delete proposal');
     }
 
-    console.log('DELETED PROPOSAL', deletedProposal.id, user.id);
+    logger.info('Deleted proposal', {
+      proposalId: deletedProposal.id,
+      userId: user.id,
+    });
 
     return {
       deletedId: proposalId,

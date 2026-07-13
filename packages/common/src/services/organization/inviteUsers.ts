@@ -13,6 +13,7 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
+import { createHash } from 'node:crypto';
 
 import { UnauthorizedError } from '../../utils/error';
 import { assignableRoleFilter } from '../access';
@@ -25,6 +26,10 @@ type CommonUserWithProfile = CommonUser & {
   currentOrganization: Organization & { profile: Profile };
   currentProfile: Profile;
 };
+
+// Hash an email so invite logs stay correlatable without leaking the address.
+const hashEmail = (email: string): string =>
+  createHash('sha256').update(email, 'utf8').digest('hex').slice(0, 16);
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -111,7 +116,7 @@ export const inviteUsersToOrganization = async (
       });
 
       if (existingUser) {
-        console.log('User already exists');
+        logger.debug('User already exists in system');
         // User exists - check if they're already in this organization
         if (existingUser.organizationUsers.length === 0) {
           // User exists but not in this organization - add them directly
@@ -204,7 +209,10 @@ export const inviteUsersToOrganization = async (
         message: personalMessage,
       });
     } catch (error) {
-      logger.error('Failed to process invitation', { email, error });
+      logger.error('Failed to process invitation', {
+        emailHash: hashEmail(email),
+        error,
+      });
       results.failed.push({
         email,
         reason: error instanceof Error ? error.message : 'Unknown error',
@@ -215,10 +223,10 @@ export const inviteUsersToOrganization = async (
   // Send all invitation emails in batch
   if (emailsToInvite.length > 0) {
     try {
-      console.log(
-        'Sending batch emails to:',
-        emailsToInvite.map((e) => e.to),
-      );
+      logger.info('Sending batch invitation emails', {
+        count: emailsToInvite.length,
+        emailHashes: emailsToInvite.map((invite) => hashEmail(invite.to)),
+      });
       const batchResult = await sendBatchInvitationEmails({
         invitations: emailsToInvite,
       });
@@ -348,7 +356,10 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
         message: personalMessage,
       });
     } catch (error) {
-      logger.error('Failed to process invitation', { email, error });
+      logger.error('Failed to process invitation', {
+        emailHash: hashEmail(email),
+        error,
+      });
       results.failed.push({
         email,
         reason: error instanceof Error ? error.message : 'Unknown error',
@@ -359,10 +370,10 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   // Send all invitation emails in batch
   if (emailsToInvite.length > 0) {
     try {
-      console.log(
-        'Sending batch emails to:',
-        emailsToInvite.map((e) => e.to),
-      );
+      logger.info('Sending batch invitation emails', {
+        count: emailsToInvite.length,
+        emailHashes: emailsToInvite.map((invite) => hashEmail(invite.to)),
+      });
       const batchResult = await sendBatchInvitationEmails({
         invitations: emailsToInvite,
       });

@@ -37,7 +37,7 @@ export async function processProposalContent({
     const content = proposalData?.content || '';
 
     if (!content) {
-      console.log(`No content to process for proposal: ${proposalId}`);
+      logger.debug('No content to process for proposal', { proposalId });
       return;
     }
 
@@ -51,7 +51,7 @@ export async function processProposalContent({
       });
 
     if (proposalAttachmentJoins.length === 0) {
-      console.log(`No attachments to process for proposal: ${proposalId}`);
+      logger.debug('No attachments to process for proposal', { proposalId });
       return;
     }
 
@@ -59,7 +59,7 @@ export async function processProposalContent({
     const imageUrls = extractImageUrlsFromContent(content);
 
     if (imageUrls.length === 0) {
-      console.log(`No image URLs found in proposal content: ${proposalId}`);
+      logger.debug('No image URLs found in proposal content', { proposalId });
       return;
     }
 
@@ -96,9 +96,10 @@ export async function processProposalContent({
         );
         if (tempUrl) {
           processedContent = processedContent.replace(tempUrl, publicUrl);
-          console.log(
-            `Replaced temporary URL with public URL: ${tempUrl} -> ${publicUrl}`,
-          );
+          logger.debug('Replaced temporary URL with public URL', {
+            tempUrl,
+            publicUrl,
+          });
         }
 
         // Update attachment metadata (use existing data from attachment record)
@@ -130,7 +131,7 @@ export async function processProposalContent({
         })
         .where(eq(proposals.id, proposalId));
 
-      console.log(`Updated proposal content for ${proposalId}`);
+      logger.info('Updated proposal content', { proposalId });
     }
 
     // Update attachment metadata
@@ -146,9 +147,10 @@ export async function processProposalContent({
           .where(eq(attachments.id, attachmentUpdate.id));
       }
 
-      console.log(
-        `Updated ${updatedAttachments.length} attachment metadata for proposal ${proposalId}`,
-      );
+      logger.info('Updated attachment metadata for proposal', {
+        proposalId,
+        count: updatedAttachments.length,
+      });
     }
   } catch (error) {
     logger.error('Error processing proposal content', { proposalId, error });
