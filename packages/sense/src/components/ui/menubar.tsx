@@ -213,10 +213,7 @@ function MenubarShortcut({
   return (
     <DropdownMenuShortcut
       data-slot="menubar-shortcut"
-      className={cn(
-        'ml-auto text-xs text-muted-foreground group-focus/menubar-item:text-accent-foreground',
-        className,
-      )}
+      className={cn('ml-auto text-xs text-muted-foreground', className)}
       {...props}
     />
   );
