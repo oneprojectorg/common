@@ -96,7 +96,7 @@ export const Overlays: Story = {
           <DialogTrigger render={<Button variant="outline" />}>
             Open dialog
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sense">
             <DialogHeader>
               <DialogTitle>Dialog title</DialogTitle>
               <DialogDescription>
@@ -123,7 +123,7 @@ export const Overlays: Story = {
           <AlertDialogTrigger render={<Button variant="outline" />}>
             Open alert dialog
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="sense">
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -144,7 +144,7 @@ export const Overlays: Story = {
           <SheetTrigger render={<Button variant="outline" />}>
             Open sheet
           </SheetTrigger>
-          <SheetContent side="right">
+          <SheetContent side="right" className="sense">
             <SheetHeader>
               <SheetTitle>Title Text</SheetTitle>
               <SheetDescription>This is a sheet description.</SheetDescription>
@@ -167,7 +167,7 @@ export const Overlays: Story = {
           <DrawerTrigger asChild>
             <Button variant="outline">Open drawer</Button>
           </DrawerTrigger>
-          <DrawerContent>
+          <DrawerContent className="sense">
             <DrawerHeader>
               <DrawerTitle>Title Text</DrawerTitle>
               <DrawerDescription>
@@ -194,7 +194,7 @@ export const Overlays: Story = {
           <PopoverTrigger render={<Button variant="outline" />}>
             Open popover
           </PopoverTrigger>
-          <PopoverContent>
+          <PopoverContent className="sense">
             <PopoverHeader>
               <PopoverTitle>Dimensions</PopoverTitle>
               <PopoverDescription>
@@ -214,7 +214,7 @@ export const Overlays: Story = {
             <TooltipTrigger render={<Button variant="outline" />}>
               Hover me
             </TooltipTrigger>
-            <TooltipContent>This is a tooltip</TooltipContent>
+            <TooltipContent className="sense">This is a tooltip</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </ParityRow>
@@ -222,7 +222,7 @@ export const Overlays: Story = {
       <ParityRow label="Hover card" img={figmaHoverCard} imgWidth={330}>
         <HoverCard>
           <HoverCardTrigger href="#">Hover trigger</HoverCardTrigger>
-          <HoverCardContent>
+          <HoverCardContent className="sense">
             <div className="flex items-center justify-center rounded-md border border-dashed p-8 text-muted-foreground">
               Remove this frame and add your content
             </div>
