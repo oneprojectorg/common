@@ -84,7 +84,7 @@ export const parityStatus: Record<
   progress: { family: 'feedback', status: 'done' },
 
   // Date & layout
-  calendar: { family: 'date-layout', status: 'todo' },
-  resizable: { family: 'date-layout', status: 'todo' },
-  direction: { family: 'date-layout', status: 'todo' },
+  calendar: { family: 'date-layout', status: 'done' },
+  resizable: { family: 'date-layout', status: 'done' },
+  direction: { family: 'date-layout', status: 'done' },
 };

@@ -353,6 +353,16 @@
       "nodeId": "296:4743",
       "page": "Progress",
       "case": "Progress, Percent=50%"
+    },
+    "calendar.png": {
+      "nodeId": "17179:197385",
+      "page": "Calendar",
+      "case": "Calendar / Basic, Type=Range Calendar, Mobile=No"
+    },
+    "resizable.png": {
+      "nodeId": "17382:7210",
+      "page": "Resizable",
+      "case": "Resizable, two panels with handle"
     }
   }
 }
