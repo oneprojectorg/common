@@ -106,7 +106,7 @@ export const MenusNavigation: Story = {
           <DropdownMenuTrigger render={<Button variant="outline" />}>
             Open menu
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-40">
+          <DropdownMenuContent className="sense w-40">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuItem>
               Profile
@@ -135,7 +135,7 @@ export const MenusNavigation: Story = {
           <ContextMenuTrigger className="flex h-24 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
             Right-click here
           </ContextMenuTrigger>
-          <ContextMenuContent className="w-64">
+          <ContextMenuContent className="sense w-64">
             <ContextMenuLabel>Actions</ContextMenuLabel>
             <ContextMenuItem>
               Back
@@ -156,7 +156,7 @@ export const MenusNavigation: Story = {
         <Menubar>
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
-            <MenubarContent>
+            <MenubarContent className="sense">
               <MenubarItem>
                 New Tab
                 <MenubarShortcut>⌘T</MenubarShortcut>
@@ -171,14 +171,14 @@ export const MenusNavigation: Story = {
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger>Edit</MenubarTrigger>
-            <MenubarContent>
+            <MenubarContent className="sense">
               <MenubarItem>Undo</MenubarItem>
               <MenubarItem>Redo</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger>View</MenubarTrigger>
-            <MenubarContent>
+            <MenubarContent className="sense">
               <MenubarItem>Reload</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
@@ -195,7 +195,7 @@ export const MenusNavigation: Story = {
           <NavigationMenuList>
             <NavigationMenuItem>
               <NavigationMenuTrigger>Getting started</NavigationMenuTrigger>
-              <NavigationMenuContent>
+              <NavigationMenuContent className="sense">
                 <ul className="grid w-64 gap-1">
                   <li>
                     <NavigationMenuLink href="#">
