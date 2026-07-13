@@ -178,9 +178,12 @@
  * consistent, either add `.sense` to `<body>` at the layout root, or pass
  * a sense-scoped element via base-ui's Portal `container` prop. */
 
-/* Radius scale — exact values from the Common Sense Figma radius collection
- * (which equal Tailwind's defaults): sm 4, md 6, lg 8, xl 12, 2xl 16,
- * 3xl 20, 4xl 24. */
+/* Radius scale — exact values from the Common Sense Figma radius collection,
+ * which equal Tailwind's defaults (sm 4, md 6, lg 8, xl 12, ...). This block
+ * exists because shared-styles.css overrides --radius-sm/--radius-md with
+ * smaller @op/ui-tuned values in its @theme; it restores the defaults for
+ * `.sense` subtrees. Delete it (and just use Tailwind's defaults) once the
+ * @op/ui overrides in shared-styles are gone. */
 .sense {
   --radius-xs: 0px;
   --radius-sm: 0.25rem;
