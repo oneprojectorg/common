@@ -1,7 +1,7 @@
 'use client';
 
 import { Command as CommandPrimitive } from 'cmdk';
-import { SearchIcon, CheckIcon } from 'lucide-react';
+import { LuSearch, LuCheck } from 'react-icons/lu';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
@@ -79,7 +79,7 @@ function CommandInput({
           {...props}
         />
         <InputGroupAddon>
-          <SearchIcon className="size-4 shrink-0 opacity-50" />
+          <LuSearch className="size-4 shrink-0 opacity-50" />
         </InputGroupAddon>
       </InputGroup>
     </div>
@@ -159,7 +159,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <CheckIcon className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      <LuCheck className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
     </CommandPrimitive.Item>
   );
 }
