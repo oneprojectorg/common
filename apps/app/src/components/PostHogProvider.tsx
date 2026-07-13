@@ -6,6 +6,8 @@ import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
 import { Suspense, useEffect } from 'react';
 
+import { stampExceptionWithTraceContext } from '../lib/otelErrorTracking';
+
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
@@ -17,6 +19,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // Capture Core Web Vitals (LCP/CLS/INP/FCP). Off by default in posthog-js;
       // the web-vitals collection lib ships transitively with posthog-js.
       capture_performance: { web_vitals: true },
+      // Stamp exceptions with OTel trace/span ids so they join to their traces
+      before_send: stampExceptionWithTraceContext,
       // Tracing headers set to `false` because it breaks CORS requests
       __add_tracing_headers: false,
     });

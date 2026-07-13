@@ -7,6 +7,7 @@ import {
 } from '@op/db/schema';
 import { OPBatchSend, RevisionResubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 
 const { reviewRevisionResubmitted } = Events;
 
@@ -51,7 +52,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
     });
 
     if (!assignment) {
-      console.error('No assignment data found for assignment:', assignmentId);
+      logger.error('No assignment data found for assignment', { assignmentId });
       return;
     }
 
@@ -100,10 +101,9 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
 
     const processProfile = processInstance.profile;
     if (!processProfile) {
-      console.error(
-        'No profile found for process instance:',
-        processInstance.id,
-      );
+      logger.error('No profile found for process instance', {
+        processInstanceId: processInstance.id,
+      });
       return;
     }
 
@@ -134,7 +134,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
           sent: data.length,
         };
       } catch (error) {
-        console.error('Failed to send revision resubmitted notifications:', {
+        logger.error('Failed to send revision resubmitted notifications', {
           error,
           assignmentId,
         });

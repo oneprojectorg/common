@@ -1,4 +1,5 @@
 import type { Proposal } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { CommonError } from '../../../utils';
 import { getBlockExecutor } from './blockExecutors';
@@ -81,7 +82,7 @@ export async function executeSelectionPipeline(
 
     return currentProposals;
   } catch (error) {
-    console.error('Error executing pipeline:', error);
+    logger.error('Error executing pipeline', { error });
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(`Pipeline execution failed: ${errorMessage}`);

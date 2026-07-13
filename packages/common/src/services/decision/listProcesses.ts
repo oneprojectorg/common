@@ -1,5 +1,6 @@
 import { and, db, desc, eq, ilike, sql } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 export interface ListProcessesInput {
   limit?: number;
@@ -65,7 +66,7 @@ export const listProcesses = async ({
       hasMore,
     };
   } catch (error) {
-    console.error('Error listing decision processes:', error);
+    logger.error('Error listing decision processes', { error });
     return {
       processes: [],
       total: 0,

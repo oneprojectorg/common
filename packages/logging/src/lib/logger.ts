@@ -2,6 +2,8 @@ import { context, trace } from '@opentelemetry/api';
 import type { AnyValue } from '@opentelemetry/api-logs';
 import { SeverityNumber, logs } from '@opentelemetry/api-logs';
 
+import { getLogContext } from './logContext';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LogData = Record<string, unknown>;
 
@@ -29,6 +31,9 @@ function toAnyValueMap(
       value === null
     ) {
       result[key] = value as AnyValue;
+    } else if (value instanceof Error) {
+      // JSON.stringify(Error) yields "{}" — keep name/message/stack instead
+      result[key] = value.stack ?? `${value.name}: ${value.message}`;
     } else {
       try {
         // Convert complex types to string
@@ -51,8 +56,13 @@ export class Logger {
     const traceId = spanContext?.traceId;
     const spanId = spanContext?.spanId;
 
-    // Merge trace context into data
+    // posthogDistinctId is the attribute PostHog Logs uses to link a record
+    // to a person; explicit values in `data` win over the request context.
+    const distinctId = getLogContext()?.posthogDistinctId;
+
+    // Merge trace and user context into data
     const enrichedData: LogData = {
+      ...(distinctId && { posthogDistinctId: distinctId }),
       ...data,
       ...(traceId && { traceId }),
       ...(spanId && { spanId }),

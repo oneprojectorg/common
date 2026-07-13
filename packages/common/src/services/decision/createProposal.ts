@@ -10,6 +10,7 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -256,7 +257,7 @@ export const createProposal = async ({
           proposalId: insertedProposal.id,
         });
       } catch (error) {
-        console.error('Error processing proposal content:', error);
+        logger.error('Error processing proposal content', { error });
         // Let the transaction roll back on error to maintain data consistency
         throw error;
       }

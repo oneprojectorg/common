@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
 import type {
@@ -121,14 +122,14 @@ function evaluateComparison(
         try {
           // Validate regex pattern is safe from ReDoS attacks
           if (!safeRegex(right)) {
-            console.error(`Unsafe regex pattern detected: ${right}`);
+            logger.error('Unsafe regex pattern detected', { pattern: right });
             return false;
           }
           const regex = new RegExp(right);
           return regex.test(left);
         } catch (error) {
           // Invalid regex pattern
-          console.error(`Invalid regex pattern: ${right}`, error);
+          logger.error('Invalid regex pattern', { pattern: right, error });
           return false;
         }
       }

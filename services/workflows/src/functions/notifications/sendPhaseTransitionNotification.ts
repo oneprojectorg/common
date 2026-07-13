@@ -8,6 +8,7 @@ import { db } from '@op/db/client';
 import { processInstances, profileUsers, profiles } from '@op/db/schema';
 import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { and, eq, isNotNull } from 'drizzle-orm';
 
 const { phaseTransitioned, manualSelectionsConfirmed } = Events;
@@ -48,15 +49,14 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     });
 
     if (!processData) {
-      console.error('No process instance found for id:', processInstanceId);
+      logger.error('No process instance found for id', { processInstanceId });
       return;
     }
 
     if (!processData.profileId) {
-      console.error(
-        'Process instance has no associated profile:',
+      logger.error('Process instance has no associated profile', {
         processInstanceId,
-      );
+      });
       return;
     }
 
@@ -144,7 +144,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           sent: data.length,
         };
       } catch (error) {
-        console.error('Failed to send phase transition notifications:', {
+        logger.error('Failed to send phase transition notifications', {
           error,
           processInstanceId,
         });

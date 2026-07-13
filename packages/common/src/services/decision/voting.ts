@@ -7,6 +7,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
@@ -320,7 +321,7 @@ export const submitVote = async ({
     } catch (err) {
       // waitUntil can throw synchronously off-Vercel (no request context).
       // Swallow here so analytics never causes "Failed to submit vote".
-      console.error('Failed to schedule user_voted tracking', err);
+      logger.error('Failed to schedule user_voted tracking', { error: err });
     }
 
     return {
@@ -337,7 +338,7 @@ export const submitVote = async ({
     if (error instanceof CommonError) {
       throw error;
     }
-    console.error('Error submitting vote:', error);
+    logger.error('Error submitting vote', { error });
     throw new CommonError('Failed to submit vote');
   }
 };
@@ -464,7 +465,7 @@ export const getVotingStatus = async ({
     if (error instanceof CommonError) {
       throw error;
     }
-    console.error('Error getting voting status:', error);
+    logger.error('Error getting voting status', { error });
     throw new CommonError('Failed to get voting status');
   }
 };

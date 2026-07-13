@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { desc, isNull } from 'drizzle-orm';
 
 export interface GetProfilePostsInput {
@@ -64,7 +65,7 @@ export const getProfilePosts = async (input: GetProfilePostsInput) => {
 
     return filteredResult.map((item) => item.post);
   } catch (error) {
-    console.error('Error fetching profile posts:', error);
+    logger.error('Error fetching profile posts', { error });
     throw error;
   }
 };

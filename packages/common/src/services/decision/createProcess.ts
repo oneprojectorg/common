@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
@@ -61,7 +62,7 @@ export const createProcess = async ({
     if (error instanceof UnauthorizedError || error instanceof CommonError) {
       throw error;
     }
-    console.error('Error creating decision process:', error);
+    logger.error('Error creating decision process', { error });
     throw new CommonError('Failed to create decision process');
   }
 };

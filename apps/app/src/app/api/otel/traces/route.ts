@@ -1,7 +1,8 @@
+import { logger } from '@op/logging';
 import { NextResponse } from 'next/server';
 
 /**
- * Proxy browser OTLP traces to SigNoz.
+ * Proxy browser OTLP traces to the configured OTel backend.
  * This avoids CORS issues and keeps API keys server-side.
  */
 export async function POST(request: Request) {
@@ -29,17 +30,16 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       // Log error but don't expose details to client
-      console.error(
-        '[OTel Proxy] Failed to forward traces:',
-        response.status,
-        await response.text(),
-      );
+      logger.error('[OTel Proxy] Failed to forward traces', {
+        status: response.status,
+        body: await response.text(),
+      });
       return new NextResponse(null, { status: 502 });
     }
 
     return new NextResponse(null, { status: response.status });
   } catch (error) {
-    console.error('[OTel Proxy] Error forwarding traces:', error);
+    logger.error('[OTel Proxy] Error forwarding traces', { error });
     return new NextResponse(null, { status: 502 });
   }
 }

@@ -11,6 +11,7 @@ import {
   sql,
 } from '@op/db/client';
 import { posts, postsToOrganizations, profiles } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { checkPermission, permission } from 'access-zones';
 import type { SQL } from 'drizzle-orm';
 
@@ -84,7 +85,7 @@ export const listPosts = async ({
     });
 
     if (!org) {
-      console.error('Could not find org while listing posts', {
+      logger.error('Could not find org while listing posts', {
         profileId,
         slug,
       });
@@ -207,7 +208,7 @@ export const listPosts = async ({
 
     return { items: itemsWithReactionsAndComments, next: nextCursor };
   } catch (e) {
-    console.error(e);
+    logger.error('Error listing posts', { error: e });
     throw e;
   }
 };

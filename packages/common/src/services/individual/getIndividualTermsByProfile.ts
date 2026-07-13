@@ -5,6 +5,7 @@ import {
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 export const getIndividualTermsByProfile = async ({
   profileId,
@@ -46,7 +47,7 @@ export const getIndividualTermsByProfile = async ({
 
     return termUris;
   } catch (error) {
-    console.error(error);
+    logger.error('Error fetching individual terms by profile', { error });
     throw error;
   }
 };

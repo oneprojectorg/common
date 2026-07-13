@@ -1,3 +1,5 @@
+import { logger } from '@op/logging';
+
 import { generateReviewAssignments } from './generateReviewAssignments';
 import type { OnPhaseAdvancedInput } from './onPhaseAdvanced';
 
@@ -13,9 +15,10 @@ export async function runGenerateReviewAssignments(
       transitionHistoryId: input.advanceResult.transitionHistoryId,
     });
   } catch (error) {
-    console.error(
-      `Review assignment generation failed for instance ${input.instanceId}, phase ${input.toPhaseId}:`,
+    logger.error('Review assignment generation failed', {
+      instanceId: input.instanceId,
+      toPhaseId: input.toPhaseId,
       error,
-    );
+    });
   }
 }

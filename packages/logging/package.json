@@ -5,7 +5,8 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./instrumentation": "./src/lib/instrumentation.ts"
   },
   "main": "src/index.ts",
   "scripts": {
@@ -14,7 +15,14 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/api-logs": "^0.208.0"
+    "@opentelemetry/api-logs": "^0.208.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.208.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.208.0",
+    "@opentelemetry/resources": "^2.5.0",
+    "@opentelemetry/sdk-logs": "^0.208.0",
+    "@opentelemetry/sdk-metrics": "^2.2.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0",
+    "@vercel/otel": "^2.1.0"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

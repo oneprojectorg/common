@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
+import { setErrorSpanFlusher } from '../lib/otelErrorTracking';
+
 /**
  * Client-side OpenTelemetry provider that initializes browser tracing.
  * Captures fetch/XHR calls, user interactions, and page navigations.
@@ -73,6 +75,12 @@ async function initOTelBrowser() {
           },
         }),
       ],
+    });
+
+    // Error spans (recorded via the PostHog before_send hook) flush
+    // immediately — the page may unload right after an error
+    setErrorSpanFlusher(() => {
+      void provider.forceFlush();
     });
 
     // Flush pending traces when user navigates away or switches tabs

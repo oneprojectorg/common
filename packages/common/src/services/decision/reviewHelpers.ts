@@ -3,6 +3,7 @@ import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
@@ -172,8 +173,9 @@ export function resolveAssignmentProposal(assignment: {
     !proposalData.collaborationDocId ||
     !proposalData.collaborationDocVersionId
   ) {
-    console.error(
-      `Proposal ${id} is missing collaborationDocId or collaborationDocVersionId`,
+    logger.error(
+      'Proposal is missing collaborationDocId or collaborationDocVersionId',
+      { proposalId: id },
     );
   }
 

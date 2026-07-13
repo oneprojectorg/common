@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { GetOrganizationPostsInput } from '@op/types';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
@@ -116,7 +117,7 @@ export const getOrganizationPosts = async (
 
     return itemsWithReactionsAndComments;
   } catch (error) {
-    console.error('Error fetching organization posts:', error);
+    logger.error('Error fetching organization posts', { error });
     throw error;
   }
 };

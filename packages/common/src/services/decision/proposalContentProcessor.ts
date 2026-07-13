@@ -1,5 +1,6 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { attachments, proposalAttachments, proposals } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 /**
  * Generate public URL for asset using Next.js rewrite
@@ -28,7 +29,7 @@ export async function processProposalContent({
     });
 
     if (!proposal) {
-      console.error(`Proposal not found: ${proposalId}`);
+      logger.error('Proposal not found', { proposalId });
       return;
     }
 
@@ -83,9 +84,9 @@ export async function processProposalContent({
         const publicUrl = getPublicUrl(storagePath);
 
         if (!publicUrl) {
-          console.error(
-            `Failed to generate public URL for ${attachment.storageObjectId}`,
-          );
+          logger.error('Failed to generate public URL', {
+            storageObjectId: attachment.storageObjectId,
+          });
           continue;
         }
 
@@ -108,7 +109,10 @@ export async function processProposalContent({
           fileSize: attachment.fileSize || 0,
         });
       } catch (error) {
-        console.error(`Error processing attachment ${attachment.id}:`, error);
+        logger.error('Error processing attachment', {
+          attachmentId: attachment.id,
+          error,
+        });
       }
     }
 
@@ -147,10 +151,7 @@ export async function processProposalContent({
       );
     }
   } catch (error) {
-    console.error(
-      `Error processing proposal content for ${proposalId}:`,
-      error,
-    );
+    logger.error('Error processing proposal content', { proposalId, error });
   }
 }
 
@@ -204,10 +205,10 @@ export async function getProposalAttachmentUrls(
         urlMap[attachment.id] = publicUrl;
       }
     } catch (error) {
-      console.error(
-        `Error getting URL for attachment ${attachment.id}:`,
+      logger.error('Error getting URL for attachment', {
+        attachmentId: attachment.id,
         error,
-      );
+      });
     }
   }
 
