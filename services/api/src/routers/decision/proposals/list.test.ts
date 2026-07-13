@@ -628,7 +628,7 @@ describe.concurrent('listProposals', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('should return html documentContent for legacy proposals with description', async ({
+  it('should return a plain-text previewText for legacy proposals with description', async ({
     task,
     onTestFinished,
   }) => {
@@ -660,13 +660,12 @@ describe.concurrent('listProposals', () => {
     });
 
     const foundProposal = result.proposals.find((p) => p.id === proposal.id);
-    expect(foundProposal?.documentContent).toEqual({
-      type: 'html',
-      content: htmlDescription,
-    });
+    expect(foundProposal?.previewText).toBe('This is rich content');
+    // List rows ship the precomputed preview instead of the full content.
+    expect(foundProposal?.documentContent).toBeUndefined();
   });
 
-  it('should return json documentContent when collaborationDocId exists and TipTap returns content', async ({
+  it('should return previewText from TipTap content when collaborationDocId exists', async ({
     task,
     onTestFinished,
   }) => {
@@ -712,15 +711,11 @@ describe.concurrent('listProposals', () => {
     });
 
     const foundProposal = result.proposals.find((p) => p.id === proposal.id);
-    expect(foundProposal?.documentContent).toEqual({
-      type: 'json',
-      fragments: {
-        default: mockTipTapContent,
-      },
-    });
+    expect(foundProposal?.previewText).toBe('Hello from TipTap');
+    expect(foundProposal?.documentContent).toBeUndefined();
   });
 
-  it('should omit documentContent when a TipTap fetch fails so one bad doc does not break the list', async ({
+  it('should omit previewText when a TipTap fetch fails so one bad doc does not break the list', async ({
     task,
     onTestFinished,
   }) => {
@@ -747,13 +742,14 @@ describe.concurrent('listProposals', () => {
     ]);
 
     // A single unavailable document must not break the whole list: the list
-    // still resolves and the affected proposal's documentContent is undefined.
+    // still resolves and the affected proposal's previewText is undefined.
     const result = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
     });
 
     const foundProposal = result.proposals.find((p) => p.id === proposal.id);
-    expect(foundProposal?.documentContent).toBeUndefined();
+    expect(foundProposal).toBeDefined();
+    expect(foundProposal?.previewText).toBeUndefined();
   });
 
   it('should fetch multiple TipTap documents in parallel', async ({
@@ -815,18 +811,8 @@ describe.concurrent('listProposals', () => {
     const found1 = result.proposals.find((p) => p.id === proposal1.id);
     const found2 = result.proposals.find((p) => p.id === proposal2.id);
 
-    expect(found1?.documentContent).toEqual({
-      type: 'json',
-      fragments: {
-        default: mockContent1,
-      },
-    });
-    expect(found2?.documentContent).toEqual({
-      type: 'json',
-      fragments: {
-        default: mockContent2,
-      },
-    });
+    expect(found1?.previewText).toBe('Doc 1');
+    expect(found2?.previewText).toBe('Doc 2');
   });
 
   it('should handle mixed proposal types (collab, legacy, empty)', async ({
@@ -892,22 +878,10 @@ describe.concurrent('listProposals', () => {
     );
     const foundEmpty = result.proposals.find((p) => p.id === emptyProposal.id);
 
-    expect(foundCollab?.documentContent).toEqual({
-      type: 'json',
-      fragments: {
-        default: mockTipTapContent,
-      },
-    });
-    expect(foundLegacy?.documentContent).toEqual({
-      type: 'html',
-      content: '<p>HTML</p>',
-    });
-    expect(foundEmpty?.documentContent).toEqual({
-      type: 'json',
-      fragments: {
-        default: { type: 'doc', content: [] },
-      },
-    });
+    expect(foundCollab?.previewText).toBe('TipTap');
+    expect(foundLegacy?.previewText).toBe('HTML');
+    // Empty doc (e.g. unedited draft) — empty preview, not an error.
+    expect(foundEmpty?.previewText).toBe('');
   });
 
   /**
@@ -1022,10 +996,7 @@ describe.concurrent('listProposals', () => {
       category: ['Infrastructure'],
     });
     // content→description backward compat
-    expect(foundA?.documentContent).toEqual({
-      type: 'html',
-      content: '<p>body from content field</p>',
-    });
+    expect(foundA?.previewText).toBe('body from content field');
 
     // Canonical budget passes through unchanged
     expect(foundB?.proposalData).toMatchObject({
@@ -1033,10 +1004,7 @@ describe.concurrent('listProposals', () => {
       budget: { amount: 4200, currency: 'EUR' },
       category: ['Education'],
     });
-    expect(foundB?.documentContent).toEqual({
-      type: 'html',
-      content: '<p>already migrated</p>',
-    });
+    expect(foundB?.previewText).toBe('already migrated');
   });
 
   it('should normalize budgets correctly when listing mixed new-schema and legacy proposals', async ({
@@ -1112,10 +1080,7 @@ describe.concurrent('listProposals', () => {
       title: 'New Schema',
       collaborationDocId: expect.any(String),
     });
-    expect(foundNew?.documentContent).toEqual({
-      type: 'json',
-      fragments: { default: mockContent },
-    });
+    expect(foundNew?.previewText).toBe('TipTap');
 
     // Legacy: budget normalized, content→description, custom field preserved
     expect(foundLegacy?.proposalData).toMatchObject({
@@ -1124,10 +1089,7 @@ describe.concurrent('listProposals', () => {
       budget: { amount: 9999, currency: 'USD' },
       customField: 'should survive',
     });
-    expect(foundLegacy?.documentContent).toEqual({
-      type: 'html',
-      content: '<p>old content field</p>',
-    });
+    expect(foundLegacy?.previewText).toBe('old content field');
   });
 
   /**
@@ -1611,17 +1573,13 @@ describe.concurrent('listProposals', () => {
     const listedProposal = result.proposals.find((p) => p.id === proposal.id);
     expect(listedProposal).toBeDefined();
 
-    const fragments = (
-      listedProposal!.documentContent as {
-        type: 'json';
-        fragments: Record<string, unknown>;
-      }
-    ).fragments;
-    expect(fragments.title).toEqual(textFragment('Pinned Title'));
-    expect(fragments.budget).toEqual(
-      textFragment('{"amount":500,"currency":"EUR"}'),
-    );
-    expect(fragments.category).toEqual(textFragment('Pinned Category'));
+    // The pinned version's fragments drive both the preview and the resolved
+    // system fields — the live (latest) fragments must not leak into the list.
+    expect(listedProposal!.previewText).toBe('Pinned summary');
+    expect(listedProposal!.proposalData).toMatchObject({
+      title: 'Pinned Title',
+      budget: { amount: 500, currency: 'EUR' },
+    });
   });
 });
 

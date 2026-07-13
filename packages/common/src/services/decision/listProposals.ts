@@ -15,6 +15,7 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { parseProposalData } from './proposalDataSchema';
+import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -51,7 +52,35 @@ export interface ListProposalsInput {
    * have the database drive the sort (descending count, createdAt tiebreak).
    */
   includeVoteCounts?: boolean;
+  /**
+   * Internal override: also return the full `documentContent` fragments per
+   * row. Not exposed on the tRPC schema — list reads ship the precomputed
+   * `previewText` instead; only trusted full-content consumers (e.g. the
+   * proposals export) should set this.
+   */
+  includeDocumentContent?: boolean;
 }
+
+/**
+ * Column picks for the `submittedBy`/`profile` relations on list rows. Covers
+ * the fields the widest consumer needs — the legacy results encoder
+ * (`baseProfileEncoder`, via `getInstanceResults`) requires the full profile
+ * shape, while the non-legacy `proposalSchema` encoder narrows further on the
+ * wire. Keeps only the generated `search` tsvector and other never-encoded
+ * columns out of the lateral joins.
+ */
+export const proposalProfileColumns = {
+  id: true,
+  type: true,
+  slug: true,
+  name: true,
+  city: true,
+  state: true,
+  bio: true,
+  mission: true,
+  email: true,
+  website: true,
+} satisfies Record<string, true>;
 
 export const listProposals = async ({
   input,
@@ -72,6 +101,19 @@ export const listProposals = async ({
     isEmpty,
     buildWhereClause,
   } = await resolveProposalListScope({ input, user });
+
+  // Template resolution depends only on the instance row — start it now so
+  // its (occasional) fallback DB read overlaps the main query instead of
+  // adding a serial barrier afterwards.
+  const proposalTemplatePromise = resolveProposalTemplate(
+    instance.instanceData as Record<string, unknown> | null,
+    instance.processId,
+  );
+  // Backstop: if this function throws or early-returns before the template is
+  // awaited (auth failure, bad cursor, empty phase window), a rejection here
+  // must not surface as an unhandled promise rejection. The later `await`
+  // still rethrows.
+  proposalTemplatePromise.catch(() => {});
 
   // The empty short-circuit is split around the cursor decode to preserve
   // pre-existing error semantics: trusted contexts always exited before
@@ -135,6 +177,7 @@ export const listProposals = async ({
       },
       with: {
         submittedBy: {
+          columns: proposalProfileColumns,
           with: {
             avatarImage: true,
             profileUsers: {
@@ -143,7 +186,7 @@ export const listProposals = async ({
             },
           },
         },
-        profile: true,
+        profile: { columns: proposalProfileColumns },
       },
       // Fetch one extra to detect whether a next page exists.
       limit: limit + 1,
@@ -187,11 +230,9 @@ export const listProposals = async ({
 
   type ProposalListItem = (typeof proposalList)[number];
 
-  // Resolve proposalTemplate from instanceData, falling back to processSchema
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
-    instance.processId,
-  );
+  // Resolved from instanceData (falling back to processSchema) — the promise
+  // was started right after the scope resolved, so this await is usually free.
+  const proposalTemplate = await proposalTemplatePromise;
 
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
@@ -258,10 +299,22 @@ export const listProposals = async ({
     const isEditable =
       input.phase === 'results' ? false : isOwner || hasAdminPermission;
 
+    // List rows ship a precomputed plain-text preview plus fragment-resolved
+    // system fields instead of the full document fragments; the fragments
+    // themselves only ride along for trusted full-content consumers.
+    const documentContent = documentContentMap.get(proposal.id);
+    const { previewText, systemFieldOverrides } = buildProposalListPreview({
+      documentContent,
+      proposalTemplate,
+    });
+
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
-      proposalData: parseProposalData(proposal.proposalData),
+      proposalData: {
+        ...parseProposalData(proposal.proposalData),
+        ...systemFieldOverrides,
+      },
       status: proposal.status,
       visibility: proposal.visibility,
       createdAt: proposal.createdAt,
@@ -277,7 +330,10 @@ export const listProposals = async ({
       isEditable,
       isSelected: selectedIds.has(proposal.id),
       isFlagged: flaggedIds.has(proposal.id),
-      documentContent: documentContentMap.get(proposal.id),
+      previewText: previewText ?? undefined,
+      documentContent: input.includeDocumentContent
+        ? documentContent
+        : undefined,
       proposalTemplate,
       ...(includeVoteCounts && {
         voteCount: Number(

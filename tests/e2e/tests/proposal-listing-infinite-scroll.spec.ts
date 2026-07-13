@@ -42,7 +42,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
     });
 
     // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
-    const PAGE_LIMIT = 51;
+    const PAGE_LIMIT = 24;
     const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
 
     for (let i = 1; i <= TOTAL_PROPOSALS; i++) {
@@ -143,7 +143,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
     });
 
     // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
-    const PAGE_LIMIT = 51;
+    const PAGE_LIMIT = 24;
     const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
 
     for (let i = 1; i <= TOTAL_PROPOSALS; i++) {

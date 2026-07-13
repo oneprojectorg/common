@@ -69,7 +69,9 @@ export interface ProposalsListProps {
 }
 
 // A multiple of three so a full page fills the three-per-row grid evenly.
-const PROPOSALS_PAGE_LIMIT = 51;
+// Kept small — every server-side cost of listProposals scales with this
+// number, and infinite scroll pulls further pages as needed.
+const PROPOSALS_PAGE_LIMIT = 24;
 
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
 
