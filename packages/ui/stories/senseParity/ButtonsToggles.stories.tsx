@@ -3,7 +3,12 @@ import { ButtonGroup } from '@op/sense/ButtonGroup';
 import { Toggle } from '@op/sense/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { LuBold, LuCircleArrowLeft } from 'react-icons/lu';
+import {
+  LuBold,
+  LuCircleArrowLeft,
+  LuItalic,
+  LuUnderline,
+} from 'react-icons/lu';
 
 import figmaButtonDefault from '../assets/figma/button-default.png';
 import figmaButtonDestructive from '../assets/figma/button-destructive.png';
@@ -115,15 +120,15 @@ export const ButtonsToggles: Story = {
         img={figmaToggleGroupJoined}
         imgWidth={144}
       >
-        <ToggleGroup spacing={0} variant="outline" defaultValue={['a']}>
-          <ToggleGroupItem value="a" aria-label="Bold">
+        <ToggleGroup spacing={0} variant="outline" defaultValue={['bold']}>
+          <ToggleGroupItem value="bold" aria-label="Bold">
             <LuBold />
           </ToggleGroupItem>
-          <ToggleGroupItem value="b" aria-label="Bold">
-            <LuBold />
+          <ToggleGroupItem value="italic" aria-label="Italic">
+            <LuItalic />
           </ToggleGroupItem>
-          <ToggleGroupItem value="c" aria-label="Bold">
-            <LuBold />
+          <ToggleGroupItem value="underline" aria-label="Underline">
+            <LuUnderline />
           </ToggleGroupItem>
         </ToggleGroup>
       </ParityRow>
@@ -133,15 +138,15 @@ export const ButtonsToggles: Story = {
         img={figmaToggleGroupSpaced}
         imgWidth={160}
       >
-        <ToggleGroup variant="outline" defaultValue={['a']}>
-          <ToggleGroupItem value="a" aria-label="Bold">
+        <ToggleGroup variant="outline" defaultValue={['bold']}>
+          <ToggleGroupItem value="bold" aria-label="Bold">
             <LuBold />
           </ToggleGroupItem>
-          <ToggleGroupItem value="b" aria-label="Bold">
-            <LuBold />
+          <ToggleGroupItem value="italic" aria-label="Italic">
+            <LuItalic />
           </ToggleGroupItem>
-          <ToggleGroupItem value="c" aria-label="Bold">
-            <LuBold />
+          <ToggleGroupItem value="underline" aria-label="Underline">
+            <LuUnderline />
           </ToggleGroupItem>
         </ToggleGroup>
       </ParityRow>
