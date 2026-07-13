@@ -229,6 +229,34 @@
   --text-2xl--line-height: 32px;
 }
 
+/* Semantic type scale from the Figma "Typography" collection. The collection
+ * has Default and Mobile modes; these are mobile-first with the Default
+ * (desktop) values applied from `md` up — breakpoint is our assumption, the
+ * collection doesn't name one. xs/sm/base in the modes match the scale
+ * above; lg/xl/2xl have no Figma equivalent and stay Tailwind defaults for
+ * stock shadcn internals. */
+@theme {
+  --text-label: 16px;
+  --text-label--line-height: 16px;
+  --text-title: 18px;
+  --text-title--line-height: 28px;
+  --text-headline: 20px;
+  --text-headline--line-height: 28px;
+  --text-display: 24px;
+  --text-display--line-height: 32px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --text-title: 20px;
+    --text-title--line-height: 22px;
+    --text-headline: 30px;
+    --text-headline--line-height: 33px;
+    --text-display: 48px;
+    --text-display--line-height: 52px;
+  }
+}
+
 @keyframes accordion-down {
   from {
     height: 0;
