@@ -253,6 +253,66 @@
       "nodeId": "21141:393123",
       "page": "Tabs",
       "case": "Playground example: underline (line) variant"
+    },
+    "table.png": {
+      "nodeId": "325:388",
+      "page": "Table",
+      "case": "Table with header, body, footer, caption"
+    },
+    "card.png": {
+      "nodeId": "21123:292666",
+      "page": "Card",
+      "case": "Card, Size=default and sm"
+    },
+    "badge.png": {
+      "nodeId": "26:169",
+      "page": "Badge",
+      "case": "Badge variant sheet"
+    },
+    "avatar.png": {
+      "nodeId": "17100:29935",
+      "page": "Avatar",
+      "case": "Avatar sizes and types"
+    },
+    "accordion.png": {
+      "nodeId": "21119:34264",
+      "page": "Accordion",
+      "case": "Accordion set, Basic"
+    },
+    "item.png": {
+      "nodeId": "18672:198607",
+      "page": "Item",
+      "case": "Item variant sheet"
+    },
+    "empty.png": {
+      "nodeId": "18672:2962",
+      "page": "Empty",
+      "case": "Empty with media, title, description, actions"
+    },
+    "kbd.png": {
+      "nodeId": "18665:995",
+      "page": "Kbd",
+      "case": "Kbd group"
+    },
+    "chart.png": {
+      "nodeId": "449:7503",
+      "page": "Chart",
+      "case": "Bar Chart sheet (mock-only reference)"
+    },
+    "separator.png": {
+      "nodeId": "118:2690",
+      "page": "Separator",
+      "case": "Horizontal + vertical separators"
+    },
+    "carousel.png": {
+      "nodeId": "241:1368",
+      "page": "Carousel",
+      "case": "Carousel with arrow buttons"
+    },
+    "scroll-area.png": {
+      "nodeId": "18597:81811",
+      "page": "Scroll Area",
+      "case": "Vertical scroll area demo container"
     }
   }
 }
