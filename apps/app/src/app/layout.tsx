@@ -18,9 +18,10 @@ import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubs
 import { I18nProvider } from '../lib/i18n';
 import { getLocaleDirection } from '../lib/i18n/config';
 
+// Variable font (wght 100–900) so intermediate weights render real faces —
+// the Common Sense "strong" text styles sit at 450.
 const roboto = Roboto({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '700', '900'],
   variable: '--font-sans',
   display: 'swap',
 });

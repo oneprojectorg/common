@@ -155,6 +155,11 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
+  /* Strong text weight — the Common Sense "-strong" text styles (labels,
+   * buttons, kbd) sit at 450, between normal and medium. Requires Roboto
+   * loaded as a variable font (apps/app root layout). Use `font-strong`. */
+  --font-weight-strong: 450;
+
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
