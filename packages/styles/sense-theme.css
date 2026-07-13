@@ -183,6 +183,17 @@
  * consistent, either add `.sense` to `<body>` at the layout root, or pass
  * a sense-scoped element via base-ui's Portal `container` prop. */
 
+/* Shadow + blur — the Common Sense shadow collection equals Tailwind's
+ * defaults, but shared-styles.css overrides `--shadow`/`--shadow-md` with the
+ * @op/ui glow style and `--blur-sm` with 1px. Restore the defaults for
+ * `.sense` subtrees (same delete-when-@op/ui-dies lifecycle as the radius
+ * block below; same portal caveat as above). */
+.sense {
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --blur-sm: 8px;
+}
+
 /* Radius scale — exact values from the Common Sense Figma radius collection,
  * which equal Tailwind's defaults (sm 4, md 6, lg 8, xl 12, ...). This block
  * exists because shared-styles.css overrides --radius-sm/--radius-md with
