@@ -178,12 +178,18 @@
  * consistent, either add `.sense` to `<body>` at the layout root, or pass
  * a sense-scoped element via base-ui's Portal `container` prop. */
 
-/* Radius scale — matches shadcn.com defaults. */
+/* Radius scale — exact values from the Common Sense Figma radius collection
+ * (which equal Tailwind's defaults): sm 4, md 6, lg 8, xl 12, 2xl 16,
+ * 3xl 20, 4xl 24. */
 .sense {
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-xs: 0px;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+  --radius-4xl: 1.5rem;
 }
 
 /* Font smoothing — the Common Sense designs assume macOS-style grayscale
