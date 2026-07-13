@@ -251,10 +251,19 @@
   --text-label--line-height: 16px;
   --text-title: 18px;
   --text-title--line-height: 28px;
+  /* Serif titles track tighter in the component masters: -0.3px at 20px
+   * (-0.015em). text-label itself stays untracked — sans labels
+   * (sidebar, field titles) measure 0 in Figma; serif titles at label
+   * size use `tracking-serif-label` below. */
+  --text-title--letter-spacing: -0.015em;
   --text-headline: 20px;
   --text-headline--line-height: 28px;
   --text-display: 24px;
   --text-display--line-height: 32px;
+
+  /* For 16px serif titles (popover title, small-card title): -0.16px at
+   * 16px in the masters. */
+  --tracking-serif-label: -0.01em;
 }
 
 @media (min-width: 768px) {
