@@ -22,6 +22,7 @@ import { getLocaleDirection } from '../lib/i18n/config';
 // the Common Sense "strong" text styles sit at 450.
 const roboto = Roboto({
   subsets: ['latin'],
+  weight: '100 900',
   variable: '--font-sans',
   display: 'swap',
 });
