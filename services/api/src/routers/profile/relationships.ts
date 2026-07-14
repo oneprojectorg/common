@@ -1,7 +1,7 @@
 import {
   Channels,
   addProfileRelationship,
-  assertProposalProfileVisibleById,
+  assertProposalEngagementAccess,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
@@ -100,11 +100,11 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType } = input;
 
       // The confirmed tier admits out-of-network accounts (the claim flow's
-      // point), so the network gate no longer bounds who reaches this. If the
-      // target is a proposal, assert the caller can actually see it — otherwise
-      // a leaked draft/hidden proposal's profile id could be liked to inflate
-      // its public count. No-ops for public org/person targets.
-      await assertProposalProfileVisibleById({
+      // point), so the network gate no longer bounds who reaches this. Gate a
+      // proposal like/follow the same way commenting is gated — SUBMIT_PROPOSALS
+      // on the parent decision — so engagement stays consistent. No-ops for
+      // public org/person targets.
+      await assertProposalEngagementAccess({
         user: ctx.user,
         profileId: targetProfileId,
       });
