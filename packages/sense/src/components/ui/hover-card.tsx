@@ -26,7 +26,7 @@ function HoverCardTrigger({
 
 function HoverCardContent({
   className,
-  side = 'bottom',
+  side = 'top',
   sideOffset = 4,
   align = 'center',
   alignOffset = 4,
