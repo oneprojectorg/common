@@ -205,34 +205,34 @@
       "case": "Hover card panel"
     },
     "dropdown-menu.png": {
-      "nodeId": "105:55",
+      "nodeId": "21207:248596",
       "page": "Dropdown Menu",
-      "case": "Menu panel, Color=Default, Appearance=Solid"
+      "case": "Playground first example: Basic"
     },
     "context-menu.png": {
-      "nodeId": "249:5013",
+      "nodeId": "21186:4423",
       "page": "Context Menu",
-      "case": "Context menu panel, Color=Default, Appearance=Solid"
+      "case": "Playground first example"
     },
     "menubar.png": {
-      "nodeId": "216:1522",
+      "nodeId": "21147:293978",
       "page": "Menubar",
-      "case": "Menubar with open menu"
+      "case": "Playground first example"
     },
     "navigation-menu.png": {
-      "nodeId": "17375:179951",
+      "nodeId": "17375:197438",
       "page": "Navigation Menu",
-      "case": "Popover, Type=Custom"
+      "case": "Playground first example"
     },
     "breadcrumb.png": {
-      "nodeId": "109:946",
+      "nodeId": "17085:177518",
       "page": "Breadcrumb",
-      "case": "Breadcrumb row, Size=md"
+      "case": "Playground first example"
     },
     "tabs.png": {
-      "nodeId": "183:539",
+      "nodeId": "21408:100587",
       "page": "Tabs",
-      "case": "Tabs list, Variant=Default, Orientation=Default"
+      "case": "Playground first example: Flex"
     },
     "sidebar.png": {
       "nodeId": "5198:1787",
@@ -240,14 +240,19 @@
       "case": "Sidebar 01 example"
     },
     "pagination.png": {
-      "nodeId": "208:1701",
+      "nodeId": "17086:207086",
       "page": "Pagination",
-      "case": "Assembled pagination row"
+      "case": "Playground example: full pagination row"
     },
     "command.png": {
-      "nodeId": "204:1143",
+      "nodeId": "21183:21228",
       "page": "Command",
-      "case": "Command palette, Variant=Suggestions"
+      "case": "Playground first example"
+    },
+    "tabs-line.png": {
+      "nodeId": "21141:393123",
+      "page": "Tabs",
+      "case": "Playground example: underline (line) variant"
     }
   }
 }
