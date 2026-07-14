@@ -231,17 +231,18 @@ export const CreateOrganizationForm = forwardRef<
             <field.TextField
               label={t('Website')}
               isRequired
-              type="url"
-              // Let our zod schema own validation: it accepts a bare domain and
-              // auto-prefixes `https://`. Native URL validation would reject the
-              // scheme-less value and silently block form submission.
-              validationBehavior="aria"
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               inputProps={{
                 icon: <LuLink className="size-4 text-neutral-black" />,
                 placeholder: t("Enter your organization's website here"),
+                // Not `type="url"`: our zodUrl validation accepts a bare domain
+                // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
+                // browser's native URL validation rejects the scheme-less value
+                // and silently blocks form submission. `inputMode` keeps the
+                // URL-optimized keyboard without that native constraint.
+                inputMode: 'url',
               }}
               errorMessage={getFieldErrorMessage(field)}
             />
