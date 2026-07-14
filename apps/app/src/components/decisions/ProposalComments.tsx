@@ -12,6 +12,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
+import { JoinDecisionButton } from './JoinAccountModal';
 
 export function ProposalComments({
   proposal,
@@ -37,7 +38,14 @@ export function ProposalComments({
   // SUBMIT_PROPOSALS on the decision profile). Showing the post box to users
   // who'd get rejected on submit surfaces as a "Not authorized" toast.
   const canSubmitProposal = proposal.access?.submitProposals === true;
-  const readOnly = readOnlyProp || !userCanInteract(user) || !canSubmitProposal;
+  const canInteract = userCanInteract(user);
+  const readOnly = readOnlyProp || !canInteract || !canSubmitProposal;
+  // A visitor on a public process who could comment with an account gets an
+  // account-claim prompt where the composer would be. The opening button
+  // relies on JoinAccountModal being mounted by ProposalViewLayout; the other
+  // ProposalComments surface (ReviewProposalPane) only renders for reviewers,
+  // who always pass userCanInteract.
+  const showJoinPrompt = !readOnlyProp && !canInteract && canSubmitProposal;
 
   const scrollToComments = useCallback(() => {
     setTimeout(() => {
@@ -67,6 +75,17 @@ export function ProposalComments({
                 proposalId={proposal.id}
                 processInstanceId={proposal.processInstanceId}
               />
+            </Surface>
+          </div>
+        )}
+
+        {showJoinPrompt && (
+          <div className="mb-8">
+            <Surface className="flex flex-col items-center gap-3 border-0 p-0 text-center sm:border sm:p-6">
+              <p className="text-base text-neutral-charcoal">
+                {t('Join Common to comment on this proposal.')}
+              </p>
+              <JoinDecisionButton />
             </Surface>
           </div>
         )}
