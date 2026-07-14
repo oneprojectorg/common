@@ -232,6 +232,10 @@ export const CreateOrganizationForm = forwardRef<
               label={t('Website')}
               isRequired
               type="url"
+              // Let our zod schema own validation: it accepts a bare domain and
+              // auto-prefixes `https://`. Native URL validation would reject the
+              // scheme-less value and silently block form submission.
+              validationBehavior="aria"
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
