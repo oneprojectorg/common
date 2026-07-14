@@ -144,8 +144,9 @@ test.describe('Join account flow (public decision header)', () => {
     });
 
     // Anchor on the decision header being rendered before asserting absences.
+    // .first(): the header renders the title twice (responsive md variants).
     await expect(
-      page.getByRole('heading', { name: instance.name }),
+      page.getByRole('heading', { name: instance.name }).first(),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
