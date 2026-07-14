@@ -1,23 +1,15 @@
 import { Channels, listSelectionCandidates } from '@op/common';
-import { proposalSchema } from '@op/common/client';
-import { z } from 'zod';
+import {
+  selectionCandidatesFilterSchema,
+  selectionCandidatesListSchema,
+} from '@op/common/client';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
-const listSelectionCandidatesInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  categoryId: z.uuid().optional(),
-  sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
-});
-
-const listSelectionCandidatesOutputSchema = z.object({
-  proposals: z.array(proposalSchema),
-});
-
 export const listSelectionCandidatesRouter = router({
   listSelectionCandidates: networkAuthenticatedProcedure()
-    .input(listSelectionCandidatesInputSchema)
-    .output(listSelectionCandidatesOutputSchema)
+    .input(selectionCandidatesFilterSchema)
+    .output(selectionCandidatesListSchema)
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([
         Channels.decisionInstance(input.processInstanceId),
@@ -27,6 +19,8 @@ export const listSelectionCandidatesRouter = router({
         processInstanceId: input.processInstanceId,
         categoryId: input.categoryId,
         sortOrder: input.sortOrder,
+        cursor: input.cursor,
+        limit: input.limit,
         user: ctx.user,
       });
     }),

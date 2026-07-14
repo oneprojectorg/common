@@ -1,7 +1,14 @@
-import { db } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
+import { proposalReviewAssignments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { count as countFn } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import {
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
@@ -17,24 +24,38 @@ import {
   reviewAssignmentListSchema,
 } from './schemas/reviews';
 
-/** Returns all authorized review assignments for the current reviewer in a process instance. */
+interface ListReviewAssignmentsInput {
+  processInstanceId: string;
+  status?: string;
+  dir?: 'asc' | 'desc';
+  /** Cursor returned by a prior page's `next`; opaque to callers. */
+  cursor?: string | null;
+  /** Max items in this page (1–100, default 50). */
+  limit?: number;
+  user: User;
+}
+
+/**
+ * Returns the current reviewer's authorized review assignments in a process
+ * instance, keyset-paginated on `assignedAt + id`. The per-row TipTap doc
+ * hydration that used to run over the reviewer's entire assignment set now
+ * only runs over one page, which is what keeps large queues from timing out.
+ */
 export async function listReviewAssignments({
   processInstanceId,
   status,
   dir = 'asc',
+  cursor,
+  limit = 50,
   user,
-}: {
-  processInstanceId: string;
-  status?: string;
-  dir?: 'asc' | 'desc';
-  user: User;
-}): Promise<ReviewAssignmentList> {
+}: ListReviewAssignmentsInput): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
     getInstance({ instanceId: processInstanceId, user }),
     assertUserByAuthId(user.id),
   ]);
 
-  if (!dbUser.profileId) {
+  const reviewerProfileId = dbUser.profileId;
+  if (!reviewerProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
@@ -42,17 +63,52 @@ export async function listReviewAssignments({
     throw new UnauthorizedError("You don't have access to review proposals");
   }
 
-  const assignments = await db.query.proposalReviewAssignments.findMany({
-    where: {
-      processInstanceId,
-      reviewerProfileId: dbUser.profileId,
-      ...(status && { status }),
-    },
-    with: reviewAssignmentWithConfig,
-    orderBy: {
-      assignedAt: dir,
-    },
-  });
+  const decodedCursor = cursor
+    ? decodeCursor<{ value: string | Date; id: string }>(cursor)
+    : undefined;
+
+  // Cursor lives only on the data query so `total` stays the full match count.
+  const [rawAssignments, countResult] = await Promise.all([
+    db.query.proposalReviewAssignments.findMany({
+      where: {
+        RAW: (table) =>
+          and(
+            eq(table.processInstanceId, processInstanceId),
+            eq(table.reviewerProfileId, reviewerProfileId),
+            status ? eq(table.status, status) : undefined,
+            getCursorCondition({
+              column: table.assignedAt,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: dir,
+            }),
+          )!,
+      },
+      with: reviewAssignmentWithConfig,
+      orderBy: (table, { asc, desc }) =>
+        dir === 'asc'
+          ? [asc(table.assignedAt), asc(table.id)]
+          : [desc(table.assignedAt), desc(table.id)],
+      // Fetch one extra to detect whether a next page exists.
+      limit: limit + 1,
+    }),
+    db
+      .select({ count: countFn() })
+      .from(proposalReviewAssignments)
+      .where(
+        and(
+          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+          eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
+          status ? eq(proposalReviewAssignments.status, status) : undefined,
+        ),
+      ),
+  ]);
+
+  const total = Number(countResult[0]?.count ?? 0);
+  const hasMore = rawAssignments.length > limit;
+  const pageAssignments = hasMore
+    ? rawAssignments.slice(0, limit)
+    : rawAssignments;
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
@@ -67,7 +123,7 @@ export async function listReviewAssignments({
     collaborationDocVersionId?: number;
   }> = [];
 
-  for (const assignment of assignments) {
+  for (const assignment of pageAssignments) {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
 
     docContentInputs.push({
@@ -85,7 +141,7 @@ export async function listReviewAssignments({
     { onFetchError: 'omit' },
   );
 
-  const assignmentList = assignments.map((assignment) => {
+  const assignmentList = pageAssignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
 
     const documentContent = documentContentMap.get(proposalSnapshot.id);
@@ -113,7 +169,21 @@ export async function listReviewAssignments({
     };
   });
 
+  const lastAssignment = pageAssignments[pageAssignments.length - 1];
+  const cursorValue = lastAssignment?.assignedAt;
+  // `!= null` (not a truthy check) so a falsy-but-valid sort value still
+  // produces a cursor instead of silently ending pagination.
+  const next =
+    hasMore && lastAssignment && cursorValue != null
+      ? encodeCursor<{ value: string | Date; id: string }>({
+          value: cursorValue,
+          id: lastAssignment.id,
+        })
+      : null;
+
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
+    total,
+    next,
   });
 }

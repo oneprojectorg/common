@@ -222,6 +222,63 @@ export const allProposalsListSchema = z.object({
 
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
 
+/**
+ * Leaner proposal shape for the admin manual-selection list — a view that can
+ * hold thousands of rows. Drops the per-row TipTap doc payload
+ * (`documentContent` / `htmlContent`), the resolved `proposalTemplate`, and
+ * the engagement metrics the selection table never renders; the
+ * single-proposal endpoints still hydrate the full shape when the admin opens
+ * an individual proposal.
+ */
+export const selectionCandidateSchema = proposalSchema.omit({
+  decisionCount: true,
+  isEditable: true,
+  access: true,
+  attachments: true,
+  selectionRank: true,
+  allocated: true,
+  documentContent: true,
+  htmlContent: true,
+  proposalTemplate: true,
+  likesCount: true,
+  followersCount: true,
+  commentsCount: true,
+  isLikedByUser: true,
+  isFollowedByUser: true,
+});
+
+export type SelectionCandidate = z.infer<typeof selectionCandidateSchema>;
+
+/**
+ * Input schema for `decision.listSelectionCandidates`. Pass `cursor` from the
+ * previous page's `next`. `newest` / `oldest` keyset on `createdAt + id`;
+ * `votes` pages by offset because the vote count is a correlated aggregate
+ * that can't keyset (the candidate set is phase-bounded, so offset stays
+ * cheap).
+ */
+export const selectionCandidatesFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  categoryId: z.uuid().optional(),
+  sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(50),
+});
+
+export type SelectionCandidatesFilter = z.infer<
+  typeof selectionCandidatesFilterSchema
+>;
+
+/** Response from `decision.listSelectionCandidates`. */
+export const selectionCandidatesListSchema = z.object({
+  items: z.array(selectionCandidateSchema),
+  total: z.number(),
+  next: z.string().nullable(),
+});
+
+export type SelectionCandidatesList = z.infer<
+  typeof selectionCandidatesListSchema
+>;
+
 /** Minimal submitter profile shape used by the face-pile endpoint. */
 export const proposalSubmitterSchema = z.object({
   slug: z.string(),

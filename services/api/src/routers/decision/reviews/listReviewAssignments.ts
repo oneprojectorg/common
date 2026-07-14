@@ -2,21 +2,14 @@ import {
   Channels,
   listReviewAssignments,
   reviewAssignmentListSchema,
+  reviewAssignmentsFilterSchema,
 } from '@op/common';
-import { ProposalReviewAssignmentStatus } from '@op/db/schema';
-import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listReviewAssignmentsRouter = router({
   listReviewAssignments: networkAuthenticatedProcedure()
-    .input(
-      z.object({
-        processInstanceId: z.uuid(),
-        status: z.enum(ProposalReviewAssignmentStatus).optional(),
-        dir: z.enum(['asc', 'desc']).optional(),
-      }),
-    )
+    .input(reviewAssignmentsFilterSchema)
     .output(reviewAssignmentListSchema)
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([
@@ -27,6 +20,8 @@ export const listReviewAssignmentsRouter = router({
         processInstanceId: input.processInstanceId,
         status: input.status,
         dir: input.dir,
+        cursor: input.cursor,
+        limit: input.limit,
         user: ctx.user,
       });
     }),

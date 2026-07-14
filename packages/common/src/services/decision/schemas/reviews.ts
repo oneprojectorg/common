@@ -81,6 +81,22 @@ export const proposalReviewAssignmentSchema = z.object({
   proposal: proposalSchema,
 });
 
+/**
+ * Input schema for `decision.listReviewAssignments`. Pass `cursor` from the
+ * previous page's `next`; pages keyset on `assignedAt + id`.
+ */
+export const reviewAssignmentsFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  status: z.enum(ProposalReviewAssignmentStatus).optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(50),
+});
+
+export type ReviewAssignmentsFilter = z.infer<
+  typeof reviewAssignmentsFilterSchema
+>;
+
 // ── Revision request schemas ───────────────────────────────────────────
 
 export const proposalReviewRequestSchema = z.object({
@@ -118,6 +134,9 @@ export const reviewAssignmentExtendedSchema = z.object({
 
 export const reviewAssignmentListSchema = z.object({
   assignments: z.array(reviewAssignmentExtendedSchema),
+  // Full count of the reviewer's matching assignments, independent of cursor.
+  total: z.number(),
+  next: z.string().nullable(),
 });
 
 // ── Proposal-scoped revision request schemas ──────────────────────────
