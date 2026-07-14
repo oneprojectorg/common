@@ -37,18 +37,22 @@ export function ParityRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid w-fit grid-cols-[12rem_31rem_31rem] items-start gap-x-8 border-t border-neutral-gray1 pt-6">
-      <p className="font-mono text-xs text-neutral-gray4 uppercase">{label}</p>
-      <div className="min-w-0">
-        <img
-          src={img}
-          alt={`Figma mock: ${label}`}
-          style={{ width: imgWidth }}
-          className="max-w-none"
-        />
-      </div>
-      <div className="sense min-w-0">
-        <div style={{ width: imgWidth }}>{children}</div>
+    <div className="flex w-full flex-col">
+      <p className="border-t border-neutral-gray4 bg-neutral-gray1/60 px-3 py-2 font-mono text-xs text-neutral-charcoal uppercase">
+        {label}
+      </p>
+      <div className="grid w-full grid-cols-2 items-start gap-x-8 pt-4">
+        <div className="min-w-0">
+          <img
+            src={img}
+            alt={`Figma mock: ${label}`}
+            style={{ width: imgWidth }}
+            className="max-w-none"
+          />
+        </div>
+        <div className="sense min-w-0">
+          <div style={{ minWidth: imgWidth }}>{children}</div>
+        </div>
       </div>
     </div>
   );
@@ -56,8 +60,7 @@ export function ParityRow({
 
 export function ParityGridHeader() {
   return (
-    <div className="grid w-fit grid-cols-[12rem_31rem_31rem] gap-x-8">
-      <ParityHeading>Case</ParityHeading>
+    <div className="grid w-full grid-cols-2 gap-x-8">
       <ParityHeading>Figma (@2x)</ParityHeading>
       <ParityHeading>@op/sense (live)</ParityHeading>
     </div>
