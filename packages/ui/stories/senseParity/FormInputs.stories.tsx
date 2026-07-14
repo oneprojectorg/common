@@ -1,5 +1,6 @@
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
+import { ButtonGroup } from '@op/sense/ButtonGroup';
 import { Combobox, ComboboxInput } from '@op/sense/Combobox';
 import {
   Field,
@@ -21,10 +22,17 @@ import {
   InputOTPSlot,
 } from '@op/sense/InputOTP';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
-import { Select, SelectTrigger, SelectValue } from '@op/sense/Select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
 import { Slider } from '@op/sense/Slider';
 import { Switch } from '@op/sense/Switch';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { LuGlobe, LuInfo } from 'react-icons/lu';
 
 import figmaCombobox from '../assets/figma/combobox.png';
 import figmaFieldBadge from '../assets/figma/field-badge.png';
@@ -58,6 +66,28 @@ export default meta;
 
 type Story = StoryObj;
 
+// First item with a null value acts as the placeholder: the select's initial
+// value is null, so SelectValue renders that item's label.
+const selectItems = [
+  { value: null, label: 'Placeholder' },
+  { value: 'option-1', label: 'Option 1' },
+  { value: 'option-2', label: 'Option 2' },
+  { value: 'option-3', label: 'Option 3' },
+];
+
+const phoneItems = [
+  { value: null, label: '+1 (123) 123-123' },
+  { value: 'pl', label: '+48 123 456 789' },
+  { value: 'uk', label: '+44 1234 567890' },
+];
+
+const countryItems = [
+  { value: null, label: 'Poland' },
+  { value: 'germany', label: 'Germany' },
+  { value: 'france', label: 'France' },
+  { value: 'usa', label: 'United States' },
+];
+
 export const FormInputs: Story = {
   name: 'Form inputs',
   render: () => (
@@ -80,6 +110,8 @@ export const FormInputs: Story = {
       </ParityRow>
 
       <ParityRow label="Disabled" img={figmaFieldDisabled} imgWidth={360}>
+        {/* Figma mock fades only the input; whole-field fade kept on purpose,
+            flagged to design */}
         <Field data-disabled="true">
           <FieldLabel htmlFor="parity-disabled">Username</FieldLabel>
           <Input id="parity-disabled" placeholder="Matt Wierzbicki" disabled />
@@ -144,7 +176,12 @@ export const FormInputs: Story = {
 
       <ParityRow label="With badge" img={figmaFieldBadge} imgWidth={360}>
         <Field className="relative">
-          <Badge variant="secondary" className="absolute top-0 right-0">
+          {/* max-w-fit: Field's vertical orientation sets *:w-full, which would
+              stretch the absolutely-positioned badge over the label */}
+          <Badge
+            variant="secondary"
+            className="absolute top-0 right-0 max-w-fit"
+          >
             Beta
           </Badge>
           <FieldLabel htmlFor="parity-webhook">Webhook URL</FieldLabel>
@@ -173,6 +210,9 @@ export const FormInputs: Story = {
               id="parity-website"
               placeholder="shadcndesign.com"
             />
+            <InputGroupAddon align="inline-end">
+              <LuInfo />
+            </InputGroupAddon>
           </InputGroup>
         </Field>
       </ParityRow>
@@ -184,15 +224,16 @@ export const FormInputs: Story = {
       >
         <Field>
           <FieldLabel htmlFor="parity-search">Search</FieldLabel>
-          <div className="flex gap-2">
+          <ButtonGroup>
             <InputGroup>
               <InputGroupInput
                 id="parity-search"
+                type="search"
                 placeholder="Type to search..."
               />
             </InputGroup>
             <Button variant="outline">Search</Button>
-          </div>
+          </ButtonGroup>
         </Field>
       </ParityRow>
 
@@ -226,8 +267,8 @@ export const FormInputs: Story = {
       <ParityRow label="Switch" img={figmaSwitch} imgWidth={320}>
         <div className="flex flex-col gap-4">
           {[
-            ['on', 'Focus Mode', 'Silence notifications to concentrate.', true],
-            ['off', 'Dark Mode', 'Switch to a darker theme.', false],
+            ['on', 'Switch Text', 'This is a switch description.', true],
+            ['off', 'Switch Text', 'This is a switch description.', false],
           ].map(([key, title, description, checked]) => (
             <div key={String(key)} className="flex items-start gap-3">
               <Switch defaultChecked={Boolean(checked)} />
@@ -245,21 +286,32 @@ export const FormInputs: Story = {
       </ParityRow>
 
       <ParityRow label="Select" img={figmaSelectTrigger} imgWidth={200}>
-        <Select>
+        <Select items={selectItems}>
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select" />
+            <SelectValue />
           </SelectTrigger>
+          <SelectContent className="sense">
+            {selectItems.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </ParityRow>
 
       <ParityRow label="Combobox" img={figmaCombobox} imgWidth={228}>
         <Combobox items={['Next.js', 'SvelteKit', 'Remix']}>
-          <ComboboxInput placeholder="Select framework" className="w-[228px]" />
+          <ComboboxInput placeholder="Placeholder" className="w-[228px]">
+            <InputGroupAddon>
+              <LuGlobe />
+            </InputGroupAddon>
+          </ComboboxInput>
         </Combobox>
       </ParityRow>
 
       <ParityRow label="Input OTP" img={figmaInputOtp} imgWidth={296}>
-        <InputOTP maxLength={6}>
+        <InputOTP maxLength={6} defaultValue="12">
           <InputOTPGroup>
             <InputOTPSlot index={0} />
             <InputOTPSlot index={1} />
@@ -293,18 +345,32 @@ export const FormInputs: Story = {
           <div className="flex gap-4">
             <Field>
               <FieldLabel>Phone</FieldLabel>
-              <Select>
+              <Select items={phoneItems}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="+1 (123) 123-123" />
+                  <SelectValue />
                 </SelectTrigger>
+                <SelectContent className="sense">
+                  {phoneItems.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </Field>
             <Field>
               <FieldLabel>Country</FieldLabel>
-              <Select>
+              <Select items={countryItems}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Poland" />
+                  <SelectValue />
                 </SelectTrigger>
+                <SelectContent className="sense">
+                  {countryItems.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </Field>
           </div>
