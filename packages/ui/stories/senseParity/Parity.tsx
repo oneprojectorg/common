@@ -47,11 +47,11 @@ export function ParityRow({
             src={img}
             alt={`Figma mock: ${label}`}
             style={{ width: imgWidth }}
-            className="max-w-none"
+            className="h-auto max-w-full"
           />
         </div>
         <div className="sense min-w-0">
-          <div style={{ minWidth: imgWidth }}>{children}</div>
+          <div style={{ minWidth: `min(${imgWidth}px, 100%)` }}>{children}</div>
         </div>
       </div>
     </div>
