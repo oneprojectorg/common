@@ -56,7 +56,6 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
-      canJoin={instance.access?.submitProposals === true}
       decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />

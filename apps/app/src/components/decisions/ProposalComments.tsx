@@ -41,10 +41,11 @@ export function ProposalComments({
   const canInteract = userCanInteract(user);
   const readOnly = readOnlyProp || !canInteract || !canSubmitProposal;
   // A visitor on a public process who could comment with an account gets an
-  // account-claim prompt where the composer would be. The opening button
-  // relies on JoinAccountModal being mounted by ProposalViewLayout; the other
-  // ProposalComments surface (ReviewProposalPane) only renders for reviewers,
-  // who always pass userCanInteract.
+  // account-claim prompt where the composer would be. ProposalViewLayout
+  // mounts the JoinAccountModal this opens, keyed to the same
+  // proposal.access bit; the other ProposalComments surface
+  // (ReviewProposalPane) only renders for reviewers, who always pass
+  // userCanInteract.
   const showJoinPrompt = !readOnlyProp && !canInteract && canSubmitProposal;
 
   const scrollToComments = useCallback(() => {
@@ -81,11 +82,15 @@ export function ProposalComments({
 
         {showJoinPrompt && (
           <div className="mb-8">
-            <Surface className="flex flex-col items-center gap-3 border-0 p-0 text-center sm:border sm:p-6">
-              <p className="text-base text-neutral-charcoal">
+            {/* sm:p-4 matches the composer Surface this slot-replaces. */}
+            <Surface className="flex flex-col items-center gap-3 border-0 p-0 text-center sm:border sm:p-4">
+              <p
+                id="join-to-comment-prompt"
+                className="text-base text-neutral-charcoal"
+              >
                 {t('Join Common to comment on this proposal.')}
               </p>
-              <JoinDecisionButton />
+              <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
             </Surface>
           </div>
         )}

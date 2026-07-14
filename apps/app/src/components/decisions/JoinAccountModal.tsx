@@ -6,6 +6,7 @@ import {
   useClaimAccount,
 } from '@/hooks/useClaimAccount';
 import { useUser } from '@/utils/UserProvider';
+import type { CommonUser } from '@op/api/encoders';
 import { headingClasses } from '@op/styles/constants';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
@@ -13,13 +14,14 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal } from '@op/ui/Modal';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, Suspense, useState } from 'react';
 import { Heading } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
+import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
 
 /**
@@ -34,11 +36,19 @@ import { isValidEmail } from './emailUtils';
  * won't open for one.
  */
 
+/**
+ * Who may claim: logged-out visitors and anonymous accounts. NOT the same as
+ * `!userCanInteract` — a full account without a currentProfile must see the
+ * user menu, not Join.
+ */
+export const isJoinEligible = (user: CommonUser | null | undefined): boolean =>
+  !user || user.isAnonymous;
+
 export const JoinAccountModal = () => {
   const { user } = useUser();
   const [join, setJoin] = useQueryState('join');
 
-  const isOpen = (!user || user.isAnonymous) && join === '1';
+  const isOpen = isJoinEligible(user) && join === '1';
 
   const close = () => {
     void setJoin(null);
@@ -58,7 +68,12 @@ export const JoinAccountModal = () => {
 
 /** Header button that opens the modal. Reads/writes `?join` via nuqs, so any
  * mount point must sit under a Suspense boundary (useSearchParams). */
-export const JoinDecisionButton = () => {
+export const JoinDecisionButton = ({
+  ariaDescribedBy,
+}: {
+  /** Id of an element giving the bare "Join" label its context (a11y). */
+  ariaDescribedBy?: string;
+}) => {
   const t = useTranslations();
   const [, setJoin] = useQueryState('join');
 
@@ -66,6 +81,7 @@ export const JoinDecisionButton = () => {
     <Button
       color="primary"
       size="small"
+      aria-describedby={ariaDescribedBy}
       onPress={() => {
         void setJoin('1');
       }}
@@ -87,6 +103,33 @@ export const JoinDecisionButtonFallback = () => {
       {t('Join')}
     </ButtonLink>
   );
+};
+
+/**
+ * Header account control: Join (account claim) for join-eligible visitors on
+ * public processes, the avatar menu / Log in otherwise. Owns the eligibility
+ * check and the Suspense treatment JoinDecisionButton's nuqs read requires, so
+ * every header renders the same behavior.
+ */
+export const JoinOrUserMenu = ({
+  canJoin,
+  userMenuClassName,
+}: {
+  canJoin: boolean;
+  /** Passed to HeaderUserMenu only — lets headers keep the avatar sm-gated
+   * while Join stays visible at all widths. */
+  userMenuClassName?: string;
+}) => {
+  const { user } = useUser();
+
+  if (canJoin && isJoinEligible(user)) {
+    return (
+      <Suspense fallback={<JoinDecisionButtonFallback />}>
+        <JoinDecisionButton />
+      </Suspense>
+    );
+  }
+  return <HeaderUserMenu className={userMenuClassName} />;
 };
 
 const JoinAccountModalContent = ({ onClose }: { onClose: () => void }) => {

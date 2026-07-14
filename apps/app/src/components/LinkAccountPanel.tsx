@@ -12,7 +12,6 @@ import { CheckIcon } from '@op/ui/CheckIcon';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -23,6 +22,7 @@ import {
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
+import { isValidEmail } from './decisions/emailUtils';
 
 /**
  * Account-upgrade panel for an anonymous visitor ("link mode"), reached via
@@ -57,8 +57,6 @@ export const LinkAccountPanel = () => {
     loginSuccess,
     setLoginSuccess,
   } = useAuthPanelStore();
-
-  const emailParser = z.email();
 
   // "Already have an account? Log in" — a real full account can't be linked
   // onto the anon user, so that path drops link mode and goes to normal login.
@@ -256,7 +254,7 @@ export const LinkAccountPanel = () => {
           value={email}
           isDisabled={isSubmitting}
           onChange={(val) => {
-            setEmailIsValid(emailParser.safeParse(val).success);
+            setEmailIsValid(isValidEmail(val));
             setEmail(val);
           }}
           onSubmit={() => {

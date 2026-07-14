@@ -35,9 +35,7 @@ export type ClaimEmailResult =
       alreadySignedIn?: boolean;
     };
 
-export type ClaimVerifyResult =
-  | { ok: true }
-  | { ok: false; message: string | undefined };
+export type ClaimVerifyResult = { ok: true } | { ok: false; message?: string };
 
 /** Shared flag→copy mapping for failed `requestEmailCode` results. */
 export function getClaimEmailErrorMessage(

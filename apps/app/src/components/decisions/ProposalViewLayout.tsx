@@ -17,8 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
-import { HeaderUserMenu } from '../SiteHeader';
-import { JoinAccountModal, JoinDecisionButton } from './JoinAccountModal';
+import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
 import { ReportProposalDialog } from './ReportProposalDialog';
 
 export function ProposalViewLayout({
@@ -150,14 +149,15 @@ export function ProposalViewLayout({
               <Tooltip>{revisionRequestLabel}</Tooltip>
             </TooltipTrigger>
           )}
-          <div className="hidden gap-4 sm:flex">
+          <div className="hidden sm:flex">
             <LocaleChooser />
-            {canJoin && (!user || user.isAnonymous) ? (
-              <JoinDecisionButton />
-            ) : (
-              <HeaderUserMenu />
-            )}
           </div>
+          {/* Outside the sm-only cluster: Join stays visible on mobile (the
+              avatar keeps its desktop-only treatment via userMenuClassName). */}
+          <JoinOrUserMenu
+            canJoin={canJoin}
+            userMenuClassName="hidden sm:block"
+          />
         </div>
       </div>
 

@@ -15,12 +15,8 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
-import { HeaderUserMenu } from '../SiteHeader';
 import { SupportLink } from '../SupportLink';
-import {
-  JoinDecisionButton,
-  JoinDecisionButtonFallback,
-} from './JoinAccountModal';
+import { JoinOrUserMenu } from './JoinAccountModal';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
@@ -136,15 +132,7 @@ export const DecisionInstanceHeader = ({
           )}
           <SupportLink />
           <LocaleChooser />
-          {canJoin && (!user || user.isAnonymous) ? (
-            // The button reads/writes `?join` via nuqs (useSearchParams), so it
-            // needs the same Suspense treatment as the updates toggle above.
-            <Suspense fallback={<JoinDecisionButtonFallback />}>
-              <JoinDecisionButton />
-            </Suspense>
-          ) : (
-            <HeaderUserMenu />
-          )}
+          <JoinOrUserMenu canJoin={canJoin} />
         </div>
       </div>
 

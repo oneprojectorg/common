@@ -1,5 +1,7 @@
+import { ProposalStatus } from '@op/db/schema';
 import {
   createDecisionInstance,
+  createProposal,
   getSeededTemplate,
   makeDecisionPublic,
 } from '@op/test';
@@ -75,6 +77,52 @@ test.describe('Join account flow (public decision header)', () => {
 
     // Confirmations are off in e2e, so submitting the email claims the account
     // immediately and navigates to the promote onboarding.
+    await dialog.getByRole('button', { name: 'Join' }).click();
+    await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });
+    await expect(
+      page.getByText('You do not have permission to view this page'),
+    ).not.toBeVisible();
+  });
+
+  test('logged-out visitor joins from the proposal view page', async ({
+    page,
+  }) => {
+    const { org, instance } = await seedPublicDecision('join-prop');
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: `Join prompt proposal ${randomUUID().slice(0, 6)}`,
+      },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'networkidle' },
+    );
+
+    // The comments composer slot shows the claim prompt for visitors; the
+    // header offers Join rather than Log in.
+    await expect(
+      page.getByText('Join Common to comment on this proposal.'),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByRole('button', { name: 'Log in' }),
+    ).not.toBeVisible();
+
+    // Either Join button (header or prompt) opens the claim modal mounted by
+    // the proposal view layout.
+    await page.getByRole('button', { name: 'Join' }).first().click();
+    await expect(
+      page.getByRole('heading', { name: 'Claim your account' }),
+    ).toBeVisible({ timeout: 15000 });
+
+    const email = `join-${randomUUID().slice(0, 8)}@example.com`;
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Email').fill(email);
     await dialog.getByRole('button', { name: 'Join' }).click();
     await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });
     await expect(
