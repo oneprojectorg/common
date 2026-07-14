@@ -31,16 +31,17 @@ describeAccessTierGating('profile.addRelationship', {
     },
   ),
 
+  // Confirmed out-of-network users (e.g. accounts claimed from a public
+  // decision process) may like/follow — the tier is confirmed, not network.
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.profile.addRelationship({
           targetProfileId: '00000000-0000-0000-0000-000000000000',
           relationshipType: 'following',
         }),
-        'user',
       );
     },
   ),
@@ -85,16 +86,16 @@ describeAccessTierGating('profile.removeRelationship', {
     },
   ),
 
+  // See addRelationship: confirmed tier admits out-of-network claimed users.
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.profile.removeRelationship({
           targetProfileId: '00000000-0000-0000-0000-000000000000',
           relationshipType: 'following',
         }),
-        'user',
       );
     },
   ),

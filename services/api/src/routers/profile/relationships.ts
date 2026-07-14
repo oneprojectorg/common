@@ -10,7 +10,7 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import {
-  networkAuthenticatedProcedure,
+  authenticatedConfirmedProcedure,
   openProcedure,
   router,
 } from '../../trpcFactory';
@@ -85,7 +85,11 @@ const getRelationshipsInputSchema = z.object({
   profileType: z.string().optional(),
 });
 
-const relationshipProcedure = networkAuthenticatedProcedure({
+// Confirmed tier (not closed-network): accounts claimed from public decision
+// processes are deliberately outside the allowList, and like/follow is part of
+// what a claimed account is promised. The walled garden still gates which
+// profiles such users can reach in the first place.
+const relationshipProcedure = authenticatedConfirmedProcedure({
   rateLimit: { windowSize: 10, maxRequests: 20 },
 });
 
