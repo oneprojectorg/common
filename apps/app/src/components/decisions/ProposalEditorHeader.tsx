@@ -12,6 +12,7 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { JoinAccountModal, JoinDecisionButton } from './JoinAccountModal';
 
 interface ProposalEditorHeaderProps {
   backHref: string;
@@ -120,10 +121,22 @@ export function ProposalEditorHeader({
               </Button>
             )}
             <LocaleChooser />
-            {/* No avatar or login for visitors/anonymous. */}
             {userCanInteract(user) ? (
               <UserAvatarMenu className="hidden sm:block" />
-            ) : null}
+            ) : (
+              /*
+               * The only non-interactive viewer who can reach the editor is an
+               * anonymous drafter on a public process (logged-out visitors 403
+               * at getProposal), so no canJoin plumbing is needed here. The
+               * claim links the email onto their existing anon session, which
+               * owns this draft — the proposal follows to the new account
+               * automatically.
+               */
+              <>
+                <JoinDecisionButton className="hidden sm:block" />
+                <JoinAccountModal />
+              </>
+            )}
           </>
         )}
       </div>

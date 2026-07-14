@@ -58,7 +58,7 @@ export const JoinAccountModal = () => {
 
 /** Header button that opens the modal. Reads/writes `?join` via nuqs, so any
  * mount point must sit under a Suspense boundary (useSearchParams). */
-export const JoinDecisionButton = () => {
+export const JoinDecisionButton = ({ className }: { className?: string }) => {
   const t = useTranslations();
   const [, setJoin] = useQueryState('join');
 
@@ -66,6 +66,7 @@ export const JoinDecisionButton = () => {
     <Button
       color="primary"
       size="small"
+      className={className}
       onPress={() => {
         void setJoin('1');
       }}
