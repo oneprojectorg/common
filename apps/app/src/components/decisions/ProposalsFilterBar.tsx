@@ -6,31 +6,25 @@ import { LuArrowDownToLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { useProposalFilterItems } from './useProposalFilters';
 
 export const ProposalsListHeader = ({
   hideFilters,
-  proposalFilter,
   count,
 }: {
   hideFilters: boolean;
-  proposalFilter: ProposalFilter;
   count: number;
 }) => {
   const t = useTranslations();
-  const label = useProposalFilterLabel(proposalFilter);
 
   return (
     <span className="font-serif text-title-base text-neutral-black">
-      {hideFilters ? (
-        t('My proposals')
-      ) : (
-        <>
-          {label} <Bullet /> {count}
-        </>
-      )}
+      {hideFilters
+        ? t('My proposals')
+        : t('{count, plural, one {# proposal} other {# proposals}}', {
+            count,
+          })}
     </span>
   );
 };
@@ -148,19 +142,4 @@ export const ProposalsFilterBar = ({
       ) : null}
     </>
   );
-};
-
-// useTranslations needs literal keys, so map each filter to its label here.
-const useProposalFilterLabel = (filter: ProposalFilter) => {
-  const t = useTranslations();
-  switch (filter) {
-    case ProposalFilter.MY_BALLOT:
-      return t('My ballot');
-    case ProposalFilter.MY_PROPOSALS:
-      return t('My proposals');
-    case ProposalFilter.SHORTLISTED:
-      return t('Shortlisted proposals');
-    default:
-      return t('All proposals');
-  }
 };
