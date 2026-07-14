@@ -192,6 +192,10 @@ export const instancePhaseDataEncoder = z.object({
   selectionPipeline: selectionPipelineEncoder.optional(),
   settingsSchema: jsonSchemaEncoder.optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
+  // Bucket-relative storage path of the phase's hero image. Set/cleared only
+  // via the dedicated updatePhaseHeroImage/removePhaseHeroImage endpoints, so
+  // it's read-only here and omitted from the update input encoder below.
+  heroImage: z.string().optional(),
 });
 
 /**
@@ -517,10 +521,12 @@ export const createInstanceFromTemplateInputSchema = z.object({
 });
 
 /** Input schema for phase overrides with datetime validation */
-const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
-  startDate: z.string().datetime({ offset: true }).optional(),
-  endDate: z.string().datetime({ offset: true }).optional(),
-});
+const instancePhaseDataInputEncoder = instancePhaseDataEncoder
+  .omit({ heroImage: true })
+  .extend({
+    startDate: z.string().datetime({ offset: true }).optional(),
+    endDate: z.string().datetime({ offset: true }).optional(),
+  });
 
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),

@@ -14,6 +14,12 @@ export * from './removeOverviewHeroImage';
 export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
+// Phase hero-image signed-URL upload flow
+export * from './phaseHeroImageStorage';
+export * from './removePhaseHeroImage';
+export * from './signPhaseHeroImageUploadUrl';
+export * from './updatePhaseHeroImage';
+
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
