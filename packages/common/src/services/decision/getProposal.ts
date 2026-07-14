@@ -8,7 +8,6 @@ import type {
 import {
   ProfileRelationshipType,
   ProposalStatus,
-  Visibility,
   posts,
   postsToProfiles,
   profileRelationships,
@@ -18,8 +17,8 @@ import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
-import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
+import { getProfileAccessRoles } from '../access';
+import { assertProposalProfileVisible } from './assertProposalProfileVisible';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
@@ -116,53 +115,10 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal', profileId);
   }
 
-  // Reuse the resolved instance-profile roles (drive the instance-admin check
-  // below) instead of re-fetching them per gate.
-  const instanceRoles = await assertInstanceProfileAccess({
-    user,
-    instance: proposal.processInstance,
-    profilePermissions: { decisions: permission.READ },
-    orgFallbackPermissions: [
-      { decisions: permission.READ },
-      { decisions: permission.ADMIN },
-    ],
-  });
-
-  // Draft, hidden, and flagged proposals are all restricted beyond plain
-  // instance read access, and to the same axes of access (proposal-level
-  // access and instance-admin). Resolve the caller's standing once and apply
-  // the three gates together rather than re-checking per gate. NotFoundError
-  // (never Unauthorized) throughout, so a restricted proposal's existence never
-  // leaks. `isFlagged` also rides on the response so the owner/admin UI can
-  // render the "Flagged" indicator.
-  const isFlagged = await hasActiveModerationFlag('proposal', proposal.id);
-  const isDraft = proposal.status === ProposalStatus.DRAFT;
-  const isHidden = proposal.visibility === Visibility.HIDDEN;
-
-  if (isDraft || isHidden || isFlagged) {
-    // Proposal-level access = the creator + invited collaborators (a
-    // profileUsers record on the proposal's own profile). Only fetched for a
-    // restricted proposal — a plain visible proposal never needs it.
-    const proposalRoles = await getProfileAccessRoles({
-      user,
-      profileId: proposal.profileId,
-    });
-    const hasProposalAccess = proposalRoles.length > 0;
-    const isInstanceAdmin = checkPermission(
-      { profile: permission.ADMIN },
-      instanceRoles,
-    );
-
-    // Drafts are visible only to proposal-level access (not instance admins);
-    // hidden and flagged proposals are visible to that audience OR instance
-    // admins.
-    const visibleToCaller = isDraft
-      ? hasProposalAccess
-      : hasProposalAccess || isInstanceAdmin;
-    if (!visibleToCaller) {
-      throw new NotFoundError('Proposal', profileId);
-    }
-  }
+  // Base instance-read gate + draft/hidden/flagged restrictions. `isFlagged`
+  // rides on the response so the owner/admin UI can render the "Flagged"
+  // indicator. Shared with the like/follow path (see assertProposalProfileVisible).
+  const { isFlagged } = await assertProposalProfileVisible({ user, proposal });
 
   // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
   const proposalTemplate = await resolveProposalTemplate(

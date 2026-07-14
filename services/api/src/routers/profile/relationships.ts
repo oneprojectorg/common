@@ -1,6 +1,7 @@
 import {
   Channels,
   addProfileRelationship,
+  assertProposalProfileVisibleById,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
@@ -60,7 +61,6 @@ const relationshipInputSchema = z.object({
     ProfileRelationshipType.FOLLOWING,
     ProfileRelationshipType.LIKES,
   ]),
-  pending: z.boolean().optional().prefault(false),
 });
 
 const removeRelationshipInputSchema = z.object({
@@ -97,13 +97,22 @@ export const profileRelationshipRouter = router({
   addRelationship: relationshipProcedure
     .input(relationshipInputSchema)
     .mutation(async ({ input, ctx }) => {
-      const { targetProfileId, relationshipType, pending } = input;
+      const { targetProfileId, relationshipType } = input;
+
+      // The confirmed tier admits out-of-network accounts (the claim flow's
+      // point), so the network gate no longer bounds who reaches this. If the
+      // target is a proposal, assert the caller can actually see it — otherwise
+      // a leaked draft/hidden proposal's profile id could be liked to inflate
+      // its public count. No-ops for public org/person targets.
+      await assertProposalProfileVisibleById({
+        user: ctx.user,
+        profileId: targetProfileId,
+      });
 
       await addProfileRelationship({
         targetProfileId,
         relationshipType,
         authUserId: ctx.user.id,
-        pending,
       });
 
       // Register the channels that proposal detail / list queries subscribe
