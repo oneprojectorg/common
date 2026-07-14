@@ -3,20 +3,8 @@ import { ProposalStatus, proposals } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
-import { createCallerFactory } from '../../trpcFactory';
-
-const createCaller = createCallerFactory(appRouter);
-
-async function createAuthenticatedCaller(email: string) {
-  const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
-}
+import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
 /**
  * Like/follow moved off the closed-network tier, so the service layer is now
@@ -90,6 +78,6 @@ describe.concurrent('profile.addRelationship engagement access', () => {
         targetProfileId: proposal.profileId,
         relationshipType: 'likes',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });

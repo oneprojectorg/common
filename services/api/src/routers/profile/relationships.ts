@@ -61,6 +61,7 @@ const relationshipInputSchema = z.object({
     ProfileRelationshipType.FOLLOWING,
     ProfileRelationshipType.LIKES,
   ]),
+  pending: z.boolean().optional().prefault(false),
 });
 
 const removeRelationshipInputSchema = z.object({
@@ -97,13 +98,10 @@ export const profileRelationshipRouter = router({
   addRelationship: relationshipProcedure
     .input(relationshipInputSchema)
     .mutation(async ({ input, ctx }) => {
-      const { targetProfileId, relationshipType } = input;
+      const { targetProfileId, relationshipType, pending } = input;
 
-      // The confirmed tier admits out-of-network accounts (the claim flow's
-      // point), so the network gate no longer bounds who reaches this. Gate a
-      // proposal like/follow the same way commenting is gated — SUBMIT_PROPOSALS
-      // on the parent decision — so engagement stays consistent. No-ops for
-      // public org/person targets.
+      // Proposal targets are gated like proposal comments (SUBMIT_PROPOSALS on
+      // the parent decision); no-op for any non-proposal target.
       await assertProposalEngagementAccess({
         user: ctx.user,
         profileId: targetProfileId,
@@ -113,6 +111,7 @@ export const profileRelationshipRouter = router({
         targetProfileId,
         relationshipType,
         authUserId: ctx.user.id,
+        pending,
       });
 
       // Register the channels that proposal detail / list queries subscribe
