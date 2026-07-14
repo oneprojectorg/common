@@ -18,6 +18,7 @@ import { useRouter } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { HeaderUserMenu } from '../SiteHeader';
+import { JoinAccountModal, JoinDecisionButton } from './JoinAccountModal';
 import { ReportProposalDialog } from './ReportProposalDialog';
 
 export function ProposalViewLayout({
@@ -31,6 +32,7 @@ export function ProposalViewLayout({
   isLoading = false,
   editHref,
   canEdit = false,
+  canJoin = false,
   reportProposalId,
   revisionToggle,
 }: {
@@ -44,6 +46,12 @@ export function ProposalViewLayout({
   isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
+  /**
+   * Public process (viewer can submit proposals without an account): the
+   * header offers "Join" (account claim, see JoinAccountModal) instead of
+   * "Log in" to logged-out and anonymous visitors.
+   */
+  canJoin?: boolean;
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
   reportProposalId?: string;
@@ -144,12 +152,20 @@ export function ProposalViewLayout({
           )}
           <div className="hidden gap-4 sm:flex">
             <LocaleChooser />
-            <HeaderUserMenu />
+            {canJoin && (!user || user.isAnonymous) ? (
+              <JoinDecisionButton />
+            ) : (
+              <HeaderUserMenu />
+            )}
           </div>
         </div>
       </div>
 
       <div className="relative min-h-0 overflow-y-auto">{children}</div>
+
+      {/* Mounted outside the sm-only header cluster so a `?join=1` deep link
+          still opens the modal on mobile. */}
+      {canJoin ? <JoinAccountModal /> : null}
     </div>
   );
 }

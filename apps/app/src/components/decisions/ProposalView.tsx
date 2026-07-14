@@ -48,11 +48,14 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 export function ProposalView({
   proposal: initialProposal,
   canSeeRevisions,
+  canJoin = false,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
   canSeeRevisions: boolean;
+  /** Public process: the header offers Join instead of Log in (see ProposalViewLayout). */
+  canJoin?: boolean;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -268,6 +271,7 @@ export function ProposalView({
       isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}
+      canJoin={canJoin}
       revisionToggle={
         firstRevisionRequestId
           ? {
