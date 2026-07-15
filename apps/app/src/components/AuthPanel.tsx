@@ -138,12 +138,14 @@ export const AuthEmailField = ({
   isDisabled,
   onChange,
   onSubmit,
+  placeholder = 'admin@yourorganization.org',
 }: {
   label: string;
   value: string;
   isDisabled: boolean;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  placeholder?: string;
 }) => {
   const t = useTranslations();
 
@@ -162,7 +164,7 @@ export const AuthEmailField = ({
           isRequired
           type="email"
           inputProps={{
-            placeholder: 'admin@yourorganization.org',
+            placeholder,
             spellCheck: false,
           }}
           autoFocus

@@ -1387,5 +1387,11 @@
   "Admin options": "خيارات المسؤول",
   "Process settings": "إعدادات العملية",
   "ends {date}": "ينتهي في {date}",
-  "Remove image": "إزالة الصورة"
+  "Remove image": "إزالة الصورة",
+  "Claim your account": "احصل على حسابك",
+  "Join": "انضم",
+  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "انضم إلى Common لتتمكن من الإعجاب بأي فكرة والتعليق عليها ومتابعتها، ولتعديل مساهماتك وتلقي التحديثات بشأنها.",
+  "You're already signed in. Reload the page to continue.": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة.",
+  "An account with this email already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
+  "Join Common to comment on this proposal.": "انضم إلى Common للتعليق على هذا المقترح."
 }

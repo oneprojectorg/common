@@ -15,8 +15,8 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
-import { HeaderUserMenu } from '../SiteHeader';
 import { SupportLink } from '../SupportLink';
+import { JoinOrUserMenu } from './JoinAccountModal';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
@@ -25,6 +25,7 @@ export const DecisionInstanceHeader = ({
   decisionSlug,
   isAdmin,
   canReadUpdates = false,
+  canJoin = false,
   centerSlot,
   mobileAdminBar,
 }: {
@@ -36,6 +37,11 @@ export const DecisionInstanceHeader = ({
   decisionSlug?: string;
   isAdmin?: boolean;
   canReadUpdates?: boolean;
+  /**
+   * Public process: offer "Join" (account claim, see JoinAccountModal) instead
+   * of "Log in" to logged-out and anonymous visitors.
+   */
+  canJoin?: boolean;
   /**
    * Optional content for the header's center column (e.g. the Overview /
    * Current Phase toggle). When provided, on md+ the title moves beside the
@@ -126,7 +132,7 @@ export const DecisionInstanceHeader = ({
           )}
           <SupportLink />
           <LocaleChooser />
-          <HeaderUserMenu />
+          <JoinOrUserMenu canJoin={canJoin} />
         </div>
       </div>
 

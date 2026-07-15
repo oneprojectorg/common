@@ -1389,5 +1389,11 @@
   "Admin options": "Doorashooyinka maamulaha",
   "Process settings": "Dejinta habka",
   "ends {date}": "wuxuu dhammaanayaa {date}",
-  "Remove image": "Ka saar sawirka"
+  "Remove image": "Ka saar sawirka",
+  "Claim your account": "Sheegso akoonkaaga",
+  "Join": "Ku biir",
+  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "Ku biir Common si aad u jeclaysato, uga faallooto, oo aad u raacdo fikrad kasta, iyo si aad u tafatirto oo aad u hesho war-bixinta fikradahaaga aad gudbisay.",
+  "You're already signed in. Reload the page to continue.": "Horeyba waad u soo gashay. Dib u shub bogga si aad u sii wadato.",
+  "An account with this email already exists. Try logging in instead.": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho.",
+  "Join Common to comment on this proposal.": "Ku biir Common si aad faallo uga bixiso soo-jeedintan."
 }

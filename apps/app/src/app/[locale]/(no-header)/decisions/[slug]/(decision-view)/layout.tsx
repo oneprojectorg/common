@@ -4,6 +4,7 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
+import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
@@ -35,6 +36,9 @@ const DecisionViewLayout = async ({
   // loadDecision already returned (no separate getInstance fetch).
   const isActive = hasFirstPhaseStarted(instance?.instanceData?.phases);
   const access = instance?.access;
+  // A viewer who can submit proposals without an account is on a "public"
+  // process — the header offers Join (account claim) instead of Log in.
+  const canJoin = access?.submitProposals === true;
 
   return (
     <DecisionTranslationProvider>
@@ -85,6 +89,18 @@ const DecisionViewLayout = async ({
       <Suspense fallback={null}>
         <PromoteAccountModal />
       </Suspense>
+      {/*
+       * Header "Join" modal (account claim on public processes). Mounted in the
+       * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
+       * the param via nuqs, hence the Suspense (see the side panel comment).
+       * Only mounted when the process is public — non-public pages hydrate
+       * nothing.
+       */}
+      {canJoin ? (
+        <Suspense fallback={null}>
+          <JoinAccountModal />
+        </Suspense>
+      ) : null}
     </DecisionTranslationProvider>
   );
 };
