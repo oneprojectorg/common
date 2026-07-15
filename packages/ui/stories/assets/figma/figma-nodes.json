@@ -255,44 +255,44 @@
       "case": "Playground example: underline (line) variant"
     },
     "table.png": {
-      "nodeId": "325:388",
+      "nodeId": "17089:45635",
       "page": "Table",
-      "case": "Table with header, body, footer, caption"
+      "case": "Playground first example: invoices table"
     },
     "card.png": {
-      "nodeId": "21123:292666",
+      "nodeId": "21123:311699",
       "page": "Card",
-      "case": "Card, Size=default and sm"
+      "case": "Playground first example: login card"
     },
     "badge.png": {
-      "nodeId": "26:169",
+      "nodeId": "17083:177466",
       "page": "Badge",
-      "case": "Badge variant sheet"
+      "case": "Playground first example: default badge"
     },
     "avatar.png": {
-      "nodeId": "17100:29935",
+      "nodeId": "17100:83078",
       "page": "Avatar",
-      "case": "Avatar sizes and types"
+      "case": "Playground example: fallback avatar"
     },
     "accordion.png": {
-      "nodeId": "21119:34264",
+      "nodeId": "28:1487",
       "page": "Accordion",
-      "case": "Accordion set, Basic"
+      "case": "Playground first example: FAQ"
     },
     "item.png": {
-      "nodeId": "18672:198607",
+      "nodeId": "18709:93379",
       "page": "Item",
-      "case": "Item variant sheet"
+      "case": "Playground first example"
     },
     "empty.png": {
-      "nodeId": "18672:2962",
+      "nodeId": "18679:26096",
       "page": "Empty",
-      "case": "Empty with media, title, description, actions"
+      "case": "Playground first example"
     },
     "kbd.png": {
-      "nodeId": "18665:995",
+      "nodeId": "18679:25662",
       "page": "Kbd",
-      "case": "Kbd group"
+      "case": "Playground first example: Ctrl + B"
     },
     "chart.png": {
       "nodeId": "449:7503",
@@ -300,19 +300,34 @@
       "case": "Bar Chart sheet (mock-only reference)"
     },
     "separator.png": {
-      "nodeId": "118:2690",
+      "nodeId": "17398:4174",
       "page": "Separator",
-      "case": "Horizontal + vertical separators"
+      "case": "Playground first example"
     },
     "carousel.png": {
-      "nodeId": "241:1368",
+      "nodeId": "17085:178538",
       "page": "Carousel",
-      "case": "Carousel with arrow buttons"
+      "case": "Playground first example: Basic"
     },
     "scroll-area.png": {
-      "nodeId": "18597:81811",
+      "nodeId": "18597:82157",
       "page": "Scroll Area",
-      "case": "Vertical scroll area demo container"
+      "case": "Playground first example: vertical tags list"
+    },
+    "badge-destructive.png": {
+      "nodeId": "17100:10611",
+      "page": "Badge",
+      "case": "Playground example: destructive badge with icon"
+    },
+    "badge-number.png": {
+      "nodeId": "17100:12145",
+      "page": "Badge",
+      "case": "Playground example: count pill"
+    },
+    "avatar-group.png": {
+      "nodeId": "17100:83082",
+      "page": "Avatar",
+      "case": "Playground example: avatar group"
     }
   }
 }
