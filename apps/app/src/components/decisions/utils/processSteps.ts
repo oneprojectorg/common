@@ -1,3 +1,5 @@
+import { formatPhaseDate } from '@op/ui/utils/formatting';
+
 export interface NextStep {
   id: string;
   name: string;
@@ -42,17 +44,16 @@ export function getNextSteps(
   return upcomingPhases;
 }
 
-export function formatStepForDisplay(step: NextStep): string {
+export function formatStepForDisplay(step: NextStep, locale: string): string {
   if (!step.startDate) {
     return step.name;
   }
 
-  const date = new Date(step.startDate);
-  const formattedDate = date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formattedDate = formatPhaseDate(
+    step.startDate,
+    { month: 'short', day: 'numeric', year: 'numeric' },
+    locale,
+  );
 
   return `${step.name} on ${formattedDate}`;
 }

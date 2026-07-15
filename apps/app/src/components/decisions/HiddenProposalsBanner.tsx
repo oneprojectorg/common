@@ -1,7 +1,7 @@
 'use client';
 
-import { formatDate } from '@/utils/formatting';
 import { AlertBanner } from '@op/ui/AlertBanner';
+import { formatPhaseDate } from '@op/ui/utils/formatting';
 import { useLocale } from 'next-intl';
 import { LuLock } from 'react-icons/lu';
 
@@ -20,10 +20,11 @@ export function HiddenProposalsBanner({
   const locale = useLocale();
 
   const formattedDate = currentPhaseEndDate
-    ? formatDate(currentPhaseEndDate, locale, {
-        month: 'short',
-        day: 'numeric',
-      })
+    ? formatPhaseDate(
+        currentPhaseEndDate,
+        { month: 'short', day: 'numeric' },
+        locale,
+      )
     : undefined;
 
   const message =

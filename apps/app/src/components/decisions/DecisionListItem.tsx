@@ -8,6 +8,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { formatPhaseDate } from '@op/ui/utils/formatting';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuCalendar } from 'react-icons/lu';
@@ -20,14 +21,12 @@ import { TranslatedText } from '../TranslatedText';
 import { DecisionCardHeader } from './DecisionCardHeader';
 import { DuplicateProcessModal } from './DuplicateProcessModal';
 
-const formatDateShort = (dateString: string, locale: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+const formatDateShort = (dateString: string, locale: string) =>
+  formatPhaseDate(
+    dateString,
+    { month: 'short', day: 'numeric', year: 'numeric' },
+    locale,
+  );
 
 const isClosingSoon = (dateString: string) => {
   const date = new Date(dateString);

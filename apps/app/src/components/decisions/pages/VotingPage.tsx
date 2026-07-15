@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
+import { formatPhaseDate } from '@op/ui/utils/formatting';
 import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
 
@@ -63,10 +64,11 @@ export function VotingPage({
     : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
 
   const resultsDate = nextPhase?.startDate
-    ? new Date(nextPhase.startDate).toLocaleDateString(locale, {
-        month: 'long',
-        day: 'numeric',
-      })
+    ? formatPhaseDate(
+        nextPhase.startDate,
+        { month: 'long', day: 'numeric' },
+        locale,
+      )
     : undefined;
 
   const heroDescription = hasVoted
