@@ -26,6 +26,9 @@ export type ClaimEmailResult =
   | { ok: true; needsOtp: boolean }
   | {
       ok: false;
+      /** Supabase error code (e.g. 'email_exists') — for copy mapping. */
+      code?: string;
+      /** Raw Supabase message. Not for display: English-only. */
       message?: string;
       /**
        * The current session already belongs to a full account (e.g. the user
@@ -45,7 +48,12 @@ export function getClaimEmailErrorMessage(
   if (result.alreadySignedIn) {
     return t("You're already signed in. Reload the page to continue.");
   }
-  return result.message ?? t("That didn't work");
+  if (result.code === 'email_exists') {
+    return t(
+      'An account with this email already exists. Try logging in instead.',
+    );
+  }
+  return t("That didn't work");
 }
 
 /**
@@ -97,7 +105,7 @@ export function useClaimAccount() {
         // before attributing a draft).
         const { error } = await supabase.auth.signInAnonymously();
         if (error) {
-          return { ok: false, message: error.message };
+          return { ok: false, code: error.code, message: error.message };
         }
         // The new session isn't reflected in the cached account query.
         // Fire-and-forget: the refetch only matters if the modal is abandoned,
@@ -105,12 +113,12 @@ export function useClaimAccount() {
         void utils.account.getMyAccount.invalidate();
       }
 
-      // TODO(anon-upgrade): updateUser fails if this email already belongs to
-      // another account; we surface the raw Supabase error for now.
-      // Productionize with a friendly "that account already exists" path.
+      // updateUser fails with code 'email_exists' when the email already
+      // belongs to another account — mapped to friendly copy in
+      // getClaimEmailErrorMessage.
       const { data, error } = await supabase.auth.updateUser({ email });
       if (error) {
-        return { ok: false, message: error.message };
+        return { ok: false, code: error.code, message: error.message };
       }
       // No pending change + email already set ⇒ applied immediately (no OTP).
       // GoTrue lowercases the stored email, so compare case-insensitively or a

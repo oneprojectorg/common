@@ -51,7 +51,6 @@ const DecisionViewLayout = async ({
           decisionSlug={slug}
           isAdmin={access?.admin}
           canReadUpdates={access?.admin === true || access?.read === true}
-          canJoin={canJoin}
           profileName={decisionProfile.name}
           // Pass the instance so the header renders from props (no client
           // getInstance query on this route).

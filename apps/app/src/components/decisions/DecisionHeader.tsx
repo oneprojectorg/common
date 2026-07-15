@@ -30,12 +30,6 @@ interface StandardDecisionHeaderProps extends DecisionHeaderBaseProps {
   useLegacy?: false;
   /** Whether the current user can read decision updates */
   canReadUpdates?: boolean;
-  /**
-   * Public process (viewer can submit proposals without an account): the
-   * header offers "Join" (account claim) instead of "Log in" to logged-out
-   * and anonymous visitors.
-   */
-  canJoin?: boolean;
   /** Center-column content, e.g. the Overview / Current Phase toggle */
   centerSlot?: ReactNode;
   /** Whether to render the phase stepper below the header bar (default true) */
@@ -125,6 +119,12 @@ function DecisionHeaderView({
   title: string;
   phases: ProcessPhase[];
   currentStateId: string;
+  /**
+   * Public process (viewer can submit proposals without an account): the
+   * header offers "Join" (account claim) instead of "Log in" to logged-out
+   * and anonymous visitors. Derived from the instance by both variants.
+   */
+  canJoin: boolean;
   /** Stored overview hero image path, for the admin Edit-banner controls. */
   heroImagePath?: string;
 }) {
@@ -178,7 +178,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   return (
     <DecisionHeaderView
       {...props}
-      canJoin={props.canJoin ?? instance.access?.submitProposals === true}
+      canJoin={instance.access?.submitProposals === true}
       title={
         props.profileName ||
         instance.name ||
@@ -203,6 +203,7 @@ function DecisionHeaderFromProps(
   return (
     <DecisionHeaderView
       {...props}
+      canJoin={instance.access?.submitProposals === true}
       title={
         props.profileName ||
         instance.name ||
