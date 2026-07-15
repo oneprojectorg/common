@@ -56,7 +56,7 @@ export const JoinAccountModal = () => {
       onOpenChange={(open) => (open ? null : close())}
       isDismissable
       surface="flat"
-      className="sm:max-w-[29rem]"
+      className="sm:max-w-128"
     >
       <JoinAccountModalContent />
     </Modal>
