@@ -7,8 +7,9 @@ import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';
+import { LuArrowRight } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import {
   AnimatedGradientBackground,
@@ -22,6 +23,20 @@ export const ComingSoonScreen = () => {
     <>
       <div className="pointer-events-none absolute top-0 z-10 h-30 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
       <div className="pointer-events-none absolute bottom-0 z-10 h-30 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
+      <div className="relative z-20 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-primary-tealWhite px-6 py-2.5 text-center text-neutral-charcoal">
+        <p>
+          {t(
+            "Columbus' first-ever Participatory Budgeting process is officially underway!",
+          )}
+        </p>
+        <Link
+          href="/columbus"
+          className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline"
+        >
+          {t('Access Our Voice, Our Choice')}
+          <LuArrowRight className="size-4" />
+        </Link>
+      </div>
       <motion.header
         transition={{ duration: 1 }}
         animate={{ opacity: 1 }}
@@ -134,6 +149,15 @@ export const ComingSoonScreen = () => {
               <p>{t('Sign up now to hold your spot.')}</p>
             </div>
             <WaitlistSignup />
+            <p>
+              {t('Already have an account?')}{' '}
+              <Link
+                className="text-primary underline hover:no-underline"
+                href="/login"
+              >
+                {t('Log in')}
+              </Link>
+            </p>
           </section>
         </FadeInWrapper>
       </main>
@@ -176,7 +200,7 @@ const FadeInWrapper = ({ children }: { children: React.ReactNode }) => {
       variants={fadeInVariants}
       initial="offscreen"
       whileInView="onscreen"
-      viewport={{ amount: 0.4 }}
+      viewport={{ amount: 0.4, once: true }}
     >
       {children}
     </motion.div>

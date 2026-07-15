@@ -48,7 +48,7 @@ export const WaitlistSignup = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   return (
     <DialogTrigger>
-      <Button>{t('Decide with us')}</Button>
+      <Button>{t('Join the waitlist')}</Button>
       <ModalOverlay isDismissable className={overlayStyles}>
         <div className="sticky start-0 top-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
           <Modal isDismissable className={modalStyles}>
