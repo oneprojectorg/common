@@ -1,9 +1,10 @@
 import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
-// The custom type-scale tokens must be registered as font-size classes:
-// stock twMerge can't tell `text-title` from a text color, so it would drop
-// the size whenever a `text-{color}` class appears in the same merge.
+// The custom type tokens must be registered with their real class groups:
+// stock twMerge can't tell `text-title` from a text color (dropping the size
+// whenever a `text-{color}` class appears in the same merge), and it treats
+// `font-strong` as a font family, so `font-normal` never displaces it.
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
@@ -13,6 +14,7 @@ const twMerge = extendTailwindMerge({
         'text-headline',
         'text-display',
       ],
+      'font-weight': ['font-strong'],
     },
   },
 });
