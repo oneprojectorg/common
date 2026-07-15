@@ -33,7 +33,7 @@ export const CommentNotificationEmail = ({
       </Text>
 
       <Section className="my-6">
-        <Text className="my-0 text-lg wrap-anywhere text-neutral-charcoal">
+        <Text className="my-0 text-lg wrap-anywhere whitespace-pre-wrap text-neutral-charcoal">
           "{commentContent}"
         </Text>
       </Section>

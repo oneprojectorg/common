@@ -28,7 +28,7 @@ export const OPInvitationEmail = ({
       </Text>
 
       {message ? (
-        <Text>
+        <Text className="whitespace-pre-wrap">
           <em>&ldquo;{message}&rdquo;</em>
         </Text>
       ) : null}
