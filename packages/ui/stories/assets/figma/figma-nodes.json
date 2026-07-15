@@ -59,6 +59,21 @@
       "page": "Input",
       "case": "Full form example"
     },
+    "checkbox.png": {
+      "nodeId": "17085:197594",
+      "page": "Checkbox",
+      "case": "Playground example: basic, checked"
+    },
+    "checkbox-description.png": {
+      "nodeId": "17379:198918",
+      "page": "Checkbox",
+      "case": "Playground example: with description"
+    },
+    "checkbox-group.png": {
+      "nodeId": "18684:28071",
+      "page": "Checkbox",
+      "case": "Playground example: group"
+    },
     "radio-group.png": {
       "nodeId": "65:341",
       "page": "Radio Group",

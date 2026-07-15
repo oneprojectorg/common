@@ -1,6 +1,7 @@
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { ButtonGroup } from '@op/sense/ButtonGroup';
+import { Checkbox } from '@op/sense/Checkbox';
 import { Combobox, ComboboxInput } from '@op/sense/Combobox';
 import {
   Field,
@@ -34,6 +35,9 @@ import { Switch } from '@op/sense/Switch';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuGlobe, LuInfo } from 'react-icons/lu';
 
+import figmaCheckboxDescription from '../assets/figma/checkbox-description.png';
+import figmaCheckboxGroup from '../assets/figma/checkbox-group.png';
+import figmaCheckbox from '../assets/figma/checkbox.png';
 import figmaCombobox from '../assets/figma/combobox.png';
 import figmaFieldBadge from '../assets/figma/field-badge.png';
 import figmaFieldDisabled from '../assets/figma/field-disabled.png';
@@ -235,6 +239,54 @@ export const FormInputs: Story = {
             <Button variant="outline">Search</Button>
           </ButtonGroup>
         </Field>
+      </ParityRow>
+
+      <ParityRow label="Checkbox" img={figmaCheckbox} imgWidth={230}>
+        <div className="flex items-center gap-2">
+          <Checkbox defaultChecked id="parity-checkbox-terms" />
+          <label htmlFor="parity-checkbox-terms" className="text-sm">
+            Accept terms and conditions
+          </label>
+        </div>
+      </ParityRow>
+
+      <ParityRow
+        label="Checkbox with description"
+        img={figmaCheckboxDescription}
+        imgWidth={425}
+      >
+        <div className="flex items-start gap-2">
+          <Checkbox defaultChecked id="parity-checkbox-described" />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="parity-checkbox-described" className="text-sm">
+              Accept terms and conditions
+            </label>
+            <p className="text-sm text-muted-foreground">
+              By clicking this checkbox, you agree to the terms and conditions.
+            </p>
+          </div>
+        </div>
+      </ParityRow>
+
+      <ParityRow label="Checkbox group" img={figmaCheckboxGroup} imgWidth={219}>
+        <div className="flex flex-col gap-4">
+          {[
+            ['technology', 'Technology News', true],
+            ['product', 'Product Updates', true],
+            ['tips', 'Tips & Tricks', true],
+            ['events', 'Events & Webinars', false],
+          ].map(([value, title, checked]) => (
+            <div key={String(value)} className="flex items-center gap-2">
+              <Checkbox
+                defaultChecked={Boolean(checked)}
+                id={`parity-checkbox-${value}`}
+              />
+              <label htmlFor={`parity-checkbox-${value}`} className="text-sm">
+                {title}
+              </label>
+            </div>
+          ))}
+        </div>
       </ParityRow>
 
       <ParityRow label="Radio group" img={figmaRadioGroup} imgWidth={371}>
