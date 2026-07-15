@@ -57,12 +57,19 @@ export async function deleteOrganizationUser({
     )
     .returning();
 
-  // invalidate to get rid of the cache entry
-  invalidate({
+  // Invalidate the TARGET user's cache, not the caller's — `orgUserCacheKey`
+  // partitions entries by caller identity, so passing the admin here would
+  // leave the removed member's [orgId, B.id:GLOBAL_USER_PUBLIC] entry alive
+  // until the 72h TTL expires, letting a removed admin retain access for days.
+  const targetAccessUser = { id: targetOrgUser.authUserId };
+  await invalidate({
     type: 'orgUser',
-    params: orgUserCacheKey({ user, organizationId }),
+    params: orgUserCacheKey({
+      user: targetAccessUser,
+      organizationId,
+    }),
   });
-  getOrgAccessUser.invalidate({ user, organizationId });
+  getOrgAccessUser.invalidate({ user: targetAccessUser, organizationId });
 
   if (!deletedUser) {
     throw new NotFoundError('Organization user', organizationUserId);

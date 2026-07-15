@@ -1,7 +1,6 @@
 import { invalidateMultiple } from '@op/cache';
 import { inviteNewUsers, inviteUsersToOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
@@ -86,12 +85,13 @@ export const inviteUserRouter = router({
 
           if (existingUsers.length > 0) {
             const userIds = existingUsers.map((u) => u.authUserId);
-            waitUntil(
-              invalidateMultiple({
-                type: 'user',
-                paramsList: userIds.map((id) => [id]),
-              }),
-            );
+            // Await — `waitUntil` would let the response return before the
+            // cache bust completed, so a follow-up request from these users
+            // could still see the pre-invite membership.
+            await invalidateMultiple({
+              type: 'user',
+              paramsList: userIds.map((id) => [id]),
+            });
           }
         }
 

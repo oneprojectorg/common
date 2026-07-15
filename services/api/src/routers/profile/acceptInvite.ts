@@ -1,6 +1,5 @@
 import { invalidate } from '@op/cache';
 import { acceptProfileInvite } from '@op/common';
-import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
@@ -18,8 +17,10 @@ export const acceptInviteRouter = router({
         user: ctx.user,
       });
 
-      // Invalidate user cache so they see the new profile membership
-      waitUntil(invalidate({ type: 'user', params: [ctx.user.id] }));
+      // Await — `waitUntil` would let the response return before the cache
+      // bust completed, so the caller's next request could still see the
+      // pre-accept membership.
+      await invalidate({ type: 'user', params: [ctx.user.id] });
 
       return result.profileUser;
     }),
