@@ -8,6 +8,7 @@ const meta: Meta<typeof RadioGroup> = {
   title: 'Sense/RadioGroup',
   component: RadioGroup,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

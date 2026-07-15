@@ -22,6 +22,7 @@ const meta: Meta<typeof ContextMenu> = {
   title: 'Sense/ContextMenu',
   component: ContextMenu,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

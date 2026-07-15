@@ -17,6 +17,7 @@ const meta: Meta<typeof Table> = {
   title: 'Sense/Table',
   component: Table,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

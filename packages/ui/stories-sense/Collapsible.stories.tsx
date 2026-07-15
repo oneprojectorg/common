@@ -13,6 +13,7 @@ const meta: Meta<typeof Collapsible> = {
   title: 'Sense/Collapsible',
   component: Collapsible,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

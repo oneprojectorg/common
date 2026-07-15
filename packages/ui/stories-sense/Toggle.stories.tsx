@@ -8,6 +8,7 @@ const meta: Meta<typeof Toggle> = {
   title: 'Sense/Toggle',
   component: Toggle,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     variant: {
       control: 'select',

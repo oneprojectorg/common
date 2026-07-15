@@ -19,6 +19,7 @@ const meta: Meta<typeof Sheet> = {
   title: 'Sense/Sheet',
   component: Sheet,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

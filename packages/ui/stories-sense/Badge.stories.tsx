@@ -8,6 +8,7 @@ const meta: Meta<typeof Badge> = {
   title: 'Sense/Badge',
   component: Badge,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     variant: {
       control: 'select',

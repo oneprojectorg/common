@@ -7,6 +7,7 @@ const meta: Meta<typeof Tabs> = {
   title: 'Sense/Tabs',
   component: Tabs,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

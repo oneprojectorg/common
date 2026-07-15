@@ -8,6 +8,7 @@ const meta: Meta<typeof Button> = {
   title: 'Sense/Button',
   component: Button,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     variant: {
       control: 'select',

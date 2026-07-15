@@ -13,6 +13,7 @@ const meta: Meta<typeof Carousel> = {
   title: 'Sense/Carousel',
   component: Carousel,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

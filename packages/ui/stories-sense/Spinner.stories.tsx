@@ -8,6 +8,7 @@ const meta: Meta<typeof Spinner> = {
   title: 'Sense/Spinner',
   component: Spinner,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

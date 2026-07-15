@@ -15,6 +15,7 @@ const meta: Meta<typeof ToggleGroup> = {
   title: 'Sense/ToggleGroup',
   component: ToggleGroup,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     variant: {
       control: 'select',

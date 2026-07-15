@@ -7,6 +7,7 @@ const meta: Meta<typeof Skeleton> = {
   title: 'Sense/Skeleton',
   component: Skeleton,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

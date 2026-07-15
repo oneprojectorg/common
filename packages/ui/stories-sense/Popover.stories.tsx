@@ -17,6 +17,7 @@ const meta: Meta<typeof Popover> = {
   title: 'Sense/Popover',
   component: Popover,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

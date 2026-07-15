@@ -8,6 +8,7 @@ const meta: Meta<typeof Textarea> = {
   title: 'Sense/Textarea',
   component: Textarea,
   decorators: [withSense],
+  tags: ['autodocs'],
   args: {
     placeholder: 'Type your message here.',
   },

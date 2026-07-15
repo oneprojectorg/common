@@ -17,6 +17,7 @@ const meta: Meta<typeof Drawer> = {
   title: 'Sense/Drawer',
   component: Drawer,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

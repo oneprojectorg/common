@@ -24,6 +24,7 @@ const meta: Meta<typeof DropdownMenu> = {
   title: 'Sense/DropdownMenu',
   component: DropdownMenu,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

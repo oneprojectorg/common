@@ -12,6 +12,7 @@ const meta: Meta<typeof Accordion> = {
   title: 'Sense/Accordion',
   component: Accordion,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

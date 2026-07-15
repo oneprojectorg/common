@@ -16,6 +16,7 @@ const meta: Meta<typeof Empty> = {
   title: 'Sense/Empty',
   component: Empty,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

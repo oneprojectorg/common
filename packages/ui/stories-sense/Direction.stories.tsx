@@ -8,6 +8,7 @@ const meta: Meta<typeof DirectionProvider> = {
   title: 'Sense/Direction',
   component: DirectionProvider,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

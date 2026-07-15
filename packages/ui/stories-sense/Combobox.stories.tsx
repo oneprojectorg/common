@@ -22,6 +22,7 @@ const meta: Meta<typeof Combobox> = {
   title: 'Sense/Combobox',
   component: Combobox,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

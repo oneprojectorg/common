@@ -14,6 +14,7 @@ const meta: Meta<typeof Tooltip> = {
   title: 'Sense/Tooltip',
   component: Tooltip,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

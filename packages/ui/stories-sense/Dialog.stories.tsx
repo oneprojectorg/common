@@ -19,6 +19,7 @@ const meta: Meta<typeof Dialog> = {
   title: 'Sense/Dialog',
   component: Dialog,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

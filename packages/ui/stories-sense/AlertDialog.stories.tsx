@@ -20,6 +20,7 @@ const meta: Meta<typeof AlertDialog> = {
   title: 'Sense/AlertDialog',
   component: AlertDialog,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

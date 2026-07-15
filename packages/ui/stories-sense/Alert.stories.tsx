@@ -19,6 +19,7 @@ const meta: Meta<typeof Alert> = {
   title: 'Sense/Alert',
   component: Alert,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     variant: {
       control: 'select',

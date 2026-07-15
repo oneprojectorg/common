@@ -8,6 +8,7 @@ const meta: Meta<typeof Checkbox> = {
   title: 'Sense/Checkbox',
   component: Checkbox,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

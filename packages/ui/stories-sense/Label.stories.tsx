@@ -9,6 +9,7 @@ const meta: Meta<typeof Label> = {
   title: 'Sense/Label',
   component: Label,
   decorators: [withSense],
+  tags: ['autodocs'],
   args: {
     children: 'Email address',
   },

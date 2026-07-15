@@ -14,6 +14,7 @@ const meta: Meta<typeof NavigationMenu> = {
   title: 'Sense/NavigationMenu',
   component: NavigationMenu,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

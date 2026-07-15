@@ -8,6 +8,7 @@ const meta: Meta<typeof Switch> = {
   title: 'Sense/Switch',
   component: Switch,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     size: {
       control: 'select',

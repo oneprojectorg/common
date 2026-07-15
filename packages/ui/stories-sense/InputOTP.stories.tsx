@@ -13,6 +13,7 @@ const meta: Meta<typeof InputOTP> = {
   title: 'Sense/InputOTP',
   component: InputOTP,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

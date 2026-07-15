@@ -12,6 +12,7 @@ const meta: Meta<typeof NativeSelect> = {
   title: 'Sense/NativeSelect',
   component: NativeSelect,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

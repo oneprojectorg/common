@@ -7,6 +7,7 @@ const meta: Meta<typeof Kbd> = {
   title: 'Sense/Kbd',
   component: Kbd,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

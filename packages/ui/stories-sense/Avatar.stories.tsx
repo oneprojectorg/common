@@ -14,6 +14,7 @@ const meta: Meta<typeof Avatar> = {
   title: 'Sense/Avatar',
   component: Avatar,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

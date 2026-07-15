@@ -7,6 +7,7 @@ const meta: Meta<typeof Separator> = {
   title: 'Sense/Separator',
   component: Separator,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

@@ -8,6 +8,7 @@ const meta: Meta<typeof Input> = {
   title: 'Sense/Input',
   component: Input,
   decorators: [withSense],
+  tags: ['autodocs'],
   args: {
     placeholder: 'Enter text',
   },

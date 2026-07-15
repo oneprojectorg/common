@@ -11,6 +11,7 @@ const meta: Meta<typeof ResizablePanelGroup> = {
   title: 'Sense/Resizable',
   component: ResizablePanelGroup,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

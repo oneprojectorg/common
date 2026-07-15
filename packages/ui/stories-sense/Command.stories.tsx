@@ -27,6 +27,7 @@ const meta: Meta<typeof Command> = {
   title: 'Sense/Command',
   component: Command,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

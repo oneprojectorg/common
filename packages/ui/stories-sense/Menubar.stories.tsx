@@ -21,6 +21,7 @@ const meta: Meta<typeof Menubar> = {
   title: 'Sense/Menubar',
   component: Menubar,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

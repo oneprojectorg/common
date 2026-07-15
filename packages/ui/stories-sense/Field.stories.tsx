@@ -22,6 +22,7 @@ const meta: Meta<typeof Field> = {
   title: 'Sense/Field',
   component: Field,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

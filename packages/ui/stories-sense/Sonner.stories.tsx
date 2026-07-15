@@ -9,6 +9,7 @@ const meta: Meta<typeof Toaster> = {
   title: 'Sense/Sonner',
   component: Toaster,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

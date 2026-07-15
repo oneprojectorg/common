@@ -7,6 +7,7 @@ const meta: Meta<typeof AspectRatio> = {
   title: 'Sense/AspectRatio',
   component: AspectRatio,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

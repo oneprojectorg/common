@@ -16,6 +16,7 @@ const meta: Meta<typeof Select> = {
   title: 'Sense/Select',
   component: Select,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

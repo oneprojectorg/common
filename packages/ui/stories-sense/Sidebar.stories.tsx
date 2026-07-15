@@ -22,6 +22,7 @@ const meta: Meta<typeof Sidebar> = {
   title: 'Sense/Sidebar',
   component: Sidebar,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

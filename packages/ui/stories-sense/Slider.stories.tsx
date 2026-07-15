@@ -8,6 +8,7 @@ const meta: Meta<typeof Slider> = {
   title: 'Sense/Slider',
   component: Slider,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

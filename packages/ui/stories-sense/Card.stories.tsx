@@ -18,6 +18,7 @@ const meta: Meta<typeof Card> = {
   title: 'Sense/Card',
   component: Card,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

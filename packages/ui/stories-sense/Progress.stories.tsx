@@ -7,6 +7,7 @@ const meta: Meta<typeof Progress> = {
   title: 'Sense/Progress',
   component: Progress,
   decorators: [withSense],
+  tags: ['autodocs'],
   args: {
     value: 50,
   },

@@ -15,6 +15,7 @@ const meta: Meta<typeof Pagination> = {
   title: 'Sense/Pagination',
   component: Pagination,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

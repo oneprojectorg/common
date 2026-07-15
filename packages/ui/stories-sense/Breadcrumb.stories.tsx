@@ -22,6 +22,7 @@ const meta: Meta<typeof Breadcrumb> = {
   title: 'Sense/Breadcrumb',
   component: Breadcrumb,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

@@ -7,6 +7,7 @@ const meta: Meta<typeof Calendar> = {
   title: 'Sense/Calendar',
   component: Calendar,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

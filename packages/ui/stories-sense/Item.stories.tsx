@@ -18,6 +18,7 @@ const meta: Meta<typeof Item> = {
   title: 'Sense/Item',
   component: Item,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

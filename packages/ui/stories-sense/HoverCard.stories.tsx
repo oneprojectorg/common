@@ -13,6 +13,7 @@ const meta: Meta<typeof HoverCard> = {
   title: 'Sense/HoverCard',
   component: HoverCard,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

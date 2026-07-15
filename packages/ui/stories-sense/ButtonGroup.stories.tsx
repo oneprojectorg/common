@@ -18,6 +18,7 @@ const meta: Meta<typeof ButtonGroup> = {
   title: 'Sense/ButtonGroup',
   component: ButtonGroup,
   decorators: [withSense],
+  tags: ['autodocs'],
   argTypes: {
     orientation: {
       control: 'select',

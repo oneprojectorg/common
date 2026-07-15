@@ -8,6 +8,7 @@ const meta: Meta<typeof ScrollArea> = {
   title: 'Sense/ScrollArea',
   component: ScrollArea,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;

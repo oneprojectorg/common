@@ -16,6 +16,7 @@ const meta: Meta<typeof InputGroup> = {
   title: 'Sense/InputGroup',
   component: InputGroup,
   decorators: [withSense],
+  tags: ['autodocs'],
 };
 
 export default meta;
