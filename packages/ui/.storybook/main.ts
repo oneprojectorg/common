@@ -8,6 +8,9 @@ const config: StorybookConfig = {
   stories: [
     '../stories/**/*.mdx',
     '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    // First-class @op/sense stories, kept apart from the @op/ui stories so
+    // they survive @op/ui's eventual deletion.
+    '../stories-sense/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: [
     getAbsolutePath('@storybook/addon-onboarding'),

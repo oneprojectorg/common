@@ -20,19 +20,19 @@ export const parityStatus: Record<
   { family: ParityFamily; status: ParityStatus }
 > = {
   // Form inputs
-  input: { family: 'form-inputs', status: 'todo' },
-  textarea: { family: 'form-inputs', status: 'todo' },
-  field: { family: 'form-inputs', status: 'todo' },
-  label: { family: 'form-inputs', status: 'todo' },
-  checkbox: { family: 'form-inputs', status: 'todo' },
-  'input-group': { family: 'form-inputs', status: 'todo' },
-  'radio-group': { family: 'form-inputs', status: 'todo' },
-  switch: { family: 'form-inputs', status: 'todo' },
-  slider: { family: 'form-inputs', status: 'todo' },
-  select: { family: 'form-inputs', status: 'todo' },
-  'native-select': { family: 'form-inputs', status: 'todo' },
-  combobox: { family: 'form-inputs', status: 'todo' },
-  'input-otp': { family: 'form-inputs', status: 'todo' },
+  input: { family: 'form-inputs', status: 'done' },
+  textarea: { family: 'form-inputs', status: 'done' },
+  field: { family: 'form-inputs', status: 'done' },
+  label: { family: 'form-inputs', status: 'done' },
+  checkbox: { family: 'form-inputs', status: 'done' },
+  'input-group': { family: 'form-inputs', status: 'done' },
+  'radio-group': { family: 'form-inputs', status: 'done' },
+  switch: { family: 'form-inputs', status: 'done' },
+  slider: { family: 'form-inputs', status: 'done' },
+  select: { family: 'form-inputs', status: 'done' },
+  'native-select': { family: 'form-inputs', status: 'done' },
+  combobox: { family: 'form-inputs', status: 'done' },
+  'input-otp': { family: 'form-inputs', status: 'done' },
 
   // Buttons & toggles
   button: { family: 'buttons-toggles', status: 'todo' },
