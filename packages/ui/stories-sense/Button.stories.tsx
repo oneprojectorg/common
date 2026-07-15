@@ -1,0 +1,105 @@
+import { Button } from '@op/sense/Button';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { LuChevronRight, LuMail } from 'react-icons/lu';
+
+import { withSense } from './sense';
+
+const meta: Meta<typeof Button> = {
+  title: 'Sense/Button',
+  component: Button,
+  decorators: [withSense],
+  tags: ['autodocs'],
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: [
+        'default',
+        'outline',
+        'secondary',
+        'ghost',
+        'destructive',
+        'link',
+      ],
+    },
+    size: {
+      control: 'select',
+      options: [
+        'default',
+        'xs',
+        'sm',
+        'lg',
+        'icon',
+        'icon-xs',
+        'icon-sm',
+        'icon-lg',
+      ],
+    },
+  },
+  args: {
+    children: 'Button',
+    variant: 'default',
+    size: 'default',
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof Button>;
+
+export const Default: Story = {};
+
+export const Variants: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <Button>Default</Button>
+      <Button variant="outline">Outline</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="destructive">Destructive</Button>
+      <Button variant="link">Link</Button>
+    </div>
+  ),
+};
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <Button size="xs">Extra small</Button>
+      <Button size="sm">Small</Button>
+      <Button size="default">Default</Button>
+      <Button size="lg">Large</Button>
+      <Button size="icon" aria-label="Mail">
+        <LuMail />
+      </Button>
+    </div>
+  ),
+};
+
+export const WithIcon: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <Button>
+        <LuMail data-icon="inline-start" />
+        Email
+      </Button>
+      <Button variant="outline">
+        Continue
+        <LuChevronRight data-icon="inline-end" />
+      </Button>
+    </div>
+  ),
+};
+
+export const Disabled: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <Button disabled>Default</Button>
+      <Button variant="outline" disabled>
+        Outline
+      </Button>
+      <Button variant="destructive" disabled>
+        Destructive
+      </Button>
+    </div>
+  ),
+};
