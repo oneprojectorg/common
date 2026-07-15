@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { ProposalFilterItem } from './proposalFilterItems';
+
 // Filter items for the proposal `ResponsiveSelect`, shared by ProposalsList and
 // ManualSelectionToolbar so labels and disabled rules stay in lockstep.
 export const useProposalFilterItems = ({
@@ -14,7 +16,7 @@ export const useProposalFilterItems = ({
 }: {
   hasVoted: boolean;
   currentProfileId: string | undefined;
-}) => {
+}): ProposalFilterItem[] => {
   const t = useTranslations();
   return [
     { id: ProposalFilter.ALL, label: t('All proposals') },

@@ -391,6 +391,50 @@ const ProposalsListContent = ({
 
   const canManageProposals = permissions?.admin ?? false;
 
+  // Whether the proposal-type filter has anything worth switching to. Cheap
+  // existence checks (limit 1, read `total`): "My proposals" only makes sense
+  // once the viewer has submitted one (drafts included), "Shortlisted" only
+  // once something is shortlisted. When neither applies (and the viewer hasn't
+  // voted) the filter collapses to just "All proposals" and is hidden as dead
+  // weight. The checks hit the same endpoint each phase's list uses —
+  // `listAllProposals` in results, `listProposals` (draft-aware) otherwise — so
+  // an option only shows when selecting it would actually return rows.
+  const isResultsPhase = phase === 'results';
+  const ownProposalsFilter = {
+    processInstanceId: instanceId,
+    submittedByProfileId: currentProfileId,
+    limit: 1,
+  };
+  const shortlistedFilter = {
+    processInstanceId: instanceId,
+    status: ProposalStatus.APPROVED,
+    limit: 1,
+  };
+
+  const ownProposalsCurrent = trpc.decision.listProposals.useQuery(
+    ownProposalsFilter,
+    { enabled: !!currentProfileId && !isResultsPhase },
+  );
+  const ownProposalsResults = trpc.decision.listAllProposals.useQuery(
+    ownProposalsFilter,
+    { enabled: !!currentProfileId && isResultsPhase },
+  );
+  const hasOwnProposals =
+    ((isResultsPhase ? ownProposalsResults.data : ownProposalsCurrent.data)
+      ?.total ?? 0) > 0;
+
+  const shortlistedCurrent = trpc.decision.listProposals.useQuery(
+    shortlistedFilter,
+    { enabled: !isResultsPhase },
+  );
+  const shortlistedResults = trpc.decision.listAllProposals.useQuery(
+    shortlistedFilter,
+    { enabled: isResultsPhase },
+  );
+  const hasShortlisted =
+    ((isResultsPhase ? shortlistedResults.data : shortlistedCurrent.data)
+      ?.total ?? 0) > 0;
+
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },
@@ -467,6 +511,8 @@ const ProposalsListContent = ({
         setProposalFilter={setProposalFilter}
         hasVoted={hasVoted}
         currentProfileId={currentProfileId}
+        hasOwnProposals={hasOwnProposals}
+        hasShortlisted={hasShortlisted}
         decisionSlug={decisionSlug}
         categories={categories}
         selectedCategory={selectedCategory}
