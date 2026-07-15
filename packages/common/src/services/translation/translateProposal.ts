@@ -15,6 +15,10 @@ export type ProposalTranslation = {
   category?: string[];
 } & Record<string, string | string[]>;
 
+// Fields translated as plain text (from proposalData / profile), so their
+// document-fragment counterparts must be skipped to avoid clobbering them.
+const PLAIN_TEXT_FIELD_NAMES = new Set(['title', 'category']);
+
 /**
  * Translates a proposal's content (title, category, HTML fragments) into the
  * target locale via DeepL with cache-through semantics.
@@ -52,7 +56,12 @@ export async function translateProposal({
   if (proposal.htmlContent) {
     const htmlContent = proposal.htmlContent as Record<string, string>;
     for (const [fragmentName, html] of Object.entries(htmlContent)) {
-      if (html) {
+      // Skip fragments already translated as plain text above. The template
+      // exposes `title`/`category` as document fragments too, and their
+      // generated HTML (`<p xmlns="…xhtml">…</p>`) shares the same content key
+      // as the plain field — emitting both makes the HTML version clobber the
+      // plain translation in `unflattenTranslatedFields` and surfaces the tag.
+      if (html && !PLAIN_TEXT_FIELD_NAMES.has(fragmentName)) {
         entries.push({
           contentKey: `proposal:${proposalId}:${fragmentName}`,
           text: html,
