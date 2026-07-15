@@ -43,24 +43,21 @@ export const ProposalCountHeader = ({
   total: number;
 }) => {
   const t = useTranslations();
-  if (count >= total) {
-    return (
-      <span className="font-serif text-title-base text-neutral-black">
-        {t('{count, plural, one {# proposal} other {# proposals}}', {
-          count: total,
-        })}
-      </span>
-    );
-  }
+  // Both layouts share the shape "<title-styled number> <muted remainder>". When
+  // nothing is filtered out the remainder is just the word "proposals"; a
+  // narrowing filter makes it "of {total} proposals".
+  const unfiltered = count >= total;
   return (
     <span className="flex items-baseline gap-1">
       <span className="font-serif text-title-base text-neutral-black">
-        {count}
+        {unfiltered ? total : count}
       </span>
       <span className="text-base text-neutral-gray4">
-        {t('of {total, plural, one {# proposal} other {# proposals}}', {
-          total,
-        })}
+        {unfiltered
+          ? t('{total, plural, one {proposal} other {proposals}}', { total })
+          : t('of {total, plural, one {# proposal} other {# proposals}}', {
+              total,
+            })}
       </span>
     </span>
   );
