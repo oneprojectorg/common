@@ -40,6 +40,7 @@ import {
 import { Slider } from '@op/sense/Slider';
 import { Switch } from '@op/sense/Switch';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 import { LuGlobe, LuInfo } from 'react-icons/lu';
 
 import figmaCheckboxDescription from '../assets/figma/checkbox-description.png';
@@ -77,6 +78,20 @@ export default meta;
 
 type Story = StoryObj;
 
+// Form-input components are width-fluid, so the live preview would stretch
+// past the mock. Cap it at the mock's width — scoped to this family only;
+// ParityRow itself stays deliberately fluid for the other families.
+function FormParityRow({
+  children,
+  ...props
+}: ComponentProps<typeof ParityRow>) {
+  return (
+    <ParityRow {...props}>
+      <div style={{ maxWidth: props.imgWidth }}>{children}</div>
+    </ParityRow>
+  );
+}
+
 // First item with a null value acts as the placeholder: the select's initial
 // value is null, so SelectValue renders that item's label.
 const selectItems = [
@@ -105,11 +120,11 @@ export const FormInputs: Story = {
     <div className="flex flex-col gap-10 p-8">
       <ParityGridHeader />
 
-      <ParityRow label="Input" img={figmaInputDefault} imgWidth={360}>
+      <FormParityRow label="Input" img={figmaInputDefault} imgWidth={360}>
         <Input placeholder="Enter text" />
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Field" img={figmaFieldUsername} imgWidth={360}>
+      <FormParityRow label="Field" img={figmaFieldUsername} imgWidth={360}>
         <Field>
           <FieldLabel htmlFor="parity-username">Username</FieldLabel>
           <Input id="parity-username" placeholder="Matt Wierzbicki" />
@@ -118,9 +133,9 @@ export const FormInputs: Story = {
             description
           </FieldDescription>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Disabled" img={figmaFieldDisabled} imgWidth={360}>
+      <FormParityRow label="Disabled" img={figmaFieldDisabled} imgWidth={360}>
         {/* Figma mock fades only the input; whole-field fade kept on purpose,
             flagged to design */}
         <Field data-disabled="true">
@@ -131,9 +146,9 @@ export const FormInputs: Story = {
             description
           </FieldDescription>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Invalid" img={figmaFieldInvalid} imgWidth={366}>
+      <FormParityRow label="Invalid" img={figmaFieldInvalid} imgWidth={366}>
         <Field data-invalid="true">
           <FieldLabel htmlFor="parity-invalid">Username</FieldLabel>
           <Input
@@ -146,9 +161,9 @@ export const FormInputs: Story = {
             description
           </FieldDescription>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="File" img={figmaFieldFile} imgWidth={360}>
+      <FormParityRow label="File" img={figmaFieldFile} imgWidth={360}>
         <Field>
           <FieldLabel htmlFor="parity-file">Username</FieldLabel>
           <Input id="parity-file" type="file" />
@@ -157,9 +172,13 @@ export const FormInputs: Story = {
             description
           </FieldDescription>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Field group" img={figmaFieldGroupNames} imgWidth={480}>
+      <FormParityRow
+        label="Field group"
+        img={figmaFieldGroupNames}
+        imgWidth={480}
+      >
         <div className="flex gap-4">
           <Field>
             <FieldLabel htmlFor="parity-first">First Name</FieldLabel>
@@ -170,9 +189,9 @@ export const FormInputs: Story = {
             <Input id="parity-last" placeholder="Lee" />
           </Field>
         </div>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Required" img={figmaFieldRequired} imgWidth={360}>
+      <FormParityRow label="Required" img={figmaFieldRequired} imgWidth={360}>
         <Field>
           <FieldLabel htmlFor="parity-required">
             Required Field <span className="text-destructive">*</span>
@@ -183,9 +202,9 @@ export const FormInputs: Story = {
             label above
           </FieldDescription>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="With badge" img={figmaFieldBadge} imgWidth={360}>
+      <FormParityRow label="With badge" img={figmaFieldBadge} imgWidth={360}>
         <Field className="relative">
           {/* max-w-fit: Field's vertical orientation sets *:w-full, which would
               stretch the absolutely-positioned badge over the label */}
@@ -204,9 +223,9 @@ export const FormInputs: Story = {
             You can add Badge with position absolute in the parent frame
           </FieldDescription>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow
+      <FormParityRow
         label="Inline addon"
         img={figmaFieldWebsiteAddon}
         imgWidth={360}
@@ -226,9 +245,9 @@ export const FormInputs: Story = {
             </InputGroupAddon>
           </InputGroup>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow
+      <FormParityRow
         label="With button"
         img={figmaFieldSearchButton}
         imgWidth={360}
@@ -246,18 +265,18 @@ export const FormInputs: Story = {
             <Button variant="outline">Search</Button>
           </ButtonGroup>
         </Field>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Checkbox" img={figmaCheckbox} imgWidth={230}>
+      <FormParityRow label="Checkbox" img={figmaCheckbox} imgWidth={230}>
         <div className="flex items-center gap-2">
           <Checkbox defaultChecked id="parity-checkbox-terms" />
           <label htmlFor="parity-checkbox-terms" className="text-sm">
             Accept terms and conditions
           </label>
         </div>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow
+      <FormParityRow
         label="Checkbox with description"
         img={figmaCheckboxDescription}
         imgWidth={425}
@@ -273,9 +292,13 @@ export const FormInputs: Story = {
             </p>
           </div>
         </div>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Checkbox group" img={figmaCheckboxGroup} imgWidth={219}>
+      <FormParityRow
+        label="Checkbox group"
+        img={figmaCheckboxGroup}
+        imgWidth={219}
+      >
         <div className="flex flex-col gap-4">
           {[
             ['technology', 'Technology News', true],
@@ -294,9 +317,9 @@ export const FormInputs: Story = {
             </div>
           ))}
         </div>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Radio group" img={figmaRadioGroup} imgWidth={371}>
+      <FormParityRow label="Radio group" img={figmaRadioGroup} imgWidth={371}>
         <RadioGroup defaultValue="starter" className="gap-3">
           {[
             ['starter', 'Starter Plan', 'Perfect for small businesses.'],
@@ -321,9 +344,9 @@ export const FormInputs: Story = {
             </div>
           ))}
         </RadioGroup>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Switch" img={figmaSwitch} imgWidth={320}>
+      <FormParityRow label="Switch" img={figmaSwitch} imgWidth={320}>
         <div className="flex flex-col gap-4">
           {[
             ['on', 'Switch Text', 'This is a switch description.', true],
@@ -338,13 +361,13 @@ export const FormInputs: Story = {
             </div>
           ))}
         </div>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Slider" img={figmaSlider} imgWidth={400}>
+      <FormParityRow label="Slider" img={figmaSlider} imgWidth={400}>
         <Slider defaultValue={[62]} />
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Select" img={figmaSelectTrigger} imgWidth={200}>
+      <FormParityRow label="Select" img={figmaSelectTrigger} imgWidth={200}>
         <Select items={selectItems}>
           <SelectTrigger className="w-[200px]">
             <SelectValue />
@@ -357,9 +380,9 @@ export const FormInputs: Story = {
             ))}
           </SelectContent>
         </Select>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Combobox" img={figmaCombobox} imgWidth={228}>
+      <FormParityRow label="Combobox" img={figmaCombobox} imgWidth={228}>
         <Combobox
           items={['Next.js', 'SvelteKit', 'Remix', 'Nuxt', 'Astro', 'Vite']}
         >
@@ -379,9 +402,9 @@ export const FormInputs: Story = {
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Input OTP" img={figmaInputOtp} imgWidth={296}>
+      <FormParityRow label="Input OTP" img={figmaInputOtp} imgWidth={296}>
         <InputOTP maxLength={6} defaultValue="12">
           <InputOTPGroup>
             <InputOTPSlot index={0} />
@@ -398,9 +421,9 @@ export const FormInputs: Story = {
             <InputOTPSlot index={5} />
           </InputOTPGroup>
         </InputOTP>
-      </ParityRow>
+      </FormParityRow>
 
-      <ParityRow label="Form" img={figmaForm} imgWidth={360}>
+      <FormParityRow label="Form" img={figmaForm} imgWidth={360}>
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="parity-name">Name</FieldLabel>
@@ -454,7 +477,7 @@ export const FormInputs: Story = {
             <Button variant="outline">Cancel</Button>
           </div>
         </FieldGroup>
-      </ParityRow>
+      </FormParityRow>
     </div>
   ),
 };
