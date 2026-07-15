@@ -6,22 +6,7 @@ import { LuChevronDown, LuCheck, LuChevronUp } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 
-// The popup renders in a portal, so items can't see the trigger's data-size
-// via CSS. Size set on the root flows to the trigger and items via context.
-const SelectSizeContext = React.createContext<'sm' | 'default'>('default');
-
-function Select<Value, Multiple extends boolean | undefined = false>({
-  size = 'default',
-  ...props
-}: SelectPrimitive.Root.Props<Value, Multiple> & {
-  size?: 'sm' | 'default';
-}) {
-  return (
-    <SelectSizeContext.Provider value={size}>
-      <SelectPrimitive.Root {...props} />
-    </SelectSizeContext.Provider>
-  );
-}
+const Select = SelectPrimitive.Root;
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -45,13 +30,12 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
 
 function SelectTrigger({
   className,
-  size,
+  size = 'default',
   children,
   ...props
 }: SelectPrimitive.Trigger.Props & {
   size?: 'sm' | 'default';
 }) {
-  size = size ?? React.useContext(SelectSizeContext);
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -80,12 +64,17 @@ function SelectContent({
   align = 'center',
   alignOffset = 0,
   alignItemWithTrigger = true,
+  // Match the trigger's size — the popup portals out of the trigger's
+  // subtree, so this can't be derived via CSS. Items inherit the font size.
+  size = 'default',
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
     SelectPrimitive.Positioner.Props,
     'align' | 'alignOffset' | 'side' | 'sideOffset' | 'alignItemWithTrigger'
-  >) {
+  > & {
+    size?: 'sm' | 'default';
+  }) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -99,8 +88,9 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
+          data-size={size}
           className={cn(
-            'relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-md duration-100 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+            'relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-popover text-base text-popover-foreground shadow-md duration-100 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[size=sm]:text-sm',
             className,
           )}
           {...props}
@@ -132,13 +122,11 @@ function SelectItem({
   children,
   ...props
 }: SelectPrimitive.Item.Props) {
-  const size = React.useContext(SelectSizeContext);
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      data-size={size}
       className={cn(
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2 pr-8 pl-3 text-base outline-hidden select-none focus:bg-muted focus:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-[size=sm]:py-1.5 data-[size=sm]:text-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2 pr-8 pl-3 outline-hidden select-none focus:bg-muted focus:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
