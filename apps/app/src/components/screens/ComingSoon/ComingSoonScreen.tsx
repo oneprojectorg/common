@@ -86,8 +86,8 @@ export const ComingSoonScreen = () => {
               <Image
                 src="/coming-soon-mockup.png"
                 alt="Screenshot of the Common platform"
-                width={1568}
-                height={1041}
+                width={1296}
+                height={720}
                 className="relative mx-auto w-7xl max-w-[85vw] shadow sm:max-w-[70vw]"
                 priority
               />
