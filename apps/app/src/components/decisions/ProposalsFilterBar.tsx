@@ -6,31 +6,59 @@ import { LuArrowDownToLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { useProposalFilterItems } from './useProposalFilters';
 
 export const ProposalsListHeader = ({
   hideFilters,
-  proposalFilter,
   count,
+  total,
 }: {
   hideFilters: boolean;
-  proposalFilter: ProposalFilter;
   count: number;
+  total: number;
 }) => {
   const t = useTranslations();
-  const label = useProposalFilterLabel(proposalFilter);
+  if (hideFilters) {
+    return (
+      <span className="font-serif text-title-base text-neutral-black">
+        {t('My proposals')}
+      </span>
+    );
+  }
+  return <ProposalCountHeader count={count} total={total} />;
+};
 
+// `count` is the number matching the active filter; `total` the full proposal
+// pool. A narrowing filter reads "6 of 328 proposals" — the count in title
+// styling, the muted "of {total} proposals" carrying the pool size. When
+// nothing is filtered out (count === total) the redundant "of N" is dropped and
+// it reads "328 proposals". Shared with ManualSelectionToolbar so both header
+// sites stay in lockstep.
+export const ProposalCountHeader = ({
+  count,
+  total,
+}: {
+  count: number;
+  total: number;
+}) => {
+  const t = useTranslations();
+  // Both layouts share the shape "<title-styled number> <muted remainder>". When
+  // nothing is filtered out the remainder is just the word "proposals"; a
+  // narrowing filter makes it "of {total} proposals".
+  const unfiltered = count >= total;
   return (
-    <span className="font-serif text-title-base text-neutral-black">
-      {hideFilters ? (
-        t('My proposals')
-      ) : (
-        <>
-          {label} <Bullet /> {count}
-        </>
-      )}
+    <span className="flex items-baseline gap-1">
+      <span className="font-serif text-title-base text-neutral-black">
+        {unfiltered ? total : count}
+      </span>
+      <span className="text-base text-neutral-gray4">
+        {unfiltered
+          ? t('{total, plural, one {proposal} other {proposals}}', { total })
+          : t('of {total, plural, one {# proposal} other {# proposals}}', {
+              total,
+            })}
+      </span>
     </span>
   );
 };
@@ -148,19 +176,4 @@ export const ProposalsFilterBar = ({
       ) : null}
     </>
   );
-};
-
-// useTranslations needs literal keys, so map each filter to its label here.
-const useProposalFilterLabel = (filter: ProposalFilter) => {
-  const t = useTranslations();
-  switch (filter) {
-    case ProposalFilter.MY_BALLOT:
-      return t('My ballot');
-    case ProposalFilter.MY_PROPOSALS:
-      return t('My proposals');
-    case ProposalFilter.SHORTLISTED:
-      return t('Shortlisted proposals');
-    default:
-      return t('All proposals');
-  }
 };
