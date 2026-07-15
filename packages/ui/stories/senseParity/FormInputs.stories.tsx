@@ -2,7 +2,14 @@ import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { ButtonGroup } from '@op/sense/ButtonGroup';
 import { Checkbox } from '@op/sense/Checkbox';
-import { Combobox, ComboboxInput } from '@op/sense/Combobox';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
 import {
   Field,
   FieldDescription,
@@ -353,12 +360,24 @@ export const FormInputs: Story = {
       </ParityRow>
 
       <ParityRow label="Combobox" img={figmaCombobox} imgWidth={228}>
-        <Combobox items={['Next.js', 'SvelteKit', 'Remix']}>
+        <Combobox
+          items={['Next.js', 'SvelteKit', 'Remix', 'Nuxt', 'Astro', 'Vite']}
+        >
           <ComboboxInput placeholder="Placeholder" className="w-[228px]">
             <InputGroupAddon>
               <LuGlobe />
             </InputGroupAddon>
           </ComboboxInput>
+          <ComboboxContent className="sense">
+            <ComboboxEmpty>No results found.</ComboboxEmpty>
+            <ComboboxList>
+              {(item: string) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
         </Combobox>
       </ParityRow>
 
