@@ -29,9 +29,12 @@ export const ProposalsListHeader = ({
   return <ProposalCountHeader count={count} total={total} />;
 };
 
-// Renders "6 of 328 proposals": the shown `count` leads in title styling, the
-// muted "of {total} proposals" remainder carries the pool size. Shared with
-// ManualSelectionToolbar so both header sites stay in lockstep.
+// `count` is the number matching the active filter; `total` the full proposal
+// pool. A narrowing filter reads "6 of 328 proposals" — the count in title
+// styling, the muted "of {total} proposals" carrying the pool size. When
+// nothing is filtered out (count === total) the redundant "of N" is dropped and
+// it reads "328 proposals". Shared with ManualSelectionToolbar so both header
+// sites stay in lockstep.
 export const ProposalCountHeader = ({
   count,
   total,
@@ -40,6 +43,15 @@ export const ProposalCountHeader = ({
   total: number;
 }) => {
   const t = useTranslations();
+  if (count >= total) {
+    return (
+      <span className="font-serif text-title-base text-neutral-black">
+        {t('{count, plural, one {# proposal} other {# proposals}}', {
+          count: total,
+        })}
+      </span>
+    );
+  }
   return (
     <span className="flex items-baseline gap-1">
       <span className="font-serif text-title-base text-neutral-black">
