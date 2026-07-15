@@ -12,7 +12,7 @@
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@op/common": "workspace:*",

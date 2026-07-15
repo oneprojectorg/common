@@ -14,7 +14,7 @@
     "start": "next start -p 3100",
     "start:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next start -p 4100",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@formity/react": "^1.0.0",
@@ -115,7 +115,7 @@
     "@types/testing-library__user-event": "^4.2.0",
     "postcss": "^8.5.3",
     "tailwindcss": "4.1.18",
-    "typescript": "5.7.3",
+    "typescript": "7.0.2",
     "vitest": "catalog:"
   }
 }

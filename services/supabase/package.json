@@ -12,7 +12,7 @@
   },
   "scripts": {
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "typegen": "pnpm --dir ../.. exec supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts"
   },
   "dependencies": {
@@ -24,6 +24,6 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "typescript": "5.7.3"
+    "typescript": "7.0.2"
   }
 }

@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "inngest-cli dev",
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@op/cache": "workspace:*",
@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "typescript": "5.7.3"
+    "typescript": "7.0.2"
   }
 }

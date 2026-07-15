@@ -13,7 +13,7 @@
     "format:check": "oxfmt --check",
     "start": "next start",
     "start:e2e": "next start -p 4300",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@op/api": "workspace:*",
@@ -34,6 +34,6 @@
     "@tailwindcss/postcss": "4.1.8",
     "postcss": "^8.5.3",
     "tailwindcss": "4.1.8",
-    "typescript": "5.7.3"
+    "typescript": "7.0.2"
   }
 }
