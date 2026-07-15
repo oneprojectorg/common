@@ -88,8 +88,10 @@ type ProposalQueryParams = {
 
 type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
-  /** Full server-side proposal count, independent of how many pages are loaded. */
+  /** Full server-side proposal count for the active filter, independent of how many pages are loaded. */
   total: number;
+  /** Unfiltered proposal count for the phase — the "of N" pool, counted by the same query as `total`. */
+  totalProposalCount: number;
   isFetchingNextPage: boolean;
   shouldShowTrigger: boolean;
   infiniteScrollRef: RefCallback<HTMLDivElement>;
@@ -98,6 +100,7 @@ type ProposalsLoaderRenderProps = {
 const useProposalsLoaderRenderProps = (
   allProposals: Proposal[],
   total: number,
+  totalProposalCount: number,
   {
     fetchNextPage,
     hasNextPage,
@@ -125,6 +128,7 @@ const useProposalsLoaderRenderProps = (
   return {
     allProposals,
     total,
+    totalProposalCount,
     isFetchingNextPage,
     shouldShowTrigger,
     infiniteScrollRef: ref,
@@ -147,13 +151,33 @@ const CurrentPhaseProposalsLoader = ({
       refetchOnMount: 'always',
     });
 
+  // Unfiltered count for the "of N" denominator — same endpoint/visibility as
+  // the list, so it matches `total` when no filter is active. Only `.total` is
+  // used, so a single row is fetched.
+  const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery(
+    {
+      processInstanceId: queryParams.processInstanceId,
+      dir: queryParams.dir,
+      limit: 1,
+      phase: queryParams.phase,
+    },
+    { staleTime: 30 * 1000 },
+  );
+
   const allProposals = useMemo(
     () => paginatedData.pages.flatMap((page) => page.proposals),
     [paginatedData.pages],
   );
   const total = paginatedData.pages[0]?.total ?? 0;
 
-  return children(useProposalsLoaderRenderProps(allProposals, total, query));
+  return children(
+    useProposalsLoaderRenderProps(
+      allProposals,
+      total,
+      unfilteredData.total,
+      query,
+    ),
+  );
 };
 
 const ResultsPhaseProposalsLoader = ({
@@ -181,13 +205,28 @@ const ResultsPhaseProposalsLoader = ({
       },
     );
 
+  // Unfiltered count for the "of N" denominator — same endpoint as the list so
+  // it matches `total` when no filter is active. Only `.total` is used.
+  const [unfilteredData] = trpc.decision.listAllProposals.useSuspenseQuery({
+    processInstanceId: queryParams.processInstanceId,
+    dir: queryParams.dir,
+    limit: 1,
+  });
+
   const allProposals = useMemo(
     () => paginatedData.pages.flatMap((page) => page.items),
     [paginatedData.pages],
   );
   const total = paginatedData.pages[0]?.total ?? 0;
 
-  return children(useProposalsLoaderRenderProps(allProposals, total, query));
+  return children(
+    useProposalsLoaderRenderProps(
+      allProposals,
+      total,
+      unfilteredData.total,
+      query,
+    ),
+  );
 };
 
 export const ProposalsList = (props: ProposalsListProps) => {
@@ -316,6 +355,7 @@ const ProposalsListContent = ({
   queryParams,
   allProposals,
   total,
+  totalProposalCount,
   isFetchingNextPage,
   shouldShowTrigger,
   infiniteScrollRef,
@@ -463,7 +503,7 @@ const ProposalsListContent = ({
         pinOffset={pinOffset}
         hideFilters={hideFilters}
         total={total}
-        totalProposalCount={instance.proposalCount ?? total}
+        totalProposalCount={totalProposalCount}
         proposalFilter={proposalFilter}
         setProposalFilter={setProposalFilter}
         hasVoted={hasVoted}
