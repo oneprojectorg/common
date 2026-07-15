@@ -149,7 +149,7 @@ export function ProposalViewLayout({
               <Tooltip>{revisionRequestLabel}</Tooltip>
             </TooltipTrigger>
           )}
-          <div className="hidden sm:flex">
+          <div className="hidden sm:block">
             <LocaleChooser />
           </div>
           {/* Outside the sm-only cluster: Join stays visible on mobile (the
