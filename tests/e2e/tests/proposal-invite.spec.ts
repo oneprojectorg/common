@@ -61,14 +61,25 @@ test.describe('Proposal Invite', () => {
       .set({ currentProfileId: org.organizationProfile.id })
       .where(eq(users.authUserId, invitee.id));
 
-    // Insert a pending proposal invite for the new user
-    await db.insert(profileInvites).values({
-      email: inviteeEmail,
-      profileId: proposal.profileId,
-      profileEntityType: EntityType.PROPOSAL,
-      accessRoleId: ROLES.MEMBER.id,
-      invitedBy: instance.profileId,
-    });
+    // Insert pending invites for both the decision process and the proposal —
+    // accepting the proposal invite also promotes the user into the parent
+    // decision process via the matching pending decision invite.
+    await db.insert(profileInvites).values([
+      {
+        email: inviteeEmail,
+        profileId: instance.profileId,
+        profileEntityType: EntityType.DECISION,
+        accessRoleId: ROLES.MEMBER.id,
+        invitedBy: instance.profileId,
+      },
+      {
+        email: inviteeEmail,
+        profileId: proposal.profileId,
+        profileEntityType: EntityType.PROPOSAL,
+        accessRoleId: ROLES.MEMBER.id,
+        invitedBy: instance.profileId,
+      },
+    ]);
 
     // Authenticate as the invitee
     await authenticateAsUser(page, {
