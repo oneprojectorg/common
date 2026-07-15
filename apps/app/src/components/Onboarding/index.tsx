@@ -231,52 +231,60 @@ export const OnboardingFlow = () => {
   }, [organizationDetails, fundingInformation, tos, privacyPolicy]);
 
   // Submit org creation
-  const submitOrganization = useCallback(
-    (values: Array<OrgCreationFormValues>) => {
-      if (!isOnline) {
-        toast.error({
-          title: t('No connection'),
-          message: t('Please check your internet connection and try again.'),
-        });
-        return;
-      }
+  const submitOrganization = useCallback(() => {
+    if (!isOnline) {
+      toast.error({
+        title: t('No connection'),
+        message: t('Please check your internet connection and try again.'),
+      });
+      return;
+    }
 
-      setIsSubmitting(true);
+    setIsSubmitting(true);
 
-      const combined = values.reduce(
-        (acc, val) => ({ ...acc, ...val }),
-        {} as OrgCreationFormValues,
-      );
+    // Build from the persisted store, not MultiStepForm's ephemeral local
+    // state — the local array is lost on any remount (retry-after-failure,
+    // page refresh), which drops org details and submits undefined orgType/bio.
+    const combined = getOrgCreationStepValues().reduce(
+      (acc, val) => ({ ...acc, ...val }),
+      {} as OrgCreationFormValues,
+    );
 
-      createOrganization
-        .mutateAsync(processOrgInputs(combined))
-        .then(async () => {
-          sendOnboardingAnalytics(combined);
-          await completeOnboarding.mutateAsync({ tos: true, privacy: true });
-          await trpcUtils.account.getMyAccount.invalidate();
-          await trpcUtils.account.getMyAccount.refetch();
-          router.push('/?new=1');
-        })
-        .catch((err) => {
-          console.error('ERROR', err);
-          setIsSubmitting(false);
+    createOrganization
+      .mutateAsync(processOrgInputs(combined))
+      .then(async () => {
+        sendOnboardingAnalytics(combined);
+        await completeOnboarding.mutateAsync({ tos: true, privacy: true });
+        await trpcUtils.account.getMyAccount.invalidate();
+        await trpcUtils.account.getMyAccount.refetch();
+        router.push('/?new=1');
+      })
+      .catch((err) => {
+        console.error('ERROR', err);
+        setIsSubmitting(false);
 
-          const errorInfo = analyzeError(err);
-          if (errorInfo.isConnectionError) {
-            toast.error({
-              title: t('Connection issue'),
-              message: t('Please try submitting the form again.'),
-            });
-          } else {
-            toast.error({
-              title: t("That didn't work"),
-              message: errorInfo.message,
-            });
-          }
-        });
-    },
-    [createOrganization, isOnline, router, trpcUtils, t],
-  );
+        const errorInfo = analyzeError(err);
+        if (errorInfo.isConnectionError) {
+          toast.error({
+            title: t('Connection issue'),
+            message: t('Please try submitting the form again.'),
+          });
+        } else {
+          toast.error({
+            title: t("That didn't work"),
+            message: errorInfo.message,
+          });
+        }
+      });
+  }, [
+    createOrganization,
+    isOnline,
+    router,
+    trpcUtils,
+    t,
+    getOrgCreationStepValues,
+    completeOnboarding,
+  ]);
 
   if (!hasHydrated) {
     return <DecisionInvitesSkeleton />;
