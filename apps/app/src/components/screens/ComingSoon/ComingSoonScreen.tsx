@@ -37,7 +37,7 @@ export const ComingSoonScreen = () => {
           </p>
           <Link
             href="/columbus"
-            className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline"
+            className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline hover:no-underline"
           >
             {t('Access Our Voice, Our Choice')}
             <LuArrowRight className="size-4" />
