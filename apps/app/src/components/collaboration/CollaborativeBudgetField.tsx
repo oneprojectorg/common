@@ -4,13 +4,31 @@ import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
+import { cn, getInvalidAriaAttributes } from '@op/ui/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
+import { INVALID_PILL_CLASS, getFieldErrorId } from './invalidFieldStyles';
 
 const DEFAULT_CURRENCY = 'USD';
+
+/**
+ * Fragment text is legacy/shared collaborative data — a fragment that once
+ * belonged to a non-money field can hold non-JSON text, which must not crash
+ * the editor at render.
+ */
+function parseBudgetText(text: string): BudgetData | null {
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text) as BudgetData;
+  } catch {
+    return null;
+  }
+}
 
 const getCurrencySymbol = (currency: string) =>
   (0)
@@ -28,6 +46,14 @@ interface CollaborativeBudgetFieldProps {
   minAmount?: number;
   maxAmount?: number;
   initialValue?: BudgetData | null;
+  /**
+   * Yjs fragment name to sync this field. Must match the field's template key
+   * — validation reads fragment text by key, so a custom money field syncing
+   * to the wrong fragment can never validate.
+   */
+  fragmentName?: string;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
   onChange?: (budget: BudgetData | null) => void;
 }
 
@@ -44,6 +70,8 @@ export function CollaborativeBudgetField({
   minAmount,
   maxAmount,
   initialValue = null,
+  fragmentName = 'budget',
+  isInvalid = false,
   onChange,
 }: CollaborativeBudgetFieldProps) {
   const t = useTranslations();
@@ -57,11 +85,11 @@ export function CollaborativeBudgetField({
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
-    'budget',
+    fragmentName,
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
-  const budget = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+  const budget = parseBudgetText(budgetText);
   const setBudget = (newBudget: BudgetData | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
@@ -126,7 +154,7 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    const emitted = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+    const emitted = parseBudgetText(budgetText);
     const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
 
     if (lastEmittedRef.current === key) {
@@ -174,7 +202,14 @@ export function CollaborativeBudgetField({
           variant="pill"
           color="pill"
           onPress={handleStartEditing}
-          className="justify-start text-start"
+          {...getInvalidAriaAttributes({
+            isInvalid,
+            errorMessageId: getFieldErrorId(fragmentName),
+          })}
+          className={cn(
+            'justify-start text-start',
+            isInvalid && INVALID_PILL_CLASS,
+          )}
         >
           {budgetAmount !== null
             ? budgetAmount.toLocaleString(undefined, {

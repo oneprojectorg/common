@@ -5,11 +5,18 @@ import type { TranslateFn } from '@/lib/i18n';
 /**
  * Handles tRPC validation errors from mutation responses.
  * Displays appropriate toast messages based on error shape.
+ *
+ * When `onFieldErrors` is provided, it owns the full validation-error UX
+ * (field highlighting + toast) and this function just extracts the errors
+ * and delegates. The toasts below are the no-handler fallback.
  */
 export function handleMutationError(
   error: { data?: unknown; message?: string },
   operationType: 'create' | 'update' | 'submit',
   t: TranslateFn,
+  options?: {
+    onFieldErrors?: (fieldErrors: Record<string, string>) => void;
+  },
 ) {
   console.error(`Failed to ${operationType} proposal:`, error);
 
@@ -17,10 +24,17 @@ export function handleMutationError(
     | { cause?: { fieldErrors?: Record<string, string> } }
     | undefined;
 
-  if (errorData?.cause?.fieldErrors) {
-    const fieldErrors = errorData.cause.fieldErrors;
-    const errorMessages = Object.values(fieldErrors);
+  const fieldErrors = errorData?.cause?.fieldErrors;
 
+  // Empty fieldErrors carries nothing to highlight or list — treat it as a
+  // generic failure rather than toasting an empty message.
+  if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+    if (options?.onFieldErrors) {
+      options.onFieldErrors(fieldErrors);
+      return;
+    }
+
+    const errorMessages = Object.values(fieldErrors);
     if (errorMessages.length === 1) {
       toast.error({ message: errorMessages[0] });
     } else {

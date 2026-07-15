@@ -1,5 +1,6 @@
 import { Header4 } from '@op/ui/Header';
 import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
+import { cn } from '@op/ui/utils';
 
 /** Renders title + description header for a form field. */
 export function FieldHeader({
@@ -7,6 +8,7 @@ export function FieldHeader({
   description,
   badge,
   required,
+  isInvalid,
   className = 'gap-2',
 }: {
   title?: string;
@@ -15,6 +17,8 @@ export function FieldHeader({
   badge?: React.ReactNode;
   /** When true, renders a red asterisk next to the title. */
   required?: boolean;
+  /** When true, renders the title + description in the error color. */
+  isInvalid?: boolean;
   className?: string;
 }) {
   if (!title && !description) {
@@ -25,7 +29,9 @@ export function FieldHeader({
     <div className={`flex flex-col ${className}`}>
       {title && (
         <div className="flex items-baseline justify-between gap-2">
-          <Header4 className="font-light">
+          <Header4
+            className={cn('font-light', isInvalid && 'text-functional-red')}
+          >
             {title}
             {required && <RequiredAsterisk />}
           </Header4>
@@ -35,7 +41,14 @@ export function FieldHeader({
         </div>
       )}
       {description && (
-        <p className="text-sm text-neutral-charcoal">{description}</p>
+        <p
+          className={cn(
+            'text-sm text-neutral-charcoal',
+            isInvalid && 'text-functional-red',
+          )}
+        >
+          {description}
+        </p>
       )}
     </div>
   );

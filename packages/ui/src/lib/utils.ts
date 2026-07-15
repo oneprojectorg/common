@@ -6,6 +6,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * aria attributes tying a control in its validation-error state to the
+ * element that describes the error. Spread onto the interactive element
+ * (or a TipTap `editorProps.attributes` object); empty when valid.
+ */
+export function getInvalidAriaAttributes({
+  isInvalid,
+  errorMessageId,
+}: {
+  isInvalid: boolean;
+  errorMessageId?: string;
+}): { 'aria-invalid'?: 'true'; 'aria-describedby'?: string } {
+  if (!isInvalid) {
+    return {};
+  }
+  return {
+    'aria-invalid': 'true',
+    ...(errorMessageId ? { 'aria-describedby': errorMessageId } : {}),
+  };
+}
+
 export const GRADIENT_COLORS = [
   { gradient: 'bg-gradient', hex: '#1fa88f' },
   { gradient: 'bg-redTeal', hex: '#e86a4a' },

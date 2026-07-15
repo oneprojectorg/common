@@ -22,6 +22,10 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
+import {
+  FIELD_ANCHOR_ATTR,
+  getFieldErrorId,
+} from '../../collaboration/invalidFieldStyles';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
@@ -56,6 +60,11 @@ interface ProposalFormRendererProps {
   decisionProfileId: string | null;
   /** Called when any system field value changes. */
   onFieldChange: (key: string, value: unknown) => void;
+  /**
+   * Validation messages keyed by field, from the last failed submit. Flagged
+   * fields render in their error state until the user edits them.
+   */
+  fieldErrors?: Record<string, string>;
   /** Called with the editor instance when a rich-text field gains focus. */
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
@@ -173,17 +182,29 @@ function getPreviewBudgetValue({
  * Renders a single field descriptor for collaborative editing or readonly
  * proposal preview modes.
  */
-function renderField(
-  field: FieldDescriptor,
-  draft: ProposalDraftFields,
-  decisionProfileId: string | null,
-  onFieldChange: (key: string, value: unknown) => void,
-  t: TranslateFn,
-  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
-  previewVersionFragmentContents: Record<string, JSONContent | null>,
-  onEditorFocus?: (editor: Editor) => void,
-  onEditorBlur?: (editor: Editor) => void,
-): React.ReactNode {
+function renderField({
+  field,
+  draft,
+  decisionProfileId,
+  onFieldChange,
+  t,
+  mode,
+  previewVersionFragmentContents,
+  isInvalid,
+  onEditorFocus,
+  onEditorBlur,
+}: {
+  field: FieldDescriptor;
+  draft: ProposalDraftFields;
+  decisionProfileId: string | null;
+  onFieldChange: (key: string, value: unknown) => void;
+  t: TranslateFn;
+  mode: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  previewVersionFragmentContents: Record<string, JSONContent | null>;
+  isInvalid: boolean;
+  onEditorFocus?: (editor: Editor) => void;
+  onEditorBlur?: (editor: Editor) => void;
+}): React.ReactNode {
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
@@ -206,6 +227,7 @@ function renderField(
     return (
       <CollaborativeTitleField
         placeholder={t('Untitled Proposal')}
+        isInvalid={isInvalid}
         onChange={(value) => onFieldChange('title', value)}
       />
     );
@@ -255,6 +277,7 @@ function renderField(
             onChange={(value) => onFieldChange('category', value)}
             fragmentName="category"
             placeholder={t('Select category')}
+            isInvalid={isInvalid}
           />
         </div>
       );
@@ -268,6 +291,7 @@ function renderField(
         fragmentName="category"
         placeholder={t('Select category')}
         allowEmpty={!field.required}
+        isInvalid={isInvalid}
       />
     );
   }
@@ -293,6 +317,7 @@ function renderField(
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
         initialValue={draft.budget}
+        isInvalid={isInvalid}
         onChange={(value) => onFieldChange('budget', value)}
       />
     );
@@ -329,6 +354,7 @@ function renderField(
           placeholder={placeholder}
           multiline={format === 'long-text'}
           maxLength={schema.maxLength}
+          isInvalid={isInvalid}
           onChange={(html) => onFieldChange(key, html)}
           onEditorFocus={onEditorFocus}
           onEditorBlur={onEditorBlur}
@@ -357,6 +383,8 @@ function renderField(
           minAmount={schema.minimum}
           maxAmount={schema.maximum}
           initialValue={null}
+          fragmentName={key}
+          isInvalid={isInvalid}
           onChange={(value) => onFieldChange(key, value)}
         />
       );
@@ -387,6 +415,7 @@ function renderField(
             title={schema.title}
             description={schema.description}
             required={field.required}
+            isInvalid={isInvalid}
           />
           <CollaborativeLocationField
             initialValue={
@@ -394,6 +423,7 @@ function renderField(
             }
             profileId={decisionProfileId}
             defaultMapView={schema['x-map-default']}
+            isInvalid={isInvalid}
             onChange={(value) => onFieldChange(key, value)}
           />
         </div>
@@ -430,6 +460,7 @@ function renderField(
             title={schema.title}
             description={schema.description}
             required={field.required}
+            isInvalid={isInvalid}
           />
           <CollaborativeDropdownField
             options={options}
@@ -438,6 +469,7 @@ function renderField(
             fragmentName={key}
             allowEmpty={!field.required}
             required={field.required}
+            isInvalid={isInvalid}
           />
         </div>
       );
@@ -471,6 +503,7 @@ export function ProposalFormRenderer({
   draft,
   decisionProfileId,
   onFieldChange,
+  fieldErrors = {},
   onEditorFocus,
   onEditorBlur,
   mode = 'edit-collaborative',
@@ -488,18 +521,41 @@ export function ProposalFormRenderer({
     (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
   );
 
-  const render = (field: FieldDescriptor) =>
-    renderField(
-      field,
-      draft,
-      decisionProfileId,
-      onFieldChange,
-      t,
-      mode,
-      previewVersionFragmentContents,
-      onEditorFocus,
-      onEditorBlur,
+  const render = (field: FieldDescriptor) => {
+    const errorMessage = fieldErrors[field.key];
+
+    return (
+      <div
+        {...{ [FIELD_ANCHOR_ATTR]: field.key }}
+        data-invalid={errorMessage != null || undefined}
+        className="flex max-w-full min-w-0 flex-col gap-2"
+      >
+        {renderField({
+          field,
+          draft,
+          decisionProfileId,
+          onFieldChange,
+          t,
+          mode,
+          previewVersionFragmentContents,
+          isInvalid: errorMessage != null,
+          onEditorFocus,
+          onEditorBlur,
+        })}
+        {errorMessage != null && (
+          <p
+            id={getFieldErrorId(field.key)}
+            // Announce the error's appearance for fields whose control can't
+            // carry aria-describedby focus semantics (pills, map).
+            role="alert"
+            className="text-sm text-functional-red"
+          >
+            {errorMessage}
+          </p>
+        )}
+      </div>
     );
+  };
 
   return (
     <div className={cn('flex flex-col', formGapClass)}>

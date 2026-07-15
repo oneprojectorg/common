@@ -25,7 +25,7 @@ import type { PopoverProps } from './Popover';
 type SelectionMode = 'single' | 'multiple';
 
 const selectStyles = tv({
-  base: 'flex min-w-0 flex-row justify-between rounded-lg border text-base leading-none text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
+  base: 'flex min-w-0 flex-row justify-between rounded-lg border text-base leading-none text-neutral-black outline outline-0 group-data-[invalid=true]/select:outline-1 group-data-[invalid=true]/select:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -89,6 +89,7 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
   children,
   items,
   isRequired,
+  isInvalid,
   variant = 'default',
   size,
   icon,
@@ -102,11 +103,11 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
     <AriaSelect
       {...props}
       isRequired={isRequired}
-      isInvalid={!!errorMessage && errorMessage.length > 0}
-      className={cn('flex flex-col gap-1', props.className)}
+      isInvalid={isInvalid ?? !!errorMessage}
+      className={cn('group/select flex flex-col gap-1', props.className)}
     >
       {label && (
-        <Label className="group-data-[invalid=true]:text-functional-red">
+        <Label className="group-data-[invalid=true]/select:text-functional-red">
           {label}{' '}
           {isRequired && <span className="text-functional-red"> *</span>}
         </Label>

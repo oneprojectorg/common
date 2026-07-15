@@ -33,6 +33,7 @@ import {
   useCollaborativeDoc,
   useOptionalCollaborativeDoc,
 } from '../../collaboration';
+import { FIELD_ANCHOR_ATTR } from '../../collaboration/invalidFieldStyles';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
@@ -50,6 +51,75 @@ import { useProposalValidation } from './useProposalValidation';
 
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
+
+/**
+ * Normalizes validator errors for field-level display. Nested errors are
+ * keyed by dot-path (e.g. `budget.amount`) — collapse to the top-level field
+ * key so they match rendered field anchors. First message per field wins.
+ */
+function normalizeFieldErrors(
+  errors: Record<string, string>,
+): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  for (const [key, message] of Object.entries(errors)) {
+    const fieldKey = key.split('.')[0] ?? key;
+    normalized[fieldKey] ??= message;
+  }
+  return normalized;
+}
+
+/**
+ * Returns the subset of invalid keys that have a rendered field anchor
+ * ({@link FIELD_ANCHOR_ATTR} in {@link ProposalFormRenderer}). Keys without an
+ * anchor (e.g. a field behind a disabled feature flag) can't be highlighted.
+ */
+function getAnchoredFieldKeys(invalidKeys: string[]): string[] {
+  return invalidKeys.filter(
+    (key) =>
+      document.querySelector(`[${FIELD_ANCHOR_ATTR}="${CSS.escape(key)}"]`) !==
+      null,
+  );
+}
+
+/**
+ * Scrolls the first invalid field (in visual/DOM order) into view after a
+ * failed submit. Fields are anchored via {@link FIELD_ANCHOR_ATTR} in
+ * {@link ProposalFormRenderer}. Returns whether an invalid field was found —
+ * false means none of the invalid keys correspond to a rendered field.
+ */
+function scrollToFirstInvalidField(invalidKeys: string[]): boolean {
+  if (invalidKeys.length === 0) {
+    return false;
+  }
+
+  // Comma-joined selector: querySelector returns the first match in DOM order.
+  const anchor = document.querySelector(
+    invalidKeys
+      .map((key) => `[${FIELD_ANCHOR_ATTR}="${CSS.escape(key)}"]`)
+      .join(', '),
+  );
+
+  if (!anchor) {
+    return false;
+  }
+
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches;
+  anchor.scrollIntoView({
+    behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    block: 'center',
+  });
+  // Move keyboard/screen-reader focus to the invalid field, not just the
+  // viewport.
+  anchor
+    .querySelector<HTMLElement>(
+      '[contenteditable="true"], button, input, [tabindex]:not([tabindex="-1"])',
+    )
+    ?.focus({ preventScroll: true });
+
+  return true;
+}
 
 /**
  * Tracks which TipTap editor currently has focus.
@@ -242,6 +312,24 @@ function ProposalEditorInner({
     collaborationDocId,
   });
 
+  // Validation messages from the last failed submit, keyed by field. Cleared
+  // per-field as the user edits, and wholesale once a submit passes.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const handleFieldChangeWithValidation = useCallback(
+    (key: string, value: unknown) => {
+      setFieldErrors((prev) => {
+        if (!(key in prev)) {
+          return prev;
+        }
+        const { [key]: _cleared, ...next } = prev;
+        return next;
+      });
+      handleFieldChange(key, value);
+    },
+    [handleFieldChange],
+  );
+
   // -- Schema compilation ----------------------------------------------------
 
   const templateRef = useRef(proposalTemplate);
@@ -263,14 +351,58 @@ function ProposalEditorInner({
 
   const { validate } = useProposalValidation(ydoc, proposalTemplate);
 
+  // Shared failure path for client- and server-side validation: highlight the
+  // fields, scroll to the first one, and toast. Errors on fields with no
+  // rendered control (e.g. a required location field behind a disabled feature
+  // flag) are listed in the toast instead, so no message is silently dropped.
+  const reportFieldErrors = useCallback(
+    (rawErrors: Record<string, string>) => {
+      const errors = normalizeFieldErrors(rawErrors);
+      setFieldErrors(errors);
+
+      const anchoredKeys = getAnchoredFieldKeys(Object.keys(errors));
+      if (anchoredKeys.length > 0) {
+        // Defer until the error state commits, so aria-invalid /
+        // aria-describedby and the inline message exist when focus lands —
+        // screen readers announce them at focus time.
+        requestAnimationFrame(() => scrollToFirstInvalidField(anchoredKeys));
+      }
+
+      const unanchoredMessages = Object.entries(errors)
+        .filter(([key]) => !anchoredKeys.includes(key))
+        .map(([, message]) => message);
+
+      toast.error(
+        anchoredKeys.length > 0
+          ? {
+              title: t('Please fix the highlighted fields'),
+              ...(unanchoredMessages.length > 0
+                ? { message: unanchoredMessages.join(', ') }
+                : {}),
+            }
+          : {
+              title: t('Please fix the following issues:'),
+              message: Object.values(rawErrors).join(', '),
+            },
+      );
+    },
+    [t],
+  );
+
   // -- Mutations -------------------------------------------------------------
 
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'submit', t),
+    onError: (error) =>
+      handleMutationError(error, 'submit', t, {
+        onFieldErrors: reportFieldErrors,
+      }),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'update', t),
+    onError: (error) =>
+      handleMutationError(error, 'update', t, {
+        onFieldErrors: reportFieldErrors,
+      }),
   });
 
   const submitCustomFormMutation = trpc.customForm.submit.useMutation({
@@ -350,13 +482,11 @@ function ProposalEditorInner({
     // -- Client-side schema validation (validates ALL template fields) --------
     const result = validate();
     if (!result.valid) {
-      toast.error({
-        title: t('Please fix the following issues:'),
-        message: Object.values(result.errors).join(', '),
-      });
+      reportFieldErrors(result.errors);
       return;
     }
 
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
@@ -424,6 +554,7 @@ function ProposalEditorInner({
     draftRef,
     validate,
     finalizeSubmit,
+    reportFieldErrors,
   ]);
 
   const handleCustomFormSubmit = useCallback(
@@ -475,7 +606,8 @@ function ProposalEditorInner({
         fields={proposalFields}
         draft={draft}
         decisionProfileId={instance.profileId ?? null}
-        onFieldChange={handleFieldChange}
+        onFieldChange={handleFieldChangeWithValidation}
+        fieldErrors={fieldErrors}
         onEditorFocus={onEditorFocus}
         onEditorBlur={onEditorBlur}
         mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}

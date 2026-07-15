@@ -4,7 +4,7 @@ import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
 
-import { cn } from '../../lib/utils';
+import { cn, getInvalidAriaAttributes } from '../../lib/utils';
 import { defaultEditorExtensions } from './editorConfig';
 import { baseEditorStyles } from './viewerStyles';
 
@@ -20,6 +20,8 @@ export function useRichTextEditor({
   onEditorReady,
   editable = true,
   required = false,
+  isInvalid = false,
+  errorMessageId,
 }: {
   extensions?: Extensions;
   content?: Content;
@@ -41,6 +43,13 @@ export function useRichTextEditor({
   editable?: boolean;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
+  /** When true, sets `aria-invalid` on the editable region. Updates live. */
+  isInvalid?: boolean;
+  /**
+   * id of the element describing the validation error, set as
+   * `aria-describedby` on the editable region while `isInvalid` is true.
+   */
+  errorMessageId?: string;
 }) {
   // Append a single Placeholder extension when a top-level placeholder is asked
   // for OR the Details extension is present (it needs a per-node 'Summary' hint).
@@ -75,19 +84,28 @@ export function useRichTextEditor({
     ];
   }, [extensions, placeholder, summaryPlaceholder]);
 
-  const editor = useEditor({
-    extensions: resolvedExtensions,
-    content,
-    editable,
-    editorProps: {
+  // Memoized so `useEditor`'s per-render options diff only applies changes
+  // (e.g. aria-invalid toggling after a failed submit) when the attributes
+  // actually change — a fresh literal would trigger setOptions every render.
+  const editorProps = useMemo(
+    () => ({
       attributes: {
         class: cn(
           baseEditorStyles,
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
         ...(required ? { 'aria-required': 'true' } : {}),
+        ...getInvalidAriaAttributes({ isInvalid, errorMessageId }),
       },
-    },
+    }),
+    [editorClassName, editable, required, isInvalid, errorMessageId],
+  );
+
+  const editor = useEditor({
+    extensions: resolvedExtensions,
+    content,
+    editable,
+    editorProps,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onUpdate?.(html);

@@ -1,6 +1,7 @@
 'use client';
 
 import { Skeleton } from '@op/ui/Skeleton';
+import { cn, getInvalidAriaAttributes } from '@op/ui/utils';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Document from '@tiptap/extension-document';
@@ -11,9 +12,17 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
+import { INVALID_EDITOR_CLASS, getFieldErrorId } from './invalidFieldStyles';
+
+/** Titles are single-line — swallow Enter instead of inserting a paragraph. */
+function suppressEnterKey(_view: unknown, event: KeyboardEvent): boolean {
+  return event.key === 'Enter';
+}
 
 interface CollaborativeTitleFieldProps {
   placeholder?: string;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
   onChange?: (text: string) => void;
 }
 
@@ -22,6 +31,7 @@ interface CollaborativeTitleFieldProps {
  */
 export function CollaborativeTitleField({
   placeholder = 'Untitled Proposal',
+  isInvalid = false,
   onChange,
 }: CollaborativeTitleFieldProps) {
   const { ydoc, provider, user } = useCollaborativeDoc();
@@ -49,20 +59,26 @@ export function CollaborativeTitleField({
     [ydoc, provider, user, placeholder],
   );
 
-  const editor = useEditor({
-    extensions,
-    editorProps: {
+  // Memoized so `useEditor`'s per-render options diff only applies changes
+  // (aria-invalid toggling after a failed submit) when they actually change.
+  const editorProps = useMemo(
+    () => ({
       attributes: {
         class:
           'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
+        ...getInvalidAriaAttributes({
+          isInvalid,
+          errorMessageId: getFieldErrorId('title'),
+        }),
       },
-      handleKeyDown: (_view, event) => {
-        if (event.key === 'Enter') {
-          return true;
-        }
-        return false;
-      },
-    },
+      handleKeyDown: suppressEnterKey,
+    }),
+    [isInvalid],
+  );
+
+  const editor = useEditor({
+    extensions,
+    editorProps,
     immediatelyRender: false,
   });
 
@@ -87,6 +103,10 @@ export function CollaborativeTitleField({
   }
 
   return (
-    <EditorContent dir={editor.isEmpty ? undefined : 'auto'} editor={editor} />
+    <EditorContent
+      dir={editor.isEmpty ? undefined : 'auto'}
+      editor={editor}
+      className={cn(isInvalid && INVALID_EDITOR_CLASS)}
+    />
   );
 }

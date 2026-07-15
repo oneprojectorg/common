@@ -152,31 +152,59 @@ test.describe('Proposal Submit Validation', () => {
       await authenticatedPage.waitForTimeout(360);
     };
 
+    // Helper: locator matching a field anchor currently flagged invalid.
+    // Invalid fields are marked with data-invalid on their data-field-anchor
+    // wrapper after a failed submit, and unflagged as the user edits them.
+    const invalidField = (key: string) =>
+      authenticatedPage.locator(
+        `[data-field-anchor="${key}"][data-invalid="true"]`,
+      );
+
     // =========================================================================
-    // Step 1: Submit with everything empty → expect 3 system field errors
-    // (Title, Budget, Category)
+    // Step 1: Submit with everything empty → every required field is
+    // highlighted as invalid
     // =========================================================================
 
     await submitButton.click();
 
     const errorToast = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast).toContainText('Title');
-    await expect(errorToast).toContainText('Budget');
-    await expect(errorToast).toContainText('Category');
+    for (const key of ALL_FIELDS_TEMPLATE.required) {
+      await expect(invalidField(key)).toBeVisible();
+    }
+
+    // The accessible surface of the highlight: inline message rendered, the
+    // first invalid field's editor marked invalid, described by the message,
+    // and holding focus (focus is deferred until the error state commits).
+    await expect(authenticatedPage.locator('#field-error-title')).toBeVisible();
+    const invalidTitleEditor = authenticatedPage.locator(
+      '[data-field-anchor="title"] .ProseMirror',
+    );
+    await expect(invalidTitleEditor).toHaveAttribute('aria-invalid', 'true');
+    await expect(invalidTitleEditor).toHaveAttribute(
+      'aria-describedby',
+      'field-error-title',
+    );
+    await expect(invalidTitleEditor).toBeFocused();
 
     await dismissToasts();
 
     // =========================================================================
-    // Step 2: Fill in Title → re-submit → expect 2 errors (Budget, Category)
+    // Step 2: Fill in Title → its error clears on edit (before resubmitting);
+    // re-submit → Budget and Category still invalid
     // =========================================================================
 
     const titleEditor = authenticatedPage.locator('.ProseMirror.text-title-lg');
     await titleEditor.click();
     await authenticatedPage.keyboard.type('My Test Proposal');
+
+    // Editing a flagged field clears its error immediately — no resubmit
+    await expect(invalidField('title')).toBeHidden();
+    // Untouched fields stay flagged
+    await expect(invalidField('budget')).toBeVisible();
 
     // Wait for debounced auto-save to fire
     await authenticatedPage.waitForTimeout(2_400);
@@ -185,12 +213,12 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast2 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast2).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast2).not.toContainText('Title');
-    await expect(errorToast2).toContainText('Budget');
-    await expect(errorToast2).toContainText('Category');
+    await expect(invalidField('title')).toBeHidden();
+    await expect(invalidField('budget')).toBeVisible();
+    await expect(invalidField('category')).toBeVisible();
 
     await dismissToasts();
 
@@ -214,12 +242,12 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast3 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast3).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast3).not.toContainText('Title');
-    await expect(errorToast3).not.toContainText('Budget');
-    await expect(errorToast3).toContainText('Category');
+    await expect(invalidField('title')).toBeHidden();
+    await expect(invalidField('budget')).toBeHidden();
+    await expect(invalidField('category')).toBeVisible();
 
     await dismissToasts();
 
@@ -227,11 +255,8 @@ test.describe('Proposal Submit Validation', () => {
     // Step 4: Select Category → re-submit
     //
     // After fixing all 3 system fields, the client-side validation passes.
-    // The form should now also validate dynamic required fields (Summary,
-    // Details, Priority Level, Region) before allowing submission.
-    //
-    // This assertion will FAIL on the current implementation because
-    // client-side validation does not yet check dynamic required fields.
+    // The form now also validates dynamic required fields (Summary, Details,
+    // Priority Level, Region) before allowing submission.
     // =========================================================================
 
     const categoryButton = authenticatedPage.getByRole('button', {
@@ -247,17 +272,17 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     // After fixing all system fields, submission should be blocked by
-    // dynamic field validation. The toast should list the missing dynamic
-    // required fields.
+    // dynamic field validation — the remaining dynamic required fields are
+    // highlighted.
     const errorToast4 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast4).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast4).toContainText('Summary');
-    await expect(errorToast4).toContainText('Details');
-    await expect(errorToast4).toContainText('Priority Level');
-    await expect(errorToast4).toContainText('Region');
+    await expect(invalidField('summary')).toBeVisible();
+    await expect(invalidField('details')).toBeVisible();
+    await expect(invalidField('priority')).toBeVisible();
+    await expect(invalidField('region')).toBeVisible();
 
     await dismissToasts();
 
@@ -278,13 +303,13 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast5 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast5).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast5).not.toContainText('Summary');
-    await expect(errorToast5).toContainText('Details');
-    await expect(errorToast5).toContainText('Priority Level');
-    await expect(errorToast5).toContainText('Region');
+    await expect(invalidField('summary')).toBeHidden();
+    await expect(invalidField('details')).toBeVisible();
+    await expect(invalidField('priority')).toBeVisible();
+    await expect(invalidField('region')).toBeVisible();
 
     await dismissToasts();
 
@@ -307,13 +332,13 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast6 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast6).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast6).not.toContainText('Summary');
-    await expect(errorToast6).not.toContainText('Details');
-    await expect(errorToast6).toContainText('Priority Level');
-    await expect(errorToast6).toContainText('Region');
+    await expect(invalidField('summary')).toBeHidden();
+    await expect(invalidField('details')).toBeHidden();
+    await expect(invalidField('priority')).toBeVisible();
+    await expect(invalidField('region')).toBeVisible();
 
     await dismissToasts();
 
@@ -331,11 +356,11 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast7 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please fix the following issues:' });
+      .filter({ hasText: 'Please fix the highlighted fields' });
 
     await expect(errorToast7).toBeVisible({ timeout: 6_000 });
-    await expect(errorToast7).not.toContainText('Priority Level');
-    await expect(errorToast7).toContainText('Region');
+    await expect(invalidField('priority')).toBeHidden();
+    await expect(invalidField('region')).toBeVisible();
 
     await dismissToasts();
 
@@ -351,14 +376,17 @@ test.describe('Proposal Submit Validation', () => {
 
     await submitButton.click();
 
-    // Client-side validation should pass — no "required fields" toast.
-    // The server may still reject (TipTap mock doesn't have the typed
-    // content), but that's outside the scope of this test. We only care
-    // that the frontend schema validator accepted all fields.
+    // Client-side validation should pass — no validation toast and no field
+    // left highlighted. The server may still reject (TipTap mock doesn't have
+    // the typed content), but that's outside the scope of this test. We only
+    // care that the frontend schema validator accepted all fields.
     await expect(
       authenticatedPage
         .locator('[data-sonner-toast]')
-        .filter({ hasText: 'Please fix the following issues:' }),
+        .filter({ hasText: 'Please fix the highlighted fields' }),
     ).not.toBeVisible({ timeout: 6_000 });
+    await expect(
+      authenticatedPage.locator('[data-field-anchor][data-invalid="true"]'),
+    ).toHaveCount(0);
   });
 });

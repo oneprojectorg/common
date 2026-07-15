@@ -18,6 +18,8 @@ interface CollaborativeLocationFieldProps {
   profileId: string | null;
   /** Default map camera shown before a location is chosen (from the template). */
   defaultMapView?: MapDefaultView;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
   onChange?: (location: LocationData | null) => void;
 }
 
@@ -66,6 +68,7 @@ export function CollaborativeLocationField({
   initialValue = null,
   profileId,
   defaultMapView,
+  isInvalid = false,
   onChange,
 }: CollaborativeLocationFieldProps) {
   const { ydoc } = useCollaborativeDoc();
@@ -135,6 +138,7 @@ export function CollaborativeLocationField({
       value={location}
       profileId={profileId}
       defaultMapView={defaultMapView}
+      isInvalid={isInvalid}
       onChange={handleChange}
     />
   );
