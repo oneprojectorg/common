@@ -23,7 +23,6 @@ import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuFlag, LuLeaf } from 'react-icons/lu';
 
@@ -31,6 +30,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 
+import { AttachmentImage } from '../AttachmentImage';
 import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
@@ -108,46 +108,24 @@ const PostAttachments = ({
   return attachments.map(({ fileName, storageObject }) => {
     const mimetype = storageObject.metadata?.mimetype;
     const size = storageObject.metadata?.size;
+    const url = getPublicUrl(storageObject.name) ?? undefined;
 
     return (
       <MediaDisplay
         key={storageObject.id}
         title={fileName}
         mimeType={mimetype}
-        url={getPublicUrl(storageObject.name) ?? undefined}
+        url={url}
         size={size}
       >
         <AttachmentImage
-          mimetype={mimetype ?? ''}
+          mimeType={mimetype ?? ''}
           fileName={fileName}
-          storageObjectName={storageObject.name}
+          url={url ?? ''}
         />
       </MediaDisplay>
     );
   });
-};
-
-const AttachmentImage = ({
-  mimetype,
-  fileName,
-  storageObjectName,
-}: {
-  mimetype: string;
-  fileName: string;
-  storageObjectName: string;
-}) => {
-  if (!mimetype.startsWith('image/')) return null;
-
-  return (
-    <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-      <Image
-        src={getPublicUrl(storageObjectName) ?? ''}
-        alt={fileName}
-        fill={true}
-        className="!relative size-full object-cover"
-      />
-    </div>
-  );
 };
 
 const PostUrls = memo(({ urls }: { urls: string[] }) => {
