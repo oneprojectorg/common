@@ -4,9 +4,11 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import { useCallback, useRef } from 'react';
+import { LuUserRoundPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -81,18 +83,18 @@ export function ProposalComments({
         )}
 
         {showJoinPrompt && (
-          <div className="mb-8">
-            {/* sm:p-4 matches the composer Surface this slot-replaces. */}
-            <Surface className="flex flex-col items-center gap-3 border-0 p-0 text-center sm:border sm:p-4">
-              <p
-                id="join-to-comment-prompt"
-                className="text-base text-neutral-charcoal"
-              >
-                {t('Join Common to comment on this proposal.')}
-              </p>
-              <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
-            </Surface>
-          </div>
+          <EmptyState
+            icon={<LuUserRoundPlus className="size-6" />}
+            className="mb-8"
+          >
+            <p
+              id="join-to-comment-prompt"
+              className="text-base text-neutral-charcoal"
+            >
+              {t('Join Common to comment on this proposal.')}
+            </p>
+            <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
+          </EmptyState>
         )}
 
         {commentsLoading ? (
