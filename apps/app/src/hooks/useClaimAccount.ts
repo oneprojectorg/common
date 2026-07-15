@@ -53,6 +53,8 @@ export function getClaimEmailErrorMessage(
       'An account with this email already exists. Try logging in instead.',
     );
   }
+  // The user sees localized generic copy; keep the raw cause findable.
+  console.error('claim: requestEmailCode failed', result);
   return t("That didn't work");
 }
 
