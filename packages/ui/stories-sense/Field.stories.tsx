@@ -88,7 +88,8 @@ export const WithFieldSet: Story = {
     <FieldSet className="max-w-sm">
       <FieldLegend>Notification preferences</FieldLegend>
       <FieldDescription>Choose how you want to hear from us.</FieldDescription>
-      <FieldGroup>
+      {/* checkbox-group slot opts into the tighter gap-3 row spacing */}
+      <FieldGroup data-slot="checkbox-group">
         {[
           ['email', 'Email'],
           ['sms', 'SMS'],
