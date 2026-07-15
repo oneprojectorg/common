@@ -23,35 +23,42 @@ export const ComingSoonScreen = () => {
     <>
       <div className="pointer-events-none absolute top-0 z-10 h-30 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
       <div className="pointer-events-none absolute bottom-0 z-10 h-30 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
-      <div className="relative z-20 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-primary-tealWhite px-6 py-2.5 text-center text-neutral-charcoal">
-        <p>
-          {t(
-            "Columbus' first-ever Participatory Budgeting process is officially underway!",
-          )}
-        </p>
-        <Link
-          href="/columbus"
-          className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline"
+      <div className="sticky top-0 z-20">
+        <motion.div
+          initial={{ y: '-100%' }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-primary-tealWhite px-6 py-2.5 text-center text-neutral-charcoal"
         >
-          {t('Access Our Voice, Our Choice')}
-          <LuArrowRight className="size-4" />
-        </Link>
+          <p>
+            {t(
+              "Columbus' first-ever Participatory Budgeting process is officially underway!",
+            )}
+          </p>
+          <Link
+            href="/columbus"
+            className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline"
+          >
+            {t('Access Our Voice, Our Choice')}
+            <LuArrowRight className="size-4" />
+          </Link>
+        </motion.div>
+        <motion.header
+          transition={{ duration: 1 }}
+          animate={{ opacity: 1 }}
+          initial={{ opacity: 0 }}
+          className="flex items-center justify-between p-4 md:px-8 md:py-6"
+        >
+          <img src="/logo-common.svg" alt="Common" className="h-4" />
+          <ButtonLink
+            href="/login"
+            color="secondary"
+            className="rounded-lg text-black shadow-md"
+          >
+            {t('Log in')}
+          </ButtonLink>
+        </motion.header>
       </div>
-      <motion.header
-        transition={{ duration: 1 }}
-        animate={{ opacity: 1 }}
-        initial={{ opacity: 0 }}
-        className="sticky top-0 z-20 flex items-center justify-between p-4 md:px-8 md:py-6"
-      >
-        <img src="/logo-common.svg" alt="Common" className="h-4" />
-        <ButtonLink
-          href="/login"
-          color="secondary"
-          className="rounded-lg text-black shadow-md"
-        >
-          {t('Log in')}
-        </ButtonLink>
-      </motion.header>
 
       <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 pb-[20vh] text-center sm:my-24 sm:gap-32">
         <section className="flex flex-col items-center gap-12 sm:gap-24">
