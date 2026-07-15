@@ -34,7 +34,109 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-muted: var(--destructive-muted);
+  --color-destructive-muted-foreground: var(--destructive-muted-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-muted-foreground: var(--warning-muted-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-success-muted-foreground: var(--success-muted-foreground);
   --color-input: var(--input);
+
+  /* Common Sense color scales (the "Colors Scale" Figma variables collection).
+   * These intentionally override Tailwind's default palette for these eight
+   * hues so `bg-teal-500`, `text-gray-600`, etc. resolve to brand ramps. */
+  --color-red-50: #fcf3f2;
+  --color-red-100: #fae2e0;
+  --color-red-200: #f6cbc8;
+  --color-red-300: #eea8a2;
+  --color-red-400: #e2766d;
+  --color-red-500: #cc3d31;
+  --color-red-600: #9d3b33;
+  --color-red-700: #86312a;
+  --color-red-800: #6e2c26;
+  --color-red-900: #5d2924;
+  --color-red-950: #33120f;
+  --color-orange-50: #fdf8ed;
+  --color-orange-100: #f8eacd;
+  --color-orange-200: #f0d497;
+  --color-orange-300: #e8b961;
+  --color-orange-400: #e2a23d;
+  --color-orange-500: #db862a;
+  --color-orange-600: #c1631e;
+  --color-orange-700: #a0481d;
+  --color-orange-800: #83391d;
+  --color-orange-900: #6c2f1b;
+  --color-orange-950: #3d170b;
+  --color-yellow-50: #fefce8;
+  --color-yellow-100: #fffac2;
+  --color-yellow-200: #fff088;
+  --color-yellow-300: #ffe145;
+  --color-yellow-400: #fdcd12;
+  --color-yellow-500: #f2b705;
+  --color-yellow-600: #cd8a01;
+  --color-yellow-700: #a36105;
+  --color-yellow-800: #874c0c;
+  --color-yellow-900: #723e11;
+  --color-yellow-950: #432005;
+  --color-green-50: #eefae4;
+  --color-green-100: #d6f3c4;
+  --color-green-200: #b0e790;
+  --color-green-300: #7ed64e;
+  --color-green-400: #58ab2d;
+  --color-green-500: #3f7f20;
+  --color-green-600: #2b5b15;
+  --color-green-700: #254e14;
+  --color-green-800: #203e14;
+  --color-green-900: #1b3513;
+  --color-green-950: #0c1d07;
+  --color-teal-50: #eff7f9;
+  --color-teal-100: #d7ebef;
+  --color-teal-200: #b5dade;
+  --color-teal-300: #81bcc8;
+  --color-teal-400: #4d96a3;
+  --color-teal-500: #387582;
+  --color-teal-600: #31606e;
+  --color-teal-700: #2d4f5a;
+  --color-teal-800: #2a434c;
+  --color-teal-900: #273941;
+  --color-teal-950: #16242b;
+  --color-blue-50: #eef1fc;
+  --color-blue-100: #dfe4fa;
+  --color-blue-200: #c5cdf5;
+  --color-blue-300: #a2acec;
+  --color-blue-400: #7d84e1;
+  --color-blue-500: #4444cc;
+  --color-blue-600: #473db3;
+  --color-blue-700: #514a90;
+  --color-blue-800: #413d6c;
+  --color-blue-900: #393755;
+  --color-blue-950: #212032;
+  --color-purple-50: #faf7fa;
+  --color-purple-100: #f5eef6;
+  --color-purple-200: #eadceb;
+  --color-purple-300: #dbbedb;
+  --color-purple-400: #c598c3;
+  --color-purple-500: #a1649f;
+  --color-purple-600: #845882;
+  --color-purple-700: #674464;
+  --color-purple-800: #553953;
+  --color-purple-900: #473145;
+  --color-purple-950: #2c1a2a;
+  --color-gray-50: #fafbfb;
+  --color-gray-100: #edeeee;
+  --color-gray-200: #dee0e1;
+  --color-gray-300: #d0d3d4;
+  --color-gray-400: #aab0b1;
+  --color-gray-500: #858d8f;
+  --color-gray-600: #606a6c;
+  --color-gray-700: #3a4749;
+  --color-gray-800: #273638;
+  --color-gray-900: #142426;
+  --color-gray-950: #0a1517;
 
   /* Sidebar */
   --color-sidebar: var(--sidebar);
@@ -52,6 +154,11 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Strong text weight — the Common Sense "-strong" text styles (labels,
+   * buttons, kbd) sit at 450, between normal and medium. Requires Roboto
+   * loaded as a variable font (apps/app root layout). Use `font-strong`. */
+  --font-weight-strong: 450;
 
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -76,12 +183,40 @@
  * consistent, either add `.sense` to `<body>` at the layout root, or pass
  * a sense-scoped element via base-ui's Portal `container` prop. */
 
-/* Radius scale — matches shadcn.com defaults. */
+/* Shadow + blur — the Common Sense shadow collection equals Tailwind's
+ * defaults, but shared-styles.css overrides `--shadow`/`--shadow-md` with the
+ * @op/ui glow style and `--blur-sm` with 1px. Restore the defaults for
+ * `.sense` subtrees (same delete-when-@op/ui-dies lifecycle as the radius
+ * block below; same portal caveat as above). */
 .sense {
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --blur-sm: 8px;
+}
+
+/* Radius scale — exact values from the Common Sense Figma radius collection,
+ * which equal Tailwind's defaults (sm 4, md 6, lg 8, xl 12, ...). This block
+ * exists because shared-styles.css overrides --radius-sm/--radius-md with
+ * smaller @op/ui-tuned values in its @theme; it restores the defaults for
+ * `.sense` subtrees. Delete it (and just use Tailwind's defaults) once the
+ * @op/ui overrides in shared-styles are gone. */
+.sense {
+  --radius-xs: 0px;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+  --radius-4xl: 1.5rem;
+}
+
+/* Font smoothing — the Common Sense designs assume macOS-style grayscale
+ * antialiasing. Both properties inherit, so this covers the whole `.sense`
+ * subtree (portaled popups excepted — see the portal caveat above). */
+.sense {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Standard 16px-rooted Tailwind text scale that shadcn primitives assume.
@@ -105,6 +240,41 @@
   --text-2xl--line-height: 32px;
 }
 
+/* Semantic type scale from the Figma "Typography" collection. The collection
+ * has Default and Mobile modes; these are mobile-first with the Default
+ * (desktop) values applied from `md` up — breakpoint is our assumption, the
+ * collection doesn't name one. xs/sm/base in the modes match the scale
+ * above; lg/xl/2xl have no Figma equivalent and stay Tailwind defaults for
+ * stock shadcn internals. */
+@theme {
+  /* `label` and `title` are the small serif heading styles (popover /
+   * small-card titles, dialog / sheet / card titles) — NOT sans control
+   * labels, which use the generic scale (text-base etc., tracking 0).
+   * Serif headings track tight per the component masters: -0.16px at
+   * 16px, -0.3px at 20px. */
+  --text-label: 16px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: -0.01em;
+  --text-title: 18px;
+  --text-title--line-height: 28px;
+  --text-title--letter-spacing: -0.015em;
+  --text-headline: 20px;
+  --text-headline--line-height: 28px;
+  --text-display: 24px;
+  --text-display--line-height: 32px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --text-title: 20px;
+    --text-title--line-height: 22px;
+    --text-headline: 30px;
+    --text-headline--line-height: 33px;
+    --text-display: 48px;
+    --text-display--line-height: 52px;
+  }
+}
+
 @keyframes accordion-down {
   from {
     height: 0;
@@ -123,62 +293,78 @@
   }
 }
 
+/* Semantic theme — values from the Common Sense Figma "Mode/Light" theme
+ * collection, expressed against the Colors Scale ramps above. Dark mode is
+ * unsupported (the Figma dark mode is unpopulated), so no dark block. */
 :root {
   /* Core surfaces */
   --background: var(--color-white);
-  --foreground: var(--color-neutral-charcoal);
+  --foreground: var(--color-gray-900);
 
   /* Card / popover */
   --card: var(--color-white);
-  --card-foreground: var(--color-neutral-charcoal);
+  --card-foreground: var(--color-gray-900);
   --popover: var(--color-white);
-  --popover-foreground: var(--color-neutral-charcoal);
+  --popover-foreground: var(--color-gray-900);
 
-  /* Primary (teal) — note: --color-primary already exists in shared-styles */
-  --primary-foreground: var(--color-white);
+  /* Primary (teal-500 = the existing --color-primary value; the alias in
+   * shared-styles stays authoritative for `bg-primary` etc.) */
+  --primary-foreground: var(--color-gray-50);
 
   /* Secondary (neutral) — note: --color-secondary already exists upstream */
-  --secondary-foreground: var(--color-neutral-charcoal);
+  --secondary-foreground: var(--color-gray-900);
 
   /* Muted */
-  --muted: var(--color-neutral-gray-1);
-  --muted-foreground: var(--color-neutral-gray-4);
+  --muted: var(--color-gray-50);
+  --muted-foreground: var(--color-gray-600);
 
   /* Accent */
-  --accent: var(--color-neutral-gray-1);
-  --accent-foreground: var(--color-neutral-charcoal);
+  --accent: var(--color-teal-50);
+  --accent-foreground: var(--color-teal-600);
 
-  /* Destructive */
-  --destructive: var(--color-functional-red-600);
+  /* Status: destructive / warning / success (+ muted surfaces) */
+  --destructive: var(--color-red-500);
   --destructive-foreground: var(--color-white);
+  --destructive-muted: var(--color-red-50);
+  --destructive-muted-foreground: var(--color-gray-900);
+  --warning: var(--color-orange-500);
+  --warning-foreground: var(--color-gray-900);
+  --warning-muted: var(--color-orange-50);
+  --warning-muted-foreground: var(--color-gray-900);
+  --success: var(--color-green-500);
+  --success-foreground: var(--color-gray-900);
+  --success-muted: var(--color-green-50);
+  --success-muted-foreground: var(--color-gray-900);
 
   /* Borders / inputs / focus ring.
    * shadcn components read these via `var(--border)` etc. directly (not via
    * the Tailwind `--color-*` layer), so sense needs them declared regardless
-   * of what shared-styles/intent-ui-theme also declares. */
-  --border: var(--color-neutral-gray-2);
-  --input: var(--color-neutral-gray-2);
-  --ring: var(--color-primary);
+   * of what shared-styles/intent-ui-theme also declares.
+   * Components apply the focus ring at 50% opacity. */
+  --border: var(--color-gray-100);
+  --input: var(--color-gray-300);
+  --ring: var(--color-gray-400);
+  --ring-offset: var(--color-white);
 
   /* `--radius` is the base radius shadcn primitives derive their scale from
    * (and consume directly, e.g. `rounded-[var(--radius)]`). Safe to declare
    * on :root because @op/ui doesn't reference --radius. */
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
   /* Sidebar */
-  --sidebar: var(--color-neutral-off-white);
-  --sidebar-foreground: var(--color-neutral-charcoal);
-  --sidebar-primary: var(--color-primary);
-  --sidebar-primary-foreground: var(--color-white);
-  --sidebar-accent: var(--color-neutral-gray-1);
-  --sidebar-accent-foreground: var(--color-neutral-charcoal);
-  --sidebar-border: var(--color-neutral-gray-2);
-  --sidebar-ring: var(--color-primary);
+  --sidebar: var(--color-gray-50);
+  --sidebar-foreground: var(--color-gray-900);
+  --sidebar-primary: var(--color-teal-500);
+  --sidebar-primary-foreground: var(--color-gray-50);
+  --sidebar-accent: var(--color-teal-50);
+  --sidebar-accent-foreground: var(--color-teal-600);
+  --sidebar-border: var(--color-gray-100);
+  --sidebar-ring: var(--color-gray-400);
 
-  /* Chart palette — uses brand + data tokens */
-  --chart-1: var(--color-primary);
-  --chart-2: var(--color-primary-yellow-500);
-  --chart-3: var(--color-primary-orange-500);
-  --chart-4: var(--color-data-purple);
-  --chart-5: var(--color-data-blue);
+  /* Chart palette */
+  --chart-1: var(--color-orange-500);
+  --chart-2: var(--color-teal-500);
+  --chart-3: var(--color-blue-500);
+  --chart-4: var(--color-yellow-500);
+  --chart-5: var(--color-purple-500);
 }

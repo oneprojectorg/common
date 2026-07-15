@@ -1,8 +1,8 @@
 'use client';
 
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu';
-import { ChevronRightIcon, CheckIcon } from 'lucide-react';
 import * as React from 'react';
+import { LuChevronRight, LuCheck } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 
@@ -137,7 +137,7 @@ function ContextMenuSubTrigger({
       {...props}
     >
       {children}
-      <ChevronRightIcon className="ml-auto" />
+      <LuChevronRight className="ml-auto" />
     </ContextMenuPrimitive.SubmenuTrigger>
   );
 }
@@ -177,7 +177,7 @@ function ContextMenuCheckboxItem({
     >
       <span className="pointer-events-none absolute right-2">
         <ContextMenuPrimitive.CheckboxItemIndicator>
-          <CheckIcon />
+          <LuCheck />
         </ContextMenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}
@@ -216,7 +216,7 @@ function ContextMenuRadioItem({
     >
       <span className="pointer-events-none absolute right-2">
         <ContextMenuPrimitive.RadioItemIndicator>
-          <CheckIcon />
+          <LuCheck />
         </ContextMenuPrimitive.RadioItemIndicator>
       </span>
       {children}

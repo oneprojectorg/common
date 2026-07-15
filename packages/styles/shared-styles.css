@@ -273,17 +273,9 @@
   --color-primary-tealBlack: var(--color-primary-700);
   --color-primary-tealWhite: var(--color-primary-50);
   --color-teal: var(--color-primary-600);
-  --color-teal-50: var(--color-primary-50);
-  --color-teal-100: var(--color-primary-100);
-  --color-teal-200: var(--color-primary-200);
-  --color-teal-300: var(--color-primary-300);
-  --color-teal-400: var(--color-primary-400);
-  --color-teal-500: var(--color-primary-500);
-  --color-teal-600: var(--color-primary-600);
-  --color-teal-700: var(--color-primary-700);
-  --color-teal-800: var(--color-primary-800);
-  --color-teal-900: var(--color-primary-900);
-  --color-teal-950: var(--color-primary-950);
+  /* teal-50..950 step aliases removed: the Common Sense Colors Scale in
+   * sense-theme.css owns the teal ramp now (old aliases re-overrode it,
+   * shifting sense accents back to the legacy OP ramp). */
 
   --color-primary-yellow: var(--color-primary-yellow-500);
   --color-primary-orange1: var(--color-primary-orange-500);
@@ -308,10 +300,7 @@
   --color-functional-redBlack: var(--color-functional-red-800);
   --color-functional-redWhite: var(--color-functional-red-50);
   --color-red: var(--color-functional-red-600);
-  --color-red-100: var(--color-functional-red-100);
-  --color-red-300: var(--color-functional-red-300);
-  --color-red-600: var(--color-functional-red-600);
-  --color-red-700: var(--color-functional-red-800);
+  /* red-* step aliases removed — Colors Scale owns the red ramp. */
 
   --color-functional-green: var(--color-functional-green-600);
   --color-functional-greenWhite: var(--color-functional-green-50);
@@ -319,8 +308,7 @@
   --color-status-green: var(--color-functional-green-600);
   --color-status-greenBg: var(--color-functional-green-100);
   --color-green: var(--color-functional-green-600);
-  --color-green-500: var(--color-functional-green-600);
-  --color-green-700: var(--color-functional-green-600);
+  /* green-* step aliases removed — Colors Scale owns the green ramp. */
 
   /* ============================================
    * Box Shadows

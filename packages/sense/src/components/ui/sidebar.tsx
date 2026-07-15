@@ -3,8 +3,8 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { PanelLeftIcon } from 'lucide-react';
 import * as React from 'react';
+import { LuPanelLeft } from 'react-icons/lu';
 
 import { useIsMobile } from '../../hooks/use-mobile';
 import { cn } from '../../lib/utils';
@@ -267,7 +267,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <LuPanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
