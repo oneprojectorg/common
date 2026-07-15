@@ -37,8 +37,9 @@ export const DateLayout: Story = {
         <Calendar
           mode="range"
           numberOfMonths={2}
-          defaultMonth={new Date(2025, 5)}
-          selected={{ from: new Date(2025, 5, 9), to: new Date(2025, 5, 17) }}
+          className="rounded border"
+          defaultMonth={new Date(2025, 0)}
+          selected={{ from: new Date(2025, 0, 12), to: new Date(2025, 1, 8) }}
         />
       </ParityRow>
 
