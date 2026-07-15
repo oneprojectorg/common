@@ -6,7 +6,22 @@ import { LuChevronDown, LuCheck, LuChevronUp } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 
-const Select = SelectPrimitive.Root;
+// The popup renders in a portal, so items can't see the trigger's data-size
+// via CSS. Size set on the root flows to the trigger and items via context.
+const SelectSizeContext = React.createContext<'sm' | 'default'>('default');
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  size = 'default',
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple> & {
+  size?: 'sm' | 'default';
+}) {
+  return (
+    <SelectSizeContext.Provider value={size}>
+      <SelectPrimitive.Root {...props} />
+    </SelectSizeContext.Provider>
+  );
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -30,12 +45,13 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
 
 function SelectTrigger({
   className,
-  size = 'default',
+  size,
   children,
   ...props
 }: SelectPrimitive.Trigger.Props & {
   size?: 'sm' | 'default';
 }) {
+  size = size ?? React.useContext(SelectSizeContext);
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -116,11 +132,13 @@ function SelectItem({
   children,
   ...props
 }: SelectPrimitive.Item.Props) {
+  const size = React.useContext(SelectSizeContext);
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      data-size={size}
       className={cn(
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2 pr-8 pl-3 text-base outline-hidden select-none focus:bg-muted focus:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2 pr-8 pl-3 text-base outline-hidden select-none focus:bg-muted focus:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-[size=sm]:py-1.5 data-[size=sm]:text-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}

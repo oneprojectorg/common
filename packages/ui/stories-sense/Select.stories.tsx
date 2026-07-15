@@ -62,8 +62,8 @@ export const Default: Story = {
 
 export const Small: Story = {
   render: () => (
-    <Select items={fruitItems}>
-      <SelectTrigger size="sm" className="w-[180px]">
+    <Select items={fruitItems} size="sm">
+      <SelectTrigger className="w-[180px]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="sense">
