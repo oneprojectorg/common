@@ -2,67 +2,57 @@
 
 import { ProposalFilter } from '@op/api/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
-import type { ReactNode } from 'react';
 import { LuArrowDownToLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import {
-  useProposalFilterItems,
-  useProposalFilterLabel,
-} from './useProposalFilters';
+import { useProposalFilterItems } from './useProposalFilters';
 
 export const ProposalsListHeader = ({
   hideFilters,
-  proposalFilter,
   count,
+  total,
 }: {
   hideFilters: boolean;
-  proposalFilter: ProposalFilter;
   count: number;
+  total: number;
 }) => {
   const t = useTranslations();
   if (hideFilters) {
-    return <ProposalsHeaderText>{t('My proposals')}</ProposalsHeaderText>;
+    return (
+      <span className="font-serif text-title-base text-neutral-black">
+        {t('My proposals')}
+      </span>
+    );
   }
-  return (
-    <ProposalFilterCountHeader proposalFilter={proposalFilter} count={count} />
-  );
+  return <ProposalCountHeader count={count} total={total} />;
 };
 
-// "All proposals" reads as the unfiltered total, so we drop the label and let
-// the count carry the meaning ("328 proposals"). Other filters still need
-// their label since the count alone wouldn't reveal what's been filtered.
-// Shared with ManualSelectionToolbar so both header sites stay in lockstep.
-export const ProposalFilterCountHeader = ({
-  proposalFilter,
+// Renders "6 of 328 proposals": the shown `count` leads in title styling, the
+// muted "of {total} proposals" remainder carries the pool size. Shared with
+// ManualSelectionToolbar so both header sites stay in lockstep.
+export const ProposalCountHeader = ({
   count,
+  total,
 }: {
-  proposalFilter: ProposalFilter;
   count: number;
+  total: number;
 }) => {
   const t = useTranslations();
-  const label = useProposalFilterLabel(proposalFilter);
   return (
-    <ProposalsHeaderText>
-      {proposalFilter === ProposalFilter.ALL ? (
-        t('{count, plural, one {# proposal} other {# proposals}}', { count })
-      ) : (
-        <>
-          {label} <Bullet /> {count}
-        </>
-      )}
-    </ProposalsHeaderText>
+    <span className="flex items-baseline gap-1">
+      <span className="font-serif text-title-base text-neutral-black">
+        {count}
+      </span>
+      <span className="text-base text-neutral-gray4">
+        {t('of {total, plural, one {# proposal} other {# proposals}}', {
+          total,
+        })}
+      </span>
+    </span>
   );
 };
-
-const ProposalsHeaderText = ({ children }: { children: ReactNode }) => (
-  <span className="font-serif text-title-base text-neutral-black">
-    {children}
-  </span>
-);
 
 // fallow-ignore-next-line complexity
 export const ProposalsFilterBar = ({

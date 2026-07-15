@@ -242,6 +242,7 @@ export const ManualSelectionList = ({
     <div className="flex flex-col gap-6 pb-20">
       <ManualSelectionToolbar
         count={proposals.length}
+        total={candidates.proposals.length}
         currentProfileId={user.currentProfile?.id}
         categories={categoriesData.categories}
         filters={toolbarFilters}

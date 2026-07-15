@@ -463,6 +463,7 @@ const ProposalsListContent = ({
         pinOffset={pinOffset}
         hideFilters={hideFilters}
         total={total}
+        totalProposalCount={instance.proposalCount ?? total}
         proposalFilter={proposalFilter}
         setProposalFilter={setProposalFilter}
         hasVoted={hasVoted}

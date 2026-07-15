@@ -33,23 +33,6 @@ export const useProposalFilterItems = ({
   ];
 };
 
-// useTranslations needs literal keys, so map each filter to its label here.
-// Shared by the proposal-list header sites (ProposalsListHeader and
-// ManualSelectionToolbar) so their `{label} • {count}` branches stay aligned.
-export const useProposalFilterLabel = (filter: ProposalFilter) => {
-  const t = useTranslations();
-  switch (filter) {
-    case ProposalFilter.MY_BALLOT:
-      return t('My ballot');
-    case ProposalFilter.MY_PROPOSALS:
-      return t('My proposals');
-    case ProposalFilter.SHORTLISTED:
-      return t('Shortlisted proposals');
-    default:
-      return t('All proposals');
-  }
-};
-
 // Filter selection state + auto-switch to "My ballot" once the user votes.
 // Composed by `useProposalFilters` (the in-memory candidate-list path).
 export function useProposalFilterState({
