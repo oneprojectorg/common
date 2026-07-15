@@ -268,6 +268,11 @@ export function ProposalView({
       isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}
+      // Same viewer-access bit the comments prompt reads (getProposal mirrors
+      // the decision profile's SUBMIT_PROPOSALS grant onto proposal.access),
+      // so the Join button, the modal mount, and the prompt can't diverge —
+      // on any route that renders a proposal, including the legacy one.
+      canJoin={currentProposal.access?.submitProposals === true}
       revisionToggle={
         firstRevisionRequestId
           ? {

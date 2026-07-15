@@ -3,6 +3,7 @@ import {
   ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
@@ -45,7 +46,7 @@ export const rubricTemplateSchema = z
   .transform((data) => {
     const result = rubricTemplateProbe.safeParse(data);
     if (!result.success) {
-      console.error('rubricTemplate did not match expected shape', {
+      logger.error('rubricTemplate did not match expected shape', {
         issues: result.error.issues,
       });
     }

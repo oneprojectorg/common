@@ -1,6 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -153,10 +154,10 @@ export const submitProposal = async ({
     .createVersion(parsed.collaborationDocId, { name: 'Submitted' })
     .then((v) => v?.version ?? null)
     .catch((error: unknown) => {
-      console.error(
-        `[submitProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+      logger.error('[submitProposal] Failed to create TipTap version', {
+        collaborationDocId: parsed.collaborationDocId,
         error,
-      );
+      });
       return null;
     });
 

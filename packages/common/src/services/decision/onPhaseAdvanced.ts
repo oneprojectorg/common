@@ -1,4 +1,5 @@
 import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 
 import type { AdvancePhaseResult } from './advancePhase';
 import { processResults } from './processResults';
@@ -32,10 +33,10 @@ export async function onPhaseAdvanced(
       },
     })
     .catch((err) => {
-      console.error(
-        `Failed to send phase transition event for instance ${input.instanceId}:`,
-        err,
-      );
+      logger.error('Failed to send phase transition event', {
+        instanceId: input.instanceId,
+        error: err,
+      });
     });
 
   if (targetPhase?.rules?.proposals?.review) {
@@ -47,10 +48,10 @@ export async function onPhaseAdvanced(
     try {
       await processResults({ processInstanceId: input.instanceId });
     } catch (error) {
-      console.error(
-        `Error processing results for process instance ${input.instanceId}:`,
+      logger.error('Error processing results for process instance', {
+        instanceId: input.instanceId,
         error,
-      );
+      });
     }
   }
 }

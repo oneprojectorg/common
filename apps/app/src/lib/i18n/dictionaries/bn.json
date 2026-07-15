@@ -689,6 +689,8 @@
   "Number of proposals each participant can vote on": "প্রতিটি অংশগ্রহণকারী যতগুলি প্রস্তাবে ভোট দিতে পারেন",
   "No limit": "কোনো সীমা নেই",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# ভোট} other {# ভোট}}",
+  "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {প্রস্তাব} other {প্রস্তাব}}",
+  "of {total, plural, one {# proposal} other {# proposals}}": "{total, plural, one {# প্রস্তাবের} other {# প্রস্তাবের}} মধ্যে",
   "Template Editor": "টেমপ্লেট এডিটর",
   "Criteria": "মানদণ্ড",
   "Settings": "সেটিংস",
@@ -1388,5 +1390,11 @@
   "Admin options": "অ্যাডমিন বিকল্প",
   "Process settings": "প্রক্রিয়া সেটিংস",
   "ends {date}": "{date} তারিখে শেষ হয়",
-  "Remove image": "ছবি সরান"
+  "Remove image": "ছবি সরান",
+  "Claim your account": "আপনার অ্যাকাউন্ট দাবি করুন",
+  "Join": "যোগ দিন",
+  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "যেকোনো আইডিয়া লাইক, কমেন্ট ও ফলো করতে এবং আপনার নিজের জমা দেওয়া আইডিয়া সম্পাদনা ও সেগুলোর আপডেট পেতে Common-এ যোগ দিন।",
+  "You're already signed in. Reload the page to continue.": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।",
+  "An account with this email already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
+  "Join Common to comment on this proposal.": "এই প্রস্তাবে মন্তব্য করতে Common-এ যোগ দিন।"
 }

@@ -1,5 +1,6 @@
 import { and, db, eq, isNull } from '@op/db/client';
 import { ProcessInstance, proposals } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -91,7 +92,10 @@ export const deleteProposal = async ({
       throw new CommonError('Failed to delete proposal');
     }
 
-    console.log('DELETED PROPOSAL', deletedProposal.id, user.id);
+    logger.info('Deleted proposal', {
+      proposalId: deletedProposal.id,
+      userId: user.id,
+    });
 
     return {
       deletedId: proposalId,
@@ -106,7 +110,7 @@ export const deleteProposal = async ({
     ) {
       throw error;
     }
-    console.error('Error deleting proposal:', error);
+    logger.error('Error deleting proposal', { error });
     throw new CommonError('Failed to delete proposal');
   }
 };

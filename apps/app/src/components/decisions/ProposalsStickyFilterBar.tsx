@@ -11,6 +11,8 @@ export interface ProposalsStickyFilterBarProps {
   hideFilters: boolean;
   /** Full server-side proposal count for the active filter. */
   total: number;
+  /** Unfiltered proposal count for the instance — the "of N" pool. */
+  totalProposalCount: number;
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
   hasVoted: boolean;
@@ -63,6 +65,7 @@ const getScrollParent = (node: Element | null): Element | null => {
 export const ProposalsStickyFilterBar = ({
   hideFilters,
   total,
+  totalProposalCount,
   proposalFilter,
   setProposalFilter,
   hasVoted,
@@ -147,9 +150,10 @@ export const ProposalsStickyFilterBar = ({
         />
         <ProposalsListHeader
           hideFilters={hideFilters}
-          proposalFilter={proposalFilter}
-          // Server-side filtering makes `total` accurate for the active filter.
+          // `total` is the server count for the active filter; totalProposalCount
+          // is the unfiltered pool ("6 of 328 proposals").
           count={total}
+          total={totalProposalCount}
         />
         {!hideFilters && (
           <div className="flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">

@@ -11,6 +11,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
@@ -120,7 +121,7 @@ export const createOrganization = async ({
         domain = undefined;
       }
     } catch (e) {
-      console.error('Could not parse hostname', e);
+      logger.error('Could not parse hostname', { error: e });
     }
   }
 

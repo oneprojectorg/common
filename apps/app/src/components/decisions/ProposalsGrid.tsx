@@ -478,7 +478,7 @@ const ViewProposalsList = ({
       {proposals.map((proposal) => {
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
-        const showMenu = canManageProposals;
+        const showMenu = canManageProposals || isEditable;
         const revisionRequestId = revisionRequestIdByProposalId?.get(
           proposal.id,
         );

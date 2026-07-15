@@ -5,6 +5,7 @@ import {
   csrfRejection,
   originUrlMatcher,
 } from '@op/core';
+import { logger } from '@op/logging';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
@@ -64,7 +65,7 @@ const handler = async (req: NextRequest) => {
     router: appRouter,
     createContext,
     onError({ error, path }) {
-      console.error(`tRPC Error on ${path}:`, error);
+      logger.error('tRPC error', { path, error });
     },
   });
 

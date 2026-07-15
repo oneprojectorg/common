@@ -5,6 +5,7 @@ import {
   decisionsVoteSubmissions,
   processInstances,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { CommonError, NotFoundError } from '../../utils';
 import {
@@ -47,7 +48,7 @@ export async function processResults({
       }),
     );
   } catch (error) {
-    console.error('Error processing results:', error);
+    logger.error('Error processing results', { error });
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
@@ -63,7 +64,7 @@ export async function processResults({
         }),
       );
     } catch (insertError) {
-      console.error('Failed to store error in database:', insertError);
+      logger.error('Failed to store error in database', { error: insertError });
     }
 
     throw new CommonError(`Failed to process results: ${errorMessage}`);

@@ -1,3 +1,5 @@
+import { setLogDistinctId } from '@op/logging';
+
 import { getCachedAuthClaims } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithMaybeUser } from '../types';
 import { userFromClaims } from '../utils/userFromClaims';
@@ -18,6 +20,12 @@ const withResolvedUser: MiddlewareBuilderBase<TContextWithMaybeUser> = async ({
     result.data && !result.error
       ? userFromClaims(result.data.claims)
       : undefined;
+
+  if (user) {
+    // user.id is the auth user id the frontend passes to posthog.identify(),
+    // so PostHog can link this request's logs to the person
+    setLogDistinctId(user.id);
+  }
 
   return next({
     ctx: { ...ctx, user },

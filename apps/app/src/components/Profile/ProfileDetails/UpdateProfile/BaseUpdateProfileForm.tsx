@@ -308,7 +308,13 @@ export const BaseUpdateProfileForm = forwardRef<
                 inputProps={{
                   placeholder:
                     placeholders?.website ?? t('Enter your website URL'),
-                  type: 'url',
+                  // Not `type="url"`: our zodUrl validation accepts a bare
+                  // domain (e.g. "venuecms.com") and auto-prefixes `https://`,
+                  // but the browser's native URL validation rejects the
+                  // scheme-less value and silently blocks form submission.
+                  // `inputMode` keeps the URL-optimized keyboard without that
+                  // native constraint.
+                  inputMode: 'url',
                 }}
               />
             )}

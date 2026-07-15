@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { db } from '@op/db/client';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -98,7 +99,7 @@ export const getProcessCategories = async ({
     if (error instanceof UnauthorizedError) {
       throw error;
     }
-    console.error('Error getting process categories:', error);
+    logger.error('Error getting process categories', { error });
     return [];
   }
 };

@@ -687,6 +687,8 @@
   "Number of proposals each participant can vote on": "Número de propuestas por las que puede votar cada participante",
   "No limit": "Sin límite",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# voto} other {# votos}}",
+  "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {propuesta} other {propuestas}}",
+  "of {total, plural, one {# proposal} other {# proposals}}": "de {total, plural, one {# propuesta} other {# propuestas}}",
   "Template Editor": "Editor de plantilla",
   "Criteria": "Criterios",
   "Settings": "Configuración",
@@ -1385,5 +1387,11 @@
   "Admin options": "Opciones de administrador",
   "Process settings": "Configuración del proceso",
   "ends {date}": "finaliza el {date}",
-  "Remove image": "Eliminar imagen"
+  "Remove image": "Eliminar imagen",
+  "Claim your account": "Reclama tu cuenta",
+  "Join": "Únete",
+  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "Únete a Common para dar me gusta, comentar y seguir cualquier idea, y para editar y recibir novedades sobre tus propias propuestas.",
+  "You're already signed in. Reload the page to continue.": "Ya has iniciado sesión. Recarga la página para continuar.",
+  "An account with this email already exists. Try logging in instead.": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión.",
+  "Join Common to comment on this proposal.": "Únete a Common para comentar esta propuesta."
 }

@@ -61,6 +61,7 @@ export const exportProposals = inngest.createFunction(
             dir: filters.dir,
             limit: 1000, // High limit for exports
             skipAccessCheck: true, // Access already verified when export was created
+            includeDocumentContent: true, // CSV descriptions come from the full fragments
           },
           user: userRecord as any,
         });

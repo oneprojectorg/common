@@ -7,6 +7,7 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -312,10 +313,10 @@ export async function submitManualSelection({
         },
       })
       .catch((err) => {
-        console.error(
-          `Failed to send manual selections confirmed event for instance ${processInstanceId}:`,
-          err,
-        );
+        logger.error('Failed to send manual selections confirmed event', {
+          processInstanceId,
+          error: err,
+        });
       });
   }
 }

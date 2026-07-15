@@ -20,12 +20,15 @@ import {
 import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/ui/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
-import { type RefObject, Suspense, useCallback, useMemo } from 'react';
+import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { MobileViewSwitch } from './MobileViewSwitch';
-import { ProposalListSkeletonGrid } from './ProposalListSkeleton';
+import {
+  ProposalCardSkeleton,
+  ProposalListSkeletonGrid,
+} from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { ProposalsGrid } from './ProposalsGrid';
@@ -66,7 +69,9 @@ export interface ProposalsListProps {
 }
 
 // A multiple of three so a full page fills the three-per-row grid evenly.
-const PROPOSALS_PAGE_LIMIT = 51;
+// Kept small — every server-side cost of listProposals scales with this
+// number, and infinite scroll pulls further pages as needed.
+const PROPOSALS_PAGE_LIMIT = 24;
 
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
 
@@ -83,16 +88,19 @@ type ProposalQueryParams = {
 
 type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
-  /** Full server-side proposal count, independent of how many pages are loaded. */
+  /** Full server-side proposal count for the active filter, independent of how many pages are loaded. */
   total: number;
+  /** Unfiltered proposal count for the phase — the "of N" pool, counted by the same query as `total`. */
+  totalProposalCount: number;
   isFetchingNextPage: boolean;
   shouldShowTrigger: boolean;
-  infiniteScrollRef: RefObject<HTMLDivElement | null>;
+  infiniteScrollRef: RefCallback<HTMLDivElement>;
 };
 
 const useProposalsLoaderRenderProps = (
   allProposals: Proposal[],
   total: number,
+  totalProposalCount: number,
   {
     fetchNextPage,
     hasNextPage,
@@ -120,6 +128,7 @@ const useProposalsLoaderRenderProps = (
   return {
     allProposals,
     total,
+    totalProposalCount,
     isFetchingNextPage,
     shouldShowTrigger,
     infiniteScrollRef: ref,
@@ -142,13 +151,33 @@ const CurrentPhaseProposalsLoader = ({
       refetchOnMount: 'always',
     });
 
+  // Unfiltered count for the "of N" denominator — same endpoint/visibility as
+  // the list, so it matches `total` when no filter is active. Only `.total` is
+  // used, so a single row is fetched.
+  const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery(
+    {
+      processInstanceId: queryParams.processInstanceId,
+      dir: queryParams.dir,
+      limit: 1,
+      phase: queryParams.phase,
+    },
+    { staleTime: 30 * 1000 },
+  );
+
   const allProposals = useMemo(
     () => paginatedData.pages.flatMap((page) => page.proposals),
     [paginatedData.pages],
   );
   const total = paginatedData.pages[0]?.total ?? 0;
 
-  return children(useProposalsLoaderRenderProps(allProposals, total, query));
+  return children(
+    useProposalsLoaderRenderProps(
+      allProposals,
+      total,
+      unfilteredData.total,
+      query,
+    ),
+  );
 };
 
 const ResultsPhaseProposalsLoader = ({
@@ -176,13 +205,28 @@ const ResultsPhaseProposalsLoader = ({
       },
     );
 
+  // Unfiltered count for the "of N" denominator — same endpoint as the list so
+  // it matches `total` when no filter is active. Only `.total` is used.
+  const [unfilteredData] = trpc.decision.listAllProposals.useSuspenseQuery({
+    processInstanceId: queryParams.processInstanceId,
+    dir: queryParams.dir,
+    limit: 1,
+  });
+
   const allProposals = useMemo(
     () => paginatedData.pages.flatMap((page) => page.items),
     [paginatedData.pages],
   );
   const total = paginatedData.pages[0]?.total ?? 0;
 
-  return children(useProposalsLoaderRenderProps(allProposals, total, query));
+  return children(
+    useProposalsLoaderRenderProps(
+      allProposals,
+      total,
+      unfilteredData.total,
+      query,
+    ),
+  );
 };
 
 export const ProposalsList = (props: ProposalsListProps) => {
@@ -311,6 +355,7 @@ const ProposalsListContent = ({
   queryParams,
   allProposals,
   total,
+  totalProposalCount,
   isFetchingNextPage,
   shouldShowTrigger,
   infiniteScrollRef,
@@ -432,6 +477,20 @@ const ProposalsListContent = ({
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
+  // One sentinel definition for both views — map mode renders it inside the
+  // list column (via listFooter), grid mode below the grid. Only the loading
+  // skeleton differs.
+  const renderScrollSentinel = (skeleton: React.ReactNode) =>
+    shouldShowTrigger ? (
+      <div
+        ref={infiniteScrollRef}
+        className="py-4"
+        data-testid="proposals-infinite-scroll-sentinel"
+      >
+        {isFetchingNextPage ? skeleton : null}
+      </div>
+    ) : null;
+
   return (
     <div
       className={cn(
@@ -444,6 +503,7 @@ const ProposalsListContent = ({
         pinOffset={pinOffset}
         hideFilters={hideFilters}
         total={total}
+        totalProposalCount={totalProposalCount}
         proposalFilter={proposalFilter}
         setProposalFilter={setProposalFilter}
         hasVoted={hasVoted}
@@ -487,6 +547,7 @@ const ProposalsListContent = ({
               decisionSlug={decisionSlug}
               permissions={permissions}
               mapView={mapView}
+              listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
             />
           ) : (
             // Local boundaries keep the pin query from suspending / erroring
@@ -518,6 +579,7 @@ const ProposalsListContent = ({
                     votedByProfileId: queryParams.votedByProfileId,
                     status: queryParams.status,
                   }}
+                  listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -543,15 +605,7 @@ const ProposalsListContent = ({
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && shouldShowTrigger && (
-        <div
-          ref={infiniteScrollRef}
-          className="py-4"
-          data-testid="proposals-infinite-scroll-sentinel"
-        >
-          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
-        </div>
-      )}
+      {!isMapMode && renderScrollSentinel(<ProposalListSkeletonGrid />)}
 
       {translation.showBanner && (
         <TranslateBanner

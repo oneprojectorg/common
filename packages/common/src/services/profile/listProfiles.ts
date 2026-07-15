@@ -1,6 +1,7 @@
 import { match } from '@op/core';
 import { and, db, inArray, sql } from '@op/db/client';
 import { type EntityType, locations, profiles } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import {
   NotFoundError,
@@ -119,7 +120,7 @@ export const listProfiles = async ({
 
     return { items, next: nextCursor };
   } catch (error) {
-    console.error('Error in listProfiles:', error);
+    logger.error('Error in listProfiles', { error });
     throw error;
   }
 };

@@ -1,6 +1,7 @@
 import { type DbClient, db as defaultDb, eq, inArray } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
@@ -137,7 +138,7 @@ export async function updateTransitionsForProcess({
     if (error instanceof CommonError) {
       throw error;
     }
-    console.error('Error updating transitions for process:', error);
+    logger.error('Error updating transitions for process', { error });
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(

@@ -2,7 +2,6 @@ import {
   type DbClient,
   type SQL,
   and,
-  asc,
   db as defaultDb,
   desc,
   eq,
@@ -75,35 +74,50 @@ async function resolvePhaseWindow(
   currentPhaseId: string | null | undefined,
   db: DbClient,
 ): Promise<PhaseWindow> {
-  const [inbound] = await db
+  // One round trip for every transition touching the phase (an instance has
+  // few transitions per phase), resolved in JS: inbound is the most recent
+  // transition INTO the phase, outbound the earliest transition OUT strictly
+  // after it — the same rows the previous two sequential queries selected.
+  const transitions = await db
     .select({
       id: stateTransitionHistory.id,
       transitionedAt: stateTransitionHistory.transitionedAt,
+      toStateId: stateTransitionHistory.toStateId,
+      fromStateId: stateTransitionHistory.fromStateId,
     })
     .from(stateTransitionHistory)
     .where(
       and(
         eq(stateTransitionHistory.processInstanceId, instanceId),
-        eq(stateTransitionHistory.toStateId, phaseId),
+        or(
+          eq(stateTransitionHistory.toStateId, phaseId),
+          eq(stateTransitionHistory.fromStateId, phaseId),
+        ),
       ),
-    )
-    .orderBy(desc(stateTransitionHistory.transitionedAt))
-    .limit(1);
+    );
 
-  const [outbound] = await db
-    .select({ transitionedAt: stateTransitionHistory.transitionedAt })
-    .from(stateTransitionHistory)
-    .where(
-      and(
-        eq(stateTransitionHistory.processInstanceId, instanceId),
-        eq(stateTransitionHistory.fromStateId, phaseId),
-        ...(inbound
-          ? [gt(stateTransitionHistory.transitionedAt, inbound.transitionedAt)]
-          : []),
-      ),
-    )
-    .orderBy(asc(stateTransitionHistory.transitionedAt))
-    .limit(1);
+  let inbound: { id: string; transitionedAt: Date } | undefined;
+  for (const transition of transitions) {
+    if (
+      transition.toStateId === phaseId &&
+      (!inbound || transition.transitionedAt > inbound.transitionedAt)
+    ) {
+      inbound = transition;
+    }
+  }
+
+  let outbound: { transitionedAt: Date } | undefined;
+  for (const transition of transitions) {
+    if (transition.fromStateId !== phaseId) {
+      continue;
+    }
+    if (inbound && transition.transitionedAt <= inbound.transitionedAt) {
+      continue;
+    }
+    if (!outbound || transition.transitionedAt < outbound.transitionedAt) {
+      outbound = transition;
+    }
+  }
 
   if (!inbound && !outbound) {
     // No transitions reference this phase. It's either the current initial

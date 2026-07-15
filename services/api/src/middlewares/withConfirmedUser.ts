@@ -1,3 +1,5 @@
+import { setLogDistinctId } from '@op/logging';
+
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
@@ -20,6 +22,8 @@ const withConfirmedUser: MiddlewareBuilderBase<TContextWithUser> = async ({
   const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data);
+
+  setLogDistinctId(user.id);
 
   return next({
     ctx: { ...ctx, user },

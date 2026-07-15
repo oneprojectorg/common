@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { NotFoundError } from '../../utils';
 
@@ -21,7 +22,7 @@ export const getProcess = async (processId: string) => {
     if (error instanceof NotFoundError) {
       throw error;
     }
-    console.error('Error fetching decision process:', error);
+    logger.error('Error fetching decision process', { error });
     throw new NotFoundError('Decision process', processId);
   }
 };

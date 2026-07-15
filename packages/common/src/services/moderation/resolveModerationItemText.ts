@@ -1,6 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { posts } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { assembleProposalData } from '../decision/assembleProposalData';
 import { extractProposalText } from '../decision/extractProposalText';
@@ -75,10 +76,9 @@ export const resolveModerationItemText = async (
         : fragmentTexts;
       return extractProposalText({ ...stored, ...recordOf(assembled) });
     } catch (error) {
-      console.error(
-        'Falling back to stored proposalData for moderation text:',
+      logger.error('Falling back to stored proposalData for moderation text', {
         error,
-      );
+      });
       return extractProposalText(stored);
     }
   }

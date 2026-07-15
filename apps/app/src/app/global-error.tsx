@@ -4,6 +4,8 @@ import { posthogUIHost } from '@op/core';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 
+import { stampExceptionWithTraceContext } from '../lib/otelErrorTracking';
+
 // This component replaces the root layout on catastrophic errors, so
 // PostHogProvider, next-intl, Tailwind, and @op/ui are all unavailable.
 // Hardcoded strings, inline styles, and the manual posthog.init are intentional.
@@ -20,6 +22,7 @@ export default function GlobalError({
         api_host: '/stats',
         ui_host: posthogUIHost,
         capture_exceptions: true,
+        before_send: stampExceptionWithTraceContext,
         // Tracing headers set to `false` because it breaks CORS requests
         __add_tracing_headers: false,
       });

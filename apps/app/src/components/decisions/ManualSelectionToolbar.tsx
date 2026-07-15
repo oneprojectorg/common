@@ -4,7 +4,7 @@ import { ProposalFilter } from '@op/api/encoders';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
+import { ProposalCountHeader } from './ProposalsFilterBar';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { useProposalFilterItems } from './useProposalFilters';
 
@@ -23,6 +23,7 @@ export interface SelectionFilters {
 
 interface ManualSelectionToolbarProps {
   count: number;
+  total: number;
   currentProfileId: string | undefined;
   categories: Category[];
   filters: SelectionFilters;
@@ -31,6 +32,7 @@ interface ManualSelectionToolbarProps {
 
 export const ManualSelectionToolbar = ({
   count,
+  total,
   currentProfileId,
   categories,
   filters,
@@ -46,9 +48,7 @@ export const ManualSelectionToolbar = ({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <span className="font-serif text-title-base text-neutral-black">
-        {t('All proposals')} <Bullet /> {count}
-      </span>
+      <ProposalCountHeader count={count} total={total} />
       <div className="flex flex-wrap items-center gap-2">
         <ResponsiveSelect
           selectedKey={proposalFilter}

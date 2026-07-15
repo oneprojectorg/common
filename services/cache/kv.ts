@@ -53,12 +53,14 @@ if (REDIS_URL) {
   });
 
   redis.on('error', (err) => {
-    logger.error('Redis Client Error', err);
+    logger.error('Redis Client Error', { error: err });
   });
 
   // Connect to Redis
   if (!redis.isOpen) {
-    redis.connect().catch(console.error);
+    redis.connect().catch((error) => {
+      logger.error('Redis connect failed', { error });
+    });
   }
 }
 

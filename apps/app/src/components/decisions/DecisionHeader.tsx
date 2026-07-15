@@ -108,6 +108,7 @@ function DecisionHeaderView({
   decisionSlug,
   isAdmin,
   canReadUpdates,
+  canJoin,
   centerSlot,
   showStepper = true,
   title,
@@ -118,6 +119,12 @@ function DecisionHeaderView({
   title: string;
   phases: ProcessPhase[];
   currentStateId: string;
+  /**
+   * Public process (viewer can submit proposals without an account): the
+   * header offers "Join" (account claim) instead of "Log in" to logged-out
+   * and anonymous visitors. Derived from the instance by both variants.
+   */
+  canJoin: boolean;
   /** Stored overview hero image path, for the admin Edit-banner controls. */
   heroImagePath?: string;
 }) {
@@ -135,6 +142,7 @@ function DecisionHeaderView({
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
+        canJoin={canJoin}
         centerSlot={centerSlot}
         mobileAdminBar={
           showAdminControls && decisionSlug ? (
@@ -170,6 +178,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   return (
     <DecisionHeaderView
       {...props}
+      canJoin={instance.access?.submitProposals === true}
       title={
         props.profileName ||
         instance.name ||
@@ -194,6 +203,7 @@ function DecisionHeaderFromProps(
   return (
     <DecisionHeaderView
       {...props}
+      canJoin={instance.access?.submitProposals === true}
       title={
         props.profileName ||
         instance.name ||

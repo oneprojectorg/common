@@ -9,6 +9,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
@@ -110,7 +111,7 @@ export const inviteUsersToOrganization = async (
       });
 
       if (existingUser) {
-        console.log('User already exists');
+        logger.debug('User already exists in system');
         // User exists - check if they're already in this organization
         if (existingUser.organizationUsers.length === 0) {
           // User exists but not in this organization - add them directly
@@ -143,14 +144,14 @@ export const inviteUsersToOrganization = async (
                   accessRoleId: targetRole.id,
                 });
               } else {
-                console.error('Could not add user');
+                logger.error('Could not add user');
               }
             });
 
             results.successful.push(email);
             continue; // Skip email sending for existing users
           } else {
-            console.error('Invalid role specified for organization invite');
+            logger.error('Invalid role specified for organization invite');
 
             // Role not found
             results.failed.push({
@@ -160,7 +161,7 @@ export const inviteUsersToOrganization = async (
             continue;
           }
         } else {
-          console.error('User already in organization');
+          logger.error('User already in organization');
           // User already in organization
           results.failed.push({
             email,
@@ -203,7 +204,7 @@ export const inviteUsersToOrganization = async (
         message: personalMessage,
       });
     } catch (error) {
-      console.error(`Failed to process invitation for ${email}:`, error);
+      logger.error('Failed to process invitation', { error });
       results.failed.push({
         email,
         reason: error instanceof Error ? error.message : 'Unknown error',
@@ -214,10 +215,9 @@ export const inviteUsersToOrganization = async (
   // Send all invitation emails in batch
   if (emailsToInvite.length > 0) {
     try {
-      console.log(
-        'Sending batch emails to:',
-        emailsToInvite.map((e) => e.to),
-      );
+      logger.info('Sending batch invitation emails', {
+        count: emailsToInvite.length,
+      });
       const batchResult = await sendBatchInvitationEmails({
         invitations: emailsToInvite,
       });
@@ -232,7 +232,9 @@ export const inviteUsersToOrganization = async (
         });
       });
     } catch (batchError) {
-      console.error('Failed to send batch invitation emails:', batchError);
+      logger.error('Failed to send batch invitation emails', {
+        error: batchError,
+      });
       // If batch sending fails entirely, mark all prepared emails as failed
       emailsToInvite.forEach((emailData) => {
         results.failed.push({
@@ -345,7 +347,7 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
         message: personalMessage,
       });
     } catch (error) {
-      console.error(`Failed to process invitation for ${email}:`, error);
+      logger.error('Failed to process invitation', { error });
       results.failed.push({
         email,
         reason: error instanceof Error ? error.message : 'Unknown error',
@@ -356,10 +358,9 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   // Send all invitation emails in batch
   if (emailsToInvite.length > 0) {
     try {
-      console.log(
-        'Sending batch emails to:',
-        emailsToInvite.map((e) => e.to),
-      );
+      logger.info('Sending batch invitation emails', {
+        count: emailsToInvite.length,
+      });
       const batchResult = await sendBatchInvitationEmails({
         invitations: emailsToInvite,
       });
@@ -374,7 +375,9 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
         });
       });
     } catch (batchError) {
-      console.error('Failed to send batch invitation emails:', batchError);
+      logger.error('Failed to send batch invitation emails', {
+        error: batchError,
+      });
       // If batch sending fails entirely, mark all prepared emails as failed
       emailsToInvite.forEach((emailData) => {
         results.failed.push({

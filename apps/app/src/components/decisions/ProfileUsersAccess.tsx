@@ -147,10 +147,7 @@ export const ProfileUsersAccess = ({
         />
 
         {shouldShowTrigger && (
-          <div
-            ref={scrollTriggerRef as React.RefObject<HTMLDivElement>}
-            className="flex justify-center py-4"
-          >
+          <div ref={scrollTriggerRef} className="flex justify-center py-4">
             {isFetchingNextPage && <SkeletonLine lines={3} />}
           </div>
         )}

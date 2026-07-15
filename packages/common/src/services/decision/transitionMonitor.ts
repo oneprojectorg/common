@@ -4,6 +4,7 @@ import {
   decisionProcessTransitions,
   processInstances,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
@@ -115,7 +116,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
 
     return result;
   } catch (error) {
-    console.error('Error in processDueTransitions:', error);
+    logger.error('Error in processDueTransitions', { error });
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(`Failed to process due transitions: ${errorMessage}`);
@@ -223,7 +224,10 @@ async function advanceInstanceTransitions({
         processInstanceId: transition.processInstanceId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      console.error(`Failed to process transition ${transition.id}:`, error);
+      logger.error('Failed to process transition', {
+        transitionId: transition.id,
+        error,
+      });
       break;
     }
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import type { Proposal, ProposalProfile } from '@op/common/client';
+import type { Proposal } from '@op/common/client';
 import {
   normalizeProposalCategories,
   parseProposalData,
@@ -51,7 +51,7 @@ export function ProposalMapHovercard({
   );
 }
 
-type HovercardAuthorData = ProposalProfile & { isAnonymous?: boolean };
+type HovercardAuthorData = NonNullable<Proposal['submittedBy']>;
 
 function HovercardMeta({
   author,

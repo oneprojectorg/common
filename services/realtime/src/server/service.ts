@@ -1,4 +1,5 @@
 import type { ChannelName } from '@op/common/realtime';
+import { logger } from '@op/logging';
 
 import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from './client';
@@ -47,7 +48,7 @@ class RealtimeService {
     try {
       await client.publish({ channel, data: message });
     } catch (error) {
-      console.error('[Realtime] Publish failed:', error);
+      logger.error('[Realtime] Publish failed', { channel, error });
     }
   }
 }

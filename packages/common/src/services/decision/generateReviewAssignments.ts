@@ -7,6 +7,7 @@ import {
   proposals,
   users,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import {
@@ -65,14 +66,14 @@ export async function generateReviewAssignments({
   const decisionProfileId = instance.profileId;
 
   if (!decisionProfileId) {
-    console.error(
-      `generateReviewAssignments: instance ${instanceId} has no profileId`,
-    );
+    logger.error('generateReviewAssignments: instance has no profileId', {
+      instanceId,
+    });
     return;
   }
 
   if (!decisionsZone) {
-    console.error('generateReviewAssignments: decisions access zone not found');
+    logger.error('generateReviewAssignments: decisions access zone not found');
     return;
   }
 

@@ -1,5 +1,6 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { attachments, proposalAttachments, proposals } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 /**
  * Generate public URL for asset using Next.js rewrite
@@ -28,7 +29,7 @@ export async function processProposalContent({
     });
 
     if (!proposal) {
-      console.error(`Proposal not found: ${proposalId}`);
+      logger.error('Proposal not found', { proposalId });
       return;
     }
 
@@ -36,7 +37,7 @@ export async function processProposalContent({
     const content = proposalData?.content || '';
 
     if (!content) {
-      console.log(`No content to process for proposal: ${proposalId}`);
+      logger.debug('No content to process for proposal', { proposalId });
       return;
     }
 
@@ -50,7 +51,7 @@ export async function processProposalContent({
       });
 
     if (proposalAttachmentJoins.length === 0) {
-      console.log(`No attachments to process for proposal: ${proposalId}`);
+      logger.debug('No attachments to process for proposal', { proposalId });
       return;
     }
 
@@ -58,7 +59,7 @@ export async function processProposalContent({
     const imageUrls = extractImageUrlsFromContent(content);
 
     if (imageUrls.length === 0) {
-      console.log(`No image URLs found in proposal content: ${proposalId}`);
+      logger.debug('No image URLs found in proposal content', { proposalId });
       return;
     }
 
@@ -83,9 +84,9 @@ export async function processProposalContent({
         const publicUrl = getPublicUrl(storagePath);
 
         if (!publicUrl) {
-          console.error(
-            `Failed to generate public URL for ${attachment.storageObjectId}`,
-          );
+          logger.error('Failed to generate public URL', {
+            storageObjectId: attachment.storageObjectId,
+          });
           continue;
         }
 
@@ -95,9 +96,10 @@ export async function processProposalContent({
         );
         if (tempUrl) {
           processedContent = processedContent.replace(tempUrl, publicUrl);
-          console.log(
-            `Replaced temporary URL with public URL: ${tempUrl} -> ${publicUrl}`,
-          );
+          logger.debug('Replaced temporary URL with public URL', {
+            tempUrl,
+            publicUrl,
+          });
         }
 
         // Update attachment metadata (use existing data from attachment record)
@@ -108,7 +110,10 @@ export async function processProposalContent({
           fileSize: attachment.fileSize || 0,
         });
       } catch (error) {
-        console.error(`Error processing attachment ${attachment.id}:`, error);
+        logger.error('Error processing attachment', {
+          attachmentId: attachment.id,
+          error,
+        });
       }
     }
 
@@ -126,7 +131,7 @@ export async function processProposalContent({
         })
         .where(eq(proposals.id, proposalId));
 
-      console.log(`Updated proposal content for ${proposalId}`);
+      logger.info('Updated proposal content', { proposalId });
     }
 
     // Update attachment metadata
@@ -142,15 +147,13 @@ export async function processProposalContent({
           .where(eq(attachments.id, attachmentUpdate.id));
       }
 
-      console.log(
-        `Updated ${updatedAttachments.length} attachment metadata for proposal ${proposalId}`,
-      );
+      logger.info('Updated attachment metadata for proposal', {
+        proposalId,
+        count: updatedAttachments.length,
+      });
     }
   } catch (error) {
-    console.error(
-      `Error processing proposal content for ${proposalId}:`,
-      error,
-    );
+    logger.error('Error processing proposal content', { proposalId, error });
   }
 }
 
@@ -204,10 +207,10 @@ export async function getProposalAttachmentUrls(
         urlMap[attachment.id] = publicUrl;
       }
     } catch (error) {
-      console.error(
-        `Error getting URL for attachment ${attachment.id}:`,
+      logger.error('Error getting URL for attachment', {
+        attachmentId: attachment.id,
         error,
-      );
+      });
     }
   }
 
