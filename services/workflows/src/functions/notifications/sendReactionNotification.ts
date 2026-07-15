@@ -19,6 +19,12 @@ const { postReactionAdded } = Events;
 export const sendReactionNotification = inngest.createFunction(
   {
     id: 'sendReactionNotification',
+    // Cap per post so a popular post's reaction burst can't swamp the
+    // pool while debounce collapses duplicates.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.postId',
+    },
     debounce: {
       key,
       period: '2m',

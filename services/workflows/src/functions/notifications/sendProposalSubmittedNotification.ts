@@ -18,6 +18,13 @@ const { proposalSubmitted } = Events;
 export const sendProposalSubmittedNotification = inngest.createFunction(
   {
     id: 'sendProposalSubmittedNotification',
+    // DB-heavy: joins proposals → profiles → processInstances → profileUsers
+    // and batch-sends to every reviewer. Cap per proposal so a multi-submit
+    // burst on one decision can't monopolize the pool.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.proposalId',
+    },
     debounce: {
       key: 'event.data.proposalId',
       period: '1m',

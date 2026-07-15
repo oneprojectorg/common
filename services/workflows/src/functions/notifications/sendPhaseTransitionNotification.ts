@@ -16,6 +16,14 @@ const { phaseTransitioned, manualSelectionsConfirmed } = Events;
 export const sendPhaseTransitionNotification = inngest.createFunction(
   {
     id: 'sendPhaseTransitionNotification',
+    // The midnight-UTC processTransitions cron fans this handler out per
+    // active process; each run does an unbounded profileUsers scan and
+    // batch-sends emails. Cap concurrent runs per process so a busy decision
+    // cannot starve the shared apps/api DB pool during the burst.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.processInstanceId',
+    },
     debounce: {
       key: 'event.data.processInstanceId + "-" + event.data.fromPhaseId + "-" + event.data.toPhaseId',
       period: '1m',
