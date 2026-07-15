@@ -6,6 +6,7 @@ import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
+import { PolicyReacceptanceModal } from '@/components/PolicyReacceptanceModal';
 import { SidebarNav } from '@/components/SidebarNav';
 import { SiteHeader } from '@/components/SiteHeader';
 import { AppLayout } from '@/components/layout/split/AppLayout';
@@ -28,6 +29,7 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex size-full max-h-full flex-col">
       <UserProvider initialUser={user}>
+        <PolicyReacceptanceModal />
         <SidebarProvider>
           <SiteHeader />
           <SidebarLayout>
