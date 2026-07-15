@@ -1,0 +1,7 @@
+{
+  "_readme": "Source nodes for the Figma parity screenshots in this directory. Each family PR adds its PNGs and entries here. To refresh or add: export the node as PNG at 2x — via the Figma MCP download_assets tool with defaultScale: 2, or REST GET api.figma.com/v1/images/:fileKey?ids=<nodeId>&scale=2&format=png (FIGMA_TOKEN in .env.local) — and overwrite/add the file. Keep exports at 2x — parity stories render them at half their pixel width for retina crispness. Page node ids come from REST GET /v1/files/:fileKey?depth=1 (the Figma MCP page listing under-reports).",
+  "fileKey": "cjLIVfBJVLadAaigW1hjyG",
+  "fileName": "Common Sense",
+  "scale": 2,
+  "screenshots": {}
+}
