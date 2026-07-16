@@ -23,7 +23,7 @@ function Switch({
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none block rounded-full bg-background shadow-sm ring-0 transition-transform group-data-[size=default]/switch:size-5 group-data-[size=sm]/switch:size-4 data-checked:translate-x-[calc(100%+1px)] data-unchecked:translate-x-px dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-foreground"
+        className="pointer-events-none block rounded-full bg-background shadow-sm ring-0 transition-transform group-data-[size=default]/switch:size-5 group-data-[size=sm]/switch:size-4 data-checked:translate-x-[calc(100%+1px)] data-unchecked:translate-x-px rtl:data-checked:-translate-x-[calc(100%+1px)] rtl:data-unchecked:-translate-x-px dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-foreground"
       />
     </SwitchPrimitive.Root>
   );
