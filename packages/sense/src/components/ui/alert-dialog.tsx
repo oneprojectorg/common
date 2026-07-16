@@ -71,7 +71,7 @@ function AlertDialogHeader({
     <div
       data-slot="alert-dialog-header"
       className={cn(
-        'grid grid-rows-[auto_1fr] items-start gap-1.5 px-6 pt-6 pb-8 text-left has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4',
+        'grid grid-rows-[auto_1fr] items-start gap-1.5 px-6 pt-6 pb-8 text-start has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4',
         className,
       )}
       {...props}

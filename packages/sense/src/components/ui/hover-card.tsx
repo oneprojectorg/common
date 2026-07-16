@@ -16,7 +16,7 @@ function HoverCardTrigger({
     <PreviewCardPrimitive.Trigger
       data-slot="hover-card-trigger"
       className={cn(
-        'rounded-md text-sm font-strong text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50',
+        'rounded-md text-sm font-strong text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50',
         className,
       )}
       {...props}
