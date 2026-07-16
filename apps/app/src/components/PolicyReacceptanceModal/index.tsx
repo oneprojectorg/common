@@ -130,7 +130,7 @@ const PolicyReacceptanceMain = ({
         />
         <span
           id="policy-consent-label"
-          className="text-sm text-neutral-charcoal"
+          className="text-base text-neutral-charcoal"
         >
           {t.rich(
             'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
