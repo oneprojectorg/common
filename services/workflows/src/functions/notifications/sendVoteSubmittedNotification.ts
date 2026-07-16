@@ -6,7 +6,7 @@ import {
   profileUsers,
   profiles,
 } from '@op/db/schema';
-import { OPNodemailer, VoteSubmittedEmail } from '@op/emails';
+import { OPBatchSend, VoteSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
@@ -117,16 +117,22 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     // Step 3: Send notification email
     await step.run('send-email', async () => {
       try {
-        await OPNodemailer({
-          to: voterEmail,
-          subject: VoteSubmittedEmail.subject(voteData.processProfileName),
-          component: () =>
-            VoteSubmittedEmail({
-              processTitle: voteData.processProfileName,
-              decisionUrl,
-              nextSteps,
-            }),
-        });
+        const { errors } = await OPBatchSend([
+          {
+            to: voterEmail,
+            subject: VoteSubmittedEmail.subject(voteData.processProfileName),
+            component: () =>
+              VoteSubmittedEmail({
+                processTitle: voteData.processProfileName,
+                decisionUrl,
+                nextSteps,
+              }),
+          },
+        ]);
+
+        if (errors.length > 0) {
+          throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+        }
       } catch (error) {
         logger.error('Failed to send vote submitted notification', {
           error,

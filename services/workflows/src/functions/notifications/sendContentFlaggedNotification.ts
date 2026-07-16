@@ -86,17 +86,23 @@ export const sendContentFlaggedNotification = inngest.createFunction(
         return;
       }
 
-      const { OPNodemailer, ContentFlaggedEmail } = await import('@op/emails');
+      const { OPBatchSend, ContentFlaggedEmail } = await import('@op/emails');
 
-      await OPNodemailer({
-        to: recipient.email,
-        subject: `Your ${recipient.contentType} has been flagged`,
-        component: () =>
-          ContentFlaggedEmail({
-            recipientName: recipient.name ?? undefined,
-            contentType: recipient.contentType,
-          }),
-      });
+      const { errors } = await OPBatchSend([
+        {
+          to: recipient.email,
+          subject: `Your ${recipient.contentType} has been flagged`,
+          component: () =>
+            ContentFlaggedEmail({
+              recipientName: recipient.name ?? undefined,
+              contentType: recipient.contentType,
+            }),
+        },
+      ]);
+
+      if (errors.length > 0) {
+        throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+      }
     });
 
     return { notified: true };
