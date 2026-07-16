@@ -90,9 +90,11 @@ export const WithDropdown: Story = {
               <LuChevronDown className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="sense w-auto">
-              <DropdownMenuItem>Documentation</DropdownMenuItem>
-              <DropdownMenuItem>Themes</DropdownMenuItem>
-              <DropdownMenuItem>GitHub</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">
+                Documentation
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">Themes</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">GitHub</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </BreadcrumbItem>
