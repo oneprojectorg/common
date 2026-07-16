@@ -1,4 +1,5 @@
 import { Button } from '@op/sense/Button';
+import { Spinner } from '@op/sense/Spinner';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuChevronRight, LuMail } from 'react-icons/lu';
 
@@ -109,6 +110,25 @@ export const WithIcon: Story = {
       <Button variant="outline">
         Continue
         <LuChevronRight data-icon="inline-end" />
+      </Button>
+    </div>
+  ),
+};
+
+export const Loading: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <Button disabled>
+        <Spinner data-icon="inline-start" />
+        Loading
+      </Button>
+      <Button variant="outline" disabled>
+        <Spinner data-icon="inline-start" />
+        Loading
+      </Button>
+      <Button variant="destructive" size="sm" disabled>
+        <Spinner data-icon="inline-start" />
+        Loading
       </Button>
     </div>
   ),
