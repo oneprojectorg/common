@@ -6,8 +6,17 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
+import { Button } from '@op/sense/Button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@op/sense/Card';
 import { DirectionProvider } from '@op/sense/Direction';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@op/sense/InputOTP';
 import { Label } from '@op/sense/Label';
 import { Progress, ProgressLabel, ProgressValue } from '@op/sense/Progress';
 import { Slider } from '@op/sense/Slider';
@@ -121,19 +130,40 @@ export const Navigation: Story = {
   ),
 };
 
-// The one-time-password input keeps its rounded outer corners and single
-// 1px seams on the logical start/end in both directions.
-export const OneTimePassword: Story = {
+// Full composition: the header action slot sits at the inline end, text
+// aligns to the inline start, and the footer buttons mirror.
+export const WithCard: Story = {
   render: () => (
     <DirectionPair
-      render={() => (
-        <InputOTP maxLength={6} defaultValue="123456">
-          <InputOTPGroup>
-            {[0, 1, 2, 3, 4, 5].map((index) => (
-              <InputOTPSlot key={index} index={index} />
-            ))}
-          </InputOTPGroup>
-        </InputOTP>
+      render={(dir) => (
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle>
+              {dir === 'ltr' ? 'Community garden fund' : 'صندوق حديقة الحي'}
+            </CardTitle>
+            <CardDescription>
+              {dir === 'ltr'
+                ? 'Proposed by the Greenway circle'
+                : 'مقترح من دائرة غرينواي'}
+            </CardDescription>
+            <CardAction>
+              <Button variant="ghost" size="sm">
+                {dir === 'ltr' ? 'Follow' : 'متابعة'}
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            {dir === 'ltr'
+              ? 'Shared garden beds, a seed library, and weekend workshops for the whole neighborhood.'
+              : 'أحواض زراعة مشتركة ومكتبة بذور وورش عمل في عطلة نهاية الأسبوع لجميع سكان الحي.'}
+          </CardContent>
+          <CardFooter className="gap-2">
+            <Button size="sm">{dir === 'ltr' ? 'Vote' : 'صوّت'}</Button>
+            <Button variant="outline" size="sm">
+              {dir === 'ltr' ? 'Read more' : 'اقرأ المزيد'}
+            </Button>
+          </CardFooter>
+        </Card>
       )}
     />
   ),
