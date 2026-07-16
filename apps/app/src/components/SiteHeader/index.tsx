@@ -30,6 +30,7 @@ import {
   LuCircleHelp,
   LuLogOut,
   LuSearch,
+  LuX,
 } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
@@ -342,6 +343,7 @@ const AvatarMenuContent = ({
 };
 
 export const UserAvatarMenu = ({ className }: { className?: string }) => {
+  const t = useTranslations();
   const { user } = useRequiredUser();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -413,7 +415,17 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
-            <MenuList className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+            <div className="flex justify-end px-4 pt-3">
+              <button
+                type="button"
+                aria-label={t('Close')}
+                onClick={() => setIsDrawerOpen(false)}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+              >
+                <LuX className="size-4" />
+              </button>
+            </div>
+            <MenuList className="flex min-w-full flex-col border-t-0 p-4 pt-0 pb-8">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 setIsOrgDeletionOpen={setIsOrgDeletionOpen}
