@@ -53,11 +53,6 @@ export const getPost = async ({
           storageObject: true,
         },
       },
-      reactions: {
-        with: {
-          profile: true,
-        },
-      },
       ...(includeChildren && maxDepth > 0
         ? {
             childPosts: {
@@ -78,11 +73,6 @@ export const getPost = async ({
                 attachments: {
                   with: {
                     storageObject: true,
-                  },
-                },
-                reactions: {
-                  with: {
-                    profile: true,
                   },
                 },
               },

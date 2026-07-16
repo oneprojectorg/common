@@ -60,11 +60,6 @@ export const getOrganizationPosts = async (
                 storageObject: true,
               },
             },
-            reactions: {
-              with: {
-                profile: true,
-              },
-            },
             ...(includeChildren && maxDepth > 0
               ? {
                   childPosts: {
@@ -79,11 +74,6 @@ export const getOrganizationPosts = async (
                       attachments: {
                         with: {
                           storageObject: true,
-                        },
-                      },
-                      reactions: {
-                        with: {
-                          profile: true,
                         },
                       },
                     },

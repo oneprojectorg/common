@@ -1,3 +1,4 @@
+import { REACTION_PREVIEW_LIMIT, toggleReaction } from '@op/common';
 import { db, eq, inArray } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -154,6 +155,61 @@ describe.concurrent('organization posts', () => {
 
       const ids = result.items.map((item) => item.post.id);
       expect(ids).toContain(topLevel.id);
+    });
+
+    it('aggregates reaction counts, caps the reactor preview, and reports the caller reaction', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      // One reactor beyond the preview window so the cap is observable.
+      const memberCount = REACTION_PREVIEW_LIMIT + 1;
+      const { organization, organizationProfile, adminUser, memberUsers } =
+        await testData.createOrganization({
+          users: { admin: 1, member: memberCount },
+        });
+
+      const adminCaller = await callerFor(adminUser.email);
+      const post = await adminCaller.createPost({
+        id: organization.id,
+        content: 'Post that will collect a pile of reactions.',
+      });
+      registerPostCleanup(onTestFinished, [post.id]);
+
+      // Every member "likes" the post; the admin "loves" it. Counts must be
+      // exact even though the preview only hydrates a window of reactors.
+      for (const member of memberUsers) {
+        await toggleReaction({
+          user: { id: member.authUserId },
+          postId: post.id,
+          reactionType: 'like',
+        });
+      }
+      await toggleReaction({
+        user: { id: adminUser.authUserId },
+        postId: post.id,
+        reactionType: 'love',
+      });
+
+      const result = await adminCaller.listPosts({
+        slug: organizationProfile.slug,
+      });
+      const hydrated = result.items.find((item) => item.post.id === post.id);
+
+      expect(hydrated?.post.reactionCounts).toEqual({
+        like: memberCount,
+        love: 1,
+      });
+      // Preview is windowed even though the true count is higher.
+      expect(hydrated?.post.reactionUsers?.like?.length).toBe(
+        REACTION_PREVIEW_LIMIT,
+      );
+      const memberProfileIds = new Set(memberUsers.map((m) => m.profileId));
+      hydrated?.post.reactionUsers?.like?.forEach((user) => {
+        expect(memberProfileIds.has(user.id)).toBe(true);
+      });
+      // The caller's own reaction round-trips back.
+      expect(hydrated?.post.userReaction).toBe('love');
     });
   });
 });

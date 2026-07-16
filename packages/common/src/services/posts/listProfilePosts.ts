@@ -95,7 +95,6 @@ export const listProfilePosts = async ({
         with: {
           profile: { with: { avatarImage: true } },
           attachments: { with: { storageObject: true } },
-          reactions: { with: { profile: true } },
         },
       })
     : [];
