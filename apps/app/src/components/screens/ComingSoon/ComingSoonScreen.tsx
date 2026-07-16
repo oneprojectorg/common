@@ -7,6 +7,7 @@ import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';
+import { ReactNode } from 'react';
 import { LuArrowRight } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -31,21 +32,26 @@ export const ComingSoonScreen = () => {
         >
           <div className="pointer-events-none absolute inset-x-0 top-full h-30 bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
           <p>
-            {t(
-              "Columbus' first-ever Participatory Budgeting process is officially underway!",
+            {t.rich(
+              "Columbus' participatory budgeting is now open. <participate>Participate</participate>",
+              {
+                participate: (chunks: ReactNode) => (
+                  // Plain anchor, not the i18n Link: the vanity slug only
+                  // resolves via the afterFiles rewrite on a full-page
+                  // request. SPA/RSC navigation matches the (main)/[...rest]
+                  // catch-all instead and bounces anonymous visitors to
+                  // /login.
+                  <a
+                    href="/columbus"
+                    className="inline-flex items-center gap-1 align-bottom whitespace-nowrap text-primary-teal underline hover:no-underline"
+                  >
+                    {chunks}
+                    <LuArrowRight className="size-4" />
+                  </a>
+                ),
+              },
             )}
           </p>
-          {/* Plain anchor, not the i18n Link: the vanity slug only resolves
-              via the afterFiles rewrite on a full-page request. SPA/RSC
-              navigation matches the (main)/[...rest] catch-all instead and
-              bounces anonymous visitors to /login. */}
-          <a
-            href="/columbus"
-            className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline hover:no-underline"
-          >
-            {t('Access Our Voice, Our Choice')}
-            <LuArrowRight className="size-4" />
-          </a>
         </motion.div>
         <motion.header
           transition={{ duration: 1 }}
