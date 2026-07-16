@@ -25,26 +25,19 @@ export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
 
   return (
     <Tabs value={activeView}>
-      <TabsList>
+      {/* TODO: remove these overrides when we migrate to @op/sense */}
+      <TabsList className="!h-9">
         <TabsTrigger
           value="overview"
-          render={
-            <Link
-              className="hover:no-underline"
-              href={`/decisions/${decisionSlug}`}
-            />
-          }
+          className="font-normal hover:no-underline"
+          render={<Link href={`/decisions/${decisionSlug}`} />}
         >
           {t('Overview')}
         </TabsTrigger>
         <TabsTrigger
           value="current"
-          render={
-            <Link
-              className="hover:no-underline"
-              href={`/decisions/${decisionSlug}/current`}
-            />
-          }
+          className="font-normal hover:no-underline"
+          render={<Link href={`/decisions/${decisionSlug}/current`} />}
         >
           {t('Current Phase')}
         </TabsTrigger>
