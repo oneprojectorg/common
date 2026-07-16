@@ -7,6 +7,12 @@ import {
   InputGroupTextarea,
 } from '@op/sense/InputGroup';
 import { Label } from '@op/sense/Label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@op/sense/Tooltip';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as React from 'react';
 import { LuCheck, LuCopy, LuInfo, LuSearch, LuSend } from 'react-icons/lu';
@@ -34,7 +40,23 @@ export const Default: Story = {
         </InputGroupAddon>
         <InputGroupInput id="input-group-website" placeholder="example.com" />
         <InputGroupAddon align="inline-end">
-          <LuInfo />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <InputGroupButton
+                    size="icon-xs"
+                    aria-label="About website URLs"
+                  />
+                }
+              >
+                <LuInfo />
+              </TooltipTrigger>
+              <TooltipContent className="sense">
+                Your organization's public website address.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </InputGroupAddon>
       </InputGroup>
     </div>
