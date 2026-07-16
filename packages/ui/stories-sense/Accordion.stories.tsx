@@ -52,9 +52,15 @@ export const Default: Story = {
   ),
 };
 
-export const SingleOpen: Story = {
+// base-ui accordions are single-open by default; `multiple` lets several
+// panels stay expanded at once.
+export const MultipleOpen: Story = {
   render: () => (
-    <Accordion multiple={false} defaultValue={['item-2']} className="max-w-lg">
+    <Accordion
+      multiple
+      defaultValue={['item-1', 'item-2']}
+      className="max-w-lg"
+    >
       {items.map((item) => (
         <AccordionItem key={item.value} value={item.value}>
           <AccordionTrigger>{item.question}</AccordionTrigger>
