@@ -63,14 +63,38 @@ export const Variants: Story = {
 
 export const Sizes: Story = {
   render: () => (
-    <div className="flex flex-wrap items-center gap-4">
-      <Button size="xs">Extra small</Button>
-      <Button size="sm">Small</Button>
-      <Button size="default">Default</Button>
-      <Button size="lg">Large</Button>
-      <Button size="icon" aria-label="Mail">
-        <LuMail />
-      </Button>
+    <div className="flex flex-col gap-4">
+      {(
+        [
+          'default',
+          'outline',
+          'secondary',
+          'ghost',
+          'destructive',
+          'link',
+        ] as const
+      ).map((variant) => (
+        <div key={variant} className="flex flex-wrap items-center gap-4">
+          <Button variant={variant} size="xs">
+            Extra small
+          </Button>
+          <Button variant={variant} size="sm">
+            Small
+          </Button>
+          <Button variant={variant} size="default">
+            Default
+          </Button>
+          <Button variant={variant} size="lg">
+            Large
+          </Button>
+          <Button variant={variant} size="icon-sm" aria-label="Mail">
+            <LuMail />
+          </Button>
+          <Button variant={variant} size="icon" aria-label="Mail">
+            <LuMail />
+          </Button>
+        </div>
+      ))}
     </div>
   ),
 };

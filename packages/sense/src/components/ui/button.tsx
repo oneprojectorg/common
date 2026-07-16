@@ -33,6 +33,16 @@ const buttonVariants = cva(
         'icon-lg': 'size-12',
       },
     },
+    compoundVariants: [
+      // Figma: destructive at small sizes is the washed "secondary" look —
+      // red-50 fill with destructive text — not the solid fill.
+      {
+        variant: 'destructive',
+        size: ['sm', 'xs', 'icon-sm', 'icon-xs'],
+        class:
+          'bg-destructive-muted text-destructive hover:bg-[color-mix(in_oklch,var(--destructive-muted),var(--foreground)_10%)] active:bg-[color-mix(in_oklch,var(--destructive-muted),var(--foreground)_15%)]',
+      },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
