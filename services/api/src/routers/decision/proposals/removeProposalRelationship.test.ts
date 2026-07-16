@@ -5,8 +5,9 @@ import {
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
-// See addRelationship.test.ts: confirmed tier admits out-of-network claimed
-// users; the service layer gates proposal targets on the parent decision.
+// See addProposalRelationship.test.ts: confirmed tier admits out-of-network
+// claimed users; the service layer gates proposal targets on the parent
+// decision.
 describeAccessTierGating('decision.removeProposalRelationship', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();

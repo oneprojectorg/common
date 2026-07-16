@@ -1,6 +1,6 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { acceptProposalInviteRouter } from './acceptProposalInvite';
-import { addProposalRelationshipRouter } from './addRelationship';
+import { addProposalRelationshipRouter } from './addProposalRelationship';
 import { createProposalRouter } from './create';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
@@ -11,7 +11,7 @@ import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAg
 import { listProposalsRouter } from './list';
 import { listProposalLocationsRouter } from './listProposalLocations';
 import { listWithReviewAggregatesRouter } from './listWithReviewAggregates';
-import { removeProposalRelationshipRouter } from './removeRelationship';
+import { removeProposalRelationshipRouter } from './removeProposalRelationship';
 import { submitProposalRouter } from './submit';
 import { updateProposalRouter } from './update';
 
