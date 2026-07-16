@@ -214,13 +214,18 @@
 /* Font smoothing — the Common Sense designs assume macOS-style grayscale
  * antialiasing. Both properties inherit, so this covers the whole `.sense`
  * subtree (portaled popups excepted — see the portal caveat above). */
-.sense {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* shared-styles.css paints body text neutral-charcoal (@op/ui); sense
-   * subtrees re-baseline to the sense foreground token so components without
-   * an explicit text class don't inherit the @op/ui color. */
-  color: var(--foreground);
+/* @layer base so Tailwind utilities still win: an element carrying both
+ * `.sense` and its own utility (e.g. a portaled tooltip with
+ * `text-background`) must keep the utility — unlayered rules would beat it. */
+@layer base {
+  .sense {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* shared-styles.css paints body text neutral-charcoal (@op/ui); sense
+     * subtrees re-baseline to the sense foreground token so components
+     * without an explicit text class don't inherit the @op/ui color. */
+    color: var(--foreground);
+  }
 }
 
 /* Standard 16px-rooted Tailwind text scale that shadcn primitives assume.
