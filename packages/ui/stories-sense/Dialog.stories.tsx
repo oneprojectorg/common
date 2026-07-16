@@ -41,7 +41,7 @@ export const Default: Story = {
             Make changes to your profile here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        <FieldGroup className="px-6 py-4">
+        <FieldGroup className="px-6 pt-8 pb-10">
           <Field>
             <FieldLabel htmlFor="dialog-name">Name</FieldLabel>
             <Input id="dialog-name" defaultValue="Frida Kahlo" />
