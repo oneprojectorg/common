@@ -78,8 +78,9 @@ test.describe('Policy re-acceptance modal', () => {
       dialog.getByRole('heading', { name: "We've updated our policies." }),
     ).toBeVisible();
 
-    // Accept and continue.
-    await dialog.getByRole('checkbox').check();
+    // Accept and continue. Force past the visually-hidden React Aria checkbox
+    // input (Playwright's actionability check never passes on it otherwise).
+    await dialog.getByRole('checkbox').check({ force: true });
     await expect(agree).toBeEnabled();
     await agree.click();
 
