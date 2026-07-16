@@ -31,10 +31,11 @@ export const ProposalsListHeader = ({
 
 // `count` is the number matching the active filter; `total` the full proposal
 // pool. A narrowing filter reads "6 of 328 proposals" — the count in title
-// styling, the muted "of {total} proposals" carrying the pool size. When
-// nothing is filtered out (count === total) the redundant "of N" is dropped and
-// it reads "328 proposals". Shared with ManualSelectionToolbar so both header
-// sites stay in lockstep.
+// styling, and the pool size in the "of {total} proposals" remainder styled the
+// same so both figures read as headline numbers; the surrounding words stay
+// muted. When nothing is filtered out (count === total) the redundant "of N" is
+// dropped and it reads "328 proposals". Shared with ManualSelectionToolbar so
+// both header sites stay in lockstep.
 export const ProposalCountHeader = ({
   count,
   total,
@@ -43,9 +44,6 @@ export const ProposalCountHeader = ({
   total: number;
 }) => {
   const t = useTranslations();
-  // Both layouts share the shape "<title-styled number> <muted remainder>". When
-  // nothing is filtered out the remainder is just the word "proposals"; a
-  // narrowing filter makes it "of {total} proposals".
   const unfiltered = count >= total;
   return (
     <span className="flex items-baseline gap-1">
@@ -55,9 +53,17 @@ export const ProposalCountHeader = ({
       <span className="text-base text-neutral-gray4">
         {unfiltered
           ? t('{total, plural, one {proposal} other {proposals}}', { total })
-          : t('of {total, plural, one {# proposal} other {# proposals}}', {
-              total,
-            })}
+          : t.rich(
+              'of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}',
+              {
+                total,
+                highlight: (chunks: React.ReactNode) => (
+                  <span className="font-serif text-title-base text-neutral-black">
+                    {chunks}
+                  </span>
+                ),
+              },
+            )}
       </span>
     </span>
   );

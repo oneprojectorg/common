@@ -665,7 +665,7 @@
   "No limit": "No limit",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# vote} other {# votes}}",
   "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {proposal} other {proposals}}",
-  "of {total, plural, one {# proposal} other {# proposals}}": "of {total, plural, one {# proposal} other {# proposals}}",
+  "of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}": "of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}",
   "Template Editor": "Template Editor",
   "Criteria": "Criteria",
   "Settings": "Settings",

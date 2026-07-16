@@ -690,7 +690,7 @@
   "No limit": "কোনো সীমা নেই",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# ভোট} other {# ভোট}}",
   "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {প্রস্তাব} other {প্রস্তাব}}",
-  "of {total, plural, one {# proposal} other {# proposals}}": "{total, plural, one {# প্রস্তাবের} other {# প্রস্তাবের}} মধ্যে",
+  "of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}": "{total, plural, one {<highlight>#</highlight> প্রস্তাবের} other {<highlight>#</highlight> প্রস্তাবের}} মধ্যে",
   "Template Editor": "টেমপ্লেট এডিটর",
   "Criteria": "মানদণ্ড",
   "Settings": "সেটিংস",
