@@ -62,22 +62,21 @@ export const Default: Story = {
   ),
 };
 
-// The panel is a grid with self-padding header/footer sections; capping its
-// height makes the body row (min-h-0) the scroll container.
+// Upstream pattern: cap and scroll the body div; header and footer stay put.
 export const ScrollingBody: Story = {
   render: () => (
     <Dialog>
       <DialogTrigger render={<Button variant="outline" />}>
         View community agreement
       </DialogTrigger>
-      <DialogContent className="sense max-h-[min(32rem,80vh)] grid-rows-[auto_minmax(0,1fr)_auto]">
+      <DialogContent className="sense">
         <DialogHeader>
           <DialogTitle>Community agreement</DialogTitle>
           <DialogDescription>
             Please review before joining the decision process.
           </DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 overflow-y-auto px-6 py-4">
+        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
           <div className="flex flex-col gap-4 text-sm">
             {[
               'Participation is open to every confirmed member of the network. Each member holds an equal vote regardless of tenure or role.',
