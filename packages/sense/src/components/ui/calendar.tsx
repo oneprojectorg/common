@@ -15,7 +15,9 @@ import { Button, buttonVariants } from './button';
 function Calendar({
   className,
   classNames,
-  showOutsideDays = true,
+  // With multiple months, outside days duplicate dates across the adjacent
+  // grids (and both copies pick up selection styling), so they default off.
+  showOutsideDays,
   captionLayout = 'label',
   buttonVariant = 'ghost',
   locale,
@@ -29,7 +31,7 @@ function Calendar({
 
   return (
     <DayPicker
-      showOutsideDays={showOutsideDays}
+      showOutsideDays={showOutsideDays ?? (props.numberOfMonths ?? 1) === 1}
       className={cn(
         'group/calendar bg-background p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
