@@ -144,3 +144,28 @@ const DateTimeDemo = () => {
 export const WithTimePicker: Story = {
   render: () => <DateTimeDemo />,
 };
+
+// Month and year dropdowns in the caption (upstream "Month and Year
+// Selector" example) — startMonth/endMonth bound the year list.
+const MonthYearSelectorDemo = () => {
+  const [selected, setSelected] = useState<Date | undefined>(
+    new Date(2026, 5, 15),
+  );
+
+  return (
+    <Calendar
+      mode="single"
+      captionLayout="dropdown"
+      defaultMonth={new Date(2026, 5, 1)}
+      startMonth={new Date(2024, 0)}
+      endMonth={new Date(2028, 11)}
+      selected={selected}
+      onSelect={setSelected}
+      className="rounded border"
+    />
+  );
+};
+
+export const MonthYearSelector: Story = {
+  render: () => <MonthYearSelectorDemo />,
+};
