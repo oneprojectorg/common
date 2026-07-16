@@ -259,9 +259,18 @@ export const LogoLoop = React.memo<LogoLoopProps>(
 
     const updateDimensions = useCallback(() => {
       const containerWidth = containerRef.current?.clientWidth ?? 0;
-      const sequenceRect = seqRef.current?.getBoundingClientRect?.();
-      const sequenceWidth = sequenceRect?.width ?? 0;
-      const sequenceHeight = sequenceRect?.height ?? 0;
+      // getComputedStyle, not getBoundingClientRect: the rect is scaled by
+      // ancestor CSS transforms (e.g. a scale-in entrance animation), which
+      // bakes a too-short wrap length in and makes every loop visibly snap.
+      const sequenceStyles = seqRef.current
+        ? getComputedStyle(seqRef.current)
+        : null;
+      const sequenceWidth = sequenceStyles
+        ? parseFloat(sequenceStyles.width) || 0
+        : 0;
+      const sequenceHeight = sequenceStyles
+        ? parseFloat(sequenceStyles.height) || 0
+        : 0;
       if (isVertical) {
         const parentHeight =
           containerRef.current?.parentElement?.clientHeight ?? 0;

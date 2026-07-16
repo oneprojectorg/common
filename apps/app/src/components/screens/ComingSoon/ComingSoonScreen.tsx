@@ -7,8 +7,9 @@ import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';
+import { LuArrowRight } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import {
   AnimatedGradientBackground,
@@ -20,23 +21,48 @@ export const ComingSoonScreen = () => {
   const t = useTranslations();
   return (
     <>
-      <div className="pointer-events-none absolute top-0 z-10 h-30 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
       <div className="pointer-events-none absolute bottom-0 z-10 h-30 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
-      <motion.header
-        transition={{ duration: 1 }}
-        animate={{ opacity: 1 }}
-        initial={{ opacity: 0 }}
-        className="sticky top-0 z-20 flex items-center justify-between p-4 md:px-8 md:py-6"
-      >
-        <img src="/logo-common.svg" alt="Common" className="h-4" />
-        <ButtonLink
-          href="/login"
-          color="secondary"
-          className="rounded-lg text-black shadow-md"
+      <div className="sticky top-0 z-20">
+        <motion.div
+          initial={{ y: '-100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
+          className="relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-primary-tealWhite px-6 py-2.5 text-center text-neutral-charcoal"
         >
-          {t('Log in')}
-        </ButtonLink>
-      </motion.header>
+          <div className="pointer-events-none absolute inset-x-0 top-full h-30 bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
+          <p>
+            {t(
+              "Columbus' first-ever Participatory Budgeting process is officially underway!",
+            )}
+          </p>
+          {/* Plain anchor, not the i18n Link: the vanity slug only resolves
+              via the afterFiles rewrite on a full-page request. SPA/RSC
+              navigation matches the (main)/[...rest] catch-all instead and
+              bounces anonymous visitors to /login. */}
+          <a
+            href="/columbus"
+            className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline hover:no-underline"
+          >
+            {t('Access Our Voice, Our Choice')}
+            <LuArrowRight className="size-4" />
+          </a>
+        </motion.div>
+        <motion.header
+          transition={{ duration: 1 }}
+          animate={{ opacity: 1 }}
+          initial={{ opacity: 0 }}
+          className="relative flex items-center justify-between p-4 md:px-8 md:py-6"
+        >
+          <img src="/logo-common.svg" alt="Common" className="h-4" />
+          <ButtonLink
+            href="/login"
+            color="secondary"
+            className="rounded-lg text-black shadow-md"
+          >
+            {t('Log in')}
+          </ButtonLink>
+        </motion.header>
+      </div>
 
       <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 pb-[20vh] text-center sm:my-24 sm:gap-32">
         <section className="flex flex-col items-center gap-12 sm:gap-24">
@@ -71,8 +97,8 @@ export const ComingSoonScreen = () => {
               <Image
                 src="/coming-soon-mockup.png"
                 alt="Screenshot of the Common platform"
-                width={1568}
-                height={1041}
+                width={1296}
+                height={720}
                 className="relative mx-auto w-7xl max-w-[85vw] shadow sm:max-w-[70vw]"
                 priority
               />
@@ -134,6 +160,15 @@ export const ComingSoonScreen = () => {
               <p>{t('Sign up now to hold your spot.')}</p>
             </div>
             <WaitlistSignup />
+            <p>
+              {t('Already have an account?')}{' '}
+              <Link
+                className="text-primary underline hover:no-underline"
+                href="/login"
+              >
+                {t('Log in')}
+              </Link>
+            </p>
           </section>
         </FadeInWrapper>
       </main>
@@ -176,7 +211,7 @@ const FadeInWrapper = ({ children }: { children: React.ReactNode }) => {
       variants={fadeInVariants}
       initial="offscreen"
       whileInView="onscreen"
-      viewport={{ amount: 0.4 }}
+      viewport={{ amount: 0.4, once: true }}
     >
       {children}
     </motion.div>
