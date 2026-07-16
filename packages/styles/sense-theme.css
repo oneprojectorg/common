@@ -183,6 +183,16 @@
  * consistent, either add `.sense` to `<body>` at the layout root, or pass
  * a sense-scoped element via base-ui's Portal `container` prop. */
 
+/* Scrollbar-hiding utility that upstream shadcn defines in its globals.css;
+ * command, combobox, and sidebar reference it. */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Shadow + blur — the Common Sense shadow collection equals Tailwind's
  * defaults, but shared-styles.css overrides `--shadow`/`--shadow-md` with the
  * @op/ui glow style and `--blur-sm` with 1px. Restore the defaults for
