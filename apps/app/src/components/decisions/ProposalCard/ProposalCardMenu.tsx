@@ -9,7 +9,7 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuList, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
@@ -304,9 +304,9 @@ export function ProposalCardMenu({
             className="m-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
           >
             <ModalBody className="pb-safe p-0">
-              <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+              <MenuList className="flex min-w-full flex-col border-0 p-0 shadow-none">
                 {renderMenuItems(true)}
-              </Menu>
+              </MenuList>
             </ModalBody>
           </Modal>
         </>

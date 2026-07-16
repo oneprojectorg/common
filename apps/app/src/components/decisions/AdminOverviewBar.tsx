@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem, MenuList } from '@op/ui/Menu';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
@@ -81,7 +81,7 @@ export function AdminOverviewBar({
         className="md:hidden"
       >
         <SheetBody>
-          <Menu
+          <MenuList
             aria-label={t('Admin options')}
             className="flex min-w-full flex-col border-0 p-0 shadow-none"
           >
@@ -102,7 +102,7 @@ export function AdminOverviewBar({
             >
               {t('Process settings')}
             </MenuItem>
-          </Menu>
+          </MenuList>
         </SheetBody>
       </Sheet>
 
