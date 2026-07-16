@@ -1,7 +1,7 @@
 import type { CommonUser } from '@op/api/encoders';
 import { describe, expect, it } from 'vitest';
 
-import { shouldReacceptPolicies } from './policyReacceptance';
+import { shouldReacceptPolicies } from './eligibility';
 
 const makeUser = (overrides: Partial<CommonUser>): CommonUser =>
   ({

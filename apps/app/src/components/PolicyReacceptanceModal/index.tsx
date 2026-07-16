@@ -1,12 +1,12 @@
 'use client';
 
 import { useMaybeUser } from '@/utils/UserProvider';
-import { shouldReacceptPolicies } from '@/utils/policyReacceptance';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Header1 } from '@op/ui/Header';
 import { Modal, ModalBody } from '@op/ui/Modal';
+import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -16,6 +16,8 @@ import { useTranslations } from '@/lib/i18n';
 import { CommunityCommitmentsContent } from '@/components/CommunityCommitmentsContent';
 import { PrivacyPolicyContent } from '@/components/PrivacyPolicyContent';
 import { ToSContent } from '@/components/ToSContent';
+
+import { shouldReacceptPolicies } from './eligibility';
 
 type PolicyDocument = 'terms' | 'privacy' | 'conduct';
 
@@ -65,12 +67,7 @@ const PolicyReacceptanceModalContent = () => {
   };
 
   return (
-    <Modal
-      isOpen
-      isDismissable={false}
-      isKeyboardDismissDisabled
-      className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[80vh] sm:w-[34rem] sm:max-w-[34rem]"
-    >
+    <Modal isOpen isDismissable={false} isKeyboardDismissDisabled>
       {activeDocument ? (
         <PolicyDocumentView
           document={activeDocument}
@@ -113,7 +110,7 @@ const PolicyReacceptanceMain = ({
         </p>
       </div>
 
-      <section className="flex flex-col gap-2 rounded-xl border border-neutral-gray1 bg-neutral-offWhite p-4">
+      <Surface variant="filled" className="flex flex-col gap-2 rounded-xl p-4">
         <span className="font-serif text-title-sm text-neutral-charcoal">
           {t("What's changed")}
         </span>
@@ -122,43 +119,50 @@ const PolicyReacceptanceMain = ({
             'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
           )}
         </p>
-      </section>
+      </Surface>
 
-      <div className="flex flex-col gap-4">
-        <Checkbox size="small" isSelected={agreed} onChange={onAgreedChange}>
-          <span className="text-sm">
-            {t.rich(
-              'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
-              {
-                terms: (chunks: ReactNode) => (
-                  <PolicyLink onOpen={() => onOpenDocument('terms')}>
-                    {chunks}
-                  </PolicyLink>
-                ),
-                privacy: (chunks: ReactNode) => (
-                  <PolicyLink onOpen={() => onOpenDocument('privacy')}>
-                    {chunks}
-                  </PolicyLink>
-                ),
-                conduct: (chunks: ReactNode) => (
-                  <PolicyLink onOpen={() => onOpenDocument('conduct')}>
-                    {chunks}
-                  </PolicyLink>
-                ),
-              },
-            )}
-          </span>
-        </Checkbox>
-
-        <Button
-          className="w-full"
-          isDisabled={!agreed}
-          isLoading={isSubmitting}
-          onPress={onAgree}
+      <div className="flex items-start gap-2">
+        <Checkbox
+          size="small"
+          aria-labelledby="policy-consent-label"
+          isSelected={agreed}
+          onChange={onAgreedChange}
+        />
+        <span
+          id="policy-consent-label"
+          className="text-sm text-neutral-charcoal"
         >
-          {t('Agree and continue')}
-        </Button>
+          {t.rich(
+            'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
+            {
+              terms: (chunks: ReactNode) => (
+                <PolicyLink onOpen={() => onOpenDocument('terms')}>
+                  {chunks}
+                </PolicyLink>
+              ),
+              privacy: (chunks: ReactNode) => (
+                <PolicyLink onOpen={() => onOpenDocument('privacy')}>
+                  {chunks}
+                </PolicyLink>
+              ),
+              conduct: (chunks: ReactNode) => (
+                <PolicyLink onOpen={() => onOpenDocument('conduct')}>
+                  {chunks}
+                </PolicyLink>
+              ),
+            },
+          )}
+        </span>
       </div>
+
+      <Button
+        className="w-full"
+        isDisabled={!agreed}
+        isLoading={isSubmitting}
+        onPress={onAgree}
+      >
+        {t('Agree and continue')}
+      </Button>
     </ModalBody>
   );
 };
@@ -187,14 +191,10 @@ const PolicyDocumentView = ({
   return (
     <>
       <div className="sticky top-0 z-30 flex min-h-16 items-center border-b bg-white px-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-neutral-charcoal outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal"
-        >
-          <LuArrowLeft className="size-5" aria-hidden />
+        <Button variant="link" size="inline" className="gap-1" onPress={onBack}>
+          <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
           {t('Back')}
-        </button>
+        </Button>
         <span className="pointer-events-none absolute inset-x-0 text-center font-serif text-title-sm">
           {documentTitle[document]}
         </span>
@@ -206,9 +206,8 @@ const PolicyDocumentView = ({
   );
 };
 
-// Opens a policy document inside the modal without toggling the consent checkbox
-// it sits inside (stop the press from reaching the surrounding React Aria
-// Checkbox).
+// Opens a policy document inside the modal. Rendered next to (not inside) the
+// consent Checkbox, so pressing a link never toggles it.
 const PolicyLink = ({
   onOpen,
   children,
@@ -216,15 +215,7 @@ const PolicyLink = ({
   onOpen: () => void;
   children: ReactNode;
 }) => (
-  <button
-    type="button"
-    className="cursor-pointer text-primary-teal underline"
-    onClick={(e) => {
-      e.stopPropagation();
-      onOpen();
-    }}
-    onPointerDown={(e) => e.stopPropagation()}
-  >
+  <Button variant="link" size="inline" onPress={onOpen}>
     {children}
-  </button>
+  </Button>
 );
