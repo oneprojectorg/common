@@ -3,13 +3,15 @@ import { describe, expect, it } from 'vitest';
 
 import { shouldReacceptPolicies } from './eligibility';
 
+const AFTER_CUTOFF = '2026-08-01T00:00:00.000Z';
+
 const makeUser = (overrides: Partial<CommonUser>): CommonUser =>
   ({
     id: 'u1',
     authUserId: 'auth1',
     isAnonymous: false,
-    tosAcceptedOn: '2026-08-01T00:00:00.000Z',
-    privacyAcceptedOn: '2026-08-01T00:00:00.000Z',
+    tosAcceptedOn: AFTER_CUTOFF,
+    privacyAcceptedOn: AFTER_CUTOFF,
     ...overrides,
   }) as CommonUser;
 
@@ -19,7 +21,7 @@ describe('shouldReacceptPolicies', () => {
     expect(shouldReacceptPolicies(null)).toBe(false);
   });
 
-  it('excludes anonymous sign-ins even when acceptance dates are missing', () => {
+  it('excludes anonymous sign-ins even with stale acceptance', () => {
     expect(
       shouldReacceptPolicies(
         makeUser({
@@ -31,7 +33,7 @@ describe('shouldReacceptPolicies', () => {
     ).toBe(false);
   });
 
-  it('includes users who have not accepted the current policies', () => {
+  it('includes users who have never accepted (null)', () => {
     expect(
       shouldReacceptPolicies(
         makeUser({ tosAcceptedOn: null, privacyAcceptedOn: null }),
@@ -39,33 +41,42 @@ describe('shouldReacceptPolicies', () => {
     ).toBe(true);
   });
 
-  it('includes users who accepted only one of the two', () => {
+  it('includes users who accepted on or before July 12, 2026', () => {
     expect(
       shouldReacceptPolicies(
         makeUser({
-          tosAcceptedOn: '2026-08-01T00:00:00.000Z',
-          privacyAcceptedOn: null,
-        }),
-      ),
-    ).toBe(true);
-    expect(
-      shouldReacceptPolicies(
-        makeUser({
-          tosAcceptedOn: null,
-          privacyAcceptedOn: '2026-08-01T00:00:00.000Z',
+          tosAcceptedOn: '2026-07-12T23:00:00.000Z',
+          privacyAcceptedOn: '2026-07-12T23:00:00.000Z',
         }),
       ),
     ).toBe(true);
   });
 
-  it('excludes users who have accepted both', () => {
+  it('includes users where only one of the two is stale', () => {
+    expect(
+      shouldReacceptPolicies(
+        makeUser({ tosAcceptedOn: AFTER_CUTOFF, privacyAcceptedOn: null }),
+      ),
+    ).toBe(true);
     expect(
       shouldReacceptPolicies(
         makeUser({
-          tosAcceptedOn: '2026-08-01T00:00:00.000Z',
-          privacyAcceptedOn: '2026-08-01T00:00:00.000Z',
+          tosAcceptedOn: '2026-05-01T00:00:00.000Z',
+          privacyAcceptedOn: AFTER_CUTOFF,
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('excludes users who accepted after the cutoff', () => {
+    expect(
+      shouldReacceptPolicies(
+        makeUser({
+          tosAcceptedOn: '2026-07-13T00:00:00.000Z',
+          privacyAcceptedOn: '2026-07-13T00:00:00.000Z',
         }),
       ),
     ).toBe(false);
+    expect(shouldReacceptPolicies(makeUser({}))).toBe(false);
   });
 });
