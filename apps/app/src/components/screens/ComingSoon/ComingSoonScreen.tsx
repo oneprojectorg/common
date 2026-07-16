@@ -35,13 +35,17 @@ export const ComingSoonScreen = () => {
               "Columbus' first-ever Participatory Budgeting process is officially underway!",
             )}
           </p>
-          <Link
+          {/* Plain anchor, not the i18n Link: the vanity slug only resolves
+              via the afterFiles rewrite on a full-page request. SPA/RSC
+              navigation matches the (main)/[...rest] catch-all instead and
+              bounces anonymous visitors to /login. */}
+          <a
             href="/columbus"
             className="flex items-center gap-1 whitespace-nowrap text-primary-teal underline hover:no-underline"
           >
             {t('Access Our Voice, Our Choice')}
             <LuArrowRight className="size-4" />
-          </Link>
+          </a>
         </motion.div>
         <motion.header
           transition={{ duration: 1 }}
