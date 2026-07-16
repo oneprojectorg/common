@@ -147,7 +147,7 @@ function ComboboxItem({
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        "relative flex w-full cursor-default items-center gap-2 rounded-md py-2 pr-8 pl-3 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-muted data-highlighted:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex w-full cursor-default items-center gap-2 rounded-md py-2 ps-3 pe-8 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-muted data-highlighted:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -155,7 +155,7 @@ function ComboboxItem({
       {children}
       <ComboboxPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
+          <span className="pointer-events-none absolute end-2 flex size-4 items-center justify-center" />
         }
       >
         <LuCheck className="pointer-events-none" />
@@ -250,7 +250,7 @@ function ComboboxChip({
       // base-ui's ChipRemove is focusableWhenDisabled, so it exposes
       // aria-disabled rather than a native disabled attribute.
       className={cn(
-        'flex h-8 w-fit items-center justify-center gap-1 rounded-sm bg-accent px-3 text-sm font-strong whitespace-nowrap text-accent-foreground has-aria-disabled:cursor-not-allowed has-aria-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0',
+        'flex h-8 w-fit items-center justify-center gap-1 rounded-sm bg-accent px-3 text-sm font-strong whitespace-nowrap text-accent-foreground has-aria-disabled:cursor-not-allowed has-aria-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pe-0',
         className,
       )}
       {...props}
