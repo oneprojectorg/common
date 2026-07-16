@@ -33,8 +33,8 @@ export default meta;
 type Story = StoryObj<typeof Alert>;
 
 export const Default: Story = {
-  render: () => (
-    <Alert className="max-w-xl">
+  render: (args) => (
+    <Alert {...args} className="max-w-xl">
       <LuCircleCheck />
       <AlertTitle>Payment received</AlertTitle>
       <AlertDescription>

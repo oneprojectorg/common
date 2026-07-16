@@ -33,11 +33,9 @@ export const WithLabelAndValue: Story = {
 export const Values: Story = {
   render: () => (
     <div className="flex w-80 flex-col gap-6">
-      <Progress value={0} />
-      <Progress value={25} />
-      <Progress value={50} />
-      <Progress value={75} />
-      <Progress value={100} />
+      {[0, 25, 50, 75, 100].map((value) => (
+        <Progress key={value} value={value} />
+      ))}
     </div>
   ),
 };

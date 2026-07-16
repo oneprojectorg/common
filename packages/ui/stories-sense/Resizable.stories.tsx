@@ -23,11 +23,11 @@ export const Horizontal: Story = {
     <div className="h-60 w-full max-w-lg">
       <ResizablePanelGroup className="rounded-lg border">
         <ResizablePanel defaultSize={50}>
-          <div className="flex h-full items-center justify-center">One</div>
+          <PanelBody>One</PanelBody>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={50}>
-          <div className="flex h-full items-center justify-center">Two</div>
+          <PanelBody>Two</PanelBody>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -39,11 +39,11 @@ export const Vertical: Story = {
     <div className="h-80 w-full max-w-lg">
       <ResizablePanelGroup orientation="vertical" className="rounded-lg border">
         <ResizablePanel defaultSize={30}>
-          <div className="flex h-full items-center justify-center">Header</div>
+          <PanelBody>Header</PanelBody>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={70}>
-          <div className="flex h-full items-center justify-center">Content</div>
+          <PanelBody>Content</PanelBody>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -55,11 +55,11 @@ export const WithHandle: Story = {
     <div className="h-60 w-full max-w-lg">
       <ResizablePanelGroup className="rounded-lg border">
         <ResizablePanel defaultSize={25}>
-          <div className="flex h-full items-center justify-center">Sidebar</div>
+          <PanelBody>Sidebar</PanelBody>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={75}>
-          <div className="flex h-full items-center justify-center">Content</div>
+          <PanelBody>Content</PanelBody>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -71,17 +71,23 @@ export const ThreePanels: Story = {
     <div className="h-60 w-full max-w-lg">
       <ResizablePanelGroup className="rounded-lg border">
         <ResizablePanel defaultSize={25}>
-          <div className="flex h-full items-center justify-center">One</div>
+          <PanelBody>One</PanelBody>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={50}>
-          <div className="flex h-full items-center justify-center">Two</div>
+          <PanelBody>Two</PanelBody>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={25}>
-          <div className="flex h-full items-center justify-center">Three</div>
+          <PanelBody>Three</PanelBody>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   ),
 };
+
+function PanelBody({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-full items-center justify-center">{children}</div>
+  );
+}

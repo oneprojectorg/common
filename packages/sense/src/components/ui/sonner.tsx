@@ -10,7 +10,9 @@ import {
 } from 'react-icons/lu';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
-const Toaster = ({ ...props }: ToasterProps) => {
+import { cn } from '../../lib/utils';
+
+const Toaster = ({ className, ...props }: ToasterProps) => {
   // Default light, not 'system': sense has no dark spec, and without a
   // next-themes provider 'system' lets the OS put sonner in dark mode.
   const { theme = 'light' } = useTheme();
@@ -18,7 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      className="toaster group"
+      className={cn('toaster group', className)}
       icons={{
         success: <LuCircleCheck className="size-4" />,
         info: <LuInfo className="size-4" />,
@@ -36,14 +38,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         // Sonner ships its own unlayered stylesheet, which beats Tailwind's
-        // layered utilities — the `!` modifiers below are required on every
-        // property sonner itself sets (toast border; button size/colors,
-        // which sonner renders as small inverted pills by default).
+        // layered utilities — any property sonner itself sets needs a `!`
+        // modifier to land (border/title/description colors and weights;
+        // button size/colors, which sonner renders as small inverted pills
+        // by default). Sonner's own gap/padding/radius/shadow already match
+        // the sense look, so those are left to its stylesheet.
         classNames: {
-          toast:
-            'group/toast gap-2 rounded-lg border border-border! p-4 shadow-[0_4px_12px_-1px_rgb(0_0_0_/_0.10)]',
-          title: 'text-base font-strong',
-          description: 'text-sm text-muted-foreground',
+          toast: 'group/toast border-border!',
+          title: 'text-base font-strong!',
+          description: 'text-sm text-muted-foreground!',
           actionButton:
             'h-8! rounded-md! bg-primary! px-2.5! text-sm! font-strong text-primary-foreground!',
           cancelButton:
@@ -55,4 +58,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   );
 };
 
+// Re-exported so consumers (and the sense stories) can fire toasts without a
+// direct dependency on the sonner package.
+export { toast } from 'sonner';
 export { Toaster };

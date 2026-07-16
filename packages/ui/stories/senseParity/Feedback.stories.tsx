@@ -7,11 +7,10 @@ import {
 import { Button } from '@op/sense/Button';
 import { Progress } from '@op/sense/Progress';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Toaster } from '@op/sense/Sonner';
+import { Toaster, toast } from '@op/sense/Sonner';
 import { Spinner } from '@op/sense/Spinner';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuCircleAlert } from 'react-icons/lu';
-import { toast } from 'sonner';
 
 import figmaAlert from '../assets/figma/alert.png';
 import figmaProgress from '../assets/figma/progress.png';
@@ -51,9 +50,10 @@ export const Feedback: Story = {
         </Alert>
       </ParityRow>
 
-      {/* Sonner renders toasts in a portal, so there is no static live
-          rendering to place next to the mock. Reviewers: click the button
-          and compare the toast that appears with the Figma export. */}
+      {/* Toasts only appear on demand (the toaster is fixed-position, rendered
+          inline), so there is no static live rendering to place next to the
+          mock. Reviewers: click the button and compare the toast that
+          appears with the Figma export. */}
       <ParityRow label="Sonner" img={figmaSonner} imgWidth={358}>
         <Button
           variant="outline"
@@ -67,7 +67,7 @@ export const Feedback: Story = {
         >
           Show toast
         </Button>
-        <Toaster className="sense" />
+        <Toaster />
       </ParityRow>
 
       <ParityRow label="Skeleton" img={figmaSkeleton} imgWidth={206}>

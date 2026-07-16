@@ -1,7 +1,6 @@
 import { Button } from '@op/sense/Button';
-import { Toaster } from '@op/sense/Sonner';
+import { Toaster, toast } from '@op/sense/Sonner';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { toast } from 'sonner';
 
 import { withSense } from './sense';
 
@@ -16,8 +15,8 @@ export default meta;
 
 type Story = StoryObj<typeof Toaster>;
 
-// Toasts render in a portal outside the `.sense` wrapper, so the Toaster
-// re-scopes itself with `className="sense"`.
+// The toaster renders inline (position:fixed, no portal), so it inherits the
+// `.sense` scope from the story wrapper — no re-scoping needed.
 export const Default: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
@@ -53,7 +52,7 @@ export const Default: Story = {
       >
         Error
       </Button>
-      <Toaster className="sense" />
+      <Toaster />
     </div>
   ),
 };
