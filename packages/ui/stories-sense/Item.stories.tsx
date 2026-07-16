@@ -149,7 +149,7 @@ export const WithAvatar: Story = {
       {[
         ['Frida Kahlo', 'Steward · Greenway circle'],
         ['Mark Rothko', 'Member · Arts committee'],
-      ].map(([name, role]) => (
+      ].map(([name = '', role]) => (
         <Item key={name} variant="outline">
           <ItemMedia>
             <Avatar>
