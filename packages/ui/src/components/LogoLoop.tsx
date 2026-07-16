@@ -280,9 +280,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
             containerRef.current.style.height = `${targetHeight}px`;
         }
         if (sequenceHeight > 0) {
-          // Wrap length must be the exact fractional stride — rounding up
-          // makes the loop snap back by the remainder once per cycle.
-          setSeqHeight(sequenceHeight);
+          setSeqHeight(Math.ceil(sequenceHeight));
           const viewport =
             containerRef.current?.clientHeight ??
             parentHeight ??
@@ -293,7 +291,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
           setCopyCount(Math.max(ANIMATION_CONFIG.MIN_COPIES, copiesNeeded));
         }
       } else if (sequenceWidth > 0) {
-        setSeqWidth(sequenceWidth);
+        setSeqWidth(Math.ceil(sequenceWidth));
         const copiesNeeded =
           Math.ceil(containerWidth / sequenceWidth) +
           ANIMATION_CONFIG.COPY_HEADROOM;
