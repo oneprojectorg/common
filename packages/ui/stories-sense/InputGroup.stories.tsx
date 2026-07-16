@@ -8,7 +8,8 @@ import {
 } from '@op/sense/InputGroup';
 import { Label } from '@op/sense/Label';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { LuCopy, LuInfo, LuSearch, LuSend } from 'react-icons/lu';
+import * as React from 'react';
+import { LuCheck, LuCopy, LuInfo, LuSearch, LuSend } from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -51,31 +52,65 @@ export const WithIcon: Story = {
   ),
 };
 
-export const WithButton: Story = {
-  render: () => (
+function CopyUrlDemo() {
+  const url = 'https://common.oneproject.org';
+  const [copied, setCopied] = React.useState(false);
+  return (
     <InputGroup className="max-w-sm">
-      <InputGroupInput readOnly value="https://common.oneproject.org" />
+      <InputGroupInput readOnly value={url} />
       <InputGroupAddon align="inline-end">
-        <InputGroupButton size="icon-xs" aria-label="Copy">
-          <LuCopy />
+        <InputGroupButton
+          size="icon-xs"
+          aria-label={copied ? 'Copied' : 'Copy'}
+          onClick={() => {
+            void navigator.clipboard.writeText(url).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            });
+          }}
+        >
+          {copied ? <LuCheck /> : <LuCopy />}
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
-  ),
+  );
+}
+
+export const WithButton: Story = {
+  render: () => <CopyUrlDemo />,
 };
 
-export const WithTextarea: Story = {
-  render: () => (
+const MESSAGE_LIMIT = 80;
+
+function MessageDemo() {
+  const [message, setMessage] = React.useState('');
+  return (
     <InputGroup className="max-w-sm">
-      <InputGroupTextarea placeholder="Send a message..." />
+      <InputGroupTextarea
+        placeholder="Send a message..."
+        value={message}
+        maxLength={MESSAGE_LIMIT}
+        onChange={(event) => setMessage(event.target.value)}
+      />
       <InputGroupAddon align="block-end">
-        <InputGroupText className="text-sm">52 characters left</InputGroupText>
-        <InputGroupButton size="icon-xs" className="ml-auto" aria-label="Send">
+        <InputGroupText className="text-sm">
+          {MESSAGE_LIMIT - message.length} characters left
+        </InputGroupText>
+        <InputGroupButton
+          size="icon-xs"
+          className="ms-auto"
+          aria-label="Send"
+          disabled={message.length === 0}
+        >
           <LuSend />
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
-  ),
+  );
+}
+
+export const WithTextarea: Story = {
+  render: () => <MessageDemo />,
 };
 
 export const Disabled: Story = {
