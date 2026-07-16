@@ -104,7 +104,7 @@ export const DataDisplay: Story = {
               {[1, 2, 3, 4].map((n) => (
                 <TableHead key={n}>Head Text</TableHead>
               ))}
-              <TableHead className="text-right">Head Text</TableHead>
+              <TableHead className="text-end">Head Text</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,14 +113,14 @@ export const DataDisplay: Story = {
                 {[1, 2, 3, 4].map((n) => (
                   <TableCell key={n}>Table Cell Text</TableCell>
                 ))}
-                <TableCell className="text-right">Table Cell Text</TableCell>
+                <TableCell className="text-end">Table Cell Text</TableCell>
               </TableRow>
             ))}
           </TableBody>
           <TableFooter>
             <TableRow>
               <TableCell colSpan={4}>Total</TableCell>
-              <TableCell className="text-right">$1,110.00</TableCell>
+              <TableCell className="text-end">$1,110.00</TableCell>
             </TableRow>
           </TableFooter>
         </Table>

@@ -46,7 +46,7 @@ export const Default: Story = {
           <TableHead>Invoice</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Method</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          <TableHead className="text-end">Amount</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -55,14 +55,14 @@ export const Default: Story = {
             <TableCell className="font-strong">{invoice.id}</TableCell>
             <TableCell>{invoice.status}</TableCell>
             <TableCell>{invoice.method}</TableCell>
-            <TableCell className="text-right">{invoice.amount}</TableCell>
+            <TableCell className="text-end">{invoice.amount}</TableCell>
           </TableRow>
         ))}
       </TableBody>
       <TableFooter>
         <TableRow>
           <TableCell colSpan={3}>Total</TableCell>
-          <TableCell className="text-right">$1,750.00</TableCell>
+          <TableCell className="text-end">$1,750.00</TableCell>
         </TableRow>
       </TableFooter>
     </Table>
@@ -76,7 +76,7 @@ export const WithBadges: Story = {
         <TableRow>
           <TableHead>Invoice</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          <TableHead className="text-end">Amount</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -96,7 +96,7 @@ export const WithBadges: Story = {
                 {invoice.status}
               </Badge>
             </TableCell>
-            <TableCell className="text-right">{invoice.amount}</TableCell>
+            <TableCell className="text-end">{invoice.amount}</TableCell>
           </TableRow>
         ))}
       </TableBody>
