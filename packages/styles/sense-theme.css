@@ -214,6 +214,13 @@
 /* Font smoothing — the Common Sense designs assume macOS-style grayscale
  * antialiasing. Both properties inherit, so this covers the whole `.sense`
  * subtree (portaled popups excepted — see the portal caveat above). */
+/* border-* utilities resolve --color-border at use-site; without this,
+ * sense's border-border silently tracked @op/ui's neutral token (slated for
+ * deletion). Scoped like the radius overrides above. */
+.sense {
+  --color-border: var(--border);
+}
+
 /* @layer base so Tailwind utilities still win: an element carrying both
  * `.sense` and its own utility (e.g. a portaled tooltip with
  * `text-background`) must keep the utility — unlayered rules would beat it. */
