@@ -14,8 +14,11 @@ import {
 import { Input } from '@op/sense/Input';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
+  LuArchive,
   LuBellOff,
   LuCheck,
+  LuClock,
+  LuFolderInput,
   LuChevronDown,
   LuCircleArrowLeft,
   LuCircleArrowRight,
@@ -55,6 +58,47 @@ export const Default: Story = {
       <Button variant="outline">Archive</Button>
       <Button variant="outline">Snooze</Button>
       <Button variant="outline">Move</Button>
+    </ButtonGroup>
+  ),
+};
+
+export const WithIcons: Story = {
+  render: () => (
+    <ButtonGroup>
+      <Button variant="outline">
+        <LuArchive data-icon="inline-start" />
+        Archive
+      </Button>
+      <Button variant="outline">
+        <LuClock data-icon="inline-start" />
+        Snooze
+      </Button>
+      <Button variant="outline">
+        <LuFolderInput data-icon="inline-start" />
+        Move
+      </Button>
+      <Button variant="outline" size="icon" aria-label="Back">
+        <LuCircleArrowLeft />
+      </Button>
+    </ButtonGroup>
+  ),
+};
+
+export const Small: Story = {
+  render: () => (
+    <ButtonGroup>
+      <Button variant="outline" size="sm">
+        Archive
+      </Button>
+      <Button variant="outline" size="sm">
+        Snooze
+      </Button>
+      <Button variant="outline" size="sm">
+        Move
+      </Button>
+      <Button variant="outline" size="icon-sm" aria-label="Back">
+        <LuCircleArrowLeft />
+      </Button>
     </ButtonGroup>
   ),
 };
