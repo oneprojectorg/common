@@ -131,27 +131,3 @@ export const WithIcons: Story = {
     </ContextMenu>
   ),
 };
-
-// Inset items align with labelled siblings that carry an icon or indicator.
-export const WithInset: Story = {
-  render: () => (
-    <ContextMenu>
-      <ContextMenuTrigger className="flex h-36 w-72 items-center justify-center rounded-md border border-dashed border-input bg-muted text-sm text-muted-foreground">
-        Right-click here
-      </ContextMenuTrigger>
-      <ContextMenuContent className="sense w-56">
-        <ContextMenuGroup>
-          <ContextMenuLabel inset>View</ContextMenuLabel>
-          <ContextMenuCheckboxItem defaultChecked>
-            Show comments
-          </ContextMenuCheckboxItem>
-          <ContextMenuCheckboxItem>Show votes</ContextMenuCheckboxItem>
-          <ContextMenuItem inset>Expand all sections</ContextMenuItem>
-          <ContextMenuItem inset disabled>
-            Collapse all sections
-          </ContextMenuItem>
-        </ContextMenuGroup>
-      </ContextMenuContent>
-    </ContextMenu>
-  ),
-};
