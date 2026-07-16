@@ -93,7 +93,7 @@
     "build": "storybook build",
     "dev": "storybook dev -p 3600 --no-open",
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -150,7 +150,7 @@
     "react": "^19.0.1",
     "storybook": "^10.1.11",
     "tailwindcss": "4.1.18",
-    "typescript": "5.7.3",
+    "typescript": "7.0.2",
     "vite": "^6.2.0"
   }
 }

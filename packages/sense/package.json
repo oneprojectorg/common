@@ -68,7 +68,7 @@
   "module": "./src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -94,6 +94,6 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/react": "19.0.10",
-    "typescript": "5.7.3"
+    "typescript": "7.0.2"
   }
 }

@@ -11,7 +11,7 @@
   "main": "src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
@@ -27,6 +27,6 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "next": "catalog:",
-    "typescript": "^5"
+    "typescript": "7.0.2"
   }
 }

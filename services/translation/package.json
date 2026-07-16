@@ -9,7 +9,7 @@
   },
   "scripts": {
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@op/db": "workspace:*",
@@ -21,6 +21,6 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/he": "^1.2.3",
-    "typescript": "5.7.3"
+    "typescript": "7.0.2"
   }
 }

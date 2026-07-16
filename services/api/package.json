@@ -21,7 +21,7 @@
     "test:supabase:status": "tsx src/test/supabase-test.ts status",
     "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
     "test:watch": "vitest",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
@@ -71,7 +71,7 @@
     "@rjsf/utils": "^6.3.1",
     "@types/jsonwebtoken": "^9.0.10",
     "jsonwebtoken": "^9.0.2",
-    "typescript": "5.7.3",
+    "typescript": "7.0.2",
     "vitest": "catalog:"
   }
 }

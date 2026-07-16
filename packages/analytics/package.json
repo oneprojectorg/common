@@ -13,7 +13,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:^",
@@ -22,6 +22,6 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/node": "^22.13.5",
-    "typescript": "5.7.3"
+    "typescript": "7.0.2"
   }
 }

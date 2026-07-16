@@ -89,6 +89,14 @@ const config = {
   // uses Turbopack via the config above.
   webpack: (config, { isServer }) => {
     config.resolve = config.resolve || {};
+    // Next builds webpack's tsconfig `paths` aliases via the TypeScript JS API,
+    // which the TypeScript 7 native compiler (@typescript/native-preview) does
+    // not expose, so the `@/*` alias must be registered here explicitly.
+    // Turbopack (dev) resolves it natively from tsconfig.
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@': path.resolve(__dirname, 'src'),
+    };
     if (!isServer) {
       // Disable the 'tls' node core module on the client side.
       config.resolve.fallback = {
