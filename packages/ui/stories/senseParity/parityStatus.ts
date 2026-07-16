@@ -50,15 +50,15 @@ export const parityStatus: Record<
   'hover-card': { family: 'overlays', status: 'done' },
 
   // Menus & navigation
-  'dropdown-menu': { family: 'menus-navigation', status: 'todo' },
-  'context-menu': { family: 'menus-navigation', status: 'todo' },
-  menubar: { family: 'menus-navigation', status: 'todo' },
-  'navigation-menu': { family: 'menus-navigation', status: 'todo' },
-  breadcrumb: { family: 'menus-navigation', status: 'todo' },
-  tabs: { family: 'menus-navigation', status: 'todo' },
-  sidebar: { family: 'menus-navigation', status: 'todo' },
-  pagination: { family: 'menus-navigation', status: 'todo' },
-  command: { family: 'menus-navigation', status: 'todo' },
+  'dropdown-menu': { family: 'menus-navigation', status: 'done' },
+  'context-menu': { family: 'menus-navigation', status: 'done' },
+  menubar: { family: 'menus-navigation', status: 'done' },
+  'navigation-menu': { family: 'menus-navigation', status: 'done' },
+  breadcrumb: { family: 'menus-navigation', status: 'done' },
+  tabs: { family: 'menus-navigation', status: 'done' },
+  sidebar: { family: 'menus-navigation', status: 'done' },
+  pagination: { family: 'menus-navigation', status: 'done' },
+  command: { family: 'menus-navigation', status: 'done' },
 
   // Data display
   table: { family: 'data-display', status: 'todo' },

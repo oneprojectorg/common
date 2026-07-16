@@ -203,6 +203,56 @@
       "nodeId": "216:3126",
       "page": "Hover Card",
       "case": "Hover card panel"
+    },
+    "dropdown-menu.png": {
+      "nodeId": "21207:248596",
+      "page": "Dropdown Menu",
+      "case": "Playground first example: Basic"
+    },
+    "context-menu.png": {
+      "nodeId": "21186:4423",
+      "page": "Context Menu",
+      "case": "Playground first example"
+    },
+    "menubar.png": {
+      "nodeId": "21147:293978",
+      "page": "Menubar",
+      "case": "Playground first example"
+    },
+    "navigation-menu.png": {
+      "nodeId": "17375:197438",
+      "page": "Navigation Menu",
+      "case": "Playground first example"
+    },
+    "breadcrumb.png": {
+      "nodeId": "17085:177518",
+      "page": "Breadcrumb",
+      "case": "Playground first example"
+    },
+    "tabs.png": {
+      "nodeId": "21408:100587",
+      "page": "Tabs",
+      "case": "Playground first example: Flex"
+    },
+    "sidebar.png": {
+      "nodeId": "5198:1787",
+      "page": "Sidebar",
+      "case": "Sidebar 01 example"
+    },
+    "pagination.png": {
+      "nodeId": "17086:207086",
+      "page": "Pagination",
+      "case": "Playground example: full pagination row"
+    },
+    "command.png": {
+      "nodeId": "21183:21228",
+      "page": "Command",
+      "case": "Playground first example"
+    },
+    "tabs-line.png": {
+      "nodeId": "21141:393123",
+      "page": "Tabs",
+      "case": "Playground example: underline (line) variant"
     }
   }
 }
