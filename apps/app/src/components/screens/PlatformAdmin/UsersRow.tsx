@@ -5,14 +5,17 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
+import { Button as OpButton } from '@op/ui/Button';
 import { MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
+import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
+import { LuCopy } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -76,6 +79,25 @@ export const UsersRowCells = ({ user }: { user: User }) => {
         ) : (
           '—'
         )}
+      </TableCell>
+      <TableCell className="text-sm font-normal text-neutral-charcoal">
+        <TooltipTrigger>
+          <OpButton
+            color="secondary"
+            size="small"
+            aria-label={t('Copy auth user ID')}
+            onPress={() => {
+              navigator.clipboard.writeText(user.authUserId);
+              toast.success({
+                message: t('Auth user ID copied to your clipboard.'),
+                dismissable: false,
+              });
+            }}
+          >
+            <LuCopy />
+          </OpButton>
+          <Tooltip>{user.authUserId}</Tooltip>
+        </TooltipTrigger>
       </TableCell>
       <TableCell className="text-sm text-neutral-charcoal">
         <div className="flex justify-end">
