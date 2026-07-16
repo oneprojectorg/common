@@ -4,12 +4,33 @@ import {
   ButtonGroupSeparator,
   ButtonGroupText,
 } from '@op/sense/ButtonGroup';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import { Input } from '@op/sense/Input';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
+  LuArchive,
+  LuBellOff,
+  LuCheck,
+  LuChevronDown,
   LuCircleArrowLeft,
   LuCircleArrowRight,
+  LuClock,
+  LuCopy,
+  LuFolderInput,
+  LuForward,
+  LuReply,
   LuSearch,
+  LuShare,
+  LuStar,
+  LuTrash,
+  LuTriangleAlert,
+  LuUserX,
 } from 'react-icons/lu';
 
 import { withSense } from './sense';
@@ -34,9 +55,18 @@ type Story = StoryObj<typeof ButtonGroup>;
 export const Default: Story = {
   render: () => (
     <ButtonGroup>
-      <Button variant="outline">Button</Button>
-      <Button variant="outline">Button</Button>
-      <Button variant="outline">Button</Button>
+      <Button variant="outline">
+        <LuArchive data-icon="inline-start" />
+        Archive
+      </Button>
+      <Button variant="outline">
+        <LuClock data-icon="inline-start" />
+        Snooze
+      </Button>
+      <Button variant="outline">
+        <LuFolderInput data-icon="inline-start" />
+        Move
+      </Button>
       <Button variant="outline" size="icon" aria-label="Back">
         <LuCircleArrowLeft />
       </Button>
@@ -49,15 +79,72 @@ export const Default: Story = {
 export const WithSeparators: Story = {
   render: () => (
     <ButtonGroup>
-      <Button>Button</Button>
+      <Button>
+        <LuReply data-icon="inline-start" />
+        Reply
+      </Button>
       <PrimaryGroupSeparator />
-      <Button>Button</Button>
+      <Button>
+        <LuForward data-icon="inline-start" />
+        Forward
+      </Button>
       <PrimaryGroupSeparator />
-      <Button>Button</Button>
+      <Button>
+        <LuStar data-icon="inline-start" />
+        Favorite
+      </Button>
       <PrimaryGroupSeparator />
       <Button size="icon" aria-label="Back">
         <LuCircleArrowLeft />
       </Button>
+    </ButtonGroup>
+  ),
+};
+
+export const SplitWithDropdown: Story = {
+  render: () => (
+    <ButtonGroup>
+      <Button variant="outline">Follow</Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="outline" size="icon" aria-label="More options" />
+          }
+        >
+          <LuChevronDown />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="sense" align="end">
+          <DropdownMenuItem>
+            <LuBellOff />
+            Mute Conversation
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <LuCheck />
+            Mark as Read
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <LuTriangleAlert />
+            Report Conversation
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <LuUserX />
+            Block User
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <LuShare />
+            Share Conversation
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <LuCopy />
+            Duplicate Conversation
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive">
+            <LuTrash />
+            Delete Conversation
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </ButtonGroup>
   ),
 };
