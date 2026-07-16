@@ -1,5 +1,6 @@
-import { Calendar, faIR } from '@op/sense/Calendar';
+import { Calendar } from '@op/sense/Calendar';
 import type { DateRange } from '@op/sense/Calendar';
+import { faIR } from '@op/sense/CalendarLocales';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 

@@ -227,5 +227,4 @@ function CalendarDayButton({
 
 // Re-exported so consumers don't need a direct react-day-picker dependency.
 export type { DateRange } from 'react-day-picker';
-export { faIR } from 'react-day-picker/locale';
 export { Calendar, CalendarDayButton };

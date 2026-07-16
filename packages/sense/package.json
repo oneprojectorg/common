@@ -19,6 +19,7 @@
     "./Button": "./src/components/ui/button.tsx",
     "./ButtonGroup": "./src/components/ui/button-group.tsx",
     "./Calendar": "./src/components/ui/calendar.tsx",
+    "./CalendarLocales": "./src/components/ui/calendar-locales.ts",
     "./Card": "./src/components/ui/card.tsx",
     "./Carousel": "./src/components/ui/carousel.tsx",
     "./Chart": "./src/components/ui/chart.tsx",
