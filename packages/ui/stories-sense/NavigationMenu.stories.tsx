@@ -5,6 +5,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
 } from '@op/sense/NavigationMenu';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -98,7 +99,9 @@ export const Default: Story = {
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <NavigationMenuLink href="#">Docs</NavigationMenuLink>
+          <NavigationMenuLink href="#" className={navigationMenuTriggerStyle()}>
+            Docs
+          </NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
