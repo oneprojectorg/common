@@ -45,7 +45,6 @@ export function ProposalCardActions({
     targetProfileId: currentProposal.profileId,
     invalidateQueries: [
       {
-        profileId: currentProposal.profileId,
         processInstanceId: initialProposal.processInstanceId,
       },
     ],
