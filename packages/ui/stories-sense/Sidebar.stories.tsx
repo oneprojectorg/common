@@ -58,7 +58,7 @@ export const Default: Story = {
                       v1.0.1
                     </span>
                   </div>
-                  <LuChevronsUpDown className="ml-auto" />
+                  <LuChevronsUpDown className="ms-auto" />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -120,7 +120,7 @@ export const Default: Story = {
                       frida@example.com
                     </span>
                   </div>
-                  <LuChevronsUpDown className="ml-auto" />
+                  <LuChevronsUpDown className="ms-auto" />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

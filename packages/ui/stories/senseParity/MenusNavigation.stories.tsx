@@ -65,6 +65,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
 } from '@op/sense/NavigationMenu';
 import {
   Pagination,
@@ -417,7 +418,12 @@ export const MenusNavigation: Story = {
               </NavigationMenuContent>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink href="#">Docs</NavigationMenuLink>
+              <NavigationMenuLink
+                href="#"
+                className={navigationMenuTriggerStyle()}
+              >
+                Docs
+              </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
@@ -517,7 +523,7 @@ export const MenusNavigation: Story = {
                           v1.0.1
                         </span>
                       </div>
-                      <LuChevronsUpDown className="ml-auto" />
+                      <LuChevronsUpDown className="ms-auto" />
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
