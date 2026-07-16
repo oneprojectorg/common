@@ -204,5 +204,5 @@ export const WithText: Story = {
 };
 
 const PrimaryGroupSeparator = () => (
-  <ButtonGroupSeparator className="bg-[color-mix(in_oklch,var(--primary),white_20%)]" />
+  <ButtonGroupSeparator variant="onPrimary" />
 );

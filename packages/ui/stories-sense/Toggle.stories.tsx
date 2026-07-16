@@ -27,7 +27,7 @@ type Story = StoryObj<typeof Toggle>;
 
 export const Default: Story = {
   render: () => (
-    <Toggle aria-label="Bold">
+    <Toggle>
       <LuBold />
       Text
     </Toggle>
@@ -37,11 +37,11 @@ export const Default: Story = {
 export const Variants: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
-      <Toggle aria-label="Bold">
+      <Toggle>
         <LuBold />
         Text
       </Toggle>
-      <Toggle variant="outline" aria-label="Bold">
+      <Toggle variant="outline">
         <LuBold />
         Text
       </Toggle>
@@ -52,15 +52,15 @@ export const Variants: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
-      <Toggle variant="outline" size="sm" aria-label="Italic">
+      <Toggle variant="outline" size="sm">
         <LuItalic />
         Small
       </Toggle>
-      <Toggle variant="outline" size="default" aria-label="Italic">
+      <Toggle variant="outline" size="default">
         <LuItalic />
         Default
       </Toggle>
-      <Toggle variant="outline" size="lg" aria-label="Italic">
+      <Toggle variant="outline" size="lg">
         <LuItalic />
         Large
       </Toggle>
@@ -71,11 +71,11 @@ export const Sizes: Story = {
 export const Pressed: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
-      <Toggle defaultPressed aria-label="Bold">
+      <Toggle defaultPressed>
         <LuBold />
         Text
       </Toggle>
-      <Toggle variant="outline" defaultPressed aria-label="Bold">
+      <Toggle variant="outline" defaultPressed>
         <LuBold />
         Text
       </Toggle>
@@ -86,11 +86,11 @@ export const Pressed: Story = {
 export const Disabled: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
-      <Toggle disabled aria-label="Bold">
+      <Toggle disabled>
         <LuBold />
         Text
       </Toggle>
-      <Toggle variant="outline" disabled aria-label="Bold">
+      <Toggle variant="outline" disabled>
         <LuBold />
         Text
       </Toggle>

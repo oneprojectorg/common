@@ -64,14 +64,22 @@ function ButtonGroupText({
 function ButtonGroupSeparator({
   className,
   orientation = 'vertical',
+  variant = 'default',
   ...props
-}: React.ComponentProps<typeof Separator>) {
+}: React.ComponentProps<typeof Separator> & {
+  /** `onPrimary` for separators between filled primary buttons — an opaque
+   * white-over-primary mix, since the separator renders over the page
+   * background between the buttons. */
+  variant?: 'default' | 'onPrimary';
+}) {
   return (
     <Separator
       data-slot="button-group-separator"
       orientation={orientation}
       className={cn(
         'relative self-stretch bg-input data-horizontal:w-auto data-vertical:h-auto',
+        variant === 'onPrimary' &&
+          'bg-[color-mix(in_oklch,var(--primary),var(--color-white)_20%)]',
         className,
       )}
       {...props}

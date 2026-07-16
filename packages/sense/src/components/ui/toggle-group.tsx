@@ -73,9 +73,12 @@ function ToggleGroupItem({
       data-spacing={context.spacing}
       className={cn(
         // Joined (spacing=0) outline items keep their full border and overlap
-        // adjacent borders by 1px; the selected item raises above its
-        // neighbors so its accent border paints complete on all four sides.
-        'relative shrink-0 group-data-[spacing=0]/toggle-group:rounded-none focus:z-10 focus-visible:z-10 aria-pressed:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:not-first:-ml-px group-data-vertical/toggle-group:data-[spacing=0]:not-first:-mt-px group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-lg group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-lg group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-lg group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-lg data-[state=on]:z-10',
+        // adjacent borders by 1px (logical margin so RTL collapses the right
+        // seam); inner corners square off while outer corners keep the item's
+        // own size-appropriate radius. The selected item raises above its
+        // neighbors so its accent border paints complete on all four sides,
+        // and focus raises above selection so the ring never clips.
+        'relative shrink-0 focus:z-10 focus-visible:z-20 aria-pressed:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:not-first:-ms-px group-data-horizontal/toggle-group:data-[spacing=0]:not-first:rounded-s-none group-data-horizontal/toggle-group:data-[spacing=0]:not-last:rounded-e-none group-data-vertical/toggle-group:data-[spacing=0]:not-first:-mt-px group-data-vertical/toggle-group:data-[spacing=0]:not-first:rounded-t-none group-data-vertical/toggle-group:data-[spacing=0]:not-last:rounded-b-none',
         toggleVariants({
           variant: context.variant || variant,
           size: context.size || size,
