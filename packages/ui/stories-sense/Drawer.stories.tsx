@@ -10,6 +10,8 @@ import {
   DrawerTrigger,
 } from '@op/sense/Drawer';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import * as React from 'react';
+import { LuMinus, LuPlus } from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -25,31 +27,64 @@ export default meta;
 type Story = StoryObj<typeof Drawer>;
 
 // Drawer is vaul-based, so triggers compose with asChild rather than render.
-export const Default: Story = {
-  render: () => (
+const VOTE_BUDGET = 10;
+
+function AllocateVotesDemo() {
+  const [votes, setVotes] = React.useState(3);
+  return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline">Open drawer</Button>
+        <Button variant="outline">Allocate votes</Button>
       </DrawerTrigger>
       <DrawerContent className="sense">
         <DrawerHeader>
-          <DrawerTitle>Move goal</DrawerTitle>
-          <DrawerDescription>Set your daily activity goal.</DrawerDescription>
+          <DrawerTitle>Community garden proposal</DrawerTitle>
+          <DrawerDescription>
+            You have {VOTE_BUDGET - votes} of {VOTE_BUDGET} votes left this
+            round.
+          </DrawerDescription>
         </DrawerHeader>
-        <div className="px-6">
-          <div className="flex items-center justify-center rounded-md border border-dashed bg-muted p-5.5 text-center text-sm text-muted-foreground">
-            Remove this frame and add your content
+        <div className="flex items-center justify-center gap-6 px-6 py-4">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className="rounded-full"
+            aria-label="Remove a vote"
+            disabled={votes <= 0}
+            onClick={() => setVotes(votes - 1)}
+          >
+            <LuMinus />
+          </Button>
+          <div className="text-center">
+            <div className="text-display font-strong tabular-nums">{votes}</div>
+            <div className="text-xs text-muted-foreground uppercase">
+              Votes on this proposal
+            </div>
           </div>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className="rounded-full"
+            aria-label="Add a vote"
+            disabled={votes >= VOTE_BUDGET}
+            onClick={() => setVotes(votes + 1)}
+          >
+            <LuPlus />
+          </Button>
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
+          <Button>Confirm allocation</Button>
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
-  ),
+  );
+}
+
+export const Default: Story = {
+  render: () => <AllocateVotesDemo />,
 };
 
 export const Directions: Story = {
