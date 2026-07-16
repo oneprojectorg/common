@@ -8,6 +8,7 @@ import {
 } from '@op/sense/Avatar';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { getGradientForString } from '../src/lib/utils';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Avatar> = {
@@ -35,6 +36,31 @@ export const Fallback: Story = {
     <Avatar>
       <AvatarFallback>CN</AvatarFallback>
     </Avatar>
+  ),
+};
+
+// The app renders letter fallbacks on a deterministic gradient hashed from
+// the display name (see @op/ui getGradientForString). The gradient utilities
+// live in @op/styles, so the sense primitive stays unopinionated and the app
+// composes them onto AvatarFallback — mirrored here.
+export const GradientFallbacks: Story = {
+  render: () => (
+    <div className="flex items-center gap-4">
+      {['Frida Kahlo', 'Mark Rothko', 'Sonia Delaunay', 'Lee Krasner'].map(
+        (name) => (
+          <Avatar key={name}>
+            <AvatarFallback
+              className={`${getGradientForString(name)} text-white`}
+            >
+              {name
+                .split(' ')
+                .map((part) => part[0])
+                .join('')}
+            </AvatarFallback>
+          </Avatar>
+        ),
+      )}
+    </div>
   ),
 };
 
