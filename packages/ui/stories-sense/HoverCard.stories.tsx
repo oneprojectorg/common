@@ -23,7 +23,12 @@ type Story = StoryObj<typeof HoverCard>;
 export const Default: Story = {
   render: () => (
     <HoverCard>
-      <HoverCardTrigger href="#">@fridakahlo</HoverCardTrigger>
+      <HoverCardTrigger
+        href="#"
+        className="text-sm font-strong text-primary hover:underline"
+      >
+        @fridakahlo
+      </HoverCardTrigger>
       <HoverCardContent className="sense">
         <div className="flex gap-4">
           <Avatar>
@@ -51,7 +56,12 @@ export const Sides: Story = {
     <div className="flex flex-wrap items-center gap-8">
       {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
         <HoverCard key={side}>
-          <HoverCardTrigger href="#">{side}</HoverCardTrigger>
+          <HoverCardTrigger
+            href="#"
+            className="text-sm font-strong text-primary hover:underline"
+          >
+            {side}
+          </HoverCardTrigger>
           <HoverCardContent side={side} className="sense w-56">
             This hover card opens on the {side} of the trigger.
           </HoverCardContent>

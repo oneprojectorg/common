@@ -379,7 +379,7 @@ function RawDialogSample() {
         <RawDialogHeader>
           <RawDialogTitle>Dialog title</RawDialogTitle>
         </RawDialogHeader>
-        <div className="text-sm">Dialog body</div>
+        <div className="px-6 py-4 text-sm">Dialog body</div>
         <RawDialogFooter>
           <RawButton>Close</RawButton>
         </RawDialogFooter>
@@ -409,7 +409,7 @@ function RawSheetSample() {
         <RawSheetHeader>
           <RawSheetTitle>Sheet title</RawSheetTitle>
         </RawSheetHeader>
-        <div className="px-4 text-sm">Sheet body</div>
+        <div className="px-6 text-sm">Sheet body</div>
       </RawSheetContent>
     </RawSheet>
   );

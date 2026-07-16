@@ -156,7 +156,7 @@ export const ScrollingBody: Story = {
             Please review before joining the decision process.
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+        <div className="max-h-[calc(100dvh-14rem)] overflow-y-auto px-6 py-4">
           <div className="flex flex-col gap-6">
             {communityAgreement.map((section) => (
               <section key={section.heading} className="flex flex-col gap-3">

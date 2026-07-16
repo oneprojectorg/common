@@ -72,10 +72,12 @@ import { ParityGridHeader, ParityRow, withDesignScale } from './Parity';
 
 // Figma parity for the overlays family. See Parity.tsx for the conventions.
 //
-// Each row shows the overlay twice: "preview" renders the real component
-// permanently open with its panel restyled into static flow (no backdrop,
-// no fixed positioning) so the bare panel sits next to the Figma export,
-// and "interactive" is the trigger-driven component.
+// The dialog/alert-dialog/sheet/drawer rows show the overlay twice: "preview"
+// renders the real component permanently open with its panel restyled into
+// static flow (no backdrop, no fixed positioning) so the bare panel sits next
+// to the Figma export, and "interactive" is the trigger-driven component.
+// Popover, tooltip, and hover-card popups can't render unanchored, so those
+// rows are interactive-only.
 
 const meta: Meta = {
   title: 'Sense Comparison/Figma Parity/Overlays',
@@ -308,7 +310,12 @@ export const Overlays: Story = {
 
       <ParityRow label="Hover card" img={figmaHoverCard} imgWidth={330}>
         <HoverCard>
-          <HoverCardTrigger href="#">Hover trigger</HoverCardTrigger>
+          <HoverCardTrigger
+            href="#"
+            className="text-sm font-strong text-primary hover:underline"
+          >
+            Hover trigger
+          </HoverCardTrigger>
           <HoverCardContent className="sense">{hoverCardBody}</HoverCardContent>
         </HoverCard>
       </ParityRow>
@@ -321,11 +328,9 @@ export const Overlays: Story = {
 // the wrapper via the container prop; backdrops are hidden and positioning
 // is neutralised by the classes above.
 function OverlayModes({
-  previewClassName,
   preview,
   children,
 }: {
-  previewClassName?: string;
   preview: (container: HTMLDivElement) => React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -336,7 +341,7 @@ function OverlayModes({
       <p className="font-mono text-xs text-neutral-gray4 uppercase">Preview</p>
       <div
         ref={setContainer}
-        className={`relative w-full overflow-hidden rounded-lg border border-neutral-gray1 bg-neutral-gray1/40 [&_[data-slot$=overlay]]:hidden ${previewClassName ?? ''}`}
+        className="relative w-full overflow-hidden rounded-lg border border-neutral-gray1 bg-neutral-gray1/40 [&_[data-slot$=overlay]]:hidden"
       >
         {container && preview(container)}
       </div>

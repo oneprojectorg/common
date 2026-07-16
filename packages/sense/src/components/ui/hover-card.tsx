@@ -15,8 +15,10 @@ function HoverCardTrigger({
   return (
     <PreviewCardPrimitive.Trigger
       data-slot="hover-card-trigger"
+      // Unstyled like upstream — triggers wrap arbitrary content (links,
+      // avatars, cards). Only keyboard-focus visibility is baked in.
       className={cn(
-        'rounded-md text-sm font-strong text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50',
+        'rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
         className,
       )}
       {...props}
