@@ -1,7 +1,6 @@
 import {
   Channels,
   addProfileRelationship,
-  assertProposalEngagementAccess,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
@@ -11,7 +10,7 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import {
-  authenticatedConfirmedProcedure,
+  networkAuthenticatedProcedure,
   openProcedure,
   router,
 } from '../../trpcFactory';
@@ -86,11 +85,7 @@ const getRelationshipsInputSchema = z.object({
   profileType: z.string().optional(),
 });
 
-// Confirmed tier (not closed-network): accounts claimed from public decision
-// processes are deliberately outside the allowList, and like/follow is part of
-// what a claimed account is promised. The walled garden still gates which
-// profiles such users can reach in the first place.
-const relationshipProcedure = authenticatedConfirmedProcedure({
+const relationshipProcedure = networkAuthenticatedProcedure({
   rateLimit: { windowSize: 10, maxRequests: 20 },
 });
 
@@ -99,13 +94,6 @@ export const profileRelationshipRouter = router({
     .input(relationshipInputSchema)
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType, pending } = input;
-
-      // Proposal targets are gated like proposal comments (SUBMIT_PROPOSALS on
-      // the parent decision); no-op for any non-proposal target.
-      await assertProposalEngagementAccess({
-        user: ctx.user,
-        profileId: targetProfileId,
-      });
 
       await addProfileRelationship({
         targetProfileId,

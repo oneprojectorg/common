@@ -81,108 +81,109 @@ export function useRelationshipMutations({
   );
 
   // Add relationship mutation with optimistic updates
-  const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches for the relationship queries
-      await utils.profile.getRelationships.cancel(relationshipQueryKey);
+  const addRelationshipMutation =
+    trpc.decision.addProposalRelationship.useMutation({
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches for the relationship queries
+        await utils.profile.getRelationships.cancel(relationshipQueryKey);
 
-      // Snapshot the previous value
-      const previousData =
-        utils.profile.getRelationships.getData(relationshipQueryKey);
+        // Snapshot the previous value
+        const previousData =
+          utils.profile.getRelationships.getData(relationshipQueryKey);
 
-      // Optimistically update the cache
-      if (
-        previousData &&
-        variables.targetProfileId &&
-        typeof previousData === 'object' &&
-        !Array.isArray(previousData)
-      ) {
-        // Create a minimal relationship object for optimistic update
-        const optimisticRelationship = {
-          relationshipType: variables.relationshipType,
-          pending: false,
-          createdAt: new Date().toISOString(),
-          targetProfile: {
-            id: variables.targetProfileId,
-            name: '',
-            slug: '',
-            bio: null,
-            avatarImage: null,
-            type: 'proposal',
-          },
-        };
+        // Optimistically update the cache
+        if (
+          previousData &&
+          variables.targetProfileId &&
+          typeof previousData === 'object' &&
+          !Array.isArray(previousData)
+        ) {
+          // Create a minimal relationship object for optimistic update
+          const optimisticRelationship = {
+            relationshipType: variables.relationshipType,
+            pending: false,
+            createdAt: new Date().toISOString(),
+            targetProfile: {
+              id: variables.targetProfileId,
+              name: '',
+              slug: '',
+              bio: null,
+              avatarImage: null,
+              type: 'proposal',
+            },
+          };
 
-        const optimisticData = { ...previousData };
-        const existingRelationships =
-          optimisticData[variables.relationshipType] || [];
-        optimisticData[variables.relationshipType] = [
-          ...existingRelationships,
-          optimisticRelationship,
-        ];
+          const optimisticData = { ...previousData };
+          const existingRelationships =
+            optimisticData[variables.relationshipType] || [];
+          optimisticData[variables.relationshipType] = [
+            ...existingRelationships,
+            optimisticRelationship,
+          ];
 
-        utils.profile.getRelationships.setData(
-          relationshipQueryKey,
-          optimisticData,
-        );
-      }
+          utils.profile.getRelationships.setData(
+            relationshipQueryKey,
+            optimisticData,
+          );
+        }
 
-      return { previousData };
-    },
-    onSuccess: () => {
-      // Call user-provided onSuccess callback
-      if (onSuccess) {
-        onSuccess();
-      }
-    },
-    onError: (error, variables, context) => {
-      // Rollback on error
-      if (context?.previousData) {
-        utils.profile.getRelationships.setData(
-          relationshipQueryKey,
-          context.previousData,
-        );
-      }
-      console.error('Failed to add relationship:', error);
+        return { previousData };
+      },
+      onSuccess: () => {
+        // Call user-provided onSuccess callback
+        if (onSuccess) {
+          onSuccess();
+        }
+      },
+      onError: (error, variables, context) => {
+        // Rollback on error
+        if (context?.previousData) {
+          utils.profile.getRelationships.setData(
+            relationshipQueryKey,
+            context.previousData,
+          );
+        }
+        console.error('Failed to add relationship:', error);
 
-      // Show user-facing error notification
-      const action =
-        variables.relationshipType === ProfileRelationshipType.LIKES
-          ? 'like'
-          : 'follow';
-      toast.error({
-        message: `Failed to ${action}. Please try again.`,
-      });
-    },
-    onSettled: async () => {
-      // Always refetch relationship data after error or success
-      // Await all invalidations to ensure they complete before proceeding
-      await Promise.all([
-        utils.profile.getRelationships.invalidate(relationshipQueryKey),
-        ...invalidateQueries.flatMap((query) => {
-          const promises = [];
-          if (query.profileId) {
-            promises.push(
-              utils.decision.getProposal.invalidate({
-                profileId: query.profileId,
-              }),
-            );
-          }
-          if (query.processInstanceId) {
-            promises.push(
-              utils.decision.listProposals.invalidate({
-                processInstanceId: query.processInstanceId,
-              }),
-            );
-          }
-          return promises;
-        }),
-      ]);
-    },
-  });
+        // Show user-facing error notification
+        const action =
+          variables.relationshipType === ProfileRelationshipType.LIKES
+            ? 'like'
+            : 'follow';
+        toast.error({
+          message: `Failed to ${action}. Please try again.`,
+        });
+      },
+      onSettled: async () => {
+        // Always refetch relationship data after error or success
+        // Await all invalidations to ensure they complete before proceeding
+        await Promise.all([
+          utils.profile.getRelationships.invalidate(relationshipQueryKey),
+          ...invalidateQueries.flatMap((query) => {
+            const promises = [];
+            if (query.profileId) {
+              promises.push(
+                utils.decision.getProposal.invalidate({
+                  profileId: query.profileId,
+                }),
+              );
+            }
+            if (query.processInstanceId) {
+              promises.push(
+                utils.decision.listProposals.invalidate({
+                  processInstanceId: query.processInstanceId,
+                }),
+              );
+            }
+            return promises;
+          }),
+        ]);
+      },
+    });
 
   // Remove relationship mutation with optimistic updates
   const removeRelationshipMutation =
-    trpc.profile.removeRelationship.useMutation({
+    trpc.decision.removeProposalRelationship.useMutation({
       onMutate: async (variables) => {
         // Cancel outgoing refetches for the relationship queries
         await utils.profile.getRelationships.cancel(relationshipQueryKey);
@@ -291,7 +292,6 @@ export function useRelationshipMutations({
         await addRelationshipMutation.mutateAsync({
           targetProfileId,
           relationshipType: ProfileRelationshipType.LIKES,
-          pending: false,
         });
       }
     } catch (error) {
@@ -324,7 +324,6 @@ export function useRelationshipMutations({
         await addRelationshipMutation.mutateAsync({
           targetProfileId,
           relationshipType: ProfileRelationshipType.FOLLOWING,
-          pending: false,
         });
       }
     } catch (error) {
