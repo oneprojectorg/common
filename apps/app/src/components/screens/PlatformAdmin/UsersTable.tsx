@@ -171,7 +171,6 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Organization')}</TableColumn>
           <TableColumn>{t('Created')}</TableColumn>
           <TableColumn>{t('Last sign in')}</TableColumn>
-          <TableColumn>{t('Auth ID')}</TableColumn>
           <TableColumn className="text-end">{t('Actions')}</TableColumn>
         </TableHeader>
         <TableBody>
@@ -224,14 +223,11 @@ const UsersTableSkeleton = () => {
         <TableColumn>
           <Skeleton className="h-4 w-14" />
         </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
           <TableRow key={i} id={`skeleton-${i}`}>
-            {[...Array(8)].map((_, j) => (
+            {[...Array(7)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />
               </TableCell>

@@ -5,7 +5,6 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
-import { Button as OpButton } from '@op/ui/Button';
 import { MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -80,25 +79,6 @@ export const UsersRowCells = ({ user }: { user: User }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
-        <TooltipTrigger>
-          <OpButton
-            color="secondary"
-            size="small"
-            aria-label={t('Copy auth user ID')}
-            onPress={() => {
-              navigator.clipboard.writeText(user.authUserId);
-              toast.success({
-                message: t('Auth user ID copied to your clipboard.'),
-                dismissable: false,
-              });
-            }}
-          >
-            <LuCopy />
-          </OpButton>
-          <Tooltip>{user.authUserId}</Tooltip>
-        </TooltipTrigger>
-      </TableCell>
       <TableCell className="text-sm text-neutral-charcoal">
         <div className="flex justify-end">
           <OptionMenu
@@ -115,6 +95,20 @@ export const UsersRowCells = ({ user }: { user: User }) => {
               className="px-3 py-1"
             >
               {t('View analytics')}
+            </MenuItem>
+            <MenuItem
+              key="copy-auth-user-id"
+              onAction={() => {
+                navigator.clipboard.writeText(user.authUserId);
+                toast.success({
+                  message: t('Auth user ID copied to your clipboard.'),
+                  dismissable: false,
+                });
+              }}
+              className="px-3 py-1"
+            >
+              <LuCopy className="size-4" />
+              {t('Copy authUserId')}
             </MenuItem>
             <MenuItem
               key="edit-profile"
