@@ -253,6 +253,81 @@
       "nodeId": "21141:393123",
       "page": "Tabs",
       "case": "Playground example: underline (line) variant"
+    },
+    "table.png": {
+      "nodeId": "17089:45635",
+      "page": "Table",
+      "case": "Playground first example: invoices table"
+    },
+    "card.png": {
+      "nodeId": "21123:311699",
+      "page": "Card",
+      "case": "Playground first example: login card"
+    },
+    "badge.png": {
+      "nodeId": "17083:177466",
+      "page": "Badge",
+      "case": "Playground first example: default badge"
+    },
+    "avatar.png": {
+      "nodeId": "17100:83078",
+      "page": "Avatar",
+      "case": "Playground example: fallback avatar"
+    },
+    "accordion.png": {
+      "nodeId": "28:1487",
+      "page": "Accordion",
+      "case": "Playground first example: FAQ"
+    },
+    "item.png": {
+      "nodeId": "18709:93379",
+      "page": "Item",
+      "case": "Playground first example"
+    },
+    "empty.png": {
+      "nodeId": "18679:26096",
+      "page": "Empty",
+      "case": "Playground first example"
+    },
+    "kbd.png": {
+      "nodeId": "18679:25662",
+      "page": "Kbd",
+      "case": "Playground first example: Ctrl + B"
+    },
+    "chart.png": {
+      "nodeId": "449:7503",
+      "page": "Chart",
+      "case": "Bar Chart sheet (mock-only reference)"
+    },
+    "separator.png": {
+      "nodeId": "17398:4174",
+      "page": "Separator",
+      "case": "Playground first example"
+    },
+    "carousel.png": {
+      "nodeId": "17085:178538",
+      "page": "Carousel",
+      "case": "Playground first example: Basic"
+    },
+    "scroll-area.png": {
+      "nodeId": "18597:82157",
+      "page": "Scroll Area",
+      "case": "Playground first example: vertical tags list"
+    },
+    "badge-destructive.png": {
+      "nodeId": "17100:10611",
+      "page": "Badge",
+      "case": "Playground example: destructive badge with icon"
+    },
+    "badge-number.png": {
+      "nodeId": "17100:12145",
+      "page": "Badge",
+      "case": "Playground example: count pill"
+    },
+    "avatar-group.png": {
+      "nodeId": "17100:83082",
+      "page": "Avatar",
+      "case": "Playground example: avatar group"
     }
   }
 }

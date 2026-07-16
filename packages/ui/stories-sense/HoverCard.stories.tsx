@@ -4,6 +4,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@op/sense/HoverCard';
+import { getGradientForString } from '@op/styles/constants';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuCalendarDays } from 'react-icons/lu';
 
@@ -32,7 +33,11 @@ export const Default: Story = {
       <HoverCardContent className="sense">
         <div className="flex gap-4">
           <Avatar>
-            <AvatarFallback>FK</AvatarFallback>
+            <AvatarFallback
+              className={`${getGradientForString('Frida Kahlo')} text-white`}
+            >
+              FK
+            </AvatarFallback>
           </Avatar>
           <div className="grid gap-1">
             <p className="font-strong">Frida Kahlo</p>
