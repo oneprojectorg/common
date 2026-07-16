@@ -513,7 +513,7 @@ export const MenusNavigation: Story = {
       </ParityRow>
 
       <ParityRow label="Sidebar" img={figmaSidebar} imgWidth={256}>
-        <div className="w-full overflow-hidden rounded-lg border border-neutral-gray1">
+        <div className="w-full overflow-hidden rounded-lg border border-border">
           <SidebarProvider className="min-h-0 w-64">
             <Sidebar collapsible="none" className="h-auto">
               <SidebarHeader>
@@ -617,7 +617,9 @@ export const MenusNavigation: Story = {
 
       {/* cmdk renders inline, so the real panel is compared directly. */}
       <ParityRow label="Command" img={figmaCommand} imgWidth={384}>
-        <Command value="" className="w-96 rounded-lg border border-border">
+        {/* value="" suppresses cmdk's automatic first-item highlight so the
+            static panel matches the Figma mock's no-selection state. */}
+        <Command value="" className="w-96">
           <CommandInput placeholder="Type a command or search" />
           <CommandList className="max-h-none">
             <CommandEmpty>No results found.</CommandEmpty>
