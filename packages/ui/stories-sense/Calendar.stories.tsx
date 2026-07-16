@@ -134,7 +134,7 @@ const DateTimeDemo = () => {
           type="time"
           value={time}
           onChange={(event) => setTime(event.target.value)}
-          className="ms-auto w-fit"
+          className="ms-auto h-8 w-fit rounded-md px-2.5 text-sm"
         />
       </div>
     </div>
