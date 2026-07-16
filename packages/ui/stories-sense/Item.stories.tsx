@@ -18,6 +18,7 @@ import {
   ItemSeparator,
   ItemTitle,
 } from '@op/sense/Item';
+import { getGradientForString } from '@op/styles/constants';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   LuChevronDown,
@@ -39,6 +40,12 @@ const meta: Meta<typeof Item> = {
 export default meta;
 
 type Story = StoryObj<typeof Item>;
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((part) => part[0])
+    .join('');
 
 export const Default: Story = {
   render: () => (
@@ -139,7 +146,10 @@ export const WithImage: Story = {
     <div className="flex w-lg flex-col gap-4">
       <Item variant="outline">
         <ItemMedia variant="image">
-          <img src="https://github.com/shadcn.png" alt="Community garden" />
+          <img
+            src="https://picsum.photos/seed/garden/64/64"
+            alt="Community garden"
+          />
         </ItemMedia>
         <ItemContent>
           <ItemTitle>Community garden fund</ItemTitle>
@@ -165,11 +175,10 @@ export const WithAvatar: Story = {
         <Item key={name} variant="outline">
           <ItemMedia>
             <Avatar>
-              <AvatarFallback>
-                {name
-                  .split(' ')
-                  .map((part) => part[0])
-                  .join('')}
+              <AvatarFallback
+                className={`${getGradientForString(name)} text-white`}
+              >
+                {getInitials(name)}
               </AvatarFallback>
             </Avatar>
           </ItemMedia>
@@ -261,11 +270,10 @@ export const InDropdown: Story = {
             <Item size="xs" className="w-full">
               <ItemMedia>
                 <Avatar size="sm">
-                  <AvatarFallback>
-                    {name
-                      .split(' ')
-                      .map((part) => part[0])
-                      .join('')}
+                  <AvatarFallback
+                    className={`${getGradientForString(name)} text-white`}
+                  >
+                    {getInitials(name)}
                   </AvatarFallback>
                 </Avatar>
               </ItemMedia>

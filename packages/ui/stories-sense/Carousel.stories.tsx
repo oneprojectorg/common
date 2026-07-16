@@ -20,6 +20,9 @@ export default meta;
 
 type Story = StoryObj<typeof Carousel>;
 
+const tileClass =
+  'flex aspect-square items-center justify-center rounded-xl border bg-muted text-title';
+
 export const Default: Story = {
   render: () => (
     <div className="mx-12 w-80">
@@ -27,9 +30,7 @@ export const Default: Story = {
         <CarouselContent>
           {[1, 2, 3, 4, 5].map((n) => (
             <CarouselItem key={n}>
-              <div className="flex aspect-square items-center justify-center rounded-xl border border-border bg-muted text-title">
-                {n}
-              </div>
+              <div className={tileClass}>{n}</div>
             </CarouselItem>
           ))}
         </CarouselContent>
@@ -47,9 +48,7 @@ export const MultipleItems: Story = {
         <CarouselContent>
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <CarouselItem key={n} className="basis-1/3">
-              <div className="flex aspect-square items-center justify-center rounded-xl border border-border bg-muted text-title">
-                {n}
-              </div>
+              <div className={tileClass}>{n}</div>
             </CarouselItem>
           ))}
         </CarouselContent>

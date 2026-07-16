@@ -54,7 +54,7 @@ export const Default: Story = {
 export const Outlined: Story = {
   render: () => (
     <div className="max-w-md">
-      <Empty className="border border-dashed">
+      <Empty className="border">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <LuFolder />

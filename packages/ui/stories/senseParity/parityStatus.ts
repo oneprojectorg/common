@@ -74,7 +74,7 @@ export const parityStatus: Record<
   'aspect-ratio': { family: 'data-display', status: 'done' },
   carousel: { family: 'data-display', status: 'done' },
   'scroll-area': { family: 'data-display', status: 'done' },
-  chart: { family: 'data-display', status: 'done' },
+  chart: { family: 'data-display', status: 'in-progress' },
 
   // Feedback
   alert: { family: 'feedback', status: 'todo' },

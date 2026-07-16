@@ -6,8 +6,9 @@
 // portaled part — see Dialog.stories.tsx for the pattern.
 //
 // These stories live in `stories-sense/`, deliberately separate from
-// `stories/` (@op/ui): they only import from `@op/sense/*`, so when @op/ui is
-// deleted and Storybook moves out, this directory moves with it unchanged.
+// `stories/` (@op/ui): they only import from `@op/sense/*` and `@op/styles`
+// (both of which outlive @op/ui), so when @op/ui is deleted and Storybook
+// moves out, this directory moves with it unchanged.
 
 import type { Decorator } from '@storybook/react-vite';
 

@@ -46,6 +46,12 @@ const invoices = [
   { id: 'INV005', status: 'Paid', method: 'PayPal', amount: '$550.00' },
 ];
 
+const statusVariant: Record<string, 'secondary' | 'warning' | 'destructive'> = {
+  Paid: 'secondary',
+  Pending: 'warning',
+  Unpaid: 'destructive',
+};
+
 export const Default: Story = {
   render: () => (
     <Table className="max-w-2xl">
@@ -93,15 +99,7 @@ export const WithBadges: Story = {
           <TableRow key={invoice.id}>
             <TableCell className="font-strong">{invoice.id}</TableCell>
             <TableCell>
-              <Badge
-                variant={
-                  invoice.status === 'Paid'
-                    ? 'secondary'
-                    : invoice.status === 'Pending'
-                      ? 'warning'
-                      : 'destructive'
-                }
-              >
+              <Badge variant={statusVariant[invoice.status]}>
                 {invoice.status}
               </Badge>
             </TableCell>

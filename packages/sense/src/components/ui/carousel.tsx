@@ -199,7 +199,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <LuChevronLeft className="rtl:rotate-180" />
+      <LuChevronLeft />
       <span className="sr-only">Previous slide</span>
     </Button>
   );
@@ -230,7 +230,7 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <LuChevronRight className="rtl:rotate-180" />
+      <LuChevronRight />
       <span className="sr-only">Next slide</span>
     </Button>
   );

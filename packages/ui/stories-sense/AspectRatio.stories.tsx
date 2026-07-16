@@ -17,7 +17,7 @@ type Story = StoryObj<typeof AspectRatio>;
 export const Default: Story = {
   render: () => (
     <div className="w-96">
-      <AspectRatio ratio={16 / 9} className="rounded-lg bg-muted">
+      <AspectRatio ratio={16 / 9} className="rounded-lg bg-border">
         <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
           16 : 9
         </div>
@@ -29,7 +29,7 @@ export const Default: Story = {
 export const Square: Story = {
   render: () => (
     <div className="w-48">
-      <AspectRatio ratio={1} className="rounded-lg bg-muted">
+      <AspectRatio ratio={1} className="rounded-lg bg-border">
         <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
           1 : 1
         </div>

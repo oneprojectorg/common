@@ -32,16 +32,10 @@ export const Default: Story = {
           <LuChevronsUpDown />
         </CollapsibleTrigger>
       </div>
-      <div className="rounded-lg border border-border px-4 py-2 text-sm">
-        @base-ui/react
-      </div>
+      <div className="rounded-lg border px-4 py-2 text-sm">@base-ui/react</div>
       <CollapsibleContent className="flex flex-col gap-2">
-        <div className="rounded-lg border border-border px-4 py-2 text-sm">
-          @op/sense
-        </div>
-        <div className="rounded-lg border border-border px-4 py-2 text-sm">
-          @op/styles
-        </div>
+        <div className="rounded-lg border px-4 py-2 text-sm">@op/sense</div>
+        <div className="rounded-lg border px-4 py-2 text-sm">@op/styles</div>
       </CollapsibleContent>
     </Collapsible>
   ),

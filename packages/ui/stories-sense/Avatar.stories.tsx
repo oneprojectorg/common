@@ -6,9 +6,9 @@ import {
   AvatarGroupCount,
   AvatarImage,
 } from '@op/sense/Avatar';
+import { getGradientForString } from '@op/styles/constants';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { getGradientForString } from '../src/lib/utils';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Avatar> = {

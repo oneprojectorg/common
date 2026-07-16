@@ -72,6 +72,8 @@ import figmaEmpty from '../assets/figma/empty.png';
 import figmaItem from '../assets/figma/item.png';
 import figmaKbd from '../assets/figma/kbd.png';
 import figmaScrollArea from '../assets/figma/scroll-area.png';
+
+const scrollItemCount = 12;
 import figmaSeparator from '../assets/figma/separator.png';
 import figmaTable from '../assets/figma/table.png';
 import { ParityGridHeader, ParityRow, withDesignScale } from './Parity';
@@ -311,13 +313,13 @@ export const DataDisplay: Story = {
       </ParityRow>
 
       <ParityRow label="Scroll area" img={figmaScrollArea} imgWidth={192}>
-        <ScrollArea className="h-72 w-48 rounded-lg border border-border bg-background">
+        <ScrollArea className="h-72 w-48 rounded-lg border bg-background">
           <div className="p-4">
             <p className="pb-4 text-sm font-strong">Tags</p>
-            {Array.from({ length: 12 }, (_, i) => (
+            {Array.from({ length: scrollItemCount }, (_, i) => (
               <div key={i}>
                 <p className="text-sm">v1.2.0-beta.{50 - i}</p>
-                {i < 11 && <Separator className="my-2" />}
+                {i < scrollItemCount - 1 && <Separator className="my-2" />}
               </div>
             ))}
           </div>
@@ -357,7 +359,7 @@ function CarouselWithCounter() {
         <CarouselContent>
           {[1, 2, 3, 4, 5].map((n) => (
             <CarouselItem key={n}>
-              <div className="flex aspect-square items-center justify-center rounded-xl border border-border bg-muted text-title">
+              <div className="flex aspect-square items-center justify-center rounded-xl border bg-muted text-title">
                 {n}
               </div>
             </CarouselItem>
