@@ -1,6 +1,8 @@
 import { Calendar } from '@op/sense/Calendar';
 import type { DateRange } from '@op/sense/Calendar';
 import { ar } from '@op/sense/CalendarLocales';
+import { Input } from '@op/sense/Input';
+import { Label } from '@op/sense/Label';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
@@ -85,4 +87,60 @@ const ArabicDemo = () => {
 
 export const Arabic: Story = {
   render: () => <ArabicDemo />,
+};
+
+// Days before the (pinned) reference date are disabled — the shape of a
+// "pick a future date" flow. In the app you'd pass `{ before: new Date() }`.
+const DisabledDatesDemo = () => {
+  const referenceDate = new Date(2026, 5, 15);
+  const [selected, setSelected] = useState<Date | undefined>(undefined);
+
+  return (
+    <Calendar
+      mode="single"
+      defaultMonth={new Date(2026, 5, 1)}
+      disabled={{ before: referenceDate }}
+      selected={selected}
+      onSelect={setSelected}
+      className="rounded border"
+    />
+  );
+};
+
+export const DisabledDates: Story = {
+  render: () => <DisabledDatesDemo />,
+};
+
+// Date + time: the calendar picks the day, a native time input picks the
+// time. Composition mirrors the upstream shadcn date-time example.
+const DateTimeDemo = () => {
+  const [date, setDate] = useState<Date | undefined>(new Date(2026, 5, 15));
+  const [time, setTime] = useState('10:30');
+
+  return (
+    <div className="w-fit rounded border">
+      <Calendar
+        mode="single"
+        defaultMonth={new Date(2026, 5, 1)}
+        selected={date}
+        onSelect={setDate}
+      />
+      <div className="flex items-center gap-3 border-t p-3">
+        <Label htmlFor="calendar-time" className="text-sm">
+          Time
+        </Label>
+        <Input
+          id="calendar-time"
+          type="time"
+          value={time}
+          onChange={(event) => setTime(event.target.value)}
+          className="ms-auto w-fit"
+        />
+      </div>
+    </div>
+  );
+};
+
+export const WithTimePicker: Story = {
+  render: () => <DateTimeDemo />,
 };
