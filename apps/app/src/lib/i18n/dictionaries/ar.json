@@ -1225,7 +1225,7 @@
   "No limit": "بلا حد",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, zero {لا أصوات} one {صوت واحد} two {صوتان} few {# أصوات} many {# صوتًا} other {# صوت}}",
   "{total, plural, one {proposal} other {proposals}}": "{total, plural, zero {مقترحات} one {مقترح} two {مقترحان} few {مقترحات} many {مقترحات} other {مقترحات}}",
-  "of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}": "من {total, plural, zero {مقترح} one {مقترح واحد} two {مقترحين} few {<highlight>#</highlight> مقترحات} many {<highlight>#</highlight> مقترحًا} other {<highlight>#</highlight> مقترح}}",
+  "of {total, plural, one {# proposal} other {# proposals}}": "من {total, plural, zero {مقترح} one {مقترح واحد} two {مقترحين} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",
   "Open menu": "فتح القائمة",
   "Open process steps": "فتح خطوات العملية",
   "Somali": "الصومالية",

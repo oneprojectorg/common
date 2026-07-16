@@ -1330,7 +1330,7 @@
   "No limit": "Xad ma leh",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# cod} other {# codad}}",
   "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {soo jeedin} other {soo jeedimo}}",
-  "of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}": "ka mid ah {total, plural, one {<highlight>#</highlight> soo jeedin} other {<highlight>#</highlight> soo jeedimo}}",
+  "of {total, plural, one {# proposal} other {# proposals}}": "ka mid ah {total, plural, one {# soo jeedin} other {# soo jeedimo}}",
   "You don't have access to updates for this decision.": "Ma haysatid fasax aad ku aragto cusboonaysiinta go'aankan.",
   "Open menu": "Fur menu-ga",
   "Open process steps": "Fur tallaabooyinka habka",

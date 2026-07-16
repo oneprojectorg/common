@@ -689,7 +689,7 @@
   "No limit": "Sem limite",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# voto} other {# votos}}",
   "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {proposta} other {propostas}}",
-  "of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}": "de {total, plural, one {<highlight>#</highlight> proposta} other {<highlight>#</highlight> propostas}}",
+  "of {total, plural, one {# proposal} other {# proposals}}": "de {total, plural, one {# proposta} other {# propostas}}",
   "Template Editor": "Editor de modelo",
   "Criteria": "Critérios",
   "Settings": "Configurações",

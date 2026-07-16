@@ -30,12 +30,11 @@ export const ProposalsListHeader = ({
 };
 
 // `count` is the number matching the active filter; `total` the full proposal
-// pool. A narrowing filter reads "6 of 328 proposals" — the count in title
-// styling, and the pool size in the "of {total} proposals" remainder styled the
-// same so both figures read as headline numbers; the surrounding words stay
-// muted. When nothing is filtered out (count === total) the redundant "of N" is
-// dropped and it reads "328 proposals". Shared with ManualSelectionToolbar so
-// both header sites stay in lockstep.
+// pool. When nothing is filtered out (count === total) it reads "328 proposals"
+// as a single headline — number and word both in title styling. A narrowing
+// filter reads "6 of 328 proposals": the count leads in title styling and the
+// muted "of {total} proposals" remainder (including its number) carries the pool
+// size. Shared with ManualSelectionToolbar so both header sites stay in lockstep.
 export const ProposalCountHeader = ({
   count,
   total,
@@ -50,20 +49,18 @@ export const ProposalCountHeader = ({
       <span className="font-serif text-title-base text-neutral-black">
         {unfiltered ? total : count}
       </span>
-      <span className="text-base text-neutral-gray4">
+      <span
+        className={
+          unfiltered
+            ? 'font-serif text-title-base text-neutral-black'
+            : 'text-base text-neutral-gray4'
+        }
+      >
         {unfiltered
           ? t('{total, plural, one {proposal} other {proposals}}', { total })
-          : t.rich(
-              'of {total, plural, one {<highlight>#</highlight> proposal} other {<highlight>#</highlight> proposals}}',
-              {
-                total,
-                highlight: (chunks: React.ReactNode) => (
-                  <span className="font-serif text-title-base text-neutral-black">
-                    {chunks}
-                  </span>
-                ),
-              },
-            )}
+          : t('of {total, plural, one {# proposal} other {# proposals}}', {
+              total,
+            })}
       </span>
     </span>
   );
