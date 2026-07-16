@@ -41,7 +41,7 @@ export const Default: Story = {
             Make changes to your profile here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
+        <div className="grid gap-4 px-6 py-4">
           <div className="grid gap-2">
             <Label htmlFor="dialog-name">Name</Label>
             <Input id="dialog-name" defaultValue="Frida Kahlo" />
@@ -56,6 +56,48 @@ export const Default: Story = {
             Cancel
           </DialogClose>
           <Button>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  ),
+};
+
+// The panel is a grid with self-padding header/footer sections; capping its
+// height makes the body row (min-h-0) the scroll container.
+export const ScrollingBody: Story = {
+  render: () => (
+    <Dialog>
+      <DialogTrigger render={<Button variant="outline" />}>
+        View community agreement
+      </DialogTrigger>
+      <DialogContent className="sense max-h-[min(32rem,80vh)] grid-rows-[auto_minmax(0,1fr)_auto]">
+        <DialogHeader>
+          <DialogTitle>Community agreement</DialogTitle>
+          <DialogDescription>
+            Please review before joining the decision process.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 overflow-y-auto px-6 py-4">
+          <div className="flex flex-col gap-4 text-sm">
+            {[
+              'Participation is open to every confirmed member of the network. Each member holds an equal vote regardless of tenure or role.',
+              'Proposals must state a clear outcome, a budget if funds are requested, and the people responsible for carrying the work forward.',
+              'Discussion phases last at least one week so members across time zones can weigh in before any vote opens.',
+              'Votes are cast privately. Aggregate results are published to all members once the voting phase closes.',
+              'Members may delegate their vote for a given decision to another member they trust, and may revoke that delegation at any time before the vote closes.',
+              'Facilitators may extend a phase when participation falls below quorum, but may never shorten one after it has been announced.',
+              'Amendments to this agreement follow the same process as any other proposal, with a higher approval threshold of two thirds.',
+              'Disputes about process are raised with the facilitation circle, whose decisions are documented and reviewable by the membership.',
+            ].map((paragraph, index) => (
+              <p key={index}>
+                {index + 1}. {paragraph}
+              </p>
+            ))}
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>Close</DialogClose>
+          <Button>Agree and join</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
