@@ -1,6 +1,6 @@
 import { Calendar } from '@op/sense/Calendar';
 import type { DateRange } from '@op/sense/Calendar';
-import { faIR } from '@op/sense/CalendarLocales';
+import { ar } from '@op/sense/CalendarLocales';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
@@ -61,11 +61,10 @@ export const Range: Story = {
   render: () => <RangeDemo />,
 };
 
-// Persian-language RTL example: faIR locale, Persian-Arabic numerals, and
-// rtl layout (nav chevrons flip, week starts Saturday). Note this is still
-// the Gregorian grid — a true Jalali calendar needs a date-fns-jalali
-// dateLib, which react-day-picker v10 no longer bundles.
-const PersianDemo = () => {
+// Arabic RTL example (the app ships an ar dictionary): ar locale,
+// Arabic-Indic numerals, rtl layout — nav chevrons flip and the week starts
+// Saturday. Still the Gregorian grid, matching the app's dates.
+const ArabicDemo = () => {
   const [selected, setSelected] = useState<Date | undefined>(
     new Date(2026, 5, 15),
   );
@@ -74,8 +73,8 @@ const PersianDemo = () => {
     <Calendar
       mode="single"
       dir="rtl"
-      locale={faIR}
-      numerals="arabext"
+      locale={ar}
+      numerals="arab"
       defaultMonth={new Date(2026, 5, 1)}
       selected={selected}
       onSelect={setSelected}
@@ -84,6 +83,6 @@ const PersianDemo = () => {
   );
 };
 
-export const Persian: Story = {
-  render: () => <PersianDemo />,
+export const Arabic: Story = {
+  render: () => <ArabicDemo />,
 };
