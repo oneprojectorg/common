@@ -533,7 +533,11 @@ export const MenusNavigation: Story = {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
-                <SidebarInput placeholder="Search" />
+                <SidebarGroup className="py-0">
+                  <SidebarGroupContent>
+                    <SidebarInput placeholder="Search" />
+                  </SidebarGroupContent>
+                </SidebarGroup>
               </SidebarHeader>
               <SidebarContent>
                 <SidebarGroup>
