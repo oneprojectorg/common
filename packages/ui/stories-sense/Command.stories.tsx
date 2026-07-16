@@ -13,12 +13,22 @@ import {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import {
+  LuBell,
+  LuBuilding2,
   LuCalculator,
   LuCalendar,
   LuCreditCard,
+  LuFilePlus,
+  LuHouse,
+  LuInbox,
+  LuLogOut,
+  LuScale,
   LuSettings,
   LuSmile,
   LuUser,
+  LuUserPlus,
+  LuVote,
+  LuWorkflow,
 } from 'react-icons/lu';
 
 import { withSense } from './sense';
@@ -103,4 +113,73 @@ const CommandDialogExample = () => {
 
 export const InDialog: Story = {
   render: () => <CommandDialogExample />,
+};
+
+// Enough groups and items to exceed the list's max-h-72, exercising the
+// scroll behaviour (scrollbar hidden via the no-scrollbar utility).
+export const ManyGroups: Story = {
+  render: () => (
+    <Command className="w-96">
+      <CommandInput placeholder="Type a command or search" />
+      <CommandList>
+        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandGroup heading="Navigate">
+          <CommandItem>
+            <LuHouse />
+            Home
+            <CommandShortcut>⌘H</CommandShortcut>
+          </CommandItem>
+          <CommandItem>
+            <LuInbox />
+            Inbox
+            <CommandShortcut>⌘I</CommandShortcut>
+          </CommandItem>
+          <CommandItem>
+            <LuScale />
+            Decisions
+          </CommandItem>
+          <CommandItem>
+            <LuBuilding2 />
+            Organizations
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Create">
+          <CommandItem>
+            <LuFilePlus />
+            New proposal
+            <CommandShortcut>⌘N</CommandShortcut>
+          </CommandItem>
+          <CommandItem>
+            <LuWorkflow />
+            New decision process
+          </CommandItem>
+          <CommandItem>
+            <LuVote />
+            Start a vote
+          </CommandItem>
+          <CommandItem>
+            <LuUserPlus />
+            Invite teammate
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Account">
+          <CommandItem>
+            <LuUser />
+            Profile
+            <CommandShortcut>⌘P</CommandShortcut>
+          </CommandItem>
+          <CommandItem>
+            <LuBell />
+            Notification settings
+          </CommandItem>
+          <CommandItem>
+            <LuLogOut />
+            Sign out
+          </CommandItem>
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  ),
 };

@@ -15,6 +15,14 @@ import {
   ContextMenuTrigger,
 } from '@op/sense/ContextMenu';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import {
+  LuArchive,
+  LuCopy,
+  LuPencil,
+  LuScissors,
+  LuShare2,
+  LuTrash2,
+} from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -74,6 +82,74 @@ export const Default: Story = {
             </ContextMenuRadioItem>
             <ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
           </ContextMenuRadioGroup>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
+  ),
+};
+
+export const WithIcons: Story = {
+  render: () => (
+    <ContextMenu>
+      <ContextMenuTrigger className="flex h-36 w-72 items-center justify-center rounded-md border border-dashed border-input bg-muted text-sm text-muted-foreground">
+        Right-click here
+      </ContextMenuTrigger>
+      <ContextMenuContent className="sense w-52">
+        <ContextMenuGroup>
+          <ContextMenuItem>
+            <LuPencil />
+            Edit
+          </ContextMenuItem>
+          <ContextMenuItem>
+            <LuCopy />
+            Copy
+            <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem>
+            <LuScissors />
+            Cut
+            <ContextMenuShortcut>⌘X</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem>
+            <LuShare2 />
+            Share
+          </ContextMenuItem>
+        </ContextMenuGroup>
+        <ContextMenuSeparator />
+        <ContextMenuGroup>
+          <ContextMenuItem>
+            <LuArchive />
+            Archive
+          </ContextMenuItem>
+          <ContextMenuItem variant="destructive">
+            <LuTrash2 />
+            Delete
+            <ContextMenuShortcut>⌫</ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
+  ),
+};
+
+// Inset items align with labelled siblings that carry an icon or indicator.
+export const WithInset: Story = {
+  render: () => (
+    <ContextMenu>
+      <ContextMenuTrigger className="flex h-36 w-72 items-center justify-center rounded-md border border-dashed border-input bg-muted text-sm text-muted-foreground">
+        Right-click here
+      </ContextMenuTrigger>
+      <ContextMenuContent className="sense w-56">
+        <ContextMenuGroup>
+          <ContextMenuLabel inset>View</ContextMenuLabel>
+          <ContextMenuCheckboxItem defaultChecked>
+            Show comments
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem>Show votes</ContextMenuCheckboxItem>
+          <ContextMenuItem inset>Expand all sections</ContextMenuItem>
+          <ContextMenuItem inset disabled>
+            Collapse all sections
+          </ContextMenuItem>
         </ContextMenuGroup>
       </ContextMenuContent>
     </ContextMenu>

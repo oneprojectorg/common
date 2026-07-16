@@ -183,6 +183,19 @@
  * consistent, either add `.sense` to `<body>` at the layout root, or pass
  * a sense-scoped element via base-ui's Portal `container` prop. */
 
+/* Thin, muted scrollbars for scrollable regions inside sense subtrees
+ * (menus, popups, dialog bodies). Chrome 121+ and Firefox honor these;
+ * Safari ignores them and keeps its overlay scrollbars, which already look
+ * fine. Thumb uses --input (gray-300) — the "visible line" gray, close to
+ * the native thumb but flat and gutterless. */
+@layer base {
+  .sense,
+  .sense * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input) transparent;
+  }
+}
+
 /* Scrollbar-hiding utility that upstream shadcn defines in its globals.css;
  * command, combobox, and sidebar reference it. */
 @utility no-scrollbar {
