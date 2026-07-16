@@ -221,6 +221,21 @@
   --color-border: var(--border);
 }
 
+/* Bare `border` (no color utility) defaults to the sense border token,
+ * mirroring shared-styles.css's app-wide rule (which hardcodes the @op/ui
+ * neutral and dies with it). Explicit utilities like border-input still win —
+ * they live in the utilities layer. */
+@layer base {
+  .sense,
+  .sense *,
+  .sense ::before,
+  .sense ::after,
+  .sense ::backdrop,
+  .sense ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
 /* @layer base so Tailwind utilities still win: an element carrying both
  * `.sense` and its own utility (e.g. a portaled tooltip with
  * `text-background`) must keep the utility — unlayered rules would beat it. */
