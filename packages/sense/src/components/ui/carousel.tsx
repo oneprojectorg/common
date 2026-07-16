@@ -187,11 +187,11 @@ function CarouselPrevious({
       className={cn(
         'absolute touch-manipulation rounded-full',
         orientation === 'horizontal'
-          ? // active:-translate-y-1/2 pins the vertical centering against the
-            // Button base's active:translate-y-px press nudge — both write
-            // --tw-translate-y, and losing the -50% mid-press moves the button
-            // out from under the cursor, eating the click.
-            'top-1/2 -left-12 -translate-y-1/2 active:-translate-y-1/2'
+          ? // my-auto centering (per upstream) instead of translate — the
+            // Button base's active:translate-y-px press nudge writes
+            // --tw-translate-y and would stomp a -translate-y-1/2, moving the
+            // button out from under the cursor mid-press and eating the click.
+            'inset-y-0 -left-12 my-auto'
           : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
         className,
       )}
@@ -199,7 +199,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <LuChevronLeft />
+      <LuChevronLeft className="rtl:rotate-180" />
       <span className="sr-only">Previous slide</span>
     </Button>
   );
@@ -221,8 +221,8 @@ function CarouselNext({
       className={cn(
         'absolute touch-manipulation rounded-full',
         orientation === 'horizontal'
-          ? // See CarouselPrevious: pins centering against the press nudge.
-            'top-1/2 -right-12 -translate-y-1/2 active:-translate-y-1/2'
+          ? // See CarouselPrevious: my-auto centering avoids the press nudge.
+            'inset-y-0 -right-12 my-auto'
           : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
         className,
       )}
@@ -230,7 +230,7 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <LuChevronRight />
+      <LuChevronRight className="rtl:rotate-180" />
       <span className="sr-only">Next slide</span>
     </Button>
   );
