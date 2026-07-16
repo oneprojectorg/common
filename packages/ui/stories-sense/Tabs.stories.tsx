@@ -51,7 +51,7 @@ export const Default: Story = {
         <TabsContent
           key={tab}
           value={tab}
-          className="flex flex-col gap-4 rounded-lg border border-border p-4"
+          className="flex flex-col gap-4 rounded-lg border p-4"
         >
           <div className="flex flex-col gap-1">
             <p className="font-strong text-foreground">{tab}</p>

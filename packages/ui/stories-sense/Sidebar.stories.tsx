@@ -54,7 +54,7 @@ const buildingYourApplication = [
 // inspected without taking over the Storybook canvas.
 export const Default: Story = {
   render: () => (
-    <div className="w-64 overflow-hidden rounded-lg border border-border">
+    <div className="w-64 overflow-hidden rounded-lg border">
       <SidebarProvider className="min-h-0 w-64">
         <Sidebar collapsible="none" className="h-auto">
           <SidebarHeader>
