@@ -1,6 +1,11 @@
 import { db } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
+import {
+  ProfileRelationshipType,
+  ProposalStatus,
+  profileRelationships,
+  proposals,
+} from '@op/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -69,13 +74,15 @@ describeAccessTierGating('decision.addProposalRelationship', {
 });
 
 /**
- * Proposal like/follow is gated the same way commenting is — SUBMIT_PROPOSALS
- * on the parent decision — so a confirmed account with no standing on the
- * decision can't like its proposals, and non-proposal profiles are rejected
- * outright (those go through the closed-network `profile.addRelationship`).
+ * Proposal like/follow requires the same permission commenting does —
+ * SUBMIT_PROPOSALS on the parent decision — so a confirmed account with no
+ * standing on the decision can't like (or unlike) its proposals, and
+ * non-proposal profiles are rejected outright (those go through the
+ * closed-network `profile.addRelationship`). Covers both the add and remove
+ * endpoints, which share `assertProposalEngagementAccess`.
  */
-describe.concurrent('decision.addProposalRelationship engagement access', () => {
-  it('lets a caller with submit access like a proposal in that decision', async ({
+describe.concurrent('proposal relationship engagement access', () => {
+  it('lets a caller with submit access like, follow, and unfollow a proposal in that decision', async ({
     task,
     onTestFinished,
   }) => {
@@ -99,14 +106,45 @@ describe.concurrent('decision.addProposalRelationship engagement access', () => 
       .set({ status: ProposalStatus.SUBMITTED })
       .where(eq(proposals.id, proposal.id));
 
+    const relationshipRows = (relationshipType: ProfileRelationshipType) =>
+      db
+        .select({ id: profileRelationships.id })
+        .from(profileRelationships)
+        .where(
+          and(
+            eq(profileRelationships.targetProfileId, proposal.profileId),
+            eq(profileRelationships.relationshipType, relationshipType),
+          ),
+        );
+
     // setup.userEmail owns the decision (submit access).
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    await expect(
-      ownerCaller.decision.addProposalRelationship({
-        targetProfileId: proposal.profileId,
-        relationshipType: 'likes',
-      }),
-    ).resolves.not.toThrow();
+    await ownerCaller.decision.addProposalRelationship({
+      targetProfileId: proposal.profileId,
+      relationshipType: 'likes',
+    });
+    await ownerCaller.decision.addProposalRelationship({
+      targetProfileId: proposal.profileId,
+      relationshipType: 'following',
+    });
+    expect(await relationshipRows(ProfileRelationshipType.LIKES)).toHaveLength(
+      1,
+    );
+    expect(
+      await relationshipRows(ProfileRelationshipType.FOLLOWING),
+    ).toHaveLength(1);
+
+    // Unfollow removes only the following row; the like stays.
+    await ownerCaller.decision.removeProposalRelationship({
+      targetProfileId: proposal.profileId,
+      relationshipType: 'following',
+    });
+    expect(
+      await relationshipRows(ProfileRelationshipType.FOLLOWING),
+    ).toHaveLength(0);
+    expect(await relationshipRows(ProfileRelationshipType.LIKES)).toHaveLength(
+      1,
+    );
   });
 
   it('rejects a confirmed account with no standing on the decision', async ({
@@ -137,6 +175,14 @@ describe.concurrent('decision.addProposalRelationship engagement access', () => 
     const outsiderCaller = await createAuthenticatedCaller(outsider.userEmail);
     await expect(
       outsiderCaller.decision.addProposalRelationship({
+        targetProfileId: proposal.profileId,
+        relationshipType: 'likes',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    // Remove is gated by the same assert — no standing means no unlike either.
+    await expect(
+      outsiderCaller.decision.removeProposalRelationship({
         targetProfileId: proposal.profileId,
         relationshipType: 'likes',
       }),

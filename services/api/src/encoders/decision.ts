@@ -8,6 +8,7 @@ import type { JSONContent } from '@op/common/client';
 import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
 import {
   ProcessStatus,
+  ProfileRelationshipType,
   ProposalStatus,
   Visibility,
   decisionProcesses,
@@ -550,6 +551,16 @@ export const updateInstanceInputSchema = createInstanceInputSchema
 
 export const getInstanceInputSchema = z.object({
   instanceId: z.uuid(),
+});
+
+// Shared by decision.addProposalRelationship / removeProposalRelationship —
+// proposal engagement is limited to like/follow.
+export const proposalRelationshipInputSchema = z.object({
+  targetProfileId: z.uuid(),
+  relationshipType: z.enum([
+    ProfileRelationshipType.FOLLOWING,
+    ProfileRelationshipType.LIKES,
+  ]),
 });
 
 export const createProposalInputSchema = z.object({

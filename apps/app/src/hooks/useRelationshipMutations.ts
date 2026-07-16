@@ -8,7 +8,6 @@ interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
   onSuccess?: () => void;
   invalidateQueries?: Array<{
-    profileId?: string | null;
     processInstanceId?: string;
   }>;
 }
@@ -79,6 +78,27 @@ export function useRelationshipMutations({
       (r) => r.targetProfile?.id === targetProfileId,
     ),
   );
+
+  // Shared by both mutations' onSettled: always refetch relationship data
+  // after error or success. The proposal detail view refreshes via the
+  // realtime channel the mutation registers (Channels.decisionProposal), so
+  // it isn't invalidated here; the proposal list deliberately isn't
+  // channel-invalidated, so callers pass processInstanceId to refresh their
+  // own list counts.
+  const invalidateAfterMutation = async () => {
+    await Promise.all([
+      utils.profile.getRelationships.invalidate(relationshipQueryKey),
+      ...invalidateQueries.flatMap((query) =>
+        query.processInstanceId
+          ? [
+              utils.decision.listProposals.invalidate({
+                processInstanceId: query.processInstanceId,
+              }),
+            ]
+          : [],
+      ),
+    ]);
+  };
 
   // Add relationship mutation with optimistic updates
   const addRelationshipMutation =
@@ -154,31 +174,7 @@ export function useRelationshipMutations({
           message: `Failed to ${action}. Please try again.`,
         });
       },
-      onSettled: async () => {
-        // Always refetch relationship data after error or success
-        // Await all invalidations to ensure they complete before proceeding
-        await Promise.all([
-          utils.profile.getRelationships.invalidate(relationshipQueryKey),
-          ...invalidateQueries.flatMap((query) => {
-            const promises = [];
-            if (query.profileId) {
-              promises.push(
-                utils.decision.getProposal.invalidate({
-                  profileId: query.profileId,
-                }),
-              );
-            }
-            if (query.processInstanceId) {
-              promises.push(
-                utils.decision.listProposals.invalidate({
-                  processInstanceId: query.processInstanceId,
-                }),
-              );
-            }
-            return promises;
-          }),
-        ]);
-      },
+      onSettled: invalidateAfterMutation,
     });
 
   // Remove relationship mutation with optimistic updates
@@ -240,31 +236,7 @@ export function useRelationshipMutations({
           message: `Failed to ${action}. Please try again.`,
         });
       },
-      onSettled: async () => {
-        // Always refetch relationship data after error or success
-        // Await all invalidations to ensure they complete before proceeding
-        await Promise.all([
-          utils.profile.getRelationships.invalidate(relationshipQueryKey),
-          ...invalidateQueries.flatMap((query) => {
-            const promises = [];
-            if (query.profileId) {
-              promises.push(
-                utils.decision.getProposal.invalidate({
-                  profileId: query.profileId,
-                }),
-              );
-            }
-            if (query.processInstanceId) {
-              promises.push(
-                utils.decision.listProposals.invalidate({
-                  processInstanceId: query.processInstanceId,
-                }),
-              );
-            }
-            return promises;
-          }),
-        ]);
-      },
+      onSettled: invalidateAfterMutation,
     });
 
   // Combined loading state (includes initial query loading)
@@ -295,8 +267,10 @@ export function useRelationshipMutations({
         });
       }
     } catch (error) {
-      // Error handling and user notification is done in mutation's onError
-      // Just catch to prevent unhandled promise rejection
+      // Mutation errors are rolled back and toasted in onError; mutateAsync
+      // also rejects when onSuccess/onSettled throw (onError doesn't run for
+      // those), so log here instead of swallowing silently.
+      console.error('Like mutation post-processing failed:', error);
     }
   }, [
     targetProfileId,
@@ -327,8 +301,10 @@ export function useRelationshipMutations({
         });
       }
     } catch (error) {
-      // Error handling and user notification is done in mutation's onError
-      // Just catch to prevent unhandled promise rejection
+      // Mutation errors are rolled back and toasted in onError; mutateAsync
+      // also rejects when onSuccess/onSettled throw (onError doesn't run for
+      // those), so log here instead of swallowing silently.
+      console.error('Follow mutation post-processing failed:', error);
     }
   }, [
     targetProfileId,

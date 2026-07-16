@@ -3,18 +3,9 @@ import {
   assertProposalEngagementAccess,
   removeProfileRelationship,
 } from '@op/common';
-import { ProfileRelationshipType } from '@op/db/schema';
-import { z } from 'zod';
 
+import { proposalRelationshipInputSchema } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
-
-const removeProposalRelationshipInputSchema = z.object({
-  targetProfileId: z.uuid(),
-  relationshipType: z.enum([
-    ProfileRelationshipType.FOLLOWING,
-    ProfileRelationshipType.LIKES,
-  ]),
-});
 
 export const removeProposalRelationshipRouter = router({
   /**
@@ -24,7 +15,7 @@ export const removeProposalRelationshipRouter = router({
   removeProposalRelationship: authenticatedConfirmedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .input(removeProposalRelationshipInputSchema)
+    .input(proposalRelationshipInputSchema)
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
