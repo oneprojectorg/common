@@ -8,6 +8,7 @@ import {
   navigationMenuTriggerStyle,
 } from '@op/sense/NavigationMenu';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { LuCircle, LuCircleCheck, LuCircleDashed } from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -95,6 +96,27 @@ export const Default: Story = {
                   </NavigationMenuLink>
                 </li>
               ))}
+            </ul>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuTrigger>With Icon</NavigationMenuTrigger>
+          <NavigationMenuContent className="sense">
+            <ul className="grid w-48">
+              <li>
+                <NavigationMenuLink href="#">
+                  <LuCircleDashed />
+                  Backlog
+                </NavigationMenuLink>
+                <NavigationMenuLink href="#">
+                  <LuCircle />
+                  To Do
+                </NavigationMenuLink>
+                <NavigationMenuLink href="#">
+                  <LuCircleCheck />
+                  Done
+                </NavigationMenuLink>
+              </li>
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
