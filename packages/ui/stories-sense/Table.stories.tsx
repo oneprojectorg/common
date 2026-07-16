@@ -1,4 +1,12 @@
 import { Badge } from '@op/sense/Badge';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import {
   Table,
   TableBody,
@@ -10,6 +18,7 @@ import {
   TableRow,
 } from '@op/sense/Table';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { LuEllipsis } from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -97,6 +106,52 @@ export const WithBadges: Story = {
               </Badge>
             </TableCell>
             <TableCell className="text-end">{invoice.amount}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  ),
+};
+
+// Per-row overflow menu, mirroring the upstream "With Actions" example. The
+// menu portals out of the `.sense` wrapper, so its content re-scopes itself.
+export const WithActions: Story = {
+  render: () => (
+    <Table className="max-w-2xl">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Proposal</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-end">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {[
+          ['Community garden fund', 'In review'],
+          ['Neighborhood tool library', 'Open for votes'],
+          ['Street mural program', 'Draft'],
+        ].map(([proposal, status]) => (
+          <TableRow key={proposal}>
+            <TableCell className="font-strong">{proposal}</TableCell>
+            <TableCell>{status}</TableCell>
+            <TableCell className="text-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="ghost" size="icon-sm" />}
+                >
+                  <LuEllipsis />
+                  <span className="sr-only">Open menu</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="sense">
+                  <DropdownMenuItem>Edit</DropdownMenuItem>
+                  <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive">
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

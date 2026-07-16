@@ -1,6 +1,12 @@
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import {
   Item,
   ItemActions,
   ItemContent,
@@ -13,7 +19,13 @@ import {
   ItemTitle,
 } from '@op/sense/Item';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { LuChevronRight, LuFileText, LuFolder, LuImage } from 'react-icons/lu';
+import {
+  LuChevronDown,
+  LuChevronRight,
+  LuFileText,
+  LuFolder,
+  LuImage,
+} from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -197,6 +209,75 @@ export const CompactGroup: Story = {
         ))}
       </ItemGroup>
     </div>
+  ),
+};
+
+// Card-style items: ItemHeader carries a full-bleed image above the content,
+// and the group lays out as a grid (upstream item-header example).
+export const Cards: Story = {
+  render: () => (
+    <ItemGroup className="grid w-2xl grid-cols-3 gap-4">
+      {[
+        ['Community garden', 'Shared beds and a seed library.'],
+        ['Tool library', 'Borrow instead of buying.'],
+        ['Street murals', 'Local artists, public walls.'],
+      ].map(([title = '', description]) => (
+        <Item key={title} variant="outline">
+          <ItemHeader>
+            <img
+              src={`https://picsum.photos/seed/${encodeURIComponent(title)}/300/300`}
+              alt={title}
+              className="aspect-square w-full rounded-sm object-cover"
+            />
+          </ItemHeader>
+          <ItemContent>
+            <ItemTitle>{title}</ItemTitle>
+            <ItemDescription>{description}</ItemDescription>
+          </ItemContent>
+        </Item>
+      ))}
+    </ItemGroup>
+  ),
+};
+
+// Items as rich dropdown rows (upstream item-dropdown example). The xs size
+// zeroes the item's own padding inside menu content, so the menu item's
+// padding does the work. The menu portals out of the `.sense` wrapper and
+// re-scopes itself.
+export const InDropdown: Story = {
+  render: () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+        Assign to
+        <LuChevronDown data-icon="inline-end" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="sense w-72">
+        {[
+          ['Frida Kahlo', 'frida@example.com'],
+          ['Mark Rothko', 'mark@example.com'],
+          ['Sonia Delaunay', 'sonia@example.com'],
+        ].map(([name = '', email]) => (
+          <DropdownMenuItem key={name} className="p-2">
+            <Item size="xs" className="w-full">
+              <ItemMedia>
+                <Avatar size="sm">
+                  <AvatarFallback>
+                    {name
+                      .split(' ')
+                      .map((part) => part[0])
+                      .join('')}
+                  </AvatarFallback>
+                </Avatar>
+              </ItemMedia>
+              <ItemContent className="gap-0.5">
+                <ItemTitle>{name}</ItemTitle>
+                <ItemDescription>{email}</ItemDescription>
+              </ItemContent>
+            </Item>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   ),
 };
 
