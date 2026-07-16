@@ -14,12 +14,12 @@ import {
   profileRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
+import { getResourceSignedUrls } from '../resources/storage';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
@@ -33,6 +33,10 @@ import {
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { ProposalTemplateSchema } from './types';
+
+// Proposal attachments are handed to the client for the lifetime of a review
+// session; a 24h token avoids re-signing on every proposal read.
+const PROPOSAL_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -247,27 +251,29 @@ export const getProposal = async ({
   let attachmentsWithUrls = proposal.attachments ?? [];
 
   if (attachmentsWithUrls.length > 0) {
-    const supabase = createSBServiceClient();
+    const signedUrls = await getResourceSignedUrls({
+      filePaths: attachmentsWithUrls.flatMap((pa) =>
+        pa.attachment?.storageObject?.name
+          ? [pa.attachment.storageObject.name]
+          : [],
+      ),
+      ttlSeconds: PROPOSAL_ATTACHMENT_SIGNED_URL_TTL_SECONDS,
+    });
 
-    attachmentsWithUrls = await Promise.all(
-      attachmentsWithUrls.map(async (pa) => {
-        const storagePath = pa.attachment?.storageObject?.name;
-        if (!storagePath) {
-          return pa;
-        }
+    attachmentsWithUrls = attachmentsWithUrls.map((pa) => {
+      const storagePath = pa.attachment?.storageObject?.name;
+      if (!storagePath || !pa.attachment) {
+        return pa;
+      }
 
-        const { data } = await supabase.storage
-          .from('assets')
-          .createSignedUrl(storagePath, 60 * 60 * 24);
-
-        return {
-          ...pa,
-          attachment: pa.attachment
-            ? { ...pa.attachment, url: data?.signedUrl }
-            : pa.attachment,
-        };
-      }),
-    );
+      return {
+        ...pa,
+        attachment: {
+          ...pa.attachment,
+          url: signedUrls.get(storagePath) ?? undefined,
+        },
+      };
+    });
   }
 
   const documentContent = documentContentMap.get(proposal.id);
