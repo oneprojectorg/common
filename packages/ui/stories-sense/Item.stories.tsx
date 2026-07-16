@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
   Item,
@@ -138,6 +139,63 @@ export const WithImage: Story = {
           </Button>
         </ItemActions>
       </Item>
+    </div>
+  ),
+};
+
+export const WithAvatar: Story = {
+  render: () => (
+    <div className="flex w-lg flex-col gap-4">
+      {[
+        ['Frida Kahlo', 'Steward · Greenway circle'],
+        ['Mark Rothko', 'Member · Arts committee'],
+      ].map(([name, role]) => (
+        <Item key={name} variant="outline">
+          <ItemMedia>
+            <Avatar>
+              <AvatarFallback>
+                {name
+                  .split(' ')
+                  .map((part) => part[0])
+                  .join('')}
+              </AvatarFallback>
+            </Avatar>
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>{name}</ItemTitle>
+            <ItemDescription>{role}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button variant="ghost" size="sm">
+              Message
+            </Button>
+          </ItemActions>
+        </Item>
+      ))}
+    </div>
+  ),
+};
+
+// Compact xs rows in a muted group — the shape of a notification list.
+export const CompactGroup: Story = {
+  render: () => (
+    <div className="w-lg">
+      <ItemGroup className="gap-1">
+        {[
+          ['New proposal in Greenway', '2 minutes ago'],
+          ['Voting opened for Budget 2027', '1 hour ago'],
+          ['Frida Kahlo mentioned you', 'Yesterday'],
+        ].map(([title, when]) => (
+          <Item key={title} size="xs" variant="muted">
+            <ItemContent>
+              <ItemTitle>{title}</ItemTitle>
+            </ItemContent>
+            <ItemActions>
+              <span className="text-xs text-muted-foreground">{when}</span>
+            </ItemActions>
+          </Item>
+        ))}
+      </ItemGroup>
     </div>
   ),
 };
