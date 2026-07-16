@@ -69,7 +69,7 @@ function CommandInput({
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
     <div data-slot="command-input-wrapper" className="p-2 pb-0">
-      <InputGroup className="h-11 rounded-lg border-input bg-muted shadow-none *:data-[slot=input-group-addon]:pl-3">
+      <InputGroup className="h-11 rounded-lg border-input bg-muted shadow-none *:data-[slot=input-group-addon]:ps-3">
         <CommandPrimitive.Input
           data-slot="command-input"
           className={cn(
@@ -159,7 +159,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <LuCheck className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      <LuCheck className="ms-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
     </CommandPrimitive.Item>
   );
 }
@@ -172,7 +172,7 @@ function CommandShortcut({
     <span
       data-slot="command-shortcut"
       className={cn(
-        'ml-auto text-xs text-muted-foreground group-data-[selected=true]/command-item:text-foreground',
+        'ms-auto text-xs text-muted-foreground group-data-[selected=true]/command-item:text-foreground',
         className,
       )}
       {...props}
