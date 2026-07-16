@@ -9,8 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@op/sense/Dialog';
+import { Field, FieldGroup, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
-import { Label } from '@op/sense/Label';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { withSense } from './sense';
@@ -41,16 +41,16 @@ export const Default: Story = {
             Make changes to your profile here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 px-6 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="dialog-name">Name</Label>
+        <FieldGroup className="px-6 py-4">
+          <Field>
+            <FieldLabel htmlFor="dialog-name">Name</FieldLabel>
             <Input id="dialog-name" defaultValue="Frida Kahlo" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="dialog-username">Username</Label>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="dialog-username">Username</FieldLabel>
             <Input id="dialog-username" defaultValue="@fridakahlo" />
-          </div>
-        </div>
+          </Field>
+        </FieldGroup>
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>
             Cancel
