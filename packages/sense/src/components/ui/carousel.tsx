@@ -187,11 +187,7 @@ function CarouselPrevious({
       className={cn(
         'absolute touch-manipulation rounded-full',
         orientation === 'horizontal'
-          ? // my-auto centering (per upstream) instead of translate — the
-            // Button base's active:translate-y-px press nudge writes
-            // --tw-translate-y and would stomp a -translate-y-1/2, moving the
-            // button out from under the cursor mid-press and eating the click.
-            'inset-y-0 -left-12 my-auto'
+          ? 'inset-y-0 -left-12 my-auto'
           : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
         className,
       )}
@@ -221,8 +217,7 @@ function CarouselNext({
       className={cn(
         'absolute touch-manipulation rounded-full',
         orientation === 'horizontal'
-          ? // See CarouselPrevious: my-auto centering avoids the press nudge.
-            'inset-y-0 -right-12 my-auto'
+          ? 'inset-y-0 -right-12 my-auto'
           : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
         className,
       )}
