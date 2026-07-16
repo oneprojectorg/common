@@ -47,6 +47,11 @@ export const users = pgTable(
     }),
     tos: boolean(),
     privacy: boolean(),
+    // When the user accepted the current Terms of Use / Privacy Policy. Null
+    // until they accept the latest version; stamped whenever `tos` / `privacy`
+    // are set true. These will eventually replace the `tos` / `privacy` bools.
+    tosAcceptedOn: timestamp({ withTimezone: true, mode: 'string' }),
+    privacyAcceptedOn: timestamp({ withTimezone: true, mode: 'string' }),
     // Used for measuring when a user completed onboarding
     onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
     ...timestamps,

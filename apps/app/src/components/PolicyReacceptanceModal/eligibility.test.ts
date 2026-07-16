@@ -8,7 +8,8 @@ const makeUser = (overrides: Partial<CommonUser>): CommonUser =>
     id: 'u1',
     authUserId: 'auth1',
     isAnonymous: false,
-    onboardedAt: '2026-01-01T00:00:00.000Z',
+    tosAcceptedOn: '2026-08-01T00:00:00.000Z',
+    privacyAcceptedOn: '2026-08-01T00:00:00.000Z',
     ...overrides,
   }) as CommonUser;
 
@@ -18,54 +19,53 @@ describe('shouldReacceptPolicies', () => {
     expect(shouldReacceptPolicies(null)).toBe(false);
   });
 
-  it('excludes anonymous sign-ins', () => {
+  it('excludes anonymous sign-ins even when acceptance dates are missing', () => {
     expect(
       shouldReacceptPolicies(
         makeUser({
           isAnonymous: true,
-          onboardedAt: '2026-01-01T00:00:00.000Z',
+          tosAcceptedOn: null,
+          privacyAcceptedOn: null,
         }),
       ),
     ).toBe(false);
   });
 
-  it('excludes users who have not onboarded yet', () => {
-    expect(shouldReacceptPolicies(makeUser({ onboardedAt: null }))).toBe(false);
-    expect(shouldReacceptPolicies(makeUser({ onboardedAt: undefined }))).toBe(
-      false,
-    );
-  });
-
-  it('includes users onboarded on or before July 12, 2026', () => {
+  it('includes users who have not accepted the current policies', () => {
     expect(
       shouldReacceptPolicies(
-        makeUser({ onboardedAt: '2026-07-12T23:00:00.000Z' }),
-      ),
-    ).toBe(true);
-    // Postgres tz-string form (space-separated, offset suffix) also parses.
-    expect(
-      shouldReacceptPolicies(
-        makeUser({ onboardedAt: '2026-05-01 09:30:00+00' }),
+        makeUser({ tosAcceptedOn: null, privacyAcceptedOn: null }),
       ),
     ).toBe(true);
   });
 
-  it('excludes users onboarded after the cutoff', () => {
+  it('includes users who accepted only one of the two', () => {
     expect(
       shouldReacceptPolicies(
-        makeUser({ onboardedAt: '2026-07-13T00:00:00.000Z' }),
+        makeUser({
+          tosAcceptedOn: '2026-08-01T00:00:00.000Z',
+          privacyAcceptedOn: null,
+        }),
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       shouldReacceptPolicies(
-        makeUser({ onboardedAt: '2026-08-01T12:00:00.000Z' }),
+        makeUser({
+          tosAcceptedOn: null,
+          privacyAcceptedOn: '2026-08-01T00:00:00.000Z',
+        }),
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it('excludes an unparseable onboardedAt', () => {
+  it('excludes users who have accepted both', () => {
     expect(
-      shouldReacceptPolicies(makeUser({ onboardedAt: 'not-a-date' })),
+      shouldReacceptPolicies(
+        makeUser({
+          tosAcceptedOn: '2026-08-01T00:00:00.000Z',
+          privacyAcceptedOn: '2026-08-01T00:00:00.000Z',
+        }),
+      ),
     ).toBe(false);
   });
 });

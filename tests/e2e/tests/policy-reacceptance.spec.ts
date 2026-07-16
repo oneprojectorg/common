@@ -12,25 +12,23 @@ import {
 } from '../fixtures/index.js';
 
 /**
- * Policy re-acceptance gate: an already-onboarded user whose `onboardedAt`
- * predates the updated Terms of Use / Privacy Policy / Code of Conduct must
- * re-accept in a non-dismissable modal before continuing. Accepting stamps a
- * fresh `onboardedAt`, which closes the gate.
+ * Policy re-acceptance gate: a user who has not accepted the current Terms of
+ * Use / Privacy Policy (null `tosAcceptedOn` / `privacyAcceptedOn`) must
+ * re-accept in a non-dismissable modal before continuing. Accepting stamps both
+ * dates, which closes the gate.
  *
  * `createOrganization` makes a network-member admin (so the walled-garden app
- * loads) who is onboarded at "now". We rewind that `onboardedAt` to make them
- * eligible; leaving it at "now" (after the cutoff) is the not-eligible case.
+ * loads) whom the test helper marks as having accepted. We null those dates to
+ * make them eligible; leaving them set is the not-eligible case.
  */
 test.describe('Policy re-acceptance modal', () => {
   // Own the session: start clean and authenticate as the org we create, rather
-  // than the shared worker user (whose onboardedAt we must not mutate).
+  // than the shared worker user whose acceptance state we must not mutate.
   test.use({ storageState: { cookies: [], origins: [] } });
 
   const admin = createSupabaseAdminClient();
-  // Before the 2026-07-13 UTC cutoff baked into the eligibility helper.
-  const BEFORE_CUTOFF = '2026-01-01T00:00:00.000Z';
 
-  test('eligible user must re-accept, can read the docs, and accepting closes the gate', async ({
+  test('user who has not accepted must re-accept, can read the docs, and accepting closes the gate', async ({
     page,
   }) => {
     const org = await createOrganization({
@@ -39,10 +37,11 @@ test.describe('Policy re-acceptance modal', () => {
       users: { admin: 1, member: 0 },
     });
 
-    // Rewind onboarding to before the policy update so the user is eligible.
+    // Clear acceptance so the user is eligible. onboardedAt stays set so they
+    // reach the app rather than being redirected to onboarding.
     await db
       .update(users)
-      .set({ onboardedAt: BEFORE_CUTOFF })
+      .set({ tosAcceptedOn: null, privacyAcceptedOn: null })
       .where(eq(users.authUserId, org.adminUser.authUserId));
 
     await authenticateAsUser(page, {
@@ -84,29 +83,28 @@ test.describe('Policy re-acceptance modal', () => {
     await expect(agree).toBeEnabled();
     await agree.click();
 
-    // The gate closes once the account refetches past the cutoff.
+    // The gate closes once the account refetches with the dates stamped.
     await expect(
       page.getByRole('heading', { name: "We've updated our policies." }),
     ).toBeHidden({ timeout: 20000 });
 
-    // And onboardedAt has been stamped forward past the cutoff.
+    // And both acceptance dates are now recorded.
     const [record] = await db
-      .select({ onboardedAt: users.onboardedAt })
+      .select({
+        tosAcceptedOn: users.tosAcceptedOn,
+        privacyAcceptedOn: users.privacyAcceptedOn,
+      })
       .from(users)
       .where(eq(users.authUserId, org.adminUser.authUserId));
-    const onboardedAt = record?.onboardedAt;
-    expect(onboardedAt).toBeTruthy();
-    if (onboardedAt) {
-      expect(new Date(onboardedAt).getTime()).toBeGreaterThan(
-        new Date(BEFORE_CUTOFF).getTime(),
-      );
-    }
+    expect(record?.tosAcceptedOn).toBeTruthy();
+    expect(record?.privacyAcceptedOn).toBeTruthy();
   });
 
-  test('user onboarded after the cutoff never sees the gate', async ({
+  test('user who has already accepted never sees the gate', async ({
     page,
   }) => {
-    // createOrganization onboards the admin at "now", which is after the cutoff.
+    // The test helper marks created users as having accepted the current
+    // policies, so this admin is not eligible.
     const org = await createOrganization({
       testId: `reaccept-ok-${randomUUID().slice(0, 6)}`,
       supabaseAdmin: admin,
