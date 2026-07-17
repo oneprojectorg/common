@@ -8,9 +8,13 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 // sessionStorage — two of them overflow the ~5MB quota and the write throws
 // QuotaExceededError, breaking onboarding. Drop them from the persisted copy;
 // the real (http) URLs that replace them are small and stay.
+// Matches only base64 data URLs (`data:<mime>;base64,...`) so a free-text field
+// that merely starts with "data:" (e.g. a headline) is left untouched.
+const BASE64_DATA_URL = /^data:[^,]*;base64,/;
+
 const stripBase64DataUrls = (value: unknown): unknown => {
   if (typeof value === 'string') {
-    return value.startsWith('data:') ? undefined : value;
+    return BASE64_DATA_URL.test(value) ? undefined : value;
   }
   if (Array.isArray(value)) {
     return value.map(stripBase64DataUrls);
@@ -26,10 +30,17 @@ const stripBase64DataUrls = (value: unknown): unknown => {
   return value;
 };
 
-// A quota overflow (or storage being disabled) must degrade gracefully: the
-// form keeps working in memory instead of throwing an unhandled error.
+// Every access is guarded so a quota overflow or a browser where storage is
+// disabled (private mode, blocked cookies, SSR) degrades gracefully — the form
+// keeps working in memory instead of throwing an unhandled error.
 const createSafeStorage = (getStorage: () => Storage): StateStorage => ({
-  getItem: (name) => getStorage().getItem(name),
+  getItem: (name) => {
+    try {
+      return getStorage().getItem(name);
+    } catch {
+      return null;
+    }
+  },
   setItem: (name, value) => {
     try {
       getStorage().setItem(name, value);
@@ -37,7 +48,13 @@ const createSafeStorage = (getStorage: () => Storage): StateStorage => ({
       logger.warn('Failed to persist onboarding form state', { error });
     }
   },
-  removeItem: (name) => getStorage().removeItem(name),
+  removeItem: (name) => {
+    try {
+      getStorage().removeItem(name);
+    } catch {
+      // Nothing to clean up if storage is unavailable.
+    }
+  },
 });
 
 interface OnboardingFormState {

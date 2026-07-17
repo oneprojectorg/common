@@ -66,6 +66,18 @@ describe('useOnboardingFormStore persistence', () => {
     );
   });
 
+  it('keeps free-text fields that merely start with "data:"', async () => {
+    const useStore = await importStore();
+
+    useStore.getState().setPersonalDetails({
+      fullName: 'Ada Lovelace',
+      title: 'data: driven decisions',
+    });
+
+    const { personalDetails } = persistedState(storage);
+    expect(personalDetails.title).toBe('data: driven decisions');
+  });
+
   it('strips nested base64 blobs from other form slices', async () => {
     const useStore = await importStore();
 
