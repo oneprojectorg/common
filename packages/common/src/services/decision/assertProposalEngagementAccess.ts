@@ -1,7 +1,6 @@
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { AccessControlException } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileTypeAccess } from '../access';
@@ -49,22 +48,15 @@ export async function assertProposalEngagementAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  try {
-    await assertProfileTypeAccess({
-      user,
-      profileIds: [decisionProfileId],
-      policies: {
-        [EntityType.DECISION]: {
-          decisions: decisionPermission.SUBMIT_PROPOSALS,
-        },
+  await assertProfileTypeAccess({
+    user,
+    profileIds: [decisionProfileId],
+    policies: {
+      [EntityType.DECISION]: {
+        decisions: decisionPermission.SUBMIT_PROPOSALS,
       },
-    });
-  } catch (error) {
-    if (error instanceof AccessControlException) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-    throw error;
-  }
+    },
+  });
 
   return {
     proposalId: proposal.id,
