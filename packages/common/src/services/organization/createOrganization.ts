@@ -17,6 +17,7 @@ import { randomUUID } from 'crypto';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertGlobalRole } from '../assert';
+import { claimDraftProfileImage } from '../profile/claimDraftProfileImage';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import {
   type FundingLinksInput,
@@ -94,8 +95,8 @@ export const createOrganization = async ({
 }: {
   data: OrganizationInput &
     FundingLinksInput & {
-      orgAvatarImageId?: string;
-      orgBannerImageId?: string;
+      orgAvatarImagePath?: string;
+      orgBannerImagePath?: string;
     };
   user: User;
   db?: DbClient;
@@ -104,6 +105,21 @@ export const createOrganization = async ({
     ...data,
     profileId: null,
   });
+
+  // Images are uploaded to the caller's draft space before the org profile
+  // exists; claim validates ownership + image-ness and resolves the ids.
+  const avatarImageId = data.orgAvatarImagePath
+    ? await claimDraftProfileImage({
+        storagePath: data.orgAvatarImagePath,
+        user,
+      })
+    : undefined;
+  const headerImageId = data.orgBannerImagePath
+    ? await claimDraftProfileImage({
+        storagePath: data.orgBannerImagePath,
+        user,
+      })
+    : undefined;
 
   let domain: string | undefined;
   if (data.website) {
@@ -139,8 +155,8 @@ export const createOrganization = async ({
         bio: data.bio,
         website: data.website,
         mission: data.mission,
-        headerImageId: data.orgBannerImageId,
-        avatarImageId: data.orgAvatarImageId,
+        headerImageId,
+        avatarImageId,
       })
       .returning();
 

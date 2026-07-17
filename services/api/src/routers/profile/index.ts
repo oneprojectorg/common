@@ -19,6 +19,7 @@ import {
 } from './requests';
 import { saveProfileImageRouter } from './saveProfileImage';
 import { searchProfilesRouter } from './searchProfiles';
+import { signDraftProfileImageUploadUrlRouter } from './signDraftProfileImageUploadUrl';
 import { signProfileImageUploadUrlRouter } from './signProfileImageUploadUrl';
 import { updateDecisionRolesRouter } from './updateDecisionRoles';
 import { updateProfileInviteRouter } from './updateProfileInvite';
@@ -36,6 +37,7 @@ const profileRouter = mergeRouters(
   getProfileRouter,
   searchProfilesRouter,
   signProfileImageUploadUrlRouter,
+  signDraftProfileImageUploadUrlRouter,
   saveProfileImageRouter,
   profileRelationshipRouter,
   inviteProfileUserRouter,

@@ -1,11 +1,9 @@
-import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
+import { useSignedImageUpload } from '@/hooks/useSignedImageUpload';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -17,9 +15,9 @@ import { ToggleRow } from '../../layout/split/form/ToggleRow';
 import { createOrganizationFormValidator } from './organizationValidation';
 
 export interface ImageData {
-  url: string;
-  path?: string;
-  id?: string;
+  url?: string;
+  /** Draft-space storage path; set once an upload this session completed. */
+  storagePath?: string;
 }
 
 interface OrganizationFormFieldsProps {
@@ -44,15 +42,20 @@ export const OrganizationFormFields = ({
   children,
 }: OrganizationFormFieldsProps) => {
   const t = useTranslations();
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
-
-  const [profileImage, setProfileImage] = useState<ImageData | undefined>(
-    initialProfileImage,
-  );
-  const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
-    initialBannerImage,
-  );
+  // Images upload to the caller's draft space before the org profile exists;
+  // the storage paths ride along on submit and organization.create/update
+  // claims them server-side.
+  const signDraft = trpc.profile.signDraftProfileImageUploadUrl.useMutation();
+  const avatarUpload = useSignedImageUpload({
+    sign: (fileName) => signDraft.mutateAsync({ fileName }),
+    initialUrl: initialProfileImage?.url,
+    initialStoragePath: initialProfileImage?.storagePath,
+  });
+  const bannerUpload = useSignedImageUpload({
+    sign: (fileName) => signDraft.mutateAsync({ fileName }),
+    initialUrl: initialBannerImage?.url,
+    initialStoragePath: initialBannerImage?.storagePath,
+  });
 
   const form = useAppForm({
     defaultValues,
@@ -63,91 +66,35 @@ export const OrganizationFormFields = ({
     onSubmit: async ({ value }) => {
       await onSubmit({
         ...value,
-        profileImage,
-        bannerImage,
-        orgAvatarImageId: profileImage?.id,
-        orgBannerImageId: bannerImage?.id,
+        profileImage: {
+          url: avatarUpload.url,
+          storagePath: avatarUpload.storagePath,
+        },
+        bannerImage: {
+          url: bannerUpload.url,
+          storagePath: bannerUpload.storagePath,
+        },
+        orgAvatarImagePath: avatarUpload.storagePath,
+        orgBannerImagePath: bannerUpload.storagePath,
       });
     },
   });
-
-  const handleImageUpload = async (
-    file: File,
-    setImage: (image: ImageData | undefined) => void,
-    uploadMutation: any,
-  ): Promise<void> => {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
-
-      if (!base64) {
-        return;
-      }
-
-      const acceptedTypes = [
-        'image/gif',
-        'image/png',
-        'image/jpeg',
-        'image/webp',
-      ];
-      if (!acceptedTypes.includes(file.type)) {
-        const types = acceptedTypes.map((t) => t.split('/')[1]).join(', ');
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            { types },
-          ),
-        });
-        return;
-      }
-
-      if (file.size > DEFAULT_MAX_SIZE) {
-        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
-            size: maxSizeMB,
-          }),
-        });
-        return;
-      }
-
-      const dataUrl = `data:${file.type};base64,${base64}`;
-
-      setImage({ url: dataUrl });
-      const res = await uploadMutation.mutateAsync({
-        file: base64,
-        fileName: file.name,
-        mimeType: file.type,
-      });
-
-      if (res?.url) {
-        setImage(res);
-      }
-    };
-
-    reader.readAsDataURL(file);
-  };
 
   const formFields = (
     <>
       <div className="relative w-full pb-12 sm:pb-20">
         <BannerUploader
-          value={bannerImage?.url ?? undefined}
-          onChange={(file: File) =>
-            handleImageUpload(file, setBannerImage, uploadImage)
-          }
-          uploading={uploadImage.isPending}
-          error={uploadImage.error?.message || undefined}
+          value={bannerUpload.url}
+          onChange={bannerUpload.upload}
+          uploading={bannerUpload.isUploading}
+          error={bannerUpload.uploadError}
         />
         <AvatarUploader
           className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
-          value={profileImage?.url ?? undefined}
-          onChange={(file: File) =>
-            handleImageUpload(file, setProfileImage, uploadAvatarImage)
-          }
-          uploading={uploadAvatarImage.isPending}
-          error={uploadAvatarImage.error?.message || undefined}
+          value={avatarUpload.url}
+          onChange={avatarUpload.upload}
+          uploading={avatarUpload.isUploading}
+          error={avatarUpload.uploadError}
         />
       </div>
 
@@ -336,8 +283,14 @@ export const OrganizationFormFields = ({
 
   return children({
     form,
-    profileImage,
-    bannerImage,
+    profileImage: {
+      url: avatarUpload.url,
+      storagePath: avatarUpload.storagePath,
+    },
+    bannerImage: {
+      url: bannerUpload.url,
+      storagePath: bannerUpload.storagePath,
+    },
     isSubmitting: form.state.isSubmitting,
     formFields,
   });

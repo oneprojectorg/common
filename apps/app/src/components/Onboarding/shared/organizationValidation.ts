@@ -64,8 +64,8 @@ export const createOrganizationFormValidator = (t: TranslateFn) =>
     communitiesServed: z.array(multiSelectOptionValidator).optional(),
     strategies: z.array(multiSelectOptionValidator).optional(),
     networkOrganization: z.boolean().prefault(false),
-    orgAvatarImageId: z.string().optional(),
-    orgBannerImageId: z.string().optional(),
+    orgAvatarImagePath: z.string().optional(),
+    orgBannerImagePath: z.string().optional(),
   });
 
 // Static validator for type inference and external schema composition.
@@ -82,8 +82,8 @@ export const organizationFormValidator = z.object({
   communitiesServed: z.array(multiSelectOptionValidator).optional(),
   strategies: z.array(multiSelectOptionValidator).optional(),
   networkOrganization: z.boolean().prefault(false),
-  orgAvatarImageId: z.string().optional(),
-  orgBannerImageId: z.string().optional(),
+  orgAvatarImagePath: z.string().optional(),
+  orgBannerImagePath: z.string().optional(),
 });
 
 export type OrganizationFormData = z.infer<typeof organizationFormValidator>;

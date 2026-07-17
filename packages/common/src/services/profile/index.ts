@@ -14,6 +14,8 @@ export * from './updateProfileInvite';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
 export * from './signProfileImageUploadUrl';
+export * from './signDraftProfileImageUploadUrl';
+export * from './claimDraftProfileImage';
 export * from './saveProfileImage';
 export * from './getProfileUserWithRelations';
 export * from './requests';

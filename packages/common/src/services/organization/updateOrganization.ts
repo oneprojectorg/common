@@ -14,6 +14,7 @@ import pMap from 'p-map';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertOrgAccess, assertOrganization } from '../assert';
+import { claimDraftProfileImage } from '../profile/claimDraftProfileImage';
 import {
   type FundingLinksInput,
   type UpdateOrganizationInput,
@@ -28,8 +29,8 @@ export const updateOrganization = async ({
   id: string;
   data: UpdateOrganizationInput &
     FundingLinksInput & {
-      orgAvatarImageId?: string;
-      orgBannerImageId?: string;
+      orgAvatarImagePath?: string;
+      orgBannerImagePath?: string;
     };
   user: User;
 }) => {
@@ -51,15 +52,37 @@ export const updateOrganization = async ({
 
   const orgInputs = UpdateOrganizationInputParser.parse(updateData);
 
-  // Update organization
-  const [orgToUpdate] = await db
-    .update(organizations)
-    .set(orgInputs)
-    .where(eq(organizations.id, organizationId))
-    .returning();
+  // New images arrive as draft-space storage paths (uploaded via signed URL);
+  // claim validates ownership + image-ness and resolves the ids. Omitted
+  // paths leave the existing images untouched.
+  const avatarImageId = data.orgAvatarImagePath
+    ? await claimDraftProfileImage({
+        storagePath: data.orgAvatarImagePath,
+        user,
+      })
+    : undefined;
+  const headerImageId = data.orgBannerImagePath
+    ? await claimDraftProfileImage({
+        storagePath: data.orgBannerImagePath,
+        user,
+      })
+    : undefined;
 
-  if (!orgToUpdate) {
-    throw new NotFoundError('Organization', organizationId);
+  // Update organization. An image-only update has no organizations-table
+  // fields — drizzle throws "No values to set" on an empty set(), so fall
+  // back to the already-asserted row.
+  let orgToUpdate = existingOrg;
+  if (Object.keys(orgInputs).length > 0) {
+    const [updatedOrg] = await db
+      .update(organizations)
+      .set(orgInputs)
+      .where(eq(organizations.id, organizationId))
+      .returning();
+
+    if (!updatedOrg) {
+      throw new NotFoundError('Organization', organizationId);
+    }
+    orgToUpdate = updatedOrg;
   }
 
   // Loop through changes concurrently
@@ -69,18 +92,26 @@ export const updateOrganization = async ({
         // Update profile with relevant fields
         const profileFields = Object.fromEntries(
           Object.entries(data).filter(
-            ([key, value]) => value !== undefined && key !== 'id',
+            ([key, value]) =>
+              value !== undefined &&
+              key !== 'id' &&
+              key !== 'orgAvatarImagePath' &&
+              key !== 'orgBannerImagePath',
           ),
         );
 
         // Only update profile if there are fields to update
-        if (Object.keys(profileFields).length > 0) {
+        if (
+          Object.keys(profileFields).length > 0 ||
+          avatarImageId ||
+          headerImageId
+        ) {
           await db
             .update(profiles)
             .set({
               ...profileFields,
-              headerImageId: data.orgBannerImageId,
-              avatarImageId: data.orgAvatarImageId,
+              headerImageId,
+              avatarImageId,
             })
             .where(eq(profiles.id, orgToUpdate.profileId));
         }
