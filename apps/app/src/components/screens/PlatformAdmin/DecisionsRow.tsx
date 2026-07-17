@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Button } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter } from '@/lib/i18n/routing';
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -28,6 +29,7 @@ export const DecisionsRowCells = ({
 }) => {
   const format = useFormatter();
   const t = useTranslations();
+  const router = useRouter();
   const createdAt = decision.createdAt ? new Date(decision.createdAt) : null;
   const phaseEndDate = decision.currentPhase?.endDate
     ? new Date(decision.currentPhase.endDate)
@@ -110,6 +112,13 @@ export const DecisionsRowCells = ({
             size="medium"
             menuClassName="min-w-48 p-2"
           >
+            <MenuItem
+              key="view-details"
+              onAction={() => router.push(`/admin/decisions/${decision.id}`)}
+              className="px-3 py-1"
+            >
+              {t('View details')}
+            </MenuItem>
             <MenuItem
               key="view-instance-data"
               onAction={() => setIsDataModalOpen(true)}

@@ -25,56 +25,20 @@ export interface GenerateReviewAssignmentsInput {
 }
 
 /**
- * Generate review assignment rows for proposals entering a review-capable phase.
- *
- * Only members with the REVIEW capability on the `decisions` access zone are
- * eligible. Reviewers are never assigned their own proposals.
- *
- * Currently supports the `full_coverage` policy (every eligible reviewer is
- * assigned every proposal). Throws for unsupported policies.
+ * Resolve the personal profile ids of members eligible to review for a
+ * decision profile: members holding a role with the REVIEW capability on the
+ * `decisions` access zone. Returns [] (and logs) when the zone is missing.
  */
-export async function generateReviewAssignments({
-  instanceId,
-  phaseId,
-  selectedProposalIds,
-  transitionHistoryId,
-}: GenerateReviewAssignmentsInput): Promise<void> {
-  if (selectedProposalIds.length === 0) {
-    return;
-  }
-
-  const [instance, decisionsZone] = await Promise.all([
-    db.query.processInstances.findFirst({ where: { id: instanceId } }),
-    db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
-  ]);
-
-  if (!instance) {
-    throw new CommonError(
-      `generateReviewAssignments: instance ${instanceId} not found`,
-    );
-  }
-
-  const instanceData = instance.instanceData as DecisionInstanceData;
-  const reviewsPolicy = instanceData.config?.reviewsPolicy;
-
-  if (reviewsPolicy && reviewsPolicy !== 'full_coverage') {
-    throw new CommonError(
-      `Review assignment policy '${reviewsPolicy}' is not implemented`,
-    );
-  }
-
-  const decisionProfileId = instance.profileId;
-
-  if (!decisionProfileId) {
-    logger.error('generateReviewAssignments: instance has no profileId', {
-      instanceId,
-    });
-    return;
-  }
+export async function getEligibleReviewerProfileIds(
+  decisionProfileId: string,
+): Promise<string[]> {
+  const decisionsZone = await db.query.accessZones.findFirst({
+    where: { name: 'decisions' },
+  });
 
   if (!decisionsZone) {
-    logger.error('generateReviewAssignments: decisions access zone not found');
-    return;
+    logger.error('getEligibleReviewerProfileIds: decisions zone not found');
+    return [];
   }
 
   // Resolve which roles grant REVIEW on the decisions zone for this decision
@@ -105,6 +69,79 @@ export async function generateReviewAssignments({
     .filter((row) => (row.permission & decisionPermission.REVIEW) !== 0)
     .map((row) => row.accessRoleId);
 
+  if (reviewRoleIds.length === 0) {
+    return [];
+  }
+
+  // profileUsers (decision membership)
+  //   → profileUserToAccessRoles (role assignments)
+  //   → users (personal profileId)
+  // Filtered to members holding a role with the REVIEW capability.
+  const rows = await db
+    .selectDistinct({ profileId: users.profileId })
+    .from(profileUsers)
+    .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
+    .innerJoin(
+      profileUserToAccessRoles,
+      eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+    )
+    .where(
+      and(
+        eq(profileUsers.profileId, decisionProfileId),
+        inArray(profileUserToAccessRoles.accessRoleId, reviewRoleIds),
+      ),
+    );
+
+  return rows.map((r) => r.profileId).filter((id): id is string => id != null);
+}
+
+/**
+ * Generate review assignment rows for proposals entering a review-capable phase.
+ *
+ * Only members with the REVIEW capability on the `decisions` access zone are
+ * eligible. Reviewers are never assigned their own proposals.
+ *
+ * Currently supports the `full_coverage` policy (every eligible reviewer is
+ * assigned every proposal). Throws for unsupported policies.
+ */
+export async function generateReviewAssignments({
+  instanceId,
+  phaseId,
+  selectedProposalIds,
+  transitionHistoryId,
+}: GenerateReviewAssignmentsInput): Promise<void> {
+  if (selectedProposalIds.length === 0) {
+    return;
+  }
+
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+  });
+
+  if (!instance) {
+    throw new CommonError(
+      `generateReviewAssignments: instance ${instanceId} not found`,
+    );
+  }
+
+  const instanceData = instance.instanceData as DecisionInstanceData;
+  const reviewsPolicy = instanceData.config?.reviewsPolicy;
+
+  if (reviewsPolicy && reviewsPolicy !== 'full_coverage') {
+    throw new CommonError(
+      `Review assignment policy '${reviewsPolicy}' is not implemented`,
+    );
+  }
+
+  const decisionProfileId = instance.profileId;
+
+  if (!decisionProfileId) {
+    logger.error('generateReviewAssignments: instance has no profileId', {
+      instanceId,
+    });
+    return;
+  }
+
   const [selectedProposals, reviewerProfileIds, transitionProposalRows] =
     await Promise.all([
       db
@@ -115,31 +152,7 @@ export async function generateReviewAssignments({
         .from(proposals)
         .where(inArray(proposals.id, selectedProposalIds)),
 
-      // profileUsers (decision membership)
-      //   → profileUserToAccessRoles (role assignments)
-      //   → users (personal profileId)
-      // Filtered to members holding a role with the REVIEW capability.
-      reviewRoleIds.length === 0
-        ? Promise.resolve<string[]>([])
-        : db
-            .selectDistinct({ profileId: users.profileId })
-            .from(profileUsers)
-            .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
-            .innerJoin(
-              profileUserToAccessRoles,
-              eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
-            )
-            .where(
-              and(
-                eq(profileUsers.profileId, decisionProfileId),
-                inArray(profileUserToAccessRoles.accessRoleId, reviewRoleIds),
-              ),
-            )
-            .then((rows) =>
-              rows
-                .map((r) => r.profileId)
-                .filter((id): id is string => id != null),
-            ),
+      getEligibleReviewerProfileIds(decisionProfileId),
 
       // Look up the proposal history snapshots captured during the phase transition.
       db

@@ -1,0 +1,1 @@
+export { DecisionInstanceDetail } from './DecisionInstanceDetail';

@@ -28,6 +28,20 @@ export {
 export {
   adminDecisionInstanceSchema,
   type AdminDecisionInstance,
+  adminProfileRefSchema,
+  type AdminProfileRef,
+  adminDecisionPhaseSchema,
+  type AdminDecisionPhase,
+  adminDecisionInstanceDetailSchema,
+  type AdminDecisionInstanceDetail,
+  adminReviewAssignmentSchema,
+  type AdminReviewAssignment,
+  adminDecisionReviewerSchema,
+  type AdminDecisionReviewer,
+  adminAssignableProposalSchema,
+  type AdminAssignableProposal,
+  adminDecisionReviewAssignmentsSchema,
+  type AdminDecisionReviewAssignments,
 } from './services/decision/schemas/adminDecisionInstance';
 export {
   proposalSelectionSchema,
