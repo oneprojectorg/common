@@ -1,5 +1,9 @@
 // import type { User } from '@op/supabase/lib';
-import { logger as opLogger, withLogContext } from '@op/logging';
+import {
+  logger as opLogger,
+  setLogSessionId,
+  withLogContext,
+} from '@op/logging';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
@@ -14,6 +18,13 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   next,
 }) =>
   withLogContext(async () => {
+    // The frontend forwards its PostHog session id; stamping it here links
+    // every log emitted during the request to the user's session replay.
+    const sessionId = ctx.req.headers.get('x-posthog-session-id');
+    if (sessionId) {
+      setLogSessionId(sessionId);
+    }
+
     const start = Date.now();
     const logger = {
       debug: (message: string, data?: Record<string, unknown>) => {

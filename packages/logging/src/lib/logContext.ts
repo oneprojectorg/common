@@ -4,6 +4,7 @@ const LOG_CONTEXT_KEY = createContextKey('@op/logging log context');
 
 interface LogContext {
   posthogDistinctId?: string;
+  sessionId?: string;
 }
 
 /**
@@ -31,6 +32,22 @@ export function setLogDistinctId(distinctId: string): void {
     | undefined;
   if (holder) {
     holder.posthogDistinctId = distinctId;
+  }
+}
+
+/**
+ * Record the caller's PostHog session id on the active log context so every log
+ * record emitted within the request carries `sessionId` — the attribute PostHog
+ * Logs matches against a session replay
+ * (https://posthog.com/docs/logs/link-session-replay). No-op outside a
+ * {@link withLogContext} scope.
+ */
+export function setLogSessionId(sessionId: string): void {
+  const holder = context.active().getValue(LOG_CONTEXT_KEY) as
+    | LogContext
+    | undefined;
+  if (holder) {
+    holder.sessionId = sessionId;
   }
 }
 

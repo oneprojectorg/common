@@ -14,6 +14,7 @@ import {
   splitLink,
 } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
+import type { PostHog } from 'posthog-js';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
@@ -55,23 +56,35 @@ function buildChannelQueryKey(path: string, input: unknown): TRPCQueryKey {
 const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 const isServer = typeof window === 'undefined';
 
-// Function to get PostHog distinct_id if available
-function getPostHogDistinctId(): string | null {
+// Read a value off the loaded posthog-js client, guarding against SSR and the
+// client not being initialized yet.
+function readPostHog<T>(read: (posthog: PostHog) => T): T | null {
   if (isServer) {
     return null;
   }
 
   try {
     // Dynamic import to avoid server-side issues with posthog-js
-    const posthog = require('posthog-js').default;
+    const posthog: PostHog = require('posthog-js').default;
     if (posthog?.__loaded) {
-      return posthog.get_distinct_id();
+      return read(posthog);
     }
   } catch {
     // PostHog not available
   }
 
   return null;
+}
+
+// Function to get PostHog distinct_id if available
+function getPostHogDistinctId(): string | null {
+  return readPostHog((posthog) => posthog.get_distinct_id());
+}
+
+// Function to get the current PostHog session_id if available. Forwarding it to
+// the backend links server-side logs to the user's session replay.
+function getPostHogSessionId(): string | null {
+  return readPostHog((posthog) => posthog.get_session_id());
 }
 
 const envURL = OPURLConfig('API');
@@ -102,6 +115,12 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
     const distinctId = getPostHogDistinctId();
     if (distinctId) {
       headers.set('x-posthog-distinct-id', distinctId);
+    }
+
+    // Add PostHog session_id so the backend can link its logs to the replay
+    const sessionId = getPostHogSessionId();
+    if (sessionId) {
+      headers.set('x-posthog-session-id', sessionId);
     }
 
     // On server: decrypt SSR cookies and add to headers

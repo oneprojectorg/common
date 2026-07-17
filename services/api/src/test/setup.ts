@@ -40,6 +40,7 @@ vi.mock('@op/logging', () => ({
   transformMiddlewareRequest: vi.fn(() => ['test request', {}]),
   withLogContext: vi.fn(<T>(fn: () => T): T => fn()),
   setLogDistinctId: vi.fn(),
+  setLogSessionId: vi.fn(),
 }));
 
 // Test environment configuration for isolated test Supabase instance
