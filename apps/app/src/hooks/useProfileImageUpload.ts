@@ -21,8 +21,8 @@ const ACCEPTED_IMAGE_LABEL = ALLOWED_UPLOAD_MIME_TYPES.filter((type) =>
   .join(', ');
 
 /**
- * Shared upload logic for the profile avatar and banner images (edit-profile
- * modal + onboarding form).
+ * Shared upload logic for a profile's avatar and banner images (edit-profile
+ * modal + onboarding form; org profiles share the same endpoints).
  *
  * Uploads use the signed-URL flow (sign → PUT the file binary straight to
  * storage → record the path), so the file never rides inside a tRPC request
@@ -30,10 +30,13 @@ const ACCEPTED_IMAGE_LABEL = ALLOWED_UPLOAD_MIME_TYPES.filter((type) =>
  * base64-through-tRPC flow for large photos.
  */
 export function useProfileImageUpload({
+  profileId,
   imageType,
   initialUrl,
   onSuccess,
 }: {
+  /** Target profile; may be briefly undefined while the account query loads. */
+  profileId: string | undefined;
   imageType: 'avatar' | 'banner';
   initialUrl?: string;
   onSuccess?: () => void;
@@ -45,10 +48,14 @@ export function useProfileImageUpload({
   // a newer request superseded them, so a slow upload landing after a second
   // upload can't revert the preview to a stale image or clobber `isUploading`.
   const latestRequestRef = useRef(0);
-  const signMutation = trpc.account.signProfileImageUploadUrl.useMutation();
-  const saveMutation = trpc.account.saveProfileImage.useMutation();
+  const signMutation = trpc.profile.signProfileImageUploadUrl.useMutation();
+  const saveMutation = trpc.profile.saveProfileImage.useMutation();
 
   const upload = async (file: File) => {
+    if (!profileId) {
+      toast.error({ message: t('Something went wrong') });
+      return;
+    }
     if (
       !isAllowedUploadMimeType(file.type) ||
       !file.type.startsWith('image/')
@@ -76,6 +83,7 @@ export function useProfileImageUpload({
     setIsUploading(true);
     try {
       const signed = await signMutation.mutateAsync({
+        profileId,
         imageType,
         fileName: file.name,
       });
@@ -88,6 +96,7 @@ export function useProfileImageUpload({
         throw new Error('Upload failed');
       }
       await saveMutation.mutateAsync({
+        profileId,
         imageType,
         storagePath: signed.storagePath,
         mimeType: file.type,

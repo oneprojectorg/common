@@ -4,13 +4,15 @@ import { z } from 'zod';
 import { authenticatedConfirmedProcedure, router } from '../../trpcFactory';
 
 /**
- * Mints a signed upload URL for the caller's own profile avatar or banner.
- * Thin wrapper: the signing lives in the @op/common service.
+ * Mints a signed upload URL for a profile's avatar or banner (personal or
+ * org profiles). Thin wrapper: the access assertion + signing live in the
+ * @op/common service.
  */
 export const signProfileImageUploadUrlRouter = router({
   signProfileImageUploadUrl: authenticatedConfirmedProcedure()
     .input(
       z.object({
+        profileId: z.string().uuid(),
         fileName: z.string().min(1).max(255),
         imageType: z.enum(['avatar', 'banner']),
       }),

@@ -124,11 +124,13 @@ export const PersonalDetailsForm = ({
   };
   // Hydrate previews from the store if present
   const avatarUpload = useProfileImageUpload({
+    profileId,
     imageType: 'avatar',
     initialUrl: personalDetails?.profileImageUrl,
     onSuccess: handleImageUploadSuccess,
   });
   const bannerUpload = useProfileImageUpload({
+    profileId,
     imageType: 'banner',
     initialUrl: personalDetails?.bannerImageUrl,
     onSuccess: handleImageUploadSuccess,

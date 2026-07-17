@@ -18,10 +18,21 @@ type AuthenticatedCaller = Awaited<
   ReturnType<typeof createAuthenticatedCaller>
 >;
 
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
 // 1x1 PNG; small enough to keep tests cheap, still a valid image.
 const TEST_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 const TEST_PNG_BUFFER = Buffer.from(TEST_PNG_BASE64, 'base64');
+
+async function getPersonalProfileId(caller: AuthenticatedCaller) {
+  const account = await caller.account.getMyAccount();
+  const profileId = account?.profile?.id;
+  if (!profileId) {
+    throw new Error('test user has no personal profile');
+  }
+  return profileId;
+}
 
 /**
  * Runs the production profile-image upload sequence via a tRPC caller: sign
@@ -30,18 +41,21 @@ const TEST_PNG_BUFFER = Buffer.from(TEST_PNG_BASE64, 'base64');
  */
 async function uploadProfileImageForTest({
   caller,
+  profileId,
   imageType,
   fileName = 'photo.png',
   mimeType = 'image/png',
   body = TEST_PNG_BUFFER,
 }: {
   caller: AuthenticatedCaller;
+  profileId: string;
   imageType: 'avatar' | 'banner';
   fileName?: string;
   mimeType?: string;
   body?: Buffer;
 }) {
-  const signed = await caller.account.signProfileImageUploadUrl({
+  const signed = await caller.profile.signProfileImageUploadUrl({
+    profileId,
     fileName,
     imageType,
   });
@@ -56,22 +70,15 @@ async function uploadProfileImageForTest({
   return signed;
 }
 
-async function getUserImageRows(userEmail: string) {
-  const userRow = await db.query.users.findFirst({
-    where: { email: userEmail },
-    columns: { avatarImageId: true, profileId: true },
+async function getProfileImageRow(profileId: string) {
+  return db.query.profiles.findFirst({
+    where: { id: profileId },
+    columns: { avatarImageId: true, headerImageId: true },
   });
-  const profileRow = userRow?.profileId
-    ? await db.query.profiles.findFirst({
-        where: { id: userRow.profileId },
-        columns: { avatarImageId: true, headerImageId: true },
-      })
-    : undefined;
-  return { userRow, profileRow };
 }
 
 describe.concurrent('saveProfileImage', () => {
-  it('records an uploaded avatar on both the user and their personal profile', async ({
+  it('records an uploaded avatar on both the personal profile and the user', async ({
     task,
     onTestFinished,
   }) => {
@@ -81,21 +88,28 @@ describe.concurrent('saveProfileImage', () => {
       grantAccess: true,
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    const profileId = await getPersonalProfileId(caller);
 
     const signed = await uploadProfileImageForTest({
       caller,
+      profileId,
       imageType: 'avatar',
     });
-    const result = await caller.account.saveProfileImage({
+    const result = await caller.profile.saveProfileImage({
+      profileId,
       storagePath: signed.storagePath,
       mimeType: 'image/png',
       imageType: 'avatar',
     });
     expect(result.storagePath).toBe(signed.storagePath);
 
-    const { userRow, profileRow } = await getUserImageRows(setup.userEmail);
-    expect(userRow?.avatarImageId).toBeTruthy();
-    expect(profileRow?.avatarImageId).toBe(userRow?.avatarImageId);
+    const profileRow = await getProfileImageRow(profileId);
+    expect(profileRow?.avatarImageId).toBeTruthy();
+    const userRow = await db.query.users.findFirst({
+      where: { email: setup.userEmail },
+      columns: { avatarImageId: true },
+    });
+    expect(userRow?.avatarImageId).toBe(profileRow?.avatarImageId);
   });
 
   it('records an uploaded banner on the personal profile', async ({
@@ -108,22 +122,60 @@ describe.concurrent('saveProfileImage', () => {
       grantAccess: true,
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    const profileId = await getPersonalProfileId(caller);
 
     const signed = await uploadProfileImageForTest({
       caller,
+      profileId,
       imageType: 'banner',
     });
-    await caller.account.saveProfileImage({
+    await caller.profile.saveProfileImage({
+      profileId,
       storagePath: signed.storagePath,
       mimeType: 'image/png',
       imageType: 'banner',
     });
 
-    const { profileRow } = await getUserImageRows(setup.userEmail);
+    const profileRow = await getProfileImageRow(profileId);
     expect(profileRow?.headerImageId).toBeTruthy();
   });
 
-  it('rejects a storage path uploaded by another user', async ({
+  it('lets a caller with profile UPDATE access set an org profile banner', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const orgProfileId = setup.organization.profileId;
+    // The org profile isn't the caller's personal profile, so access comes
+    // from an Admin role (which carries profile UPDATE) on the org profile.
+    await testData.grantProfileAccess(
+      orgProfileId,
+      setup.user.id,
+      setup.userEmail,
+    );
+
+    const signed = await uploadProfileImageForTest({
+      caller,
+      profileId: orgProfileId,
+      imageType: 'banner',
+    });
+    await caller.profile.saveProfileImage({
+      profileId: orgProfileId,
+      storagePath: signed.storagePath,
+      mimeType: 'image/png',
+      imageType: 'banner',
+    });
+
+    const profileRow = await getProfileImageRow(orgProfileId);
+    expect(profileRow?.headerImageId).toBeTruthy();
+  });
+
+  it("rejects signing for another user's personal profile", async ({
     task,
     onTestFinished,
   }) => {
@@ -133,28 +185,57 @@ describe.concurrent('saveProfileImage', () => {
       grantAccess: true,
     });
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const ownerProfileId = await getPersonalProfileId(ownerCaller);
     const otherUser = await testData.createMemberUser({
       organization: setup.organization,
     });
     const otherCaller = await createAuthenticatedCaller(otherUser.email);
 
+    await expect(
+      otherCaller.profile.signProfileImageUploadUrl({
+        profileId: ownerProfileId,
+        fileName: 'photo.png',
+        imageType: 'avatar',
+      }),
+    ).rejects.toThrow(/not authorized/i);
+  });
+
+  it("rejects a storage path from another profile's prefix", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: true,
+    });
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const ownerProfileId = await getPersonalProfileId(ownerCaller);
+    const otherUser = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    const otherCaller = await createAuthenticatedCaller(otherUser.email);
+    const otherProfileId = otherUser.profileId;
+
     const signed = await uploadProfileImageForTest({
       caller: ownerCaller,
+      profileId: ownerProfileId,
       imageType: 'avatar',
     });
 
-    // The path prefix is scoped to the uploader's user id, so another caller
-    // can't claim the object.
+    // The other user may edit their own profile, but the object lives under
+    // the owner's profile prefix — the trust-boundary check rejects it.
     await expect(
-      otherCaller.account.saveProfileImage({
+      otherCaller.profile.saveProfileImage({
+        profileId: otherProfileId,
         storagePath: signed.storagePath,
         mimeType: 'image/png',
         imageType: 'avatar',
       }),
     ).rejects.toThrow();
 
-    const { userRow } = await getUserImageRows(otherUser.email);
-    expect(userRow?.avatarImageId).toBeFalsy();
+    const profileRow = await getProfileImageRow(otherProfileId);
+    expect(profileRow?.avatarImageId).toBeFalsy();
   });
 
   it('rejects a path that was signed but never uploaded', async ({
@@ -167,14 +248,17 @@ describe.concurrent('saveProfileImage', () => {
       grantAccess: true,
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    const profileId = await getPersonalProfileId(caller);
 
-    const signed = await caller.account.signProfileImageUploadUrl({
+    const signed = await caller.profile.signProfileImageUploadUrl({
+      profileId,
       fileName: 'never-uploaded.png',
       imageType: 'avatar',
     });
 
     await expect(
-      caller.account.saveProfileImage({
+      caller.profile.saveProfileImage({
+        profileId,
         storagePath: signed.storagePath,
         mimeType: 'image/png',
         imageType: 'avatar',
@@ -192,11 +276,13 @@ describe.concurrent('saveProfileImage', () => {
       grantAccess: true,
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    const profileId = await getPersonalProfileId(caller);
 
     // A PDF passes the shared allowlist + prefix + declared==stored checks,
     // so this proves the image-only guard specifically rejects it.
     const signed = await uploadProfileImageForTest({
       caller,
+      profileId,
       imageType: 'banner',
       fileName: 'photo.pdf',
       mimeType: 'application/pdf',
@@ -204,7 +290,8 @@ describe.concurrent('saveProfileImage', () => {
     });
 
     await expect(
-      caller.account.saveProfileImage({
+      caller.profile.saveProfileImage({
+        profileId,
         storagePath: signed.storagePath,
         mimeType: 'application/pdf',
         imageType: 'banner',
@@ -222,14 +309,17 @@ describe.concurrent('saveProfileImage', () => {
       grantAccess: true,
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    const profileId = await getPersonalProfileId(caller);
 
     const signed = await uploadProfileImageForTest({
       caller,
+      profileId,
       imageType: 'avatar',
     });
 
     await expect(
-      caller.account.saveProfileImage({
+      caller.profile.saveProfileImage({
+        profileId,
         storagePath: signed.storagePath,
         mimeType: 'image/jpeg',
         imageType: 'avatar',
@@ -238,11 +328,12 @@ describe.concurrent('saveProfileImage', () => {
   });
 });
 
-describeAccessTierGating('account.signProfileImageUploadUrl', {
+describeAccessTierGating('profile.signProfileImageUploadUrl', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
-      caller.account.signProfileImageUploadUrl({
+      caller.profile.signProfileImageUploadUrl({
+        profileId: NIL_UUID,
         fileName: 'avatar.png',
         imageType: 'avatar',
       }),
@@ -255,7 +346,8 @@ describeAccessTierGating('account.signProfileImageUploadUrl', {
     async ({ callers }) => {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
-        caller.account.signProfileImageUploadUrl({
+        caller.profile.signProfileImageUploadUrl({
+          profileId: NIL_UUID,
           fileName: 'avatar.png',
           imageType: 'avatar',
         }),
@@ -269,7 +361,8 @@ describeAccessTierGating('account.signProfileImageUploadUrl', {
     async ({ callers }) => {
       const caller = await callers.userJwt();
       await expectPassesAccessTierGate(
-        caller.account.signProfileImageUploadUrl({
+        caller.profile.signProfileImageUploadUrl({
+          profileId: NIL_UUID,
           fileName: 'avatar.png',
           imageType: 'avatar',
         }),
@@ -282,7 +375,8 @@ describeAccessTierGating('account.signProfileImageUploadUrl', {
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
-        caller.account.signProfileImageUploadUrl({
+        caller.profile.signProfileImageUploadUrl({
+          profileId: NIL_UUID,
           fileName: 'avatar.png',
           imageType: 'avatar',
         }),
@@ -291,12 +385,13 @@ describeAccessTierGating('account.signProfileImageUploadUrl', {
   ),
 });
 
-describeAccessTierGating('account.saveProfileImage', {
+describeAccessTierGating('profile.saveProfileImage', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
-      caller.account.saveProfileImage({
-        storagePath: 'x/avatar/x.png',
+      caller.profile.saveProfileImage({
+        profileId: NIL_UUID,
+        storagePath: `profiles/${NIL_UUID}/avatar/x.png`,
         mimeType: 'image/png',
         imageType: 'avatar',
       }),
@@ -309,8 +404,9 @@ describeAccessTierGating('account.saveProfileImage', {
     async ({ callers }) => {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
-        caller.account.saveProfileImage({
-          storagePath: 'x/avatar/x.png',
+        caller.profile.saveProfileImage({
+          profileId: NIL_UUID,
+          storagePath: `profiles/${NIL_UUID}/avatar/x.png`,
           mimeType: 'image/png',
           imageType: 'avatar',
         }),
@@ -324,8 +420,9 @@ describeAccessTierGating('account.saveProfileImage', {
     async ({ callers }) => {
       const caller = await callers.userJwt();
       await expectPassesAccessTierGate(
-        caller.account.saveProfileImage({
-          storagePath: 'x/avatar/x.png',
+        caller.profile.saveProfileImage({
+          profileId: NIL_UUID,
+          storagePath: `profiles/${NIL_UUID}/avatar/x.png`,
           mimeType: 'image/png',
           imageType: 'avatar',
         }),
@@ -338,8 +435,9 @@ describeAccessTierGating('account.saveProfileImage', {
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
-        caller.account.saveProfileImage({
-          storagePath: 'x/avatar/x.png',
+        caller.profile.saveProfileImage({
+          profileId: NIL_UUID,
+          storagePath: `profiles/${NIL_UUID}/avatar/x.png`,
           mimeType: 'image/png',
           imageType: 'avatar',
         }),

@@ -63,11 +63,13 @@ export const BaseUpdateProfileForm = forwardRef<
       router.refresh();
     };
     const avatarUpload = useProfileImageUpload({
+      profileId,
       imageType: 'avatar',
       initialUrl: getPublicUrl(profile.avatarImage?.name) || undefined,
       onSuccess: handleImageUploadSuccess,
     });
     const bannerUpload = useProfileImageUpload({
+      profileId,
       imageType: 'banner',
       initialUrl: getPublicUrl(profile.headerImage?.name) || undefined,
       onSuccess: handleImageUploadSuccess,

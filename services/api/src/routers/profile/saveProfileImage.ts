@@ -14,6 +14,7 @@ export const saveProfileImageRouter = router({
   saveProfileImage: authenticatedConfirmedProcedure()
     .input(
       z.object({
+        profileId: z.string().uuid(),
         storagePath: z.string().min(1),
         mimeType: z.string().min(1),
         imageType: z.enum(['avatar', 'banner']),
