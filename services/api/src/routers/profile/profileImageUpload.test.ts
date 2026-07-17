@@ -385,6 +385,55 @@ describeAccessTierGating('profile.signProfileImageUploadUrl', {
   ),
 });
 
+describeAccessTierGating('profile.signDraftProfileImageUploadUrl', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.profile.signDraftProfileImageUploadUrl({
+        fileName: 'draft.png',
+      }),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.signDraftProfileImageUploadUrl({
+          fileName: 'draft.png',
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'admits user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.signDraftProfileImageUploadUrl({
+          fileName: 'draft.png',
+        }),
+      );
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.signDraftProfileImageUploadUrl({
+          fileName: 'draft.png',
+        }),
+      );
+    },
+  ),
+});
+
 describeAccessTierGating('profile.saveProfileImage', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();

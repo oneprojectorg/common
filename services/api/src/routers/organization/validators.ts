@@ -61,8 +61,8 @@ export const baseOrganizationSchema = z.object({
   receivingFundsLink: z.string(),
   offeringFundsDescription: z.string(),
   offeringFundsLink: z.string(),
-  orgAvatarImageId: z.string(),
-  orgBannerImageId: z.string(),
+  orgAvatarImagePath: z.string(),
+  orgBannerImagePath: z.string(),
 });
 
 // Create organization schema - some fields required, others optional
@@ -124,8 +124,8 @@ export const createOrganizationInputSchema = baseOrganizationSchema.extend({
   receivingFundsLink: z.string().optional(),
   offeringFundsDescription: z.string().optional(),
   offeringFundsLink: z.string().optional(),
-  orgAvatarImageId: z.string().optional(),
-  orgBannerImageId: z.string().optional(),
+  orgAvatarImagePath: z.string().optional(),
+  orgBannerImagePath: z.string().optional(),
 });
 
 // Update organization schema - all fields optional except id

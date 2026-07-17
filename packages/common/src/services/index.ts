@@ -28,6 +28,8 @@ export {
   updateProfileUserRoles,
   removeProfileUser,
   signProfileImageUploadUrl,
+  signDraftProfileImageUploadUrl,
+  claimDraftProfileImage,
   saveProfileImage,
 } from './profile';
 export {

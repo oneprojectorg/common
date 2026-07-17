@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
+import { useSignedImageUpload } from '@/hooks/useSignedImageUpload';
 import { getPublicUrl } from '@/utils';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
@@ -15,13 +15,12 @@ import { SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useRouter } from 'next/navigation';
-import { forwardRef, useState } from 'react';
+import { forwardRef } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
-import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { FormContainer } from '../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
@@ -109,31 +108,19 @@ export const UpdateOrganizationForm = forwardRef<
   // Initialize form data from profile and terms
   const initialData = transformOrganizationToFormData(profile, terms);
 
-  // Initialize images from profile
-  const initialProfileImage: ImageData | undefined = profile.profile.avatarImage
-    ? {
-        url: getPublicUrl(profile.profile.avatarImage.name) || '',
-        id: profile.profile.avatarImage.id,
-      }
-    : undefined;
-
-  const initialBannerImage: ImageData | undefined = profile.profile.headerImage
-    ? {
-        url: getPublicUrl(profile.profile.headerImage.name) || '',
-        id: profile.profile.headerImage.id,
-      }
-    : undefined;
-
   const updateOrganization = trpc.organization.update.useMutation();
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
-
-  const [profileImage, setProfileImage] = useState<ImageData | undefined>(
-    initialProfileImage,
-  );
-  const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
-    initialBannerImage,
-  );
+  // New images upload to the caller's draft space; the storage paths ride
+  // along on submit and organization.update claims them server-side. An
+  // unchanged image has no storagePath, which leaves the column untouched.
+  const signDraft = trpc.profile.signDraftProfileImageUploadUrl.useMutation();
+  const avatarUpload = useSignedImageUpload({
+    sign: (fileName) => signDraft.mutateAsync({ fileName }),
+    initialUrl: getPublicUrl(profile.profile.avatarImage?.name) || undefined,
+  });
+  const bannerUpload = useSignedImageUpload({
+    sign: (fileName) => signDraft.mutateAsync({ fileName }),
+    initialUrl: getPublicUrl(profile.profile.headerImage?.name) || undefined,
+  });
   const isOnline = useConnectionStatus();
 
   const submitUpdate = async (formData: any) => {
@@ -154,8 +141,8 @@ export const UpdateOrganizationForm = forwardRef<
         data: item.data || {},
         isNewValue: item.isNewValue || false,
       })),
-      orgAvatarImageId: profileImage?.id,
-      orgBannerImageId: bannerImage?.id,
+      orgAvatarImagePath: avatarUpload.storagePath,
+      orgBannerImagePath: bannerUpload.storagePath,
     };
 
     try {
@@ -197,65 +184,6 @@ export const UpdateOrganizationForm = forwardRef<
     },
   });
 
-  const handleImageUpload = async (
-    file: File,
-    setImage: (image: ImageData | undefined) => void,
-    uploadMutation: any,
-  ): Promise<void> => {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
-
-      if (!base64) {
-        return;
-      }
-
-      const acceptedTypes = [
-        'image/gif',
-        'image/png',
-        'image/jpeg',
-        'image/webp',
-      ];
-      if (!acceptedTypes.includes(file.type)) {
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            {
-              types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
-            },
-          ),
-        });
-        return;
-      }
-
-      if (file.size > DEFAULT_MAX_SIZE) {
-        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
-            size: maxSizeMB,
-          }),
-        });
-        return;
-      }
-
-      const dataUrl = `data:${file.type};base64,${base64}`;
-
-      setImage({ url: dataUrl });
-      const res = await uploadMutation.mutateAsync({
-        file: base64,
-        fileName: file.name,
-        mimeType: file.type,
-      });
-
-      if (res?.url) {
-        setImage(res);
-      }
-    };
-
-    reader.readAsDataURL(file);
-  };
-
   return (
     <form
       ref={ref}
@@ -270,21 +198,17 @@ export const UpdateOrganizationForm = forwardRef<
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
-            value={bannerImage?.url ?? undefined}
-            onChange={(file: File) =>
-              handleImageUpload(file, setBannerImage, uploadImage)
-            }
-            uploading={uploadImage.isPending}
-            error={uploadImage.error?.message || undefined}
+            value={bannerUpload.url}
+            onChange={bannerUpload.upload}
+            uploading={bannerUpload.isUploading}
+            error={bannerUpload.uploadError}
           />
           <AvatarUploader
             className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
-            value={profileImage?.url ?? undefined}
-            onChange={(file: File) =>
-              handleImageUpload(file, setProfileImage, uploadAvatarImage)
-            }
-            uploading={uploadAvatarImage.isPending}
-            error={uploadAvatarImage.error?.message || undefined}
+            value={avatarUpload.url}
+            onChange={avatarUpload.upload}
+            uploading={avatarUpload.isUploading}
+            error={avatarUpload.uploadError}
           />
         </div>
 
