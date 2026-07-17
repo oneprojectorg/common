@@ -1,4 +1,4 @@
-import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
+import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
@@ -6,8 +6,7 @@ import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
-import { ReactNode, Suspense, useState } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -104,8 +103,6 @@ export const validator = z.object({
   profileImageUrl: z.string().optional(),
   bannerImageUrl: z.string().optional(),
 });
-const acceptedTypes = ['image/gif', 'image/png', 'image/jpeg', 'image/webp'];
-
 export const PersonalDetailsForm = ({
   onNext,
   className,
@@ -116,82 +113,26 @@ export const PersonalDetailsForm = ({
   );
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const uploadImage = trpc.account.uploadImage.useMutation();
-  const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   // Get current user's profile ID for the focus areas component
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
   const profileId = userAccount?.profile?.id;
 
-  // Hydrate profileImageUrl from store if present, else undefined
-  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
-    personalDetails?.profileImageUrl,
-  );
-  const [bannerImageUrl, setBannerImageUrl] = useState<string | undefined>(
-    personalDetails?.bannerImageUrl,
-  );
-
-  const handleImageUpload = async (
-    file: File,
-    setImageUrl: (url: string | undefined) => void,
-    uploadMutation: typeof uploadBannerImage | typeof uploadImage,
-  ): Promise<void> => {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
-
-      if (!base64) {
-        return;
-      }
-
-      if (!acceptedTypes.includes(file.type)) {
-        const types = acceptedTypes
-          .map((type) => type.split('/')[1])
-          .join(', ');
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            { types },
-          ),
-        });
-        return;
-      }
-
-      if (file.size > DEFAULT_MAX_SIZE) {
-        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
-            size: maxSizeMB,
-          }),
-        });
-        return;
-      }
-
-      const dataUrl = `data:${file.type};base64,${base64}`;
-      setImageUrl(dataUrl);
-
-      const res = await uploadMutation.mutateAsync(
-        {
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-        },
-        {
-          onSuccess: () => {
-            utils.account.getMyAccount.invalidate();
-            utils.account.getUserProfiles.invalidate();
-          },
-        },
-      );
-
-      if (res?.url) {
-        setImageUrl(res.url);
-      }
-    };
-
-    reader.readAsDataURL(file);
+  const handleImageUploadSuccess = () => {
+    utils.account.getMyAccount.invalidate();
+    utils.account.getUserProfiles.invalidate();
   };
+  // Hydrate previews from the store if present
+  const avatarUpload = useProfileImageUpload({
+    imageType: 'avatar',
+    initialUrl: personalDetails?.profileImageUrl,
+    onSuccess: handleImageUploadSuccess,
+  });
+  const bannerUpload = useProfileImageUpload({
+    imageType: 'banner',
+    initialUrl: personalDetails?.bannerImageUrl,
+    onSuccess: handleImageUploadSuccess,
+  });
 
   // Hydrate form from store if present
   const form = useAppForm({
@@ -228,7 +169,11 @@ export const PersonalDetailsForm = ({
           profileId,
         });
       }
-      setPersonalDetails({ ...value, profileImageUrl, bannerImageUrl }); // Persist to store on submit
+      setPersonalDetails({
+        ...value,
+        profileImageUrl: avatarUpload.url,
+        bannerImageUrl: bannerUpload.url,
+      }); // Persist to store on submit
       onNext(value);
     },
   });
@@ -250,22 +195,18 @@ export const PersonalDetailsForm = ({
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
-            value={bannerImageUrl ?? undefined}
-            onChange={(file: File) =>
-              handleImageUpload(file, setBannerImageUrl, uploadBannerImage)
-            }
-            uploading={uploadBannerImage.isPending}
-            error={uploadBannerImage.error?.message || undefined}
+            value={bannerUpload.url}
+            onChange={bannerUpload.upload}
+            uploading={bannerUpload.isUploading}
+            error={bannerUpload.uploadError}
           />
           <AvatarUploader
             label={t('Profile Picture')}
             className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
-            value={profileImageUrl ?? undefined}
-            onChange={(file: File) =>
-              handleImageUpload(file, setProfileImageUrl, uploadImage)
-            }
-            uploading={uploadImage.isPending}
-            error={uploadImage.error?.message || undefined}
+            value={avatarUpload.url}
+            onChange={avatarUpload.upload}
+            uploading={avatarUpload.isUploading}
+            error={avatarUpload.uploadError}
           />
         </div>
         <form.AppField
@@ -395,8 +336,8 @@ export const PersonalDetailsForm = ({
 
         <form.SubmitButton className="sm:w-full">
           {updateProfile.isPending ||
-          uploadImage.isPending ||
-          uploadBannerImage.isPending ? (
+          avatarUpload.isUploading ||
+          bannerUpload.isUploading ? (
             <LoadingSpinner />
           ) : (
             t('Continue')
