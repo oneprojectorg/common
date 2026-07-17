@@ -13,6 +13,8 @@ export * from './listUserInvites';
 export * from './updateProfileInvite';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
+export * from './signProfileImageUploadUrl';
+export * from './saveProfileImage';
 export * from './getProfileUserWithRelations';
 export * from './requests';
 export * from './schemas';

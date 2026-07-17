@@ -1,6 +1,5 @@
-import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
+import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
@@ -10,9 +9,8 @@ import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { ReactNode, Suspense, forwardRef, useState } from 'react';
+import { ReactNode, Suspense, forwardRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -58,18 +56,24 @@ export const BaseUpdateProfileForm = forwardRef<
     const t = useTranslations();
     const router = useRouter();
 
-    const uploadImage = trpc.account.uploadImage.useMutation();
-    const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
-
     const profileId = profile.id;
 
-    // Initialize with current profile data
-    const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
-      getPublicUrl(profile.avatarImage?.name) || undefined,
-    );
-    const [bannerImageUrl, setBannerImageUrl] = useState<string | undefined>(
-      getPublicUrl(profile.headerImage?.name) || undefined,
-    );
+    const handleImageUploadSuccess = () => {
+      onImageUploadSuccess?.();
+      router.refresh();
+    };
+    const avatarUpload = useProfileImageUpload({
+      profileId,
+      imageType: 'avatar',
+      initialUrl: getPublicUrl(profile.avatarImage?.name) || undefined,
+      onSuccess: handleImageUploadSuccess,
+    });
+    const bannerUpload = useProfileImageUpload({
+      profileId,
+      imageType: 'banner',
+      initialUrl: getPublicUrl(profile.headerImage?.name) || undefined,
+      onSuccess: handleImageUploadSuccess,
+    });
 
     const form = useAppForm({
       defaultValues: {
@@ -104,69 +108,6 @@ export const BaseUpdateProfileForm = forwardRef<
       },
     });
 
-    const handleImageUpload = async (
-      file: File,
-      setImageUrl: (url: string | undefined) => void,
-      uploadMutation: typeof uploadImage | typeof uploadBannerImage,
-    ): Promise<void> => {
-      const reader = new FileReader();
-
-      reader.onload = async (e) => {
-        const base64 = (e.target?.result as string)?.split(',')[1];
-
-        if (!base64) {
-          return;
-        }
-
-        if (!acceptedImageTypes.includes(file.type)) {
-          toast.error({
-            message: t(
-              'That file type is not supported. Accepted types: {types}',
-              {
-                types: acceptedImageTypes
-                  .map((type) => type.split('/')[1])
-                  .join(', '),
-              },
-            ),
-          });
-          return;
-        }
-
-        if (file.size > DEFAULT_MAX_SIZE) {
-          const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-          toast.error({
-            message: t('File too large. Maximum size: {size}MB', {
-              size: maxSizeMB,
-            }),
-          });
-          return;
-        }
-
-        const dataUrl = `data:${file.type};base64,${base64}`;
-        setImageUrl(dataUrl);
-
-        const res = await uploadMutation.mutateAsync(
-          {
-            file: base64,
-            fileName: file.name,
-            mimeType: file.type,
-          },
-          {
-            onSuccess: () => {
-              onImageUploadSuccess?.();
-              router.refresh();
-            },
-          },
-        );
-
-        if (res?.url) {
-          setImageUrl(res.url);
-        }
-      };
-
-      reader.readAsDataURL(file);
-    };
-
     return (
       <form
         ref={ref}
@@ -180,22 +121,18 @@ export const BaseUpdateProfileForm = forwardRef<
           {/* Header Images */}
           <div className="relative w-full pb-12 sm:pb-20">
             <BannerUploader
-              value={bannerImageUrl ?? undefined}
-              onChange={(file: File) =>
-                handleImageUpload(file, setBannerImageUrl, uploadBannerImage)
-              }
-              uploading={uploadBannerImage.isPending}
-              error={uploadBannerImage.error?.message || undefined}
+              value={bannerUpload.url}
+              onChange={bannerUpload.upload}
+              uploading={bannerUpload.isUploading}
+              error={bannerUpload.uploadError}
             />
             <AvatarUploader
               label={t('Profile Picture')}
               className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
-              value={profileImageUrl ?? undefined}
-              onChange={(file: File) =>
-                handleImageUpload(file, setProfileImageUrl, uploadImage)
-              }
-              uploading={uploadImage.isPending}
-              error={uploadImage.error?.message || undefined}
+              value={avatarUpload.url}
+              onChange={avatarUpload.upload}
+              uploading={avatarUpload.isUploading}
+              error={avatarUpload.uploadError}
             />
           </div>
           <form.AppField
@@ -333,8 +270,8 @@ export const BaseUpdateProfileForm = forwardRef<
         <ModalFooter className="sticky">
           <form.SubmitButton className="sm:w-auto">
             {isSubmitting ||
-            uploadImage.isPending ||
-            uploadBannerImage.isPending ? (
+            avatarUpload.isUploading ||
+            bannerUpload.isUploading ? (
               <LoadingSpinner />
             ) : (
               t('Save')
@@ -410,10 +347,3 @@ export const validator = z
   );
 
 export type FormFields = z.infer<typeof validator>;
-
-export const acceptedImageTypes = [
-  'image/gif',
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-];

@@ -27,6 +27,8 @@ export {
   listUserInvites,
   updateProfileUserRoles,
   removeProfileUser,
+  signProfileImageUploadUrl,
+  saveProfileImage,
 } from './profile';
 export {
   addRelationship as addProfileRelationship,
