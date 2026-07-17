@@ -9,6 +9,67 @@ import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Errors are surfaced by LoginPanel via the `?error=` query param. Sending
+// them to the bare origin landed unauthed users on a page with no error UI.
+const redirectWithError = (errorRedirect: string, message: string) =>
+  NextResponse.redirect(
+    `${errorRedirect}?error=${encodeURIComponent(message)}`,
+  );
+
+const exchangeCode = async ({
+  code,
+  errorRedirect,
+}: {
+  code: string;
+  errorRedirect: string;
+}): Promise<NextResponse | null> => {
+  const supabase = await createSBServerClient();
+
+  const { data: authData, error } =
+    await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    logger.error('OAuth code exchange failed', { error });
+
+    return redirectWithError(
+      errorRedirect,
+      error.message || 'There was an error signing you in.',
+    );
+  }
+
+  if (!authData.user?.email) {
+    await supabase.auth.signOut();
+
+    return redirectWithError(
+      errorRedirect,
+      'Unable to verify your email address. Please try again.',
+    );
+  }
+
+  // Check if the user is allowed to login
+  // Note: User and profile are automatically created by database trigger
+  // when Supabase creates the auth.users record
+  try {
+    const client = await createClient();
+    await client.account.login({
+      email: authData.user.email,
+      usingOAuth: true,
+    });
+  } catch (error) {
+    // If the user is not invited or not registered, sign them out
+    await supabase.auth.signOut();
+
+    return redirectWithError(
+      errorRedirect,
+      error instanceof Error
+        ? error.message
+        : 'Unable to verify your email address. Please try again.',
+    );
+  }
+
+  return null;
+};
+
 export const GET = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
@@ -16,55 +77,13 @@ export const GET = async (request: NextRequest) => {
   // On successful verification, always redirect the user to the app
   const useUrl = OPURLConfig('APP');
 
-  // Errors are surfaced by LoginPanel via the `?error=` query param. Sending
-  // them to the bare origin landed unauthed users on a page with no error UI.
   const errorRedirect = new URL('/login', request.nextUrl.origin).toString();
 
   if (code) {
-    const supabase = await createSBServerClient();
+    const errorResponse = await exchangeCode({ code, errorRedirect });
 
-    const { data: authData, error } =
-      await supabase.auth.exchangeCodeForSession(code);
-
-    if (error) {
-      logger.error('OAuth code exchange failed', { error });
-
-      // return the user to an error page with some instructions
-      return NextResponse.redirect(
-        `${errorRedirect}?error=${encodeURIComponent(error.message || 'There was an error signing you in.')}`,
-      );
-    }
-
-    if (authData.user?.email) {
-      // Check if the user is allowed to login
-      // Note: User and profile are automatically created by database trigger
-      // when Supabase creates the auth.users record
-      try {
-        const client = await createClient();
-        await client.account.login({
-          email: authData.user.email,
-          usingOAuth: true,
-        });
-      } catch (error) {
-        // If the user is not invited or not registered, sign them out
-        await supabase.auth.signOut();
-
-        if (error instanceof Error) {
-          return NextResponse.redirect(
-            `${errorRedirect}?error=${encodeURIComponent(error.message)}`,
-          );
-        }
-
-        return NextResponse.redirect(
-          `${errorRedirect}?error=${encodeURIComponent('Unable to verify your email address. Please try again.')}`,
-        );
-      }
-    } else {
-      await supabase.auth.signOut();
-
-      return NextResponse.redirect(
-        `${errorRedirect}?error=${encodeURIComponent('Unable to verify your email address. Please try again.')}`,
-      );
+    if (errorResponse) {
+      return errorResponse;
     }
   } else {
     const providerError = searchParams.get('error');
@@ -81,8 +100,9 @@ export const GET = async (request: NextRequest) => {
         description: providerErrorDescription,
       });
 
-      return NextResponse.redirect(
-        `${errorRedirect}?error=${encodeURIComponent(providerErrorDescription || 'There was an error signing you in.')}`,
+      return redirectWithError(
+        errorRedirect,
+        providerErrorDescription || 'There was an error signing you in.',
       );
     }
   }
