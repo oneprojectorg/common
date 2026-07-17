@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@op/logging/client';
 import { IntlErrorCode, NextIntlClientProvider } from 'next-intl';
 import { ReactNode, useEffect } from 'react';
 
@@ -40,7 +41,10 @@ export const I18nProvider = ({ children, messages, locale }: Props) => {
           // ENVIRONMENT_FALLBACK: timeZone/now fallbacks are non-fatal client-side
           return;
         }
-        console.error(error);
+        logger.error('NextIntlClientProvider error', {
+          error,
+          context: 'NextIntlClientProvider',
+        });
       }}
       getMessageFallback={({ key }: MessageFallbackParams): string => {
         // Just return the key as fallback without errors

@@ -1,4 +1,5 @@
 import type { TipTapFragmentResponse } from '@op/collab';
+import { logger } from '@op/logging';
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
 
@@ -32,9 +33,9 @@ export function generateProposalHtml(
 
       result[fragmentName] = generateHTML(doc, serverExtensions);
     } catch (error) {
-      console.warn('Failed to generate HTML for fragment', {
+      logger.error('Failed to generate HTML for fragment', {
         fragmentName,
-        error: error instanceof Error ? error.message : String(error),
+        error,
       });
       result[fragmentName] = '';
     }

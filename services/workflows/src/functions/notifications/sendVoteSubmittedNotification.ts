@@ -84,7 +84,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     });
 
     if (!voteData) {
-      console.log('No vote data found for submission:', voteSubmissionId);
+      logger.info('No vote data found for submission', { voteSubmissionId });
       return;
     }
 
@@ -102,7 +102,9 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     });
 
     if (!voterEmail) {
-      console.log('No email found for voter profile:', voteData.voterProfileId);
+      logger.info('No email found for voter profile', {
+        voterProfileId: voteData.voterProfileId,
+      });
       return;
     }
 

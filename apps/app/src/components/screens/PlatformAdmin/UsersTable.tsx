@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { Header2 } from '@op/ui/Header';
 import { MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -83,7 +84,7 @@ export const UsersTable = () => {
         exportUsersToCSV(allUsers);
         toast.success({ message: t('Users exported successfully') });
       } catch (error) {
-        console.error('Export failed:', error);
+        logger.error('Export failed', { error, context: 'UsersTable.export' });
         toast.error({ message: t('Failed to export users') });
       }
     });

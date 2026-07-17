@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@op/logging/client';
 import { useEffect, useRef } from 'react';
 
 import { setErrorSpanFlusher } from '../lib/otelErrorTracking';
@@ -95,6 +96,9 @@ async function initOTelBrowser() {
       }
     });
   } catch (error) {
-    console.warn('[OTel] Failed to initialize browser tracing:', error);
+    logger.warn('[OTel] Failed to initialize browser tracing', {
+      error,
+      context: 'otel_browser_init',
+    });
   }
 }

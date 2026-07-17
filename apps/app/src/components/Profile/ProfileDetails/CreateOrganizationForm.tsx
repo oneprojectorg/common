@@ -3,6 +3,7 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { logger } from '@op/logging/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -91,7 +92,10 @@ export const CreateOrganizationForm = forwardRef<
       await createOrganization.mutateAsync(createData);
       sendOnboardingAnalytics(formData);
     } catch (err) {
-      console.error('ERROR', err);
+      logger.error('Create organization failed', {
+        error: err,
+        context: 'CreateOrganizationForm',
+      });
       onError();
       const errorInfo = analyzeError(err);
 

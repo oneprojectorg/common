@@ -5,6 +5,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -154,7 +155,9 @@ export function ProposalCardMenu({
 
   const handleDeleteConfirm = async () => {
     if (!proposal.id) {
-      console.error('No proposal ID provided for delete action');
+      logger.error('No proposal ID provided for delete action', {
+        context: 'ProposalCardMenu.delete',
+      });
       return;
     }
 
@@ -164,7 +167,10 @@ export function ProposalCardMenu({
       });
       setIsDeleteModalOpen(false); // Close modal after successful deletion
     } catch (error) {
-      console.error('Error in ProposalCardMenu handleDeleteConfirm:', error);
+      logger.error('Error in ProposalCardMenu handleDeleteConfirm', {
+        error,
+        context: 'ProposalCardMenu.handleDeleteConfirm',
+      });
     }
   };
 

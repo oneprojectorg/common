@@ -6,6 +6,7 @@ import type {
 } from '@op/common/client';
 import { schemaValidator } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
@@ -53,7 +54,10 @@ export function CustomFormModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (!isCustomFormDefinition(schema)) {
-    console.error('[CustomFormModal] Unsupported form definition', schema);
+    logger.error('Unsupported form definition', {
+      context: 'CustomFormModal',
+      schema: JSON.stringify(schema),
+    });
     return null;
   }
 

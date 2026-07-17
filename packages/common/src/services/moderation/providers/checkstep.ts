@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { createHash, createHmac } from 'node:crypto';
 import { z } from 'zod';
 
@@ -253,8 +254,9 @@ const scoresFromViolations = (
         // is notified so the map can be updated in config before scoring goes
         // stale on a whole class of violations.
         warnedUnknownPolicies.add(rawPolicy);
-        console.warn(
+        logger.warn(
           `[moderation] unknown Checkstep policy code "${rawPolicy}" — extend MODERATION_POLICY_MAP to categorise it`,
+          { policyCode: rawPolicy },
         );
       }
     }

@@ -61,17 +61,15 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
     );
 
     if (!revisionRequest) {
-      console.warn('Revision request not found:', revisionRequestId);
+      logger.warn('Revision request not found', { revisionRequestId });
       return;
     }
 
     if (revisionRequest.state !== ProposalReviewRequestState.REQUESTED) {
-      console.log(
-        'Revision request is no longer active:',
+      logger.info('Revision request is no longer active', {
         revisionRequestId,
-        'state:',
-        revisionRequest.state,
-      );
+        state: revisionRequest.state,
+      });
       return;
     }
 
@@ -79,12 +77,10 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
       assignment.status !==
       ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION
     ) {
-      console.log(
-        'Assignment is no longer awaiting revision:',
+      logger.info('Assignment is no longer awaiting revision', {
         assignmentId,
-        'status:',
-        assignment.status,
-      );
+        status: assignment.status,
+      });
       return;
     }
 
@@ -92,10 +88,9 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
     const authorProfileUsers = proposal.profile.profileUsers.filter(hasEmail);
 
     if (authorProfileUsers.length === 0) {
-      console.warn(
-        'No author profile users found for proposal profile:',
-        proposal.profileId,
-      );
+      logger.warn('No author profile users found for proposal profile', {
+        profileId: proposal.profileId,
+      });
       return;
     }
 

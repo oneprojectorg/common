@@ -2,6 +2,7 @@
 
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { logger } from '@op/logging/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
@@ -260,7 +261,10 @@ export const OnboardingFlow = () => {
         router.push('/?new=1');
       })
       .catch((err) => {
-        console.error('ERROR', err);
+        logger.error('Onboarding: failed to create organization', {
+          error: err,
+          context: 'Onboarding.createOrganization',
+        });
         setIsSubmitting(false);
 
         const errorInfo = analyzeError(err);

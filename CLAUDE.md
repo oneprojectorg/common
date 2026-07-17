@@ -109,6 +109,13 @@ Use `pnpm w:<workspace>` shortcuts:
 1. **ALWAYS** wrap strings with `t('...')` - never hardcode user-facing text
 4. **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })` and `t.rich()` for strings that are broken up with styles/components.
 
+### Logging
+
+- **Never log through `console.*`.** All logging must go through our loggers so it always reports to PostHog:
+  - **Server** (services, `@op/common`, tRPC procedures, workflows): `import { logger } from '@op/logging'` — emits OpenTelemetry logs that ship to PostHog. Inside a tRPC procedure prefer `ctx.logger` (adds request context).
+  - **Client / browser** (`apps/app`, `'use client'` code): `import { logger } from '@op/logging/client'` — reports to PostHog (`captureException` for `error`/`warn`) and also writes to the console.
+- Use `logger.error(message, { error })` for caught errors (pass the caught error under the `error` key), and `logger.warn` / `logger.info` for everything else. Do **not** call `console.log` / `console.error` / `console.warn` directly in app or service code.
+
 ## Workflow Notes
 
 - If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server

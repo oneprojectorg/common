@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { IntlErrorCode } from 'next-intl';
 import { getRequestConfig } from 'next-intl/server';
 
@@ -46,7 +47,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
         return;
       }
       // Default next-intl behavior: log other errors
-      console.error(error);
+      logger.error('next-intl request config error', { error });
     },
   };
 });

@@ -8,6 +8,7 @@ import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
@@ -131,7 +132,10 @@ const PostUpdateWithUser = ({
         toast.error({ message: errorInfo.message });
       }
 
-      console.log('ERROR', err);
+      logger.error('Failed to create organization post', {
+        error: err,
+        context: 'PostUpdate.createOrgPost',
+      });
     },
   });
 
@@ -297,7 +301,10 @@ const PostUpdateWithUser = ({
         toast.error({ message: errorInfo.message });
       }
 
-      console.log('ERROR', err);
+      logger.error('Failed to create post', {
+        error: err,
+        context: 'PostUpdate.createPost',
+      });
     },
     onSuccess: (data, variables, context) => {
       fileUpload.clearFiles();

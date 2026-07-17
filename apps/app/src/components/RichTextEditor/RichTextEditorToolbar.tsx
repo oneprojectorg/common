@@ -1,6 +1,7 @@
 'use client';
 
 import { useFileUpload } from '@/hooks/useFileUpload';
+import { logger } from '@op/logging/client';
 import { cn } from '@op/ui/utils';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useRef } from 'react';
@@ -94,7 +95,10 @@ export function RichTextEditorToolbar({
         // Insert the uploaded image into the editor
         editor.chain().focus().setImage({ src: uploadResult.url }).run();
       } catch (error) {
-        console.error('Failed to upload image:', error);
+        logger.error('Failed to upload image', {
+          error,
+          context: 'RichTextEditorToolbar.uploadImage',
+        });
       }
 
       // Clear the input

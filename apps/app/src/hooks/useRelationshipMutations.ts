@@ -1,6 +1,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
+import { logger } from '@op/logging/client';
 import { toast } from '@op/ui/Toast';
 import { useCallback } from 'react';
 
@@ -163,7 +164,10 @@ export function useRelationshipMutations({
             context.previousData,
           );
         }
-        console.error('Failed to add relationship:', error);
+        logger.error('Failed to add relationship', {
+          error,
+          context: 'useRelationshipMutations.add',
+        });
 
         // Show user-facing error notification
         const action =
@@ -225,7 +229,10 @@ export function useRelationshipMutations({
             context.previousData,
           );
         }
-        console.error('Failed to remove relationship:', error);
+        logger.error('Failed to remove relationship', {
+          error,
+          context: 'useRelationshipMutations.remove',
+        });
 
         // Show user-facing error notification
         const action =
@@ -248,7 +255,9 @@ export function useRelationshipMutations({
   // Handler for like/unlike
   const handleLike = useCallback(async () => {
     if (!targetProfileId) {
-      console.error('No targetProfileId provided for like action');
+      logger.error('No targetProfileId provided for like action', {
+        context: 'useRelationshipMutations.like',
+      });
       return;
     }
 
@@ -270,7 +279,10 @@ export function useRelationshipMutations({
       // Mutation errors are rolled back and toasted in onError; mutateAsync
       // also rejects when onSuccess/onSettled throw (onError doesn't run for
       // those), so log here instead of swallowing silently.
-      console.error('Like mutation post-processing failed:', error);
+      logger.error('Like mutation post-processing failed', {
+        error,
+        context: 'useRelationshipMutations.like',
+      });
     }
   }, [
     targetProfileId,
@@ -282,7 +294,9 @@ export function useRelationshipMutations({
   // Handler for follow/unfollow
   const handleFollow = useCallback(async () => {
     if (!targetProfileId) {
-      console.error('No targetProfileId provided for follow action');
+      logger.error('No targetProfileId provided for follow action', {
+        context: 'useRelationshipMutations.follow',
+      });
       return;
     }
 
@@ -304,7 +318,10 @@ export function useRelationshipMutations({
       // Mutation errors are rolled back and toasted in onError; mutateAsync
       // also rejects when onSuccess/onSettled throw (onError doesn't run for
       // those), so log here instead of swallowing silently.
-      console.error('Follow mutation post-processing failed:', error);
+      logger.error('Follow mutation post-processing failed', {
+        error,
+        context: 'useRelationshipMutations.follow',
+      });
     }
   }, [
     targetProfileId,

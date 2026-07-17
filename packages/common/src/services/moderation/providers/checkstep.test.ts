@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { createHash, createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -220,7 +221,7 @@ describe('createCheckstepProvider', () => {
     // Log-once alert on Checkstep taxonomy drift: an unknown code still
     // scores as `other` (so the flag pipeline runs), but ops sees a warning
     // so the map can be updated before scoring goes stale.
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const provider = createCheckstepProvider({
       apiKey: 'k',
       // Force the adapter to see `MYSTERY_CODE_ABC123` as unknown.

@@ -3,6 +3,7 @@ import {
   getCachedDocumentFragments,
   getTipTapClient,
 } from '@op/collab';
+import { logger } from '@op/logging';
 import pMap from 'p-map';
 
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -113,9 +114,9 @@ export async function getProposalDocumentsContent(
 
           return { id, fragments, failed: false as const };
         } catch (error) {
-          console.warn('Failed to fetch TipTap document', {
+          logger.error('Failed to fetch TipTap document', {
             collaborationDocId,
-            error: error instanceof Error ? error.message : String(error),
+            error,
           });
           return { id, fragments: undefined, failed: true as const };
         }

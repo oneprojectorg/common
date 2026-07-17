@@ -5,6 +5,7 @@ import { getPublicUrl } from '@/utils';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { logger } from '@op/logging/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -168,7 +169,10 @@ export const UpdateOrganizationForm = forwardRef<
 
       onSuccess();
     } catch (error) {
-      console.error('Failed to update organization:', error);
+      logger.error('Failed to update organization', {
+        error,
+        context: 'UpdateOrganizationForm',
+      });
 
       const errorInfo = analyzeError(error);
 
