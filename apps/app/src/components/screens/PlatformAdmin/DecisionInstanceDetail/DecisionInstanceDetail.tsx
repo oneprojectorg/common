@@ -165,9 +165,18 @@ const PhaseCard = ({
 
   const hasAnySection =
     phase.hasProposals || phase.hasReviews || phase.hasVoting;
+  const isCompleted = currentIndex >= 0 && index < currentIndex;
 
   return (
-    <Card>
+    <Card
+      className={
+        phase.isCurrent
+          ? 'border-primary'
+          : isCompleted
+            ? 'bg-muted'
+            : undefined
+      }
+    >
       <CardHeader className={hasAnySection ? 'border-b' : undefined}>
         <CardTitle>
           {phase.name ?? t('Phase {number}', { number: index + 1 })}
