@@ -41,6 +41,9 @@ vi.mock('@op/logging', () => ({
   withLogContext: vi.fn(<T>(fn: () => T): T => fn()),
   setLogDistinctId: vi.fn(),
   setLogSessionId: vi.fn(),
+  getPosthogCookieName: vi.fn(() => undefined),
+  parsePosthogDistinctId: vi.fn(() => undefined),
+  getPosthogDistinctIdFromCookieHeader: vi.fn(() => undefined),
 }));
 
 // Test environment configuration for isolated test Supabase instance

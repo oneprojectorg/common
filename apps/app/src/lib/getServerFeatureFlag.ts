@@ -1,4 +1,5 @@
 import PostHogClient from '@op/analytics/client';
+import { getPosthogCookieName, parsePosthogDistinctId } from '@op/logging';
 import { cookies } from 'next/headers';
 import type { PostHog } from 'posthog-node';
 
@@ -17,32 +18,15 @@ function getClient(): PostHog | null {
 
 /**
  * Read the PostHog distinct id the browser SDK persists, so server-side flag
- * evaluation targets the same identity the client does. posthog-js stores it
- * as JSON under `ph_<project_key>_posthog`.
+ * evaluation targets the same identity the client does.
  */
 async function getDistinctId(): Promise<string | null> {
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!key) {
+  const cookieName = getPosthogCookieName();
+  if (!cookieName) {
     return null;
   }
-  const cookie = (await cookies()).get(`ph_${key}_posthog`);
-  if (!cookie) {
-    return null;
-  }
-  try {
-    const parsed: unknown = JSON.parse(cookie.value);
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      'distinct_id' in parsed &&
-      typeof parsed.distinct_id === 'string'
-    ) {
-      return parsed.distinct_id;
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  const cookie = (await cookies()).get(cookieName);
+  return parsePosthogDistinctId(cookie?.value) ?? null;
 }
 
 /**

@@ -17,6 +17,7 @@ import { OTLPHttpProtoTraceExporter, registerOTel } from '@vercel/otel';
 import type { Instrumentation } from 'next';
 
 import { logger } from './logger';
+import { getPosthogDistinctIdFromCookieHeader } from './posthogIdentity';
 
 /**
  * Shared OpenTelemetry setup for the Next.js `register()` instrumentation
@@ -106,7 +107,14 @@ export const onRequestError: Instrumentation.onRequestError = async (
   request,
   context,
 ) => {
+  // Runs outside `withLogContext`, so recover the distinct id from the request
+  // cookie directly to keep these person-linked.
+  const cookieHeader = Array.isArray(request.headers.cookie)
+    ? request.headers.cookie.join('; ')
+    : request.headers.cookie;
+  const posthogDistinctId = getPosthogDistinctIdFromCookieHeader(cookieHeader);
   logger.error('Unhandled server request error', {
+    ...(posthogDistinctId && { posthogDistinctId }),
     error,
     path: request.path,
     method: request.method,
