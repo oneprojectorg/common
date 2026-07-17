@@ -4,6 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
@@ -217,7 +218,10 @@ const VotingProposalsList = ({
         data: values,
       });
     } catch (error) {
-      console.error('Failed to submit phase form:', error);
+      logger.error('Failed to submit phase form', {
+        error,
+        context: 'ProposalsGrid.handlePhaseFormSubmit',
+      });
       toast.error({ message: t('Failed to submit form') });
       return; // Keep the modal open so the user can retry.
     }

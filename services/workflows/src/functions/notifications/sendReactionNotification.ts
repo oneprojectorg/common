@@ -36,7 +36,7 @@ export const sendReactionNotification = inngest.createFunction(
     );
 
     if (!reactionEmoji) {
-      console.log('Invalid reaction type:', reactionType);
+      logger.info('Invalid reaction type', { reactionType });
       return;
     }
 
@@ -94,14 +94,20 @@ export const sendReactionNotification = inngest.createFunction(
         const data = result[0];
 
         if (!data) {
-          console.log('No data found for post reaction notification');
+          logger.info('No data found for post reaction notification', {
+            postId,
+            sourceProfileId,
+          });
           return;
         }
 
         if (!data.orgProfileSlug) {
-          console.log(
+          logger.info(
             'Could not find profile slug for post reaction notification',
-            postId,
+            {
+              postId,
+              sourceProfileId,
+            },
           );
           return;
         }
@@ -112,7 +118,10 @@ export const sendReactionNotification = inngest.createFunction(
           : { name: data.orgProfileName!, email: data.orgProfileEmail! };
 
         if (!authorProfile?.email) {
-          console.log('No author email found for post reaction notification');
+          logger.info('No author email found for post reaction notification', {
+            postId,
+            sourceProfileId,
+          });
           return;
         }
 

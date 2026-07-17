@@ -3,6 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -97,7 +98,10 @@ export const InviteUserModal = ({
   };
 
   const handleInviteError = (error: any, title: string) => {
-    console.error('Failed to send invite:', error.message);
+    logger.error('Failed to send invite', {
+      error,
+      context: 'InviteUserModal.sendInvite',
+    });
 
     const errorInfo = analyzeError(error);
 

@@ -1,4 +1,5 @@
 import type { ModerationFlag } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import type { SubmissionAggregate } from './moderationSubmissionStore';
 import type {
@@ -153,8 +154,9 @@ export const applyModerationVerdict = async (
   // ever appear outside an edit race, something upstream is wrong.
   if (!aggregate) {
     if (isDetach) {
-      console.warn(
+      logger.warn(
         `[moderation] detach verdict dropped (round mismatch) for ${itemType}:${itemId} — superseded round or unmatched ref; current round carries its own verdict`,
+        { itemType, itemId, roundId: verdict.roundId },
       );
     }
     return { action: 'noop', detached: false };

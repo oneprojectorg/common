@@ -11,6 +11,7 @@ import {
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { SplitPane } from '@op/ui/SplitPane';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
@@ -407,7 +408,10 @@ function ProposalEditorInner({
 
       await finalizeSubmit();
     } catch (error) {
-      console.error('Failed to update proposal:', error);
+      logger.error('Failed to update proposal', {
+        error,
+        context: 'ProposalEditor.handleSubmitProposal',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -441,7 +445,10 @@ function ProposalEditorInner({
         await finalizeSubmit();
         setShowCustomFormModal(false);
       } catch (error) {
-        console.error('Failed to submit custom form:', error);
+        logger.error('Failed to submit custom form', {
+          error,
+          context: 'ProposalEditor.handleCustomFormSubmit',
+        });
       } finally {
         setIsSubmitting(false);
       }

@@ -1,5 +1,6 @@
 import { type DbClient, and, eq, inArray } from '@op/db/client';
 import { proposalCategories, taxonomies, taxonomyTerms } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 /**
  * Replaces a proposal's category links with the given labels: clears all
@@ -38,7 +39,9 @@ export async function setProposalCategories({
   });
 
   if (!proposalTaxonomy) {
-    console.warn('No "proposal" taxonomy found, skipping category linking');
+    logger.warn('No "proposal" taxonomy found, skipping category linking', {
+      proposalId,
+    });
     return;
   }
 
@@ -57,7 +60,7 @@ export async function setProposalCategories({
   for (const label of trimmedLabels) {
     const taxonomyTermId = termIdByLabel.get(label);
     if (!taxonomyTermId) {
-      console.warn(`No taxonomy term found for category: ${label}`);
+      logger.warn('No taxonomy term found for category', { proposalId, label });
       continue;
     }
     taxonomyTermIds.push(taxonomyTermId);

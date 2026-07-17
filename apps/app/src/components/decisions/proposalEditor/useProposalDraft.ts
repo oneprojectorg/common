@@ -10,6 +10,7 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
@@ -77,7 +78,10 @@ export function useProposalDraft({
 
   const autoSaveMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
-      console.error('Auto-save failed:', error);
+      logger.error('Auto-save failed', {
+        error,
+        context: 'useProposalDraft.autoSave',
+      });
     },
   });
 

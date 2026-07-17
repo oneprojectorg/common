@@ -57,7 +57,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
     });
 
     if (!proposalData) {
-      console.log('No proposal data found for proposal:', proposalId);
+      logger.warn('No proposal data found for proposal', { proposalId });
       return;
     }
 
@@ -79,7 +79,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
     });
 
     if (collaborators.length === 0) {
-      console.log('No collaborators found for proposal:', proposalId);
+      logger.info('No collaborators found for proposal', { proposalId });
       return;
     }
 

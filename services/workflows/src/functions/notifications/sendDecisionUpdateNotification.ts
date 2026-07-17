@@ -96,7 +96,7 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       .filter((p) => p.email !== post.authorEmail);
 
     if (recipients.length === 0) {
-      console.warn('No participants to notify for decision update', {
+      logger.warn('No participants to notify for decision update', {
         postId,
         targetProfileId,
       });

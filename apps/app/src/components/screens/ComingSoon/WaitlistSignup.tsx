@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@op/logging/client';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -100,7 +101,11 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         if (res.status === 201) {
           onSuccess();
         } else {
-          console.error(await res.json());
+          const errorBody = await res.json();
+          logger.error('Waitlist signup failed', {
+            context: 'WaitlistSignup',
+            response: JSON.stringify(errorBody),
+          });
           toast.error({
             title: t('Something went wrong'),
             message: t('We were not able to sign you up. Please try again.'),

@@ -1,6 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { posts, profiles, proposals, users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 
 const { contentFlagged } = Events;
 
@@ -79,7 +80,7 @@ export const sendContentFlaggedNotification = inngest.createFunction(
     await step.run('send-flagged-email', async () => {
       const recipient = await resolveRecipient(itemType, itemId);
       if (!recipient?.email) {
-        console.log('No recipient email for flagged content', {
+        logger.info('No recipient email for flagged content', {
           itemType,
           itemId,
         });

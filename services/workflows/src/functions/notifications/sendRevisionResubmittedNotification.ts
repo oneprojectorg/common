@@ -62,29 +62,25 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
     );
 
     if (!revisionRequest) {
-      console.warn('Revision request not found:', revisionRequestId);
+      logger.warn('Revision request not found', { revisionRequestId });
       return;
     }
 
     if (revisionRequest.state !== ProposalReviewRequestState.RESUBMITTED) {
-      console.log(
-        'Revision request is not in resubmitted state:',
+      logger.info('Revision request is not in resubmitted state', {
         revisionRequestId,
-        'state:',
-        revisionRequest.state,
-      );
+        state: revisionRequest.state,
+      });
       return;
     }
 
     if (
       assignment.status !== ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW
     ) {
-      console.log(
-        'Assignment is not ready for re-review:',
+      logger.info('Assignment is not ready for re-review', {
         assignmentId,
-        'status:',
-        assignment.status,
-      );
+        status: assignment.status,
+      });
       return;
     }
 
@@ -92,10 +88,9 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
     const reviewerEmails = reviewer.profileUsers.filter(hasEmail);
 
     if (reviewerEmails.length === 0) {
-      console.warn(
-        'No reviewer emails found for reviewer profile:',
-        assignment.reviewerProfileId,
-      );
+      logger.warn('No reviewer emails found for reviewer profile', {
+        reviewerProfileId: assignment.reviewerProfileId,
+      });
       return;
     }
 

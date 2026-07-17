@@ -133,22 +133,22 @@ export const createProposal = async ({
 
         for (const categoryLabel of categoryLabels) {
           if (!matchedLabels.has(categoryLabel)) {
-            console.warn(
-              `No valid proposal taxonomy term found for category: ${categoryLabel}`,
-            );
+            logger.warn('No valid proposal taxonomy term found for category', {
+              categoryLabel,
+            });
           }
         }
       } else {
         for (const categoryLabel of categoryLabels) {
-          console.warn(
-            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
-          );
+          logger.warn('No valid proposal taxonomy term found for category', {
+            categoryLabel,
+          });
         }
       }
     } catch (error) {
-      console.warn(
-        'Error fetching category terms, proceeding without category links:',
-        error,
+      logger.error(
+        'Error fetching category terms, proceeding without category links',
+        { error },
       );
     }
   }

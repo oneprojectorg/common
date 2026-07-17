@@ -5,6 +5,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { logger } from '@op/logging';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -136,7 +137,7 @@ const PostFeedSection = async ({
   try {
     await utils.organization.listAllPosts.fetchInfinite({ limit: 10 });
   } catch (e) {
-    console.error('Homepage post prefetch failed:', e);
+    logger.error('Homepage post prefetch failed', { error: e });
   }
 
   return (

@@ -452,6 +452,7 @@ export const removeRelationship = async ({ id }: { id: string }) => {
 
     return relationship[0];
   } catch (e) {
+    logger.error('Failed to remove relationship', { error: e, id });
     throw new CommonError('Could not remove relationship');
   }
 };
@@ -497,6 +498,11 @@ export const approveRelationship = async ({
 
     return true;
   } catch (e) {
+    logger.error('Failed to approve relationship', {
+      error: e,
+      sourceOrganizationId,
+      targetOrganizationId,
+    });
     throw new CommonError('Could not approve relationship');
   }
 };
@@ -529,6 +535,11 @@ export const declineRelationship = async ({
 
     return true;
   } catch (e) {
+    logger.error('Failed to decline relationship', {
+      error: e,
+      targetOrganizationId,
+      ids,
+    });
     throw new CommonError('Could not decline relationship');
   }
 };

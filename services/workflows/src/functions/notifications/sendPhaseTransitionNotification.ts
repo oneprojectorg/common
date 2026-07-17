@@ -108,12 +108,10 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     });
 
     if (participants.length === 0) {
-      console.warn(
-        'No participants found for process instance:',
+      logger.warn('No participants found for process instance', {
         processInstanceId,
-        'profileId:',
-        processData.profileId,
-      );
+        profileId: processData.profileId,
+      });
       return;
     }
 

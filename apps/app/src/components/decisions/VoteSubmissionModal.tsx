@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/ui/Button';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
@@ -32,7 +33,10 @@ export const VoteSubmissionModal = ({
       onSuccess();
     },
     onError: (error) => {
-      console.error('Failed to submit vote:', error);
+      logger.error('Failed to submit vote', {
+        error,
+        context: 'VoteSubmissionModal.submitVote',
+      });
       toast.error({
         message: error.message || 'Failed to submit vote',
       });

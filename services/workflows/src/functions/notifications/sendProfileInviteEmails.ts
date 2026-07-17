@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import { profileInvites } from '@op/db/schema';
 import { OPBatchSend, OPInvitationEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { inArray } from 'drizzle-orm';
 
 const { profileInviteSent } = Events;
@@ -16,10 +17,10 @@ export const sendProfileInviteEmails = inngest.createFunction(
       profileInviteSent.schema.parse(event.data);
 
     const result = await step.run('send-profile-invite-emails', async () => {
-      console.log(
-        `Sending profile invite emails from ${senderProfileId}`,
-        invitations.map((i) => i.email),
-      );
+      logger.info('Sending profile invite emails', {
+        senderProfileId,
+        inviteeCount: invitations.length,
+      });
 
       const emails = invitations.map(
         ({ email, inviterName, profileName, inviteUrl, personalMessage }) => ({

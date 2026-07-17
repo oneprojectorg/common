@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@op/logging/client';
 import { getAvatarColorForString } from '@op/ui/utils';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useMemo, useState } from 'react';
@@ -55,7 +56,9 @@ export function useTiptapCollab({
 
     const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
     if (!appId) {
-      console.error('[useTiptapCollab] NEXT_PUBLIC_TIPTAP_APP_ID not set');
+      logger.error('NEXT_PUBLIC_TIPTAP_APP_ID not set', {
+        context: 'useTiptapCollab',
+      });
       setStatus('disconnected');
       return;
     }

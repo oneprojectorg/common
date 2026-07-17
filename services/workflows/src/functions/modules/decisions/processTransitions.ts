@@ -1,5 +1,6 @@
 import { processDecisionsTransitions } from '@op/common';
 import { inngest } from '@op/events';
+import { logger } from '@op/logging';
 
 /**
  * Checks for incomplete decision-making transitions whose scheduled dates have passed
@@ -19,7 +20,7 @@ export const processTransitions = inngest.createFunction(
     });
 
     if (result.failed > 0) {
-      console.warn('Some transitions failed to process:', {
+      logger.error('Some transitions failed to process', {
         processed: result.processed,
         failed: result.failed,
         errors: result.errors,

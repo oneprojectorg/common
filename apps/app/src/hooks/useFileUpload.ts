@@ -1,4 +1,5 @@
 import { trpc } from '@op/api/client';
+import { logger } from '@op/logging/client';
 import { toast } from '@op/ui/Toast';
 import { useCallback, useState } from 'react';
 
@@ -188,7 +189,11 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
         try {
           await uploadFile(file);
         } catch (error) {
-          console.error('Failed to upload file:', file.name, error);
+          logger.error('Failed to upload file', {
+            error,
+            fileName: file.name,
+            context: 'useFileUpload',
+          });
         }
       }
     },
