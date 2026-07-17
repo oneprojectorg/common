@@ -191,9 +191,14 @@ const PolicyDocumentView = ({
   return (
     <>
       <div className="sticky top-0 z-30 flex min-h-16 items-center border-b bg-white px-4">
-        <Button variant="link" size="inline" className="gap-1" onPress={onBack}>
+        <Button
+          color="ghost"
+          size="inline"
+          aria-label={t('Back')}
+          className="text-neutral-black hover:text-neutral-black pressed:text-neutral-black"
+          onPress={onBack}
+        >
           <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
-          {t('Back')}
         </Button>
         <span className="pointer-events-none absolute inset-x-0 text-center font-serif text-title-sm">
           {documentTitle[document]}
