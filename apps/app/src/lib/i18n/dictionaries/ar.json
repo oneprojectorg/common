@@ -893,6 +893,7 @@
   "Connect with aligned organizations and funders building a new economy together": "تواصل مع المؤسسات والممولين المتوافقين الذين يبنون اقتصادًا جديدًا معًا",
   "A code was sent to {email}. Type the code below to sign in.": "تم إرسال رمز إلى {email}. اكتب الرمز أدناه لتسجيل الدخول.",
   "Continue with Google": "المتابعة باستخدام Google",
+  "Continue with {provider}": "المتابعة باستخدام {provider}",
   "or": "أو",
   "Organization email": "البريد الإلكتروني للمؤسسة",
   "Sign up": "إنشاء حساب",

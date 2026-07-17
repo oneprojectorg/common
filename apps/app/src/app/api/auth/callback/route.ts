@@ -31,7 +31,7 @@ export const GET = async (request: NextRequest) => {
 
       // return the user to an error page with some instructions
       return NextResponse.redirect(
-        `${errorRedirect}?error=${error.message || 'There was an error signing you in.'}`,
+        `${errorRedirect}?error=${encodeURIComponent(error.message || 'There was an error signing you in.')}`,
       );
     }
 
@@ -51,19 +51,38 @@ export const GET = async (request: NextRequest) => {
 
         if (error instanceof Error) {
           return NextResponse.redirect(
-            `${errorRedirect}?error=${error.message}`,
+            `${errorRedirect}?error=${encodeURIComponent(error.message)}`,
           );
         }
 
         return NextResponse.redirect(
-          `${errorRedirect}?error=${'Unable to verify your email address. Please try again.'}`,
+          `${errorRedirect}?error=${encodeURIComponent('Unable to verify your email address. Please try again.')}`,
         );
       }
     } else {
       await supabase.auth.signOut();
 
       return NextResponse.redirect(
-        `${errorRedirect}?error=${'Unable to verify your email address. Please try again.'}`,
+        `${errorRedirect}?error=${encodeURIComponent('Unable to verify your email address. Please try again.')}`,
+      );
+    }
+  } else {
+    const providerError = searchParams.get('error');
+
+    // The IdP declined the sign-in (user cancelled, consent denied, provider
+    // misconfigured): GoTrue redirects here with error params and no code.
+    // Without this branch the visitor lands on the walled-garden home,
+    // unauthenticated and with no feedback.
+    if (providerError) {
+      const providerErrorDescription = searchParams.get('error_description');
+
+      logger.warn('OAuth provider returned an error', {
+        error: providerError,
+        description: providerErrorDescription,
+      });
+
+      return NextResponse.redirect(
+        `${errorRedirect}?error=${encodeURIComponent(providerErrorDescription || 'There was an error signing you in.')}`,
       );
     }
   }

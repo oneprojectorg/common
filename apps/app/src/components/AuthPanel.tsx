@@ -6,6 +6,7 @@ import { Header1 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import React from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
+import { LuKeyRound } from 'react-icons/lu';
 import { create } from 'zustand';
 
 import { useTranslations } from '@/lib/i18n';
@@ -102,7 +103,13 @@ export const AuthPanelShell = ({
 };
 
 /** "Continue with Google" button. */
-export const AuthGoogleButton = ({ onPress }: { onPress: () => void }) => {
+export const AuthGoogleButton = ({
+  onPress,
+  isDisabled,
+}: {
+  onPress: () => void;
+  isDisabled?: boolean;
+}) => {
   const t = useTranslations();
 
   return (
@@ -111,9 +118,36 @@ export const AuthGoogleButton = ({ onPress }: { onPress: () => void }) => {
       variant="icon"
       className="w-full text-neutral-charcoal"
       onPress={onPress}
+      isDisabled={isDisabled}
     >
       <GoogleIcon className="size-4 stroke-none" />
       {t('Continue with Google')}
+    </Button>
+  );
+};
+
+/** "Continue with {provider}" button for the deployment's OIDC provider. */
+export const AuthOIDCButton = ({
+  providerName,
+  onPress,
+  isDisabled,
+}: {
+  providerName: string;
+  onPress: () => void;
+  isDisabled?: boolean;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Button
+      color="secondary"
+      variant="icon"
+      className="w-full text-neutral-charcoal"
+      onPress={onPress}
+      isDisabled={isDisabled}
+    >
+      <LuKeyRound className="size-4" />
+      {t('Continue with {provider}', { provider: providerName })}
     </Button>
   );
 };

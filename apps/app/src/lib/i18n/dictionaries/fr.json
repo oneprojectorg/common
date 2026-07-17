@@ -976,6 +976,7 @@
   "Connect with aligned organizations and funders building a new economy together": "Connectez-vous avec des organisations et des bailleurs de fonds alignés qui construisent ensemble une nouvelle économie",
   "A code was sent to {email}. Type the code below to sign in.": "Un code a été envoyé à {email}. Saisissez le code ci-dessous pour vous connecter.",
   "Continue with Google": "Continuer avec Google",
+  "Continue with {provider}": "Continuer avec {provider}",
   "or": "ou",
   "Organization email": "Courriel de l'organisation",
   "Sign up": "S'inscrire",

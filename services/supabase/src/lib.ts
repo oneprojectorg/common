@@ -5,6 +5,7 @@ import type {
   AuthOtpResponse,
   EmailOtpType,
   JwtPayload,
+  Provider,
   User as SupabaseAuthUser,
   UserResponse,
 } from '@supabase/supabase-js';
@@ -33,5 +34,6 @@ export {
   createServerClient,
   type EmailOtpType,
   type JwtPayload,
+  type Provider,
   type UserResponse,
 };

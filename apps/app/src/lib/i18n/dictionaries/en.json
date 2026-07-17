@@ -990,6 +990,7 @@
   "Connect with aligned organizations and funders building a new economy together": "Connect with aligned organizations and funders building a new economy together",
   "A code was sent to {email}. Type the code below to sign in.": "A code was sent to {email}. Type the code below to sign in.",
   "Continue with Google": "Continue with Google",
+  "Continue with {provider}": "Continue with {provider}",
   "or": "or",
   "Organization email": "Organization email",
   "Sign up": "Sign up",

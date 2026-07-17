@@ -978,6 +978,7 @@
   "Connect with aligned organizations and funders building a new economy together": "একসাথে একটি নতুন অর্থনীতি গড়ে তোলা সমমনা সংগঠন এবং তহবিলদাতাদের সাথে সংযুক্ত হন",
   "A code was sent to {email}. Type the code below to sign in.": "{email}-এ একটি কোড পাঠানো হয়েছে। সাইন ইন করতে নীচে কোডটি টাইপ করুন।",
   "Continue with Google": "Google দিয়ে চালিয়ে যান",
+  "Continue with {provider}": "{provider} দিয়ে চালিয়ে যান",
   "or": "অথবা",
   "Organization email": "সংগঠনের ইমেইল",
   "Sign up": "নিবন্ধন",

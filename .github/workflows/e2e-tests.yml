@@ -35,6 +35,9 @@ jobs:
       RESEND_PASSWORD: re_test_key_for_ci
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_ID: test-keycloak-client-id
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_SECRET: test-keycloak-secret
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_URL: http://127.0.0.1:8443/realms/test
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
 
     steps:
@@ -127,6 +130,9 @@ jobs:
       # Google OAuth (stub values - not used in E2E tests)
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_ID: test-keycloak-client-id
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_SECRET: test-keycloak-secret
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_URL: http://127.0.0.1:8443/realms/test
       # TipTap Cloud (collaborative editing - stub for tests)
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
 
@@ -336,6 +342,9 @@ jobs:
       # Google OAuth (stub values - not used in E2E tests)
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_ID: test-keycloak-client-id
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_SECRET: test-keycloak-secret
+      SUPABASE_AUTH_EXTERNAL_KEYCLOAK_URL: http://127.0.0.1:8443/realms/test
       # TipTap Cloud (collaborative editing - stub for tests)
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
 
