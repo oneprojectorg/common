@@ -3,11 +3,6 @@ import { isUserEmailPlatformAdmin } from '@op/common';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-import {
-  PlatformAdminHeader,
-  PlatformStats,
-} from '@/components/screens/PlatformAdmin';
-
 export default async function AdminLayout({
   children,
 }: {
@@ -20,11 +15,5 @@ export default async function AdminLayout({
     notFound();
   }
 
-  return (
-    <div className="flex w-full flex-col gap-8 p-8">
-      <PlatformAdminHeader />
-      <PlatformStats />
-      {children}
-    </div>
-  );
+  return <div className="flex w-full flex-col gap-8 p-8">{children}</div>;
 }
