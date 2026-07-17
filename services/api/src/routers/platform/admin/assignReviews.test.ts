@@ -89,21 +89,26 @@ describe.concurrent('platform.admin.assignReviews', () => {
 
     const phaseId = setup.instance.instance.currentStateId ?? 'initial';
 
+    // Distinct member profile as reviewer — the setup user acts as the org
+    // profile when creating the proposal, so the org profile is the author.
+    const reviewer = await testData.createMemberUser({
+      organization: { id: setup.organization.id },
+    });
+
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    return { setup, instanceId, proposal, phaseId, caller };
+    return { setup, instanceId, proposal, phaseId, caller, reviewer };
   };
 
   it('creates assignments, is idempotent, and shows up in the listing', async ({
     task,
     onTestFinished,
   }) => {
-    const { setup, instanceId, proposal, phaseId, caller } =
+    const { instanceId, proposal, phaseId, caller, reviewer } =
       await createSetupWithProposal(task.id, onTestFinished);
 
-    // The org profile stands in for a second member profile as reviewer.
-    const reviewerProfileId = setup.organization.profileId;
+    const reviewerProfileId = reviewer.profileId;
 
     const first = await caller.assignReviews({
       instanceId,
@@ -129,11 +134,11 @@ describe.concurrent('platform.admin.assignReviews', () => {
 
     expect(listing.totalAssignments).toBe(1);
     expect(listing.reviewers).toHaveLength(1);
-    const reviewer = listing.reviewers[0]!;
-    expect(reviewer.profile.id).toBe(reviewerProfileId);
-    expect(reviewer.assignedCount).toBe(1);
-    expect(reviewer.submittedCount).toBe(0);
-    expect(reviewer.assignments[0]?.proposalId).toBe(proposal.id);
+    const rollup = listing.reviewers[0]!;
+    expect(rollup.profile.id).toBe(reviewerProfileId);
+    expect(rollup.assignedCount).toBe(1);
+    expect(rollup.submittedCount).toBe(0);
+    expect(rollup.assignments[0]?.proposalId).toBe(proposal.id);
 
     // Dialog candidates come back too.
     expect(listing.proposals.map((p) => p.id)).toContain(proposal.id);
@@ -163,7 +168,7 @@ describe.concurrent('platform.admin.assignReviews', () => {
     task,
     onTestFinished,
   }) => {
-    const { setup, instanceId, proposal, phaseId, caller } =
+    const { instanceId, proposal, phaseId, caller, reviewer } =
       await createSetupWithProposal(task.id, onTestFinished);
 
     // Advance the instance past the target phase so it counts as completed.
@@ -176,7 +181,7 @@ describe.concurrent('platform.admin.assignReviews', () => {
       caller.assignReviews({
         instanceId,
         phaseId,
-        reviewerProfileId: setup.organization.profileId,
+        reviewerProfileId: reviewer.profileId,
         proposalIds: [proposal.id],
       }),
     ).rejects.toMatchObject({
@@ -188,14 +193,14 @@ describe.concurrent('platform.admin.assignReviews', () => {
     task,
     onTestFinished,
   }) => {
-    const { setup, instanceId, phaseId, caller } =
+    const { instanceId, phaseId, caller, reviewer } =
       await createSetupWithProposal(task.id, onTestFinished);
 
     await expect(() =>
       caller.assignReviews({
         instanceId,
         phaseId,
-        reviewerProfileId: setup.organization.profileId,
+        reviewerProfileId: reviewer.profileId,
         proposalIds: [crypto.randomUUID()],
       }),
     ).rejects.toThrow();
