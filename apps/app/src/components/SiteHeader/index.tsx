@@ -15,6 +15,7 @@ import {
   Menu,
   MenuItem,
   MenuItemSimple,
+  MenuList,
   MenuSeparator,
   MenuTrigger,
 } from '@op/ui/Menu';
@@ -409,17 +410,17 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           isDismissable={true}
           isKeyboardDismissDisabled={false}
           overlayClassName="animate-in items-end justify-center p-0 duration-300 fade-in-0"
-          className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+          className="m-0 h-auto max-h-[85svh] w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+            <MenuList className="flex min-w-full flex-col border-t-0 p-4 pb-8">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 setIsOrgDeletionOpen={setIsOrgDeletionOpen}
                 onClose={() => setIsDrawerOpen(false)}
                 onProfileSwitch={handleProfileSwitch}
               />
-            </Menu>
+            </MenuList>
           </ModalBody>
         </Modal>
         <UpdateProfileModal
