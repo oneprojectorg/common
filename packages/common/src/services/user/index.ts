@@ -428,12 +428,18 @@ export const completeOnboarding = async ({
   tos: boolean;
   privacy: boolean;
 }) => {
+  const now = new Date().toISOString();
+
   await db
     .update(users)
     .set({
-      onboardedAt: new Date().toISOString(),
+      onboardedAt: now,
       tos,
       privacy,
+      // Stamp the acceptance date whenever the corresponding flag is set true.
+      // These date columns are what gates the re-acceptance modal.
+      ...(tos ? { tosAcceptedOn: now } : {}),
+      ...(privacy ? { privacyAcceptedOn: now } : {}),
     })
     .where(eq(users.authUserId, authUserId));
 };

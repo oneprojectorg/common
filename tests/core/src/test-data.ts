@@ -76,10 +76,12 @@ export async function createUser(opts: CreateUserOptions) {
     throw new Error(`No user returned when creating test user: ${email}`);
   }
 
-  // Mark test users as onboarded so they aren't redirected to /start
+  // Mark test users as onboarded (so they aren't redirected to /start) and as
+  // having accepted the current policies (so the re-acceptance gate stays shut).
+  const now = new Date().toISOString();
   await db
     .update(users)
-    .set({ onboardedAt: new Date().toISOString() })
+    .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
     .where(eq(users.authUserId, data.user.id));
 
   return {

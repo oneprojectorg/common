@@ -76,6 +76,8 @@ export const userEncoder = createSelectSchema(users)
   })
   .extend({
     onboardedAt: z.string().nullish(),
+    tosAcceptedOn: z.string().nullish(),
+    privacyAcceptedOn: z.string().nullish(),
     isAnonymous: z.boolean(),
     // Closed-network membership; authoritative only via `encodeUser`.
     isNetworkMember: z.boolean().default(false),
