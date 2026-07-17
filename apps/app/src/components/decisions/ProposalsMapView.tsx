@@ -193,7 +193,7 @@ export function ProposalsMapView({
             proposal={proposal}
             href={hrefFor(proposal)}
             isActive={activeId === proposal.id}
-            canManage={canManageProposals}
+            canManage={canManageProposals || Boolean(proposal.isEditable)}
             onActivate={() => setActiveId(proposal.id)}
             onDeactivate={() => setActiveId(null)}
           />
