@@ -169,14 +169,19 @@ export function resolveAssignmentProposal(assignment: {
     throw new ValidationError(`Proposal ${id} has no document content`);
   }
 
+  // HTML-only proposals (no collaboration doc) are a supported legacy state —
+  // the content check above already accepts them — so they aren't flagged here.
+  // The only unexpected case is a proposal that has a collaboration doc but no
+  // version stamp, meaning the best-effort version snapshot on submit (see
+  // submitProposal) didn't take. That's non-fatal (the version is not the
+  // source of truth for content), so warn rather than error.
   if (
-    !proposalData.collaborationDocId ||
-    !proposalData.collaborationDocVersionId
+    proposalData.collaborationDocId &&
+    proposalData.collaborationDocVersionId == null
   ) {
-    logger.error(
-      'Proposal is missing collaborationDocId or collaborationDocVersionId',
-      { proposalId: id },
-    );
+    logger.warn('Proposal is missing collaborationDocVersionId', {
+      proposalId: id,
+    });
   }
 
   return { ...snapshot, id, proposalData };
