@@ -92,7 +92,7 @@ const DecisionInstanceDetailContent = ({
       </div>
 
       <Tabs defaultValue="phases">
-        <TabsList>
+        <TabsList variant="line">
           <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
           <TabsTrigger value="members">{t('Members')}</TabsTrigger>
         </TabsList>
@@ -104,6 +104,7 @@ const DecisionInstanceDetailContent = ({
               phase={phase}
               index={index}
               total={detail.phases.length}
+              currentIndex={detail.phases.findIndex((p) => p.isCurrent)}
             />
           ))}
         </TabsContent>
@@ -141,11 +142,14 @@ const PhaseCard = ({
   phase,
   index,
   total,
+  currentIndex,
 }: {
   instanceId: string;
   phase: AdminDecisionPhase;
   index: number;
   total: number;
+  /** Index of the current phase, -1 when the process has no current phase. */
+  currentIndex: number;
 }) => {
   const t = useTranslations();
   const format = useFormatter();
@@ -172,9 +176,15 @@ const PhaseCard = ({
           {t('Phase {number} of {total}', { number: index + 1, total })}
           {dates ? <span> · {dates}</span> : null}
         </CardDescription>
-        {phase.isCurrent ? (
+        {currentIndex >= 0 ? (
           <CardAction>
-            <Badge>{t('Current phase')}</Badge>
+            {phase.isCurrent ? (
+              <Badge>{t('Current phase')}</Badge>
+            ) : index < currentIndex ? (
+              <Badge variant="secondary">{t('Completed')}</Badge>
+            ) : (
+              <Badge variant="outline">{t('Upcoming')}</Badge>
+            )}
           </CardAction>
         ) : null}
       </CardHeader>
