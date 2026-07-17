@@ -14,6 +14,7 @@ import {
   splitLink,
 } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
+import type { PostHog } from 'posthog-js';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
@@ -57,14 +58,14 @@ const isServer = typeof window === 'undefined';
 
 // Read a value off the loaded posthog-js client, guarding against SSR and the
 // client not being initialized yet.
-function readPostHog<T>(read: (posthog: any) => T): T | null {
+function readPostHog<T>(read: (posthog: PostHog) => T): T | null {
   if (isServer) {
     return null;
   }
 
   try {
     // Dynamic import to avoid server-side issues with posthog-js
-    const posthog = require('posthog-js').default;
+    const posthog: PostHog = require('posthog-js').default;
     if (posthog?.__loaded) {
       return read(posthog);
     }
