@@ -2,6 +2,7 @@
 import { logger as opLogger, withLogContext } from '@op/logging';
 import spacetime from 'spacetime';
 
+import { classifyRequestError } from '../lib/error';
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
 // withLogContext opens the request-scoped log context that the auth
@@ -73,7 +74,12 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         );
       }
     } else if (result.error) {
-      opLogger.error('Request failed', {
+      // tRPC labels every service-layer throw INTERNAL_SERVER_ERROR; resolve the
+      // real status so expected 4xx (auth / not-found) log at `warn` and only
+      // genuine 5xx stay at `error` severity.
+      const { httpStatus, code } = classifyRequestError(result.error);
+      const level = httpStatus >= 500 ? 'error' : 'warn';
+      opLogger[level]('Request failed', {
         requestId: ctx.requestId,
         path,
         type,
@@ -81,7 +87,8 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         duration,
         status: 'error',
         timestamp: end,
-        errorCode: result.error.code,
+        errorCode: code,
+        httpStatus,
         errorName: result.error.name,
         error: result.error,
       });
