@@ -1,4 +1,5 @@
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProcessStatus, ProposalStatus, processInstances } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -156,6 +157,31 @@ describe.concurrent('platform.admin.assignReviews', () => {
     });
 
     expect(result.createdCount).toBe(0);
+  });
+
+  it('rejects assignment into a completed phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { setup, instanceId, proposal, phaseId, caller } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    // Advance the instance past the target phase so it counts as completed.
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'final' })
+      .where(eq(processInstances.id, instanceId));
+
+    await expect(() =>
+      caller.assignReviews({
+        instanceId,
+        phaseId,
+        reviewerProfileId: setup.organization.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
   });
 
   it('throws for proposals outside the instance', async ({

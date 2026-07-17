@@ -5,8 +5,13 @@ import {
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
+import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../utils';
+
+const phaseOrderData = z
+  .object({ phases: z.array(z.object({ phaseId: z.string() })).optional() })
+  .partial();
 
 export interface AssignReviewsToReviewerInput {
   instanceId: string;
@@ -25,6 +30,9 @@ export interface AssignReviewsToReviewerInput {
  * are never assigned their own proposals; existing assignments are left
  * untouched via `onConflictDoNothing`.
  *
+ * Assignments are rejected for completed phases (any phase ordered before the
+ * instance's current phase).
+ *
  * Returns the number of assignments created.
  */
 export async function assignReviewsToReviewer({
@@ -39,11 +47,28 @@ export async function assignReviewsToReviewer({
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
-    columns: { id: true },
+    columns: { id: true, currentStateId: true, instanceData: true },
   });
 
   if (!instance) {
     throw new NotFoundError('Decision instance not found');
+  }
+
+  const parsedPhases = phaseOrderData.safeParse(instance.instanceData);
+  const phaseIds = parsedPhases.success
+    ? (parsedPhases.data.phases?.map((phase) => phase.phaseId) ?? [])
+    : [];
+  const currentPhaseIndex = instance.currentStateId
+    ? phaseIds.indexOf(instance.currentStateId)
+    : -1;
+  const targetPhaseIndex = phaseIds.indexOf(phaseId);
+
+  if (
+    currentPhaseIndex >= 0 &&
+    targetPhaseIndex >= 0 &&
+    targetPhaseIndex < currentPhaseIndex
+  ) {
+    throw new ValidationError('Cannot assign reviews in a completed phase');
   }
 
   const [selectedProposals, latestTransition] = await Promise.all([

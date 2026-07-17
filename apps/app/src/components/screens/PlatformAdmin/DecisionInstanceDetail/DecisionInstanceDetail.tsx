@@ -209,6 +209,7 @@ const PhaseCard = ({
               <ReviewPhasePanel
                 instanceId={instanceId}
                 phaseId={phase.phaseId}
+                isCompleted={isCompleted}
               />
             </Suspense>
           </PhaseSection>
