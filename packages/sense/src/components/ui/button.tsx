@@ -40,7 +40,7 @@ const buttonVariants = cva(
         variant: 'destructive',
         size: ['sm', 'xs', 'icon-sm', 'icon-xs'],
         class:
-          'bg-destructive-muted text-destructive hover:bg-[color-mix(in_oklch,var(--destructive-muted),var(--foreground)_10%)] active:bg-[color-mix(in_oklch,var(--destructive-muted),var(--foreground)_15%)] focus-visible:ring-destructive/20',
+          'bg-destructive-muted text-destructive hover:bg-red-100 active:bg-red-200 focus-visible:ring-destructive/20',
       },
     ],
     defaultVariants: {

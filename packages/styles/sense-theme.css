@@ -369,7 +369,9 @@
   --secondary-foreground: var(--color-gray-900);
 
   /* Muted */
-  --muted: var(--color-gray-50);
+  /* Nudged darker than gray-50 so muted surfaces read against white
+   * (design-approved deviation from the ramp). */
+  --muted: #f6f8f8;
   --muted-foreground: var(--color-gray-600);
 
   /* Accent */
