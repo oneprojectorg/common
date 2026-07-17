@@ -63,6 +63,11 @@ describe('getPosthogDistinctIdFromCookieHeader', () => {
     expect(getPosthogDistinctIdFromCookieHeader(header)).toBe('anon-abc');
   });
 
+  it('returns undefined without throwing on malformed percent-encoding', () => {
+    const header = `ph_${KEY}_posthog=%E0%A4%A`;
+    expect(getPosthogDistinctIdFromCookieHeader(header)).toBeUndefined();
+  });
+
   it('returns undefined when the cookie or key is absent', () => {
     expect(
       getPosthogDistinctIdFromCookieHeader('foo=1; bar=2'),
