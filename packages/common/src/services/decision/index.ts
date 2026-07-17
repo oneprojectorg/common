@@ -66,6 +66,7 @@ export * from './getLatestSelectionForProposal';
 export * from './listProposals';
 export * from './listProposalLocations';
 export * from './listAllProposals';
+export * from './assignReviewsToReviewer';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
 export * from './backfillReviewAssignments';
