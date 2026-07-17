@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@op/sense/Select';
 import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -50,6 +50,15 @@ export const AssignReviewsDialog = ({
   const [reviewerId, setReviewerId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(proposals.map((proposal) => proposal.id)),
+  );
+
+  const reviewerItems = useMemo(
+    () =>
+      eligibleReviewers.map((reviewer) => ({
+        value: reviewer.id,
+        label: reviewer.name ?? reviewer.slug ?? reviewer.id,
+      })),
+    [eligibleReviewers],
   );
 
   const assignReviews = trpc.platform.admin.assignReviews.useMutation({
@@ -89,6 +98,18 @@ export const AssignReviewsDialog = ({
     });
   };
 
+  const allSelected =
+    selectedAssignableIds.length === assignableProposals.length &&
+    assignableProposals.length > 0;
+
+  const toggleAll = () => {
+    setSelectedIds(
+      allSelected
+        ? new Set()
+        : new Set(assignableProposals.map((proposal) => proposal.id)),
+    );
+  };
+
   const canSubmit =
     !!reviewerId &&
     selectedAssignableIds.length > 0 &&
@@ -113,10 +134,11 @@ export const AssignReviewsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 px-6">
+        <div className="flex flex-col gap-5 px-6 py-4">
           <div className="flex flex-col gap-2">
             <Label>{t('Reviewer')}</Label>
             <Select
+              items={reviewerItems}
               value={reviewerId}
               onValueChange={(value) => setReviewerId(value)}
             >
@@ -124,9 +146,9 @@ export const AssignReviewsDialog = ({
                 <SelectValue placeholder={t('Select a reviewer')} />
               </SelectTrigger>
               <SelectContent>
-                {eligibleReviewers.map((reviewer) => (
-                  <SelectItem key={reviewer.id} value={reviewer.id}>
-                    {reviewer.name ?? reviewer.slug}
+                {reviewerItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -134,16 +156,26 @@ export const AssignReviewsDialog = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>
-              {t('Proposals ({selected} of {total})', {
-                selected: selectedAssignableIds.length,
-                total: assignableProposals.length,
-              })}
-            </Label>
-            <ul className="flex max-h-64 flex-col gap-2 overflow-y-auto rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label>
+                {t('Proposals ({selected} of {total})', {
+                  selected: selectedAssignableIds.length,
+                  total: assignableProposals.length,
+                })}
+              </Label>
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={toggleAll}
+                disabled={assignableProposals.length === 0}
+              >
+                {allSelected ? t('Clear') : t('Select all')}
+              </Button>
+            </div>
+            <ul className="flex max-h-64 flex-col overflow-y-auto rounded-lg border">
               {assignableProposals.map((proposal) => (
-                <li key={proposal.id}>
-                  <Label className="flex items-center gap-2 font-normal">
+                <li key={proposal.id} className="border-b last:border-b-0">
+                  <Label className="flex items-center gap-2.5 px-3 py-2 font-normal hover:bg-muted/50">
                     <Checkbox
                       checked={selectedIds.has(proposal.id)}
                       onCheckedChange={() => toggleProposal(proposal.id)}
@@ -155,7 +187,7 @@ export const AssignReviewsDialog = ({
                 </li>
               ))}
               {assignableProposals.length === 0 ? (
-                <li className="text-sm text-muted-foreground">
+                <li className="px-3 py-2 text-sm text-muted-foreground">
                   {t('No assignable proposals.')}
                 </li>
               ) : null}
