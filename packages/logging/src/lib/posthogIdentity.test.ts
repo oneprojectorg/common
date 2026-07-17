@@ -37,7 +37,9 @@ describe('parsePosthogDistinctId', () => {
     expect(parsePosthogDistinctId(null)).toBeUndefined();
     expect(parsePosthogDistinctId('')).toBeUndefined();
     expect(parsePosthogDistinctId('not json')).toBeUndefined();
-    expect(parsePosthogDistinctId(JSON.stringify({ foo: 'bar' }))).toBeUndefined();
+    expect(
+      parsePosthogDistinctId(JSON.stringify({ foo: 'bar' })),
+    ).toBeUndefined();
     expect(
       parsePosthogDistinctId(JSON.stringify({ distinct_id: 42 })),
     ).toBeUndefined();
@@ -62,7 +64,9 @@ describe('getPosthogDistinctIdFromCookieHeader', () => {
   });
 
   it('returns undefined when the cookie or key is absent', () => {
-    expect(getPosthogDistinctIdFromCookieHeader('foo=1; bar=2')).toBeUndefined();
+    expect(
+      getPosthogDistinctIdFromCookieHeader('foo=1; bar=2'),
+    ).toBeUndefined();
     expect(getPosthogDistinctIdFromCookieHeader(undefined)).toBeUndefined();
     expect(getPosthogDistinctIdFromCookieHeader('')).toBeUndefined();
   });
