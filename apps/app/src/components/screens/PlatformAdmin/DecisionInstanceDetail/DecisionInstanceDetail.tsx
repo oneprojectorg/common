@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { useFormatter } from 'next-intl';
 import { Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -90,27 +91,36 @@ const DecisionInstanceDetailContent = ({
         </dl>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('Members')}</CardTitle>
-          <CardDescription>
-            {t('Members, roles, and invite statuses')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ComingSoon />
-        </CardContent>
-      </Card>
-
-      {detail.phases.map((phase, index) => (
-        <PhaseCard
-          key={phase.phaseId}
-          instanceId={instanceId}
-          phase={phase}
-          index={index}
-          total={detail.phases.length}
-        />
-      ))}
+      <Tabs defaultValue="phases">
+        <TabsList>
+          <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
+          <TabsTrigger value="members">{t('Members')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="phases" className="flex flex-col gap-6 pt-4">
+          {detail.phases.map((phase, index) => (
+            <PhaseCard
+              key={phase.phaseId}
+              instanceId={instanceId}
+              phase={phase}
+              index={index}
+              total={detail.phases.length}
+            />
+          ))}
+        </TabsContent>
+        <TabsContent value="members" className="pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('Members')}</CardTitle>
+              <CardDescription>
+                {t('Members, roles, and invite statuses')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ComingSoon />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
