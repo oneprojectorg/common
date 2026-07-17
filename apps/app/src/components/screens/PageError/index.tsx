@@ -6,6 +6,10 @@ import { Button } from '@op/ui/Button';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 
+import {
+  isChunkLoadError,
+  reloadForChunkError,
+} from '@/lib/chunkErrorRecovery';
 import { useTranslations } from '@/lib/i18n/routing';
 
 import { StatusScreen } from '../StatusScreen';
@@ -16,6 +20,12 @@ export interface ErrorProps {
 
 export default function PageError({ error }: ErrorProps) {
   const t = useTranslations();
+
+  useEffect(() => {
+    if (isChunkLoadError(error)) {
+      reloadForChunkError();
+    }
+  }, [error]);
 
   useEffect(() => {
     posthog.captureException(error, {

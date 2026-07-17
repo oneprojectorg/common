@@ -10,6 +10,7 @@ import { Roboto, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
+import { ChunkReloadGuard } from '../components/ChunkReloadGuard';
 import { FileDropGuard } from '../components/FileDropGuard';
 import { IconProvider } from '../components/IconProvider';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
@@ -87,6 +88,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
+          <ChunkReloadGuard />
           <FileDropGuard />
           <I18nProvider locale={locale} messages={messages}>
             <OTelBrowserProvider>
