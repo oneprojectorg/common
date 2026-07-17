@@ -1471,5 +1471,14 @@
   "View details": "View details",
   "{count} review assignments created": "{count} review assignments created",
   "{reviewers} reviewers, {assignments} assignments": "{reviewers} reviewers, {assignments} assignments",
-  "{start} – {end}": "{start} – {end}"
+  "{start} – {end}": "{start} – {end}",
+  "Owner": "Owner",
+  "Reviews policy": "Reviews policy",
+  "Phase {number} of {total}": "Phase {number} of {total}",
+  "Nothing to manage in this phase.": "Nothing to manage in this phase.",
+  "Progress": "Progress",
+  "Review progress": "Review progress",
+  "{submitted} of {assigned} submitted": "{submitted} of {assigned} submitted",
+  "Select all": "Select all",
+  "Clear": "Clear"
 }

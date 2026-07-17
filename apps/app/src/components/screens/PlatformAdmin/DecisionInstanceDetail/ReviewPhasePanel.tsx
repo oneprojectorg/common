@@ -7,6 +7,7 @@ import type {
 } from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
+import { Progress } from '@op/sense/Progress';
 import {
   Table,
   TableBody,
@@ -22,6 +23,27 @@ import { LuChevronDown, LuChevronRight, LuDownload } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { AssignReviewsDialog } from './AssignReviewsDialog';
+
+/** Display labels for assignment statuses and review states. */
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pending',
+  in_progress: 'In progress',
+  awaiting_author_revision: 'Awaiting revision',
+  ready_for_re_review: 'Ready for re-review',
+  completed: 'Completed',
+  draft: 'Draft',
+  submitted: 'Submitted',
+};
+
+const statusBadgeVariant = (state: string | null) => {
+  if (state === 'submitted') {
+    return 'default' as const;
+  }
+  if (state === 'draft') {
+    return 'warning' as const;
+  }
+  return 'outline' as const;
+};
 
 /**
  * Builds a flat CSV of every assignment (one row per reviewer × proposal)
@@ -79,7 +101,7 @@ export const ReviewPhasePanel = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
           {t('{reviewers} reviewers, {assignments} assignments', {
             reviewers: data.reviewers.length,
@@ -106,11 +128,13 @@ export const ReviewPhasePanel = ({
       </div>
 
       {data.reviewers.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
           {t('No review assignments in this phase yet.')}
         </p>
       ) : (
-        <ReviewersTable reviewers={data.reviewers} />
+        <div className="overflow-hidden rounded-md border">
+          <ReviewersTable reviewers={data.reviewers} />
+        </div>
       )}
     </div>
   );
@@ -141,10 +165,8 @@ const ReviewersTable = ({
       <TableHeader>
         <TableRow>
           <TableHead>{t('Reviewer')}</TableHead>
-          <TableHead className="text-end">{t('Assigned')}</TableHead>
-          <TableHead className="text-end">{t('Submitted')}</TableHead>
+          <TableHead>{t('Progress')}</TableHead>
           <TableHead className="text-end">{t('Drafts')}</TableHead>
-          <TableHead className="text-end">{t('Outstanding')}</TableHead>
           <TableHead>{t('Last submission')}</TableHead>
         </TableRow>
       </TableHeader>
@@ -157,8 +179,8 @@ const ReviewersTable = ({
               onToggle={() => toggle(reviewer.profile.id)}
             />
             {expanded.has(reviewer.profile.id) ? (
-              <TableRow>
-                <TableCell colSpan={6} className="bg-muted/50 p-3">
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="bg-muted/50 px-4 py-3">
                   <AssignmentsList assignments={reviewer.assignments} />
                 </TableCell>
               </TableRow>
@@ -179,29 +201,44 @@ const ReviewerRow = ({
   isExpanded: boolean;
   onToggle: () => void;
 }) => {
+  const t = useTranslations();
   const format = useFormatter();
   const lastSubmittedAt = reviewer.lastSubmittedAt
     ? new Date(reviewer.lastSubmittedAt)
     : null;
+  const percent =
+    reviewer.assignedCount > 0
+      ? (reviewer.submittedCount / reviewer.assignedCount) * 100
+      : 0;
 
   return (
     <TableRow className="cursor-pointer" onClick={onToggle}>
       <TableCell>
         <span className="flex items-center gap-1.5">
           {isExpanded ? (
-            <LuChevronDown className="size-3.5 shrink-0" />
+            <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <LuChevronRight className="size-3.5 shrink-0 rtl:rotate-180" />
+            <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:rotate-180" />
           )}
           {reviewer.profile.name ?? reviewer.profile.slug}
         </span>
       </TableCell>
-      <TableCell className="text-end">{reviewer.assignedCount}</TableCell>
-      <TableCell className="text-end">{reviewer.submittedCount}</TableCell>
-      <TableCell className="text-end">{reviewer.draftCount}</TableCell>
-      <TableCell className="text-end">
-        {reviewer.assignedCount - reviewer.submittedCount}
+      <TableCell>
+        <span className="flex items-center gap-2.5">
+          <Progress
+            value={percent}
+            className="w-24"
+            aria-label={t('Review progress')}
+          />
+          <span className="text-sm whitespace-nowrap text-muted-foreground">
+            {t('{submitted} of {assigned} submitted', {
+              submitted: reviewer.submittedCount,
+              assigned: reviewer.assignedCount,
+            })}
+          </span>
+        </span>
       </TableCell>
+      <TableCell className="text-end">{reviewer.draftCount}</TableCell>
       <TableCell>
         {lastSubmittedAt
           ? format.dateTime(lastSubmittedAt, {
@@ -222,24 +259,23 @@ const AssignmentsList = ({
   const t = useTranslations();
 
   return (
-    <ul className="flex flex-col gap-1.5">
-      {assignments.map((assignment) => (
-        <li
-          key={assignment.id}
-          className="flex items-center justify-between gap-3 text-sm"
-        >
-          <span className="truncate">
-            {assignment.proposalTitle ?? t('Untitled proposal')}
-          </span>
-          <Badge
-            variant={
-              assignment.reviewState === 'submitted' ? 'default' : 'outline'
-            }
+    <ul className="grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
+      {assignments.map((assignment) => {
+        const state = assignment.reviewState ?? assignment.status;
+        return (
+          <li
+            key={assignment.id}
+            className="flex items-center justify-between gap-3 text-sm"
           >
-            {assignment.reviewState ?? assignment.status}
-          </Badge>
-        </li>
-      ))}
+            <span className="truncate">
+              {assignment.proposalTitle ?? t('Untitled proposal')}
+            </span>
+            <Badge variant={statusBadgeVariant(assignment.reviewState)}>
+              {STATUS_LABEL[state] ?? state}
+            </Badge>
+          </li>
+        );
+      })}
     </ul>
   );
 };
