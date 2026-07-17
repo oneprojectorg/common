@@ -1,9 +1,10 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
+import { UnauthorizedError } from '../../utils';
 import { signStorageUploadUrl } from '../../utils/signStorageUploadUrl';
-import { assertProfileAccess } from '../assert';
+import { getProfileAccessRoles } from '../access';
 
 export type ProfileImageType = 'avatar' | 'banner';
 
@@ -30,18 +31,21 @@ export async function assertProfileImageAccess({
   user: User;
   profileId: string;
 }): Promise<{ isPersonalProfile: boolean }> {
-  const caller = await db.query.users.findFirst({
-    where: { authUserId: user.id },
-    columns: { profileId: true },
-  });
+  // The roles lookup is wasted work for personal profiles, but fetching both
+  // in parallel saves a serial round trip on the org-profile path.
+  const [caller, roles] = await Promise.all([
+    db.query.users.findFirst({
+      where: { authUserId: user.id },
+      columns: { profileId: true },
+    }),
+    getProfileAccessRoles({ user: { id: user.id }, profileId }),
+  ]);
   if (caller?.profileId === profileId) {
     return { isPersonalProfile: true };
   }
-  await assertProfileAccess({
-    user: { id: user.id },
-    profileId,
-    permissions: { profile: permission.UPDATE },
-  });
+  if (!checkPermission({ profile: permission.UPDATE }, roles)) {
+    throw new UnauthorizedError('Not authorized');
+  }
   return { isPersonalProfile: false };
 }
 
