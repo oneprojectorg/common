@@ -565,6 +565,8 @@
   "All users": "Todos los usuarios",
   "Created": "Creado",
   "Last sign in": "Último inicio de sesión",
+  "Copy authUserId": "Copiar authUserId",
+  "Auth user ID copied to your clipboard.": "El ID de usuario de autenticación se ha copiado a tu portapapeles.",
   "Actions": "Acciones",
   "View analytics": "Ver analíticas",
   "Edit profile": "Editar perfil",

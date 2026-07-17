@@ -497,6 +497,8 @@
   "All users": "جميع المستخدمين",
   "Created": "تم الإنشاء",
   "Last sign in": "آخر تسجيل دخول",
+  "Copy authUserId": "نسخ authUserId",
+  "Auth user ID copied to your clipboard.": "تم نسخ معرّف مستخدم المصادقة إلى الحافظة.",
   "Actions": "الإجراءات",
   "View analytics": "عرض التحليلات",
   "Edit profile": "تعديل الملف الشخصي",

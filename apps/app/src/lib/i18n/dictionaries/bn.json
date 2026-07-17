@@ -565,6 +565,8 @@
   "All users": "সব ব্যবহারকারী",
   "Created": "তৈরি",
   "Last sign in": "শেষ সাইন ইন",
+  "Copy authUserId": "authUserId কপি করুন",
+  "Auth user ID copied to your clipboard.": "Auth ব্যবহারকারী আইডি আপনার ক্লিপবোর্ডে কপি করা হয়েছে।",
   "Actions": "কাজ",
   "View analytics": "বিশ্লেষণ দেখুন",
   "Edit profile": "প্রোফাইল সম্পাদনা করুন",
