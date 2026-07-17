@@ -552,6 +552,8 @@
   "All users": "All users",
   "Created": "Created",
   "Last sign in": "Last sign in",
+  "Copy authUserId": "Copy authUserId",
+  "Auth user ID copied to your clipboard.": "Auth user ID copied to your clipboard.",
   "Actions": "Actions",
   "View analytics": "View analytics",
   "Edit profile": "Edit profile",

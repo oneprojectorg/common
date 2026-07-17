@@ -574,6 +574,8 @@
   "All users": "Tous les utilisateurs",
   "Created": "Créé",
   "Last sign in": "Dernière connexion",
+  "Copy authUserId": "Copier authUserId",
+  "Auth user ID copied to your clipboard.": "L'identifiant d'utilisateur d'authentification a été copié dans votre presse-papiers.",
   "Actions": "Actions",
   "View analytics": "Voir les analyses",
   "Edit profile": "Modifier le profil",

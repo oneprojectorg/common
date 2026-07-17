@@ -8,11 +8,13 @@ import { useRelativeTime } from '@op/hooks';
 import { MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
+import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
+import { LuCopy } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -93,6 +95,20 @@ export const UsersRowCells = ({ user }: { user: User }) => {
               className="px-3 py-1"
             >
               {t('View analytics')}
+            </MenuItem>
+            <MenuItem
+              key="copy-auth-user-id"
+              onAction={() => {
+                navigator.clipboard.writeText(user.authUserId);
+                toast.success({
+                  message: t('Auth user ID copied to your clipboard.'),
+                  dismissable: false,
+                });
+              }}
+              className="px-3 py-1"
+            >
+              <LuCopy className="size-4" />
+              {t('Copy authUserId')}
             </MenuItem>
             <MenuItem
               key="edit-profile"
