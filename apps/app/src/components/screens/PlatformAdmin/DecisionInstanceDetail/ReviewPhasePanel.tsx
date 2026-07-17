@@ -88,9 +88,12 @@ const exportAssignmentsToCsv = (
 export const ReviewPhasePanel = ({
   instanceId,
   phaseId,
+  isCompleted = false,
 }: {
   instanceId: string;
   phaseId: string;
+  /** Completed phases are read-only: no manual assignment (server enforces too). */
+  isCompleted?: boolean;
 }) => {
   const t = useTranslations();
   const [data] =
@@ -118,12 +121,14 @@ export const ReviewPhasePanel = ({
             <LuDownload data-icon="inline-start" />
             {t('Download CSV')}
           </Button>
-          <AssignReviewsDialog
-            instanceId={instanceId}
-            phaseId={phaseId}
-            eligibleReviewers={data.eligibleReviewers}
-            proposals={data.proposals}
-          />
+          {!isCompleted ? (
+            <AssignReviewsDialog
+              instanceId={instanceId}
+              phaseId={phaseId}
+              eligibleReviewers={data.eligibleReviewers}
+              proposals={data.proposals}
+            />
+          ) : null}
         </div>
       </div>
 
