@@ -102,6 +102,29 @@ export const AuthPanelShell = ({
   );
 };
 
+const AuthProviderButton = ({
+  icon,
+  label,
+  onPress,
+  isDisabled,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onPress: () => void;
+  isDisabled?: boolean;
+}) => (
+  <Button
+    color="secondary"
+    variant="icon"
+    className="w-full text-neutral-charcoal"
+    onPress={onPress}
+    isDisabled={isDisabled}
+  >
+    {icon}
+    {label}
+  </Button>
+);
+
 /** "Continue with Google" button. */
 export const AuthGoogleButton = ({
   onPress,
@@ -113,16 +136,12 @@ export const AuthGoogleButton = ({
   const t = useTranslations();
 
   return (
-    <Button
-      color="secondary"
-      variant="icon"
-      className="w-full text-neutral-charcoal"
+    <AuthProviderButton
+      icon={<GoogleIcon className="size-4 stroke-none" />}
+      label={t('Continue with Google')}
       onPress={onPress}
       isDisabled={isDisabled}
-    >
-      <GoogleIcon className="size-4 stroke-none" />
-      {t('Continue with Google')}
-    </Button>
+    />
   );
 };
 
@@ -139,16 +158,12 @@ export const AuthOIDCButton = ({
   const t = useTranslations();
 
   return (
-    <Button
-      color="secondary"
-      variant="icon"
-      className="w-full text-neutral-charcoal"
+    <AuthProviderButton
+      icon={<LuKeyRound className="size-4" />}
+      label={t('Continue with {provider}', { provider: providerName })}
       onPress={onPress}
       isDisabled={isDisabled}
-    >
-      <LuKeyRound className="size-4" />
-      {t('Continue with {provider}', { provider: providerName })}
-    </Button>
+    />
   );
 };
 
