@@ -4,6 +4,7 @@ import * as React from 'react';
 import { LuCalendar } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { RequiredAsterisk } from '../RequiredAsterisk';
 import { Calendar } from '../ui/calendar';
 import { FieldDescription, FieldError, FieldLabel } from '../ui/field';
 import {
@@ -73,7 +74,7 @@ function DatePicker({
       {label ? (
         <FieldLabel htmlFor={inputId}>
           {label}
-          {required ? <span aria-hidden>*</span> : null}
+          {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
       <Popover open={open} onOpenChange={setOpen}>

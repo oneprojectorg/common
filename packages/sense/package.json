@@ -50,6 +50,7 @@
     "./Popover": "./src/components/ui/popover.tsx",
     "./Progress": "./src/components/ui/progress.tsx",
     "./RadioGroup": "./src/components/ui/radio-group.tsx",
+    "./RequiredAsterisk": "./src/components/RequiredAsterisk/index.tsx",
     "./Resizable": "./src/components/ui/resizable.tsx",
     "./ScrollArea": "./src/components/ui/scroll-area.tsx",
     "./Select": "./src/components/ui/select.tsx",

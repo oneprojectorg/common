@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
+import { RequiredAsterisk } from '../RequiredAsterisk';
 import { FieldDescription, FieldError, FieldLabel } from '../ui/field';
 import {
   InputGroup,
@@ -96,7 +97,7 @@ function NumberField({
       {label ? (
         <FieldLabel htmlFor={inputId}>
           {label}
-          {required ? <span aria-hidden>*</span> : null}
+          {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
       <InputGroup>
