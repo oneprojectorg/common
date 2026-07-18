@@ -60,6 +60,7 @@
     "./Spinner": "./src/components/ui/spinner.tsx",
     "./Switch": "./src/components/ui/switch.tsx",
     "./Table": "./src/components/ui/table.tsx",
+    "./TagGroup": "./src/components/TagGroup/index.tsx",
     "./Tabs": "./src/components/ui/tabs.tsx",
     "./Textarea": "./src/components/ui/textarea.tsx",
     "./Toggle": "./src/components/ui/toggle.tsx",
