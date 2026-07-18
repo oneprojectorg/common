@@ -34,7 +34,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof Command> = {
-  title: 'Sense/Command',
+  title: 'Sense/Primitives/Command',
   component: Command,
   decorators: [withSense],
   tags: ['autodocs'],

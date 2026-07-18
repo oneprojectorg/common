@@ -21,7 +21,7 @@ import { LuCopy, LuEllipsis, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof DropdownMenu> = {
-  title: 'Sense/DropdownMenu',
+  title: 'Sense/Primitives/DropdownMenu',
   component: DropdownMenu,
   decorators: [withSense],
   tags: ['autodocs'],

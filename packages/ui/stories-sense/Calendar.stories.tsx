@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Calendar> = {
-  title: 'Sense/Calendar',
+  title: 'Sense/Primitives/Calendar',
   component: Calendar,
   decorators: [withSense],
   tags: ['autodocs'],

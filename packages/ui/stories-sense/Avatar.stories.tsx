@@ -12,7 +12,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Avatar> = {
-  title: 'Sense/Avatar',
+  title: 'Sense/Primitives/Avatar',
   component: Avatar,
   decorators: [withSense],
   tags: ['autodocs'],

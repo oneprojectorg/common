@@ -23,7 +23,7 @@ import { LuEllipsis } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Table> = {
-  title: 'Sense/Table',
+  title: 'Sense/Primitives/Table',
   component: Table,
   decorators: [withSense],
   tags: ['autodocs'],

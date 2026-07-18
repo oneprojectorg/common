@@ -5,7 +5,7 @@ import { LuCheck, LuTriangleAlert } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Badge> = {
-  title: 'Sense/Badge',
+  title: 'Sense/Primitives/Badge',
   component: Badge,
   decorators: [withSense],
   tags: ['autodocs'],

@@ -13,7 +13,7 @@ import { LuCircle, LuCircleCheck, LuCircleDashed } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof NavigationMenu> = {
-  title: 'Sense/NavigationMenu',
+  title: 'Sense/Primitives/NavigationMenu',
   component: NavigationMenu,
   decorators: [withSense],
   tags: ['autodocs'],

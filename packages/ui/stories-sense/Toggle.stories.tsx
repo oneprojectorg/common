@@ -5,7 +5,7 @@ import { LuBold, LuItalic } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Toggle> = {
-  title: 'Sense/Toggle',
+  title: 'Sense/Primitives/Toggle',
   component: Toggle,
   decorators: [withSense],
   tags: ['autodocs'],

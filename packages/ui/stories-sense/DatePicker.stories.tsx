@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { withSense } from './sense';
 
 const meta: Meta<typeof DatePicker> = {
-  title: 'Sense/DatePicker',
+  title: 'Sense/Composites/DatePicker',
   component: DatePicker,
   decorators: [withSense],
   tags: ['autodocs'],

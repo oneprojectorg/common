@@ -31,7 +31,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof Item> = {
-  title: 'Sense/Item',
+  title: 'Sense/Primitives/Item',
   component: Item,
   decorators: [withSense],
   tags: ['autodocs'],

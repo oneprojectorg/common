@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Textarea> = {
-  title: 'Sense/Textarea',
+  title: 'Sense/Primitives/Textarea',
   component: Textarea,
   decorators: [withSense],
   tags: ['autodocs'],

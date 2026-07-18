@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof AspectRatio> = {
-  title: 'Sense/AspectRatio',
+  title: 'Sense/Primitives/AspectRatio',
   component: AspectRatio,
   decorators: [withSense],
   tags: ['autodocs'],

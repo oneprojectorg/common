@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof RequiredAsterisk> = {
-  title: 'Sense/RequiredAsterisk',
+  title: 'Sense/Composites/RequiredAsterisk',
   component: RequiredAsterisk,
   decorators: [withSense],
   tags: ['autodocs'],

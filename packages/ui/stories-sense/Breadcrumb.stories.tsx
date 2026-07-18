@@ -19,7 +19,7 @@ import { LuChevronDown, LuSlash } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Breadcrumb> = {
-  title: 'Sense/Breadcrumb',
+  title: 'Sense/Primitives/Breadcrumb',
   component: Breadcrumb,
   decorators: [withSense],
   tags: ['autodocs'],

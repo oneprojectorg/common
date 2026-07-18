@@ -36,7 +36,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof ButtonGroup> = {
-  title: 'Sense/ButtonGroup',
+  title: 'Sense/Primitives/ButtonGroup',
   component: ButtonGroup,
   decorators: [withSense],
   tags: ['autodocs'],

@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Switch> = {
-  title: 'Sense/Switch',
+  title: 'Sense/Primitives/Switch',
   component: Switch,
   decorators: [withSense],
   tags: ['autodocs'],

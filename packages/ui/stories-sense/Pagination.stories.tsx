@@ -12,7 +12,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Pagination> = {
-  title: 'Sense/Pagination',
+  title: 'Sense/Primitives/Pagination',
   component: Pagination,
   decorators: [withSense],
   tags: ['autodocs'],

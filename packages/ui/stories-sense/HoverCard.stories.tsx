@@ -11,7 +11,7 @@ import { LuCalendarDays } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof HoverCard> = {
-  title: 'Sense/HoverCard',
+  title: 'Sense/Primitives/HoverCard',
   component: HoverCard,
   decorators: [withSense],
   tags: ['autodocs'],

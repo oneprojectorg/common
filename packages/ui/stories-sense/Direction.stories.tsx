@@ -27,7 +27,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof DirectionProvider> = {
-  title: 'Sense/Direction',
+  title: 'Sense/Primitives/Direction',
   component: DirectionProvider,
   decorators: [withSense],
   tags: ['autodocs'],

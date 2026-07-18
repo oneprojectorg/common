@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Label> = {
-  title: 'Sense/Label',
+  title: 'Sense/Primitives/Label',
   component: Label,
   decorators: [withSense],
   tags: ['autodocs'],

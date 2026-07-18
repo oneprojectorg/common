@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Input> = {
-  title: 'Sense/Input',
+  title: 'Sense/Primitives/Input',
   component: Input,
   decorators: [withSense],
   tags: ['autodocs'],

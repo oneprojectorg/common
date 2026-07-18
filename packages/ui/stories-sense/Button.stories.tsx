@@ -6,7 +6,7 @@ import { LuChevronRight, LuMail } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Button> = {
-  title: 'Sense/Button',
+  title: 'Sense/Primitives/Button',
   component: Button,
   decorators: [withSense],
   tags: ['autodocs'],

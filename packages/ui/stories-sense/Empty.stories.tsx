@@ -13,7 +13,7 @@ import { LuArrowUpRight, LuFolder } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Empty> = {
-  title: 'Sense/Empty',
+  title: 'Sense/Primitives/Empty',
   component: Empty,
   decorators: [withSense],
   tags: ['autodocs'],

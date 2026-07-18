@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { withSense } from './sense';
 
 const meta: Meta<typeof TagGroup> = {
-  title: 'Sense/TagGroup',
+  title: 'Sense/Composites/TagGroup',
   component: TagGroup,
   decorators: [withSense],
   tags: ['autodocs'],

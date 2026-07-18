@@ -14,7 +14,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Popover> = {
-  title: 'Sense/Popover',
+  title: 'Sense/Primitives/Popover',
   component: Popover,
   decorators: [withSense],
   tags: ['autodocs'],

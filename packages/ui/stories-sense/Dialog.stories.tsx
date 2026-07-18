@@ -16,7 +16,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Dialog> = {
-  title: 'Sense/Dialog',
+  title: 'Sense/Primitives/Dialog',
   component: Dialog,
   decorators: [withSense],
   tags: ['autodocs'],

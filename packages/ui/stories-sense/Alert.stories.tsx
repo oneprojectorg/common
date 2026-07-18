@@ -16,7 +16,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof Alert> = {
-  title: 'Sense/Alert',
+  title: 'Sense/Primitives/Alert',
   component: Alert,
   decorators: [withSense],
   tags: ['autodocs'],

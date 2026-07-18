@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Spinner> = {
-  title: 'Sense/Spinner',
+  title: 'Sense/Primitives/Spinner',
   component: Spinner,
   decorators: [withSense],
   tags: ['autodocs'],

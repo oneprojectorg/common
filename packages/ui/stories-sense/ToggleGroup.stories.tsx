@@ -12,7 +12,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof ToggleGroup> = {
-  title: 'Sense/ToggleGroup',
+  title: 'Sense/Primitives/ToggleGroup',
   component: ToggleGroup,
   decorators: [withSense],
   tags: ['autodocs'],

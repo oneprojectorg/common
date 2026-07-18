@@ -11,7 +11,7 @@ import { LuPlus } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Tooltip> = {
-  title: 'Sense/Tooltip',
+  title: 'Sense/Primitives/Tooltip',
   component: Tooltip,
   decorators: [withSense],
   tags: ['autodocs'],

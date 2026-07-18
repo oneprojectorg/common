@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Tabs> = {
-  title: 'Sense/Tabs',
+  title: 'Sense/Primitives/Tabs',
   component: Tabs,
   decorators: [withSense],
   tags: ['autodocs'],

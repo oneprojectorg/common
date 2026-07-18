@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Carousel> = {
-  title: 'Sense/Carousel',
+  title: 'Sense/Primitives/Carousel',
   component: Carousel,
   decorators: [withSense],
   tags: ['autodocs'],

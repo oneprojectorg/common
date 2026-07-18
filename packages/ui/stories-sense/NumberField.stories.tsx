@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { withSense } from './sense';
 
 const meta: Meta<typeof NumberField> = {
-  title: 'Sense/NumberField',
+  title: 'Sense/Composites/NumberField',
   component: NumberField,
   decorators: [withSense],
   tags: ['autodocs'],

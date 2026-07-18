@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Checkbox> = {
-  title: 'Sense/Checkbox',
+  title: 'Sense/Primitives/Checkbox',
   component: Checkbox,
   decorators: [withSense],
   tags: ['autodocs'],
