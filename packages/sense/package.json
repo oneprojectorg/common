@@ -45,6 +45,7 @@
     "./Menubar": "./src/components/ui/menubar.tsx",
     "./NativeSelect": "./src/components/ui/native-select.tsx",
     "./NavigationMenu": "./src/components/ui/navigation-menu.tsx",
+    "./NumberField": "./src/components/NumberField/index.tsx",
     "./Pagination": "./src/components/ui/pagination.tsx",
     "./Popover": "./src/components/ui/popover.tsx",
     "./Progress": "./src/components/ui/progress.tsx",
