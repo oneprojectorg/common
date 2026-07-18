@@ -28,6 +28,7 @@
     "./Combobox": "./src/components/ui/combobox.tsx",
     "./Command": "./src/components/ui/command.tsx",
     "./ContextMenu": "./src/components/ui/context-menu.tsx",
+    "./DatePicker": "./src/components/DatePicker/index.tsx",
     "./Dialog": "./src/components/ui/dialog.tsx",
     "./Direction": "./src/components/ui/direction.tsx",
     "./Drawer": "./src/components/ui/drawer.tsx",
