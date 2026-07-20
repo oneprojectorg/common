@@ -43,7 +43,6 @@ const VotingDemo = () => {
       <FooterBarEnd>
         <Button
           variant="outline"
-          size="sm"
           onClick={() => setNumSelected((n) => (n + 1) % (max + 1))}
         >
           Select another
