@@ -68,6 +68,7 @@
     "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane/index.tsx",
     "./Spinner": "./src/components/ui/spinner.tsx",
+    "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/ui/switch.tsx",
     "./Table": "./src/components/ui/table.tsx",
     "./TagGroup": "./src/components/TagGroup/index.tsx",
@@ -114,7 +115,8 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
