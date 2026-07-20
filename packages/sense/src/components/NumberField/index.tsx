@@ -59,11 +59,19 @@ function NumberField({
   );
   const [boundsError, setBoundsError] = React.useState<string | null>(null);
 
-  // Follow external value changes when controlled.
+  // Follow external value changes when controlled — but leave the display
+  // alone when it already parses to the incoming value: that's our own
+  // onChange echoing back, and reformatting it via toString() would flip
+  // large numbers into scientific notation (1e21+) mid-keystroke.
   React.useEffect(() => {
-    if (value !== undefined) {
-      setDisplayValue(value?.toString() ?? '');
+    if (value === undefined) {
+      return;
     }
+    setDisplayValue((current) =>
+      parseNumericValue(current) === value
+        ? current
+        : (value?.toString() ?? ''),
+    );
   }, [value]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
