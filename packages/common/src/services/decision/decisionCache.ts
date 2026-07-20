@@ -41,15 +41,3 @@ export const invalidateDecisionInstance = async (instanceId: string) => {
       : Promise.resolve(),
   ]);
 };
-
-/**
- * Invalidate only the participation face-pile for an instance. Use for proposal
- * mutations that change submitter/visibility but not the instance config — e.g.
- * a draft toggled to submitted bumps `proposalCount`, so callers that need to
- * invalidate the instance snapshot too should use `invalidateDecisionInstance`.
- */
-export const invalidateDecisionSubmitters = (instanceId: string) =>
-  invalidate({
-    type: 'decision',
-    params: [instanceId, 'submitters'],
-  });
