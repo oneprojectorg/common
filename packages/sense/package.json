@@ -70,6 +70,7 @@
     "./Sidebar": "./src/components/ui/sidebar.tsx",
     "./Skeleton": "./src/components/ui/skeleton.tsx",
     "./Slider": "./src/components/ui/slider.tsx",
+    "./SocialLinks": "./src/components/SocialLinks/index.tsx",
     "./Sonner": "./src/components/ui/sonner.tsx",
     "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane/index.tsx",
@@ -82,7 +83,8 @@
     "./Textarea": "./src/components/ui/textarea.tsx",
     "./Toggle": "./src/components/ui/toggle.tsx",
     "./ToggleGroup": "./src/components/ui/toggle-group.tsx",
-    "./Tooltip": "./src/components/ui/tooltip.tsx"
+    "./Tooltip": "./src/components/ui/tooltip.tsx",
+    "./TranslateBanner": "./src/components/TranslateBanner/index.tsx"
   },
   "module": "./src/index.ts",
   "scripts": {
