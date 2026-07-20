@@ -85,7 +85,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
     // carry the caller's PostHog session id produce a log linked to their
     // session replay — an error-only log stream never surfaces the happy path.
     if (result.ok) {
-      opLogger.info('Request completed', {
+      opLogger.info(`${path} OK`, {
         requestId: ctx.requestId,
         path,
         type,

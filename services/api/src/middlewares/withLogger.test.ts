@@ -80,7 +80,7 @@ describe('withLogger — request logging', () => {
     await runLogger(makeCtx({ header: 'sess' }), { ok: true });
 
     expect(logger.info).toHaveBeenCalledWith(
-      'Request completed',
+      'organization.getBySlug OK',
       expect.objectContaining({
         requestId: 'req-1',
         path: 'organization.getBySlug',
