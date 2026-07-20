@@ -116,10 +116,10 @@ function CollapsibleConfigCard({
   // The drag handle floats above a full-width trigger, so the whole header
   // (and its focus ring) spans the card; the handle intercepts its own
   // clicks. ps-11 clears the handle (12 inset + 24 handle + 8 gap).
+  // top-4 pins the handle to the header row (its 24px box matches the
+  // header's content line), so it stays put when the card expands.
   const leadingOverlay = leadingElement ? (
-    <div className="absolute start-3 top-1/2 z-10 -translate-y-1/2">
-      {leadingElement}
-    </div>
+    <div className="absolute start-3 top-4 z-10">{leadingElement}</div>
   ) : null;
 
   // Non-collapsible: simple card
