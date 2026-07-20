@@ -130,9 +130,13 @@ function CollapsibleConfigCard({
       onOpenChange={onExpandedChange}
       className={cardClasses}
     >
-      <div className="flex w-full items-center gap-3 p-4">
-        {leadingElement}
-        <CollapsibleTrigger className="group/config-card flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+      {/* Padding lives on the trigger so the whole header row (minus the
+          drag-handle strip) toggles the panel. */}
+      <div className="flex w-full items-center">
+        <div className="flex items-center self-stretch ps-4">
+          {leadingElement}
+        </div>
+        <CollapsibleTrigger className="group/config-card flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-4 ps-3 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
           {headerContent}
         </CollapsibleTrigger>
       </div>
