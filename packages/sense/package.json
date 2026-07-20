@@ -35,6 +35,7 @@
     "./DropdownMenu": "./src/components/ui/dropdown-menu.tsx",
     "./Empty": "./src/components/ui/empty.tsx",
     "./Field": "./src/components/ui/field.tsx",
+    "./Header": "./src/components/Header/index.tsx",
     "./HoverCard": "./src/components/ui/hover-card.tsx",
     "./Input": "./src/components/ui/input.tsx",
     "./InputGroup": "./src/components/ui/input-group.tsx",
