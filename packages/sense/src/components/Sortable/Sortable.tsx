@@ -223,7 +223,9 @@ export function Sortable<T extends SortableItem>({
 
       {typeof document !== 'undefined' &&
         createPortal(
-          <DragOverlay>
+          // Portals to document.body, outside any `.sense` wrapper — the
+          // overlay re-scopes itself so the preview matches the in-list item.
+          <DragOverlay className="sense">
             {activeItem ? (
               renderDragPreview ? (
                 renderDragPreview([activeItem])
