@@ -30,17 +30,18 @@ interface CollapsibleConfigCardProps {
   defaultExpanded?: boolean;
   /** Callback when expansion changes */
   onExpandedChange?: (expanded: boolean) => void;
-  /** Sortable controls for drag-and-drop */
-  controls?: SortableItemControls;
   /** Accessible label for the drag handle */
   dragHandleAriaLabel?: string;
   /** Content to render in the body (below header) */
   children?: React.ReactNode;
   /** Additional class name for the card container */
   className?: string;
-  /** Whether the card is locked (non-editable, no drag handle) */
-  locked?: boolean;
 }
+
+// Cards are always sortable — a card without drag controls is locked.
+type SortableOrLocked =
+  | { locked: true; controls?: never }
+  | { locked?: false; controls: SortableItemControls };
 
 function CollapsibleConfigCard({
   icon: Icon,
@@ -56,7 +57,7 @@ function CollapsibleConfigCard({
   children,
   className,
   locked = false,
-}: CollapsibleConfigCardProps) {
+}: CollapsibleConfigCardProps & SortableOrLocked) {
   const isDragging = controls?.isDragging ?? false;
 
   // The leading element: drag handle for editable cards, lock icon for locked cards.

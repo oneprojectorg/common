@@ -43,26 +43,9 @@ const CardBody = () => (
   </>
 );
 
-export const Default: Story = {
-  render: () => (
-    <div className="flex w-[36rem] flex-col gap-2">
-      <CollapsibleConfigCard label="Description" isCollapsible defaultExpanded>
-        <CardBody />
-      </CollapsibleConfigCard>
-      <CollapsibleConfigCard
-        label="Categories"
-        badgeLabel="Optional"
-        isCollapsible
-      >
-        <CardBody />
-      </CollapsibleConfigCard>
-      <CollapsibleConfigCard icon={LuVote} label="Votes" locked />
-    </div>
-  ),
-};
-
-// The ProcessBuilder shape: sortable list of collapsible config cards with
-// drag handles, a locked card, and a custom drag preview.
+// Cards are always sortable (locked cards are the only exception), so the
+// default story is the ProcessBuilder shape: a sortable list with drag
+// handles, a custom drag preview, and a locked card alongside.
 const SortableDemo = () => {
   const [fields, setFields] = useState([
     { id: 'title', label: 'Title', badge: 'Required' },
@@ -76,7 +59,7 @@ const SortableDemo = () => {
       onChange={setFields}
       dragTrigger="handle"
       aria-label="Form fields"
-      className="w-96 gap-2"
+      className="w-[36rem] gap-2"
       getItemLabel={(field) => field.label}
       renderDragPreview={([field]) =>
         field ? (
@@ -101,6 +84,14 @@ const SortableDemo = () => {
   );
 };
 
-export const SortableCards: Story = {
+export const Default: Story = {
   render: () => <SortableDemo />,
+};
+
+export const Locked: Story = {
+  render: () => (
+    <div className="w-[36rem]">
+      <CollapsibleConfigCard icon={LuVote} label="Votes" locked />
+    </div>
+  ),
 };
