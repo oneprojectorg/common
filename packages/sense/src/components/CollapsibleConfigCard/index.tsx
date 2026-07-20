@@ -136,8 +136,10 @@ function CollapsibleConfigCard({
           {headerContent}
         </CollapsibleTrigger>
       </div>
-      {/* ps-11 aligns the body under the trigger text (16 pad + 16 grip + 12 gap). */}
-      <CollapsibleContent>
+      {/* ps-11 aligns the body under the trigger text (16 pad + 16 grip +
+          12 gap). Height animation rides base-ui's measured panel height,
+          mirroring the accordion primitive. */}
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
         <div className="flex flex-col gap-4 ps-11 pe-10 pb-6">{children}</div>
       </CollapsibleContent>
     </Collapsible>

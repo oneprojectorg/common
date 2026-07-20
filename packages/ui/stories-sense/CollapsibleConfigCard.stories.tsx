@@ -8,7 +8,7 @@ import { Separator } from '@op/sense/Separator';
 import { Sortable } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { LuTrash2, LuVote } from 'react-icons/lu';
 
 import { withSense } from './sense';
@@ -26,22 +26,26 @@ type Story = StoryObj<typeof CollapsibleConfigCard>;
 
 // Mirrors the Template Card master: body content, separator, then a footer
 // row with a Required switch and a small destructive Delete.
-const CardBody = () => (
-  <>
-    <p className="text-base">This is an accordion content.</p>
-    <Separator />
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <Label htmlFor="required-toggle">Required?</Label>
-        <Switch id="required-toggle" />
+const CardBody = () => {
+  const toggleId = useId();
+
+  return (
+    <>
+      <p className="text-base">This is an accordion content.</p>
+      <Separator />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Label htmlFor={toggleId}>Required?</Label>
+          <Switch id={toggleId} />
+        </div>
+        <Button variant="destructive" size="sm">
+          <LuTrash2 data-icon="inline-start" />
+          Delete
+        </Button>
       </div>
-      <Button variant="destructive" size="sm">
-        <LuTrash2 data-icon="inline-start" />
-        Delete
-      </Button>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 // Cards are always sortable (locked cards are the only exception), so the
 // default story is the ProcessBuilder shape: a sortable list with drag
