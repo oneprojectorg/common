@@ -89,9 +89,19 @@ function NumberField({
   };
 
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
-    setBoundsError(
-      validateBounds(parseNumericValue(displayValue), minValue, maxValue),
-    );
+    const numeric = parseNumericValue(displayValue);
+    setBoundsError(validateBounds(numeric, minValue, maxValue));
+
+    // Canonicalize on blur ("00003" → "3", "5." → "5") — unless toString
+    // would flip to scientific notation (1e21+), where the typed digits are
+    // the better representation.
+    if (numeric !== null) {
+      const canonical = numeric.toString();
+      if (!canonical.includes('e')) {
+        setDisplayValue(canonical);
+      }
+    }
+
     onBlur?.(event);
   };
 
