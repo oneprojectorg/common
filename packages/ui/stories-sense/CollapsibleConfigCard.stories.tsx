@@ -1,11 +1,15 @@
+import { Button } from '@op/sense/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
 } from '@op/sense/CollapsibleConfigCard';
+import { Label } from '@op/sense/Label';
+import { Separator } from '@op/sense/Separator';
 import { Sortable } from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { LuListChecks, LuText, LuVote } from 'react-icons/lu';
+import { LuTrash2, LuVote } from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -20,27 +24,37 @@ export default meta;
 
 type Story = StoryObj<typeof CollapsibleConfigCard>;
 
+// Mirrors the Template Card master: body content, separator, then a footer
+// row with a Required switch and a small destructive Delete.
+const CardBody = () => (
+  <>
+    <p className="text-base">This is an accordion content.</p>
+    <Separator />
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <Label htmlFor="required-toggle">Required?</Label>
+        <Switch id="required-toggle" />
+      </div>
+      <Button variant="destructive" size="sm">
+        <LuTrash2 data-icon="inline-start" />
+        Delete
+      </Button>
+    </div>
+  </>
+);
+
 export const Default: Story = {
   render: () => (
-    <div className="flex w-96 flex-col gap-2">
-      <CollapsibleConfigCard
-        icon={LuText}
-        label="Description"
-        badgeLabel="Required"
-        isCollapsible
-        defaultExpanded
-      >
-        <p className="text-sm text-muted-foreground">
-          Field configuration goes here.
-        </p>
+    <div className="flex w-[36rem] flex-col gap-2">
+      <CollapsibleConfigCard label="Description" isCollapsible defaultExpanded>
+        <CardBody />
       </CollapsibleConfigCard>
       <CollapsibleConfigCard
-        icon={LuListChecks}
         label="Categories"
         badgeLabel="Optional"
         isCollapsible
       >
-        <p className="text-sm text-muted-foreground">Category options.</p>
+        <CardBody />
       </CollapsibleConfigCard>
       <CollapsibleConfigCard icon={LuVote} label="Votes" locked />
     </div>
@@ -67,7 +81,6 @@ const SortableDemo = () => {
       renderDragPreview={([field]) =>
         field ? (
           <CollapsibleConfigCardDragPreview
-            icon={LuText}
             label={field.label}
             badgeLabel={field.badge}
           />
@@ -76,15 +89,12 @@ const SortableDemo = () => {
     >
       {(field, controls) => (
         <CollapsibleConfigCard
-          icon={LuText}
           label={field.label}
           badgeLabel={field.badge}
           isCollapsible
           controls={controls}
         >
-          <p className="text-sm text-muted-foreground">
-            Configuration for {field.label}.
-          </p>
+          <CardBody />
         </CollapsibleConfigCard>
       )}
     </Sortable>
