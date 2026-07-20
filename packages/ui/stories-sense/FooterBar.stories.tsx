@@ -1,5 +1,14 @@
 import { Button } from '@op/sense/Button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
+import {
   FooterBar,
   FooterBarCenter,
   FooterBarDivider,
@@ -104,4 +113,47 @@ export const WithDivider: Story = {
       </FooterBarEnd>
     </FooterBar>
   ),
+};
+
+// Mirrors the selection-confirm footers (StandardSelectionFooter,
+// FinalPhaseSelectionFooter): the end slot is a dialog trigger with a
+// responsive label — short on mobile, full text from `sm:` up.
+const ConfirmSelectionDemo = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <FooterBar position="static" className="w-full rounded border">
+      <FooterBarStart>
+        <span className="text-base">3 winning proposals selected</span>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger render={<Button />}>
+            <span className="sm:hidden">Confirm</span>
+            <span className="hidden sm:inline">Confirm winning proposals</span>
+          </DialogTrigger>
+          <DialogContent className="sense">
+            <DialogHeader>
+              <DialogTitle>Confirm winning proposals</DialogTitle>
+              <DialogDescription>
+                These 3 proposals will be funded and results will be shared with
+                all participants.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setOpen(false)}>Publish results</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </FooterBarEnd>
+    </FooterBar>
+  );
+};
+
+export const ConfirmSelection: Story = {
+  render: () => <ConfirmSelectionDemo />,
 };
