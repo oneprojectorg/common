@@ -113,12 +113,21 @@ function CollapsibleConfigCard({
     className,
   );
 
+  // The drag handle floats above a full-width trigger, so the whole header
+  // (and its focus ring) spans the card; the handle intercepts its own
+  // clicks. ps-11 clears the handle (12 inset + 24 handle + 8 gap).
+  const leadingOverlay = leadingElement ? (
+    <div className="absolute start-3 top-1/2 z-10 -translate-y-1/2">
+      {leadingElement}
+    </div>
+  ) : null;
+
   // Non-collapsible: simple card
   if (!isCollapsible) {
     return (
-      <div className={cardClasses}>
-        <div className="flex w-full items-center gap-3 p-4">
-          {leadingElement}
+      <div className={cn(cardClasses, 'relative')}>
+        {leadingOverlay}
+        <div className="flex w-full items-center gap-3 p-4 ps-11">
           {headerContent}
         </div>
         {children}
@@ -131,18 +140,12 @@ function CollapsibleConfigCard({
       open={isExpanded}
       defaultOpen={defaultExpanded}
       onOpenChange={onExpandedChange}
-      className={cardClasses}
+      className={cn(cardClasses, 'relative')}
     >
-      {/* Padding lives on the trigger so the whole header row (minus the
-          drag-handle strip) toggles the panel. */}
-      <div className="flex w-full items-center">
-        <div className="flex items-center self-stretch ps-4">
-          {leadingElement}
-        </div>
-        <CollapsibleTrigger className="group/config-card flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-4 ps-3 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-          {headerContent}
-        </CollapsibleTrigger>
-      </div>
+      {leadingOverlay}
+      <CollapsibleTrigger className="group/config-card flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-lg p-4 ps-11 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+        {headerContent}
+      </CollapsibleTrigger>
       {/* ps-11 aligns the body under the trigger text (16 pad + 16 grip +
           12 gap). Height animation rides base-ui's measured panel height,
           mirroring the accordion primitive. */}
