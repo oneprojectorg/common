@@ -25,6 +25,7 @@
     "./Chart": "./src/components/ui/chart.tsx",
     "./Checkbox": "./src/components/ui/checkbox.tsx",
     "./Collapsible": "./src/components/ui/collapsible.tsx",
+    "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard/index.tsx",
     "./Combobox": "./src/components/ui/combobox.tsx",
     "./Command": "./src/components/ui/command.tsx",
     "./ContextMenu": "./src/components/ui/context-menu.tsx",
