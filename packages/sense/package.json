@@ -35,6 +35,7 @@
     "./Drawer": "./src/components/ui/drawer.tsx",
     "./DropdownMenu": "./src/components/ui/dropdown-menu.tsx",
     "./Empty": "./src/components/ui/empty.tsx",
+    "./FacePile": "./src/components/FacePile/index.tsx",
     "./Field": "./src/components/ui/field.tsx",
     "./FooterBar": "./src/components/FooterBar/index.tsx",
     "./Header": "./src/components/Header/index.tsx",
