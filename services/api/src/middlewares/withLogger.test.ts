@@ -7,7 +7,7 @@ import withLogger from './withLogger';
 
 type NextResult =
   | { ok: true }
-  | { ok: false; error: { code: string; name: string } };
+  | { ok: false; error: { code: string; name: string; message?: string } };
 
 function makeCtx({
   header,
@@ -90,7 +90,28 @@ describe('withLogger — request logging', () => {
     );
   });
 
-  it('emits an error log on failure', async () => {
+  it('logs the actual error message as the body on failure', async () => {
+    await runLogger(makeCtx({ header: 'sess' }), {
+      ok: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        name: 'TRPCError',
+        message: "Organization with ID 'anon-abc' not found.",
+      },
+    });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      "Organization with ID 'anon-abc' not found.",
+      expect.objectContaining({
+        status: 'error',
+        path: 'organization.getBySlug',
+        errorCode: 'INTERNAL_SERVER_ERROR',
+        errorName: 'TRPCError',
+      }),
+    );
+  });
+
+  it('falls back to a generic body when the error has no message', async () => {
     await runLogger(makeCtx({ header: 'sess' }), {
       ok: false,
       error: { code: 'INTERNAL_SERVER_ERROR', name: 'TRPCError' },
@@ -98,10 +119,7 @@ describe('withLogger — request logging', () => {
 
     expect(logger.error).toHaveBeenCalledWith(
       'Request failed',
-      expect.objectContaining({
-        status: 'error',
-        path: 'organization.getBySlug',
-      }),
+      expect.objectContaining({ status: 'error' }),
     );
   });
 });

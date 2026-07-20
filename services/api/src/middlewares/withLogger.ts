@@ -95,7 +95,10 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         timestamp: end,
       });
     } else if (result.error) {
-      opLogger.error('Request failed', {
+      // Log the actual error message as the body so the log stream is
+      // self-explanatory — a wall of identical "Request failed" lines forces a
+      // drill-in on every entry. Code/name/stack stay in the attributes.
+      opLogger.error(result.error.message || 'Request failed', {
         requestId: ctx.requestId,
         path,
         type,
