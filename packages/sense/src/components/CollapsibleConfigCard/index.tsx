@@ -103,8 +103,11 @@ function CollapsibleConfigCard({
   );
 
   // Padding lives in the header and content rows, not the card shell.
+  // Hover and open both wash the card gray-50 per the Template Card spec
+  // (the exact ramp step, not --muted, which sits darker since #1615).
   const cardClasses = cn(
-    'rounded-lg border bg-background',
+    'rounded-lg border bg-background transition-colors',
+    isCollapsible && !locked && 'hover:bg-gray-50 data-open:bg-gray-50',
     locked && 'bg-muted',
     isDragging && 'opacity-50',
     className,
