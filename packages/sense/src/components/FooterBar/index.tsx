@@ -103,7 +103,7 @@ function FooterBarDivider({
     <Separator
       data-slot="footer-bar-divider"
       orientation="vertical"
-      className={cn('h-6', className)}
+      className={cn('h-6 self-center', className)}
       {...props}
     />
   );

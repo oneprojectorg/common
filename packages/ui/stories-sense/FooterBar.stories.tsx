@@ -7,6 +7,8 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
+import { LuCheck } from 'react-icons/lu';
 
 import { withSense } from './sense';
 
@@ -21,38 +23,84 @@ export default meta;
 
 type Story = StoryObj<typeof FooterBar>;
 
-// `position="static"` in stories so the bar sits in flow; app usage is
-// sticky (default) or fixed.
-export const Default: Story = {
+// Mirrors the app's voting footer (ProposalsGrid): count with an accented
+// number at the start, empty center spacer, primary action at the end.
+// `position="static"` keeps the bar in flow for the story; the app uses
+// `fixed` with a translucent background.
+const VotingDemo = () => {
+  const [numSelected, setNumSelected] = useState(2);
+  const max = 5;
+
+  return (
+    <FooterBar position="static" className="w-full rounded border">
+      <FooterBarStart>
+        <span className="text-base">
+          <span className="text-primary">{numSelected}</span> of {max} proposals
+          selected
+        </span>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setNumSelected((n) => (n + 1) % (max + 1))}
+        >
+          Select another
+        </Button>
+        <Button disabled={numSelected === 0}>Submit my votes</Button>
+      </FooterBarEnd>
+    </FooterBar>
+  );
+};
+
+export const Voting: Story = {
+  render: () => <VotingDemo />,
+};
+
+// Mirrors the advance-proposal footers (ReviewSummaryAdvanceFooter,
+// StandardSelectionFooter): count at the start, toggling secondary action.
+const AdvanceDemo = () => {
+  const [advancing, setAdvancing] = useState(true);
+
+  return (
+    <FooterBar position="static" className="w-full rounded border">
+      <FooterBarStart>
+        <span className="text-base">
+          {advancing ? 3 : 2} proposals advancing
+        </span>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
+        <Button
+          variant={advancing ? 'outline' : 'secondary'}
+          size="sm"
+          onClick={() => setAdvancing((a) => !a)}
+          className={advancing ? 'border-primary text-primary' : undefined}
+        >
+          {advancing ? <LuCheck data-icon="inline-start" /> : null}
+          {advancing ? 'Advancing proposal' : 'Advance proposal'}
+        </Button>
+      </FooterBarEnd>
+    </FooterBar>
+  );
+};
+
+export const AdvanceToggle: Story = {
+  render: () => <AdvanceDemo />,
+};
+
+export const WithDivider: Story = {
   render: () => (
     <FooterBar position="static" className="w-full rounded border">
       <FooterBarStart>
-        <Button variant="ghost">Back</Button>
-      </FooterBarStart>
-      <FooterBarCenter>
-        <span className="text-sm text-muted-foreground">Step 2 of 4</span>
-      </FooterBarCenter>
-      <FooterBarEnd>
-        <Button variant="outline">Save draft</Button>
-        <FooterBarDivider />
-        <Button>Continue</Button>
-      </FooterBarEnd>
-    </FooterBar>
-  ),
-};
-
-export const Spacious: Story = {
-  render: () => (
-    <FooterBar
-      position="static"
-      padding="spacious"
-      className="w-full rounded border"
-    >
-      <FooterBarStart>
         <span className="text-sm text-muted-foreground">Unsaved changes</span>
       </FooterBarStart>
+      <FooterBarCenter />
       <FooterBarEnd>
-        <Button variant="outline">Discard</Button>
+        <Button variant="ghost">Discard</Button>
+        <FooterBarDivider />
+        <Button variant="outline">Save draft</Button>
         <Button>Publish</Button>
       </FooterBarEnd>
     </FooterBar>
