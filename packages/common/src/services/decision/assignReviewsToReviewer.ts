@@ -8,6 +8,7 @@ import {
 import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { getEligibleReviewerProfileIds } from './generateReviewAssignments';
 
 const phaseOrderData = z
   .object({ phases: z.array(z.object({ phaseId: z.string() })).optional() })
@@ -47,11 +48,28 @@ export async function assignReviewsToReviewer({
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
-    columns: { id: true, currentStateId: true, instanceData: true },
+    columns: {
+      id: true,
+      profileId: true,
+      currentStateId: true,
+      instanceData: true,
+    },
   });
 
   if (!instance) {
     throw new NotFoundError('Decision instance not found');
+  }
+
+  // Mirror the automatic path: only members holding the REVIEW capability on
+  // the decision profile can be assigned reviews.
+  const eligibleReviewerProfileIds = instance.profileId
+    ? await getEligibleReviewerProfileIds(instance.profileId)
+    : [];
+
+  if (!eligibleReviewerProfileIds.includes(reviewerProfileId)) {
+    throw new ValidationError(
+      'Reviewer is not eligible to review in this process',
+    );
   }
 
   const parsedPhases = phaseOrderData.safeParse(instance.instanceData);

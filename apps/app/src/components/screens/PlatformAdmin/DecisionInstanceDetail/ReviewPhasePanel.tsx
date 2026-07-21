@@ -53,8 +53,13 @@ const exportAssignmentsToCsv = (
   reviewers: AdminDecisionReviewer[],
   phaseId: string,
 ) => {
-  const escape = (value: string | null) =>
-    `"${(value ?? '').replace(/"/g, '""')}"`;
+  // Quote + neutralize spreadsheet formula injection: a leading =, +, -, or @
+  // would otherwise execute as a formula when the CSV is opened in Excel/Sheets.
+  const escape = (value: string | null) => {
+    const raw = value ?? '';
+    const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
 
   const header =
     'reviewer,reviewer_slug,proposal,assignment_status,review_state,submitted_at\n';

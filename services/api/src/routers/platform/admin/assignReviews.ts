@@ -14,7 +14,7 @@ export const assignReviewsRouter = router({
         instanceId: z.uuid(),
         phaseId: z.string().min(1),
         reviewerProfileId: z.uuid(),
-        proposalIds: z.array(z.uuid()).min(1),
+        proposalIds: z.array(z.uuid()).min(1).max(500),
       }),
     )
     .output(z.object({ createdCount: z.number() }))

@@ -1,3 +1,4 @@
+import { createDecisionRole } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, ProposalStatus, processInstances } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -88,17 +89,41 @@ describe.concurrent('platform.admin.assignReviews', () => {
     });
 
     const phaseId = setup.instance.instance.currentStateId ?? 'initial';
+    const decisionProfileId = setup.instance.profileId;
 
-    // Distinct member profile as reviewer — the setup user acts as the org
-    // profile when creating the proposal, so the org profile is the author.
+    // Eligible reviewer: decision-profile member holding a role with the
+    // REVIEW capability. (The setup user acts as the org profile when
+    // creating the proposal, so the org profile is the author.)
+    const reviewerRole = await createDecisionRole({
+      name: 'Reviewer',
+      profileId: decisionProfileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: true,
+            submitProposals: true,
+            vote: false,
+          },
+        },
+      },
+    });
     const reviewer = await testData.createMemberUser({
       organization: { id: setup.organization.id },
+      instanceProfileIds: [decisionProfileId],
+      roleIds: { [decisionProfileId]: reviewerRole.id },
     });
 
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    return { setup, instanceId, proposal, phaseId, caller, reviewer };
+    return { setup, testData, instanceId, proposal, phaseId, caller, reviewer };
   };
 
   it('creates assignments, is idempotent, and shows up in the listing', async ({
@@ -148,20 +173,45 @@ describe.concurrent('platform.admin.assignReviews', () => {
     task,
     onTestFinished,
   }) => {
-    const { instanceId, proposal, phaseId, caller } =
+    const { testData, instanceId, phaseId, caller, reviewer } =
       await createSetupWithProposal(task.id, onTestFinished);
 
-    const authorProfileId = proposal.submittedByProfileId;
-    expect(authorProfileId).toBeTruthy();
+    // The reviewer authors a proposal of their own.
+    const ownProposal = await testData.createProposal({
+      userEmail: reviewer.email,
+      processInstanceId: instanceId,
+      proposalData: { title: `Own proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
 
     const result = await caller.assignReviews({
       instanceId,
       phaseId,
-      reviewerProfileId: authorProfileId!,
-      proposalIds: [proposal.id],
+      reviewerProfileId: reviewer.profileId,
+      proposalIds: [ownProposal.id],
     });
 
     expect(result.createdCount).toBe(0);
+  });
+
+  it('rejects a reviewer without the REVIEW capability', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { setup, instanceId, proposal, phaseId, caller } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    await expect(() =>
+      caller.assignReviews({
+        instanceId,
+        phaseId,
+        // The org profile is not a decision member with REVIEW.
+        reviewerProfileId: setup.organization.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
   });
 
   it('rejects assignment into a completed phase', async ({
