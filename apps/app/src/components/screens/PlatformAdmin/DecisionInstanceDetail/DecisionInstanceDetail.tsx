@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { AdminDecisionPhase } from '@op/common/client';
+import type {
+  AdminDecisionConfig,
+  AdminDecisionPhase,
+} from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
 import { buttonVariants } from '@op/sense/Button';
 import {
@@ -87,6 +90,16 @@ const DecisionInstanceDetailContent = ({
           <MetaItem label={t('Owner')} value={detail.owner?.name ?? '—'} />
           <MetaItem label={t('Steward')} value={detail.steward?.name ?? '—'} />
           <MetaItem
+            label={t('Process type')}
+            value={
+              detail.processType
+                ? detail.templateVersion
+                  ? `${detail.processType} (v${detail.templateVersion})`
+                  : detail.processType
+                : '—'
+            }
+          />
+          <MetaItem
             label={t('Reviews policy')}
             value={detail.reviewsPolicy?.replaceAll('_', ' ') ?? '—'}
           />
@@ -104,6 +117,7 @@ const DecisionInstanceDetailContent = ({
       <Tabs defaultValue="phases">
         <TabsList variant="line">
           <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
+          <TabsTrigger value="configuration">{t('Configuration')}</TabsTrigger>
           <TabsTrigger value="members">{t('Members')}</TabsTrigger>
         </TabsList>
         <TabsContent value="phases" className="flex flex-col gap-6 pt-4">
@@ -117,6 +131,9 @@ const DecisionInstanceDetailContent = ({
               currentIndex={detail.phases.findIndex((p) => p.isCurrent)}
             />
           ))}
+        </TabsContent>
+        <TabsContent value="configuration" className="pt-4">
+          <ConfigurationCard config={detail.config} />
         </TabsContent>
         <TabsContent value="members" className="pt-4">
           <Card>
@@ -177,6 +194,27 @@ const PhaseCard = ({
     phase.hasProposals || phase.hasReviews || phase.hasVoting;
   const isCompleted = currentIndex >= 0 && index < currentIndex;
 
+  const ruleParts = [
+    phase.hasProposals &&
+      (phase.proposalsHiddenByDefault
+        ? t('Proposal submissions (hidden by default)')
+        : t('Proposal submissions')),
+    phase.canEditProposals && t('Proposal editing'),
+    phase.hasReviews && t('Reviews'),
+    phase.hasVoting &&
+      (phase.maxVotesPerMember != null
+        ? t('Voting (max {count} per member)', {
+            count: phase.maxVotesPerMember,
+          })
+        : t('Voting')),
+    phase.canEditVotes && t('Vote editing'),
+    phase.advancementMethod === 'manual'
+      ? t('Advances manually')
+      : phase.advancementMethod === 'date'
+        ? t('Advances by date')
+        : null,
+  ].filter(Boolean);
+
   return (
     <Card
       className={
@@ -194,6 +232,11 @@ const PhaseCard = ({
         <CardDescription>
           {t('Phase {number} of {total}', { number: index + 1, total })}
           {dates ? <span> · {dates}</span> : null}
+          {ruleParts.length > 0 ? (
+            <span className="mt-0.5 block text-sm">
+              {ruleParts.join(' · ')}
+            </span>
+          ) : null}
         </CardDescription>
         {currentIndex >= 0 ? (
           <CardAction>
@@ -234,6 +277,70 @@ const PhaseCard = ({
             {t('Nothing to manage in this phase.')}
           </p>
         ) : null}
+      </CardContent>
+    </Card>
+  );
+};
+
+const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
+  const t = useTranslations();
+
+  const settings: Array<{ label: string; value: string | boolean }> = [
+    { label: t('Private process'), value: config.isPrivate },
+    { label: t('Hide budget'), value: config.hideBudget },
+    { label: t('Proposal template'), value: config.hasProposalTemplate },
+    { label: t('Review rubric'), value: config.hasRubric },
+    { label: t('Review revisions'), value: config.reviewsAllowRevisions },
+    {
+      label: t('Anonymous review feedback'),
+      value: config.reviewsAnonymousFeedback,
+    },
+    {
+      label: t('Require category selection'),
+      value: config.requireCategorySelection,
+    },
+    {
+      label: t('Allow multiple categories'),
+      value: config.allowMultipleCategories,
+    },
+    { label: t('Organize by categories'), value: config.organizeByCategories },
+    {
+      label: t('Require collaborative proposals'),
+      value: config.requireCollaborativeProposals,
+    },
+    { label: t('Categories'), value: String(config.categoriesCount) },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Configuration')}</CardTitle>
+        <CardDescription>
+          {t('Process-level settings for this decision')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+          {settings.map((setting) => (
+            <div
+              key={setting.label}
+              className="flex items-center justify-between gap-3 border-b pb-2"
+            >
+              <dt className="text-sm">{setting.label}</dt>
+              <dd>
+                {typeof setting.value === 'boolean' ? (
+                  <Badge variant={setting.value ? 'default' : 'outline'}>
+                    {setting.value ? t('On') : t('Off')}
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {setting.value}
+                  </span>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </CardContent>
     </Card>
   );

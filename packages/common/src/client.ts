@@ -52,6 +52,8 @@ export {
   type AdminProfileRef,
   adminDecisionPhaseSchema,
   type AdminDecisionPhase,
+  adminDecisionConfigSchema,
+  type AdminDecisionConfig,
   adminDecisionInstanceDetailSchema,
   type AdminDecisionInstanceDetail,
   adminReviewAssignmentSchema,

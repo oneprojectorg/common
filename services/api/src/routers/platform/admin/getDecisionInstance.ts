@@ -12,14 +12,22 @@ const phaseRulesSchema = z
     proposals: z
       .object({
         submit: z.boolean().optional(),
+        edit: z.boolean().optional(),
         review: z.boolean().optional(),
+        defaults: z.object({ hidden: z.boolean().optional() }).optional(),
       })
       .partial()
       .optional(),
     voting: z
       .object({
         submit: z.boolean().optional(),
+        edit: z.boolean().optional(),
+        maxVotesPerMember: z.number().optional(),
       })
+      .partial()
+      .optional(),
+    advancement: z
+      .object({ method: z.string().optional() })
       .partial()
       .optional(),
   })
@@ -28,9 +36,24 @@ const phaseRulesSchema = z
 const detailInstanceData = z
   .object({
     config: z
-      .object({ reviewsPolicy: z.string().optional() })
+      .object({
+        reviewsPolicy: z.string().optional(),
+        reviewsAllowRevisions: z.boolean().optional(),
+        reviewsAnonymousFeedback: z.boolean().optional(),
+        isPrivate: z.boolean().optional(),
+        hideBudget: z.boolean().optional(),
+        requireCategorySelection: z.boolean().optional(),
+        allowMultipleCategories: z.boolean().optional(),
+        organizeByCategories: z.boolean().optional(),
+        requireCollaborativeProposals: z.boolean().optional(),
+        categories: z.array(z.unknown()).optional(),
+      })
       .partial()
       .optional(),
+    templateName: z.string().optional(),
+    templateVersion: z.string().optional(),
+    proposalTemplate: z.unknown().optional(),
+    rubricTemplate: z.unknown().optional(),
     phases: z
       .array(
         z.object({
@@ -72,7 +95,7 @@ export const getDecisionInstanceRouter = router({
           owner: { columns: { id: true, name: true, slug: true } },
           steward: { columns: { id: true, name: true, slug: true } },
           profile: { columns: { slug: true } },
-          process: { columns: { processSchema: true } },
+          process: { columns: { name: true, processSchema: true } },
         },
       });
 
@@ -101,6 +124,28 @@ export const getDecisionInstanceRouter = router({
         owner: instance.owner ?? null,
         steward: instance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,
+        processType:
+          instanceData.templateName ?? instance.process?.name ?? null,
+        templateVersion: instanceData.templateVersion ?? null,
+        config: {
+          isPrivate: instanceData.config?.isPrivate ?? false,
+          hideBudget: instanceData.config?.hideBudget ?? false,
+          hasProposalTemplate: instanceData.proposalTemplate != null,
+          hasRubric: instanceData.rubricTemplate != null,
+          reviewsAllowRevisions:
+            instanceData.config?.reviewsAllowRevisions ?? false,
+          reviewsAnonymousFeedback:
+            instanceData.config?.reviewsAnonymousFeedback ?? false,
+          requireCategorySelection:
+            instanceData.config?.requireCategorySelection ?? false,
+          allowMultipleCategories:
+            instanceData.config?.allowMultipleCategories ?? false,
+          organizeByCategories:
+            instanceData.config?.organizeByCategories ?? false,
+          requireCollaborativeProposals:
+            instanceData.config?.requireCollaborativeProposals ?? false,
+          categoriesCount: instanceData.config?.categories?.length ?? 0,
+        },
         phases: (instanceData.phases ?? []).map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
@@ -114,6 +159,12 @@ export const getDecisionInstanceRouter = router({
             hasProposals: rules?.proposals?.submit ?? false,
             hasReviews: rules?.proposals?.review ?? false,
             hasVoting: rules?.voting?.submit ?? false,
+            canEditProposals: rules?.proposals?.edit ?? false,
+            canEditVotes: rules?.voting?.edit ?? false,
+            maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
+            proposalsHiddenByDefault:
+              rules?.proposals?.defaults?.hidden ?? false,
+            advancementMethod: rules?.advancement?.method ?? null,
           };
         }),
       });

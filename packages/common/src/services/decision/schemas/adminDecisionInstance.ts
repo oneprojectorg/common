@@ -51,7 +51,31 @@ export const adminDecisionPhaseSchema = z.object({
   hasProposals: z.boolean(),
   hasReviews: z.boolean(),
   hasVoting: z.boolean(),
+  canEditProposals: z.boolean(),
+  canEditVotes: z.boolean(),
+  /** Null = no limit. */
+  maxVotesPerMember: z.number().nullable(),
+  proposalsHiddenByDefault: z.boolean(),
+  /** 'date' | 'manual' | null when unset. */
+  advancementMethod: z.string().nullable(),
 });
+
+/** Process-level configuration toggles surfaced to platform admins. */
+export const adminDecisionConfigSchema = z.object({
+  isPrivate: z.boolean(),
+  hideBudget: z.boolean(),
+  hasProposalTemplate: z.boolean(),
+  hasRubric: z.boolean(),
+  reviewsAllowRevisions: z.boolean(),
+  reviewsAnonymousFeedback: z.boolean(),
+  requireCategorySelection: z.boolean(),
+  allowMultipleCategories: z.boolean(),
+  organizeByCategories: z.boolean(),
+  requireCollaborativeProposals: z.boolean(),
+  categoriesCount: z.number(),
+});
+
+export type AdminDecisionConfig = z.infer<typeof adminDecisionConfigSchema>;
 
 export type AdminDecisionPhase = z.infer<typeof adminDecisionPhaseSchema>;
 
@@ -65,6 +89,10 @@ export const adminDecisionInstanceDetailSchema = z.object({
   owner: adminProfileRefSchema.nullable(),
   steward: adminProfileRefSchema.nullable(),
   reviewsPolicy: z.string().nullable(),
+  /** Template/process the instance was created from. */
+  processType: z.string().nullable(),
+  templateVersion: z.string().nullable(),
+  config: adminDecisionConfigSchema,
   phases: z.array(adminDecisionPhaseSchema),
 });
 
