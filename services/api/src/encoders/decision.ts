@@ -672,6 +672,12 @@ export const proposalFilterSchema = z.object({
    * past the voting phase.
    */
   votedByProfileId: z.uuid().optional(),
+  /**
+   * When true, exclude proposals the current user is assigned to review in the
+   * viewed phase. Resolved server-side from the request's user context. Powers
+   * the reviewer's "Other proposals" tab.
+   */
+  excludeAssignedForReview: z.boolean().optional(),
   /** When set to 'results', all proposals are returned as non-editable */
   phase: z.enum(['results']).optional(),
   /** Keyset pagination cursor from the previous page's `next`. */

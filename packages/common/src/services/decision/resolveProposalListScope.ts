@@ -7,6 +7,7 @@ import {
   inArray,
   isNull,
   ne,
+  notExists,
   or,
   sql,
 } from '@op/db/client';
@@ -18,6 +19,7 @@ import {
   processInstances,
   profileUsers,
   proposalCategories,
+  proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -29,6 +31,7 @@ import {
   getCurrentProfileId,
   resolveAccessUserIds,
 } from '../access';
+import { assertUserByAuthId } from '../assert';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
   type PhaseProposalSqlScope,
@@ -131,6 +134,14 @@ const resolveExplicitScope = async ({
 const buildBaseConditions = (
   t: typeof proposals,
   input: ListProposalsInput,
+  /**
+   * The reviewer's *individual* profile id (`users.profileId`) — the identity
+   * review assignments are keyed on and the value `listReviewAssignments`
+   * filters by. NOT the acting/org `currentProfileId`, which would never match
+   * an assignment when reviewing inside an org/decision profile context.
+   */
+  reviewerProfileId: string | undefined,
+  resolvedPhaseId: string | undefined,
 ): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
@@ -155,6 +166,38 @@ const buildBaseConditions = (
   if (search) {
     // Search in proposal data (JSONB) - convert to text for searching
     conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
+  }
+
+  // "Other proposals" tab: exclude proposals the caller is assigned to review
+  // in the viewed phase. Correlated anti-join on the outer row's id; the four
+  // predicates match the `(processInstanceId, proposalId, reviewerProfileId,
+  // phaseId)` unique index exactly, so it's an index-only probe per row.
+  // Phase-scoping is deliberate — an assignment from a past review phase must
+  // not hide the proposal in the current one. Anonymous / no-profile callers
+  // (no reviewerProfileId) have no assignments, so the filter is skipped and
+  // they see the full phase set.
+  if (input.excludeAssignedForReview && reviewerProfileId && resolvedPhaseId) {
+    conditions.push(
+      notExists(
+        db
+          .select({ id: proposalReviewAssignments.id })
+          .from(proposalReviewAssignments)
+          .where(
+            and(
+              eq(
+                proposalReviewAssignments.processInstanceId,
+                processInstanceId,
+              ),
+              eq(proposalReviewAssignments.proposalId, t.id),
+              eq(
+                proposalReviewAssignments.reviewerProfileId,
+                reviewerProfileId,
+              ),
+              eq(proposalReviewAssignments.phaseId, resolvedPhaseId),
+            ),
+          ),
+      ),
+    );
   }
 
   return and(...conditions)!;
@@ -311,12 +354,38 @@ export const resolveProposalListScope = async ({
   // makes the whole scope empty, so callers should short-circuit.
   const isEmpty = phaseScope.isEmpty || categoryIsEmpty;
 
+  // The phase actually being viewed. The "Other proposals" tab doesn't pass a
+  // phaseId (it defaults to the current phase), so fall back to the instance's
+  // current state for scoping the assignment exclusion.
+  const resolvedPhaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+
+  // Reviewer identity for the `excludeAssignedForReview` anti-join. Review
+  // assignments are keyed on the user's individual profile (`users.profileId`,
+  // what `listReviewAssignments` filters on), which is distinct from the
+  // acting `currentProfileId` when reviewing inside an org/decision context.
+  // Resolved only when the flag is set; anonymous / profile-less callers stay
+  // undefined and the exclusion is skipped.
+  let reviewerProfileId: string | undefined;
+  if (input.excludeAssignedForReview && user) {
+    try {
+      reviewerProfileId =
+        (await assertUserByAuthId(user.id)).profileId ?? undefined;
+    } catch {
+      reviewerProfileId = undefined;
+    }
+  }
+
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
   const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(proposalsTable, input);
+    let clause: SQL = buildBaseConditions(
+      proposalsTable,
+      input,
+      reviewerProfileId,
+      resolvedPhaseId,
+    );
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface
