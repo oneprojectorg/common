@@ -39,6 +39,16 @@ describe('createAIAgent', () => {
     expect(agent.name).toBe('Display Name');
   });
 
+  it('disables Mastra telemetry by default without clobbering an explicit value', async () => {
+    vi.stubEnv('MASTRA_TELEMETRY_DISABLED', '');
+    await importAgent();
+    expect(process.env.MASTRA_TELEMETRY_DISABLED).toBe('1');
+
+    vi.stubEnv('MASTRA_TELEMETRY_DISABLED', 'false');
+    await importAgent();
+    expect(process.env.MASTRA_TELEMETRY_DISABLED).toBe('false');
+  });
+
   it('defers env config so construction works without AI_API_KEY', async () => {
     vi.stubEnv('AI_API_KEY', '');
     const { createAIAgent } = await importAgent();
