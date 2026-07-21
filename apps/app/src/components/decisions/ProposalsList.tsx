@@ -281,8 +281,6 @@ export const ProposalsList = (props: ProposalsListProps) => {
     // Filter in SQL so pagination and the total count stay accurate per filter.
     if (proposalFilter === ProposalFilter.MY_PROPOSALS && currentProfileId) {
       params.submittedByProfileId = currentProfileId;
-    } else if (proposalFilter === ProposalFilter.SHORTLISTED) {
-      params.status = ProposalStatus.APPROVED;
     } else if (
       proposalFilter === ProposalFilter.MY_BALLOT &&
       currentProfileId

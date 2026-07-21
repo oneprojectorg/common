@@ -3,7 +3,6 @@ import he from 'he';
 export enum ProposalFilter {
   ALL = 'all',
   MY_PROPOSALS = 'my-proposals',
-  SHORTLISTED = 'shortlisted',
   MY_BALLOT = 'my-ballot',
 }
 
