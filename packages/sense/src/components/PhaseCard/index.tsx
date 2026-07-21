@@ -2,6 +2,7 @@
 
 import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 
+import { formatDateRange } from '../../lib/formatting';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -210,30 +211,6 @@ function PhaseName({ name }: { name: string }) {
       <bdi>{name}</bdi>
     </p>
   );
-}
-
-function formatDate(dateString: string, locale: string = 'en-US'): string {
-  return new Date(dateString).toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
-function formatDateRange(
-  startDate?: string,
-  endDate?: string,
-  locale?: string,
-): string {
-  if (startDate && endDate) {
-    return `${formatDate(startDate, locale)} - ${formatDate(endDate, locale)}`;
-  }
-  if (startDate) {
-    return formatDate(startDate, locale);
-  }
-  if (endDate) {
-    return formatDate(endDate, locale);
-  }
-  return '';
 }
 
 export { PhaseCard, type PhaseCardProps, type PhaseCardState };

@@ -108,7 +108,7 @@ function SortableItemWrapper<T extends SortableItem>({
 
     if (renderDropIndicator) {
       return (
-        <div ref={setNodeRef} style={style}>
+        <div ref={setNodeRef} style={style} role="listitem">
           {renderDropIndicator({ item, children: itemContent })}
         </div>
       );
@@ -116,7 +116,7 @@ function SortableItemWrapper<T extends SortableItem>({
 
     // Default: keep the space but hide the content
     return (
-      <div ref={setNodeRef} style={style}>
+      <div ref={setNodeRef} style={style} role="listitem">
         <div style={{ visibility: 'hidden' }}>{itemContent}</div>
       </div>
     );
@@ -128,6 +128,9 @@ function SortableItemWrapper<T extends SortableItem>({
       style={style}
       className={cn(itemClasses(dragTrigger === 'handle'), itemClassName)}
       {...itemProps}
+      // After the spread: dnd-kit's attributes carry role="button" in item
+      // mode, but the wrapper must stay a listitem for a valid list tree.
+      role="listitem"
     >
       {children(item, controls)}
     </div>
@@ -147,6 +150,10 @@ export function Sortable<T extends SortableItem>({
   renderDropIndicator,
 }: SortableProps<T>) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+
+  // dnd-kit's default context id is a module-level counter, which produces
+  // mismatched aria ids across SSR/hydration in Next — useId is stable.
+  const dndContextId = React.useId();
 
   // Without activation constraints the pointer sensors swallow the initial
   // mousedown/touchstart, which blocks clicks on interactive children (e.g.
@@ -190,6 +197,7 @@ export function Sortable<T extends SortableItem>({
 
   return (
     <DndContext
+      id={dndContextId}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
@@ -201,7 +209,7 @@ export function Sortable<T extends SortableItem>({
         strategy={verticalListSortingStrategy}
       >
         <div
-          role="listbox"
+          role="list"
           aria-label={ariaLabel}
           className={cn(containerClasses, className)}
         >

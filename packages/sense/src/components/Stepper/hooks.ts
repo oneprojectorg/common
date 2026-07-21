@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { z } from 'zod';
 
 import type { StepperItem } from './types';
 
@@ -43,7 +44,7 @@ export const useStepper = ({
     if (result.success) {
       success();
     } else {
-      return result.error.flatten().fieldErrors;
+      return z.flattenError(result.error).fieldErrors;
     }
   };
 

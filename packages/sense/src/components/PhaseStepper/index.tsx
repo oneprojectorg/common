@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { LuCheck, LuPlay } from 'react-icons/lu';
 
+import { formatDateRange } from '../../lib/formatting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
@@ -207,31 +208,6 @@ function PhaseStepper({
       </div>
     </div>
   );
-}
-
-function formatDate(
-  dateString: string,
-  options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
-  locale: string = 'en-US',
-): string {
-  return new Date(dateString).toLocaleDateString(locale, options);
-}
-
-function formatDateRange(
-  startDate?: string,
-  endDate?: string,
-  locale?: string,
-): string {
-  if (startDate && endDate) {
-    return `${formatDate(startDate, undefined, locale)} - ${formatDate(endDate, undefined, locale)}`;
-  }
-  if (startDate) {
-    return formatDate(startDate, undefined, locale);
-  }
-  if (endDate) {
-    return formatDate(endDate, undefined, locale);
-  }
-  return '';
 }
 
 export { PhaseStepper, type Phase };
