@@ -13,6 +13,14 @@ describe('resolveAIModel', () => {
     expect(() => resolveAIModel({ modelId: 'model-x' })).toThrow('AI_BASE_URL');
   });
 
+  it('throws on an explicitly empty baseURL instead of using the env fallback', () => {
+    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
+
+    expect(() => resolveAIModel({ modelId: 'model-x', baseURL: '' })).toThrow(
+      'No inference URL configured',
+    );
+  });
+
   it('uses the given baseURL and apiKey', () => {
     const model = resolveAIModel({
       modelId: 'model-x',
@@ -28,20 +36,6 @@ describe('resolveAIModel', () => {
     });
   });
 
-  it('prefers explicit config over env fallbacks', () => {
-    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
-    vi.stubEnv('AI_API_KEY', 'env-key');
-
-    const model = resolveAIModel({
-      modelId: 'model-x',
-      baseURL: 'https://user.example.com/v1',
-      apiKey: 'user-key',
-    });
-
-    expect(model.url).toBe('https://user.example.com/v1');
-    expect(model.apiKey).toBe('user-key');
-  });
-
   it('falls back to AI_BASE_URL and AI_API_KEY', () => {
     vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
     vi.stubEnv('AI_API_KEY', 'env-key');
@@ -52,13 +46,22 @@ describe('resolveAIModel', () => {
     expect(model.apiKey).toBe('env-key');
   });
 
-  it('allows keyless endpoints', () => {
-    vi.stubEnv('AI_API_KEY', '');
+  it('never attaches the env key to a caller-supplied endpoint', () => {
+    vi.stubEnv('AI_API_KEY', 'deploy-key');
 
     const model = resolveAIModel({
       modelId: 'model-x',
-      baseURL: 'https://ollama.internal/v1',
+      baseURL: 'https://user-endpoint.example.com/v1',
     });
+
+    expect(model.apiKey).toBeUndefined();
+  });
+
+  it('allows keyless env-configured endpoints', () => {
+    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
+    vi.stubEnv('AI_API_KEY', '');
+
+    const model = resolveAIModel({ modelId: 'model-x' });
 
     expect(model.apiKey).toBeUndefined();
   });
