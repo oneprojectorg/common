@@ -23,10 +23,6 @@ export const useProposalFilterItems = ({
       label: t('My proposals'),
       isDisabled: !currentProfileId,
     },
-    {
-      id: ProposalFilter.SHORTLISTED,
-      label: t('Shortlisted proposals'),
-    },
     ...(hasVoted
       ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
       : []),
