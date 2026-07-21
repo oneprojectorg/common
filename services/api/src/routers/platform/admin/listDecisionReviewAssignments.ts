@@ -1,7 +1,11 @@
-import { NotFoundError, getEligibleReviewerProfileIds } from '@op/common';
+import {
+  NotFoundError,
+  getEligibleReviewerProfileIds,
+  getProposalIdsForPhase,
+} from '@op/common';
 import { adminDecisionReviewAssignmentsSchema } from '@op/common/client';
-import { and, db, eq, inArray, ne } from '@op/db/client';
-import { ProposalStatus, profiles, proposals } from '@op/db/schema';
+import { db, inArray } from '@op/db/client';
+import { profiles, proposals } from '@op/db/schema';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
@@ -41,7 +45,12 @@ export const listDecisionReviewAssignmentsRouter = router({
     .query(async ({ input }) => {
       const instance = await db.query.processInstances.findFirst({
         where: { id: input.instanceId },
-        columns: { id: true, profileId: true },
+        columns: {
+          id: true,
+          profileId: true,
+          instanceData: true,
+          currentStateId: true,
+        },
       });
 
       if (!instance) {
@@ -50,7 +59,7 @@ export const listDecisionReviewAssignmentsRouter = router({
 
       // Whole-phase fetch, grouped per reviewer below. Not paginated: the
       // result set is bounded by reviewers × proposals of a single process.
-      const [assignments, eligibleProfileIds, assignableProposals] =
+      const [assignments, eligibleProfileIds, phaseProposalIds] =
         await Promise.all([
           db.query.proposalReviewAssignments.findMany({
             where: {
@@ -69,20 +78,23 @@ export const listDecisionReviewAssignmentsRouter = router({
           instance.profileId
             ? getEligibleReviewerProfileIds(instance.profileId)
             : Promise.resolve<string[]>([]),
-          db
-            .select({
-              id: proposals.id,
-              proposalData: proposals.proposalData,
-              submittedByProfileId: proposals.submittedByProfileId,
-            })
-            .from(proposals)
-            .where(
-              and(
-                eq(proposals.processInstanceId, input.instanceId),
-                ne(proposals.status, ProposalStatus.DRAFT),
-              ),
-            ),
+          // Same phase-scoped proposal set the product uses (transition
+          // attachments + non-drafts created during the phase window) — a
+          // plain status filter misses snapshot-attached proposals.
+          getProposalIdsForPhase({ instance, phaseId: input.phaseId }),
         ]);
+
+      const assignableProposals =
+        phaseProposalIds.length > 0
+          ? await db
+              .select({
+                id: proposals.id,
+                proposalData: proposals.proposalData,
+                submittedByProfileId: proposals.submittedByProfileId,
+              })
+              .from(proposals)
+              .where(inArray(proposals.id, phaseProposalIds))
+          : [];
 
       const eligibleReviewers =
         eligibleProfileIds.length > 0

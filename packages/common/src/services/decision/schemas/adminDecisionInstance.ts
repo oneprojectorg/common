@@ -112,7 +112,7 @@ export const adminDecisionReviewAssignmentsSchema = z.object({
   totalAssignments: z.number(),
   /** Members eligible to review (REVIEW capability on the decisions zone). */
   eligibleReviewers: z.array(adminProfileRefSchema),
-  /** Non-draft proposals of the process, candidates for manual assignment. */
+  /** Proposals in the phase (per getProposalIdsForPhase), candidates for manual assignment. */
   proposals: z.array(adminAssignableProposalSchema),
 });
 
