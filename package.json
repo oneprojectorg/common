@@ -35,6 +35,7 @@
     "test": "turbo test",
     "tmux": "bash scripts/tmux.sh",
     "typecheck": "turbo typecheck",
+    "w:ai": "pnpm -C ./packages/ai",
     "w:api": "pnpm -C ./services/api",
     "w:app": "pnpm -C ./apps/app",
     "w:db": "pnpm -C ./services/db",

@@ -633,7 +633,7 @@ importers:
         version: 16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       next-intl:
         specifier: ^4.8.3
-        version: 4.8.3(next@16.2.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@7.0.2)
+        version: 4.8.3(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@7.0.2)
       nuqs:
         specifier: ^2.8.5
         version: 2.8.6(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)
@@ -724,6 +724,25 @@ importers:
         version: 4.0.18(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@22.13.14)(happy-dom@20.5.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   configs/typescript-config: {}
+
+  packages/ai:
+    dependencies:
+      openai:
+        specifier: ^6.48.0
+        version: 6.48.0(ws@8.19.0)(zod@4.1.12)
+    devDependencies:
+      '@op/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.13.14
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.18(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@22.13.14)(happy-dom@20.5.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   packages/analytics:
     dependencies:
@@ -918,7 +937,7 @@ importers:
         version: 3.0.5
       next-intl:
         specifier: ^4.8.3
-        version: 4.8.3(next@16.2.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@7.0.2)
+        version: 4.8.3(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@7.0.2)
       react:
         specifier: ^19.0.1
         version: 19.2.1
@@ -8284,6 +8303,26 @@ packages:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
     engines: {node: '>=18'}
 
+  openai@6.48.0:
+    resolution: {integrity: sha512-KhVp+FyV50QrXNextvL9hIU5l6ox5HYuKQjGVk7lIqprgJol90+dQXWONV6S1lRWsKA1bXjrow8RsUT14M1hNA==}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   opener@1.5.2:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
@@ -9402,10 +9441,6 @@ packages:
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
-
-  tinyexec@1.0.2:
-    resolution: {integrity: sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg==}
-    engines: {node: '>=18'}
 
   tinyexec@1.2.4:
     resolution: {integrity: sha512-SHf/r48b7vOrjve9PxJo3MN5v5yuyjHvdUcrQffT3WXMUfnGmHDVbC4k3sHJaJTgZCwpUplIaAo5ANtMyp3YHg==}
@@ -11126,7 +11161,7 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
       '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/remapping@2.3.5':
@@ -11149,7 +11184,7 @@ snapshots:
   '@jridgewell/trace-mapping@0.3.31':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   '@js-joda/core@5.7.0': {}
 
@@ -12994,7 +13029,7 @@ snapshots:
       enhanced-resolve: 5.18.4
       jiti: 2.4.2
       lightningcss: 1.30.1
-      magic-string: 0.30.17
+      magic-string: 0.30.21
       source-map-js: 1.2.1
       tailwindcss: 4.1.8
 
@@ -13940,7 +13975,7 @@ snapshots:
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
-      magic-string: 0.30.17
+      magic-string: 0.30.21
     optionalDependencies:
       vite: 6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
@@ -16384,7 +16419,7 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.8.3: {}
 
-  next-intl@4.8.3(next@16.2.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@7.0.2):
+  next-intl@4.8.3(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@7.0.2):
     dependencies:
       '@formatjs/intl-localematcher': 0.8.1
       '@parcel/watcher': 2.5.1
@@ -16499,6 +16534,11 @@ snapshots:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
+
+  openai@6.48.0(ws@8.19.0)(zod@4.1.12):
+    optionalDependencies:
+      ws: 8.19.0
+      zod: 4.1.12
 
   opener@1.5.2: {}
 
@@ -17894,8 +17934,6 @@ snapshots:
 
   tinybench@2.9.0: {}
 
-  tinyexec@1.0.2: {}
-
   tinyexec@1.2.4: {}
 
   tinyglobby@0.2.15:
@@ -18262,7 +18300,7 @@ snapshots:
       picomatch: 4.0.3
       std-env: 3.10.0
       tinybench: 2.9.0
-      tinyexec: 1.0.2
+      tinyexec: 1.2.4
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
       vite: 6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
