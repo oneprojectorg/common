@@ -1,5 +1,4 @@
-import { Map } from '@op/sense/Map';
-import { MapMarker } from '@op/sense/Map';
+import { Map, MapMarker } from '@op/sense/Map';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 

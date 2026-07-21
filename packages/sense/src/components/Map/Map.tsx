@@ -15,7 +15,7 @@ import {
 
 // Re-exported so feature code (e.g. the location picker's boundary overlay)
 // can compose MapLibre `Source`/`Layer` children without taking a direct
-// dependency on `react-map-gl` — the package only lives in `@op/ui`.
+// dependency on `react-map-gl` — the package only lives in `@op/sense`.
 export { Layer, Source };
 export type { LayerProps };
 
