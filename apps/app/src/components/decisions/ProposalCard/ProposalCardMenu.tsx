@@ -15,7 +15,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
-import { LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
+import { LuEllipsis, LuEye, LuEyeOff } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -27,71 +27,9 @@ export function ProposalCardMenu({
   canManage?: boolean;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
-
-  const updateStatusMutation = trpc.decision.updateProposal.useMutation({
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      if (proposal.processInstanceId) {
-        await utils.decision.listProposals.cancel({
-          processInstanceId: proposal.processInstanceId,
-        });
-      }
-
-      // Snapshot the previous value
-      const previousListData = proposal.processInstanceId
-        ? utils.decision.listProposals.getData({
-            processInstanceId: proposal.processInstanceId,
-          })
-        : null;
-
-      const newStatus = variables.data.status;
-      // Optimistically update list data
-      if (previousListData && proposal.processInstanceId && newStatus) {
-        const optimisticListData = {
-          ...previousListData,
-          proposals: previousListData.proposals.map((p) =>
-            p.id === proposal.id
-              ? {
-                  ...p,
-                  status: newStatus,
-                }
-              : p,
-          ),
-        };
-        utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstanceId },
-          optimisticListData,
-        );
-      }
-
-      return { previousListData };
-    },
-    onError: (error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousListData && proposal.processInstanceId) {
-        utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstanceId },
-          context.previousListData,
-        );
-      }
-
-      toast.error({
-        message: error.message || t('Failed to update proposal status'),
-      });
-    },
-    onSuccess: (_, variables) => {
-      if (variables.data.status) {
-        const statusMessage = match(variables.data.status, {
-          [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
-        });
-        toast.success({ message: statusMessage });
-      }
-    },
-  });
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
     onError: (error) => {
@@ -124,13 +62,6 @@ export function ProposalCardMenu({
       }
     },
   });
-
-  const handleReject = () => {
-    updateStatusMutation.mutate({
-      proposalId: proposal.id,
-      data: { status: ProposalStatus.REJECTED },
-    });
-  };
 
   const handleToggleVisibility = () => {
     const newVisibility =
@@ -167,9 +98,7 @@ export function ProposalCardMenu({
   };
 
   const isLoading =
-    updateStatusMutation.isPending ||
-    deleteProposalMutation.isPending ||
-    updateVisibilityMutation.isPending;
+    deleteProposalMutation.isPending || updateVisibilityMutation.isPending;
 
   const getMenuItems = () => {
     const items: Array<{
@@ -181,18 +110,8 @@ export function ProposalCardMenu({
       isDestructive?: boolean;
     }> = [];
 
-    // Admin actions (reject, hide) - not for drafts
+    // Admin actions (hide) - not for drafts
     if (canManage && proposal.status !== ProposalStatus.DRAFT) {
-      items.push({
-        key: 'reject',
-        icon: <LuX className="size-5" />,
-        label: t('Reject from shortlist'),
-        onAction: () => {
-          handleReject();
-          setIsMenuSheetOpen(false);
-        },
-        isDisabled: isLoading || proposal.status === ProposalStatus.REJECTED,
-      });
       items.push({
         key: 'visibility',
         icon: isHidden ? (
