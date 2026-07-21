@@ -191,31 +191,3 @@ export function validateVoteSelection(
     errors,
   };
 }
-
-export function createSchemaSignature(schema: DecisionProcessSchema): string {
-  const normalizedSchema = {
-    allowProposals: schema.allowProposals,
-    allowDecisions: schema.allowDecisions,
-    maxVotesPerMember: schema.instanceData.maxVotesPerMember,
-  };
-
-  return Buffer.from(JSON.stringify(normalizedSchema)).toString('base64');
-}
-
-export function validateSchemaCompatibility(
-  currentSchema: DecisionProcessSchema,
-  requiredProperties: string[],
-): {
-  isCompatible: boolean;
-  missingProperties: string[];
-} {
-  const schemaKeys = Object.keys(currentSchema);
-  const missingProperties = requiredProperties.filter(
-    (prop) => !schemaKeys.includes(prop),
-  );
-
-  return {
-    isCompatible: missingProperties.length === 0,
-    missingProperties,
-  };
-}

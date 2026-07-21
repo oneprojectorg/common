@@ -1,4 +1,4 @@
-import { type DbClient, db as defaultDb, eq } from '@op/db/client';
+import { type DbClient, eq } from '@op/db/client';
 import { attachments, proposalAttachments, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
 
@@ -172,47 +172,4 @@ function extractImageUrlsFromContent(htmlContent: string): string[] {
   }
 
   return imageUrls;
-}
-
-/**
- * Get permanent URLs for proposal attachments
- */
-export async function getProposalAttachmentUrls(
-  proposalId: string,
-): Promise<Record<string, string>> {
-  const proposalAttachmentJoins =
-    await defaultDb._query.proposalAttachments.findMany({
-      where: eq(proposalAttachments.proposalId, proposalId),
-      with: {
-        attachment: true,
-      },
-    });
-
-  if (proposalAttachmentJoins.length === 0) {
-    return {};
-  }
-
-  const urlMap: Record<string, string> = {};
-
-  for (const proposalAttachmentJoin of proposalAttachmentJoins) {
-    const attachment = proposalAttachmentJoin.attachment as any;
-    if (!attachment) continue;
-
-    try {
-      // Generate permanent public URL using Next.js rewrite
-      const storagePath = `profile/${attachment.storageObjectId}`;
-      const publicUrl = getPublicUrl(storagePath);
-
-      if (publicUrl) {
-        urlMap[attachment.id] = publicUrl;
-      }
-    } catch (error) {
-      logger.error('Error getting URL for attachment', {
-        attachmentId: attachment.id,
-        error,
-      });
-    }
-  }
-
-  return urlMap;
 }

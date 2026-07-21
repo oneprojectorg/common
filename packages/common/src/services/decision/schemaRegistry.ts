@@ -198,16 +198,6 @@ export const globalSchemaRegistry = new SchemaRegistry();
 globalSchemaRegistry.registerHandler(simpleSchemaHandler);
 globalSchemaRegistry.registerHandler(advancedSchemaHandler);
 
-export function getSchemaRegistry(): SchemaRegistry {
-  return globalSchemaRegistry;
-}
-
-export function registerCustomSchema<T extends DecisionProcessSchema>(
-  handler: SchemaHandler<T>,
-): void {
-  globalSchemaRegistry.registerHandler(handler);
-}
-
 export function processDecisionProcessSchema(data: unknown) {
   return globalSchemaRegistry.processSchema(data);
 }
