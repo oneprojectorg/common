@@ -3,11 +3,9 @@ import { Agent } from '@mastra/core/agent';
 import { resolveAIModel } from './model';
 import type { AIModelConfig } from './model';
 
-// Mastra reports usage telemetry to its own PostHog (us.posthog.com) unless
-// disabled. We self-host everything, so default it off. To opt back in, set
-// MASTRA_TELEMETRY_DISABLED=0 (any value outside Mastra's disabled set works;
-// the default only applies once this module has loaded).
-process.env.MASTRA_TELEMETRY_DISABLED ||= '1';
+// Mastra phones usage telemetry home to its own PostHog (us.posthog.com). We
+// run our own telemetry, so disable Mastra's unconditionally — no env knob.
+process.env.MASTRA_TELEMETRY_DISABLED = '1';
 
 export interface CreateAIAgentOptions {
   name: string;
