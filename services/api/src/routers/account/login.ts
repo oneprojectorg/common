@@ -47,31 +47,61 @@ const login = router({
         throw new ValidationError('Invalid email');
       }
 
-      const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>(
-        {
+      // An existing account may always log back in: the OTP/OAuth exchange
+      // proves email ownership, and network access is gated separately by
+      // `isNetworkMember`. Claim-flow accounts (`useClaimAccount`) have no
+      // allow-list entry, so the allow-list only decides (below) whether an
+      // email without an account may create one. auth.users is the canonical
+      // record; anonymous accounts have a NULL email there.
+      const existingAuthUser = await db.query.authUsers.findFirst({
+        columns: { id: true },
+        where: { email: input.email },
+      });
+
+      let ownsExistingAccount = Boolean(existingAuthUser);
+
+      if (ownsExistingAccount && input.usingOAuth) {
+        // The OAuth code exchange creates the account before this gate runs,
+        // so discount one created by the very sign-in being gated.
+        const {
+          data: { user: authUser },
+        } = await getCachedAuthUser(ctx);
+
+        if (
+          authUser?.email?.toLowerCase() === input.email &&
+          wasCreatedByThisSignIn(authUser)
+        ) {
+          ownsExistingAccount = false;
+        }
+      }
+
+      if (!ownsExistingAccount) {
+        const allowedUserEmail = await cache<
+          ReturnType<typeof getAllowListUser>
+        >({
           type: 'allowList',
           params: [input.email],
           fetch: () => getAllowListUser({ email: input.email }),
-        },
-      );
+        });
 
-      // If the user is not invited, add them to the waitlist
-      if (
-        !allowedUserEmail?.email &&
-        !allowedEmailDomains.includes(emailDomain) &&
-        !adminEmails.includes(input.email)
-      ) {
-        if (input.usingOAuth) {
-          // The OAuth code exchange already created the account (auth.users
-          // plus the trigger-created public.users row and individual profile)
-          // before this gate ran, so remove it or the rejected visitor
-          // persists as an orphaned user.
-          await deleteRejectedOAuthSignup({ ctx, email: input.email });
+        // No account and not invited: add them to the waitlist.
+        if (
+          !allowedUserEmail?.email &&
+          !allowedEmailDomains.includes(emailDomain) &&
+          !adminEmails.includes(input.email)
+        ) {
+          if (input.usingOAuth) {
+            // The OAuth code exchange already created the account (auth.users
+            // plus the trigger-created public.users row and individual profile)
+            // before this gate ran, so remove it or the rejected visitor
+            // persists as an orphaned user.
+            await deleteRejectedOAuthSignup({ ctx, email: input.email });
+          }
+
+          throw new UnauthorizedError(
+            `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
+          );
         }
-
-        throw new UnauthorizedError(
-          `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
-        );
       }
 
       // If the user is not using OAuth and doesn't have a token, send them an OTP
