@@ -57,8 +57,16 @@ export const AssignReviewsDialog = ({
     () =>
       eligibleReviewers.map((reviewer) => ({
         value: reviewer.id,
-        label: reviewer.name ?? reviewer.slug ?? reviewer.id,
-        email: reviewer.email,
+        label: (
+          <span className="flex items-baseline gap-2">
+            {reviewer.name ?? reviewer.slug ?? reviewer.id}
+            {reviewer.email ? (
+              <span className="text-sm text-muted-foreground">
+                {reviewer.email}
+              </span>
+            ) : null}
+          </span>
+        ),
       })),
     [eligibleReviewers],
   );
@@ -150,14 +158,7 @@ export const AssignReviewsDialog = ({
               <SelectContent>
                 {reviewerItems.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    <span className="flex items-baseline gap-2">
-                      {item.label}
-                      {item.email ? (
-                        <span className="text-sm text-muted-foreground">
-                          {item.email}
-                        </span>
-                      ) : null}
-                    </span>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
