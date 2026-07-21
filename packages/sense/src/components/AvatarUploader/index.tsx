@@ -29,6 +29,8 @@ function AvatarUploader({
     if (file && onChange) {
       onChange(file);
     }
+    // Reset so re-selecting the same file fires change again.
+    event.target.value = '';
   };
 
   return (

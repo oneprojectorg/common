@@ -27,7 +27,7 @@ interface BannerImageCopy {
   remove?: string;
 }
 
-const DEFAULT_ACCEPT = 'image/png,image/jpeg,image/webp';
+const DEFAULT_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
 interface BannerImageFieldProps {
   /** Current image URL; presence switches the field to its filled state. */

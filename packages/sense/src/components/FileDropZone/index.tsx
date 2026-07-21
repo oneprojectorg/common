@@ -42,16 +42,28 @@ function FileDropZone({
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const [isDropTarget, setIsDropTarget] = React.useState(false);
 
-  const acceptsFile = (file: File) => {
+  const acceptsType = (type: string) => {
     if (!acceptedFileTypes) {
       return true;
     }
     return acceptedFileTypes.some((accepted) =>
       accepted.endsWith('/*')
-        ? file.type.startsWith(accepted.slice(0, -1))
-        : file.type === accepted,
+        ? type.startsWith(accepted.slice(0, -1))
+        : type === accepted,
     );
   };
+
+  const acceptsFile = (file: File) => acceptsType(file.type);
+
+  // Only light up (and allow a drop) for drags that carry at least one
+  // acceptable file — otherwise text/link drags and wrong-type files get an
+  // accepting cursor whose drop would be silently discarded. Some browsers
+  // report an empty type during dragover; treat that as unknown-but-allowed.
+  const dragHasAcceptableFile = (dataTransfer: DataTransfer) =>
+    Array.from(dataTransfer.items).some(
+      (item) =>
+        item.kind === 'file' && (item.type === '' || acceptsType(item.type)),
+    );
 
   const emitFiles = (files: File[]) => {
     const accepted = files.filter(acceptsFile);
@@ -66,14 +78,18 @@ function FileDropZone({
       data-drop-target={isDropTarget || undefined}
       className={cn('group/dropzone flex w-full', className)}
       onDragOver={(event) => {
-        if (disabled) {
+        if (disabled || !dragHasAcceptableFile(event.dataTransfer)) {
           return;
         }
         event.preventDefault();
         setIsDropTarget(true);
       }}
       onDragLeave={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+        const related = event.relatedTarget;
+        if (
+          !(related instanceof Node) ||
+          !event.currentTarget.contains(related)
+        ) {
           setIsDropTarget(false);
         }
       }}
