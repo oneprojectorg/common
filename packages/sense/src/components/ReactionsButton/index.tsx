@@ -86,7 +86,10 @@ function ReactionsButton({
 }
 
 const chipClasses =
-  'flex h-8 min-w-8 cursor-pointer items-center justify-center gap-1 rounded-full bg-muted px-2 text-xs leading-6 outline-none transition-colors duration-200 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-ring/50 active:bg-gray-200 disabled:cursor-default';
+  'flex h-8 min-w-8 items-center justify-center gap-1 rounded-full bg-muted px-2 text-xs leading-6 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring/50';
+
+const chipInteractiveClasses =
+  'cursor-pointer hover:bg-gray-100 active:bg-gray-200';
 
 function ReactionChip({
   reaction,
@@ -97,12 +100,19 @@ function ReactionChip({
 }) {
   const tooltipContent = formatReactionTooltip(reaction);
 
+  // Read-only chips stay enabled (aria-disabled, no press affordances) so
+  // they keep tab order and the reactor tooltip stays reachable — native
+  // disabled would suppress both.
   const button = (
     <button
       type="button"
       onClick={onClick}
-      disabled={!onClick}
-      className={cn(chipClasses, reaction.isActive && 'bg-gray-100')}
+      aria-disabled={onClick ? undefined : true}
+      className={cn(
+        chipClasses,
+        onClick ? chipInteractiveClasses : 'cursor-default',
+        reaction.isActive && 'bg-gray-100',
+      )}
     >
       <span className="text-foreground">
         {reaction.emoji} {reaction.count}
@@ -148,19 +158,20 @@ function ReactionPicker({
           <button
             type="button"
             aria-label="Add reaction"
-            className={cn(chipClasses, 'w-8 p-1')}
+            className={cn(chipClasses, chipInteractiveClasses, 'w-8 p-1')}
           />
         }
       >
         <LuSmilePlus className="size-4" />
       </PopoverTrigger>
       <PopoverContent className="sense w-auto p-1" sideOffset={4}>
-        <div className="flex" role="menu" aria-label="Reactions">
+        {/* Plain buttons in a popover — not role=menu, which would promise
+            arrow-key navigation the div doesn't implement. */}
+        <div className="flex" role="group" aria-label="Reactions">
           {availableOptions.map((option) => (
             <button
               key={option.key}
               type="button"
-              role="menuitem"
               aria-label={option.label}
               onClick={() => {
                 onAddReaction?.(option.emoji);
@@ -215,4 +226,9 @@ function formatReactionTooltip(reaction: Reaction): React.ReactNode {
   );
 }
 
-export { ReactionsButton, type Reaction, type ReactionOption };
+export {
+  ReactionsButton,
+  type Reaction,
+  type ReactionOption,
+  type ReactionUser,
+};
