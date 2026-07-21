@@ -43,6 +43,17 @@ const config: StorybookConfig = {
       ) {
         return;
       }
+      // Companion noise (vitejs/vite#15012): reporting the directive warning
+      // trips a sourcemap lookup at the directive's position (1:0), which
+      // emits a SOURCEMAP_ERROR per module. Only that position is filtered —
+      // genuine sourcemap errors elsewhere still surface.
+      if (
+        warning.code === 'SOURCEMAP_ERROR' &&
+        warning.loc?.line === 1 &&
+        warning.loc?.column === 0
+      ) {
+        return;
+      }
       if (previousOnwarn) {
         previousOnwarn(warning, warn);
       } else {
