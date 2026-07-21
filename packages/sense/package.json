@@ -56,6 +56,7 @@
     "./RequiredAsterisk": "./src/components/RequiredAsterisk/index.tsx",
     "./Resizable": "./src/components/ui/resizable.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
+    "./RichTextEditor/viewerStyles": "./src/components/RichTextEditor/viewerStyles.ts",
     "./ScrollArea": "./src/components/ui/scroll-area.tsx",
     "./Select": "./src/components/ui/select.tsx",
     "./Separator": "./src/components/ui/separator.tsx",
