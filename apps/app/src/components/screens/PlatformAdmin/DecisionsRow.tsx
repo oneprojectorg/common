@@ -58,9 +58,7 @@ export const DecisionsRowCells = ({
         )}
       </TableCell>
       <TableCell className="text-neutral-charcoal">
-        <span className="block max-w-44 truncate">
-          {decision.stewardName ?? '—'}
-        </span>
+        {decision.stewardName ?? '—'}
       </TableCell>
       <TableCell className="text-neutral-charcoal">
         {decision.totalProposalCount > decision.proposalCount ? (
