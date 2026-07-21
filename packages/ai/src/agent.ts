@@ -1,6 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 
-import { resolveAIModel } from './model';
+import { resolveAIModelConfig } from './model';
 import type { AIModelConfig } from './model';
 
 // Mastra phones usage telemetry home to its own PostHog (us.posthog.com). We
@@ -26,5 +26,5 @@ export const createAIAgent = ({
     name,
     instructions,
     // Deferred so module-scope agents don't read env fallbacks at import time.
-    model: () => resolveAIModel(model),
+    model: () => resolveAIModelConfig(model),
   });

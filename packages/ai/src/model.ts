@@ -13,7 +13,7 @@ export interface ResolvedAIModel {
   apiKey: string | undefined;
 }
 
-export const resolveAIModel = ({
+export const resolveAIModelConfig = ({
   modelId,
   baseURL,
   apiKey,
