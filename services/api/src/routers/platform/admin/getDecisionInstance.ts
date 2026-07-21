@@ -71,6 +71,7 @@ export const getDecisionInstanceRouter = router({
         with: {
           owner: { columns: { id: true, name: true, slug: true } },
           steward: { columns: { id: true, name: true, slug: true } },
+          profile: { columns: { slug: true } },
           process: { columns: { processSchema: true } },
         },
       });
@@ -94,6 +95,7 @@ export const getDecisionInstanceRouter = router({
       return adminDecisionInstanceDetailSchema.parse({
         id: instance.id,
         name: instance.name,
+        slug: instance.profile?.slug ?? null,
         status: instance.status,
         createdAt: instance.createdAt,
         owner: instance.owner ?? null,

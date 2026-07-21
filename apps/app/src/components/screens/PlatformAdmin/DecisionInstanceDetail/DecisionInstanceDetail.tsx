@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { AdminDecisionPhase } from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
+import { buttonVariants } from '@op/sense/Button';
 import {
   Card,
   CardAction,
@@ -15,7 +16,7 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { useFormatter } from 'next-intl';
 import { Suspense } from 'react';
-import { LuArrowLeft } from 'react-icons/lu';
+import { LuArrowLeft, LuArrowUpRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -71,6 +72,15 @@ const DecisionInstanceDetailContent = ({
             <Badge variant="secondary">
               {STATUS_DISPLAY[detail.status] ?? detail.status}
             </Badge>
+          ) : null}
+          {detail.slug ? (
+            <Link
+              href={`/decisions/${detail.slug}`}
+              className={`${buttonVariants({ variant: 'outline', size: 'sm' })} ms-auto`}
+            >
+              {t('View decision')}
+              <LuArrowUpRight data-icon="inline-end" />
+            </Link>
           ) : null}
         </div>
         <dl className="flex flex-wrap gap-x-10 gap-y-2">

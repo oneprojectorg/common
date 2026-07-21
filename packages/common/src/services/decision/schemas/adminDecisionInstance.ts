@@ -58,6 +58,8 @@ export type AdminDecisionPhase = z.infer<typeof adminDecisionPhaseSchema>;
 export const adminDecisionInstanceDetailSchema = z.object({
   id: z.string(),
   name: z.string(),
+  /** Slug of the decision's profile, used for the public decision URL. */
+  slug: z.string().nullable(),
   status: z.enum(ProcessStatus).nullable(),
   createdAt: z.string().nullable(),
   owner: adminProfileRefSchema.nullable(),
