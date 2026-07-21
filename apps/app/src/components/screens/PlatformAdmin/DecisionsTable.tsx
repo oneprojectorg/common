@@ -82,32 +82,31 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      {/* Reserved height so Previous/Next don't shift as row heights vary between pages. */}
-      <div className="min-h-[26rem]">
-        <Table
-          aria-label={t('All Decisions')}
-          key={decisions.map((d) => d.id).join(',')}
-          className="leading-normal whitespace-normal"
-        >
-          <TableHeader>
-            <TableColumn isRowHeader>{t('Name')}</TableColumn>
-            <TableColumn>{t('Current Phase')}</TableColumn>
-            <TableColumn>{t('Steward')}</TableColumn>
-            <TableColumn>{t('Proposals')}</TableColumn>
-            <TableColumn>{t('Participants')}</TableColumn>
-            <TableColumn>{t('Status')}</TableColumn>
-            <TableColumn>{t('Created')}</TableColumn>
-            <TableColumn className="text-end">{t('Actions')}</TableColumn>
-          </TableHeader>
-          <TableBody>
-            {decisions.map((decision) => (
-              <TableRow key={decision.id} id={decision.id}>
-                <DecisionsRowCells decision={decision} />
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {/* The shared table Root hardcodes text-sm/6 (24px leading); the descendant
+          override is the only hook that reaches it. */}
+      <Table
+        aria-label={t('All Decisions')}
+        key={decisions.map((d) => d.id).join(',')}
+        className="whitespace-normal [&_table]:leading-tight"
+      >
+        <TableHeader>
+          <TableColumn isRowHeader>{t('Name')}</TableColumn>
+          <TableColumn>{t('Current Phase')}</TableColumn>
+          <TableColumn>{t('Steward')}</TableColumn>
+          <TableColumn>{t('Proposals')}</TableColumn>
+          <TableColumn>{t('Participants')}</TableColumn>
+          <TableColumn>{t('Status')}</TableColumn>
+          <TableColumn>{t('Created')}</TableColumn>
+          <TableColumn className="text-end">{t('Actions')}</TableColumn>
+        </TableHeader>
+        <TableBody>
+          {decisions.map((decision) => (
+            <TableRow key={decision.id} id={decision.id}>
+              <DecisionsRowCells decision={decision} />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       <div className="mt-4">
         <Pagination
           range={{
