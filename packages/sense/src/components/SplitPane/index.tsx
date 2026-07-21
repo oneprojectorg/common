@@ -109,12 +109,14 @@ function SplitPaneImpl({
           <div
             key={pane.props.id}
             role="tabpanel"
-            className={paneVariants({
-              divider: index < panes.length - 1,
-              padding: pane.props.unpadded ? 'none' : 'default',
-              active: !showTabs || activeId === pane.props.id,
-              className: pane.props.className,
-            })}
+            className={cn(
+              paneVariants({
+                divider: index < panes.length - 1,
+                padding: pane.props.unpadded ? 'none' : 'default',
+                active: !showTabs || activeId === pane.props.id,
+              }),
+              pane.props.className,
+            )}
           >
             {pane.props.children}
           </div>
