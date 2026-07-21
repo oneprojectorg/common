@@ -4,8 +4,8 @@ import {
   getProposalIdsForPhase,
 } from '@op/common';
 import { adminDecisionReviewAssignmentsSchema } from '@op/common/client';
-import { db, inArray } from '@op/db/client';
-import { profiles, proposals } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/client';
+import { profiles, proposals, users } from '@op/db/schema';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
@@ -91,8 +91,15 @@ export const listDecisionReviewAssignmentsRouter = router({
                 id: proposals.id,
                 proposalData: proposals.proposalData,
                 submittedByProfileId: proposals.submittedByProfileId,
+                authorId: profiles.id,
+                authorName: profiles.name,
+                authorSlug: profiles.slug,
               })
               .from(proposals)
+              .leftJoin(
+                profiles,
+                eq(proposals.submittedByProfileId, profiles.id),
+              )
               .where(inArray(proposals.id, phaseProposalIds))
           : [];
 
@@ -103,8 +110,10 @@ export const listDecisionReviewAssignmentsRouter = router({
                 id: profiles.id,
                 name: profiles.name,
                 slug: profiles.slug,
+                email: users.email,
               })
               .from(profiles)
+              .leftJoin(users, eq(users.profileId, profiles.id))
               .where(inArray(profiles.id, eligibleProfileIds))
           : [];
 
@@ -181,6 +190,13 @@ export const listDecisionReviewAssignmentsRouter = router({
               ? (titleParsed.data.title ?? null)
               : null,
             submittedByProfileId: proposal.submittedByProfileId,
+            author: proposal.authorId
+              ? {
+                  id: proposal.authorId,
+                  name: proposal.authorName,
+                  slug: proposal.authorSlug,
+                }
+              : null,
           };
         }),
       });

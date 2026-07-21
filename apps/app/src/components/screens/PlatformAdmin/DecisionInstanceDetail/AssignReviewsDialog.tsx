@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import type {
   AdminAssignableProposal,
-  AdminProfileRef,
+  AdminEligibleReviewer,
 } from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
@@ -42,7 +42,7 @@ export const AssignReviewsDialog = ({
 }: {
   instanceId: string;
   phaseId: string;
-  eligibleReviewers: AdminProfileRef[];
+  eligibleReviewers: AdminEligibleReviewer[];
   proposals: AdminAssignableProposal[];
 }) => {
   const t = useTranslations();
@@ -58,6 +58,7 @@ export const AssignReviewsDialog = ({
       eligibleReviewers.map((reviewer) => ({
         value: reviewer.id,
         label: reviewer.name ?? reviewer.slug ?? reviewer.id,
+        email: reviewer.email,
       })),
     [eligibleReviewers],
   );
@@ -149,7 +150,14 @@ export const AssignReviewsDialog = ({
               <SelectContent>
                 {reviewerItems.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    {item.label}
+                    <span className="flex items-baseline gap-2">
+                      {item.label}
+                      {item.email ? (
+                        <span className="text-sm text-muted-foreground">
+                          {item.email}
+                        </span>
+                      ) : null}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -191,8 +199,15 @@ export const AssignReviewsDialog = ({
                         disabled={isOwnProposal}
                         onCheckedChange={() => toggleProposal(proposal.id)}
                       />
-                      <span className="truncate">
-                        {proposal.title ?? t('Untitled proposal')}
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate">
+                          {proposal.title ?? t('Untitled proposal')}
+                        </span>
+                        {proposal.author ? (
+                          <span className="truncate text-sm text-muted-foreground">
+                            {proposal.author.name ?? proposal.author.slug}
+                          </span>
+                        ) : null}
                       </span>
                       {isOwnProposal ? (
                         <Badge variant="outline" className="ms-auto shrink-0">

@@ -101,17 +101,25 @@ export const adminAssignableProposalSchema = z.object({
   id: z.string(),
   title: z.string().nullable(),
   submittedByProfileId: z.string().nullable(),
+  author: adminProfileRefSchema.nullable(),
 });
 
 export type AdminAssignableProposal = z.infer<
   typeof adminAssignableProposalSchema
 >;
 
+/** Eligible reviewer candidate; email comes from the member's user record. */
+export const adminEligibleReviewerSchema = adminProfileRefSchema.extend({
+  email: z.string().nullable(),
+});
+
+export type AdminEligibleReviewer = z.infer<typeof adminEligibleReviewerSchema>;
+
 export const adminDecisionReviewAssignmentsSchema = z.object({
   reviewers: z.array(adminDecisionReviewerSchema),
   totalAssignments: z.number(),
   /** Members eligible to review (REVIEW capability on the decisions zone). */
-  eligibleReviewers: z.array(adminProfileRefSchema),
+  eligibleReviewers: z.array(adminEligibleReviewerSchema),
   /** Proposals in the phase (per getProposalIdsForPhase), candidates for manual assignment. */
   proposals: z.array(adminAssignableProposalSchema),
 });

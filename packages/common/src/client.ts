@@ -60,6 +60,8 @@ export {
   type AdminDecisionReviewer,
   adminAssignableProposalSchema,
   type AdminAssignableProposal,
+  adminEligibleReviewerSchema,
+  type AdminEligibleReviewer,
   adminDecisionReviewAssignmentsSchema,
   type AdminDecisionReviewAssignments,
 } from './services/decision/schemas/adminDecisionInstance';
