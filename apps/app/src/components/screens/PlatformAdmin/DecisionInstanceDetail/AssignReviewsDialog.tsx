@@ -5,6 +5,7 @@ import type {
   AdminAssignableProposal,
   AdminProfileRef,
 } from '@op/common/client';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import {
@@ -173,25 +174,48 @@ export const AssignReviewsDialog = ({
               </Button>
             </div>
             <ul className="flex max-h-64 flex-col overflow-y-auto rounded-lg border">
-              {assignableProposals.map((proposal) => (
-                <li key={proposal.id} className="border-b last:border-b-0">
-                  <Label className="flex items-center gap-2.5 px-3 py-2 font-normal hover:bg-muted/50">
-                    <Checkbox
-                      checked={selectedIds.has(proposal.id)}
-                      onCheckedChange={() => toggleProposal(proposal.id)}
-                    />
-                    <span className="truncate">
-                      {proposal.title ?? t('Untitled proposal')}
-                    </span>
-                  </Label>
-                </li>
-              ))}
-              {assignableProposals.length === 0 ? (
+              {proposals.map((proposal) => {
+                const isOwnProposal =
+                  proposal.submittedByProfileId === reviewerId;
+                return (
+                  <li key={proposal.id} className="border-b last:border-b-0">
+                    <Label
+                      className={`flex items-center gap-2.5 px-3 py-2 font-normal ${
+                        isOwnProposal
+                          ? 'text-muted-foreground'
+                          : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={!isOwnProposal && selectedIds.has(proposal.id)}
+                        disabled={isOwnProposal}
+                        onCheckedChange={() => toggleProposal(proposal.id)}
+                      />
+                      <span className="truncate">
+                        {proposal.title ?? t('Untitled proposal')}
+                      </span>
+                      {isOwnProposal ? (
+                        <Badge variant="outline" className="ms-auto shrink-0">
+                          {t("Reviewer's own proposal")}
+                        </Badge>
+                      ) : null}
+                    </Label>
+                  </li>
+                );
+              })}
+              {proposals.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-muted-foreground">
-                  {t('No assignable proposals.')}
+                  {t('No proposals in this phase yet.')}
                 </li>
               ) : null}
             </ul>
+            {proposals.length > 0 && assignableProposals.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  'This reviewer authored every proposal in this phase, so there is nothing to assign to them.',
+                )}
+              </p>
+            ) : null}
           </div>
         </div>
 

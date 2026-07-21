@@ -1482,5 +1482,8 @@
   "Select all": "Select all",
   "Clear": "Clear",
   "Upcoming": "Upcoming",
-  "View decision": "View decision"
+  "View decision": "View decision",
+  "Reviewer's own proposal": "Reviewer's own proposal",
+  "No proposals in this phase yet.": "No proposals in this phase yet.",
+  "This reviewer authored every proposal in this phase, so there is nothing to assign to them.": "This reviewer authored every proposal in this phase, so there is nothing to assign to them."
 }
