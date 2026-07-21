@@ -47,6 +47,18 @@ export const Variants: Story = {
   ),
 };
 
+export const Large: Story = {
+  render: () => (
+    <TagGroup label="Focus areas" className="max-w-md">
+      {focusAreas.map((area) => (
+        <Tag key={area} size="lg">
+          {area}
+        </Tag>
+      ))}
+    </TagGroup>
+  ),
+};
+
 // Removable tags are stateful so the remove buttons actually work.
 const RemovableDemo = () => {
   const [tags, setTags] = useState(focusAreas);
