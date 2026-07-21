@@ -15,7 +15,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
-import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
+import { LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -86,7 +86,6 @@ export function ProposalCardMenu({
     onSuccess: (_, variables) => {
       if (variables.data.status) {
         const statusMessage = match(variables.data.status, {
-          [ProposalStatus.APPROVED]: t('Proposal shortlisted successfully'),
           [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
         });
         toast.success({ message: statusMessage });
@@ -125,13 +124,6 @@ export function ProposalCardMenu({
       }
     },
   });
-
-  const handleApprove = () => {
-    updateStatusMutation.mutate({
-      proposalId: proposal.id,
-      data: { status: ProposalStatus.APPROVED },
-    });
-  };
 
   const handleReject = () => {
     updateStatusMutation.mutate({
@@ -189,18 +181,8 @@ export function ProposalCardMenu({
       isDestructive?: boolean;
     }> = [];
 
-    // Admin actions (shortlist, reject, hide) - not for drafts
+    // Admin actions (reject, hide) - not for drafts
     if (canManage && proposal.status !== ProposalStatus.DRAFT) {
-      items.push({
-        key: 'approve',
-        icon: <LuCheck className="size-5" />,
-        label: t('Shortlist for voting'),
-        onAction: () => {
-          handleApprove();
-          setIsMenuSheetOpen(false);
-        },
-        isDisabled: isLoading || proposal.status === ProposalStatus.APPROVED,
-      });
       items.push({
         key: 'reject',
         icon: <LuX className="size-5" />,
