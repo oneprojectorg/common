@@ -1,3 +1,5 @@
+'use client';
+
 // From https://reactbits.dev/animations/logo-loop
 import React, {
   useCallback,
@@ -157,9 +159,7 @@ const useAnimationLoop = (
     }
 
     if (prefersReduced) {
-      track.style.transform = isVertical
-        ? 'translate3d(0, 0, 0)'
-        : 'translate3d(0, 0, 0)';
+      track.style.transform = 'translate3d(0, 0, 0)';
       return () => {
         lastTimestampRef.current = null;
       };
