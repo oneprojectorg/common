@@ -97,7 +97,9 @@ function DatePicker({
             value={inputValue}
             onChange={handleInputChange}
             onBlur={handleBlur}
-            onClick={() => setOpen(true)}
+            // No onClick open — clicking the input is for typing; the popup
+            // would steal focus. Calendar opens via the icon or ArrowDown,
+            // matching the upstream shadcn date-picker input example.
             onKeyDown={(event) => {
               if (event.key === 'ArrowDown') {
                 event.preventDefault();
