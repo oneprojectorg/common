@@ -144,12 +144,12 @@
     "@storybook/addon-themes": "^10.1.11",
     "@storybook/react": "^10.1.11",
     "@storybook/react-vite": "^10.1.11",
-    "@tailwindcss/postcss": "4.1.18",
+    "@tailwindcss/postcss": "4.3.3",
     "@types/react": "19.0.10",
     "postcss": "^8.5.3",
     "react": "^19.0.1",
     "storybook": "^10.1.11",
-    "tailwindcss": "4.1.18",
+    "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vite": "^6.2.0"
   }

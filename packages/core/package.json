@@ -24,7 +24,7 @@
     "@op/typescript-config": "workspace:*",
     "@types/he": "^1.2.3",
     "@types/node": "^22.13.5",
-    "tailwindcss": "4.1.18",
+    "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vitest": "^4.0.18"
   }
