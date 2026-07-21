@@ -35,7 +35,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-      document.cookie = `${POSTHOG_SESSION_ID_COOKIE}=${sessionId}; path=/; max-age=86400; SameSite=Lax${secure}`;
+      document.cookie = `${POSTHOG_SESSION_ID_COOKIE}=${encodeURIComponent(sessionId)}; path=/; max-age=86400; SameSite=Lax${secure}`;
     });
   }, []);
 
