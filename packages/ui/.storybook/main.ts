@@ -28,6 +28,28 @@ const config: StorybookConfig = {
       ...config.resolve.alias,
       '@': resolve(__dirname, '../src'),
     };
+
+    // Rollup drops module-level directives when bundling and warns once per
+    // module — base-ui ships 'use client' in nearly every file. The directive
+    // is meaningless in a Storybook (client-only) bundle; silence just that
+    // warning and forward everything else.
+    config.build = config.build || {};
+    config.build.rollupOptions = config.build.rollupOptions || {};
+    const previousOnwarn = config.build.rollupOptions.onwarn;
+    config.build.rollupOptions.onwarn = (warning, warn) => {
+      if (
+        warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+        warning.message.includes('use client')
+      ) {
+        return;
+      }
+      if (previousOnwarn) {
+        previousOnwarn(warning, warn);
+      } else {
+        warn(warning);
+      }
+    };
+
     return config;
   },
 };
