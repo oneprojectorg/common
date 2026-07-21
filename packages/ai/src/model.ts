@@ -29,9 +29,10 @@ export const resolveAIModel = ({
   }
 
   // The env key belongs to the env-configured endpoint only — never attach
-  // the deploy credential to a caller-supplied (end-user) endpoint.
+  // the deploy credential to a caller-supplied (end-user) endpoint. ?? not ||
+  // so an explicit empty apiKey stays keyless instead of pulling the env key.
   const resolvedApiKey =
-    baseURL == null ? apiKey || process.env.AI_API_KEY : apiKey;
+    baseURL == null ? (apiKey ?? process.env.AI_API_KEY) : apiKey;
 
   return {
     providerId: 'op-ai',

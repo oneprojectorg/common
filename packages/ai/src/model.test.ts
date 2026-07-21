@@ -65,4 +65,13 @@ describe('resolveAIModel', () => {
 
     expect(model.apiKey).toBeUndefined();
   });
+
+  it('treats an explicit empty apiKey as keyless on the env endpoint', () => {
+    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
+    vi.stubEnv('AI_API_KEY', 'deploy-key');
+
+    const model = resolveAIModel({ modelId: 'model-x', apiKey: '' });
+
+    expect(model.apiKey).toBeUndefined();
+  });
 });
