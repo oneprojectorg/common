@@ -126,7 +126,13 @@ function DatePicker({
           </InputGroupAddon>
         </InputGroup>
         {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
-        <PopoverContent align="start" className="sense w-auto p-0">
+        {/* End-aligned to the calendar icon, per the upstream input example. */}
+        <PopoverContent
+          align="end"
+          alignOffset={-8}
+          sideOffset={10}
+          className="sense w-auto overflow-hidden p-0"
+        >
           <Calendar
             mode="single"
             selected={value}
