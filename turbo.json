@@ -58,6 +58,7 @@
     "OPENL_RAPIDAPI_KEY",
     "AI_API_KEY",
     "AI_BASE_URL",
+    "AI_MODEL",
     "🌎 ------ PUBLIC VARS ------ 🌎",
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
