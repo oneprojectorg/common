@@ -85,7 +85,9 @@ describe('createAIAgent', () => {
 
 describe('asking an agent a question', () => {
   it('answers via the configured OpenAI-compatible endpoint', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(chatCompletionResponse('Paris'));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(chatCompletionResponse('Paris'));
     vi.stubGlobal('fetch', fetchMock);
 
     const agent = createAIAgent({
