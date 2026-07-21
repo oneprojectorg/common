@@ -68,27 +68,6 @@ export const States: Story = {
   ),
 };
 
-// Calendar opens on focus without stealing it — typing keeps working while
-// the calendar is visible. ArrowDown moves focus into the calendar.
-const OpenOnFocusDemo = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date(2026, 5, 15));
-
-  return (
-    <DatePicker
-      label="Event date"
-      description="Focus the field: the calendar appears but typing still works."
-      openOnFocus
-      value={date}
-      onChange={setDate}
-      className="w-72"
-    />
-  );
-};
-
-export const OpenOnFocus: Story = {
-  render: () => <OpenOnFocusDemo />,
-};
-
 // Calendar-only picker (no typing), matching the upstream shadcn simple
 // date-picker example.
 const ButtonDemo = () => {

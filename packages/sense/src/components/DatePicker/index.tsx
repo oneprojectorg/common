@@ -32,12 +32,6 @@ interface DatePickerProps {
   required?: boolean;
   id?: string;
   className?: string;
-  /**
-   * Open the calendar when the input gains focus, without moving focus into
-   * it — typing keeps working while the calendar is visible. ArrowDown moves
-   * focus into the calendar for keyboard navigation.
-   */
-  openOnFocus?: boolean;
 }
 
 function DatePicker({
@@ -53,26 +47,11 @@ function DatePicker({
   required,
   id,
   className,
-  openOnFocus = false,
 }: DatePickerProps) {
   const reactId = React.useId();
   const inputId = id ?? reactId;
-  const popupId = React.useId();
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
-  // Set while we refocus the input after a day pick, so the focus handler
-  // doesn't immediately reopen the popup the pick just closed.
-  const suppressOpenOnFocusRef = React.useRef(false);
 
   const [open, setOpen] = React.useState(false);
-
-  // In openOnFocus mode the popup never takes focus, so ArrowDown hands
-  // focus to the calendar explicitly (day-picker keeps one day tabbable).
-  const focusCalendar = () => {
-    document
-      .getElementById(popupId)
-      ?.querySelector<HTMLElement>('[tabindex="0"]')
-      ?.focus();
-  };
   const [inputValue, setInputValue] = React.useState(() => formatDate(value));
 
   // Follow external value changes (calendar picks route through here too) —
@@ -116,49 +95,23 @@ function DatePicker({
       <Popover open={open} onOpenChange={setOpen}>
         <InputGroup>
           <InputGroupInput
-            ref={inputRef}
             id={inputId}
             value={inputValue}
             onChange={handleInputChange}
             onBlur={handleBlur}
-            // Default mode never opens from the input itself — clicking it is
-            // for typing, and the popup would steal focus (upstream shadcn
-            // behavior). openOnFocus opens a non-focus-stealing popup instead.
-            onFocus={
-              openOnFocus
-                ? () => {
-                    if (suppressOpenOnFocusRef.current) {
-                      suppressOpenOnFocusRef.current = false;
-                      return;
-                    }
-                    setOpen(true);
-                  }
-                : undefined
-            }
-            onClick={openOnFocus ? () => setOpen(true) : undefined}
+            // No onClick open — clicking the input is for typing; the popup
+            // would steal focus. Calendar opens via the icon or ArrowDown,
+            // matching the upstream shadcn date-picker input example.
             onKeyDown={(event) => {
               if (event.key === 'ArrowDown') {
                 event.preventDefault();
-                if (openOnFocus && open) {
-                  focusCalendar();
-                } else {
-                  setOpen(true);
-                }
-              }
-              if (openOnFocus && open && event.key === 'Escape') {
-                setOpen(false);
+                setOpen(true);
               }
             }}
             placeholder={placeholder}
             disabled={disabled}
             required={required}
             aria-invalid={errorMessage ? true : undefined}
-            // The popup opens without an announcement in openOnFocus mode, so
-            // the input carries combobox semantics to surface it to AT.
-            role={openOnFocus ? 'combobox' : undefined}
-            aria-haspopup={openOnFocus ? 'dialog' : undefined}
-            aria-expanded={openOnFocus ? open : undefined}
-            aria-controls={openOnFocus && open ? popupId : undefined}
           />
           <InputGroupAddon align="inline-end">
             <PopoverTrigger
@@ -177,16 +130,10 @@ function DatePicker({
         {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
         {/* End-aligned to the calendar icon, per the upstream input example. */}
         <PopoverContent
-          id={popupId}
           align="end"
           alignOffset={-8}
           sideOffset={10}
           className="sense w-auto overflow-hidden p-0"
-          // openOnFocus: never move focus on open, and don't return it on
-          // close either — a mouse day-pick refocuses the input explicitly
-          // below, while an outside click must not steal focus back.
-          initialFocus={openOnFocus ? false : undefined}
-          finalFocus={openOnFocus ? false : undefined}
         >
           <Calendar
             mode="single"
@@ -196,16 +143,6 @@ function DatePicker({
             onSelect={(date) => {
               onChange?.(date);
               setOpen(false);
-              if (openOnFocus) {
-                suppressOpenOnFocusRef.current = true;
-                inputRef.current?.focus();
-                // focus() fires the focus event synchronously; if the input
-                // was already focused (Safari keeps it there), no event fires
-                // — clear the flag so it can't swallow the next real focus.
-                queueMicrotask(() => {
-                  suppressOpenOnFocusRef.current = false;
-                });
-              }
             }}
           />
         </PopoverContent>
