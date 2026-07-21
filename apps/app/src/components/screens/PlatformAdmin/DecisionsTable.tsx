@@ -85,6 +85,7 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
       <Table
         aria-label={t('All Decisions')}
         key={decisions.map((d) => d.id).join(',')}
+        className="whitespace-normal"
       >
         <TableHeader>
           <TableColumn isRowHeader>{t('Name')}</TableColumn>

@@ -58,7 +58,9 @@ export const DecisionsRowCells = ({
         )}
       </TableCell>
       <TableCell className="text-neutral-charcoal">
-        {decision.stewardName ?? '—'}
+        <span className="block max-w-44 truncate">
+          {decision.stewardName ?? '—'}
+        </span>
       </TableCell>
       <TableCell className="text-neutral-charcoal">
         {decision.totalProposalCount > decision.proposalCount ? (
@@ -88,7 +90,7 @@ export const DecisionsRowCells = ({
           ? (STATUS_DISPLAY[decision.status] ?? decision.status)
           : '—'}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="whitespace-nowrap text-neutral-charcoal">
         {createdAt ? (
           <TooltipTrigger>
             <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
