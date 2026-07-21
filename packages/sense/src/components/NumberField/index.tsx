@@ -54,23 +54,21 @@ function NumberField({
   const reactId = React.useId();
   const inputId = id ?? reactId;
 
-  const [displayValue, setDisplayValue] = React.useState(
-    () => value?.toString() ?? defaultValue?.toString() ?? '',
+  const [displayValue, setDisplayValue] = React.useState(() =>
+    formatValue(value ?? defaultValue),
   );
   const [boundsError, setBoundsError] = React.useState<string | null>(null);
 
   // Follow external value changes when controlled — but leave the display
   // alone when it already parses to the incoming value: that's our own
-  // onChange echoing back, and reformatting it via toString() would flip
-  // large numbers into scientific notation (1e21+) mid-keystroke.
+  // onChange echoing back, and reformatting it would disturb in-progress
+  // typing (e.g. a trailing decimal point).
   React.useEffect(() => {
     if (value === undefined) {
       return;
     }
     setDisplayValue((current) =>
-      parseNumericValue(current) === value
-        ? current
-        : (value?.toString() ?? ''),
+      parseNumericValue(current) === value ? current : formatValue(value),
     );
   }, [value]);
 
@@ -92,14 +90,11 @@ function NumberField({
     const numeric = parseNumericValue(displayValue);
     setBoundsError(validateBounds(numeric, minValue, maxValue));
 
-    // Canonicalize on blur ("00003" → "3", "5." → "5") — unless toString
-    // would flip to scientific notation (1e21+), where the typed digits are
-    // the better representation.
+    // Canonicalize on blur ("00003" → "3", "5." → "5"). toPlainString never
+    // emits scientific notation, so extreme magnitudes stay round-trippable
+    // through filterNumericInput (which would strip an "e").
     if (numeric !== null) {
-      const canonical = numeric.toString();
-      if (!canonical.includes('e')) {
-        setDisplayValue(canonical);
-      }
+      setDisplayValue(toPlainString(numeric));
     }
 
     onBlur?.(event);
@@ -162,6 +157,21 @@ function filterNumericInput(value: string) {
     .replace(/[^0-9.-]/g, '') // Keep only digits, minus, and decimal
     .replace(/(?!^)-/g, '') // Remove minus signs that aren't at the beginning
     .replace(/\.(?=.*\.)/g, ''); // Remove decimal points except the last one
+}
+
+// Render a number as plain digits, never scientific notation — toString()
+// flips to "1e21"/"1e-7" at the extremes, and filterNumericInput would strip
+// the "e" and corrupt the value on the next parse ("1e-7" → 17).
+// Intl caps at 20 fraction digits, so |n| < 1e-21 rounds to "0".
+function toPlainString(n: number) {
+  return n.toLocaleString('en-US', {
+    useGrouping: false,
+    maximumFractionDigits: 20,
+  });
+}
+
+function formatValue(value: number | null | undefined) {
+  return value == null ? '' : toPlainString(value);
 }
 
 function parseNumericValue(value: string) {

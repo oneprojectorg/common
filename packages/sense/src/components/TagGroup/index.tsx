@@ -21,17 +21,28 @@ function TagGroup({
   children,
   ...props
 }: TagGroupProps) {
+  // A <label> can't label a <ul>, so the group name rides aria-labelledby.
+  const labelId = React.useId();
+  const descriptionId = React.useId();
+
   return (
     <div
       data-slot="tag-group"
       className={cn('flex flex-col gap-1', className)}
       {...props}
     >
-      {label ? <FieldLabel>{label}</FieldLabel> : null}
-      <ul data-slot="tag-list" className="flex flex-wrap gap-2">
+      {label ? <FieldLabel id={labelId}>{label}</FieldLabel> : null}
+      <ul
+        data-slot="tag-list"
+        aria-labelledby={label ? labelId : undefined}
+        aria-describedby={description ? descriptionId : undefined}
+        className="flex flex-wrap gap-2"
+      >
         {children}
       </ul>
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      {description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </div>
   );

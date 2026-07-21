@@ -52,9 +52,16 @@ function DatePicker({
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(() => formatDate(value));
 
-  // Follow external value changes (calendar picks route through here too).
+  // Follow external value changes (calendar picks route through here too) —
+  // but leave the text alone when it already parses to the incoming value:
+  // that's our own onChange echoing back, and reformatting non-canonical
+  // typed text ("7/4/2026") mid-keystroke would yank the cursor.
   React.useEffect(() => {
-    setInputValue(formatDate(value));
+    setInputValue((current) =>
+      parseDate(current)?.getTime() === value?.getTime()
+        ? current
+        : formatDate(value),
+    );
   }, [value]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +71,12 @@ function DatePicker({
     if (parsed) {
       onChange?.(parsed);
     }
+  };
+
+  // Reconcile on blur: canonicalize parseable text, reset garbage back to
+  // the committed value so display and value can't diverge.
+  const handleBlur = () => {
+    setInputValue(formatDate(parseDate(inputValue) ?? value));
   };
 
   return (
@@ -83,6 +96,7 @@ function DatePicker({
             id={inputId}
             value={inputValue}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             onClick={() => setOpen(true)}
             onKeyDown={(event) => {
               if (event.key === 'ArrowDown') {
@@ -109,7 +123,8 @@ function DatePicker({
             </PopoverTrigger>
           </InputGroupAddon>
         </InputGroup>
-        <PopoverContent align="start" className="w-auto p-0">
+        {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
+        <PopoverContent align="start" className="sense w-auto p-0">
           <Calendar
             mode="single"
             selected={value}
