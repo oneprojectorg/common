@@ -214,6 +214,11 @@ export const cookieDomains = [
 // PostHog config. Eventually to be moved to env vars
 export const posthogUIHost = 'https://eu.posthog.com';
 
+// Cookie the frontend mirrors its PostHog session id into so server-side
+// renders (which never carry the `x-posthog-session-id` request header) can
+// still stamp `sessionId` onto their logs and link them to a session replay.
+export const POSTHOG_SESSION_ID_COOKIE = 'ph_session_id';
+
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
 
 export const genericEmail = 'support@oneproject.org';

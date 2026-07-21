@@ -1,4 +1,5 @@
 // import type { User } from '@op/supabase/lib';
+import { POSTHOG_SESSION_ID_COOKIE } from '@op/core';
 import {
   logger as opLogger,
   setLogSessionId,
@@ -20,7 +21,11 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   withLogContext(async () => {
     // The frontend forwards its PostHog session id; stamping it here links
     // every log emitted during the request to the user's session replay.
-    const sessionId = ctx.req.headers.get('x-posthog-session-id');
+    // Browser HTTP calls carry it as a header; server-side renders never do,
+    // so fall back to the cookie the frontend mirrors it into.
+    const sessionId =
+      ctx.req.headers.get('x-posthog-session-id') ??
+      ctx.getCookie(POSTHOG_SESSION_ID_COOKIE);
     if (sessionId) {
       setLogSessionId(sessionId);
     }
@@ -76,15 +81,24 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
     const duration = end - start;
     const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${duration}ms`;
 
-    // Log result (skip success logs in test environment)
+    // Emit a wide record on success too (not just failures) so requests that
+    // carry the caller's PostHog session id produce a log linked to their
+    // session replay — an error-only log stream never surfaces the happy path.
     if (result.ok) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.log(
-          `✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,
-        );
-      }
+      opLogger.info(`${path} OK`, {
+        requestId: ctx.requestId,
+        path,
+        type,
+        ip: ctx.ip,
+        duration,
+        status: 'ok',
+        timestamp: end,
+      });
     } else if (result.error) {
-      opLogger.error('Request failed', {
+      // Log the actual error message as the body so the log stream is
+      // self-explanatory — a wall of identical "Request failed" lines forces a
+      // drill-in on every entry. Code/name/stack stay in the attributes.
+      opLogger.error(result.error.message || 'Request failed', {
         requestId: ctx.requestId,
         path,
         type,

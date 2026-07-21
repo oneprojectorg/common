@@ -1,6 +1,6 @@
 'use client';
 
-import { posthogUIHost } from '@op/core';
+import { POSTHOG_SESSION_ID_COOKIE, posthogUIHost } from '@op/core';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
@@ -23,6 +23,19 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       before_send: stampExceptionWithTraceContext,
       // Tracing headers set to `false` because it breaks CORS requests
       __add_tracing_headers: false,
+    });
+
+    // Mirror the session id into a cookie so server-side renders — which never
+    // receive the `x-posthog-session-id` request header the tRPC HTTP link
+    // adds — can still stamp `sessionId` onto their logs. `onSessionId` fires
+    // immediately with the current id and again whenever the session rotates,
+    // and returns the unsubscribe handler for cleanup.
+    return posthog.onSessionId((sessionId) => {
+      if (!sessionId) {
+        return;
+      }
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `${POSTHOG_SESSION_ID_COOKIE}=${encodeURIComponent(sessionId)}; path=/; max-age=86400; SameSite=Lax${secure}`;
     });
   }, []);
 
