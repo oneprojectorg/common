@@ -10,14 +10,16 @@ afterEach(() => {
 });
 
 describe('createAIAgent', () => {
-  it('creates a Mastra agent wired to the configured model', async () => {
-    vi.stubEnv('AI_API_KEY', 'test-key');
+  it('creates a Mastra agent', async () => {
     const { createAIAgent } = await importAgent();
 
     const agent = createAIAgent({
       name: 'test-agent',
       instructions: 'You are a test agent.',
-      modelId: 'provider-model-x',
+      model: {
+        modelId: 'model-x',
+        baseURL: 'https://inference.example.com/v1',
+      },
     });
 
     expect(agent.name).toBe('test-agent');
@@ -25,14 +27,16 @@ describe('createAIAgent', () => {
   });
 
   it('uses an explicit id over the name when given', async () => {
-    vi.stubEnv('AI_API_KEY', 'test-key');
     const { createAIAgent } = await importAgent();
 
     const agent = createAIAgent({
       id: 'stable-id',
       name: 'Display Name',
       instructions: 'You are a test agent.',
-      modelId: 'provider-model-x',
+      model: {
+        modelId: 'model-x',
+        baseURL: 'https://inference.example.com/v1',
+      },
     });
 
     expect(agent.id).toBe('stable-id');
@@ -49,15 +53,15 @@ describe('createAIAgent', () => {
     expect(process.env.MASTRA_TELEMETRY_DISABLED).toBe('false');
   });
 
-  it('defers env config so construction works without AI_API_KEY', async () => {
-    vi.stubEnv('AI_API_KEY', '');
+  it('defers model resolution so construction works without any config', async () => {
+    vi.stubEnv('AI_BASE_URL', '');
     const { createAIAgent } = await importAgent();
 
     expect(() =>
       createAIAgent({
         name: 'test-agent',
         instructions: 'You are a test agent.',
-        modelId: 'provider-model-x',
+        model: { modelId: 'model-x' },
       }),
     ).not.toThrow();
   });

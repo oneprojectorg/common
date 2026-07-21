@@ -1,25 +1,35 @@
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+export interface AIModelConfig {
+  modelId: string;
+  /** OpenAI-compatible inference endpoint. Falls back to AI_BASE_URL. */
+  baseURL?: string;
+  /** Falls back to AI_API_KEY. Omit both for keyless self-hosted endpoints. */
+  apiKey?: string;
+}
 
-import { getAIConfig } from './config';
+export interface ResolvedAIModel {
+  providerId: string;
+  modelId: string;
+  url: string;
+  apiKey: string | undefined;
+}
 
-// createOpenAICompatible has no default endpoint, unlike the OpenAI SDK.
-const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
+export const resolveAIModel = ({
+  modelId,
+  baseURL,
+  apiKey,
+}: AIModelConfig): ResolvedAIModel => {
+  const url = baseURL || process.env.AI_BASE_URL;
 
-export const getAIModel = (modelId?: string) => {
-  const { apiKey, baseURL } = getAIConfig();
-  const resolvedModelId = modelId || process.env.AI_MODEL;
-
-  if (!resolvedModelId) {
+  if (!url) {
     throw new Error(
-      'No model id given. Pass one to getAIModel() or set AI_MODEL in your environment.',
+      'No inference URL configured. Pass baseURL or set AI_BASE_URL in your environment.',
     );
   }
 
-  const provider = createOpenAICompatible({
-    name: 'op-ai',
-    apiKey,
-    baseURL: baseURL ?? DEFAULT_BASE_URL,
-  });
-
-  return provider.chatModel(resolvedModelId);
+  return {
+    providerId: 'op-ai',
+    modelId,
+    url,
+    apiKey: apiKey || process.env.AI_API_KEY || undefined,
+  };
 };

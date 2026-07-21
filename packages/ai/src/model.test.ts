@@ -1,44 +1,65 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const importModel = async () => {
-  vi.resetModules();
-  return import('./model');
-};
+import { resolveAIModel } from './model';
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('getAIModel', () => {
-  it('throws when AI_API_KEY is not set', async () => {
+describe('resolveAIModel', () => {
+  it('throws when no inference URL is configured', () => {
+    vi.stubEnv('AI_BASE_URL', '');
+
+    expect(() => resolveAIModel({ modelId: 'model-x' })).toThrow('AI_BASE_URL');
+  });
+
+  it('uses the given baseURL and apiKey', () => {
+    const model = resolveAIModel({
+      modelId: 'model-x',
+      baseURL: 'https://inference.example.com/v1',
+      apiKey: 'user-key',
+    });
+
+    expect(model).toEqual({
+      providerId: 'op-ai',
+      modelId: 'model-x',
+      url: 'https://inference.example.com/v1',
+      apiKey: 'user-key',
+    });
+  });
+
+  it('prefers explicit config over env fallbacks', () => {
+    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
+    vi.stubEnv('AI_API_KEY', 'env-key');
+
+    const model = resolveAIModel({
+      modelId: 'model-x',
+      baseURL: 'https://user.example.com/v1',
+      apiKey: 'user-key',
+    });
+
+    expect(model.url).toBe('https://user.example.com/v1');
+    expect(model.apiKey).toBe('user-key');
+  });
+
+  it('falls back to AI_BASE_URL and AI_API_KEY', () => {
+    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
+    vi.stubEnv('AI_API_KEY', 'env-key');
+
+    const model = resolveAIModel({ modelId: 'model-x' });
+
+    expect(model.url).toBe('https://env.example.com/v1');
+    expect(model.apiKey).toBe('env-key');
+  });
+
+  it('allows keyless endpoints', () => {
     vi.stubEnv('AI_API_KEY', '');
-    const { getAIModel } = await importModel();
 
-    expect(() => getAIModel('some-model')).toThrow('AI_API_KEY');
-  });
+    const model = resolveAIModel({
+      modelId: 'model-x',
+      baseURL: 'https://ollama.internal/v1',
+    });
 
-  it('throws when no model id is given and AI_MODEL is unset', async () => {
-    vi.stubEnv('AI_API_KEY', 'test-key');
-    vi.stubEnv('AI_MODEL', '');
-    const { getAIModel } = await importModel();
-
-    expect(() => getAIModel()).toThrow('AI_MODEL');
-  });
-
-  it('builds a model for the given model id', async () => {
-    vi.stubEnv('AI_API_KEY', 'test-key');
-    const { getAIModel } = await importModel();
-
-    const model = getAIModel('provider-model-x');
-
-    expect(model.modelId).toBe('provider-model-x');
-  });
-
-  it('falls back to AI_MODEL when no model id is given', async () => {
-    vi.stubEnv('AI_API_KEY', 'test-key');
-    vi.stubEnv('AI_MODEL', 'default-model');
-    const { getAIModel } = await importModel();
-
-    expect(getAIModel().modelId).toBe('default-model');
+    expect(model.apiKey).toBeUndefined();
   });
 });
