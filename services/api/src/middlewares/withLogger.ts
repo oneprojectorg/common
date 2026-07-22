@@ -1,7 +1,10 @@
 // import type { User } from '@op/supabase/lib';
 import { POSTHOG_SESSION_ID_COOKIE } from '@op/core';
 import {
+  getPosthogCookieName,
   logger as opLogger,
+  parsePosthogDistinctId,
+  setLogDistinctId,
   setLogSessionId,
   withLogContext,
 } from '@op/logging';
@@ -31,6 +34,23 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
     }
 
     const start = Date.now();
+
+    // Seed the log context with the browser's PostHog distinct id up front, so
+    // requests that never resolve an authenticated user — logged-out callers on
+    // open endpoints, and requests rejected before an auth middleware runs
+    // `setLogDistinctId` — still link to a person. `setLogDistinctId(user.id)`
+    // later overrides this once auth resolves (for a logged-in user the cookie
+    // already holds that same id).
+    const cookieName = getPosthogCookieName();
+    if (cookieName) {
+      const cookieDistinctId = parsePosthogDistinctId(
+        ctx.getCookie(cookieName),
+      );
+      if (cookieDistinctId) {
+        setLogDistinctId(cookieDistinctId);
+      }
+    }
+
     const logger = {
       debug: (message: string, data?: Record<string, unknown>) => {
         opLogger.debug(message, {

@@ -12,6 +12,7 @@
   "main": "src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "next": "catalog:",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^4.0.18"
   }
 }

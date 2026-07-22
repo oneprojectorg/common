@@ -9,6 +9,13 @@ export {
   setLogSessionId,
 } from './lib/logContext';
 
+// PostHog distinct-id extraction (cookie fallback for person linking)
+export {
+  getPosthogCookieName,
+  parsePosthogDistinctId,
+  getPosthogDistinctIdFromCookieHeader,
+} from './lib/posthogIdentity';
+
 // OpenTelemetry metrics
 export { metrics } from '@opentelemetry/api';
 export type { Counter } from '@opentelemetry/api';
