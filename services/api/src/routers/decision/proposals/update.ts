@@ -11,7 +11,7 @@ import { authenticatedProcedure, router } from '../../../trpcFactory';
 
 export const updateProposalRouter = router({
   updateProposal: authenticatedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 20 },
+    rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(
       z.object({

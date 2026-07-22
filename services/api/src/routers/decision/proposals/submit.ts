@@ -13,7 +13,9 @@ const submitProposalInputSchema = z.object({
 });
 
 export const submitProposalRouter = router({
-  submitProposal: authenticatedProcedure()
+  submitProposal: authenticatedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 30 },
+  })
     .input(submitProposalInputSchema)
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {
