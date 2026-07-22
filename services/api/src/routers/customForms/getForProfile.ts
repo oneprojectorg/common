@@ -9,7 +9,7 @@ export const getForProfile = router({
   // needed inside the logged-in proposal flow, so there is no reason to
   // let anonymous callers enumerate profile UUIDs for form contents.
   getForProfile: authenticatedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 30 },
+    rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(getCustomFormForProfileInputSchema)
     .output(customFormEncoder.nullable())

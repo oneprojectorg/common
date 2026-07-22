@@ -16,7 +16,7 @@ const inputSchema = z.object({
 
 export const getDecisionBySlugRouter = router({
   getDecisionBySlug: openProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 20 },
+    rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(inputSchema)
     .output(decisionProfileWithSchemaEncoder)

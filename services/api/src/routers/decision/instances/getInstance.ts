@@ -22,7 +22,7 @@ import {
 
 export const getLegacyInstanceRouter = router({
   getLegacyInstance: networkAuthenticatedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 30 },
+    rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(legacyGetInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)
@@ -63,7 +63,7 @@ export const getLegacyInstanceRouter = router({
  */
 export const getInstanceRouter = router({
   getInstance: openProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 30 },
+    rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(getInstanceInputSchema)
     .output(processInstanceWithSchemaEncoder)

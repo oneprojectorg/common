@@ -5,7 +5,9 @@ import { z } from 'zod';
 import { openProcedure, router } from '../../../trpcFactory';
 
 export const getLatestSelectionForProposalRouter = router({
-  getLatestSelectionForProposal: openProcedure()
+  getLatestSelectionForProposal: openProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 100 },
+  })
     .input(
       z.object({
         proposalId: z.uuid(),

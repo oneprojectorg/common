@@ -10,7 +10,9 @@ import { openProcedure, router } from '../../../trpcFactory';
 
 export const listProposalsRouter = router({
   /** Lists proposals for a given process instance in the current phase. */
-  listProposals: openProcedure()
+  listProposals: openProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 100 },
+  })
     .input(proposalFilterSchema)
     .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
@@ -27,7 +29,9 @@ export const listProposalsRouter = router({
       return proposalListSchema.parse(result);
     }),
   /** Lists all proposals for a given process instance, no phase filter. */
-  listAllProposals: openProcedure()
+  listAllProposals: openProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 100 },
+  })
     .input(allProposalsFilterSchema)
     .output(allProposalsListSchema)
     .query(async ({ ctx, input }) => {
