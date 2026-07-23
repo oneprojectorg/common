@@ -196,14 +196,12 @@
   }
 }
 
-/* Scrollbar-hiding utility that upstream shadcn defines in its globals.css;
- * command, combobox, and sidebar reference it. */
-@utility no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+/* Tailwind v4.3's `scrollbar-none` sets `scrollbar-width: none`, which older
+ * WebKit (Chrome < 121, Safari < 18.2) ignores. Add back the pseudo-element
+ * fallback so the built-in fully hides scrollbars there too; delete once the
+ * browser floor clears those versions. */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Shadow + blur — the Common Sense shadow collection equals Tailwind's

@@ -116,7 +116,7 @@ export const InDialog: Story = {
 };
 
 // Enough groups and items to exceed the list's max-h-72, exercising the
-// scroll behaviour (scrollbar hidden via the no-scrollbar utility).
+// scroll behaviour (scrollbar hidden via the scrollbar-none utility).
 export const ManyGroups: Story = {
   render: () => (
     <Command className="w-96">
