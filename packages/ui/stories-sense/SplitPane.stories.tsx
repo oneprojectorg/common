@@ -38,8 +38,13 @@ export const Unpadded: Story = {
   render: () => (
     <div className="flex h-96 w-full flex-col overflow-hidden rounded border">
       <SplitPane>
-        <SplitPane.Pane id="list" label="List" unpadded>
-          <div className="bg-muted p-4 text-sm">Unpadded pane</div>
+        {/* Full-bleed fill goes on the pane itself, not inner content — the
+            pane owns the scrollbar gutter, so its background paints under it
+            (a child's would stop at the reserved strip). */}
+        <SplitPane.Pane id="list" label="List" unpadded className="bg-muted">
+          <div className="p-4 text-sm">
+            Unpadded pane — fill reaches every edge.
+          </div>
         </SplitPane.Pane>
         <SplitPane.Pane id="detail" label="Detail">
           <p className="text-sm text-muted-foreground">Padded pane.</p>
