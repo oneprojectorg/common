@@ -6,7 +6,7 @@ import { Button } from '../src/components/Button';
 import { ButtonGroup } from '../src/components/ButtonGroup';
 
 const meta: Meta = {
-  title: 'ButtonGroup',
+  title: 'Legacy/ButtonGroup',
   parameters: {
     layout: 'centered',
   },

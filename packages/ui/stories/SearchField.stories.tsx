@@ -5,6 +5,7 @@ import { Button } from '../src/components/Button';
 import { SearchField } from '../src/components/SearchField';
 
 const meta: Meta<typeof SearchField> = {
+  title: 'Legacy/SearchField',
   component: SearchField,
   parameters: {
     layout: 'centered',

@@ -3,6 +3,7 @@ import type { Meta } from '@storybook/react-vite';
 import { Tag, TagGroup } from '../src/components/TagGroup';
 
 const meta: Meta<typeof Example> = {
+  title: 'Legacy/TagGroup',
   component: TagGroup,
   parameters: {
     layout: 'centered',

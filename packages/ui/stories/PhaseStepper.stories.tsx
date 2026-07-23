@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PhaseStepper } from '../src/components/PhaseStepper';
 
 const meta: Meta<typeof PhaseStepper> = {
-  title: 'PhaseStepper',
+  title: 'Legacy/PhaseStepper',
   component: PhaseStepper,
   parameters: {
     layout: 'centered',

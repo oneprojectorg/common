@@ -5,7 +5,7 @@ import {
 import { Surface } from '../src/components/Surface';
 
 export default {
-  title: 'HorizontalList',
+  title: 'Legacy/HorizontalList',
   component: HorizontalList,
   parameters: {
     layout: 'centered',

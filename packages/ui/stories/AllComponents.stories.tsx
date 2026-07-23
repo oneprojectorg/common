@@ -31,7 +31,7 @@ import * as TabsStories from './Tabs.stories';
 import * as TextFieldStories from './TextField.stories';
 
 const meta: Meta = {
-  title: 'All Components',
+  title: 'Legacy/All Components',
   parameters: {
     layout: 'centered',
   },

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { RequiredAsterisk } from '../src/components/RequiredAsterisk';
 
 const meta: Meta<typeof RequiredAsterisk> = {
-  title: 'RequiredAsterisk',
+  title: 'Legacy/RequiredAsterisk',
   component: RequiredAsterisk,
   parameters: {
     layout: 'centered',

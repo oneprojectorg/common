@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pagination } from '../src/components/Pagination';
 
 export default {
-  title: 'Pagination',
+  title: 'Legacy/Pagination',
   component: Pagination,
   parameters: {
     layout: 'centered',

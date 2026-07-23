@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FileDropZone } from '../src/components/FileDropZone';
 
 const meta: Meta<typeof FileDropZone> = {
+  title: 'Legacy/FileDropZone',
   component: FileDropZone,
   parameters: {
     layout: 'centered',

@@ -3,6 +3,7 @@ import type { Meta } from '@storybook/react-vite';
 import { Tab, TabList, TabPanel, Tabs } from '../src/components/Tabs';
 
 const meta: Meta<typeof Tabs> = {
+  title: 'Legacy/Tabs',
   component: Tabs,
   parameters: {
     layout: 'centered',

@@ -3,6 +3,7 @@ import type { Meta } from '@storybook/react-vite';
 import { Breadcrumb, Breadcrumbs } from '../src/components/Breadcrumbs';
 
 const meta: Meta<typeof Breadcrumbs> = {
+  title: 'Legacy/Breadcrumbs',
   component: Breadcrumbs,
   parameters: {
     layout: 'centered',

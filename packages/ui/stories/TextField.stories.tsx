@@ -6,6 +6,7 @@ import { Button } from '../src/components/Button';
 import { TextField } from '../src/components/TextField';
 
 const meta: Meta<typeof TextField> = {
+  title: 'Legacy/TextField',
   component: TextField,
   parameters: {
     layout: 'centered',

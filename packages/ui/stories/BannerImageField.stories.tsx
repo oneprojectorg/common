@@ -15,7 +15,7 @@ const copy = {
 };
 
 const meta: Meta<typeof BannerImageField> = {
-  title: 'BannerImageField',
+  title: 'Legacy/BannerImageField',
   component: BannerImageField,
   tags: ['autodocs'],
   args: {

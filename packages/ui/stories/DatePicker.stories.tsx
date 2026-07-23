@@ -6,6 +6,7 @@ import type { DateValue } from 'react-aria-components';
 import { DatePicker } from '../src/components/DatePicker';
 
 const meta: Meta<typeof DatePicker> = {
+  title: 'Legacy/DatePicker',
   component: DatePicker,
   tags: ['autodocs'],
   args: {

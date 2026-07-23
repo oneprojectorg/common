@@ -11,7 +11,7 @@ import {
 } from '../src/components/Stepper';
 
 const meta: Meta<any> = {
-  title: 'Components/Stepper',
+  title: 'Legacy/Components/Stepper',
   component: StepItem,
   tags: ['autodocs'],
 };

@@ -1,7 +1,7 @@
 import { ButtonLink } from '../src/components/Button';
 
 export default {
-  title: 'ButtonLink',
+  title: 'Legacy/ButtonLink',
   component: ButtonLink,
   parameters: {
     layout: 'centered',

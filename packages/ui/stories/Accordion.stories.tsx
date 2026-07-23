@@ -45,7 +45,7 @@ const AccordionTitleInput = ({
 };
 
 const meta: Meta<typeof Accordion> = {
-  title: 'Accordion',
+  title: 'Legacy/Accordion',
   component: Accordion,
   parameters: {
     layout: 'centered',

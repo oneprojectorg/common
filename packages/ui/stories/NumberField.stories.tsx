@@ -6,6 +6,7 @@ import { Button } from '../src/components/Button';
 import { NumberField } from '../src/components/NumberField';
 
 const meta: Meta<typeof NumberField> = {
+  title: 'Legacy/NumberField',
   component: NumberField,
   parameters: {
     layout: 'centered',

@@ -9,7 +9,7 @@ import {
 } from '../src/components/Sheet';
 
 export default {
-  title: 'Sheet',
+  title: 'Legacy/Sheet',
   component: Sheet,
   parameters: {
     layout: 'centered',

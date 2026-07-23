@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonLine } from '../src/components/Skeleton';
 
 export default {
-  title: 'Skeleton',
+  title: 'Legacy/Skeleton',
   component: Skeleton,
   parameters: {
     layout: 'centered',

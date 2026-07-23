@@ -2,7 +2,7 @@ import { Button } from '../src/components/Button';
 import { Toast, toast } from '../src/components/Toast';
 
 export default {
-  title: 'Toast',
+  title: 'Legacy/Toast',
   component: Toast,
   parameters: {
     layout: 'centered',

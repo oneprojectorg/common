@@ -4,7 +4,7 @@ import { Button } from '../src/components/Button';
 import { Checkbox, CheckboxGroup } from '../src/components/Checkbox';
 
 export default {
-  title: 'CheckboxGroup',
+  title: 'Legacy/CheckboxGroup',
   component: CheckboxGroup,
   parameters: {
     layout: 'centered',

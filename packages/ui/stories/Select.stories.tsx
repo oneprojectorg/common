@@ -5,6 +5,7 @@ import { Button } from '../src/components/Button';
 import { Select, SelectItem, SelectSection } from '../src/components/Select';
 
 const meta: Meta<typeof Select> = {
+  title: 'Legacy/Select',
   component: Select,
   parameters: {
     layout: 'centered',

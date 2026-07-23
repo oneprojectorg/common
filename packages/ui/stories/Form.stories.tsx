@@ -5,6 +5,7 @@ import { Form } from '../src/components/Form';
 import { TextField } from '../src/components/TextField';
 
 const meta: Meta<typeof Form> = {
+  title: 'Legacy/Form',
   component: Form,
   parameters: {
     layout: 'centered',
