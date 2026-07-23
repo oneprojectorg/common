@@ -364,6 +364,7 @@ const ProposalsListContent = ({
   permissions,
   currentPhase,
   proposalsHidden,
+  excludeAssignedForReview,
   pinOffset,
   phase,
   queryParams,
@@ -623,6 +624,7 @@ const ProposalsListContent = ({
             hasFilter={hasActiveFilter}
             isVotingPhase={isVotingPhase}
             proposalsHidden={proposalsHidden}
+            excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
           />
         )}

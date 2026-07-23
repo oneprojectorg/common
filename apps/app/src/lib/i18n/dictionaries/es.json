@@ -171,6 +171,8 @@
   "{count, plural, one {# proposal} other {# proposals}}": "{count, plural, one {# propuesta} other {# propuestas}}",
   "{count, plural, one {# participant} other {# participants}}": "{count, plural, one {# participante} other {# participantes}}",
   "No proposals yet": "Aún no hay propuestas.",
+  "No other proposals": "No hay otras propuestas",
+  "There are no proposals outside your review queue.": "No hay propuestas fuera de tu cola de revisión.",
   "You could be the first one to submit a proposal": "¡Podrías ser el primero en enviar una propuesta! 😉",
   "You'll see your proposal here once you submit.": "Verás tu propuesta aquí una vez que la envíes.",
   "Proposals are private during this phase.": "Las propuestas son privadas durante esta fase.",

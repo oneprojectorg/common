@@ -172,6 +172,8 @@
   "{count, plural, one {# proposal} other {# proposals}}": "{count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}}",
   "{count, plural, one {# participant} other {# participants}}": "{count, plural, one {# জন অংশগ্রহণকারী} other {# জন অংশগ্রহণকারী}}",
   "No proposals yet": "এখনও কোন প্রস্তাব নেই।",
+  "No other proposals": "অন্য কোনো প্রস্তাবনা নেই",
+  "There are no proposals outside your review queue.": "আপনার পর্যালোচনা তালিকার বাইরে কোনো প্রস্তাবনা নেই।",
   "You could be the first one to submit a proposal": "আপনি একটি প্রস্তাব জমা দেওয়ার ক্ষেত্রে প্রথম হতে পারেন! 😉",
   "You'll see your proposal here once you submit.": "আপনি জমা দেওয়ার পর এখানে আপনার প্রস্তাব দেখতে পাবেন।",
   "Proposals are private during this phase.": "এই পর্যায়ে প্রস্তাবগুলো ব্যক্তিগত।",

@@ -53,6 +53,12 @@ export interface ProposalsProps {
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+  /**
+   * When true, this list is the reviewer's "Other proposals" tab (proposals
+   * outside their review queue). Tailors the empty state — the generic
+   * "submit the first proposal" copy is wrong here.
+   */
+  excludeAssignedForReview?: boolean;
 }
 
 export const ProposalsGrid = ({
@@ -85,8 +91,29 @@ export const ProposalsGrid = ({
   );
 };
 
-const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
+const NoProposalsFound = ({
+  hasFilter,
+  excludeAssignedForReview,
+}: {
+  hasFilter: boolean;
+  excludeAssignedForReview?: boolean;
+}) => {
   const t = useTranslations();
+
+  // The reviewer's "Other proposals" tab is empty because every proposal is in
+  // their review queue (or none exist yet) — not because nobody has submitted.
+  if (excludeAssignedForReview && !hasFilter) {
+    return (
+      <EmptyState icon={<LuLeaf className="size-6" />}>
+        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+          {t('No other proposals')}
+        </Header3>
+        <p className="text-base text-neutral-charcoal">
+          {t('There are no proposals outside your review queue.')}
+        </p>
+      </EmptyState>
+    );
+  }
 
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
@@ -465,6 +492,7 @@ const ViewProposalsList = ({
   permissions,
   hasFilter,
   proposalsHidden,
+  excludeAssignedForReview,
   revisionRequestIdByProposalId,
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
@@ -474,7 +502,12 @@ const ViewProposalsList = ({
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
     }
-    return <NoProposalsFound hasFilter={hasFilter} />;
+    return (
+      <NoProposalsFound
+        hasFilter={hasFilter}
+        excludeAssignedForReview={excludeAssignedForReview}
+      />
+    );
   }
 
   return (

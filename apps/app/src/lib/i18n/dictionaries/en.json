@@ -133,6 +133,8 @@
   "{count, plural, one {# proposal} other {# proposals}}": "{count, plural, one {# proposal} other {# proposals}}",
   "{count, plural, one {# participant} other {# participants}}": "{count, plural, one {# participant} other {# participants}}",
   "No proposals yet": "No proposals yet.",
+  "No other proposals": "No other proposals",
+  "There are no proposals outside your review queue.": "There are no proposals outside your review queue.",
   "You could be the first one to submit a proposal": "You could be the first one to submit a proposal! 😉",
   "You'll see your proposal here once you submit.": "You'll see your proposal here once you submit.",
   "Proposals are private during this phase.": "Proposals are private during this phase.",
