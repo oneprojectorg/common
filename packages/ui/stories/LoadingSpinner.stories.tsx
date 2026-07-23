@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '../src/components/LoadingSpinner';
 
 export default {
-  title: 'LoadingSpinner',
+  title: 'Legacy/LoadingSpinner',
   component: LoadingSpinner,
   parameters: {
     layout: 'centered',

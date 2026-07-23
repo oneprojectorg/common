@@ -1,7 +1,7 @@
 import { MediaDisplay } from '../src/components/MediaDisplay';
 
 export default {
-  title: 'MediaDisplay',
+  title: 'Legacy/MediaDisplay',
   component: MediaDisplay,
   parameters: {
     layout: 'centered',

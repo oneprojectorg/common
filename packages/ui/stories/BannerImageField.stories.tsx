@@ -6,7 +6,7 @@ const SAMPLE_IMAGE = 'https://picsum.photos/1200/400';
 
 const copy = {
   label: 'Banner image',
-  title: 'Upload banner image',
+  title: 'Legacy/Upload banner image',
   description: 'PNG, JPG, WebP or GIF · recommended 2400×800px · max 25MB',
   helperText:
     'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',

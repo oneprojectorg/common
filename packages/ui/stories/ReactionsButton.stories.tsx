@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ReactionsButton } from '../src/components/ReactionsButton';
 
 export default {
-  title: 'ReactionsButton',
+  title: 'Legacy/ReactionsButton',
   component: ReactionsButton,
   parameters: {
     layout: 'centered',

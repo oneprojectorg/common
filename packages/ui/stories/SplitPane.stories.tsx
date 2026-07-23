@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { SplitPane } from '../src/components/SplitPane';
 
 const meta: Meta<typeof SplitPane> = {
-  title: 'SplitPane',
+  title: 'Legacy/SplitPane',
   component: SplitPane,
   tags: ['autodocs'],
   parameters: {

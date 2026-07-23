@@ -10,7 +10,7 @@ import {
 import { ProfileItem } from '../src/components/ProfileItem';
 
 export default {
-  title: 'NotificationPanel',
+  title: 'Legacy/NotificationPanel',
   component: NotificationPanel,
   parameters: {
     layout: 'padded',

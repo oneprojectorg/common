@@ -12,7 +12,7 @@ import {
 } from '../src/components/ui/table';
 
 const meta: Meta<typeof Table> = {
-  title: 'Intent UI/Table',
+  title: 'Legacy/Intent UI/Table',
   component: Table,
   parameters: {
     layout: 'padded',

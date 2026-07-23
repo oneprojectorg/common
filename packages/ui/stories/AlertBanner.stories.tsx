@@ -4,7 +4,7 @@ import { LuLock, LuTriangleAlert } from 'react-icons/lu';
 import { AlertBanner } from '../src/components/AlertBanner';
 
 const meta: Meta<typeof AlertBanner> = {
-  title: 'AlertBanner',
+  title: 'Legacy/AlertBanner',
   component: AlertBanner,
   tags: ['autodocs'],
   args: {

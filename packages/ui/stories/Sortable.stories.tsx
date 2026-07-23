@@ -9,7 +9,7 @@ import {
 import { cn } from '../src/lib/utils';
 
 export default {
-  title: 'Sortable',
+  title: 'Legacy/Sortable',
   component: Sortable,
   parameters: {
     layout: 'centered',

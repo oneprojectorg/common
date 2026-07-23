@@ -3,7 +3,7 @@ import type { Meta } from '@storybook/react-vite';
 import { CommentButton } from '../src/components/CommentButton';
 
 const meta: Meta<typeof CommentButton> = {
-  title: 'CommentButton',
+  title: 'Legacy/CommentButton',
   component: CommentButton,
   parameters: {
     layout: 'centered',

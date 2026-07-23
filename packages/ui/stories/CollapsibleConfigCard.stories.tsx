@@ -13,7 +13,7 @@ import {
 import type { SortableItemControls } from '../src/components/Sortable';
 
 export default {
-  title: 'CollapsibleConfigCard',
+  title: 'Legacy/CollapsibleConfigCard',
   component: CollapsibleConfigCard,
   parameters: {
     layout: 'centered',

@@ -4,7 +4,7 @@ import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
 
 export default {
-  title: 'EmptyState',
+  title: 'Legacy/EmptyState',
   component: EmptyState,
   parameters: {
     layout: 'centered',

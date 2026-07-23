@@ -3,7 +3,7 @@ import { Button } from '../src/components/Button';
 import { ProfileItem } from '../src/components/ProfileItem';
 
 export default {
-  title: 'ProfileItem',
+  title: 'Legacy/ProfileItem',
   component: ProfileItem,
   parameters: {
     layout: 'padded',

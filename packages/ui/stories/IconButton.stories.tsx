@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { IconButton } from '../src/components/IconButton';
 
 const meta: Meta<typeof IconButton> = {
-  title: 'Components/IconButton',
+  title: 'Legacy/Components/IconButton',
   component: IconButton,
   parameters: {
     layout: 'centered',

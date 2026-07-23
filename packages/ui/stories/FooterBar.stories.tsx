@@ -10,7 +10,7 @@ import { FooterBar } from '../src/components/FooterBar';
 import { StepperProgressIndicator } from '../src/components/Stepper';
 
 export default {
-  title: 'FooterBar',
+  title: 'Legacy/FooterBar',
   component: FooterBar,
   parameters: {
     layout: 'fullscreen',

@@ -3,7 +3,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { PhaseCard } from '../src/components/PhaseCard';
 
 const meta: Meta<typeof PhaseCard> = {
-  title: 'PhaseCard',
+  title: 'Legacy/PhaseCard',
   component: PhaseCard,
   parameters: {
     layout: 'padded',

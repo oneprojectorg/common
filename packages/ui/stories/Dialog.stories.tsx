@@ -10,7 +10,7 @@ import {
 import { Modal } from '../src/components/Modal';
 
 export default {
-  title: 'Dialog',
+  title: 'Legacy/Dialog',
   component: Dialog,
   parameters: {
     layout: 'centered',

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { TranslateBanner } from '../src/components/TranslateBanner';
 
 const meta: Meta<typeof TranslateBanner> = {
-  title: 'Components/TranslateBanner',
+  title: 'Legacy/Components/TranslateBanner',
   component: TranslateBanner,
   parameters: {
     layout: 'centered',

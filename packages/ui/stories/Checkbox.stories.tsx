@@ -1,7 +1,7 @@
 import { Checkbox } from '../src/components/Checkbox';
 
 export default {
-  title: 'Checkbox',
+  title: 'Legacy/Checkbox',
   component: Checkbox,
   parameters: {
     layout: 'centered',

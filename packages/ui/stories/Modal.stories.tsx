@@ -11,7 +11,7 @@ import {
 } from '../src/components/Modal';
 
 export default {
-  title: 'Modal',
+  title: 'Legacy/Modal',
   component: Modal,
   parameters: {
     layout: 'centered',

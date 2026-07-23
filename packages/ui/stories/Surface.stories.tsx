@@ -1,7 +1,7 @@
 import { Surface } from '../src/components/Surface';
 
 export default {
-  title: 'Surface',
+  title: 'Legacy/Surface',
   component: Surface,
   parameters: {
     layout: 'centered',

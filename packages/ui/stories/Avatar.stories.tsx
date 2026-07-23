@@ -1,7 +1,7 @@
 import { Avatar, AvatarSkeleton } from '../src/components/Avatar';
 
 export default {
-  title: 'Avatar',
+  title: 'Legacy/Avatar',
   component: Avatar,
   parameters: {
     layout: 'centered',
