@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AutoSizeInput } from '../src/components/AutoSizeInput';
 
 const meta: Meta<typeof AutoSizeInput> = {
+  title: 'Legacy/AutoSizeInput',
   component: AutoSizeInput,
   parameters: {
     layout: 'centered',

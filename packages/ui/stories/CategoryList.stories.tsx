@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CategoryList } from '../src/components/CategoryList';
 
 const meta: Meta<typeof CategoryList> = {
+  title: 'Legacy/CategoryList',
   component: CategoryList,
   parameters: {
     layout: 'centered',

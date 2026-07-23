@@ -7,6 +7,7 @@ import { Dialog } from '../src/components/Dialog';
 import { Popover } from '../src/components/Popover';
 
 const meta: Meta<typeof Popover> = {
+  title: 'Legacy/Popover',
   component: Popover,
   parameters: {
     layout: 'centered',

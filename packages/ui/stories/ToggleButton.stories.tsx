@@ -3,6 +3,7 @@ import type { Meta } from '@storybook/react-vite';
 import { ToggleButton } from '../src/components/ToggleButton';
 
 const meta: Meta<typeof ToggleButton> = {
+  title: 'Legacy/ToggleButton',
   component: ToggleButton,
   parameters: {
     layout: 'centered',

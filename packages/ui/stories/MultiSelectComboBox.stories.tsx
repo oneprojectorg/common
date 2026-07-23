@@ -7,6 +7,7 @@ import {
 } from '../src/components/MultiSelectComboBox';
 
 const meta: Meta<typeof MultiSelectComboBox> = {
+  title: 'Legacy/MultiSelectComboBox',
   component: MultiSelectComboBox,
   parameters: {
     layout: 'centered',

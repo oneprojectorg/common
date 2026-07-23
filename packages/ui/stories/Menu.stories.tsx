@@ -11,6 +11,7 @@ import {
 } from '../src/components/Menu';
 
 const meta: Meta<typeof Menu> = {
+  title: 'Legacy/Menu',
   component: Menu,
   parameters: {
     layout: 'centered',

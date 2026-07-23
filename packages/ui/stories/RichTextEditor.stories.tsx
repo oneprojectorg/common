@@ -8,6 +8,7 @@ import {
 } from '../src/components/RichTextEditor/RichTextEditor';
 
 const meta: Meta<typeof RichTextEditor> = {
+  title: 'Legacy/RichTextEditor',
   component: RichTextEditor,
   parameters: {
     layout: 'centered',

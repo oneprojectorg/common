@@ -6,6 +6,7 @@ import { Button } from '../src/components/Button';
 import { Tooltip } from '../src/components/Tooltip';
 
 const meta: Meta<typeof Tooltip> = {
+  title: 'Legacy/Tooltip',
   component: Tooltip,
   parameters: {
     layout: 'centered',

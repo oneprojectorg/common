@@ -10,6 +10,7 @@ import {
 } from '../src/components/ComboBox';
 
 const meta: Meta<typeof ComboBox> = {
+  title: 'Legacy/ComboBox',
   component: ComboBox,
   parameters: {
     layout: 'centered',
