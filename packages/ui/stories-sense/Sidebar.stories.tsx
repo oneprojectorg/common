@@ -31,7 +31,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof Sidebar> = {
-  title: 'Sense/Sidebar',
+  title: 'Sense/Primitives/Sidebar',
   component: Sidebar,
   decorators: [withSense],
   tags: ['autodocs'],

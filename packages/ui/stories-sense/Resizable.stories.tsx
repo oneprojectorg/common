@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof ResizablePanelGroup> = {
-  title: 'Sense/Resizable',
+  title: 'Sense/Primitives/Resizable',
   component: ResizablePanelGroup,
   decorators: [withSense],
   tags: ['autodocs'],

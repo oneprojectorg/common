@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Accordion> = {
-  title: 'Sense/Accordion',
+  title: 'Sense/Primitives/Accordion',
   component: Accordion,
   decorators: [withSense],
   tags: ['autodocs'],

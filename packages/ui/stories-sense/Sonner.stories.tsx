@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Toaster> = {
-  title: 'Sense/Sonner',
+  title: 'Sense/Primitives/Sonner',
   component: Toaster,
   decorators: [withSense],
   tags: ['autodocs'],

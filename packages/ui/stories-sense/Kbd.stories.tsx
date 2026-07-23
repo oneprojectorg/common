@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Kbd> = {
-  title: 'Sense/Kbd',
+  title: 'Sense/Primitives/Kbd',
   component: Kbd,
   decorators: [withSense],
   tags: ['autodocs'],

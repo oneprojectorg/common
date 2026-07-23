@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Separator> = {
-  title: 'Sense/Separator',
+  title: 'Sense/Primitives/Separator',
   component: Separator,
   decorators: [withSense],
   tags: ['autodocs'],

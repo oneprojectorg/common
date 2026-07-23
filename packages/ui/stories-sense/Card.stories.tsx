@@ -15,7 +15,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Card> = {
-  title: 'Sense/Card',
+  title: 'Sense/Primitives/Card',
   component: Card,
   decorators: [withSense],
   tags: ['autodocs'],

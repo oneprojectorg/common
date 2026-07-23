@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof ScrollArea> = {
-  title: 'Sense/ScrollArea',
+  title: 'Sense/Primitives/ScrollArea',
   component: ScrollArea,
   decorators: [withSense],
   tags: ['autodocs'],

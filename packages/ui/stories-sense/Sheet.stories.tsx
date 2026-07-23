@@ -16,7 +16,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Sheet> = {
-  title: 'Sense/Sheet',
+  title: 'Sense/Primitives/Sheet',
   component: Sheet,
   decorators: [withSense],
   tags: ['autodocs'],

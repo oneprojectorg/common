@@ -19,7 +19,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Field> = {
-  title: 'Sense/Field',
+  title: 'Sense/Primitives/Field',
   component: Field,
   decorators: [withSense],
   tags: ['autodocs'],

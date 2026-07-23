@@ -13,7 +13,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Select> = {
-  title: 'Sense/Select',
+  title: 'Sense/Primitives/Select',
   component: Select,
   decorators: [withSense],
   tags: ['autodocs'],

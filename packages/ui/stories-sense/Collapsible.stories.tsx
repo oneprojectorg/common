@@ -10,7 +10,7 @@ import { LuChevronsUpDown } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Collapsible> = {
-  title: 'Sense/Collapsible',
+  title: 'Sense/Primitives/Collapsible',
   component: Collapsible,
   decorators: [withSense],
   tags: ['autodocs'],

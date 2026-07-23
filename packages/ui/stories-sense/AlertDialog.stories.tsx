@@ -17,7 +17,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof AlertDialog> = {
-  title: 'Sense/AlertDialog',
+  title: 'Sense/Primitives/AlertDialog',
   component: AlertDialog,
   decorators: [withSense],
   tags: ['autodocs'],

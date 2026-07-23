@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Slider> = {
-  title: 'Sense/Slider',
+  title: 'Sense/Primitives/Slider',
   component: Slider,
   decorators: [withSense],
   tags: ['autodocs'],

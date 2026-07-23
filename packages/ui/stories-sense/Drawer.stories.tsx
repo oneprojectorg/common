@@ -16,7 +16,7 @@ import { LuMinus, LuPlus } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Drawer> = {
-  title: 'Sense/Drawer',
+  title: 'Sense/Primitives/Drawer',
   component: Drawer,
   decorators: [withSense],
   tags: ['autodocs'],

@@ -18,7 +18,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Menubar> = {
-  title: 'Sense/Menubar',
+  title: 'Sense/Primitives/Menubar',
   component: Menubar,
   decorators: [withSense],
   tags: ['autodocs'],

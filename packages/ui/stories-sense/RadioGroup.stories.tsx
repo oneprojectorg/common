@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof RadioGroup> = {
-  title: 'Sense/RadioGroup',
+  title: 'Sense/Primitives/RadioGroup',
   component: RadioGroup,
   decorators: [withSense],
   tags: ['autodocs'],

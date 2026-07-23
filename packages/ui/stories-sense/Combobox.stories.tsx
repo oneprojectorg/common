@@ -19,7 +19,7 @@ import { LuGlobe } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof Combobox> = {
-  title: 'Sense/Combobox',
+  title: 'Sense/Primitives/Combobox',
   component: Combobox,
   decorators: [withSense],
   tags: ['autodocs'],

@@ -27,7 +27,7 @@ import {
 import { withSense } from './sense';
 
 const meta: Meta<typeof ContextMenu> = {
-  title: 'Sense/ContextMenu',
+  title: 'Sense/Primitives/ContextMenu',
   component: ContextMenu,
   decorators: [withSense],
   tags: ['autodocs'],

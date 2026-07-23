@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withSense } from './sense';
 
 const meta: Meta<typeof NativeSelect> = {
-  title: 'Sense/NativeSelect',
+  title: 'Sense/Primitives/NativeSelect',
   component: NativeSelect,
   decorators: [withSense],
   tags: ['autodocs'],

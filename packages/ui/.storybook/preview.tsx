@@ -34,7 +34,7 @@ const preview: Preview = {
       // Sort the @op/ui ↔ @op/sense migration surface to the top so it's
       // easy to find; everything else stays in default alphabetical order.
       storySort: {
-        order: ['Sense', 'Sense Comparison', '*'],
+        order: ['Sense', ['Primitives', 'Composites'], 'Sense Comparison', '*'],
       },
     },
   },

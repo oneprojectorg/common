@@ -20,7 +20,7 @@ import { LuCheck, LuCopy, LuInfo, LuSearch, LuSend } from 'react-icons/lu';
 import { withSense } from './sense';
 
 const meta: Meta<typeof InputGroup> = {
-  title: 'Sense/InputGroup',
+  title: 'Sense/Primitives/InputGroup',
   component: InputGroup,
   decorators: [withSense],
   tags: ['autodocs'],
