@@ -62,6 +62,13 @@ export interface ProposalsListProps {
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
   /**
+   * When true, exclude proposals the current user is assigned to review in the
+   * viewed phase. Powers the reviewer's "Other proposals" tab; the reviewer
+   * profile is resolved server-side. Applied to both the list and the count so
+   * the header reflects the non-assigned pool.
+   */
+  excludeAssignedForReview?: boolean;
+  /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
    */
@@ -84,6 +91,7 @@ type ProposalQueryParams = {
   dir: 'asc' | 'desc';
   limit: number;
   phase?: 'results';
+  excludeAssignedForReview?: boolean;
 };
 
 type ProposalsLoaderRenderProps = {
@@ -160,6 +168,10 @@ const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
+      // Scope the "of N" denominator to the same non-assigned pool as the list
+      // so the header reads "N proposals" (not "N of M") on the reviewer's
+      // "Other proposals" tab.
+      excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },
     { staleTime: 30 * 1000 },
   );
@@ -230,7 +242,7 @@ const ResultsPhaseProposalsLoader = ({
 };
 
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase, initialFilter } = props;
+  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -272,6 +284,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
       dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: PROPOSALS_PAGE_LIMIT,
       phase,
+      excludeAssignedForReview,
     };
 
     if (selectedCategory !== 'all-categories') {
@@ -298,6 +311,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     phase,
     proposalFilter,
     currentProfileId,
+    excludeAssignedForReview,
   ]);
 
   const renderContent = (data: ProposalsLoaderRenderProps) => (
