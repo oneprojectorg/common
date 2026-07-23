@@ -230,7 +230,7 @@ function PhaseDetailForm({
   }
 
   return (
-    <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
+    <div className="mx-auto w-full scrollbar-gutter-stable space-y-4 p-4 md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-neutral-gray4">

@@ -118,7 +118,7 @@ export function PhasesSectionContent({
   };
 
   return (
-    <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
+    <div className="mx-auto w-full scrollbar-gutter-stable space-y-4 p-4 md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
         <Header2 className="font-serif text-title-sm">{t('Phases')}</Header2>
         <SaveStatusIndicator

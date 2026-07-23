@@ -144,7 +144,7 @@ export function ProcessSettingsForm({
   });
 
   return (
-    <div className="size-full [scrollbar-gutter:stable]">
+    <div className="size-full scrollbar-gutter-stable">
       <form
         onSubmit={(e) => {
           e.preventDefault();

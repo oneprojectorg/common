@@ -55,7 +55,7 @@ export function ReviewSettingsContent({
   };
 
   return (
-    <div className="mx-auto w-full space-y-8 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
+    <div className="mx-auto w-full scrollbar-gutter-stable space-y-8 p-4 md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
         <Header2 className="font-serif text-title-base">{t('Reviews')}</Header2>
         <SaveStatusIndicator

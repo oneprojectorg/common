@@ -421,7 +421,7 @@ export function TemplateEditorContent({
           side={isMobile ? 'right' : 'left'}
         />
 
-        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
+        <main className="flex-1 basis-1/2 scrollbar-gutter-stable overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
             <div className="hidden items-center justify-between md:flex">
               <Header2 className="font-serif text-title-sm">

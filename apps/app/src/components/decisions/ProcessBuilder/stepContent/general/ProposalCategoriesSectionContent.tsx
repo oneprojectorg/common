@@ -155,7 +155,7 @@ export function ProposalCategoriesSectionContent({
   const showList = categories.length > 0;
 
   return (
-    <div className="mx-auto w-full space-y-6 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
+    <div className="mx-auto w-full scrollbar-gutter-stable space-y-6 p-4 md:max-w-160 md:p-8">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Header2 className="font-serif text-title-sm">

@@ -36,7 +36,7 @@ function Pane(_props: SplitPanePaneProps): null {
 // Each pane mounts once — visibility on mobile is toggled via CSS so stateful
 // children (collaborative editors, forms) don't get double-mounted.
 const paneStyles = tv({
-  base: 'flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]',
+  base: 'flex min-w-0 flex-1 scrollbar-gutter-stable flex-col overflow-y-auto',
   variants: {
     padding: {
       default: 'px-6 pt-8 pb-4 sm:p-12',

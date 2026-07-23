@@ -100,7 +100,7 @@ function OverviewSectionContent({
   };
 
   return (
-    <div className="size-full [scrollbar-gutter:stable]">
+    <div className="size-full scrollbar-gutter-stable">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 md:px-0 md:py-6">
         <div className="flex justify-end">
           <SaveStatusIndicator
