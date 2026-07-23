@@ -90,8 +90,8 @@ const config = {
   webpack: (config, { isServer }) => {
     config.resolve = config.resolve || {};
     // Next builds webpack's tsconfig `paths` aliases via the TypeScript JS API,
-    // which the TypeScript 7 native compiler (@typescript/native-preview) does
-    // not expose, so the `@/*` alias must be registered here explicitly.
+    // which the TypeScript 7 native compiler does not expose, so the `@/*`
+    // alias must be registered here explicitly.
     // Turbopack (dev) resolves it natively from tsconfig.
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
