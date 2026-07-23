@@ -1,10 +1,14 @@
 import { db } from '@op/db/client';
-import { createSBServiceClient } from '@op/supabase/server';
 
+import { getResourceSignedUrls } from '../resources/storage';
 import {
   type ProposalAttachment,
   proposalAttachmentSchema,
 } from './schemas/proposal';
+
+// The review pane re-fetches on each open, so a 4h token comfortably outlives
+// a session without minting a long-lived URL.
+const ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 60 * 4;
 
 /** Fetches proposal attachments with signed URLs for a single proposal. */
 export async function getProposalAttachmentsWithSignedUrls(
@@ -27,25 +31,23 @@ export async function getProposalAttachmentsWithSignedUrls(
     return [];
   }
 
-  const supabase = createSBServiceClient();
-  const attachmentsWithUrls = await Promise.all(
-    proposalAttachmentJoins.map(async (join) => {
-      const storagePath = join.attachment.storageObject?.name;
-      if (!storagePath) {
-        return { ...join, attachment: { ...join.attachment, url: undefined } };
-      }
-      // 4-hour TTL — the review pane re-fetches on each open
-      const { data } = await supabase.storage
-        .from('assets')
-        .createSignedUrl(storagePath, 60 * 60 * 4);
-      return {
-        ...join,
-        attachment: { ...join.attachment, url: data?.signedUrl },
-      };
-    }),
-  );
+  const signedUrls = await getResourceSignedUrls({
+    filePaths: proposalAttachmentJoins.flatMap((join) =>
+      join.attachment.storageObject?.name
+        ? [join.attachment.storageObject.name]
+        : [],
+    ),
+    ttlSeconds: ATTACHMENT_SIGNED_URL_TTL_SECONDS,
+  });
 
-  return attachmentsWithUrls.map((item) =>
-    proposalAttachmentSchema.parse(item),
-  );
+  return proposalAttachmentJoins.map((join) => {
+    const storagePath = join.attachment.storageObject?.name;
+    const url = storagePath
+      ? (signedUrls.get(storagePath) ?? undefined)
+      : undefined;
+    return proposalAttachmentSchema.parse({
+      ...join,
+      attachment: { ...join.attachment, url },
+    });
+  });
 }

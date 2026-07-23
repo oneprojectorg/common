@@ -161,6 +161,66 @@ const memCache = new LRUCache<string, MemCacheEntry>({
   sizeCalculation: estimateEntrySize,
 });
 
+// Redis TTL (seconds) applied when a caller doesn't pass an explicit `ttl`.
+const DEFAULT_REDIS_TTL_SECONDS = 72 * 60 * 60; // 72h
+
+// Reads a single key through the tiered cache (memcache → Redis) WITHOUT
+// running any source fetch on a miss. Shared by `cache()` (single-key) and
+// `cacheMany()` (batched) so the tiering, timeout handling, and metrics stay
+// identical across both. A Redis hit is promoted into memcache here, exactly
+// as the single-key path did before this was extracted.
+const readCached = async ({
+  cacheKey,
+  type,
+  skipMemCache,
+  memTtl,
+}: {
+  cacheKey: string;
+  type: keyof typeof TypeMap;
+  skipMemCache: boolean;
+  memTtl: number;
+}): Promise<{ hit: true; data: unknown } | { hit: false }> => {
+  // try memcache first — the LRU returns `undefined` for entries that have
+  // expired or been evicted, so a stale read simply falls through to Redis.
+  const cachedVal = !skipMemCache ? memCache.get(cacheKey) : undefined;
+  if (cachedVal) {
+    cacheMetrics.recordHit({ type: 'memory', keyType: type });
+    return { hit: true, data: cachedVal.data };
+  }
+
+  // fall back to Redis cache
+  //
+  // Two timeouts cover Redis slowness, in order of likelihood:
+  //   1. `tryGetFromRedis` applies a per-command socket timeout
+  //      (REDIS_COMMAND_TIMEOUT_MS) so a stuck connection fails fast.
+  //   2. The outer Promise.race below is the belt-and-suspenders fallback
+  //      (REDIS_RACE_TIMEOUT_MS) for anything the client doesn't abort —
+  //      including a fully saturated event loop.
+  //
+  // Whichever fires, the outcome is recorded as a `cache.timeouts` event
+  // and NOT as a `cache.misses` — those two signals are different (Redis
+  // is slow vs Redis is cold) and need separate dashboards.
+  const raceTimeout = new Promise<typeof RACE_TIMEOUT>((resolve) => {
+    setTimeout(() => resolve(RACE_TIMEOUT), REDIS_RACE_TIMEOUT_MS);
+  });
+
+  const raced = await Promise.race([tryGetFromRedis(cacheKey), raceTimeout]);
+
+  if (raced === RACE_TIMEOUT) {
+    cacheMetrics.recordTimeout({ layer: 'race', keyType: type });
+  } else if (raced.status === 'hit') {
+    cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
+    memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
+    return { hit: true, data: raced.data };
+  } else if (raced.status === 'timeout') {
+    cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
+  } else {
+    cacheMetrics.recordMiss(type);
+  }
+
+  return { hit: false };
+};
+
 /**
  * Caches values into a tiered structure: memcache → Redis → fetch function.
  *
@@ -201,42 +261,9 @@ export const cache = async <T>({
   // an immortal entry — matching the Redis-side `ttl ? …` guard below.
   const memTtl = ttl || MEMCACHE_EXPIRE;
 
-  // try memcache first — the LRU returns `undefined` for entries that have
-  // expired or been evicted, so a stale read simply falls through to Redis.
-  const cachedVal = !skipMemCache ? memCache.get(cacheKey) : undefined;
-  if (cachedVal) {
-    cacheMetrics.recordHit({ type: 'memory', keyType: type });
-    return cachedVal.data as Awaited<T>;
-  }
-
-  // fall back to Redis cache
-  //
-  // Two timeouts cover Redis slowness, in order of likelihood:
-  //   1. `tryGetFromRedis` applies a per-command socket timeout
-  //      (REDIS_COMMAND_TIMEOUT_MS) so a stuck connection fails fast.
-  //   2. The outer Promise.race below is the belt-and-suspenders fallback
-  //      (REDIS_RACE_TIMEOUT_MS) for anything the client doesn't abort —
-  //      including a fully saturated event loop.
-  //
-  // Whichever fires, the outcome is recorded as a `cache.timeouts` event
-  // and NOT as a `cache.misses` — those two signals are different (Redis
-  // is slow vs Redis is cold) and need separate dashboards.
-  const raceTimeout = new Promise<typeof RACE_TIMEOUT>((resolve) => {
-    setTimeout(() => resolve(RACE_TIMEOUT), REDIS_RACE_TIMEOUT_MS);
-  });
-
-  const raced = await Promise.race([tryGetFromRedis(cacheKey), raceTimeout]);
-
-  if (raced === RACE_TIMEOUT) {
-    cacheMetrics.recordTimeout({ layer: 'race', keyType: type });
-  } else if (raced.status === 'hit') {
-    cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
-    memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
-    return raced.data as Awaited<T>;
-  } else if (raced.status === 'timeout') {
-    cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
-  } else {
-    cacheMetrics.recordMiss(type);
+  const cached = await readCached({ cacheKey, type, skipMemCache, memTtl });
+  if (cached.hit) {
+    return cached.data as Awaited<T>;
   }
 
   // finally retrieve the data from the DB
@@ -248,13 +275,92 @@ export const cache = async <T>({
     memCache.set(cacheKey, { data: newData }, { ttl: memTtl });
     // don't cache if we couldn't find the record (?)
     // TTL in redis is in seconds
-    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 72 * 60 * 60)); // 72h default cache
+    waitUntil(
+      set(cacheKey, newData, ttl ? ttl / 1000 : DEFAULT_REDIS_TTL_SECONDS),
+    );
   } else if (storeNulls && !shouldSkipCache) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { data: null }, { ttl: memTtl });
   }
 
   return newData;
+};
+
+/**
+ * Batched variant of {@link cache}. Reads every id through the tiered cache,
+ * then calls `fetchMissing` ONCE with just the ids that missed — so a caller
+ * signing N storage paths makes a single upstream batch request instead of N.
+ *
+ * Each id is keyed as `[id, ...extraParams]`, so `extraParams` (e.g. a TTL
+ * discriminator) is shared across every id in the batch. Returns a Map from
+ * every requested id to its value (or `null` when missing and unfetched).
+ *
+ * @param fetchMissing - Resolves the missing ids in one call. Ids omitted from
+ *                       the returned Map resolve to `null`.
+ * @param options.storeNulls - Cache `null`/absent results as negative entries.
+ */
+export const cacheMany = async <T>({
+  type,
+  appKey,
+  ids,
+  extraParams = [],
+  fetchMissing,
+  options = {},
+}: {
+  type: keyof typeof TypeMap;
+  appKey?: string;
+  ids: string[];
+  extraParams?: CacheParams;
+  fetchMissing: (missingIds: string[]) => Promise<Map<string, Awaited<T>>>;
+  options?: {
+    skipMemCache?: boolean;
+    storeNulls?: boolean;
+    ttl?: number;
+  };
+}): Promise<Map<string, Awaited<T> | null>> => {
+  const { ttl, skipMemCache = false, storeNulls = false } = options;
+  const memTtl = ttl || MEMCACHE_EXPIRE;
+  const uniqueIds = [...new Set(ids)];
+  const result = new Map<string, Awaited<T> | null>();
+
+  const reads = await Promise.all(
+    uniqueIds.map(async (id) => {
+      const cacheKey = getCacheKey(type, appKey, [id, ...extraParams]);
+      const cached = await readCached({ cacheKey, type, skipMemCache, memTtl });
+      return { id, cacheKey, cached };
+    }),
+  );
+
+  const missing: { id: string; cacheKey: string }[] = [];
+  for (const { id, cacheKey, cached } of reads) {
+    if (cached.hit) {
+      result.set(id, cached.data as Awaited<T>);
+    } else {
+      missing.push({ id, cacheKey });
+    }
+  }
+
+  if (missing.length === 0) {
+    return result;
+  }
+
+  const fetched = await fetchMissing(missing.map((m) => m.id));
+
+  for (const { id, cacheKey } of missing) {
+    const value = fetched.get(id) ?? null;
+    result.set(id, value);
+
+    if (value !== null) {
+      memCache.set(cacheKey, { data: value }, { ttl: memTtl });
+      waitUntil(
+        set(cacheKey, value, ttl ? ttl / 1000 : DEFAULT_REDIS_TTL_SECONDS),
+      );
+    } else if (storeNulls) {
+      memCache.set(cacheKey, { data: null }, { ttl: memTtl });
+    }
+  }
+
+  return result;
 };
 
 export const invalidate = async ({

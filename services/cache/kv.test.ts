@@ -62,7 +62,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, set } = await import('./kv');
+const { cache, cacheMany, get, set } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -287,6 +287,130 @@ describe('get()', () => {
   it('returns null on a non-timeout error (does not throw)', async () => {
     fakeRedis.get.mockRejectedValue(new Error('boom'));
     await expect(get('some-key')).resolves.toBeNull();
+  });
+});
+
+describe('cacheMany()', () => {
+  beforeEach(() => {
+    fakeRedis.get.mockReset();
+    fakeRedis.setEx.mockReset();
+    fakeRedis.del.mockReset();
+    fakeRedis.setEx.mockResolvedValue('OK');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('fetches only the missing ids in a single batch and merges cached hits', async () => {
+    // `cached-1` is warm in Redis; `miss-1` / `miss-2` are cold. The batch
+    // fetch must see ONLY the two cold ids, exactly once.
+    fakeRedis.get.mockImplementation(async (key: string) =>
+      key.includes('cached-1') ? JSON.stringify('url-cached-1') : null,
+    );
+
+    const fetchMissing = vi.fn(async (missingIds: string[]) => {
+      return new Map(missingIds.map((id) => [id, `url-${id}`]));
+    });
+
+    const result = await cacheMany<string>({
+      type: 'resourceSignedUrl',
+      ids: ['cached-1', 'miss-1', 'miss-2'],
+      options: { skipMemCache: true },
+      fetchMissing,
+    });
+
+    expect(fetchMissing).toHaveBeenCalledOnce();
+    expect(fetchMissing).toHaveBeenCalledWith(['miss-1', 'miss-2']);
+    expect(result).toEqual(
+      new Map([
+        ['cached-1', 'url-cached-1'],
+        ['miss-1', 'url-miss-1'],
+        ['miss-2', 'url-miss-2'],
+      ]),
+    );
+  });
+
+  it('deduplicates repeated ids before fetching', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+
+    const fetchMissing = vi.fn(async (missingIds: string[]) => {
+      return new Map(missingIds.map((id) => [id, `url-${id}`]));
+    });
+
+    const result = await cacheMany<string>({
+      type: 'resourceSignedUrl',
+      ids: ['dup-a', 'dup-a', 'dup-b'],
+      options: { skipMemCache: true },
+      fetchMissing,
+    });
+
+    expect(fetchMissing).toHaveBeenCalledWith(['dup-a', 'dup-b']);
+    expect(result.get('dup-a')).toBe('url-dup-a');
+    expect(result.get('dup-b')).toBe('url-dup-b');
+  });
+
+  it('returns null for ids the batch fetch omits, and skips fetch entirely when empty', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+
+    // Fetch resolves only one of the two requested ids.
+    const fetchMissing = vi.fn(
+      async () => new Map([['present', 'url-present']]),
+    );
+
+    const result = await cacheMany<string>({
+      type: 'resourceSignedUrl',
+      ids: ['present', 'absent'],
+      options: { skipMemCache: true },
+      fetchMissing,
+    });
+
+    expect(result.get('present')).toBe('url-present');
+    expect(result.get('absent')).toBeNull();
+
+    const emptyFetch = vi.fn(async () => new Map<string, string>());
+    const empty = await cacheMany<string>({
+      type: 'resourceSignedUrl',
+      ids: [],
+      fetchMissing: emptyFetch,
+    });
+    expect(empty.size).toBe(0);
+    expect(emptyFetch).not.toHaveBeenCalled();
+  });
+
+  it('writes fetched values to Redis so a later read is a hit', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+
+    await cacheMany<string>({
+      type: 'resourceSignedUrl',
+      ids: ['write-1'],
+      extraParams: ['900'],
+      options: { skipMemCache: true, ttl: 5000 },
+      fetchMissing: async () => new Map([['write-1', 'url-write-1']]),
+    });
+
+    // TTL (ms) is converted to seconds for the Redis SETEX.
+    expect(fakeRedis.setEx).toHaveBeenCalledWith(
+      'dev/v1/common/resourceSignedUrl/write-1:900',
+      5,
+      JSON.stringify('url-write-1'),
+    );
+  });
+
+  it('does not cache omitted (null) ids by default, so they re-fetch', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+
+    await cacheMany<string>({
+      type: 'resourceSignedUrl',
+      ids: ['no-store'],
+      options: { skipMemCache: true },
+      fetchMissing: async () => new Map<string, string>(),
+    });
+
+    const wroteNull = fakeRedis.setEx.mock.calls.some(([key]) =>
+      key.includes('no-store'),
+    );
+    expect(wroteNull).toBe(false);
   });
 });
 
