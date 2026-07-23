@@ -7,10 +7,16 @@ import {
   inArray,
   isNotNull,
   isNull,
+  lte,
   or,
   sql,
 } from '@op/db/client';
-import { posts, postsToOrganizations, profiles } from '@op/db/schema';
+import {
+  postReactions,
+  posts,
+  postsToOrganizations,
+  profiles,
+} from '@op/db/schema';
 import { logger } from '@op/logging';
 import { checkPermission, permission } from 'access-zones';
 import type { SQL } from 'drizzle-orm';
@@ -165,11 +171,6 @@ export const listPosts = async ({
                     storageObject: true,
                   },
                 },
-                reactions: {
-                  with: {
-                    profile: true,
-                  },
-                },
               },
             },
             organization: {
@@ -214,17 +215,12 @@ export const listPosts = async ({
 };
 
 /**
- * Represents a reaction item with required fields for processing
+ * How many reactor profiles we hydrate per (post, reactionType) for the UI
+ * preview. The feed only ever renders the most-recent handful of reactor names
+ * in a tooltip (the exact total comes from `reactionCounts`), so a windowed
+ * top-N keeps a viral post from dragging every reactor's profile into the page.
  */
-type ReactionItem = {
-  reactionType: string;
-  createdAt?: string | Date | null;
-  profileId: string;
-  profile?: {
-    id: string;
-    name: string;
-  } | null;
-};
+export const REACTION_PREVIEW_LIMIT = 3;
 
 /**
  * Fields added to posts by this function
@@ -243,14 +239,142 @@ type EnhancedPostFields = {
   isFlagged: boolean;
 };
 
+type ReactionEnrichment = {
+  reactionCounts: Record<string, number>;
+  reactionUsers: Record<
+    string,
+    Array<{ id: string; name: string; timestamp: Date }>
+  >;
+  userReaction: string | null;
+};
+
+const emptyReactionEnrichment = (): ReactionEnrichment => ({
+  reactionCounts: {},
+  reactionUsers: {},
+  userReaction: null,
+});
+
+/**
+ * Derives reaction counts, a windowed top-N reactor preview, and the caller's
+ * own reaction for a set of posts — entirely in SQL. Replaces hydrating every
+ * reactor's profile per reaction (which made feeds scale with total reactions,
+ * not page size).
+ */
+const getReactionEnrichmentByPostId = async ({
+  postIds,
+  profileId,
+}: {
+  postIds: string[];
+  profileId?: string;
+}): Promise<Map<string, ReactionEnrichment>> => {
+  const enrichment = new Map<string, ReactionEnrichment>();
+  postIds.forEach((id) => {
+    enrichment.set(id, emptyReactionEnrichment());
+  });
+
+  if (postIds.length === 0) {
+    return enrichment;
+  }
+
+  // (b) Windowed top-N reactor preview per (post, reactionType), most recent
+  // first, in a single round-trip via ROW_NUMBER().
+  const ranked = db
+    .select({
+      postId: postReactions.postId,
+      reactionType: postReactions.reactionType,
+      profileId: postReactions.profileId,
+      name: profiles.name,
+      createdAt: postReactions.createdAt,
+      rowNumber: sql<number>`row_number() over (
+        partition by ${postReactions.postId}, ${postReactions.reactionType}
+        order by ${postReactions.createdAt} desc, ${postReactions.id} desc
+      )`.as('row_number'),
+    })
+    .from(postReactions)
+    .innerJoin(profiles, eq(profiles.id, postReactions.profileId))
+    .where(inArray(postReactions.postId, postIds))
+    .as('ranked');
+
+  // The three reads are independent — run them concurrently.
+  const [counts, previews, own] = await Promise.all([
+    // (a) Exact totals per (post, reactionType).
+    db
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+        total: count(postReactions.id),
+      })
+      .from(postReactions)
+      .where(inArray(postReactions.postId, postIds))
+      .groupBy(postReactions.postId, postReactions.reactionType),
+    db
+      .select({
+        postId: ranked.postId,
+        reactionType: ranked.reactionType,
+        profileId: ranked.profileId,
+        name: ranked.name,
+        createdAt: ranked.createdAt,
+      })
+      .from(ranked)
+      .where(lte(ranked.rowNumber, REACTION_PREVIEW_LIMIT)),
+    // (c) The caller's own reaction per post. `id desc` matches the preview's
+    // tiebreaker so a caller with several rows resolves deterministically.
+    profileId
+      ? db
+          .select({
+            postId: postReactions.postId,
+            reactionType: postReactions.reactionType,
+          })
+          .from(postReactions)
+          .where(
+            and(
+              inArray(postReactions.postId, postIds),
+              eq(postReactions.profileId, profileId),
+            ),
+          )
+          .orderBy(desc(postReactions.createdAt), desc(postReactions.id))
+      : Promise.resolve([]),
+  ]);
+
+  counts.forEach((row) => {
+    const target = enrichment.get(row.postId);
+    if (target) {
+      target.reactionCounts[row.reactionType] = Number(row.total);
+    }
+  });
+
+  previews.forEach((row) => {
+    const target = enrichment.get(row.postId);
+    if (target) {
+      (target.reactionUsers[row.reactionType] ??= []).push({
+        id: row.profileId,
+        name: row.name,
+        timestamp: row.createdAt ? new Date(row.createdAt) : new Date(),
+      });
+    }
+  });
+
+  own.forEach((row) => {
+    const target = enrichment.get(row.postId);
+    // A post keeps only one reaction per profile in practice; if several
+    // exist, the ordering above means the most recent lands first — keep it.
+    if (target && target.userReaction === null) {
+      target.userReaction = row.reactionType;
+    }
+  });
+
+  return enrichment;
+};
+
 /**
  * Processes posts to add reaction counts, user reactions, and comment counts.
  *
- * Note: The generic constraint uses `any` for the `post` parameter to remain compatible
- * with Drizzle's loosely-typed query results. Within the function, we process reactions
- * with proper type safety using the `ReactionItem` type.
+ * The generic constraint uses `any` for the `post` parameter to remain
+ * compatible with Drizzle's loosely-typed query results. Reactions are derived
+ * from dedicated aggregate queries keyed on the post ids, so callers no longer
+ * need to hydrate the full `reactions` relation.
  *
- * @param items - Array of items where each has a post with id and optional reactions array
+ * @param items - Array of items where each has a post with an id
  * @param profileId - The current user's profile ID to determine their reaction
  * @returns Items with enhanced post data including reaction counts and comment counts
  */
@@ -269,7 +393,10 @@ export const getItemsWithReactionsAndComments = async <
   // Flagged posts only reach enrichment for their author or an admin (the read
   // filters drop them for everyone else), so this decorates exactly the people
   // who should see the "Flagged" indicator.
-  const flaggedIds = await getActivelyFlaggedItemIds('post', postIds);
+  const [flaggedIds, reactionsByPostId] = await Promise.all([
+    getActivelyFlaggedItemIds('post', postIds),
+    getReactionEnrichmentByPostId({ postIds, profileId }),
+  ]);
 
   // Fetch comment counts for all posts in a single query
   const commentCountMap: Record<string, number> = {};
@@ -296,48 +423,8 @@ export const getItemsWithReactionsAndComments = async <
   }
 
   return items.map((item) => {
-    const reactionCounts: Record<string, number> = {};
-    const reactionUsers: Record<
-      string,
-      Array<{ id: string; name: string; timestamp: Date }>
-    > = {};
-    let userReaction: string | null = null;
-
-    // Count reactions by type and collect user info
-    if (item.post.reactions) {
-      item.post.reactions.forEach((reaction: ReactionItem) => {
-        reactionCounts[reaction.reactionType] =
-          (reactionCounts[reaction.reactionType] || 0) + 1;
-
-        // Collect user data for each reaction type
-        if (!reactionUsers[reaction.reactionType]) {
-          reactionUsers[reaction.reactionType] = [];
-        }
-
-        // Only add user data if profile exists
-        if (reaction.profile) {
-          const timestamp = reaction.createdAt
-            ? new Date(reaction.createdAt)
-            : new Date();
-
-          // Ensure the date is valid
-          const validTimestamp = isNaN(timestamp.getTime())
-            ? new Date()
-            : timestamp;
-
-          reactionUsers[reaction.reactionType]?.push({
-            id: reaction.profile.id,
-            name: reaction.profile.name,
-            timestamp: validTimestamp,
-          });
-        }
-
-        // Track user's reaction (only one per user)
-        if (reaction.profileId === profileId) {
-          userReaction = reaction.reactionType;
-        }
-      });
-    }
+    const reactions =
+      reactionsByPostId.get(item.post.id) ?? emptyReactionEnrichment();
 
     // Get comment count for this post
     const commentCount = commentCountMap[item.post.id] || 0;
@@ -346,9 +433,9 @@ export const getItemsWithReactionsAndComments = async <
       ...item,
       post: {
         ...item.post,
-        reactionCounts,
-        reactionUsers, // Add user data grouped by reaction type
-        userReaction,
+        reactionCounts: reactions.reactionCounts,
+        reactionUsers: reactions.reactionUsers,
+        userReaction: reactions.userReaction,
         commentCount,
         isFlagged: flaggedIds.has(item.post.id),
       },

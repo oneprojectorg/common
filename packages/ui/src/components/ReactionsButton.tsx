@@ -95,7 +95,9 @@ export const ReactionButton = ({
     );
   }
 
-  const reactionData = emoji ? [{ emoji, users: users || [] }] : [];
+  const reactionData = emoji
+    ? [{ emoji, users: users || [], totalCount: count }]
+    : [];
 
   return (
     <ReactionTooltip reactions={reactionData}>

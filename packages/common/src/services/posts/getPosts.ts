@@ -51,7 +51,6 @@ export const getPosts = async (input: GetPostsInput) => {
   const postRelations = {
     profile: { with: { avatarImage: true } },
     attachments: { with: { storageObject: true } },
-    reactions: { with: { profile: true } },
   } as const;
 
   // When scoping by profile without an explicit parentPostId, default to
