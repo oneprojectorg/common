@@ -64,9 +64,16 @@ function SplitPaneImpl({
     (child): child is ReactElement<SplitPanePaneProps> => isValidElement(child),
   );
 
-  const [activeId, setActiveId] = useState<string>(
-    defaultMobileTabId ?? panes[0]?.props.id ?? '',
-  );
+  // Fall back to the first pane when defaultMobileTabId matches nothing
+  // (stale/typo'd id) — an unmatched id would leave every pane inactive and
+  // blank the mobile view. Unlike missing child id/label (structural, thrown
+  // below), a bad default is a recoverable convenience-prop mistake.
+  const [activeId, setActiveId] = useState<string>(() => {
+    const ids = panes.map((pane) => pane.props.id);
+    return defaultMobileTabId && ids.includes(defaultMobileTabId)
+      ? defaultMobileTabId
+      : (panes[0]?.props.id ?? '');
+  });
 
   if (panes.length < 1) {
     return null;
@@ -108,7 +115,9 @@ function SplitPaneImpl({
         {panes.map((pane, index) => (
           <div
             key={pane.props.id}
-            role="tabpanel"
+            // Only a tabpanel when the mobile tab bar exists to label it;
+            // a lone pane has no tab, so the role would be orphaned.
+            role={showTabs ? 'tabpanel' : undefined}
             className={cn(
               paneVariants({
                 divider: index < panes.length - 1,

@@ -59,10 +59,12 @@ interface GradientHeaderProps extends React.ComponentProps<'div'> {
 function GradientHeader({
   className,
   gradient = 'bg-gradient',
+  dir = 'auto',
   ...props
 }: GradientHeaderProps) {
   return (
     <div
+      dir={dir}
       className={cn(
         'mx-auto flex w-fit items-center bg-clip-text font-serif text-display text-transparent',
         gradient,
