@@ -4,6 +4,10 @@ import { posthogUIHost } from '@op/core';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 
+import {
+  isChunkLoadError,
+  reloadForChunkError,
+} from '../lib/chunkErrorRecovery';
 import { stampExceptionWithTraceContext } from '../lib/otelErrorTracking';
 
 // This component replaces the root layout on catastrophic errors, so
@@ -16,6 +20,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    if (isChunkLoadError(error)) {
+      reloadForChunkError();
+    }
+  }, [error]);
+
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
