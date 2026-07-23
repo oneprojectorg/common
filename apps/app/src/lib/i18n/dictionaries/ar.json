@@ -1095,7 +1095,7 @@
   "Manage Participants": "إدارة المشاركين",
   "Failed to translate content": "فشل ترجمة المحتوى",
   "Translated with DeepL": "تمت الترجمة باستخدام DeepL",
-  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "اسم قصير لك للتعرف بسهولة على الغرض من المرحلة. هذا غير مرئي للمشاركين.",
+  "A short name to easily recognize the purpose of the phase.": "اسم قصير للتعرف بسهولة على الغرض من المرحلة.",
   "Field name": "اسم الحقل",
   "Optional": "اختياري",
   "Type": "النوع",
