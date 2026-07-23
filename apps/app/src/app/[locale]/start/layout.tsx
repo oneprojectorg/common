@@ -1,6 +1,5 @@
 import { getUser } from '@/utils/getUser';
 import { assertWalledGardenAccess } from '@/utils/walledGarden';
-import { headers } from 'next/headers';
 
 import { Link } from '@/lib/i18n/routing';
 
@@ -10,13 +9,9 @@ import { TranslatedText } from '@/components/TranslatedText';
 const StartLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  // Layouts don't get searchParams; read the query string the proxy exposes via
-  // x-search. The promote flow runs as non-members, so admit them past the gate.
-  const search = (await headers()).get('x-search') ?? '';
-  const isPromoteFlow = new URLSearchParams(search).get('promote') === '1';
-
-  // Onboarding is inside the walled garden.
-  await assertWalledGardenAccess(user, { allowNonMembers: isPromoteFlow });
+  // Admit any real account: non-members belong in onboarding, and gating them
+  // out only deadlocks returning users. Real protection is in the service layer.
+  await assertWalledGardenAccess(user, { allowNonMembers: true });
 
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">

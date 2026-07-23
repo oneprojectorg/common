@@ -1,8 +1,12 @@
 import { UserProvider } from '@/utils/UserProvider';
 import { getUser } from '@/utils/getUser';
-import { shouldRedirectToOnboarding } from '@/utils/onboarding';
+import {
+  buildOnboardingRedirect,
+  shouldRedirectToOnboarding,
+} from '@/utils/onboarding';
 import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
@@ -23,7 +27,13 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   await assertWalledGardenAccess(user);
 
   if (shouldRedirectToOnboarding(user)) {
-    redirect('/en/start');
+    const requestHeaders = await headers();
+    redirect(
+      buildOnboardingRedirect(
+        requestHeaders.get('x-pathname'),
+        requestHeaders.get('x-search'),
+      ),
+    );
   }
 
   return (

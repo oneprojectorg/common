@@ -1,3 +1,4 @@
+import { getUser } from '@/utils/getUser';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -13,10 +14,13 @@ export async function generateMetadata({
   return { title: t('Get Started') };
 }
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  // Resolve membership server-side so OnboardingFlow branches synchronously.
+  const user = await getUser();
+
   return (
     <div className="flex flex-1 flex-col items-center">
-      <OnboardingFlow />
+      <OnboardingFlow isNetworkMember={user?.isNetworkMember ?? false} />
     </div>
   );
 }

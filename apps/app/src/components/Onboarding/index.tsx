@@ -2,6 +2,7 @@
 
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
@@ -68,10 +69,22 @@ const processOrgInputs = (data: OrgCreationFormValues) => ({
   website: data.website ?? '',
 });
 
-export const OnboardingFlow = () => {
+export const OnboardingFlow = ({
+  isNetworkMember,
+}: {
+  isNetworkMember: boolean;
+}) => {
   const t = useTranslations();
   const router = useRouter();
   const isOnline = useConnectionStatus();
+  // Return to where the layout redirect sent the user from (?redirect=), falling
+  // back to the post-onboarding home. Without this the preserved destination
+  // added by the (main)/(no-header) layouts is ignored for members.
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+  const completionDestination = isSafeRedirectPath(redirectParam)
+    ? redirectParam
+    : '/?new=1';
   const [hasHydrated, setHasHydrated] = useState(false);
   const [invitesComplete, setInvitesComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,11 +102,6 @@ export const OnboardingFlow = () => {
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
   const completeOnboarding = trpc.account.completeOnboarding.useMutation();
   const createOrganization = trpc.organization.create.useMutation();
-
-  // Promote flow (just-upgraded anon visitor) skips org joining; that journey
-  // lives in PromoteOnboardingFlow.
-  const searchParams = useSearchParams();
-  const isPromoteFlow = searchParams.get('promote') === '1';
 
   // Handle hydration detection
   React.useEffect(() => {
@@ -178,7 +186,7 @@ export const OnboardingFlow = () => {
         await completeOnboarding.mutateAsync({ tos: true, privacy: true });
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
-        router.push('/?new=1');
+        router.push(completionDestination);
       } catch (err) {
         setIsSubmitting(false);
         const errorInfo = analyzeError(err);
@@ -202,6 +210,7 @@ export const OnboardingFlow = () => {
       completeOnboarding,
       trpcUtils,
       router,
+      completionDestination,
       t,
     ],
   );
@@ -258,7 +267,7 @@ export const OnboardingFlow = () => {
         await completeOnboarding.mutateAsync({ tos: true, privacy: true });
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
-        router.push('/?new=1');
+        router.push(completionDestination);
       })
       .catch((err) => {
         logger.error('Onboarding: failed to create organization', {
@@ -288,6 +297,7 @@ export const OnboardingFlow = () => {
     t,
     getOrgCreationStepValues,
     completeOnboarding,
+    completionDestination,
   ]);
 
   if (!hasHydrated) {
@@ -306,7 +316,9 @@ export const OnboardingFlow = () => {
     return <LoadingSpinner />;
   }
 
-  if (isPromoteFlow) {
+  // Non-members get the org-less journey; members get the full org flow. Keyed
+  // on membership, not `?promote=1`, which is gone once a user returns.
+  if (!isNetworkMember) {
     return <PromoteOnboardingFlow hasHydrated={hasHydrated} />;
   }
 
