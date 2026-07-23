@@ -129,25 +129,31 @@ export const sendReactionNotification = inngest.createFunction(
 
         const reactorName = data.sourceProfileName;
         const contentType = data.parentPostId ? 'comment' : 'post';
-        const { OPNodemailer } = await import('@op/emails');
+        const { OPBatchSend } = await import('@op/emails');
         const { ReactionNotificationEmail } = await import('@op/emails');
         const postUrl = `${OPURLConfig('APP').ENV_URL}/profile/${data.orgProfileSlug}/posts/${postId}`;
 
-        await OPNodemailer({
-          to: authorProfile.email,
-          from: `${reactorName} via Common`,
-          subject: `${reactorName} reacted to your ${contentType}`,
-          component: () =>
-            ReactionNotificationEmail({
-              reactorName,
-              postContent: data.postContent,
-              recipientName: authorProfile.name,
-              reactionType: reactionEmoji.emoji,
-              contentType,
-              postUrl,
-              content,
-            }),
-        });
+        const { errors } = await OPBatchSend([
+          {
+            to: authorProfile.email,
+            from: `${reactorName} via Common`,
+            subject: `${reactorName} reacted to your ${contentType}`,
+            component: () =>
+              ReactionNotificationEmail({
+                reactorName,
+                postContent: data.postContent,
+                recipientName: authorProfile.name,
+                reactionType: reactionEmoji.emoji,
+                contentType,
+                postUrl,
+                content,
+              }),
+          },
+        ]);
+
+        if (errors.length > 0) {
+          throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+        }
       } catch (error) {
         // Log error and re-throw for retries
         logger.error('Failed to send reaction notification', {
