@@ -5,22 +5,25 @@ import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
+import type { Provider } from '@op/supabase/lib';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { cn } from '@op/ui/utils';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { getOIDCProvider } from '@/lib/oidcProvider';
 
 import {
   AuthCodeField,
   AuthDivider,
   AuthEmailField,
   AuthGoogleButton,
+  AuthOIDCButton,
   AuthPanelShell,
   isValidOtpLength,
   useAuthPanelStore,
@@ -57,19 +60,38 @@ export const LoginPanel = () => {
     setLoginSuccess,
   } = useAuthPanelStore();
 
-  const handleLogin = async () => {
+  const oidcProvider = getOIDCProvider();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const signInWithProvider = async ({
+    provider,
+    scopes,
+  }: {
+    provider: Provider;
+    scopes?: string;
+  }) => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
 
     if (redirectParam !== null) {
       callbackUrl.searchParams.set('redirect', redirectParam);
     }
 
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
+    setIsRedirecting(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
       options: {
         redirectTo: callbackUrl.toString(),
+        scopes,
       },
     });
+
+    // signInWithOAuth resolves before the browser navigates away; only a
+    // failure to reach the authorize endpoint lands here.
+    if (error) {
+      setIsRedirecting(false);
+      setTokenError(error.message);
+    }
   };
 
   const {
@@ -206,7 +228,27 @@ export const LoginPanel = () => {
         <div className="flex flex-col gap-8">
           {!loginSuccess && (
             <>
-              <AuthGoogleButton onPress={handleLogin} />
+              <div className="flex flex-col gap-4">
+                <AuthGoogleButton
+                  onPress={() => signInWithProvider({ provider: 'google' })}
+                  isDisabled={isRedirecting}
+                />
+                {oidcProvider ? (
+                  <AuthOIDCButton
+                    providerName={oidcProvider.name}
+                    onPress={() =>
+                      // Keycloak 20+ requires the openid scope for the
+                      // userinfo call; GoTrue appends it to the provider's
+                      // default scopes.
+                      signInWithProvider({
+                        provider: oidcProvider.provider,
+                        scopes: 'openid',
+                      })
+                    }
+                    isDisabled={isRedirecting}
+                  />
+                ) : null}
+              </div>
               <AuthDivider />
             </>
           )}

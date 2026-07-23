@@ -87,6 +87,16 @@ redirect_uri = ""
 url = ""
 skip_nonce_check = false
 
+# OpenID Connect login. `url` is the issuer base (e.g. a Keycloak realm URL);
+# unset env vars leave the provider inert, same as the google block above.
+[auth.external.keycloak]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_KEYCLOAK_CLIENT_SECRET)"
+redirect_uri = ""
+url = "env(SUPABASE_AUTH_EXTERNAL_KEYCLOAK_URL)"
+skip_nonce_check = false
+
 [analytics]
 enabled = false
 
