@@ -19,7 +19,7 @@ type Story = StoryObj<typeof SplitPane>;
 // viewport to see the mobile mode.
 export const Default: Story = {
   render: () => (
-    <div className="h-96 w-full overflow-hidden rounded border">
+    <div className="flex h-96 w-full flex-col overflow-hidden rounded border">
       <SplitPane>
         <SplitPane.Pane id="editor" label="Editor">
           <p className="text-sm text-muted-foreground">
@@ -36,7 +36,7 @@ export const Default: Story = {
 
 export const Unpadded: Story = {
   render: () => (
-    <div className="h-96 w-full overflow-hidden rounded border">
+    <div className="flex h-96 w-full flex-col overflow-hidden rounded border">
       <SplitPane>
         <SplitPane.Pane id="list" label="List" unpadded>
           <div className="bg-muted p-4 text-sm">Unpadded pane</div>
