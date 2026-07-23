@@ -6,7 +6,7 @@ const SAMPLE_IMAGE = 'https://picsum.photos/1200/400';
 
 const copy = {
   label: 'Banner image',
-  title: 'Legacy/Upload banner image',
+  title: 'Upload banner image',
   description: 'PNG, JPG, WebP or GIF · recommended 2400×800px · max 25MB',
   helperText:
     'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
@@ -15,7 +15,7 @@ const copy = {
 };
 
 const meta: Meta<typeof BannerImageField> = {
-  title: 'BannerImageField',
+  title: 'Legacy/BannerImageField',
   component: BannerImageField,
   tags: ['autodocs'],
   args: {
