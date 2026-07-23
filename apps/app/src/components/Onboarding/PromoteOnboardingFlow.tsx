@@ -3,6 +3,7 @@
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
@@ -55,6 +56,8 @@ export const PromoteOnboardingFlow = ({
 
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
+  // No fallback is safe for a non-member; the `redirect` back to their public
+  // origin page is the only real return path.
   const promoteRedirect = isSafeRedirectPath(redirectParam)
     ? redirectParam
     : '/';
@@ -77,6 +80,14 @@ export const PromoteOnboardingFlow = ({
     try {
       await completeOnboarding.mutateAsync({ tos: true, privacy: true });
       await trpcUtils.account.getMyAccount.invalidate();
+      if (!isSafeRedirectPath(redirectParam)) {
+        // `/` sends a non-member into the walled garden (403) — track how often
+        // onboarding dead-ends here.
+        logger.warn(
+          'Promote onboarding finished without a safe redirect; landing may be gated',
+          { redirectParam },
+        );
+      }
       window.location.assign(promoteRedirect);
     } catch (err) {
       setIsSubmitting(false);
@@ -90,7 +101,14 @@ export const PromoteOnboardingFlow = ({
           : errorInfo.message,
       });
     }
-  }, [isOnline, completeOnboarding, trpcUtils, promoteRedirect, t]);
+  }, [
+    isOnline,
+    completeOnboarding,
+    trpcUtils,
+    promoteRedirect,
+    redirectParam,
+    t,
+  ]);
 
   const ToSStep = useMemo(() => {
     const Step = (props: StepProps) => (
