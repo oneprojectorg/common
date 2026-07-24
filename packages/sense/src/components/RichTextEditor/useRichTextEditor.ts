@@ -2,7 +2,7 @@ import type { JSONContent } from '@tiptap/core';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { cn } from '../../lib/utils';
 import { defaultEditorExtensions } from './editorConfig';
@@ -122,12 +122,18 @@ export function useRichTextEditor({
     editor.commands.setContent(content);
   }, [content, editable, editor]);
 
-  // Notify parent when editor is ready
+  // Notify parent once, when the editor transitions from null to live. The
+  // callback rides a ref so an inline-arrow `onEditorReady` (new identity each
+  // render) doesn't re-fire this one-shot init on every parent re-render.
+  const onEditorReadyRef = useRef(onEditorReady);
   useEffect(() => {
-    if (editor && onEditorReady) {
-      onEditorReady(editor);
+    onEditorReadyRef.current = onEditorReady;
+  });
+  useEffect(() => {
+    if (editor) {
+      onEditorReadyRef.current?.(editor);
     }
-  }, [editor, onEditorReady]);
+  }, [editor]);
 
   return editor;
 }

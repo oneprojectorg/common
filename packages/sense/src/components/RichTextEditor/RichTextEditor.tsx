@@ -27,11 +27,18 @@ export const RichTextEditor = forwardRef<
     placeholder?: string;
     /** Translated hint for an empty Details summary (see useRichTextEditor). */
     summaryPlaceholder?: string;
+    /**
+     * Emits the editor HTML on every update. `onUpdate` and `onChange` are
+     * intentional aliases (same value, same timing) kept for @op/ui migration
+     * — wire only one.
+     */
     onUpdate?: (content: string) => void;
     onChange?: (content: string) => void;
     /** Emits the editor's JSON doc on every update (for JSON-stored content). */
     onChangeJSON?: (content: JSONContent) => void;
     onEditorReady?: (editor: Editor) => void;
+    /** Sets `aria-required` on the editable region for assistive tech. */
+    required?: boolean;
     className?: string;
     editorClassName?: string;
   }
@@ -46,6 +53,7 @@ export const RichTextEditor = forwardRef<
       onChange,
       onChangeJSON,
       onEditorReady,
+      required,
       className = '',
       editorClassName = '',
     },
@@ -61,6 +69,7 @@ export const RichTextEditor = forwardRef<
       onChange,
       onChangeJSON,
       onEditorReady,
+      required,
     });
 
     // Expose editor methods through ref
