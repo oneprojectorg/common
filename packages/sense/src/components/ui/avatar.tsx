@@ -1,6 +1,7 @@
 'use client';
 
 import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
+import { getGradientForString } from '@op/styles/constants';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
@@ -38,19 +39,48 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   );
 }
 
+/** Up-to-two initials: first + last word's first letter (single word → one). */
+function initialsFromName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '';
+  }
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+  return (first + last).toUpperCase();
+}
+
 function AvatarFallback({
   className,
+  name,
+  children,
   ...props
-}: AvatarPrimitive.Fallback.Props) {
+}: AvatarPrimitive.Fallback.Props & {
+  /**
+   * Display name for the "no image" fallback. Seeds the deterministic gradient
+   * fill and, when no children are given, renders derived initials (Frida
+   * Kahlo → FK). Without a name (or string children) the fill stays muted.
+   */
+  name?: string;
+}) {
+  const seed = name ?? (typeof children === 'string' ? children : undefined);
+  const gradient = seed ? getGradientForString(seed) : undefined;
+  const content = children ?? (name ? initialsFromName(name) : null);
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs',
+        'flex size-full items-center justify-center rounded-full text-sm group-data-[size=sm]/avatar:text-xs',
+        gradient
+          ? cn(gradient, 'text-white')
+          : 'bg-muted text-muted-foreground',
         className,
       )}
       {...props}
-    />
+    >
+      {content}
+    </AvatarPrimitive.Fallback>
   );
 }
 
