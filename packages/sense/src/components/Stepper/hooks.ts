@@ -3,6 +3,15 @@ import { z } from 'zod';
 
 import type { StepperItem } from './types';
 
+/** Field-name → validation messages, as produced by zod's flattenError. */
+type StepFieldErrors = Record<string, string[] | undefined>;
+
+/**
+ * Result of attempting to advance: a tagged union so callers can't silently
+ * drop validation failures (the reason a bare error-return was avoided).
+ */
+type NextStepResult = { ok: true } | { ok: false; errors: StepFieldErrors };
+
 export const useStepper = ({
   items,
   initialStep = 0,
@@ -19,11 +28,10 @@ export const useStepper = ({
 
   /**
    * Validate the current step against its zod schema and advance on success.
-   * Returns `undefined` when it advanced, or a `fieldErrors` map when
-   * validation failed — callers MUST check the return value to surface errors
-   * (a bare `onClick={() => nextStep(values)}` silently swallows them).
+   * Returns `{ ok: true }` when it advanced, or `{ ok: false, errors }` with a
+   * field-error map when validation failed — branch on `ok` to render errors.
    */
-  const nextStep = (values: Record<string, unknown> = {}) => {
+  const nextStep = (values: Record<string, unknown> = {}): NextStepResult => {
     const success = () =>
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps - 1));
 
@@ -33,7 +41,7 @@ export const useStepper = ({
     if (!schema) {
       success();
 
-      return;
+      return { ok: true };
     }
 
     const currentValues = Object.keys(schema.shape).reduce(
@@ -49,9 +57,11 @@ export const useStepper = ({
 
     if (result.success) {
       success();
-    } else {
-      return z.flattenError(result.error).fieldErrors;
+
+      return { ok: true };
     }
+
+    return { ok: false, errors: z.flattenError(result.error).fieldErrors };
   };
 
   const prevStep = () => {
