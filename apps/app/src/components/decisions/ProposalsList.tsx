@@ -518,6 +518,11 @@ const ProposalsListContent = ({
   // hosts the view toggle).
   const showFilterBar = isMapMode || allProposals.length > 0 || hasActiveFilter;
 
+  // A location-enabled decision defaults to map mode, but an empty, unfiltered
+  // result has nothing to plot. Fall through to the grid so the tailored empty
+  // state renders instead of a blank map; the filter bar keeps the view toggle.
+  const isEmptyUnfiltered = allProposals.length === 0 && !hasActiveFilter;
+
   return (
     <div
       className={cn(
@@ -564,7 +569,7 @@ const ProposalsListContent = ({
       <ProposalTranslationProvider
         translations={translation.translationState?.translations ?? {}}
       >
-        {isMapMode ? (
+        {isMapMode && !isEmptyUnfiltered ? (
           phase === 'results' ? (
             // Results uses the phase-agnostic `listAllProposals` set; source
             // pins from that same loaded data so pins match the results list.
