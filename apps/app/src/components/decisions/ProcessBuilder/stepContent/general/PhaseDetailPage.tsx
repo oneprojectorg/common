@@ -258,7 +258,7 @@ function PhaseDetailForm({
           onBlur={() => markTouched('name')}
           errorMessage={getErrorMessage('name')}
           description={t(
-            'A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.',
+            'A short name to easily recognize the purpose of the phase.',
           )}
           maxLength={50}
         />
