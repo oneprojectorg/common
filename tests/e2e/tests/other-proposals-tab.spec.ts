@@ -10,11 +10,7 @@ import {
 
 import { expect, test } from '../fixtures/index.js';
 
-/**
- * Schema with a review phase (`proposals.review: true`) so the
- * DecisionStateRouter renders the ReviewPage — which, for a reviewer, hosts the
- * "Proposals to review" and "Other proposals" tabs.
- */
+// Review phase (`proposals.review: true`) so the reviewer sees the tabs.
 const REVIEW_SCHEMA = {
   id: 'other-proposals-e2e',
   version: '1.0.0',
@@ -56,8 +52,7 @@ const REVIEW_SCHEMA = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-// Titles rendered on proposal cards come from the collab-doc title fragment,
-// which the e2e mock (@op/collab) pre-seeds for these well-known doc IDs.
+// Card titles come from the collab-doc fragment the e2e mock pre-seeds for these doc IDs.
 const ASSIGNED_TITLE = 'Community Garden Project'; // test-proposal-listing-doc
 const OTHER_TITLE = 'Youth Mentorship Program'; // test-proposal-listing-doc-alt
 
@@ -66,7 +61,6 @@ test.describe('Other proposals tab', () => {
     authenticatedPage: page,
     org,
   }) => {
-    // -- Setup: a decision in the review phase with two proposals ------------
     const template = await getSeededTemplate();
 
     const instance = await createDecisionInstance({
@@ -88,8 +82,7 @@ test.describe('Other proposals tab', () => {
       email: org.adminUser.email,
     };
 
-    // Proposal assigned to the current user for review — belongs on the
-    // "Proposals to review" tab, and must be excluded from "Other proposals".
+    // Assigned to the reviewer → must be excluded from "Other proposals".
     await createReviewScenario({
       instance: { id: instance.instance.id },
       author,
@@ -100,8 +93,7 @@ test.describe('Other proposals tab', () => {
       },
     });
 
-    // A submitted proposal the user is NOT assigned to review — the only one
-    // that should surface on the "Other proposals" tab.
+    // Not assigned → the only proposal that should appear on "Other proposals".
     await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: author.profileId,
@@ -114,25 +106,21 @@ test.describe('Other proposals tab', () => {
       },
     });
 
-    // History trigger settles before the page reads the list.
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
-    // -- Both tabs render for the reviewer -----------------------------------
     const reviewTab = page.getByRole('tab', { name: 'Proposals to review' });
     const otherTab = page.getByRole('tab', { name: 'Other proposals' });
     await expect(reviewTab).toBeVisible({ timeout: 36_000 });
     await expect(otherTab).toBeVisible();
 
-    // Default tab lists the assigned proposal.
     await expect(page.getByText(ASSIGNED_TITLE).first()).toBeVisible({
       timeout: 36_000,
     });
 
-    // -- Other proposals: assigned one gone, unassigned one present ----------
     await otherTab.click();
     await expect(otherTab).toHaveAttribute('aria-selected', 'true');
 

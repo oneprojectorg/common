@@ -53,11 +53,7 @@ export interface ProposalsProps {
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
-  /**
-   * When true, this list is the reviewer's "Other proposals" tab (proposals
-   * outside their review queue). Tailors the empty state — the generic
-   * "submit the first proposal" copy is wrong here.
-   */
+  /** Reviewer's "Other proposals" tab — tailors the empty state. */
   excludeAssignedForReview?: boolean;
 }
 
@@ -100,8 +96,6 @@ const NoProposalsFound = ({
 }) => {
   const t = useTranslations();
 
-  // The reviewer's "Other proposals" tab is empty because every proposal is in
-  // their review queue (or none exist yet) — not because nobody has submitted.
   if (excludeAssignedForReview && !hasFilter) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>

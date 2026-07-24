@@ -65,8 +65,6 @@ export function ReviewPage({
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
-  // Shared across the review tabs so each panel gets its own boundary while the
-  // tab bar stays mounted.
   const proposalsLoadErrorFallback = {
     default: () => (
       <EmptyState icon={<LuLeaf className="size-6" />}>

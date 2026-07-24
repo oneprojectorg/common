@@ -697,11 +697,6 @@ export const proposalLocationsFilterSchema = z.object({
   categoryId: z.string().optional(),
   phaseId: z.string().optional(),
   votedByProfileId: z.uuid().optional(),
-  /**
-   * When true, exclude proposals the current user is assigned to review, so map
-   * pins match the reviewer's "Other proposals" list. Applied server-side via
-   * the same scope resolver as the list.
-   */
   excludeAssignedForReview: z.boolean().optional(),
   phase: z.enum(['results']).optional(),
 });

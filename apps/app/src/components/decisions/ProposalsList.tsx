@@ -61,12 +61,7 @@ export interface ProposalsListProps {
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
-  /**
-   * When true, exclude proposals the current user is assigned to review in the
-   * viewed phase. Powers the reviewer's "Other proposals" tab; the reviewer
-   * profile is resolved server-side. Applied to both the list and the count so
-   * the header reflects the non-assigned pool.
-   */
+  /** Exclude proposals the current user is assigned to review (Other proposals tab). */
   excludeAssignedForReview?: boolean;
   /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
@@ -168,9 +163,6 @@ const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
-      // Scope the "of N" denominator to the same non-assigned pool as the list
-      // so the header reads "N proposals" (not "N of M") on the reviewer's
-      // "Other proposals" tab.
       excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },
     { staleTime: 30 * 1000 },
@@ -518,9 +510,7 @@ const ProposalsListContent = ({
   // hosts the view toggle).
   const showFilterBar = isMapMode || allProposals.length > 0 || hasActiveFilter;
 
-  // A location-enabled decision defaults to map mode, but an empty, unfiltered
-  // result has nothing to plot. Fall through to the grid so the tailored empty
-  // state renders instead of a blank map; the filter bar keeps the view toggle.
+  // Empty + unfiltered falls through to the grid's empty state instead of a blank map.
   const isEmptyUnfiltered = allProposals.length === 0 && !hasActiveFilter;
 
   return (
