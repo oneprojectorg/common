@@ -1,4 +1,6 @@
 import { GLOBAL_USER_IDS } from '@op/core';
+import { db, eq } from '@op/db/client';
+import { users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -348,6 +350,35 @@ describe.concurrent('platform.admin.listAllUsers', () => {
         customDomainUserEmails.has(user.email!),
       ),
     );
+  });
+
+  it('finds and displays a user by auth.users email when public.users.email is NULL', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { adminUser, memberUsers } = await testData.createOrganization({
+      users: { admin: 1, member: 1 },
+    });
+    const member = memberUsers[0]!;
+
+    // Simulate the anonymous-upgrade bug: email lives on auth.users but
+    // public.users.email is NULL.
+    await db
+      .update(users)
+      .set({ email: null })
+      .where(eq(users.authUserId, member.authUserId));
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listAllUsers({ limit: 100, query: task.id });
+
+    const found = result.items.find(
+      (user) => user.authUserId === member.authUserId,
+    );
+    expect(found).toBeDefined();
+    expect(found?.email).toBe(member.email);
   });
 
   it('should never surface the global sentinel users', async ({

@@ -40,6 +40,8 @@ export const listAllUsersRouter = router({
         items: items.map((user) =>
           adminUserEncoder.parse({
             ...user,
+            // Email is authoritative on auth.users, not public.users.
+            email: user.authUser?.email ?? null,
             isAnonymous: Boolean(user.authUser?.isAnonymous),
             lastSignInAt: user.authUser?.lastSignInAt ?? null,
           }),
