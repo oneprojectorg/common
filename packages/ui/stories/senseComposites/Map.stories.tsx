@@ -5,7 +5,8 @@ import { Pair, Section } from '../../src/comparison/Comparison';
 import { Map as OldMap } from '../../src/components/Map';
 import { MapMarker as OldMapMarker } from '../../src/components/MapMarker';
 
-const DEMO_STYLE = 'https://demotiles.maplibre.org/style.json';
+// Same key-less tiles the app falls back to (OpenFreeMap Liberty).
+const DEMO_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 const meta: Meta = {
   title: 'Sense Comparison/Composites/Map',
