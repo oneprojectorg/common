@@ -1,5 +1,5 @@
-import { and, count, db, ilike } from '@op/db/client';
-import { users } from '@op/db/schema';
+import { and, count, db, ilike, inArray } from '@op/db/client';
+import { authUsers, users } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
@@ -33,13 +33,19 @@ export const listAllUsers = async ({
   // Filter shared by the paginated query and the total count: exclude the
   // sentinel users and, when searching, match the email. The cursor condition
   // is added only to the paginated query.
-  const baseConds = (table: {
-    authUserId: AnyPgColumn;
-    email: AnyPgColumn;
-  }): SQL[] => {
+  const baseConds = (table: { authUserId: AnyPgColumn }): SQL[] => {
     const conds: SQL[] = [excludeGlobalUsers(table.authUserId)];
     if (hasSearch) {
-      conds.push(ilike(table.email, `%${query}%`));
+      // Match against auth.users.email (authoritative) via the auth_user_id FK.
+      conds.push(
+        inArray(
+          table.authUserId,
+          db
+            .select({ id: authUsers.id })
+            .from(authUsers)
+            .where(ilike(authUsers.email, `%${query}%`)),
+        ),
+      );
     }
     return conds;
   };
