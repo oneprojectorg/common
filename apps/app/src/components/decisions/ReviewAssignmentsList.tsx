@@ -11,7 +11,7 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
+import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
@@ -69,15 +69,7 @@ export function ReviewAssignmentsList({
     <div className="flex flex-col gap-6">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span className="font-serif text-title-base text-neutral-black">
-            {t('Proposals to review')}
-          </span>
-          <Bullet />
-          <span className="font-serif text-title-base text-neutral-black">
-            {assignments.length}
-          </span>
-        </div>
+        <ProposalCount count={assignments.length} />
         <div className="grid max-w-fit grid-cols-2 justify-end gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end">
           <ResponsiveSelect
             selectedKey={statusFilter ?? 'all'}
