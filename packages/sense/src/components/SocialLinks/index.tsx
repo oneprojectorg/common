@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { SiGithub, SiLinkedin, SiX } from 'react-icons/si';
 
 import { cn } from '../../lib/utils';
