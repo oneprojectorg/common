@@ -21,6 +21,37 @@ const Row = ({ children }: { children: ReactNode }) => (
   <ol className="w-96">{children}</ol>
 );
 
+// The states composed into the decision Overview timeline — the default view.
+export const Timeline: Story = {
+  render: () => (
+    <ol className="flex w-96 flex-col gap-2">
+      <PhaseCard
+        state="completed"
+        name="Submissions"
+        startDate="2026-06-01"
+        endDate="2026-06-14"
+      />
+      <PhaseCard
+        state="current"
+        name="Review"
+        startDate="2026-06-15"
+        endDate="2026-06-28"
+        isNowOpen
+        href="#"
+      />
+      <PhaseCard
+        state="upcoming"
+        name="Voting"
+        startDate="2026-07-01"
+        endDate="2026-07-14"
+        isAdvanceable
+        onAdvance={() => {}}
+      />
+      <PhaseCard state="upcoming" name="Results" />
+    </ol>
+  ),
+};
+
 // Completed: gray rail, name with a green check, dates below.
 export const Completed: Story = {
   render: () => (
@@ -77,34 +108,5 @@ export const Advanceable: Story = {
         onAdvance={() => {}}
       />
     </Row>
-  ),
-};
-
-// The states composed into the decision Overview timeline.
-export const Timeline: Story = {
-  render: () => (
-    <ol className="flex w-96 flex-col gap-2">
-      <PhaseCard
-        state="completed"
-        name="Submissions"
-        startDate="2026-06-01"
-        endDate="2026-06-14"
-      />
-      <PhaseCard
-        state="current"
-        name="Review"
-        startDate="2026-06-15"
-        endDate="2026-06-28"
-        isNowOpen
-        href="#"
-      />
-      <PhaseCard
-        state="upcoming"
-        name="Voting"
-        startDate="2026-07-01"
-        endDate="2026-07-14"
-      />
-      <PhaseCard state="upcoming" name="Results" />
-    </ol>
   ),
 };
