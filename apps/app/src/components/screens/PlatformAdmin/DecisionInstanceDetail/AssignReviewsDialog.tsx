@@ -53,6 +53,16 @@ export const AssignReviewsDialog = ({
     () => new Set(proposals.map((proposal) => proposal.id)),
   );
 
+  // Fresh state each open: `proposals` may have been refetched since the last
+  // assignment, and a previous session's reviewer/selection shouldn't linger.
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      setReviewerId(null);
+      setSelectedIds(new Set(proposals.map((proposal) => proposal.id)));
+    }
+    setIsOpen(open);
+  };
+
   const reviewerItems = useMemo(
     () =>
       eligibleReviewers.map((reviewer) => ({
@@ -126,7 +136,7 @@ export const AssignReviewsDialog = ({
     !assignReviews.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button size="sm" disabled={eligibleReviewers.length === 0}>
