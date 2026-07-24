@@ -19,7 +19,7 @@ interface PhaseCardProps {
   /** Show the "Now open!" tag (current card accepting proposals). */
   isNowOpen?: boolean;
   nowOpenLabel?: string;
-  /** Render the Advance button (upcoming card the viewer can advance into). */
+  /** Render the Start button (upcoming card the viewer can advance into). */
   isAdvanceable?: boolean;
   advanceLabel?: string;
   onAdvance?: () => void;
@@ -54,7 +54,7 @@ type PhaseContentProps = Pick<
   'name' | 'startDate' | 'endDate' | 'locale' | 'className'
 >;
 
-/** Completed: compact, green rail + check + dates + name. */
+/** Completed: gray rail + name with a green check, dates below. */
 function CompletedPhaseCard({
   name,
   startDate,
@@ -65,27 +65,30 @@ function CompletedPhaseCard({
   return (
     <li
       className={cn(
-        'flex flex-col gap-2 border-s border-success/30 px-4 py-2',
+        'flex flex-col gap-1 border-s border-success/30 p-4',
         className,
       )}
     >
       <div className="flex items-center gap-2">
-        <span className="flex size-4 items-center justify-center rounded-full bg-success-muted text-success">
-          <LuCheck className="size-3" aria-hidden />
+        <PhaseName name={name} />
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success-muted text-success">
+          <LuCheck className="size-3.5" aria-hidden />
         </span>
-        <PhaseDates
-          startDate={startDate}
-          endDate={endDate}
-          locale={locale}
-          className="text-muted-foreground"
-        />
       </div>
-      <PhaseName name={name} />
+      <PhaseDates
+        startDate={startDate}
+        endDate={endDate}
+        locale={locale}
+        className="text-muted-foreground"
+      />
     </li>
   );
 }
 
-/** Current: filled teal card linking to `href`, optional "Now open!" tag + arrow. */
+/**
+ * Current: filled teal card linking to `href`. Badge over the name, dates
+ * below; the navigation arrow reveals on hover/focus (per the Figma master).
+ */
 function CurrentPhaseCard({
   name,
   startDate,
@@ -101,57 +104,62 @@ function CurrentPhaseCard({
     <li className={className}>
       <a
         href={href}
-        className="flex items-center justify-between gap-4 rounded-xl bg-teal-100 p-4 text-teal-900 transition hover:bg-teal-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="group flex items-center justify-between gap-4 rounded-lg bg-teal-50 p-4 text-teal-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-col gap-2">
+          {isNowOpen ? (
+            <Badge className="w-fit bg-teal-500 text-background">
+              {nowOpenLabel}
+            </Badge>
+          ) : null}
+          <div className="flex min-w-0 flex-col">
+            <PhaseName name={name} />
             <PhaseDates
               startDate={startDate}
               endDate={endDate}
               locale={locale}
             />
-            {isNowOpen ? (
-              <Badge className="bg-teal-900 text-background">
-                {nowOpenLabel}
-              </Badge>
-            ) : null}
           </div>
-          <PhaseName name={name} />
         </div>
-        <LuArrowRight className="size-4 shrink-0 rtl:rotate-180" aria-hidden />
+        <span
+          aria-hidden
+          className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+        >
+          <LuArrowRight className="size-4 rtl:rotate-180" />
+        </span>
       </a>
     </li>
   );
 }
 
-/** Upcoming + advanceable: muted card with an Advance button. */
+/** Upcoming + advanceable: light card, name over dates, with a Start button. */
 function AdvanceablePhaseCard({
   name,
   startDate,
   endDate,
   locale,
   className,
-  advanceLabel = 'Advance',
+  advanceLabel = 'Start',
   onAdvance,
 }: PhaseContentProps & Pick<PhaseCardProps, 'advanceLabel' | 'onAdvance'>) {
   return (
     <li
       className={cn(
-        'flex items-center justify-between gap-4 rounded-xl bg-muted p-4',
+        'flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4',
         className,
       )}
     >
-      <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-1">
+        <PhaseName name={name} />
         <PhaseDates
           startDate={startDate}
           endDate={endDate}
           locale={locale}
           className="text-muted-foreground"
         />
-        <PhaseName name={name} />
       </div>
       <Button
-        variant="secondary"
+        variant="outline"
         onClick={() => onAdvance?.()}
         className="shrink-0"
       >
@@ -162,7 +170,7 @@ function AdvanceablePhaseCard({
   );
 }
 
-/** Upcoming: compact, gray rail + dates + name. */
+/** Upcoming: gray rail, name over dates. */
 function UpcomingPhaseCard({
   name,
   startDate,
@@ -171,14 +179,14 @@ function UpcomingPhaseCard({
   className,
 }: PhaseContentProps) {
   return (
-    <li className={cn('flex flex-col gap-2 border-s px-4 py-2', className)}>
+    <li className={cn('flex flex-col gap-1 border-s p-4', className)}>
+      <PhaseName name={name} />
       <PhaseDates
         startDate={startDate}
         endDate={endDate}
         locale={locale}
         className="text-muted-foreground"
       />
-      <PhaseName name={name} />
     </li>
   );
 }
@@ -199,7 +207,7 @@ function PhaseDates({
   }
 
   return (
-    <span className={cn('text-base', className)}>
+    <span className={cn('text-sm', className)}>
       {formatDateRange(startDate, endDate, locale)}
     </span>
   );
