@@ -14,7 +14,6 @@ import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
-import { LuCopy } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -88,29 +87,6 @@ export const UsersRowCells = ({ user }: { user: User }) => {
             menuClassName="min-w-48 p-2"
           >
             <MenuItem
-              key="view-analytics"
-              onAction={() => {
-                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-              }}
-              className="px-3 py-1"
-            >
-              {t('View analytics')}
-            </MenuItem>
-            <MenuItem
-              key="copy-auth-user-id"
-              onAction={() => {
-                navigator.clipboard.writeText(user.authUserId);
-                toast.success({
-                  message: t('Auth user ID copied to your clipboard.'),
-                  dismissable: false,
-                });
-              }}
-              className="px-3 py-1"
-            >
-              <LuCopy className="size-4" />
-              {t('Copy authUserId')}
-            </MenuItem>
-            <MenuItem
               key="edit-profile"
               onAction={() => {
                 if (user.profile) {
@@ -129,7 +105,30 @@ export const UsersRowCells = ({ user }: { user: User }) => {
               }}
               className="px-3 py-1"
             >
-              Add to Organization
+              {t('Add to organization')}
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem
+              key="copy-auth-user-id"
+              onAction={() => {
+                navigator.clipboard.writeText(user.authUserId);
+                toast.success({
+                  message: t('Auth user ID copied to your clipboard.'),
+                  dismissable: false,
+                });
+              }}
+              className="px-3 py-1"
+            >
+              {t('Copy authUserId')}
+            </MenuItem>
+            <MenuItem
+              key="view-analytics"
+              onAction={() => {
+                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+              }}
+              className="px-3 py-1"
+            >
+              {t('View analytics')}
             </MenuItem>
             <MenuSeparator />
             <MenuItem
