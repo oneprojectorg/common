@@ -126,6 +126,16 @@ const resolveExplicitScope = async ({
   return votedRows.map((row) => row.proposalId);
 };
 
+/**
+ * Reviewer identity + phase for the `excludeAssignedForReview` anti-join. Both
+ * are required together; absent means skip the exclusion.
+ */
+type ReviewAssignmentExclusion = {
+  /** The reviewer's individual profile id (`users.profileId`). */
+  reviewerProfileId: string;
+  phaseId: string;
+};
+
 // Shared function to build WHERE conditions for both count and data queries.
 // Parameterized on the table reference so callers can pass either the schema
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
@@ -134,14 +144,7 @@ const resolveExplicitScope = async ({
 const buildBaseConditions = (
   t: typeof proposals,
   input: ListProposalsInput,
-  /**
-   * The reviewer's *individual* profile id (`users.profileId`) — the identity
-   * review assignments are keyed on and the value `listReviewAssignments`
-   * filters by. NOT the acting/org `currentProfileId`, which would never match
-   * an assignment when reviewing inside an org/decision profile context.
-   */
-  reviewerProfileId: string | undefined,
-  resolvedPhaseId: string | undefined,
+  reviewExclusion: ReviewAssignmentExclusion | undefined,
 ): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
@@ -169,14 +172,10 @@ const buildBaseConditions = (
   }
 
   // "Other proposals" tab: exclude proposals the caller is assigned to review
-  // in the viewed phase. Correlated anti-join on the outer row's id; the four
-  // predicates match the `(processInstanceId, proposalId, reviewerProfileId,
-  // phaseId)` unique index exactly, so it's an index-only probe per row.
-  // Phase-scoping is deliberate — an assignment from a past review phase must
-  // not hide the proposal in the current one. Anonymous / no-profile callers
-  // (no reviewerProfileId) have no assignments, so the filter is skipped and
-  // they see the full phase set.
-  if (input.excludeAssignedForReview && reviewerProfileId && resolvedPhaseId) {
+  // in the viewed phase. Correlated anti-join matching the
+  // (processInstanceId, proposalId, reviewerProfileId, phaseId) unique index.
+  // Phase-scoped so a past-phase assignment can't hide the proposal now.
+  if (reviewExclusion) {
     conditions.push(
       notExists(
         db
@@ -191,9 +190,9 @@ const buildBaseConditions = (
               eq(proposalReviewAssignments.proposalId, t.id),
               eq(
                 proposalReviewAssignments.reviewerProfileId,
-                reviewerProfileId,
+                reviewExclusion.reviewerProfileId,
               ),
-              eq(proposalReviewAssignments.phaseId, resolvedPhaseId),
+              eq(proposalReviewAssignments.phaseId, reviewExclusion.phaseId),
             ),
           ),
       ),
@@ -354,24 +353,18 @@ export const resolveProposalListScope = async ({
   // makes the whole scope empty, so callers should short-circuit.
   const isEmpty = phaseScope.isEmpty || categoryIsEmpty;
 
-  // The phase actually being viewed. The "Other proposals" tab doesn't pass a
-  // phaseId (it defaults to the current phase), so fall back to the instance's
-  // current state for scoping the assignment exclusion.
-  const resolvedPhaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+  // The phase being viewed — the "Other proposals" tab omits phaseId and
+  // defaults to the instance's current state.
+  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
-  // Reviewer identity for the `excludeAssignedForReview` anti-join. Review
-  // assignments are keyed on the user's individual profile (`users.profileId`,
-  // what `listReviewAssignments` filters on), which is distinct from the
-  // acting `currentProfileId` when reviewing inside an org/decision context.
-  // Resolved only when the flag is set; anonymous / profile-less callers stay
-  // undefined and the exclusion is skipped.
-  let reviewerProfileId: string | undefined;
-  if (input.excludeAssignedForReview && user) {
-    try {
-      reviewerProfileId =
-        (await assertUserByAuthId(user.id)).profileId ?? undefined;
-    } catch {
-      reviewerProfileId = undefined;
+  // Reviewer + phase for the excludeAssignedForReview anti-join. Assignments are
+  // keyed on the user's individual profile (users.profileId), resolved only when
+  // the flag is set; profile-less callers skip the exclusion.
+  let reviewExclusion: ReviewAssignmentExclusion | undefined;
+  if (input.excludeAssignedForReview && user && phaseId) {
+    const reviewer = await assertUserByAuthId(user.id).catch(() => null);
+    if (reviewer?.profileId) {
+      reviewExclusion = { reviewerProfileId: reviewer.profileId, phaseId };
     }
   }
 
@@ -383,8 +376,7 @@ export const resolveProposalListScope = async ({
     let clause: SQL = buildBaseConditions(
       proposalsTable,
       input,
-      reviewerProfileId,
-      resolvedPhaseId,
+      reviewExclusion,
     );
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
