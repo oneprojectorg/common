@@ -138,7 +138,7 @@ function BannerImageField({
       ) : (
         <div className="flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:p-6">
           <div className="flex gap-4">
-            <div className="flex w-32 items-center justify-center rounded-md bg-gray-100">
+            <div className="flex w-32 items-center justify-center rounded-md bg-muted">
               {uploading ? (
                 <Spinner />
               ) : (

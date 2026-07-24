@@ -55,7 +55,7 @@ function AvatarUploader({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            aria-label={label ?? 'Upload image'}
+            aria-label={label ? `Upload ${label}` : 'Upload image'}
             className="z-10 cursor-pointer rounded-full bg-foreground/50 p-2 text-background outline-none hover:bg-foreground/70 focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed"
           >
             {uploading ? <Spinner /> : <LuCamera className="size-4" />}

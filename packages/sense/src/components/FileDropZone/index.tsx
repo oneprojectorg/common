@@ -111,7 +111,7 @@ function FileDropZone({
           disabled && 'pointer-events-none cursor-not-allowed opacity-50',
         )}
       >
-        <div className="flex size-20 items-center justify-center rounded-full bg-gray-100 group-data-[drop-target]/dropzone:bg-accent">
+        <div className="flex size-20 items-center justify-center rounded-full bg-background group-data-[drop-target]/dropzone:bg-accent">
           <LuFilePlus2 className="size-10 text-muted-foreground group-data-[drop-target]/dropzone:text-accent-foreground" />
         </div>
         <div className="flex flex-col items-center gap-1">

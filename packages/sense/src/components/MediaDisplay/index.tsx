@@ -33,7 +33,7 @@ function MediaDisplay({
 
   const details: React.ReactNode[] = [];
 
-  if (title && isPdf) {
+  if (title) {
     details.push(
       <p key="title" className="text-base font-strong">
         {title}
@@ -83,15 +83,30 @@ function MediaDisplay({
     );
   }
 
+  const body = (
+    <>
+      {children}
+      {details.length > 0 && <div className="p-4">{details}</div>}
+    </>
+  );
+
   return (
     <Card
       data-slot="media-display"
       className={cn('gap-0 overflow-hidden py-0', className)}
     >
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
-        {children}
-        {details.length > 0 && <div className="p-4">{details}</div>}
-      </a>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          {body}
+        </a>
+      ) : (
+        <div className="block">{body}</div>
+      )}
     </Card>
   );
 }
