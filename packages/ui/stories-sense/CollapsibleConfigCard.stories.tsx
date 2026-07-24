@@ -24,9 +24,20 @@ export default meta;
 
 type Story = StoryObj<typeof CollapsibleConfigCard>;
 
+const requiredBadge = (required: boolean) =>
+  required ? 'Required' : 'Optional';
+
 // Mirrors the Template Card master: body content, separator, then a footer
-// row with a Required switch and a small destructive Delete.
-const CardBody = () => {
+// row with a Required switch and a small destructive Delete. The switch
+// drives the header badge (the consumer owns that wiring — the card is
+// presentational).
+const CardBody = ({
+  required,
+  onRequiredChange,
+}: {
+  required: boolean;
+  onRequiredChange: (required: boolean) => void;
+}) => {
   const toggleId = useId();
 
   return (
@@ -36,7 +47,11 @@ const CardBody = () => {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Label htmlFor={toggleId}>Required?</Label>
-          <Switch id={toggleId} />
+          <Switch
+            id={toggleId}
+            checked={required}
+            onCheckedChange={onRequiredChange}
+          />
         </div>
         <Button variant="destructive" size="sm">
           <LuTrash2 data-icon="inline-start" />
@@ -52,10 +67,15 @@ const CardBody = () => {
 // handles, a custom drag preview, and a locked card alongside.
 const SortableDemo = () => {
   const [fields, setFields] = useState([
-    { id: 'title', label: 'Title', badge: 'Required' },
-    { id: 'description', label: 'Description', badge: 'Required' },
-    { id: 'budget', label: 'Budget', badge: 'Optional' },
+    { id: 'title', label: 'Title', required: true },
+    { id: 'description', label: 'Description', required: true },
+    { id: 'budget', label: 'Budget', required: false },
   ]);
+
+  const setRequired = (id: string, required: boolean) =>
+    setFields((prev) =>
+      prev.map((field) => (field.id === id ? { ...field, required } : field)),
+    );
 
   return (
     <Sortable
@@ -69,7 +89,7 @@ const SortableDemo = () => {
         field ? (
           <CollapsibleConfigCardDragPreview
             label={field.label}
-            badgeLabel={field.badge}
+            badgeLabel={requiredBadge(field.required)}
           />
         ) : null
       }
@@ -77,11 +97,14 @@ const SortableDemo = () => {
       {(field, controls) => (
         <CollapsibleConfigCard
           label={field.label}
-          badgeLabel={field.badge}
+          badgeLabel={requiredBadge(field.required)}
           isCollapsible
           controls={controls}
         >
-          <CardBody />
+          <CardBody
+            required={field.required}
+            onRequiredChange={(required) => setRequired(field.id, required)}
+          />
         </CollapsibleConfigCard>
       )}
     </Sortable>
