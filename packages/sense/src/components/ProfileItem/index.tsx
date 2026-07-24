@@ -16,7 +16,7 @@ interface ProfileItemProps {
 }
 
 const titleClasses: Record<ProfileItemSize, string> = {
-  default: 'font-semibold text-foreground',
+  default: 'text-base font-semibold text-foreground',
   small: 'text-base text-muted-foreground',
 };
 
@@ -44,12 +44,12 @@ function ProfileItem({
       )}
     >
       {avatar}
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div dir="auto" className={titleClasses[size]}>
           {title}
         </div>
         {description ? (
-          <div dir="auto" className="mt-2 text-muted-foreground">
+          <div dir="auto" className="text-sm text-muted-foreground">
             {description}
           </div>
         ) : null}
