@@ -152,6 +152,7 @@ const VotingProposalsList = ({
   votedProposalIds = [],
   hasFilter,
   proposalsHidden,
+  excludeAssignedForReview,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
@@ -271,7 +272,12 @@ const VotingProposalsList = ({
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
     }
-    return <NoProposalsFound hasFilter={hasFilter} />;
+    return (
+      <NoProposalsFound
+        hasFilter={hasFilter}
+        excludeAssignedForReview={excludeAssignedForReview}
+      />
+    );
   }
 
   return (

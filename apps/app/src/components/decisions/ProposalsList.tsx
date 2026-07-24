@@ -607,6 +607,8 @@ const ProposalsListContent = ({
                     submittedByProfileId: queryParams.submittedByProfileId,
                     votedByProfileId: queryParams.votedByProfileId,
                     status: queryParams.status,
+                    excludeAssignedForReview:
+                      queryParams.excludeAssignedForReview,
                   }}
                   listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
                 />
