@@ -7,6 +7,7 @@ import {
   inArray,
   isNull,
   ne,
+  notExists,
   or,
   sql,
 } from '@op/db/client';
@@ -18,6 +19,7 @@ import {
   processInstances,
   profileUsers,
   proposalCategories,
+  proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -29,6 +31,7 @@ import {
   getCurrentProfileId,
   resolveAccessUserIds,
 } from '../access';
+import { assertUserByAuthId } from '../assert';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
   type PhaseProposalSqlScope,
@@ -123,6 +126,16 @@ const resolveExplicitScope = async ({
   return votedRows.map((row) => row.proposalId);
 };
 
+/**
+ * Reviewer identity + phase for the `excludeAssignedForReview` anti-join. Both
+ * are required together; absent means skip the exclusion.
+ */
+type ReviewAssignmentExclusion = {
+  /** The reviewer's individual profile id (`users.profileId`). */
+  reviewerProfileId: string;
+  phaseId: string;
+};
+
 // Shared function to build WHERE conditions for both count and data queries.
 // Parameterized on the table reference so callers can pass either the schema
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
@@ -131,6 +144,7 @@ const resolveExplicitScope = async ({
 const buildBaseConditions = (
   t: typeof proposals,
   input: ListProposalsInput,
+  reviewExclusion: ReviewAssignmentExclusion | undefined,
 ): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
@@ -155,6 +169,34 @@ const buildBaseConditions = (
   if (search) {
     // Search in proposal data (JSONB) - convert to text for searching
     conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
+  }
+
+  // "Other proposals" tab: exclude proposals the caller is assigned to review
+  // in the viewed phase. Correlated anti-join matching the
+  // (processInstanceId, proposalId, reviewerProfileId, phaseId) unique index.
+  // Phase-scoped so a past-phase assignment can't hide the proposal now.
+  if (reviewExclusion) {
+    conditions.push(
+      notExists(
+        db
+          .select({ id: proposalReviewAssignments.id })
+          .from(proposalReviewAssignments)
+          .where(
+            and(
+              eq(
+                proposalReviewAssignments.processInstanceId,
+                processInstanceId,
+              ),
+              eq(proposalReviewAssignments.proposalId, t.id),
+              eq(
+                proposalReviewAssignments.reviewerProfileId,
+                reviewExclusion.reviewerProfileId,
+              ),
+              eq(proposalReviewAssignments.phaseId, reviewExclusion.phaseId),
+            ),
+          ),
+      ),
+    );
   }
 
   return and(...conditions)!;
@@ -311,12 +353,31 @@ export const resolveProposalListScope = async ({
   // makes the whole scope empty, so callers should short-circuit.
   const isEmpty = phaseScope.isEmpty || categoryIsEmpty;
 
+  // The phase being viewed — the "Other proposals" tab omits phaseId and
+  // defaults to the instance's current state.
+  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+
+  // Reviewer + phase for the excludeAssignedForReview anti-join. Assignments are
+  // keyed on the user's individual profile (users.profileId), resolved only when
+  // the flag is set; profile-less callers skip the exclusion.
+  let reviewExclusion: ReviewAssignmentExclusion | undefined;
+  if (input.excludeAssignedForReview && user && phaseId) {
+    const reviewer = await assertUserByAuthId(user.id).catch(() => null);
+    if (reviewer?.profileId) {
+      reviewExclusion = { reviewerProfileId: reviewer.profileId, phaseId };
+    }
+  }
+
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
   const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(proposalsTable, input);
+    let clause: SQL = buildBaseConditions(
+      proposalsTable,
+      input,
+      reviewExclusion,
+    );
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface

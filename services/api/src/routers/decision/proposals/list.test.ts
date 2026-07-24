@@ -12,6 +12,7 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { createReviewAssignment } from '@op/test';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -2317,4 +2318,252 @@ describeDecisionAccessTierGating('listProposals', {
       );
     },
   ),
+});
+
+/**
+ * `excludeAssignedForReview` — powers the reviewer's "Other proposals" tab by
+ * hiding proposals the caller is assigned to review in the viewed phase. The
+ * exclusion is resolved server-side from the caller's profile via a phase-
+ * scoped `NOT EXISTS` anti-join, so `total` and keyset pagination reflect it.
+ */
+describe.concurrent('listProposals: excludeAssignedForReview', () => {
+  /** Resolves the caller's current profile id (what the service excludes on). */
+  async function getProfileId(authUserId: string): Promise<string> {
+    const row = await db.query.users.findFirst({
+      where: { authUserId },
+      columns: { profileId: true },
+    });
+    if (!row?.profileId) {
+      throw new Error(`No profile for auth user ${authUserId}`);
+    }
+    return row.profileId;
+  }
+
+  /**
+   * Creates a PUBLISHED, no-pipeline instance with three SUBMITTED proposals
+   * and advances it to the `review` phase (where all three stay visible).
+   */
+  async function setupReviewPhaseWithProposals(
+    testData: TestDecisionsDataManager,
+    task: { id: string },
+  ) {
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const { userEmail } = setup;
+
+    const [p1, p2, p3] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 3 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    return { setup, instanceId, userEmail, p1, p2, p3 };
+  }
+
+  it('excludes the caller-assigned proposal and reflects it in total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, userEmail, p1 } =
+      await setupReviewPhaseWithProposals(testData, task);
+
+    const callerProfileId = await getProfileId(setup.user.id);
+
+    // Assign the caller to review p1 in the current (review) phase.
+    await createReviewAssignment({
+      processInstanceId: instanceId,
+      proposalId: p1.id,
+      reviewerProfileId: callerProfileId,
+      phaseId: 'review',
+    });
+
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    // Flag off: all three proposals, including the assigned one.
+    const withAssigned = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+    expect(withAssigned.total).toBe(3);
+    expect(withAssigned.proposals.map((p) => p.id)).toContain(p1.id);
+
+    // Flag on: the assigned proposal is gone and total drops to match.
+    const withoutAssigned = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      excludeAssignedForReview: true,
+    });
+    expect(withoutAssigned.total).toBe(2);
+    expect(withoutAssigned.proposals.map((p) => p.id)).not.toContain(p1.id);
+  });
+
+  it('keeps total and keyset pagination consistent with the exclusion', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, userEmail, p1, p2, p3 } =
+      await setupReviewPhaseWithProposals(testData, task);
+
+    const callerProfileId = await getProfileId(setup.user.id);
+    await createReviewAssignment({
+      processInstanceId: instanceId,
+      proposalId: p1.id,
+      reviewerProfileId: callerProfileId,
+      phaseId: 'review',
+    });
+
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    // Page through the excluded list one row at a time.
+    const page1 = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      excludeAssignedForReview: true,
+      limit: 1,
+    });
+    expect(page1.total).toBe(2);
+    expect(page1.hasMore).toBe(true);
+    expect(page1.next).not.toBeNull();
+
+    const page2 = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      excludeAssignedForReview: true,
+      limit: 1,
+      cursor: page1.next,
+    });
+    expect(page2.total).toBe(2);
+    expect(page2.hasMore).toBe(false);
+
+    // The assigned proposal never surfaces on any page; the other two do.
+    const seenIds = [...page1.proposals, ...page2.proposals].map((p) => p.id);
+    expect(seenIds).not.toContain(p1.id);
+    expect(seenIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
+  });
+
+  it('only excludes the current caller — a peer reviewer still sees everything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, p1 } = await setupReviewPhaseWithProposals(
+      testData,
+      task,
+    );
+
+    // Assign p1 to a *different* reviewer.
+    const peer = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    await createReviewAssignment({
+      processInstanceId: instanceId,
+      proposalId: p1.id,
+      reviewerProfileId: peer.profileId,
+      phaseId: 'review',
+    });
+
+    // The caller (owner, no assignments of their own) sees all three even with
+    // the flag on — the exclusion is scoped to the requester's assignments.
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      excludeAssignedForReview: true,
+    });
+    expect(result.total).toBe(3);
+    expect(result.proposals.map((p) => p.id)).toContain(p1.id);
+  });
+
+  it('does not exclude assignments from a different phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, userEmail, p1 } =
+      await setupReviewPhaseWithProposals(testData, task);
+
+    const callerProfileId = await getProfileId(setup.user.id);
+
+    // Assignment lives in the *submission* phase, but we're viewing review.
+    await createReviewAssignment({
+      processInstanceId: instanceId,
+      proposalId: p1.id,
+      reviewerProfileId: callerProfileId,
+      phaseId: 'submission',
+    });
+
+    const caller = await createAuthenticatedCaller(userEmail);
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      excludeAssignedForReview: true,
+    });
+
+    // The past-phase assignment must not hide the proposal in the current one.
+    expect(result.total).toBe(3);
+    expect(result.proposals.map((p) => p.id)).toContain(p1.id);
+  });
+
+  it('composes with sort direction, excluding the assigned proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, userEmail, p1, p2, p3 } =
+      await setupReviewPhaseWithProposals(testData, task);
+
+    const callerProfileId = await getProfileId(setup.user.id);
+    await createReviewAssignment({
+      processInstanceId: instanceId,
+      proposalId: p1.id,
+      reviewerProfileId: callerProfileId,
+      phaseId: 'review',
+    });
+
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    // Canonical ascending order with the flag off (creation order via
+    // Promise.all isn't deterministic, so derive the expected order instead of
+    // hard-coding it).
+    const baseline = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      dir: 'asc',
+    });
+    const excluded = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      excludeAssignedForReview: true,
+      dir: 'asc',
+    });
+
+    // The excluded list is exactly the baseline order minus the assigned p1 —
+    // sort composes with the exclusion, order is otherwise preserved.
+    const expectedIds = baseline.proposals
+      .map((p) => p.id)
+      .filter((id) => id !== p1.id);
+    expect(excluded.proposals.map((p) => p.id)).toEqual(expectedIds);
+    expect(expectedIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
+  });
 });
