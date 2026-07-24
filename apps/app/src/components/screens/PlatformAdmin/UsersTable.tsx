@@ -29,7 +29,11 @@ import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ResponsiveSelect } from '../../decisions/ResponsiveSelect';
 import { UsersRowCells } from './UsersRow';
+
+/** Anonymous-account filter options for the users list */
+type AnonFilter = 'exclude' | 'include';
 
 /**
  * Exports user data to CSV and triggers download
@@ -64,13 +68,22 @@ export const UsersTable = () => {
   const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
+  const [anonFilter, setAnonFilter] = useState<AnonFilter>('exclude');
+  const includeAnonymous = anonFilter === 'include';
   const [isExporting, startExportTransition] = useTransition();
+
+  const anonFilterItems: Array<{ id: AnonFilter; label: string }> = [
+    { id: 'exclude', label: t('Exclude anonymous users') },
+    { id: 'include', label: t('Include anonymous users') },
+  ];
 
   const handleExportAllUsers = useCallback(() => {
     startExportTransition(async () => {
       try {
-        // Fetch all users without limit
-        const result = await utils.platform.admin.listAllUsers.fetch({});
+        // Fetch all users without limit, honouring the anonymous filter
+        const result = await utils.platform.admin.listAllUsers.fetch({
+          includeAnonymous,
+        });
 
         if (result.items.length === 0) {
           return;
@@ -88,16 +101,16 @@ export const UsersTable = () => {
         toast.error({ message: t('Failed to export users') });
       }
     });
-  }, [utils, t]);
+  }, [utils, t, includeAnonymous]);
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <Header2 className="text-md font-serif">
           {t('platformAdmin_allUsers')}
         </Header2>
-        <div className="flex items-center gap-2">
-          <div className="w-64">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="w-full sm:w-64">
             <SearchField
               aria-label={t('Search users by name or email')}
               placeholder={t('Search users by name or email')}
@@ -105,6 +118,14 @@ export const UsersTable = () => {
               onChange={setSearchQuery}
             />
           </div>
+          <ResponsiveSelect<AnonFilter>
+            selectedKey={anonFilter}
+            onSelectionChange={setAnonFilter}
+            items={anonFilterItems}
+            aria-label={t('Filter anonymous users')}
+            size="medium"
+            className="min-w-36 flex-1 sm:w-36 sm:flex-none"
+          />
           <OptionMenu
             aria-label={t('User options')}
             variant="outline"
@@ -119,14 +140,23 @@ export const UsersTable = () => {
         </div>
       </div>
       <Suspense fallback={<UsersTableSkeleton />}>
-        <UsersTableContent searchQuery={debouncedQuery} />
+        <UsersTableContent
+          searchQuery={debouncedQuery}
+          includeAnonymous={includeAnonymous}
+        />
       </Suspense>
     </div>
   );
 };
 
 /** Renders users table with live data */
-const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
+const UsersTableContent = ({
+  searchQuery,
+  includeAnonymous,
+}: {
+  searchQuery: string;
+  includeAnonymous: boolean;
+}) => {
   const t = useTranslations();
   const {
     cursor,
@@ -138,15 +168,16 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     reset,
   } = useCursorPagination(5);
 
-  // Reset pagination when search query changes
+  // Reset pagination when the search query or anonymous filter changes
   useEffect(() => {
     reset();
-  }, [searchQuery]);
+  }, [searchQuery, includeAnonymous]);
 
   const queryInput = {
     cursor,
     limit,
     query: searchQuery || undefined,
+    includeAnonymous,
   };
 
   const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
