@@ -405,6 +405,16 @@ test.describe('Decision Manual Selection — full flow', () => {
       .set({ allocated: '9000' })
       .where(eq(decisionProcessResultSelections.proposalId, beta.id));
 
+    // The allocations above were written straight to the DB, bypassing the
+    // app mutations that normally invalidate the query cache. React Query is
+    // persisted to localStorage (PersistQueryClientProvider), so a plain
+    // reload rehydrates the pre-update results (allocated=null) and renders
+    // them stale-while-revalidate — a race the assertions below can lose.
+    // Drop the persisted cache so the reload fetches the allocations fresh.
+    await authenticatedPage.evaluate(() =>
+      window.localStorage.removeItem('REACT_QUERY_OFFLINE_CACHE'),
+    );
+
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 
     const fundedHeading = authenticatedPage.getByRole('heading', {

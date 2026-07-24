@@ -491,6 +491,18 @@ const ProposalsListContent = ({
       </div>
     ) : null;
 
+  // True for any active filter (category OR All/Mine/Shortlisted) so an empty
+  // result reads "none match your filters", not "none yet".
+  const hasActiveFilter =
+    selectedCategory !== 'all-categories' ||
+    proposalFilter !== ProposalFilter.ALL;
+
+  // With nothing to filter, sort, or export, the control bar is just noise —
+  // collapse to the empty state alone. Keep it when a filter is active (so a
+  // zero-result filter can still be cleared) and in map mode (where the bar
+  // hosts the view toggle).
+  const showFilterBar = isMapMode || allProposals.length > 0 || hasActiveFilter;
+
   return (
     <div
       className={cn(
@@ -499,31 +511,33 @@ const ProposalsListContent = ({
         isMapMode && 'max-sm:pb-0',
       )}
     >
-      <ProposalsStickyFilterBar
-        pinOffset={pinOffset}
-        hideFilters={hideFilters}
-        total={total}
-        totalProposalCount={totalProposalCount}
-        proposalFilter={proposalFilter}
-        setProposalFilter={setProposalFilter}
-        hasVoted={hasVoted}
-        currentProfileId={currentProfileId}
-        decisionSlug={decisionSlug}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-        canManageProposals={canManageProposals}
-        isExporting={isExporting}
-        isDownloadReady={isDownloadReady}
-        downloadUrl={downloadUrl}
-        downloadFileName={downloadFileName}
-        onExport={handleExport}
-        hasLocationField={hasLocationField}
-        effectiveView={effectiveView}
-        onViewChange={handleViewChange}
-      />
+      {showFilterBar && (
+        <ProposalsStickyFilterBar
+          pinOffset={pinOffset}
+          hideFilters={hideFilters}
+          total={total}
+          totalProposalCount={totalProposalCount}
+          proposalFilter={proposalFilter}
+          setProposalFilter={setProposalFilter}
+          hasVoted={hasVoted}
+          currentProfileId={currentProfileId}
+          decisionSlug={decisionSlug}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          canManageProposals={canManageProposals}
+          isExporting={isExporting}
+          isDownloadReady={isDownloadReady}
+          downloadUrl={downloadUrl}
+          downloadFileName={downloadFileName}
+          onExport={handleExport}
+          hasLocationField={hasLocationField}
+          effectiveView={effectiveView}
+          onViewChange={handleViewChange}
+        />
+      )}
 
       {translation.translationState && (
         <TranslationNotice
@@ -592,12 +606,7 @@ const ProposalsListContent = ({
             decisionSlug={decisionSlug}
             permissions={permissions}
             votedProposalIds={selectedProposalIds}
-            // True for any active filter (category OR All/Mine/Shortlisted) so an
-            // empty result reads "none match your filters", not "none yet".
-            hasFilter={
-              selectedCategory !== 'all-categories' ||
-              proposalFilter !== ProposalFilter.ALL
-            }
+            hasFilter={hasActiveFilter}
             isVotingPhase={isVotingPhase}
             proposalsHidden={proposalsHidden}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
