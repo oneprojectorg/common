@@ -1,4 +1,4 @@
-import { and, count, db, eq, inArray } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
@@ -11,10 +11,7 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import {
-  type ReviewAssignmentSort,
-  sortByLeastReviewed,
-} from './reviewAssignmentSort';
+import type { ReviewAssignmentSort } from './reviewAssignmentSort';
 import {
   getActiveRevisionRequest,
   resolveAssignmentProposal,
@@ -26,9 +23,9 @@ import {
 } from './schemas/reviews';
 
 /**
- * Status priority for the "least reviewed" secondary sort — lower ranks first.
- * Orders the reviewer's queue by how actionable each item is: resume
- * in-progress work, then items needing action, then not-started, then done.
+ * Status priority for the "least reviewed" secondary sort — lower ranks first,
+ * so the most actionable work (resume in-progress, then items needing action)
+ * surfaces ahead of not-started and completed within a review-count bucket.
  */
 const STATUS_SORT_RANK: Record<string, number> = {
   [ProposalReviewAssignmentStatus.IN_PROGRESS]: 0,
@@ -38,39 +35,8 @@ const STATUS_SORT_RANK: Record<string, number> = {
   [ProposalReviewAssignmentStatus.COMPLETED]: 4,
 } satisfies Record<ProposalReviewAssignmentStatus, number>;
 
-/**
- * Counts COMPLETED review assignments per proposal across all reviewers in the
- * instance — the same "≥1 completed assignment = reviewed" definition surfaced
- * as the "N Reviewed" badge. Used to order the reviewer queue by coverage.
- */
-async function getCompletedReviewCounts(
-  processInstanceId: string,
-  proposalIds: string[],
-): Promise<Map<string, number>> {
-  if (proposalIds.length === 0) {
-    return new Map();
-  }
-
-  const rows = await db
-    .select({
-      proposalId: proposalReviewAssignments.proposalId,
-      completed: count(),
-    })
-    .from(proposalReviewAssignments)
-    .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        inArray(proposalReviewAssignments.proposalId, proposalIds),
-        eq(
-          proposalReviewAssignments.status,
-          ProposalReviewAssignmentStatus.COMPLETED,
-        ),
-      ),
-    )
-    .groupBy(proposalReviewAssignments.proposalId);
-
-  return new Map(rows.map((row) => [row.proposalId, Number(row.completed)]));
-}
+/** Any unmapped (future) status sorts after all known ones. */
+const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
 /** Returns all authorized review assignments for the current reviewer in a process instance. */
 export async function listReviewAssignments({
@@ -97,6 +63,32 @@ export async function listReviewAssignments({
     throw new UnauthorizedError("You don't have access to review proposals");
   }
 
+  // COMPLETED reviews for the proposal across *all* reviewers — the same
+  // "≥1 completed = reviewed" definition shown as the "N Reviewed" badge. A
+  // correlated subquery (own `pra_completed` alias) so it isn't constrained by
+  // the outer query's per-reviewer filter.
+  const completedReviewCount = (t: typeof proposalReviewAssignments) =>
+    sql<number>`(
+      SELECT COUNT(*)::int FROM ${proposalReviewAssignments} AS pra_completed
+      WHERE pra_completed.proposal_id = ${t.proposalId}
+        AND pra_completed.process_instance_id = ${processInstanceId}
+        AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}
+    )`;
+
+  const statusRank = (t: typeof proposalReviewAssignments) =>
+    sql<number>`CASE ${t.status} ${sql.join(
+      Object.entries(STATUS_SORT_RANK).map(
+        ([value, rank]) => sql`WHEN ${value} THEN ${rank}`,
+      ),
+      sql` `,
+    )} ELSE ${UNKNOWN_STATUS_RANK} END`;
+
+  // Stable per-reviewer shuffle: the constant reviewer prefix makes equally
+  // reviewed proposals order differently for each reviewer (spreading review
+  // coverage), while staying stable across refetches for a given reviewer.
+  const reviewerShuffle = (t: typeof proposalReviewAssignments) =>
+    sql`md5(${dbUser.profileId} || ${t.proposalId}::text)`;
+
   const assignments = await db.query.proposalReviewAssignments.findMany({
     where: {
       processInstanceId,
@@ -104,22 +96,24 @@ export async function listReviewAssignments({
       ...(status && { status }),
     },
     with: reviewAssignmentWithConfig,
-    // `assignedAt asc` is the base order for date sorts and the stable seed the
-    // "least reviewed" re-sort below builds on. This list is never paginated,
-    // so the coverage-based re-order can safely happen in memory.
-    orderBy: {
-      assignedAt: sort === 'newest' ? 'desc' : 'asc',
+    // The `id` tie-break gives a deterministic order when the primary keys are
+    // equal (e.g. same `assignedAt`, or same coverage before the shuffle).
+    orderBy: (table, { asc, desc }) => {
+      if (sort === 'newest') {
+        return [desc(table.assignedAt), desc(table.id)];
+      }
+      if (sort === 'oldest') {
+        return [asc(table.assignedAt), asc(table.id)];
+      }
+      // 'leastReviewed': fewest completed reviews, then status priority, then
+      // the stable per-reviewer shuffle.
+      return [
+        asc(completedReviewCount(table)),
+        asc(statusRank(table)),
+        asc(reviewerShuffle(table)),
+      ];
     },
   });
-
-  const orderedAssignments =
-    sort === 'leastReviewed'
-      ? await sortAssignmentsByLeastReviewed(
-          assignments,
-          processInstanceId,
-          dbUser.profileId,
-        )
-      : assignments;
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
@@ -152,7 +146,7 @@ export async function listReviewAssignments({
     { onFetchError: 'omit' },
   );
 
-  const assignmentList = orderedAssignments.map((assignment) => {
+  const assignmentList = assignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
 
     const documentContent = documentContentMap.get(proposalSnapshot.id);
@@ -183,33 +177,4 @@ export async function listReviewAssignments({
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
   });
-}
-
-/**
- * Re-orders the reviewer's assignments by review coverage: least-reviewed
- * proposals first, then the reviewer's status priority within each bucket, then
- * a stable per-reviewer random tiebreak (see {@link sortByLeastReviewed}).
- */
-async function sortAssignmentsByLeastReviewed<
-  T extends { proposalId: string; status: string },
->(
-  assignments: T[],
-  processInstanceId: string,
-  reviewerProfileId: string,
-): Promise<T[]> {
-  const completedCounts = await getCompletedReviewCounts(
-    processInstanceId,
-    assignments.map((assignment) => assignment.proposalId),
-  );
-
-  return sortByLeastReviewed(
-    assignments.map((assignment) => ({
-      assignment,
-      proposalId: assignment.proposalId,
-      completedReviewCount: completedCounts.get(assignment.proposalId) ?? 0,
-      statusRank:
-        STATUS_SORT_RANK[assignment.status] ?? Number.MAX_SAFE_INTEGER,
-    })),
-    reviewerProfileId,
-  ).map((item) => item.assignment);
 }
