@@ -178,12 +178,6 @@ function PhaseStepper({
 
   return (
     <div className={cn('w-full', className)}>
-      <style>{`
-        @keyframes phase-ripple {
-          0% { transform: scale(1); opacity: 0.4; }
-          100% { transform: scale(1.6); opacity: 0; }
-        }
-      `}</style>
       <div className="flex justify-center gap-2">
         {phases.map((phase, index) => {
           const stepState = getStepState(index);

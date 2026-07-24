@@ -178,8 +178,14 @@ export function Sortable<T extends SortableItem>({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => String(item.id) === active.id);
-      const newIndex = items.findIndex((item) => String(item.id) === over.id);
+      // active.id/over.id are UniqueIdentifier (string | number); items
+      // register as String(item.id), so normalize both sides before compare.
+      const oldIndex = items.findIndex(
+        (item) => String(item.id) === String(active.id),
+      );
+      const newIndex = items.findIndex(
+        (item) => String(item.id) === String(over.id),
+      );
       const newItems = arrayMove(items, oldIndex, newIndex);
       onChange(newItems);
     }

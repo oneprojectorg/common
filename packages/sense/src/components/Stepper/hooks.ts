@@ -17,6 +17,12 @@ export const useStepper = ({
     setCurrentStep(step);
   };
 
+  /**
+   * Validate the current step against its zod schema and advance on success.
+   * Returns `undefined` when it advanced, or a `fieldErrors` map when
+   * validation failed — callers MUST check the return value to surface errors
+   * (a bare `onClick={() => nextStep(values)}` silently swallows them).
+   */
   const nextStep = (values: Record<string, unknown> = {}) => {
     const success = () =>
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps - 1));
