@@ -702,7 +702,6 @@
   "Number of proposals each participant can vote on": "প্রতিটি অংশগ্রহণকারী যতগুলি প্রস্তাবে ভোট দিতে পারেন",
   "No limit": "কোনো সীমা নেই",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# ভোট} other {# ভোট}}",
-  "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {প্রস্তাব} other {প্রস্তাব}}",
   "of {total, plural, one {# proposal} other {# proposals}}": "{total, plural, one {# প্রস্তাবের} other {# প্রস্তাবের}} মধ্যে",
   "Template Editor": "টেমপ্লেট এডিটর",
   "Criteria": "মানদণ্ড",

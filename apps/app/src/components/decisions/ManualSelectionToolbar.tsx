@@ -4,7 +4,7 @@ import { ProposalFilter } from '@op/api/encoders';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalCountHeader } from './ProposalsFilterBar';
+import { ProposalCount } from './ProposalCount';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { useProposalFilterItems } from './useProposalFilters';
 
@@ -48,7 +48,7 @@ export const ManualSelectionToolbar = ({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <ProposalCountHeader count={count} total={total} />
+      <ProposalCount count={count} total={total} />
       <div className="flex flex-wrap items-center gap-2">
         <ResponsiveSelect
           selectedKey={proposalFilter}

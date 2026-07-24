@@ -8,7 +8,13 @@
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 
-export const TranslatedText = ({ text }: { text: TranslationKey }) => {
+export const TranslatedText = ({
+  text,
+  values,
+}: {
+  text: TranslationKey;
+  values?: Record<string, unknown>;
+}) => {
   const t = useTranslations();
-  return t(text);
+  return t(text, values);
 };

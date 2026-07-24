@@ -700,7 +700,6 @@
   "Number of proposals each participant can vote on": "Número de propuestas por las que puede votar cada participante",
   "No limit": "Sin límite",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# voto} other {# votos}}",
-  "{total, plural, one {proposal} other {proposals}}": "{total, plural, one {propuesta} other {propuestas}}",
   "of {total, plural, one {# proposal} other {# proposals}}": "de {total, plural, one {# propuesta} other {# propuestas}}",
   "Template Editor": "Editor de plantilla",
   "Criteria": "Criterios",
