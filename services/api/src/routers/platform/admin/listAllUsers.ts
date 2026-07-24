@@ -16,6 +16,8 @@ export const listAllUsersRouter = router({
         .extend({
           /** string for searching users by email (for now) */
           query: z.string().optional(),
+          /** include anonymous accounts in the results (excluded by default) */
+          includeAnonymous: z.boolean().optional(),
         })
         .optional(),
     )
@@ -27,13 +29,14 @@ export const listAllUsersRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const { cursor, dir, query, limit } = input ?? {};
+      const { cursor, dir, query, limit, includeAnonymous } = input ?? {};
 
       const { items, next, total } = await listAllUsers({
         cursor,
         dir,
         query,
         limit,
+        includeAnonymous,
       });
 
       return {

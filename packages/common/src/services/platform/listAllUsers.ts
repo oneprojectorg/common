@@ -1,4 +1,4 @@
-import { and, count, db, ilike, inArray } from '@op/db/client';
+import { and, count, db, eq, ilike, inArray, notInArray } from '@op/db/client';
 import { authUsers, users } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
@@ -14,27 +14,42 @@ import {
 /**
  * List every user on the platform with cursor-based pagination and optional
  * email search. Used by the platform-admin dashboard. Skips the global
- * access-control sentinel users.
+ * access-control sentinel users. Anonymous accounts are excluded unless
+ * `includeAnonymous` is set.
  */
 export const listAllUsers = async ({
   cursor,
   dir = 'desc',
   query,
   limit,
+  includeAnonymous = false,
 }: {
   cursor?: string | null;
   dir?: SortDir;
   query?: string;
   limit?: number;
+  includeAnonymous?: boolean;
 }) => {
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
   const hasSearch = !!(query && query.length >= 2);
 
   // Filter shared by the paginated query and the total count: exclude the
-  // sentinel users and, when searching, match the email. The cursor condition
+  // sentinel users, drop anonymous accounts (unless requested), and, when
+  // searching, match the authoritative auth.users email. The cursor condition
   // is added only to the paginated query.
   const baseConds = (table: { authUserId: AnyPgColumn }): SQL[] => {
     const conds: SQL[] = [excludeGlobalUsers(table.authUserId)];
+    if (!includeAnonymous) {
+      conds.push(
+        notInArray(
+          table.authUserId,
+          db
+            .select({ id: authUsers.id })
+            .from(authUsers)
+            .where(eq(authUsers.isAnonymous, true)),
+        ),
+      );
+    }
     if (hasSearch) {
       // Match against auth.users.email (authoritative) via the auth_user_id FK.
       conds.push(
