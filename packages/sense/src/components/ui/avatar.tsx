@@ -1,6 +1,7 @@
 'use client';
 
 import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
+import { getGradientForString } from '@op/styles/constants';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
@@ -40,13 +41,28 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
 
 function AvatarFallback({
   className,
+  name,
   ...props
-}: AvatarPrimitive.Fallback.Props) {
+}: AvatarPrimitive.Fallback.Props & {
+  /**
+   * Seed for the deterministic gradient fill shown when there's no image.
+   * Defaults to string children (e.g. initials). Pass the full display name
+   * for a stable per-person color. Falls back to muted when no seed exists.
+   */
+  name?: string;
+}) {
+  const seed =
+    name ?? (typeof props.children === 'string' ? props.children : undefined);
+  const gradient = seed ? getGradientForString(seed) : undefined;
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs',
+        'flex size-full items-center justify-center rounded-full text-sm group-data-[size=sm]/avatar:text-xs',
+        gradient
+          ? cn(gradient, 'text-white')
+          : 'bg-muted text-muted-foreground',
         className,
       )}
       {...props}
