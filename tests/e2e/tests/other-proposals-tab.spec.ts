@@ -106,8 +106,6 @@ test.describe('Other proposals tab', () => {
       },
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
     await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
