@@ -350,6 +350,18 @@
   }
 }
 
+/* PhaseStepper active-step ripple (was injected inline per-instance). */
+@keyframes phase-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
 /* Semantic theme — values from the Common Sense Figma "Mode/Light" theme
  * collection, expressed against the Colors Scale ramps above. Dark mode is
  * unsupported (the Figma dark mode is unpopulated), so no dark block. */

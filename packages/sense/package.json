@@ -25,6 +25,7 @@
     "./Chart": "./src/components/ui/chart.tsx",
     "./Checkbox": "./src/components/ui/checkbox.tsx",
     "./Collapsible": "./src/components/ui/collapsible.tsx",
+    "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard/index.tsx",
     "./Combobox": "./src/components/ui/combobox.tsx",
     "./Command": "./src/components/ui/command.tsx",
     "./ContextMenu": "./src/components/ui/context-menu.tsx",
@@ -50,6 +51,8 @@
     "./NavigationMenu": "./src/components/ui/navigation-menu.tsx",
     "./NumberField": "./src/components/NumberField/index.tsx",
     "./Pagination": "./src/components/ui/pagination.tsx",
+    "./PhaseCard": "./src/components/PhaseCard/index.tsx",
+    "./PhaseStepper": "./src/components/PhaseStepper/index.tsx",
     "./Popover": "./src/components/ui/popover.tsx",
     "./Progress": "./src/components/ui/progress.tsx",
     "./RadioGroup": "./src/components/ui/radio-group.tsx",
@@ -65,8 +68,10 @@
     "./Skeleton": "./src/components/ui/skeleton.tsx",
     "./Slider": "./src/components/ui/slider.tsx",
     "./Sonner": "./src/components/ui/sonner.tsx",
+    "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane/index.tsx",
     "./Spinner": "./src/components/ui/spinner.tsx",
+    "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/ui/switch.tsx",
     "./Table": "./src/components/ui/table.tsx",
     "./TagGroup": "./src/components/TagGroup/index.tsx",
@@ -83,6 +88,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@op/styles": "workspace:*",
     "@tiptap/core": "catalog:",
     "@tiptap/extension-details": "catalog:",
@@ -110,7 +118,8 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
