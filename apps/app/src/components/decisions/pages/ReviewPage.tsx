@@ -5,6 +5,7 @@ import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -64,6 +65,19 @@ export function ReviewPage({
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
+  const proposalsLoadErrorFallback = {
+    default: () => (
+      <EmptyState icon={<LuLeaf className="size-6" />}>
+        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+          <TranslatedText text="We couldn't load proposals" />
+        </Header3>
+        <p className="text-base text-neutral-charcoal">
+          <TranslatedText text="Please refresh the page to try again." />
+        </p>
+      </EmptyState>
+    ),
+  };
+
   return (
     <div className="min-h-full">
       <DecisionHeroBanner heroImagePath={heroImagePath}>
@@ -107,28 +121,45 @@ export function ReviewPage({
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">
-          <APIErrorBoundary
-            fallbacks={{
-              default: () => (
-                <EmptyState icon={<LuLeaf className="size-6" />}>
-                  <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-                    <TranslatedText text="We couldn't load proposals" />
-                  </Header3>
-                  <p className="text-base text-neutral-charcoal">
-                    <TranslatedText text="Please refresh the page to try again." />
-                  </p>
-                </EmptyState>
-              ),
-            }}
-          >
-            <Suspense fallback={<ProposalListSkeleton />}>
-              {canReview ? (
-                <ReviewAssignmentsList
-                  processInstanceId={instance.id}
-                  decisionSlug={decisionSlug}
-                  canViewReviewers={isAdmin}
-                />
-              ) : (
+          {canReview ? (
+            <Tabs className="gap-6" defaultSelectedKey="to-review">
+              <TabList className="flex gap-6">
+                <Tab id="to-review">{t('Proposals to review')}</Tab>
+                <Tab id="other-proposals">{t('Other proposals')}</Tab>
+              </TabList>
+
+              <TabPanel id="to-review" className="grow sm:p-0">
+                <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
+                  <Suspense fallback={<ProposalListSkeleton />}>
+                    <ReviewAssignmentsList
+                      processInstanceId={instance.id}
+                      decisionSlug={decisionSlug}
+                      canViewReviewers={isAdmin}
+                    />
+                  </Suspense>
+                </APIErrorBoundary>
+              </TabPanel>
+
+              <TabPanel id="other-proposals" className="grow sm:p-0">
+                <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
+                  <Suspense fallback={<ProposalListSkeleton />}>
+                    <ProposalsList
+                      slug={slug}
+                      instanceId={instance.id}
+                      decisionSlug={decisionSlug}
+                      decisionProfileId={decisionProfileId}
+                      permissions={instance.access}
+                      currentPhase={currentPhase}
+                      pinOffset={pinOffset}
+                      excludeAssignedForReview
+                    />
+                  </Suspense>
+                </APIErrorBoundary>
+              </TabPanel>
+            </Tabs>
+          ) : (
+            <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
+              <Suspense fallback={<ProposalListSkeleton />}>
                 <ProposalsList
                   slug={slug}
                   instanceId={instance.id}
@@ -138,9 +169,9 @@ export function ReviewPage({
                   currentPhase={currentPhase}
                   pinOffset={pinOffset}
                 />
-              )}
-            </Suspense>
-          </APIErrorBoundary>
+              </Suspense>
+            </APIErrorBoundary>
+          )}
         </div>
       </div>
     </div>

@@ -53,6 +53,8 @@ export interface ProposalsProps {
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+  /** Reviewer's "Other proposals" tab — tailors the empty state. */
+  excludeAssignedForReview?: boolean;
 }
 
 export const ProposalsGrid = ({
@@ -85,8 +87,27 @@ export const ProposalsGrid = ({
   );
 };
 
-const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
+const NoProposalsFound = ({
+  hasFilter,
+  excludeAssignedForReview,
+}: {
+  hasFilter: boolean;
+  excludeAssignedForReview?: boolean;
+}) => {
   const t = useTranslations();
+
+  if (excludeAssignedForReview && !hasFilter) {
+    return (
+      <EmptyState icon={<LuLeaf className="size-6" />}>
+        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+          {t('No other proposals')}
+        </Header3>
+        <p className="text-base text-neutral-charcoal">
+          {t('There are no proposals outside your review queue.')}
+        </p>
+      </EmptyState>
+    );
+  }
 
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
@@ -125,6 +146,7 @@ const VotingProposalsList = ({
   votedProposalIds = [],
   hasFilter,
   proposalsHidden,
+  excludeAssignedForReview,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
@@ -244,7 +266,12 @@ const VotingProposalsList = ({
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
     }
-    return <NoProposalsFound hasFilter={hasFilter} />;
+    return (
+      <NoProposalsFound
+        hasFilter={hasFilter}
+        excludeAssignedForReview={excludeAssignedForReview}
+      />
+    );
   }
 
   return (
@@ -465,6 +492,7 @@ const ViewProposalsList = ({
   permissions,
   hasFilter,
   proposalsHidden,
+  excludeAssignedForReview,
   revisionRequestIdByProposalId,
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
@@ -474,7 +502,12 @@ const ViewProposalsList = ({
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
     }
-    return <NoProposalsFound hasFilter={hasFilter} />;
+    return (
+      <NoProposalsFound
+        hasFilter={hasFilter}
+        excludeAssignedForReview={excludeAssignedForReview}
+      />
+    );
   }
 
   return (

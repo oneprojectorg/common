@@ -61,6 +61,8 @@ export interface ProposalsListProps {
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+  /** Exclude proposals the current user is assigned to review (Other proposals tab). */
+  excludeAssignedForReview?: boolean;
   /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
@@ -84,6 +86,7 @@ type ProposalQueryParams = {
   dir: 'asc' | 'desc';
   limit: number;
   phase?: 'results';
+  excludeAssignedForReview?: boolean;
 };
 
 type ProposalsLoaderRenderProps = {
@@ -160,6 +163,7 @@ const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
+      excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },
     { staleTime: 30 * 1000 },
   );
@@ -230,7 +234,7 @@ const ResultsPhaseProposalsLoader = ({
 };
 
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase, initialFilter } = props;
+  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -272,6 +276,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
       dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: PROPOSALS_PAGE_LIMIT,
       phase,
+      excludeAssignedForReview,
     };
 
     if (selectedCategory !== 'all-categories') {
@@ -298,6 +303,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     phase,
     proposalFilter,
     currentProfileId,
+    excludeAssignedForReview,
   ]);
 
   const renderContent = (data: ProposalsLoaderRenderProps) => (
@@ -350,6 +356,7 @@ const ProposalsListContent = ({
   permissions,
   currentPhase,
   proposalsHidden,
+  excludeAssignedForReview,
   pinOffset,
   phase,
   queryParams,
@@ -503,6 +510,9 @@ const ProposalsListContent = ({
   // hosts the view toggle).
   const showFilterBar = isMapMode || allProposals.length > 0 || hasActiveFilter;
 
+  // Empty + unfiltered falls through to the grid's empty state instead of a blank map.
+  const isEmptyUnfiltered = allProposals.length === 0 && !hasActiveFilter;
+
   return (
     <div
       className={cn(
@@ -549,7 +559,7 @@ const ProposalsListContent = ({
       <ProposalTranslationProvider
         translations={translation.translationState?.translations ?? {}}
       >
-        {isMapMode ? (
+        {isMapMode && !isEmptyUnfiltered ? (
           phase === 'results' ? (
             // Results uses the phase-agnostic `listAllProposals` set; source
             // pins from that same loaded data so pins match the results list.
@@ -592,6 +602,8 @@ const ProposalsListContent = ({
                     submittedByProfileId: queryParams.submittedByProfileId,
                     votedByProfileId: queryParams.votedByProfileId,
                     status: queryParams.status,
+                    excludeAssignedForReview:
+                      queryParams.excludeAssignedForReview,
                   }}
                   listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
                 />
@@ -609,6 +621,7 @@ const ProposalsListContent = ({
             hasFilter={hasActiveFilter}
             isVotingPhase={isVotingPhase}
             proposalsHidden={proposalsHidden}
+            excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
           />
         )}

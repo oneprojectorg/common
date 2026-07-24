@@ -697,6 +697,7 @@ export const proposalLocationsFilterSchema = z.object({
   categoryId: z.string().optional(),
   phaseId: z.string().optional(),
   votedByProfileId: z.uuid().optional(),
+  excludeAssignedForReview: z.boolean().optional(),
   phase: z.enum(['results']).optional(),
 });
 
