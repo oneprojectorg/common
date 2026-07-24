@@ -39,21 +39,33 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   );
 }
 
+/** Up-to-two initials: first + last word's first letter (single word → one). */
+function initialsFromName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '';
+  }
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+  return (first + last).toUpperCase();
+}
+
 function AvatarFallback({
   className,
   name,
+  children,
   ...props
 }: AvatarPrimitive.Fallback.Props & {
   /**
-   * Seed for the deterministic gradient fill shown when there's no image.
-   * Defaults to string children (e.g. initials). Pass the full display name
-   * for a stable per-person color. Falls back to muted when no seed exists.
+   * Display name for the "no image" fallback. Seeds the deterministic gradient
+   * fill and, when no children are given, renders derived initials (Frida
+   * Kahlo → FK). Without a name (or string children) the fill stays muted.
    */
   name?: string;
 }) {
-  const seed =
-    name ?? (typeof props.children === 'string' ? props.children : undefined);
+  const seed = name ?? (typeof children === 'string' ? children : undefined);
   const gradient = seed ? getGradientForString(seed) : undefined;
+  const content = children ?? (name ? initialsFromName(name) : null);
 
   return (
     <AvatarPrimitive.Fallback
@@ -66,7 +78,9 @@ function AvatarFallback({
         className,
       )}
       {...props}
-    />
+    >
+      {content}
+    </AvatarPrimitive.Fallback>
   );
 }
 

@@ -25,12 +25,6 @@ type Story = StoryObj<typeof NotificationPanel>;
 
 const people = ['Frida Kahlo', 'Mark Rothko'];
 
-const initials = (name: string) =>
-  name
-    .split(' ')
-    .map((part) => part[0])
-    .join('');
-
 export const Default: Story = {
   render: () => (
     <div className="w-[36rem]">
@@ -42,9 +36,7 @@ export const Default: Story = {
               <ProfileItem
                 avatar={
                   <Avatar>
-                    <AvatarFallback name={name}>
-                      {initials(name)}
-                    </AvatarFallback>
+                    <AvatarFallback name={name} />
                   </Avatar>
                 }
                 title={name}

@@ -17,7 +17,7 @@ type Story = StoryObj<typeof ProfileItem>;
 
 const avatar = (
   <Avatar>
-    <AvatarFallback name="Frida Kahlo">FK</AvatarFallback>
+    <AvatarFallback name="Frida Kahlo" />
   </Avatar>
 );
 
