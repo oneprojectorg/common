@@ -214,6 +214,22 @@ describe.concurrent('platform.admin.assignReviews', () => {
     });
   });
 
+  it('rejects an unknown phase id', async ({ task, onTestFinished }) => {
+    const { instanceId, proposal, caller, reviewer } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    await expect(() =>
+      caller.assignReviews({
+        instanceId,
+        phaseId: 'not-a-real-phase',
+        reviewerProfileId: reviewer.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
   it('rejects assignment into a completed phase', async ({
     task,
     onTestFinished,

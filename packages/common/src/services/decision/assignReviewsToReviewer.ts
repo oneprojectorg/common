@@ -81,6 +81,13 @@ export async function assignReviewsToReviewer({
     : -1;
   const targetPhaseIndex = phaseIds.indexOf(phaseId);
 
+  // Legacy instances without a parseable phase list stay permissive; when the
+  // phases are known, an unknown phaseId would silently bypass the
+  // completed-phase guard and create rows no phase-scoped query can see.
+  if (phaseIds.length > 0 && targetPhaseIndex < 0) {
+    throw new ValidationError('Unknown phase for this process');
+  }
+
   if (
     currentPhaseIndex >= 0 &&
     targetPhaseIndex >= 0 &&

@@ -178,7 +178,7 @@ export const listDecisionReviewAssignmentsRouter = router({
         reviewers,
         totalAssignments: assignments.length,
         eligibleReviewers: eligibleReviewers.sort((a, b) =>
-          a.name.localeCompare(b.name),
+          (a.name ?? '').localeCompare(b.name ?? ''),
         ),
         proposals: assignableProposals.map((proposal) => {
           const titleParsed = proposalTitleData.safeParse(
