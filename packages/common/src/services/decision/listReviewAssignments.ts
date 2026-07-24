@@ -26,6 +26,19 @@ import {
 } from './schemas/reviews';
 
 /**
+ * Status priority for the "least reviewed" secondary sort — lower ranks first.
+ * Orders the reviewer's queue by how actionable each item is: resume
+ * in-progress work, then items needing action, then not-started, then done.
+ */
+const STATUS_SORT_RANK: Record<string, number> = {
+  [ProposalReviewAssignmentStatus.IN_PROGRESS]: 0,
+  [ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW]: 1,
+  [ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION]: 2,
+  [ProposalReviewAssignmentStatus.PENDING]: 3,
+  [ProposalReviewAssignmentStatus.COMPLETED]: 4,
+} satisfies Record<ProposalReviewAssignmentStatus, number>;
+
+/**
  * Counts COMPLETED review assignments per proposal across all reviewers in the
  * instance — the same "≥1 completed assignment = reviewed" definition surfaced
  * as the "N Reviewed" badge. Used to order the reviewer queue by coverage.
@@ -174,8 +187,8 @@ export async function listReviewAssignments({
 
 /**
  * Re-orders the reviewer's assignments by review coverage: least-reviewed
- * proposals first, the reviewer's in-progress items ahead within each bucket,
- * then a stable per-reviewer random tiebreak (see {@link sortByLeastReviewed}).
+ * proposals first, then the reviewer's status priority within each bucket, then
+ * a stable per-reviewer random tiebreak (see {@link sortByLeastReviewed}).
  */
 async function sortAssignmentsByLeastReviewed<
   T extends { proposalId: string; status: string },
@@ -194,8 +207,8 @@ async function sortAssignmentsByLeastReviewed<
       assignment,
       proposalId: assignment.proposalId,
       completedReviewCount: completedCounts.get(assignment.proposalId) ?? 0,
-      isInProgress:
-        assignment.status === ProposalReviewAssignmentStatus.IN_PROGRESS,
+      statusRank:
+        STATUS_SORT_RANK[assignment.status] ?? Number.MAX_SAFE_INTEGER,
     })),
     reviewerProfileId,
   ).map((item) => item.assignment);

@@ -9,9 +9,9 @@ import {
 function item(
   proposalId: string,
   completedReviewCount: number,
-  isInProgress = false,
+  statusRank = 3,
 ): LeastReviewedSortItem {
-  return { proposalId, completedReviewCount, isInProgress };
+  return { proposalId, completedReviewCount, statusRank };
 }
 
 describe('stableRandomScore', () => {
@@ -45,20 +45,24 @@ describe('sortByLeastReviewed', () => {
     expect(result.map((r) => r.proposalId)).toEqual(['b', 'c', 'a']);
   });
 
-  it('surfaces in-progress items first within the same review-count bucket', () => {
+  it('orders by status rank within the same review-count bucket', () => {
     const result = sortByLeastReviewed(
       [
-        item('a', 0, false),
-        item('b', 0, true),
-        item('c', 0, false),
-        item('reviewed', 2, true),
+        item('pending', 0, 3),
+        item('inProgress', 0, 0),
+        item('needsAction', 0, 1),
+        item('reviewed', 2, 0),
       ],
       'reviewer-1',
     );
-    // `b` (in progress, 0 reviews) leads its bucket; `reviewed` stays last
-    // because the review count dominates the in-progress preference.
-    expect(result[0]?.proposalId).toBe('b');
-    expect(result.at(-1)?.proposalId).toBe('reviewed');
+    // Within the 0-review bucket, lower statusRank leads; `reviewed` stays last
+    // because the review count dominates the status preference.
+    expect(result.map((r) => r.proposalId)).toEqual([
+      'inProgress',
+      'needsAction',
+      'pending',
+      'reviewed',
+    ]);
   });
 
   it('breaks remaining ties deterministically for a given reviewer', () => {

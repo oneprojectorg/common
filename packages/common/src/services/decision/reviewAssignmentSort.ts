@@ -13,8 +13,12 @@ export interface LeastReviewedSortItem {
   proposalId: string;
   /** Total COMPLETED reviews for this proposal across all reviewers. */
   completedReviewCount: number;
-  /** Whether the current reviewer's own assignment is in progress. */
-  isInProgress: boolean;
+  /**
+   * Priority of the reviewer's own assignment status — lower sorts first, so
+   * the most actionable work (resume in-progress, then items needing action)
+   * surfaces ahead of not-started and completed within a review-count bucket.
+   */
+  statusRank: number;
 }
 
 /**
@@ -38,8 +42,8 @@ export function stableRandomScore(seed: string): number {
  * queue design:
  *   1. fewest completed reviews across all reviewers (ascending), so
  *      under-reviewed proposals surface first;
- *   2. the reviewer's in-progress items first, so they resume where they left
- *      off within a review-count bucket;
+ *   2. the reviewer's status priority (ascending `statusRank`), so the most
+ *      actionable items lead within a review-count bucket;
  *   3. a stable per-reviewer random tiebreak, so proposals with equal coverage
  *      appear in a different order for each reviewer and coverage spreads out.
  *
@@ -54,8 +58,8 @@ export function sortByLeastReviewed<T extends LeastReviewedSortItem>(
       return a.completedReviewCount - b.completedReviewCount;
     }
 
-    if (a.isInProgress !== b.isInProgress) {
-      return a.isInProgress ? -1 : 1;
+    if (a.statusRank !== b.statusRank) {
+      return a.statusRank - b.statusRank;
     }
 
     return (
