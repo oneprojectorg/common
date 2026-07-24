@@ -5,6 +5,10 @@ export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
 export {
+  REVIEW_ASSIGNMENT_SORTS,
+  type ReviewAssignmentSort,
+} from './services/decision/reviewAssignmentSort';
+export {
   attachmentSchema,
   documentContentSchema,
   proposalAccessSchema,

@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProposalReviewAssignmentStatus } from '@op/common/client';
+import {
+  ProposalReviewAssignmentStatus,
+  REVIEW_ASSIGNMENT_SORTS,
+} from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -21,8 +24,6 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
   ...string[],
 ];
 
-const SORT_DIRS = ['asc', 'desc'] as const;
-
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
@@ -38,9 +39,9 @@ export function ReviewAssignmentsList({
     'status',
     parseAsStringLiteral(ASSIGNMENT_STATUSES),
   );
-  const [dir, setDir] = useQueryState(
+  const [sort, setSort] = useQueryState(
     'sort',
-    parseAsStringLiteral(SORT_DIRS).withDefault('desc'),
+    parseAsStringLiteral(REVIEW_ASSIGNMENT_SORTS).withDefault('leastReviewed'),
   );
 
   const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
@@ -48,7 +49,7 @@ export function ReviewAssignmentsList({
     ...(statusFilter && {
       status: statusFilter as ProposalReviewAssignmentStatus,
     }),
-    dir,
+    sort,
   });
 
   const assignments = data?.assignments ?? [];
@@ -98,12 +99,13 @@ export function ReviewAssignmentsList({
             ]}
           />
           <ResponsiveSelect
-            selectedKey={dir === 'asc' ? 'oldest' : 'newest'}
+            selectedKey={sort}
             onSelectionChange={(key) =>
-              setDir(key === 'oldest' ? 'asc' : 'desc')
+              setSort(key as (typeof REVIEW_ASSIGNMENT_SORTS)[number])
             }
             aria-label={t('Sort order')}
             items={[
+              { id: 'leastReviewed', label: t('Least reviewed') },
               { id: 'newest', label: t('Newest First') },
               { id: 'oldest', label: t('Oldest First') },
             ]}

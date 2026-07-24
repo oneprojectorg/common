@@ -1,4 +1,8 @@
-import { db } from '@op/db/client';
+import { and, count, db, eq, inArray } from '@op/db/client';
+import {
+  ProposalReviewAssignmentStatus,
+  proposalReviewAssignments,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
@@ -7,6 +11,10 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import {
+  type ReviewAssignmentSort,
+  sortByLeastReviewed,
+} from './reviewAssignmentSort';
 import {
   getActiveRevisionRequest,
   resolveAssignmentProposal,
@@ -17,16 +25,50 @@ import {
   reviewAssignmentListSchema,
 } from './schemas/reviews';
 
+/**
+ * Counts COMPLETED review assignments per proposal across all reviewers in the
+ * instance — the same "≥1 completed assignment = reviewed" definition surfaced
+ * as the "N Reviewed" badge. Used to order the reviewer queue by coverage.
+ */
+async function getCompletedReviewCounts(
+  processInstanceId: string,
+  proposalIds: string[],
+): Promise<Map<string, number>> {
+  if (proposalIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      proposalId: proposalReviewAssignments.proposalId,
+      completed: count(),
+    })
+    .from(proposalReviewAssignments)
+    .where(
+      and(
+        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+        inArray(proposalReviewAssignments.proposalId, proposalIds),
+        eq(
+          proposalReviewAssignments.status,
+          ProposalReviewAssignmentStatus.COMPLETED,
+        ),
+      ),
+    )
+    .groupBy(proposalReviewAssignments.proposalId);
+
+  return new Map(rows.map((row) => [row.proposalId, Number(row.completed)]));
+}
+
 /** Returns all authorized review assignments for the current reviewer in a process instance. */
 export async function listReviewAssignments({
   processInstanceId,
   status,
-  dir = 'asc',
+  sort = 'leastReviewed',
   user,
 }: {
   processInstanceId: string;
   status?: string;
-  dir?: 'asc' | 'desc';
+  sort?: ReviewAssignmentSort;
   user: User;
 }): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
@@ -49,10 +91,22 @@ export async function listReviewAssignments({
       ...(status && { status }),
     },
     with: reviewAssignmentWithConfig,
+    // `assignedAt asc` is the base order for date sorts and the stable seed the
+    // "least reviewed" re-sort below builds on. This list is never paginated,
+    // so the coverage-based re-order can safely happen in memory.
     orderBy: {
-      assignedAt: dir,
+      assignedAt: sort === 'newest' ? 'desc' : 'asc',
     },
   });
+
+  const orderedAssignments =
+    sort === 'leastReviewed'
+      ? await sortAssignmentsByLeastReviewed(
+          assignments,
+          processInstanceId,
+          dbUser.profileId,
+        )
+      : assignments;
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
@@ -85,7 +139,7 @@ export async function listReviewAssignments({
     { onFetchError: 'omit' },
   );
 
-  const assignmentList = assignments.map((assignment) => {
+  const assignmentList = orderedAssignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
 
     const documentContent = documentContentMap.get(proposalSnapshot.id);
@@ -116,4 +170,33 @@ export async function listReviewAssignments({
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
   });
+}
+
+/**
+ * Re-orders the reviewer's assignments by review coverage: least-reviewed
+ * proposals first, the reviewer's in-progress items ahead within each bucket,
+ * then a stable per-reviewer random tiebreak (see {@link sortByLeastReviewed}).
+ */
+async function sortAssignmentsByLeastReviewed<
+  T extends { proposalId: string; status: string },
+>(
+  assignments: T[],
+  processInstanceId: string,
+  reviewerProfileId: string,
+): Promise<T[]> {
+  const completedCounts = await getCompletedReviewCounts(
+    processInstanceId,
+    assignments.map((assignment) => assignment.proposalId),
+  );
+
+  return sortByLeastReviewed(
+    assignments.map((assignment) => ({
+      assignment,
+      proposalId: assignment.proposalId,
+      completedReviewCount: completedCounts.get(assignment.proposalId) ?? 0,
+      isInProgress:
+        assignment.status === ProposalReviewAssignmentStatus.IN_PROGRESS,
+    })),
+    reviewerProfileId,
+  ).map((item) => item.assignment);
 }

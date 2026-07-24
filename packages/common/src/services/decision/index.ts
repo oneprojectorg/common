@@ -70,6 +70,7 @@ export * from './runGenerateReviewAssignments';
 export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
+export * from './reviewAssignmentSort';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
 export * from './getPhaseReviewProgress';

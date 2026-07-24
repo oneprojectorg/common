@@ -5,7 +5,11 @@ import {
   ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
-import { createProposalReview, createRevisionRequest } from '@op/test';
+import {
+  createProposalReview,
+  createReviewAssignment as createReviewAssignmentRow,
+  createRevisionRequest,
+} from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -226,6 +230,110 @@ describe.concurrent('listReviewAssignments', () => {
         requestComment: 'Missing budget breakdown.',
       },
     });
+  });
+
+  it('orders by least reviewed — fewest completed reviews across all reviewers first', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+
+    // Three proposals assigned to the same reviewer, all pending for them.
+    const zero = await testData.createReviewAssignment({
+      title: 'Zero completed reviews',
+    });
+    const context = zero.context;
+    const reviewer = zero.reviewer;
+    const one = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'One completed review',
+    });
+    const two = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Two completed reviews',
+    });
+
+    for (const created of [zero, one, two]) {
+      const { collaborationDocId } = created.proposal.proposalData as {
+        collaborationDocId: string;
+      };
+      seedMockCollab(collaborationDocId);
+    }
+
+    // Other reviewers complete some proposals so their coverage differs.
+    const otherA = await testData.createReviewer(context);
+    const otherB = await testData.createReviewer(context);
+    const instanceId = context.instance.instance.id;
+    await createReviewAssignmentRow({
+      processInstanceId: instanceId,
+      proposalId: one.proposal.id,
+      reviewerProfileId: otherA.profileId,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createReviewAssignmentRow({
+      processInstanceId: instanceId,
+      proposalId: two.proposal.id,
+      reviewerProfileId: otherA.profileId,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createReviewAssignmentRow({
+      processInstanceId: instanceId,
+      proposalId: two.proposal.id,
+      reviewerProfileId: otherB.profileId,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: instanceId,
+      sort: 'leastReviewed',
+    });
+
+    expect(result.assignments.map((a) => a.assignment.proposal.id)).toEqual([
+      zero.proposal.id,
+      one.proposal.id,
+      two.proposal.id,
+    ]);
+  });
+
+  it('surfaces the reviewer’s in-progress assignment first within an equal review-count bucket', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+
+    const pending = await testData.createReviewAssignment({
+      title: 'Not started',
+    });
+    const context = pending.context;
+    const reviewer = pending.reviewer;
+    const inProgress = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Picked up',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+
+    for (const created of [pending, inProgress]) {
+      const { collaborationDocId } = created.proposal.proposalData as {
+        collaborationDocId: string;
+      };
+      seedMockCollab(collaborationDocId);
+    }
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+      sort: 'leastReviewed',
+    });
+
+    // Both proposals have zero completed reviews, so the in-progress one wins
+    // the tiebreak and leads the list.
+    expect(result.assignments[0]?.assignment.proposal.id).toBe(
+      inProgress.proposal.id,
+    );
   });
 
   it('returns empty list when reviewer has no assignments', async ({
