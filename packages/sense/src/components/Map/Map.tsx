@@ -104,10 +104,19 @@ export function Map({
   const boundsKey = bounds ? bounds.flat().join(',') : null;
   const stableBounds = useMemo(() => bounds, [boundsKey]);
 
+  // True only if bounds were present at mount — those are already applied via
+  // `initialViewState`, so the effect below must skip its first fit or the map
+  // animates to bounds it's already showing.
+  const boundsAppliedOnMountRef = useRef(bounds != null);
+
   // Fit the camera to `bounds` whenever they change (e.g. the marker set is
   // filtered). Takes precedence over `center`/`zoom`.
   useEffect(() => {
     if (!stableBounds) {
+      return;
+    }
+    if (boundsAppliedOnMountRef.current) {
+      boundsAppliedOnMountRef.current = false;
       return;
     }
     mapRef.current?.fitBounds(stableBounds, {
