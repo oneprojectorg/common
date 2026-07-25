@@ -1050,6 +1050,9 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      maplibre-gl:
+        specifier: ^5.24.0
+        version: 5.24.0
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -1065,6 +1068,9 @@ importers:
       react-icons:
         specifier: ^5.5.0
         version: 5.5.0(react@19.2.1)
+      react-map-gl:
+        specifier: ^8.1.1
+        version: 8.1.1(maplibre-gl@5.24.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-resizable-panels:
         specifier: ^4.11.2
         version: 4.11.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
