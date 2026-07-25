@@ -1,7 +1,7 @@
 'use client';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   Layer,
   type LayerProps,
@@ -98,23 +98,29 @@ export function Map({
   // same point on mount (a pointless 3s animation).
   const hasMountedRef = useRef(false);
 
+  // Stabilize `bounds` by its coordinates so an inline literal (a fresh ref
+  // each render) doesn't re-fire the effects below every render. Consumers
+  // then don't have to memoize it themselves.
+  const boundsKey = bounds ? bounds.flat().join(',') : null;
+  const stableBounds = useMemo(() => bounds, [boundsKey]);
+
   // Fit the camera to `bounds` whenever they change (e.g. the marker set is
   // filtered). Takes precedence over `center`/`zoom`.
   useEffect(() => {
-    if (!bounds) {
+    if (!stableBounds) {
       return;
     }
-    mapRef.current?.fitBounds(bounds, {
+    mapRef.current?.fitBounds(stableBounds, {
       padding: boundsPadding,
       maxZoom: BOUNDS_FIT_MAX_ZOOM,
       duration: 1000,
     });
-  }, [bounds, boundsPadding]);
+  }, [stableBounds, boundsPadding]);
 
   // Recenter when the controlled `center` changes (search / use-my-location).
   // Skipped while `bounds` drives the camera so the two don't fight.
   useEffect(() => {
-    if (bounds) {
+    if (stableBounds) {
       return;
     }
     if (!hasMountedRef.current) {
@@ -127,7 +133,7 @@ export function Map({
       essential: true,
       duration: 3000,
     });
-  }, [center.lng, center.lat, bounds]);
+  }, [center.lng, center.lat, stableBounds]);
 
   return (
     <div className={cn('relative h-44 w-full sm:h-80', className)}>

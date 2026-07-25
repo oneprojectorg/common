@@ -406,11 +406,13 @@ function useMapPinHovercard({
   // across the pin→card gap.
   const scheduleDismiss = () => {
     clearDismissTimer();
-    if (isControlled) {
-      return;
-    }
+    // Fire `onDeactivate` on leave in both modes — only the internal open
+    // state is skipped when controlled. Otherwise a controlled consumer using
+    // `onMouseLeave` never learns the cursor left and stays stuck active.
     dismissTimerRef.current = setTimeout(() => {
-      setInternalIsOpen(false);
+      if (!isControlled) {
+        setInternalIsOpen(false);
+      }
       dismissTimerRef.current = null;
       onDeactivate?.();
     }, HOVERCARD_DISMISS_DELAY_MS);
