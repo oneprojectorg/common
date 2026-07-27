@@ -48,6 +48,7 @@ export * from './selectionPipeline';
 
 // Proposal invites
 export * from './acceptProposalInvite';
+export * from './events/emitDecisionMemberRolesChanged';
 
 // Proposal management
 export * from './proposalDataSchema';

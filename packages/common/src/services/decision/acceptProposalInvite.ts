@@ -4,10 +4,7 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
-import { Events, event } from '@op/events';
-import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import { waitUntil } from '@vercel/functions';
 
 import {
   CommonError,
@@ -16,6 +13,7 @@ import {
   UnauthorizedError,
 } from '../../utils/error';
 import { assertGlobalRole } from '../assert';
+import { emitDecisionMemberRolesChanged } from './events/emitDecisionMemberRolesChanged';
 
 /**
  * Accept a proposal invite and ensure the user is also added as a Member
@@ -96,6 +94,9 @@ export const acceptProposalInvite = async ({
 
   // Write all data
 
+  const decisionRoleIdToGrant =
+    pendingDecisionInvite?.accessRoleId ?? memberRole.id;
+
   const profileUser = await db.transaction(async (tx) => {
     const now = new Date().toISOString();
     const userValues = {
@@ -145,7 +146,7 @@ export const acceptProposalInvite = async ({
       followUpWrites.push(
         tx.insert(profileUserToAccessRoles).values({
           profileUserId: decisionProfileUser.id,
-          accessRoleId: pendingDecisionInvite?.accessRoleId ?? memberRole.id,
+          accessRoleId: decisionRoleIdToGrant,
         }),
       );
 
@@ -166,26 +167,12 @@ export const acceptProposalInvite = async ({
 
   // Only the decision-profile grant is relevant to decision-side consumers.
   if (decisionProfileIdToAdd) {
-    const eventData = {
+    emitDecisionMemberRolesChanged({
       decisionProfileId: decisionProfileIdToAdd,
       authUserId: user.id,
-      addedRoleIds: [pendingDecisionInvite?.accessRoleId ?? memberRole.id],
+      addedRoleIds: [decisionRoleIdToGrant],
       removedRoleIds: [],
-    };
-    waitUntil(
-      event
-        .send({
-          name: Events.decisionMemberRolesChanged.name,
-          data: eventData,
-        })
-        .catch((error) => {
-          // Log the full payload so a dropped event can be replayed by hand.
-          logger.error('Failed to send decision member roles changed event', {
-            eventData,
-            error,
-          });
-        }),
-    );
+    });
   }
 
   return { profileUser };

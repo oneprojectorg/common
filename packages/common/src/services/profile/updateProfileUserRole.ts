@@ -1,10 +1,7 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import { EntityType, profileUserToAccessRoles } from '@op/db/schema';
-import { Events, event } from '@op/events';
-import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import { waitUntil } from '@vercel/functions';
 import { checkPermission, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils/error';
@@ -16,6 +13,7 @@ import {
   profileUserCacheKey,
 } from '../access';
 import { assertProfileAdmin } from '../assert';
+import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
@@ -133,26 +131,12 @@ export const updateProfileUserRoles = async ({
     });
 
     if (targetProfileUser.profile.type === EntityType.DECISION) {
-      const eventData = {
+      emitDecisionMemberRolesChanged({
         decisionProfileId: targetProfileId,
         authUserId: targetProfileUser.authUserId,
         addedRoleIds: rolesToAdd,
         removedRoleIds: rolesToRemove,
-      };
-      waitUntil(
-        event
-          .send({
-            name: Events.decisionMemberRolesChanged.name,
-            data: eventData,
-          })
-          .catch((error) => {
-            // Log the full payload so a dropped event can be replayed by hand.
-            logger.error('Failed to send decision member roles changed event', {
-              eventData,
-              error,
-            });
-          }),
-      );
+      });
     }
   }
 

@@ -25,7 +25,10 @@ export type BackfillReviewAssignmentsResult =
  * phase membership: mid-phase submissions were never assigned to existing
  * reviewers, and the new reviewer must match them exactly. Never prunes —
  * deleting non-pending assignments would cascade-delete submitted reviews.
- * Guards no-op with a log so event-driven callers can invoke it blindly.
+ * Expected no-op states (wrong phase, no reviewers, nothing to assign) are
+ * logged skips, not errors — but corrupt instance data still throws, which
+ * event-driven callers should surface (e.g. as a retried job) rather than
+ * swallow.
  */
 export async function backfillReviewAssignments({
   instanceId,
