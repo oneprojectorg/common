@@ -82,9 +82,12 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
+      {/* The shared table Root hardcodes text-sm/6 (24px leading); the descendant
+          override is the only hook that reaches it. */}
       <Table
         aria-label={t('All Decisions')}
         key={decisions.map((d) => d.id).join(',')}
+        className="whitespace-normal [&_table]:leading-tight"
       >
         <TableHeader>
           <TableColumn isRowHeader>{t('Name')}</TableColumn>

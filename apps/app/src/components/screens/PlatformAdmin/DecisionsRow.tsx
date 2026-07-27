@@ -88,7 +88,7 @@ export const DecisionsRowCells = ({
           ? (STATUS_DISPLAY[decision.status] ?? decision.status)
           : '—'}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="whitespace-nowrap text-neutral-charcoal">
         {createdAt ? (
           <TooltipTrigger>
             <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
