@@ -5,7 +5,7 @@ import {
   shouldRedirectToOnboarding,
 } from '@/utils/onboarding';
 import { assertWalledGardenAccess } from '@/utils/walledGarden';
-import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
+import { SidebarProvider } from '@op/sense/Sidebar';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
@@ -40,12 +40,21 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
     <div className="flex size-full max-h-full flex-col">
       <UserProvider initialUser={user}>
         <PolicyReacceptanceModal />
-        <SidebarProvider>
+        {/* TODO(sense): Figma nav redesign pending. shadcn's canonical
+            Sidebar+SidebarInset can't express a full-width header sitting above
+            the sidebar, so we keep the op/ui arrangement: the provider is a
+            flex column (header on top), with the sidebar + content as a row
+            below. defaultOpen={false} preserves the op/ui default of a nav that
+            stays collapsed until the header trigger opens it. */}
+        <SidebarProvider
+          defaultOpen={false}
+          className="min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <SiteHeader />
-          <SidebarLayout>
+          <div className="relative flex size-full flex-1 flex-col overflow-y-auto bg-background sm:flex-row">
             <SidebarNav />
             <AppLayout>{children}</AppLayout>
-          </SidebarLayout>
+          </div>
         </SidebarProvider>
       </UserProvider>
       {/* Served by our own edge-cached proxy (app/api/embeds) instead of

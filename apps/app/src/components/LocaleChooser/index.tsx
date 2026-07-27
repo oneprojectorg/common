@@ -1,16 +1,16 @@
 'use client';
 
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { IconButton } from '@op/ui/IconButton';
-import { Select, SelectItem } from '@op/ui/Select';
-import { cn } from '@op/ui/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@op/sense/Select';
+import { cn } from '@op/sense/lib/utils';
 import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 
-import { usePathname } from '@/lib/i18n';
-import { useTranslations } from '@/lib/i18n';
+import { usePathname, useTranslations } from '@/lib/i18n';
 import { i18nConfig } from '@/lib/i18n/config';
 
 interface LocaleChooserProps {
@@ -29,77 +29,56 @@ const localeDisplayNames: Record<string, string> = {
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const pathname = usePathname();
   const params = useParams();
-  const currentLocale = params.locale as string;
+  const localeParam = params.locale;
+  const currentLocale =
+    (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
 
-  const handleSelectionChange = (selectedKey: React.Key | null) => {
-    if (selectedKey === null) {
-      return;
-    }
-    const newLocale = selectedKey as string;
-    if (newLocale !== currentLocale) {
+  const handleValueChange = (value: string | null) => {
+    if (value && value !== currentLocale) {
       // Hard navigation (not the client router) so the server applies the
       // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
       // as a next.config rewrite, so a client-side transition to `/es/columbus`
       // can't resolve them and bounces anonymous viewers to /login. A full load
       // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
       // so the reload is negligible.
-      window.location.assign(`/${newLocale}${pathname}`);
+      window.location.assign(`/${value}${pathname}`);
     }
     onClose?.();
   };
 
   return (
+    // Passing `items` gives base-ui the value→label map so any SelectValue
+    // would render "English" not "en"; the trigger here is icon-only, so the
+    // raw-value gotcha never surfaces, but the map keeps the labels correct.
     <Select
-      selectedKey={currentLocale}
-      onSelectionChange={handleSelectionChange}
-      aria-label={t('Select language')}
-      listBoxClassName="max-h-none overflow-visible"
-      popoverProps={{
-        className: '!max-h-none overflow-visible',
-        placement: 'bottom end',
-      }}
-      customTrigger={
-        <>
-          <IconButton
-            aria-label={t('Select language')}
-            variant="outline"
-            size="medium"
-            className="hidden sm:flex"
-          >
-            <LuGlobe className="size-4" />
-          </IconButton>
-          {isMobile ? (
-            <Button
-              color="neutral"
-              unstyled
-              variant="icon"
-              className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
-            >
-              <LuGlobe className="size-4" />
-            </Button>
-          ) : null}
-        </>
-      }
+      value={currentLocale}
+      onValueChange={handleValueChange}
+      items={localeDisplayNames}
     >
-      {i18nConfig.locales.map((locale) => (
-        <SelectItem
-          key={locale}
-          id={locale}
-          className={cn(currentLocale === locale && 'text-primary-teal')}
-        >
-          <div
-            className={cn(
-              'flex items-center justify-between',
-              currentLocale === locale && 'text-primary-teal',
-            )}
+      <SelectTrigger
+        aria-label={t('Select language')}
+        className="h-auto w-fit gap-0 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 [&>svg:last-child]:hidden"
+      >
+        <span className="hidden size-8 items-center justify-center rounded-md border border-input sm:flex">
+          <LuGlobe className="size-4" />
+        </span>
+        <span className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden">
+          <LuGlobe className="size-4" />
+        </span>
+      </SelectTrigger>
+      <SelectContent align="end" alignItemWithTrigger={false}>
+        {i18nConfig.locales.map((locale) => (
+          <SelectItem
+            key={locale}
+            value={locale}
+            className={cn(currentLocale === locale && 'text-primary-teal')}
           >
-            <span>{localeDisplayNames[locale] || locale}</span>
-          </div>
-        </SelectItem>
-      ))}
+            {localeDisplayNames[locale] || locale}
+          </SelectItem>
+        ))}
+      </SelectContent>
     </Select>
   );
 };

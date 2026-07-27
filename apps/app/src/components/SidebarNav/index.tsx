@@ -1,56 +1,64 @@
 'use client';
 
-import { Sidebar, useSidebar } from '@op/ui/Sidebar';
-import { cn } from '@op/ui/utils';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@op/sense/Sidebar';
 import { ReactNode } from 'react';
 import { usePress } from 'react-aria';
 import { LuHouse, LuMessageCircle, LuUsers } from 'react-icons/lu';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
+interface NavLinkProps {
+  href: string;
+  active?: boolean;
+  children: ReactNode;
+}
+
 export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
   return (
-    <Sidebar className="border-e" label={t('Navigation')}>
-      <nav className="flex flex-col gap-1 p-4">
-        <NavLink href="/" active={pathname === '/'}>
-          <LuHouse className="size-4" /> {t('Home')}
-        </NavLink>
-        <NavLink href="/org" active={pathname.startsWith('/org')}>
-          <LuUsers className="size-4" /> {t('Organizations')}
-        </NavLink>
-        <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
-          <LuMessageCircle className="size-4" /> {t('Decisions')}
-        </NavLink>
-      </nav>
+    // TODO(sense): Figma nav redesign pending — the op/ui <Sidebar> is mapped
+    // onto shadcn primitives (Sidebar/SidebarContent/SidebarMenu). Offcanvas
+    // preserves the op/ui default (nav hidden until the header trigger opens
+    // it); the three links, icons, and active states are kept as-is.
+    <Sidebar collapsible="offcanvas" className="border-e">
+      <SidebarContent>
+        <SidebarMenu className="gap-1 p-4">
+          <NavLink href="/" active={pathname === '/'}>
+            <LuHouse className="size-4" /> {t('Home')}
+          </NavLink>
+          <NavLink href="/org" active={pathname.startsWith('/org')}>
+            <LuUsers className="size-4" /> {t('Organizations')}
+          </NavLink>
+          <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
+            <LuMessageCircle className="size-4" /> {t('Decisions')}
+          </NavLink>
+        </SidebarMenu>
+      </SidebarContent>
     </Sidebar>
   );
 };
 
-const NavLink = ({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active?: boolean;
-  children: ReactNode;
-}) => {
+const NavLink = ({ href, active, children }: NavLinkProps) => {
   const { toggleSidebar, isMobile } = useSidebar();
   const { pressProps } = usePress({
     onPress: isMobile ? toggleSidebar : undefined,
   });
   return (
-    <Link
-      href={href}
-      className={cn(
-        'flex items-center gap-2 rounded-md p-3 hover:bg-neutral-offWhite hover:no-underline',
-        active && 'bg-neutral-offWhite/50',
-      )}
-      {...pressProps}
-    >
-      {children}
-    </Link>
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={active}
+        render={<Link href={href} {...pressProps} />}
+      >
+        {children}
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 };
