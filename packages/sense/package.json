@@ -32,6 +32,7 @@
     "./Combobox": "./src/components/ui/combobox.tsx",
     "./Command": "./src/components/ui/command.tsx",
     "./CommentButton": "./src/components/CommentButton/index.tsx",
+    "./Confetti": "./src/components/Confetti/index.tsx",
     "./ContextMenu": "./src/components/ui/context-menu.tsx",
     "./DatePicker": "./src/components/DatePicker/index.tsx",
     "./Dialog": "./src/components/ui/dialog.tsx",
@@ -52,6 +53,7 @@
     "./Item": "./src/components/ui/item.tsx",
     "./Kbd": "./src/components/ui/kbd.tsx",
     "./Label": "./src/components/ui/label.tsx",
+    "./LogoLoop": "./src/components/LogoLoop/index.tsx",
     "./Map": "./src/components/Map/index.ts",
     "./MediaDisplay": "./src/components/MediaDisplay/index.tsx",
     "./Menubar": "./src/components/ui/menubar.tsx",
@@ -93,7 +95,8 @@
     "./Toggle": "./src/components/ui/toggle.tsx",
     "./ToggleGroup": "./src/components/ui/toggle-group.tsx",
     "./Tooltip": "./src/components/ui/tooltip.tsx",
-    "./TranslateBanner": "./src/components/TranslateBanner/index.tsx"
+    "./TranslateBanner": "./src/components/TranslateBanner/index.tsx",
+    "./icons": "./src/components/icons/index.ts"
   },
   "module": "./src/index.ts",
   "scripts": {
