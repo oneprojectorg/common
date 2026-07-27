@@ -206,11 +206,19 @@ export const Selection: Story = {
   ),
 };
 
-// Results phase: read-only cards with the final vote total and an "…" menu.
+// Results phase: the whole card links to the proposal (stretched title link),
+// while the "…" menu stays clickable above it. Metrics are display-only counts
+// (no handlers) — non-interactive, matching the app's read-only views.
 export const Results: Story = {
   render: () => (
     <div className="w-[26rem]">
-      <ProposalCard {...base} aside={<MenuButton />} totalVotes={83} />
+      <ProposalCard
+        {...base}
+        href="#"
+        aside={<MenuButton />}
+        metrics={{ likes: 12, bookmarks: 4, comments: 8 }}
+        totalVotes={83}
+      />
     </div>
   ),
 };
@@ -239,6 +247,7 @@ export const MapPin: Story = {
     <div className="w-[18rem]">
       <ProposalCard
         variant="pin"
+        href="#"
         title={base.title}
         authors={base.authors}
         tags={['Infrastructure', 'Accessibility']}
