@@ -1,5 +1,6 @@
 import {
   Channels,
+  REVIEW_ASSIGNMENT_SORTS,
   listReviewAssignments,
   reviewAssignmentListSchema,
 } from '@op/common';
@@ -14,7 +15,7 @@ export const listReviewAssignmentsRouter = router({
       z.object({
         processInstanceId: z.uuid(),
         status: z.enum(ProposalReviewAssignmentStatus).optional(),
-        dir: z.enum(['asc', 'desc']).optional(),
+        sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
       }),
     )
     .output(reviewAssignmentListSchema)
@@ -26,7 +27,7 @@ export const listReviewAssignmentsRouter = router({
       return await listReviewAssignments({
         processInstanceId: input.processInstanceId,
         status: input.status,
-        dir: input.dir,
+        sort: input.sort,
         user: ctx.user,
       });
     }),
