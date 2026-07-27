@@ -95,7 +95,17 @@ export const ProfileUsersAccess = ({
     { retry: false },
   );
 
-  const profileUsers = data?.pages.flatMap((page) => page.items) ?? [];
+  // Dedupe by id: duplicate row keys send the react-aria Table collection
+  // into an infinite loop (RangeError: Invalid array length), so a single
+  // overlapping page must never reach it.
+  const profileUsers = Array.from(
+    new Map(
+      (data?.pages.flatMap((page) => page.items) ?? []).map((profileUser) => [
+        profileUser.id,
+        profileUser,
+      ]),
+    ).values(),
+  );
   const roles = rolesData?.items ?? [];
 
   return (
