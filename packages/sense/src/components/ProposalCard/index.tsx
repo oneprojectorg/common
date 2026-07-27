@@ -127,7 +127,7 @@ export function ProposalCard({
         {headerBadge}
         <h3
           className={cn(
-            'font-serif text-title-sm',
+            'font-serif text-title',
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
@@ -148,7 +148,7 @@ export function ProposalCard({
         <p className="line-clamp-3 text-base text-foreground">{description}</p>
       ) : null}
       {metrics ? (
-        <div className="-ms-2 flex items-center gap-1">
+        <div className="flex items-center gap-1">
           <MetricToggle icon={LuHeart} metric={metrics.likes} label="Like" />
           <MetricToggle
             icon={LuBookmark}
@@ -236,7 +236,11 @@ function TagRow({
   const overflow = tags.length - shown.length;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {budget ? <Badge variant="secondary">{budget}</Badge> : null}
+      {budget ? (
+        <Badge variant="outline" className="bg-background">
+          {budget}
+        </Badge>
+      ) : null}
       {shown.map((tag) => (
         <Badge key={tag} variant="secondary">
           {tag}

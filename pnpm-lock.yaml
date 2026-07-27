@@ -1244,6 +1244,9 @@ importers:
       react-map-gl:
         specifier: ^8.1.1
         version: 8.1.1(maplibre-gl@5.24.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      react-masonry-css:
+        specifier: ^1.0.16
+        version: 1.0.16(react@19.2.1)
       react-stately:
         specifier: 'catalog:'
         version: 3.46.0(react@19.2.1)

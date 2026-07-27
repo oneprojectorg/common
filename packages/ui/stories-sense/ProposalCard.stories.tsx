@@ -222,27 +222,11 @@ export const Awarded: Story = {
     <div className="w-[26rem]">
       <ProposalCard
         {...base}
-        metrics={{ likes: 0, bookmarks: 0, comments: 0 }}
-        status={<StatusBadge variant="inactive">Status</StatusBadge>}
-        reviewedLabel="5 Reviewed"
         totalVotes={83}
         awardedLabel={
           <StatusBadge variant="success" icon={LuBadgeCheck}>
             $145K Awarded
           </StatusBadge>
-        }
-        actions={
-          <>
-            <Button>Revise</Button>
-            <Button variant="outline">
-              <LuPencil aria-hidden />
-              Edit
-            </Button>
-            <Button variant="destructive">
-              <LuTrash2 aria-hidden />
-              Delete
-            </Button>
-          </>
         }
       />
     </div>
