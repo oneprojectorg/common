@@ -41,7 +41,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-neutral-gray-1, currentColor);
+    border-color: var(--border, currentColor);
   }
 
   /*
@@ -76,12 +76,14 @@
 
   /* ============================================
    * Border Radius
+   * Only the steps that deviate from Tailwind v4 defaults are declared;
+   * sm/md/lg/xl/2xl match Tailwind and are inherited. --radius is the shadcn
+   * base radius (not a Tailwind var).
    * ============================================ */
-  --radius-sm: 0.125rem;
-  --radius: 0.25rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-xs: 0px; /* TW default is 0.125rem */
+  --radius: 0.5rem;
+  --radius-3xl: 1.25rem; /* TW default is 1.5rem */
+  --radius-4xl: 1.5rem; /* TW default is 2rem */
 
   /* ============================================
    * Font Families
@@ -160,27 +162,11 @@
   --text-title-sm12--font-weight: 400;
   --text-title-sm12--letter-spacing: -0.01125rem;
 
-  /* Body sizes (override defaults with custom weights) */
-  --text-xs: 0.625rem;
-  --text-xs--line-height: 150%;
-  --text-xs--font-weight: 400;
-
-  --text-sm: 0.75rem;
-  --text-sm--line-height: 150%;
-  --text-sm--font-weight: 400;
-
-  --text-base: 0.875rem;
-  --text-base--line-height: 150%;
-  --text-base--font-weight: 400;
-
-  --text-lg: 1rem;
-  --text-lg--line-height: 150%;
-  --text-lg--font-weight: 400;
-
-  --text-xl: 1.125rem;
-  --text-xl--line-height: 150%;
-  --text-xl--font-weight: 400;
-
+  /* Body sizes (--text-xs … --text-2xl): the Common Sense scale is identical
+   * to Tailwind v4's rem defaults, so we no longer override them here — the
+   * @op/ui overrides that used to shrink them (0.875rem base etc.) are gone and
+   * Tailwind's defaults apply. The custom serif heading scale (--text-label /
+   * title / headline / display) still lives in sense-theme.css. */
 
   /* ============================================
    * Spacing
@@ -240,7 +226,7 @@
   /* ============================================
    * Colors - Border
    * ============================================ */
-  --color-border: var(--color-neutral-gray-1);
+  --color-border: var(--border);
 
   /* ============================================
    * Colors - Accent (default Tailwind neutral palette)
@@ -313,17 +299,15 @@
 
   /* ============================================
    * Box Shadows
+   * --shadow / --shadow-md match Tailwind v4 defaults (inherited, not
+   * declared). Only the @op/ui glow shadows remain — used by @op/ui
+   * components, removed when the package is deleted.
    * ============================================ */
-  --shadow: 0px 0px 16px 0px rgba(20, 35, 38, 0.08);
   --shadow-light: 0px 0px 16px 0px rgba(20, 35, 38, 0.04);
-  --shadow-md: var(--shadow);
   --shadow-green: 0px 0px 16px 0px rgba(193, 255, 173, 0.88);
   --shadow-orange: 0px 0px 16px 0px rgba(242, 183, 5, 0.64);
 
-  /* ============================================
-   * Backdrop Blur
-   * ============================================ */
-  --blur-sm: 1px;
+  /* Backdrop Blur — --blur-sm (8px) matches Tailwind's default; inherited. */
 
   /* ============================================
    * Grid Template Columns

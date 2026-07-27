@@ -165,32 +165,19 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-/* Sense-scoped overrides for radius scale and text scale.
- *
- * Why a `.sense` class and not `[data-slot]`: shadcn convention puts
- * `data-slot` on every primitive part, BUT `@op/ui` also uses `data-slot`
- * on Sidebar / Table / ButtonGroup / AlertBanner. Scoping to `[data-slot]`
- * leaks the sense scales into any `@op/ui` Sidebar's descendants (Tailwind
- * `text-*` and `rounded-*` utilities resolve against `--text-*` /
- * `--radius-*`, which cascade as CSS variables from any matching ancestor).
- *
- * `.sense` is opt-in. Apps that want sense conventions wrap their root (or
- * a subtree) with the class; everything else — including @op/ui — keeps
- * the OP-tuned scales declared in shared-styles.css.
- *
- * Caveat: portaled popups (Dialog / Popover / Combobox content) render at
- * `document.body`, outside any `.sense` subtree. To keep portal styling
- * consistent, either add `.sense` to `<body>` at the layout root, or pass
- * a sense-scoped element via base-ui's Portal `container` prop. */
+/* The sense radius and text scales are now the global defaults (declared in
+ * shared-styles.css's @theme), so the former `.sense`-scoped overrides are
+ * gone. The remaining rules below apply globally. */
 
-/* Thin, muted scrollbars for scrollable regions inside sense subtrees
- * (menus, popups, dialog bodies). Chrome 121+ and Firefox honor these;
+/* Thin, muted scrollbars for scrollable regions (menus, popups, dialog
+ * bodies). Chrome 121+ and Firefox honor these;
  * Safari ignores them and keeps its overlay scrollbars, which already look
  * fine. Thumb uses --input (gray-300) — the "visible line" gray, close to
  * the native thumb but flat and gutterless. */
 @layer base {
-  .sense,
-  .sense * {
+  *,
+  ::before,
+  ::after {
     scrollbar-width: thin;
     scrollbar-color: var(--input) transparent;
   }
@@ -206,92 +193,31 @@
   }
 }
 
-/* Shadow + blur — the Common Sense shadow collection equals Tailwind's
- * defaults, but shared-styles.css overrides `--shadow`/`--shadow-md` with the
- * @op/ui glow style and `--blur-sm` with 1px. Restore the defaults for
- * `.sense` subtrees (same delete-when-@op/ui-dies lifecycle as the radius
- * block below; same portal caveat as above). */
-.sense {
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --blur-sm: 8px;
-}
-
-/* Radius scale — exact values from the Common Sense Figma radius collection,
- * which equal Tailwind's defaults (sm 4, md 6, lg 8, xl 12, ...). This block
- * exists because shared-styles.css overrides --radius-sm/--radius-md with
- * smaller @op/ui-tuned values in its @theme; it restores the defaults for
- * `.sense` subtrees. Delete it (and just use Tailwind's defaults) once the
- * @op/ui overrides in shared-styles are gone. */
-.sense {
-  --radius-xs: 0px;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: var(--radius);
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-3xl: 1.25rem;
-  --radius-4xl: 1.5rem;
-}
-
-/* Font smoothing — the Common Sense designs assume macOS-style grayscale
- * antialiasing. Both properties inherit, so this covers the whole `.sense`
- * subtree (portaled popups excepted — see the portal caveat above). */
-/* border-* utilities resolve --color-border at use-site; without this,
- * sense's border-border silently tracked @op/ui's neutral token (slated for
- * deletion). Scoped like the radius overrides above. */
-.sense {
-  --color-border: var(--border);
-}
-
 /* Bare `border` (no color utility) defaults to the sense border token,
  * mirroring shared-styles.css's app-wide rule (which hardcodes the @op/ui
  * neutral and dies with it). Explicit utilities like border-input still win —
  * they live in the utilities layer. */
 @layer base {
-  .sense,
-  .sense *,
-  .sense ::before,
-  .sense ::after,
-  .sense ::backdrop,
-  .sense ::file-selector-button {
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
     border-color: var(--border);
   }
 }
 
-/* @layer base so Tailwind utilities still win: an element carrying both
- * `.sense` and its own utility (e.g. a portaled tooltip with
- * `text-background`) must keep the utility — unlayered rules would beat it. */
+/* @layer base so Tailwind utilities still win: an element carrying its own
+ * utility (e.g. a portaled tooltip with `text-background`) must keep the
+ * utility — unlayered rules would beat it. */
 @layer base {
-  .sense {
+  :root {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* shared-styles.css paints body text neutral-charcoal (@op/ui); sense
-     * subtrees re-baseline to the sense foreground token so components
-     * without an explicit text class don't inherit the @op/ui color. */
+    /* Body text re-baselines to the sense foreground token so components
+     * without an explicit text class resolve the sense color globally. */
     color: var(--foreground);
   }
-}
-
-/* Standard 16px-rooted Tailwind text scale that shadcn primitives assume.
- * shared-styles.css declares smaller @op/ui-tuned values in its @theme; we
- * override them here for `.sense` subtrees only.
- *
- * Remove this block once the app's base font-size moves from 14px to 16px
- * and the scale in shared-styles.css aligns with Tailwind defaults. */
-.sense {
-  --text-xs: 12px;
-  --text-xs--line-height: 16px;
-  --text-sm: 14px;
-  --text-sm--line-height: 20px;
-  --text-base: 16px;
-  --text-base--line-height: 24px;
-  --text-lg: 18px;
-  --text-lg--line-height: 28px;
-  --text-xl: 20px;
-  --text-xl--line-height: 28px;
-  --text-2xl: 24px;
-  --text-2xl--line-height: 32px;
 }
 
 /* Semantic type scale from the Figma "Typography" collection. The collection
@@ -307,28 +233,28 @@
    * All four serif headings track tight per the Figma Headings/* text
    * styles (authored in em, so one value covers both breakpoints):
    * label -0.01em, title/headline -0.015em, display -0.025em. */
-  --text-label: 16px;
-  --text-label--line-height: 16px;
+  --text-label: 1rem;
+  --text-label--line-height: 1rem;
   --text-label--letter-spacing: -0.01em;
-  --text-title: 18px;
-  --text-title--line-height: 28px;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.75rem;
   --text-title--letter-spacing: -0.015em;
-  --text-headline: 20px;
-  --text-headline--line-height: 28px;
+  --text-headline: 1.25rem;
+  --text-headline--line-height: 1.75rem;
   --text-headline--letter-spacing: -0.015em;
-  --text-display: 24px;
-  --text-display--line-height: 32px;
+  --text-display: 1.5rem;
+  --text-display--line-height: 2rem;
   --text-display--letter-spacing: -0.025em;
 }
 
 @media (min-width: 768px) {
   :root {
-    --text-title: 20px;
-    --text-title--line-height: 22px;
-    --text-headline: 30px;
-    --text-headline--line-height: 33px;
-    --text-display: 48px;
-    --text-display--line-height: 52px;
+    --text-title: 1.25rem;
+    --text-title--line-height: 1.375rem;
+    --text-headline: 1.875rem;
+    --text-headline--line-height: 2.0625rem;
+    --text-display: 3rem;
+    --text-display--line-height: 3.25rem;
   }
 }
 
