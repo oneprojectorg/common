@@ -15,6 +15,7 @@ export const listReviewAssignmentsRouter = router({
       z.object({
         processInstanceId: z.uuid(),
         status: z.enum(ProposalReviewAssignmentStatus).optional(),
+        categoryIds: z.array(z.string()).optional(),
         sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
       }),
     )
@@ -27,6 +28,7 @@ export const listReviewAssignmentsRouter = router({
       return await listReviewAssignments({
         processInstanceId: input.processInstanceId,
         status: input.status,
+        categoryIds: input.categoryIds,
         sort: input.sort,
         user: ctx.user,
       });

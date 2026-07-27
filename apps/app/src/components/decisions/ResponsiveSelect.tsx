@@ -16,7 +16,9 @@ const BOTTOM_SHEET_CLASS =
 
 interface SelectOption<T extends string> {
   id: T;
-  label: string;
+  label: ReactNode;
+  /** Plain-text value for typeahead — required when `label` isn't a plain string. */
+  textValue?: string;
   isDisabled?: boolean;
 }
 
@@ -90,6 +92,7 @@ export function ResponsiveSelect<T extends string>({
                 <MenuItem
                   key={item.id}
                   id={item.id}
+                  textValue={item.textValue}
                   isDisabled={item.isDisabled}
                   className={`bg-transparent px-6 py-4 outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
                   onAction={() => {
@@ -116,7 +119,12 @@ export function ResponsiveSelect<T extends string>({
       aria-label={ariaLabel}
     >
       {items.map((item) => (
-        <SelectItem key={item.id} id={item.id} isDisabled={item.isDisabled}>
+        <SelectItem
+          key={item.id}
+          id={item.id}
+          textValue={item.textValue}
+          isDisabled={item.isDisabled}
+        >
           {item.label}
         </SelectItem>
       ))}
