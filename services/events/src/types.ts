@@ -72,6 +72,17 @@ export const Events = {
       proposalId: z.string().uuid(),
     }),
   },
+  // Emitted only for decision profiles. Role-id arrays are a narrowing hint —
+  // consumers must re-derive state from the DB.
+  decisionMemberRolesChanged: {
+    name: 'decision/member-roles-changed' as const,
+    schema: z.object({
+      decisionProfileId: z.string().uuid(),
+      authUserId: z.string().uuid(),
+      addedRoleIds: z.array(z.string().uuid()),
+      removedRoleIds: z.array(z.string().uuid()),
+    }),
+  },
   phaseTransitioned: {
     name: 'decision/phase-transitioned' as const,
     schema: z.object({

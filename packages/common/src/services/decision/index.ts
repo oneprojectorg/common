@@ -67,6 +67,8 @@ export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
+export * from './backfillReviewAssignments';
+export * from './getEligibleReviewerProfileIds';
 export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';

@@ -1,10 +1,14 @@
 import { db, eq } from '@op/db/client';
 import {
+  EntityType,
   profileInvites,
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import {
   CommonError,
@@ -27,6 +31,10 @@ export const acceptProfileInvite = async ({
   const invite = await db.query.profileInvites.findFirst({
     where: {
       id: inviteId,
+    },
+    with: {
+      // Gates the decision-scoped role-change event below.
+      profile: { columns: { type: true } },
     },
   });
 
@@ -85,6 +93,29 @@ export const acceptProfileInvite = async ({
 
     return profileUser;
   });
+
+  if (invite.profile.type === EntityType.DECISION) {
+    const eventData = {
+      decisionProfileId: invite.profileId,
+      authUserId: user.id,
+      addedRoleIds: [invite.accessRoleId],
+      removedRoleIds: [],
+    };
+    waitUntil(
+      event
+        .send({
+          name: Events.decisionMemberRolesChanged.name,
+          data: eventData,
+        })
+        .catch((error) => {
+          // Log the full payload so a dropped event can be replayed by hand.
+          logger.error('Failed to send decision member roles changed event', {
+            eventData,
+            error,
+          });
+        }),
+    );
+  }
 
   return { profileUser: result };
 };

@@ -1,20 +1,9 @@
-import { and, db, eq, inArray } from '@op/db/client';
-import {
-  decisionTransitionProposals,
-  profileUserToAccessRoles,
-  profileUsers,
-  proposalReviewAssignments,
-  proposals,
-  users,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
-import {
-  pickEffectivePermissionRows,
-  zonePermissionsWhere,
-} from '../access/utils';
-import { decisionPermission } from './permissions';
+import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { insertReviewAssignments } from './insertReviewAssignments';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GenerateReviewAssignmentsInput {
@@ -43,10 +32,9 @@ export async function generateReviewAssignments({
     return;
   }
 
-  const [instance, decisionsZone] = await Promise.all([
-    db.query.processInstances.findFirst({ where: { id: instanceId } }),
-    db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
-  ]);
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+  });
 
   if (!instance) {
     throw new CommonError(
@@ -72,121 +60,37 @@ export async function generateReviewAssignments({
     return;
   }
 
-  if (!decisionsZone) {
-    logger.error('generateReviewAssignments: decisions access zone not found');
-    return;
-  }
-
-  // Resolve which roles grant REVIEW on the decisions zone for this decision
-  // profile. Permission rows are profile-scoped: global rows (profileId IS
-  // NULL) are the baseline, and a row scoped to the decision profile OVERRIDES
-  // the global one. Candidate roles are the profile's own roles plus global
-  // roles — the only ones grantable to its members.
-  const zonePermissionRows =
-    await db.query.accessRolePermissionsOnAccessZones.findMany({
-      where: {
-        accessZoneId: decisionsZone.id,
-        ...zonePermissionsWhere(decisionProfileId),
-        accessRole: {
-          OR: [
-            { profileId: { isNull: true } },
-            { profileId: decisionProfileId },
-          ],
-        },
-      },
-      columns: { accessRoleId: true, permission: true, profileId: true },
-    });
-
-  const reviewRoleIds = pickEffectivePermissionRows(
-    zonePermissionRows,
-    (row) => row.accessRoleId,
-    decisionProfileId,
-  )
-    .filter((row) => (row.permission & decisionPermission.REVIEW) !== 0)
-    .map((row) => row.accessRoleId);
-
   const [selectedProposals, reviewerProfileIds, transitionProposalRows] =
     await Promise.all([
-      db
-        .select({
-          id: proposals.id,
-          submittedByProfileId: proposals.submittedByProfileId,
-        })
-        .from(proposals)
-        .where(inArray(proposals.id, selectedProposalIds)),
+      db.query.proposals.findMany({
+        where: { id: { in: selectedProposalIds } },
+        columns: { id: true, submittedByProfileId: true },
+      }),
 
-      // profileUsers (decision membership)
-      //   → profileUserToAccessRoles (role assignments)
-      //   → users (personal profileId)
-      // Filtered to members holding a role with the REVIEW capability.
-      reviewRoleIds.length === 0
-        ? Promise.resolve<string[]>([])
-        : db
-            .selectDistinct({ profileId: users.profileId })
-            .from(profileUsers)
-            .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
-            .innerJoin(
-              profileUserToAccessRoles,
-              eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
-            )
-            .where(
-              and(
-                eq(profileUsers.profileId, decisionProfileId),
-                inArray(profileUserToAccessRoles.accessRoleId, reviewRoleIds),
-              ),
-            )
-            .then((rows) =>
-              rows
-                .map((r) => r.profileId)
-                .filter((id): id is string => id != null),
-            ),
+      getEligibleReviewerProfileIds({ decisionProfileId }),
 
-      // Look up the proposal history snapshots captured during the phase transition.
-      db
-        .select({
-          proposalId: decisionTransitionProposals.proposalId,
-          proposalHistoryId: decisionTransitionProposals.proposalHistoryId,
-        })
-        .from(decisionTransitionProposals)
-        .where(
-          and(
-            eq(
-              decisionTransitionProposals.transitionHistoryId,
-              transitionHistoryId,
-            ),
-            inArray(
-              decisionTransitionProposals.proposalId,
-              selectedProposalIds,
-            ),
-          ),
-        ),
+      // The proposal history snapshots captured during the phase transition.
+      db.query.decisionTransitionProposals.findMany({
+        where: {
+          transitionHistoryId,
+          proposalId: { in: selectedProposalIds },
+        },
+        columns: { proposalId: true, proposalHistoryId: true },
+      }),
     ]);
-
-  if (reviewerProfileIds.length === 0 || selectedProposals.length === 0) {
-    return;
-  }
 
   const historyByProposalId = new Map(
     transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
   );
 
-  const assignmentValues = selectedProposals.flatMap((proposal) =>
-    reviewerProfileIds
-      // NOTE: we should revisit this logic when we have multiple authors per proposal
-      .filter((profileId) => profileId !== proposal.submittedByProfileId)
-      .map((profileId) => ({
-        processInstanceId: instanceId,
-        proposalId: proposal.id,
-        reviewerProfileId: profileId,
-        phaseId,
-        assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
-      })),
-  );
-
-  if (assignmentValues.length > 0) {
-    await db
-      .insert(proposalReviewAssignments)
-      .values(assignmentValues)
-      .onConflictDoNothing();
-  }
+  await insertReviewAssignments({
+    instanceId,
+    phaseId,
+    reviewerProfileIds,
+    assignableProposals: selectedProposals.map((proposal) => ({
+      proposalId: proposal.id,
+      submittedByProfileId: proposal.submittedByProfileId,
+      assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
+    })),
+  });
 }

@@ -4,7 +4,10 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import {
   CommonError,
@@ -160,6 +163,30 @@ export const acceptProposalInvite = async ({
 
     return proposalProfileUser;
   });
+
+  // Only the decision-profile grant is relevant to decision-side consumers.
+  if (decisionProfileIdToAdd) {
+    const eventData = {
+      decisionProfileId: decisionProfileIdToAdd,
+      authUserId: user.id,
+      addedRoleIds: [pendingDecisionInvite?.accessRoleId ?? memberRole.id],
+      removedRoleIds: [],
+    };
+    waitUntil(
+      event
+        .send({
+          name: Events.decisionMemberRolesChanged.name,
+          data: eventData,
+        })
+        .catch((error) => {
+          // Log the full payload so a dropped event can be replayed by hand.
+          logger.error('Failed to send decision member roles changed event', {
+            eventData,
+            error,
+          });
+        }),
+    );
+  }
 
   return { profileUser };
 };
