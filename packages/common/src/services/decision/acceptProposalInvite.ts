@@ -13,6 +13,7 @@ import {
   UnauthorizedError,
 } from '../../utils/error';
 import { assertGlobalRole } from '../assert';
+import { emitDecisionMemberRolesChanged } from './events/emitDecisionMemberRolesChanged';
 
 /**
  * Accept a proposal invite and ensure the user is also added as a Member
@@ -93,6 +94,9 @@ export const acceptProposalInvite = async ({
 
   // Write all data
 
+  const decisionRoleIdToGrant =
+    pendingDecisionInvite?.accessRoleId ?? memberRole.id;
+
   const profileUser = await db.transaction(async (tx) => {
     const now = new Date().toISOString();
     const userValues = {
@@ -142,7 +146,7 @@ export const acceptProposalInvite = async ({
       followUpWrites.push(
         tx.insert(profileUserToAccessRoles).values({
           profileUserId: decisionProfileUser.id,
-          accessRoleId: pendingDecisionInvite?.accessRoleId ?? memberRole.id,
+          accessRoleId: decisionRoleIdToGrant,
         }),
       );
 
@@ -160,6 +164,16 @@ export const acceptProposalInvite = async ({
 
     return proposalProfileUser;
   });
+
+  // Only the decision-profile grant is relevant to decision-side consumers.
+  if (decisionProfileIdToAdd) {
+    emitDecisionMemberRolesChanged({
+      decisionProfileId: decisionProfileIdToAdd,
+      authUserId: user.id,
+      addedRoleIds: [decisionRoleIdToGrant],
+      removedRoleIds: [],
+    });
+  }
 
   return { profileUser };
 };

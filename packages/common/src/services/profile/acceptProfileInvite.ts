@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import {
+  EntityType,
   profileInvites,
   profileUserToAccessRoles,
   profileUsers,
@@ -12,6 +13,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
+import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
 
 /**
  * Accept a profile invite, creating a profileUser with the specified role.
@@ -27,6 +29,10 @@ export const acceptProfileInvite = async ({
   const invite = await db.query.profileInvites.findFirst({
     where: {
       id: inviteId,
+    },
+    with: {
+      // Gates the decision-scoped role-change event below.
+      profile: { columns: { type: true } },
     },
   });
 
@@ -85,6 +91,15 @@ export const acceptProfileInvite = async ({
 
     return profileUser;
   });
+
+  if (invite.profile.type === EntityType.DECISION) {
+    emitDecisionMemberRolesChanged({
+      decisionProfileId: invite.profileId,
+      authUserId: user.id,
+      addedRoleIds: [invite.accessRoleId],
+      removedRoleIds: [],
+    });
+  }
 
   return { profileUser: result };
 };

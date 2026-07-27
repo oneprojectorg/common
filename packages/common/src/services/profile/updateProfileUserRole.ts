@@ -1,6 +1,6 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
-import { profileUserToAccessRoles } from '@op/db/schema';
+import { EntityType, profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -13,6 +13,7 @@ import {
   profileUserCacheKey,
 } from '../access';
 import { assertProfileAdmin } from '../assert';
+import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
@@ -39,6 +40,8 @@ export const updateProfileUserRoles = async ({
       where: { id: profileUserId },
       with: {
         roles: true,
+        // Gates the decision-scoped role-change event below.
+        profile: { columns: { type: true } },
       },
     }),
     // Non-assignable system global roles resolve as nonexistent and fail the
@@ -126,6 +129,15 @@ export const updateProfileUserRoles = async ({
         );
       }
     });
+
+    if (targetProfileUser.profile.type === EntityType.DECISION) {
+      emitDecisionMemberRolesChanged({
+        decisionProfileId: targetProfileId,
+        authUserId: targetProfileUser.authUserId,
+        addedRoleIds: rolesToAdd,
+        removedRoleIds: rolesToRemove,
+      });
+    }
   }
 
   await Promise.all([
