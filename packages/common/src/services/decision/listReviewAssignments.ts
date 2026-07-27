@@ -11,7 +11,6 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import type { ReviewAssignmentSort } from './reviewAssignmentSort';
 import {
   getActiveRevisionRequest,
   resolveAssignmentProposal,
@@ -19,6 +18,7 @@ import {
 } from './reviewHelpers';
 import {
   type ReviewAssignmentList,
+  type ReviewAssignmentSort,
   reviewAssignmentListSchema,
 } from './schemas/reviews';
 
