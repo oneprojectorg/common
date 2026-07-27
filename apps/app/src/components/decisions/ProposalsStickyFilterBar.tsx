@@ -23,12 +23,6 @@ export interface ProposalsStickyFilterBarProps {
   setSelectedCategory: (value: string) => void;
   sortOrder: string;
   setSortOrder: (value: string) => void;
-  canManageProposals: boolean;
-  isExporting: boolean;
-  isDownloadReady: boolean;
-  downloadUrl?: string | null;
-  downloadFileName?: string | null;
-  onExport: () => void;
   hasLocationField: boolean;
   effectiveView: ProposalView;
   onViewChange: (next: ProposalView) => void;
@@ -76,12 +70,6 @@ export const ProposalsStickyFilterBar = ({
   setSelectedCategory,
   sortOrder,
   setSortOrder,
-  canManageProposals,
-  isExporting,
-  isDownloadReady,
-  downloadUrl,
-  downloadFileName,
-  onExport,
   hasLocationField,
   effectiveView,
   onViewChange,
@@ -168,12 +156,6 @@ export const ProposalsStickyFilterBar = ({
               onSelectCategory={setSelectedCategory}
               sortOrder={sortOrder}
               onSelectSort={setSortOrder}
-              canManageProposals={canManageProposals}
-              isExporting={isExporting}
-              isDownloadReady={isDownloadReady}
-              downloadUrl={downloadUrl}
-              downloadFileName={downloadFileName}
-              onExport={onExport}
             />
             {hasLocationField && (
               <div className="hidden items-center gap-4 sm:flex">
