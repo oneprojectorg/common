@@ -4,12 +4,16 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalReviewState,
+  proposalCategories,
+  taxonomyTerms,
 } from '@op/db/schema';
+import { db } from '@op/db/test';
 import {
   createProposalReview,
   createReviewAssignment as createReviewAssignmentRow,
   createRevisionRequest,
 } from '@op/test';
+import { inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -49,6 +53,31 @@ const rubricTemplate: RubricTemplateSchema = {
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function attachCategoryToProposal({
+  proposalId,
+  label,
+}: {
+  proposalId: string;
+  label: string;
+}) {
+  const [term] = await db
+    .insert(taxonomyTerms)
+    .values({
+      termUri: `${label.toLowerCase()}-${proposalId}`,
+      label,
+    })
+    .returning();
+  if (!term) {
+    throw new Error('failed to create taxonomy term');
+  }
+
+  await db
+    .insert(proposalCategories)
+    .values({ proposalId, taxonomyTermId: term.id });
+
+  return term;
 }
 
 function seedMockCollab(collaborationDocId: string) {
@@ -334,6 +363,100 @@ describe.concurrent('listReviewAssignments', () => {
     expect(result.assignments[0]?.assignment.proposal.id).toBe(
       inProgress.proposal.id,
     );
+  });
+
+  it('filters assignments by category, matching any of the requested categories', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const inDistrictOne = await testData.createReviewAssignment({
+      title: 'District 1 proposal',
+    });
+    const inDistrictTwo = await testData.createReviewAssignment({
+      context: inDistrictOne.context,
+      reviewer: inDistrictOne.reviewer,
+      title: 'District 2 proposal',
+    });
+    const uncategorized = await testData.createReviewAssignment({
+      context: inDistrictOne.context,
+      reviewer: inDistrictOne.reviewer,
+      title: 'Uncategorized proposal',
+    });
+
+    for (const created of [inDistrictOne, inDistrictTwo, uncategorized]) {
+      const { collaborationDocId } = created.proposal.proposalData as {
+        collaborationDocId: string;
+      };
+      seedMockCollab(collaborationDocId);
+    }
+
+    const [termOne, termTwo] = await Promise.all([
+      attachCategoryToProposal({
+        proposalId: inDistrictOne.proposal.id,
+        label: 'District 1',
+      }),
+      attachCategoryToProposal({
+        proposalId: inDistrictTwo.proposal.id,
+        label: 'District 2',
+      }),
+    ]);
+    // proposalCategories cascades on taxonomyTerms delete, so cleaning up the
+    // terms cleans up the join rows too.
+    onTestFinished(async () => {
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.id, [termOne.id, termTwo.id]));
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      inDistrictOne.reviewer.email,
+    );
+
+    const single = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: inDistrictOne.context.instance.instance.id,
+      categoryIds: [termOne.id],
+    });
+
+    expect(single.assignments).toHaveLength(1);
+    expect(single.assignments[0]?.assignment.proposal.id).toBe(
+      inDistrictOne.proposal.id,
+    );
+
+    // Multiple categories OR together — the uncategorized proposal stays out.
+    const multiple = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: inDistrictOne.context.instance.instance.id,
+      categoryIds: [termOne.id, termTwo.id],
+    });
+
+    expect(
+      multiple.assignments.map((a) => a.assignment.proposal.id).sort(),
+    ).toEqual([inDistrictOne.proposal.id, inDistrictTwo.proposal.id].sort());
+  });
+
+  it('returns empty list when the category matches no proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Uncategorized proposal',
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+      categoryIds: [crypto.randomUUID()],
+    });
+
+    expect(result.assignments).toHaveLength(0);
   });
 
   it('returns empty list when reviewer has no assignments', async ({

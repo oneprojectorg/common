@@ -42,11 +42,14 @@ const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 export async function listReviewAssignments({
   processInstanceId,
   status,
+  categoryIds,
   sort = 'leastReviewed',
   user,
 }: {
   processInstanceId: string;
   status?: string;
+  /** Taxonomy term ids — limits results to assignments whose proposal is in any of the categories. */
+  categoryIds?: string[];
   sort?: ReviewAssignmentSort;
   user: User;
 }): Promise<ReviewAssignmentList> {
@@ -61,6 +64,29 @@ export async function listReviewAssignments({
 
   if (!instance.access.review && !instance.access.admin) {
     throw new UnauthorizedError("You don't have access to review proposals");
+  }
+
+  // Resolve the categories' proposal IDs up front (same approach as
+  // resolveProposalListScope): assignments have no category column, so the
+  // filter is an ID-set constraint on the snapshot's proposal, matching any
+  // of the requested categories. Categories matching no proposals can't
+  // match any assignment, so short-circuit.
+  let categoryProposalIds: string[] | undefined;
+  if (categoryIds && categoryIds.length > 0) {
+    const proposalIdsInCategories = await db.query.proposalCategories.findMany({
+      columns: { proposalId: true },
+      where: {
+        taxonomyTermId: { in: categoryIds },
+        // Shared taxonomy terms can tag proposals in other instances; scope
+        // here so the ID set passed to the assignment query stays tight.
+        proposal: { processInstanceId },
+      },
+    });
+
+    categoryProposalIds = proposalIdsInCategories.map((p) => p.proposalId);
+    if (categoryProposalIds.length === 0) {
+      return reviewAssignmentListSchema.parse({ assignments: [] });
+    }
   }
 
   // COMPLETED reviews for the proposal across *all* reviewers — the same
@@ -94,6 +120,9 @@ export async function listReviewAssignments({
       processInstanceId,
       reviewerProfileId: dbUser.profileId,
       ...(status && { status }),
+      ...(categoryProposalIds && {
+        proposalId: { in: categoryProposalIds },
+      }),
     },
     with: reviewAssignmentWithConfig,
     // The `id` tie-break gives a deterministic order when the primary keys are

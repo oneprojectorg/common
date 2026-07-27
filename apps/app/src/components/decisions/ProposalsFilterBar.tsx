@@ -6,6 +6,7 @@ import { LuArrowDownToLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ProposalCount } from './ProposalCount';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { useProposalFilterItems } from './useProposalFilters';
@@ -69,13 +70,6 @@ export const ProposalsFilterBar = ({
   const t = useTranslations();
   const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
 
-  // TODO: This is a hardcoded, per-decision copy override — the Columbus
-  // decision refers to its categories as "districts", matched here on its
-  // decision slug. Replace this with a proper configurable terminology/labeling
-  // mechanism (e.g. per-process category term settings) instead of matching on
-  // a hardcoded slug so we don't accrue more of these.
-  const usesDistricts = decisionSlug === 'columbus';
-
   return (
     <>
       <ResponsiveSelect
@@ -89,24 +83,11 @@ export const ProposalsFilterBar = ({
         aria-label={t('Filter proposals')}
         items={filterItems}
       />
-      <ResponsiveSelect
-        selectedKey={selectedCategory}
-        onSelectionChange={onSelectCategory}
-        aria-label={
-          usesDistricts
-            ? t('Filter proposals by district')
-            : t('Filter proposals by category')
-        }
-        items={[
-          {
-            id: 'all-categories',
-            label: usesDistricts ? t('All districts') : t('All categories'),
-          },
-          ...categories.map((category) => ({
-            id: category.id,
-            label: category.name,
-          })),
-        ]}
+      <CategoryFilterSelect
+        decisionSlug={decisionSlug}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={onSelectCategory}
       />
       <ResponsiveSelect
         selectedKey={sortOrder}

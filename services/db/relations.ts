@@ -53,6 +53,19 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Proposal Categories relations (junction table)
+   *
+   * proposalId is NOT NULL, so we mark the relation as optional: false.
+   */
+  proposalCategories: {
+    proposal: r.one.proposals({
+      from: r.proposalCategories.proposalId,
+      to: r.proposals.id,
+      optional: false,
+    }),
+  },
+
+  /**
    * Decision Transition Proposals relations (junction table)
    *
    * Links state transitions to the proposals that were active at that point.
