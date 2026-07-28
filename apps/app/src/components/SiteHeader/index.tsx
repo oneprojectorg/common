@@ -6,7 +6,7 @@ import { Button } from '@op/sense/Button';
 import { SidebarTrigger } from '@op/sense/Sidebar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense, useState } from 'react';
-import { LuSearch } from 'react-icons/lu';
+import { LuAlignJustify, LuSearch } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -84,12 +84,14 @@ export const SiteHeader = () => {
 
   return (
     <>
-      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-border bg-background px-6 py-2 sm:grid">
+      <header className="gridCentered relative z-20 hidden h-auto w-full items-center justify-between border-b border-border bg-background px-6 py-2 sm:grid">
         <div className="flex items-center gap-3">
           <SidebarTrigger
             aria-label={t('Open menu')}
             className="size-11 rounded-lg"
-          />
+          >
+            <LuAlignJustify className="size-4" />
+          </SidebarTrigger>
           <Link href="/" className="flex gap-1" aria-label={t('Home')}>
             <CommonLogo />
           </Link>
@@ -105,13 +107,15 @@ export const SiteHeader = () => {
       </header>
 
       {/* Mobile */}
-      <header className="flex h-auto w-full items-center justify-between border-b border-border bg-background px-4 py-2 sm:hidden">
+      <header className="relative z-20 flex h-auto w-full items-center justify-between border-b border-border bg-background px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <div className="flex items-center gap-3">
             <SidebarTrigger
               aria-label={t('Open menu')}
               className="size-8 rounded-lg"
-            />
+            >
+              <LuAlignJustify className="size-4" />
+            </SidebarTrigger>
             <Link href="/" className="flex gap-1" aria-label={t('Home')}>
               <CommonLogo />
             </Link>

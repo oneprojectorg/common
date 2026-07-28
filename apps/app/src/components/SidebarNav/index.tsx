@@ -24,11 +24,15 @@ export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
   return (
-    // TODO(sense): Figma nav redesign pending — the op/ui <Sidebar> is mapped
-    // onto shadcn primitives (Sidebar/SidebarContent/SidebarMenu). Offcanvas
-    // preserves the op/ui default (nav hidden until the header trigger opens
-    // it); the three links, icons, and active states are kept as-is.
-    <Sidebar collapsible="offcanvas" className="border-e">
+    // Mirrors the old op/ui behavior on the new shadcn Sidebar: offcanvas (nav
+    // hidden until the header trigger opens it, pushing content), overlay Sheet
+    // on mobile. Per shadcn's "sticky site header" (sidebar-16) pattern, the
+    // desktop fixed panel is offset below the full-width header via
+    // --header-height (set on the content row in the (main) layout).
+    <Sidebar
+      collapsible="offcanvas"
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))]! border-e"
+    >
       <SidebarContent>
         <SidebarMenu className="gap-1 p-4">
           <NavLink href="/" active={pathname === '/'}>

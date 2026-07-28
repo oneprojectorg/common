@@ -5,7 +5,7 @@ import {
   shouldRedirectToOnboarding,
 } from '@/utils/onboarding';
 import { assertWalledGardenAccess } from '@/utils/walledGarden';
-import { SidebarProvider } from '@op/sense/Sidebar';
+import { SidebarInset, SidebarProvider } from '@op/sense/Sidebar';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
@@ -51,9 +51,17 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
           className="min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SiteHeader />
-          <div className="relative flex size-full flex-1 flex-col overflow-y-auto bg-background sm:flex-row">
+          <div
+            // --header-height offsets the desktop sidebar's fixed panel so it
+            // starts below the full-width header (see SidebarNav). Matches the
+            // 60px SiteHeader.
+            style={{ '--header-height': '3.75rem' } as React.CSSProperties}
+            className="relative flex size-full flex-1 flex-col overflow-y-auto bg-background sm:flex-row"
+          >
             <SidebarNav />
-            <AppLayout>{children}</AppLayout>
+            <SidebarInset>
+              <AppLayout>{children}</AppLayout>
+            </SidebarInset>
           </div>
         </SidebarProvider>
       </UserProvider>
