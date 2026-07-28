@@ -167,6 +167,111 @@ const ProfileMenuRow = ({
   );
 };
 
+// On desktop the rows are real menu items (roving keyboard focus); in the
+// mobile sheet base-ui menu items can't mount, so they fall back to buttons /
+// plain elements. These live at module scope (not inside AvatarMenuContent) so
+// a re-render doesn't remount the whole menu and drop keyboard focus.
+const MenuDivider = ({ asMenuItem }: { asMenuItem?: boolean }) =>
+  asMenuItem ? <DropdownMenuSeparator /> : <Separator />;
+
+const MenuSection = ({
+  asMenuItem,
+  className,
+  children,
+}: {
+  asMenuItem?: boolean;
+  className?: string;
+  children: ReactNode;
+}) =>
+  asMenuItem ? (
+    <DropdownMenuGroup className={className}>{children}</DropdownMenuGroup>
+  ) : (
+    <div className={className}>{children}</div>
+  );
+
+const ActionRow = ({
+  asMenuItem,
+  className,
+  onClick,
+  children,
+}: {
+  asMenuItem?: boolean;
+  className?: string;
+  onClick: () => void;
+  children: ReactNode;
+}) => {
+  const shared = cn(
+    'flex h-auto w-full cursor-pointer items-center justify-start gap-1.5 rounded-md px-3 py-2 text-start outline-none',
+    className,
+  );
+
+  if (asMenuItem) {
+    return (
+      <DropdownMenuItem className={shared} onClick={onClick}>
+        {children}
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      className={cn(shared, 'hover:bg-muted')}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+};
+
+// A menu row that navigates (opens an external link). Uses base-ui
+// Menu.LinkItem on desktop so it's a real `<a>` in the roving focus; a plain
+// anchor in the mobile sheet.
+const LinkRow = ({
+  asMenuItem,
+  href,
+  className,
+  onClick,
+  children,
+}: {
+  asMenuItem?: boolean;
+  href: string;
+  className?: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) => {
+  const shared = cn(
+    'flex h-auto w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-start no-underline outline-none',
+    className,
+  );
+
+  if (asMenuItem) {
+    return (
+      <DropdownMenuLinkItem
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={shared}
+        onClick={onClick}
+      >
+        {children}
+      </DropdownMenuLinkItem>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(shared, 'hover:bg-muted')}
+      onClick={onClick}
+    >
+      {children}
+    </a>
+  );
+};
+
 const AvatarMenuContent = ({
   asMenuItem = false,
   onClose,
@@ -215,105 +320,9 @@ const AvatarMenuContent = ({
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
 
-  // On desktop the rows are real menu items (roving keyboard focus); in the
-  // mobile sheet base-ui menu items can't mount, so they fall back to buttons.
-  const Divider = asMenuItem ? DropdownMenuSeparator : Separator;
-
-  const Section = ({
-    className,
-    children,
-  }: {
-    className?: string;
-    children: ReactNode;
-  }) =>
-    asMenuItem ? (
-      <DropdownMenuGroup className={className}>{children}</DropdownMenuGroup>
-    ) : (
-      <div className={className}>{children}</div>
-    );
-
-  const ActionRow = ({
-    className,
-    onClick,
-    children,
-  }: {
-    className?: string;
-    onClick: () => void;
-    children: ReactNode;
-  }) => {
-    const shared = cn(
-      'flex h-auto w-full cursor-pointer items-center justify-start gap-1.5 rounded-md px-3 py-2 text-start outline-none',
-      className,
-    );
-
-    if (asMenuItem) {
-      return (
-        <DropdownMenuItem className={shared} onClick={onClick}>
-          {children}
-        </DropdownMenuItem>
-      );
-    }
-
-    return (
-      <Button
-        variant="ghost"
-        className={cn(shared, 'hover:bg-muted')}
-        onClick={onClick}
-      >
-        {children}
-      </Button>
-    );
-  };
-
-  // A menu row that navigates (opens an external link). Uses base-ui
-  // Menu.LinkItem on desktop so it's a real `<a>` in the roving focus; a plain
-  // anchor in the mobile sheet.
-  const LinkRow = ({
-    href,
-    className,
-    onClick,
-    children,
-  }: {
-    href: string;
-    className?: string;
-    onClick?: () => void;
-    children: ReactNode;
-  }) => {
-    const shared = cn(
-      'flex h-auto w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-start no-underline outline-none',
-      className,
-    );
-
-    if (asMenuItem) {
-      return (
-        <DropdownMenuLinkItem
-          href={href}
-          target="_blank"
-          rel="noopener,noreferrer"
-          className={shared}
-          onClick={onClick}
-        >
-          {children}
-        </DropdownMenuLinkItem>
-      );
-    }
-
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener,noreferrer"
-        className={cn(shared, 'hover:bg-muted')}
-        onClick={onClick}
-      >
-        {children}
-      </a>
-    );
-  };
-
   return (
     <>
-      <Section className="flex flex-col gap-3 px-3">
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-3 px-3">
         {userProfiles?.map((profile) => (
           <ProfileMenuRow
             key={profile.id}
@@ -325,7 +334,7 @@ const AvatarMenuContent = ({
           />
         ))}
 
-        <Divider />
+        <MenuDivider asMenuItem={asMenuItem} />
         {orgProfiles?.map((profile) => (
           <ProfileMenuRow
             key={profile.id}
@@ -336,12 +345,13 @@ const AvatarMenuContent = ({
             onProfileSwitch={onProfileSwitch}
           />
         ))}
-      </Section>
+      </MenuSection>
 
-      <Divider />
+      <MenuDivider asMenuItem={asMenuItem} />
 
-      <Section className="flex flex-col gap-1 py-2">
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 py-2">
         <LinkRow
+          asMenuItem={asMenuItem}
           href="https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b"
           className="font-normal text-foreground"
           onClick={onClose}
@@ -349,6 +359,7 @@ const AvatarMenuContent = ({
           <LuCircleHelp className="size-4" /> {t('Feature Requests & Support')}
         </LinkRow>
         <ActionRow
+          asMenuItem={asMenuItem}
           className="font-normal text-foreground"
           onClick={() => {
             // Full-page navigation: client-side routing would re-render the
@@ -359,24 +370,27 @@ const AvatarMenuContent = ({
         >
           <LuLogOut className="size-4" /> {t('Log out')}
         </ActionRow>
-      </Section>
+      </MenuSection>
 
-      <Divider />
+      <MenuDivider asMenuItem={asMenuItem} />
 
-      <Section className="flex flex-col gap-2 px-3">
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-2 px-3">
         <ActionRow
+          asMenuItem={asMenuItem}
           className="justify-start p-1 text-sm font-strong text-primary hover:underline"
           onClick={() => onOpenLegal('privacy')}
         >
           {t('Privacy Policy')}
         </ActionRow>
         <ActionRow
+          asMenuItem={asMenuItem}
           className="justify-start p-1 text-sm font-strong text-primary hover:underline"
           onClick={() => onOpenLegal('tos')}
         >
           {t('Terms of Service')}
         </ActionRow>
         <ActionRow
+          asMenuItem={asMenuItem}
           className="justify-start p-1 text-sm font-strong text-primary hover:underline"
           onClick={() => onOpenLegal('community')}
         >
@@ -384,6 +398,7 @@ const AvatarMenuContent = ({
         </ActionRow>
         {deleteOrganizationEnabled ? (
           <ActionRow
+            asMenuItem={asMenuItem}
             className="justify-start p-1 text-sm font-strong text-foreground hover:underline"
             onClick={onDeleteAccount}
           >
@@ -399,7 +414,7 @@ const AvatarMenuContent = ({
             <DropdownMenuLinkItem
               href="https://github.com/oneprojectorg/common"
               target="_blank"
-              rel="noopener,noreferrer"
+              rel="noopener noreferrer"
               className="inline h-auto rounded-none p-0 text-xs hover:underline"
             >
               {t('Ethical Open Source')}
@@ -409,7 +424,7 @@ const AvatarMenuContent = ({
               className="cursor-pointer hover:underline"
               href="https://github.com/oneprojectorg/common"
               target="_blank"
-              rel="noopener,noreferrer"
+              rel="noopener noreferrer"
             >
               {t('Ethical Open Source')}
             </Link>
@@ -419,7 +434,7 @@ const AvatarMenuContent = ({
           <Bullet />
           <span>{new Date().getFullYear()}</span>
         </div>
-      </Section>
+      </MenuSection>
     </>
   );
 };
@@ -616,7 +631,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           side="bottom"
           sideOffset={6}
           align="end"
-          className="flex w-78 flex-col gap-3 p-0 py-4"
+          className="flex w-86 flex-col gap-3 p-0 py-4"
         >
           <AvatarMenuContent
             asMenuItem
