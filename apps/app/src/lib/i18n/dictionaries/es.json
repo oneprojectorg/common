@@ -281,6 +281,8 @@
   "people on Common": "personas en Common",
   "are collaborating on Common": "están colaborando en Common",
   "Search": "Buscar",
+  "Search for <strong>{query}</strong>": "Buscar <strong>{query}</strong>",
+  "Search processes, organizations, opportunities…": "Buscar procesos, organizaciones, oportunidades…",
   "Search results": "Resultados de búsqueda",
   "Recent Searches": "Búsquedas recientes",
   "Failed to send invite": "Error al enviar la invitación",

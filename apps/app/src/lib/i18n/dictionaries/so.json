@@ -235,6 +235,8 @@
   "people on Common": "dad Common-ka ku yaal",
   "are collaborating on Common": "waxay iskaashi ku sameeyaan Common-ka",
   "Search": "Raadi",
+  "Search for <strong>{query}</strong>": "Raadi <strong>{query}</strong>",
+  "Search processes, organizations, opportunities…": "Raadi hababka, ururrada, iyo fursadaha…",
   "Search results": "Natiijooyinka raadinta",
   "Recent Searches": "Raadinta Dhawaan",
   "Failed to send invite": "Ku guuldareystay dirista casuumaadda",

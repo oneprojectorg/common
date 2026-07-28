@@ -233,6 +233,8 @@
   "people on Common": "أشخاص على Common",
   "are collaborating on Common": "يتعاونون على Common",
   "Search": "بحث",
+  "Search for <strong>{query}</strong>": "البحث عن <strong>{query}</strong>",
+  "Search processes, organizations, opportunities…": "ابحث في العمليات والمنظمات والفرص…",
   "Search results": "نتائج البحث",
   "Recent Searches": "عمليات البحث الأخيرة",
   "Failed to send invite": "فشل إرسال الدعوة",

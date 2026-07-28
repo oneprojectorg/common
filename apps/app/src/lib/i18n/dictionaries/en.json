@@ -242,6 +242,8 @@
   "people on Common": "people on Common",
   "are collaborating on Common": "are collaborating on Common",
   "Search": "Search",
+  "Search for <strong>{query}</strong>": "Search for <strong>{query}</strong>",
+  "Search processes, organizations, opportunities…": "Search processes, organizations, opportunities…",
   "Search results": "Search results",
   "Recent Searches": "Recent Searches",
   "Failed to send invite": "Failed to send invite",
