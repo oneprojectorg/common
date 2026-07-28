@@ -1,7 +1,7 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { decisionProcesses, users } from '@op/db/schema';
+import { ProcessStatus, decisionProcesses, users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -507,6 +507,59 @@ describe.concurrent('duplicateInstance', () => {
     expect(instanceData.config).toBeUndefined();
     expect(instanceData.proposalTemplate).toBeUndefined();
     expect(instanceData.rubricTemplate).toBeUndefined();
+  });
+
+  it('should surface the duplicated instance in the acting profile process list (steward-scoped)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      result: source,
+      caller,
+      userEmail,
+    } = await createSourceInstance(testData, task.id);
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, userEmail));
+
+    // The acting profile is the current profile (an org when in org context),
+    // which is tracked as the steward. The owner is always the individual.
+    const actingProfileId = userRecord!.currentProfileId!;
+    const individualProfileId = userRecord!.profileId!;
+    expect(actingProfileId).not.toBe(individualProfileId);
+
+    // Duplicate without an explicit steward, mirroring the create flow: the
+    // process should be stewarded by the profile the user is acting as.
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Visible Duplicate ${task.id}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    // The decisions list scopes "your processes" by steward (the acting
+    // profile), matching the profile page. The duplicate must appear there.
+    const stewardScoped = await caller.decision.listDecisionProfiles({
+      limit: 50,
+      status: [ProcessStatus.DRAFT],
+      stewardProfileId: actingProfileId,
+    });
+    expect(stewardScoped.items.map((item) => item.id)).toContain(duplicate.id);
+
+    // Scoping by owner = acting profile must NOT be used for this: the owner is
+    // the individual, so an owner-scoped query for the org returns nothing.
+    // This guards against regressing back to owner-based list filtering.
+    const ownerScoped = await caller.decision.listDecisionProfiles({
+      limit: 50,
+      status: [ProcessStatus.DRAFT],
+      ownerProfileId: actingProfileId,
+    });
+    expect(ownerScoped.items.map((item) => item.id)).not.toContain(
+      duplicate.id,
+    );
   });
 
   it('should default ownerProfileId to individual and stewardProfileId to currentProfileId when steward not provided', async ({
