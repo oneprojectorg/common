@@ -11,7 +11,10 @@ export const CommunityCommitmentsModal = () => {
 
   return (
     <DialogTrigger>
-      <Button unstyled className="text-primary-teal hover:underline">
+      <Button
+        unstyled
+        className="text-sm font-strong text-primary-teal hover:underline"
+      >
         {t('Community Commitments')}
       </Button>
 
