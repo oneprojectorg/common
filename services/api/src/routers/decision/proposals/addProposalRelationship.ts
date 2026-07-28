@@ -1,7 +1,6 @@
 import {
   Channels,
-  addProfileRelationship,
-  assertProposalEngagementAccess,
+  addProposalRelationship as addProposalRelationshipService,
 } from '@op/common';
 import { ProfileRelationshipType } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -19,28 +18,21 @@ export const addProposalRelationshipRouter = router({
    * Like/follow a proposal. Separate from the generic (closed-network)
    * `profile.addRelationship`: proposal engagement is open to confirmed
    * out-of-network accounts — e.g. accounts claimed from a public decision
-   * process — and is gated on the parent decision instead: SUBMIT_PROPOSALS,
-   * the same permission commenting requires. Only proposal profiles are
-   * accepted.
+   * process. The service asserts the gate: only proposal targets, requiring
+   * SUBMIT_PROPOSALS on the parent decision, the same permission commenting
+   * requires.
    */
-  addProposalRelationship: authenticatedConfirmedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 20 },
-  })
+  addProposalRelationship: authenticatedConfirmedProcedure()
     .input(proposalRelationshipInputSchema)
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
       const { proposalId, processInstanceId } =
-        await assertProposalEngagementAccess({
+        await addProposalRelationshipService({
           user: ctx.user,
-          profileId: targetProfileId,
+          targetProfileId,
+          relationshipType,
         });
-
-      await addProfileRelationship({
-        targetProfileId,
-        relationshipType,
-        authUserId: ctx.user.id,
-      });
 
       // The proposal detail query subscribes to this channel; registering it
       // refreshes engagement counts (likesCount, followersCount) immediately.

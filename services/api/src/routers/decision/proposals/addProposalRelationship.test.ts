@@ -178,7 +178,7 @@ describe.concurrent('proposal relationship engagement access', () => {
         targetProfileId: proposal.profileId,
         relationshipType: 'likes',
       }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
 
     // Remove is gated by the same assert — no standing means no unlike either.
     await expect(
@@ -186,7 +186,41 @@ describe.concurrent('proposal relationship engagement access', () => {
         targetProfileId: proposal.profileId,
         relationshipType: 'likes',
       }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
+  it('rejects an org member whose roles carry no grant on the decision profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Org-fallback-free proposal' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    // Org membership alone no longer admits: the gate resolves grants on the
+    // decision profile only (comment parity), with no org-role fallback.
+    const orgMember = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+
+    const orgMemberCaller = await createAuthenticatedCaller(orgMember.email);
+    await expect(
+      orgMemberCaller.decision.addProposalRelationship({
+        targetProfileId: proposal.profileId,
+        relationshipType: 'likes',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('rejects a non-proposal target profile', async ({

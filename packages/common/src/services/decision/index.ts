@@ -62,6 +62,8 @@ export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';
 export * from './assertProposalEngagementAccess';
+export * from './addProposalRelationship';
+export * from './removeProposalRelationship';
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
 export * from './listProposalLocations';
