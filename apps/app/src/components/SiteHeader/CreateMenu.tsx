@@ -72,10 +72,7 @@ export const CreateMenu = () => {
       >
         <DropdownMenuTrigger
           render={
-            <Button
-              className="h-8 rounded-md px-2 sm:px-3"
-              variant={isMobile ? 'secondary' : 'default'}
-            />
+            <Button variant="default" size={isMobile ? 'icon-sm' : 'default'} />
           }
         >
           <LuPlus className="size-4" />

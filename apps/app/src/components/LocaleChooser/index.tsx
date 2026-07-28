@@ -61,10 +61,10 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
         aria-label={t('Select language')}
         className="h-auto w-fit gap-0 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 [&>svg:last-child]:hidden"
       >
-        <span className="hidden size-8 items-center justify-center rounded-md border border-input sm:flex">
+        <span className="hidden size-11 items-center justify-center rounded-lg border border-input bg-background sm:flex">
           <LuGlobe className="size-4" />
         </span>
-        <span className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden">
+        <span className="flex size-8 items-center justify-center rounded-lg border border-input bg-background sm:hidden">
           <LuGlobe className="size-4" />
         </span>
       </SelectTrigger>

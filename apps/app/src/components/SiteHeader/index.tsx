@@ -8,7 +8,6 @@ import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
-import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
 import {
@@ -16,6 +15,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Separator } from '@op/sense/Separator';
 import { SidebarTrigger } from '@op/sense/Sidebar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
@@ -23,8 +24,10 @@ import { screens } from '@op/styles/constants';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
+  LuChevronRight,
   LuCircleHelp,
   LuLogOut,
+  LuPencil,
   LuSearch,
 } from 'react-icons/lu';
 
@@ -42,12 +45,6 @@ import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';
 import { CreateMenu } from './CreateMenu';
 
-// TODO(sense): Figma nav redesign pending. The account menu is shared between a
-// desktop DropdownMenu popover and a mobile bottom-sheet Dialog. Because base-ui
-// menu items (DropdownMenuItem) require a Menu context, the shared rows are
-// rendered as plain buttons/divs so the same content works inside both the
-// DropdownMenuContent and the DialogContent. Revisit item semantics + the
-// bottom-sheet treatment in the redesign pass.
 const ProfileAvatar = ({
   name,
   imageName,
@@ -71,20 +68,25 @@ const ProfileAvatar = ({
   );
 };
 
-const ProfileMenuItem = ({
+const ProfileMenuRow = ({
   profile,
+  description,
+  isEditable = false,
+  onEdit,
   onClose,
   onProfileSwitch,
-  children,
 }: {
   profile: Profile;
+  description?: string;
+  isEditable?: boolean;
+  onEdit?: () => void;
   onClose?: () => void;
   onProfileSwitch?: (profile: {
     name: string;
     avatarImage?: { name: string } | null;
   }) => void;
-  children?: React.ReactNode;
 }) => {
+  const t = useTranslations();
   const { user } = useRequiredUser();
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -97,44 +99,71 @@ const ProfileMenuItem = ({
       router.refresh();
     },
   });
+  const isCurrent = user.currentProfile?.id === profile.id;
+
+  const handleSelect = () => {
+    if (isCurrent) {
+      const profilePath =
+        profile.type === EntityType.INDIVIDUAL
+          ? `/profile/${profile.slug}`
+          : `/org/${profile.slug}`;
+      router.push(profilePath);
+      onClose?.();
+      return;
+    }
+
+    onProfileSwitch?.({
+      name: profile.name,
+      avatarImage: profile.avatarImage,
+    });
+    onClose?.();
+
+    void switchProfile.mutate({
+      profileId: profile.id,
+    });
+  };
+
   return (
-    <Button
-      key={profile.id}
-      variant="ghost"
+    <div
       className={cn(
-        'flex min-h-[60px] w-72 items-center justify-start gap-2 hover:bg-neutral-offWhite',
-        user.currentProfile?.id === profile.id && 'bg-neutral-offWhite',
+        'group/row flex items-center gap-4 rounded-lg border p-4',
+        isCurrent ? 'border-accent-foreground bg-accent' : 'border-border',
       )}
-      onClick={() => {
-        if (user.currentProfile?.id === profile.id) {
-          const profilePath =
-            profile.type === EntityType.INDIVIDUAL
-              ? `/profile/${profile.slug}`
-              : `/org/${profile.slug}`;
-          router.push(profilePath);
-          onClose?.();
-          return;
-        }
-
-        onProfileSwitch?.({
-          name: profile.name,
-          avatarImage: profile.avatarImage,
-        });
-        onClose?.();
-
-        void switchProfile.mutate({
-          profileId: profile.id,
-        });
-      }}
     >
-      <ProfileAvatar
-        name={profile.name}
-        imageName={profile.avatarImage?.name}
-        alt="Profile avatar"
+      <Button
+        variant="ghost"
+        onClick={handleSelect}
+        className="h-auto min-w-0 flex-1 justify-start p-0 hover:bg-transparent"
+      >
+        <ProfileItem
+          className="w-full"
+          avatar={
+            <ProfileAvatar
+              name={profile.name}
+              imageName={profile.avatarImage?.name}
+              alt={profile.name}
+              size="lg"
+              className="flex-shrink-0"
+            />
+          }
+          title={profile.name}
+          description={description}
+        />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
         className="flex-shrink-0"
-      />
-      {children}
-    </Button>
+        aria-label={isEditable ? t('Edit Profile') : profile.name}
+        onClick={isEditable && onEdit ? onEdit : handleSelect}
+      >
+        {isEditable ? (
+          <LuPencil className="size-4" />
+        ) : (
+          <LuChevronRight className="size-4" />
+        )}
+      </Button>
+    </div>
   );
 };
 
@@ -152,9 +181,8 @@ const AvatarMenuContent = ({
     avatarImage?: { name: string } | null;
   }) => void;
 }) => {
-  const { user } = useRequiredUser();
-  const logout = useAuthLogout();
   const t = useTranslations();
+  const logout = useAuthLogout();
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
 
@@ -183,167 +211,109 @@ const AvatarMenuContent = ({
       },
     ) ?? {};
 
-  const avatarUrl = user.profile?.avatarImage?.name || user.avatarImage?.name;
-
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
 
   return (
     <>
-      <div className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal">
-        <ProfileAvatar
-          name={user.name ?? ''}
-          imageName={avatarUrl}
-          alt={user.name ?? 'User avatar'}
-          size="sm"
-        />
-        <div className="flex flex-col">
-          <span className="sm:text-sm">
-            {t('Logged in as')} <bdi>{user.profile?.name ?? user.name}</bdi> (
-            <button
-              type="button"
-              onClick={() => setIsProfileOpen(true)}
-              className="text-primary-teal hover:underline"
-            >
-              {t('Edit Profile')}
-            </button>
-            )
-          </span>
-          <span className="max-w-72 text-sm text-neutral-gray4 sm:text-xs">
-            {user.currentOrganization ? (
-              <>
-                {t('Admin for')}{' '}
-                <bdi>
-                  {user.currentProfile?.name ??
-                    user.currentOrganization?.profile.name}
-                </bdi>
-              </>
-            ) : (
-              (user.currentProfile?.bio ?? '')
-            )}
-          </span>
-        </div>
-      </div>
-
-      {userProfiles?.map((profile) => (
-        <ProfileMenuItem
-          key={profile.id}
-          profile={profile}
-          onClose={onClose}
-          onProfileSwitch={onProfileSwitch}
-        >
-          <div className="flex flex-col overflow-hidden">
-            <div className="flex items-center gap-1">
-              <span className="truncate overflow-hidden">
-                <bdi>{profile.name}</bdi>{' '}
-              </span>
-              {user.currentProfile?.id === profile.id ? (
-                <Badge variant="secondary">Active</Badge>
-              ) : null}
-            </div>
-            <div
-              dir="auto"
-              className="relative truncate overflow-hidden text-sm text-neutral-gray4"
-            >
-              {profile.bio}
-            </div>
-          </div>
-        </ProfileMenuItem>
-      ))}
-
-      {orgProfiles?.length ? <MenuDivider /> : null}
-      {orgProfiles?.map((profile) => (
-        <ProfileMenuItem
-          key={profile.id}
-          profile={profile}
-          onClose={onClose}
-          onProfileSwitch={onProfileSwitch}
-        >
-          <div className="flex flex-col overflow-hidden">
-            <div className="relative flex items-center gap-1">
-              <span className="truncate overflow-hidden">
-                <bdi>{profile.name}</bdi>{' '}
-              </span>
-              {user.currentProfile?.id === profile.id ? (
-                <Badge variant="secondary">Active</Badge>
-              ) : null}
-            </div>
-            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4 capitalize">
-              {t('Organization')}
-            </div>
-          </div>
-        </ProfileMenuItem>
-      ))}
-      <MenuDivider />
-      <Button
-        variant="ghost"
-        className="w-full justify-start px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
-        onClick={() => {
-          window.open(
-            'https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b',
-            '_blank',
-            'noopener,noreferrer',
-          );
-
-          onClose?.();
-        }}
-      >
-        <LuCircleHelp className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-        {t('Feature Requests & Support')}
-      </Button>
-      <Button
-        variant="ghost"
-        className="w-full justify-start px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
-        onClick={() => {
-          // Full-page navigation: client-side routing would re-render the
-          // authed tree with a dead session before the redirect lands.
-          void logout.refetch().finally(() => window.location.assign('/'));
-          onClose?.();
-        }}
-      >
-        <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-        {t('Log out')}
-      </Button>
-      <div className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 sm:text-sm">
-        <div>
-          <PrivacyPolicyModal />
-          {' • '}
-          <ToSModal />
-          {' • '}
-          <CommunityCommitmentsModal />
-        </div>
-      </div>
-      <div className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4">
-        <div className="text-xs">
-          <span
-            className="pointer text-primary-teal hover:underline"
-            onClick={() => {
-              window.open(
-                'https://github.com/oneprojectorg/common',
-                '_blank',
-                'noopener,noreferrer',
-              );
-
+      <div className="flex flex-col gap-3 px-3">
+        {userProfiles?.map((profile) => (
+          <ProfileMenuRow
+            key={profile.id}
+            profile={profile}
+            description={profile.bio ?? undefined}
+            isEditable
+            onEdit={() => {
+              setIsProfileOpen(true);
               onClose?.();
             }}
-          >
-            {t('Ethical Open Source')}
-          </span>{' '}
-          • One Project • {new Date().getFullYear()}
+            onClose={onClose}
+            onProfileSwitch={onProfileSwitch}
+          />
+        ))}
+
+        {orgProfiles?.length ? <Separator /> : null}
+
+        {orgProfiles?.map((profile) => (
+          <ProfileMenuRow
+            key={profile.id}
+            profile={profile}
+            description={t('Organization')}
+            onClose={onClose}
+            onProfileSwitch={onProfileSwitch}
+          />
+        ))}
+      </div>
+
+      <Separator />
+
+      <div className="flex flex-col gap-1 py-2">
+        <Button
+          variant="ghost"
+          className="h-auto w-full justify-start gap-1.5 rounded-md px-3 py-2 font-normal text-foreground"
+          onClick={() => {
+            window.open(
+              'https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b',
+              '_blank',
+              'noopener,noreferrer',
+            );
+
+            onClose?.();
+          }}
+        >
+          <LuCircleHelp className="size-4" /> {t('Feature Requests & Support')}
+        </Button>
+        <Button
+          variant="ghost"
+          className="h-auto w-full justify-start gap-1.5 rounded-md px-3 py-2 font-normal text-foreground"
+          onClick={() => {
+            // Full-page navigation: client-side routing would re-render the
+            // authed tree with a dead session before the redirect lands.
+            void logout.refetch().finally(() => window.location.assign('/'));
+            onClose?.();
+          }}
+        >
+          <LuLogOut className="size-4" /> {t('Log out')}
+        </Button>
+      </div>
+
+      <Separator />
+
+      <div className="flex flex-col gap-2 px-3">
+        <div className="flex flex-col items-start gap-2">
+          <PrivacyPolicyModal />
+          <ToSModal />
+          <CommunityCommitmentsModal />
           {deleteOrganizationEnabled && (
-            <>
-              {' • '}
-              <button
-                type="button"
-                className="cursor-pointer text-neutral-charcoal hover:underline"
-                onClick={() => {
-                  setIsOrgDeletionOpen(true);
-                  onClose?.();
-                }}
-              >
-                {t('Delete my account')}
-              </button>
-            </>
+            <button
+              type="button"
+              className="text-sm font-strong text-foreground hover:underline"
+              onClick={() => {
+                setIsOrgDeletionOpen(true);
+                onClose?.();
+              }}
+            >
+              {t('Delete my account')}
+            </button>
           )}
+        </div>
+        <div className="flex items-center px-3 py-1">
+          <p className="text-xs text-muted-foreground">
+            <span
+              className="cursor-pointer text-primary hover:underline"
+              onClick={() => {
+                window.open(
+                  'https://github.com/oneprojectorg/common',
+                  '_blank',
+                  'noopener,noreferrer',
+                );
+
+                onClose?.();
+              }}
+            >
+              {t('Ethical Open Source')}
+            </span>{' '}
+            • One Project • {new Date().getFullYear()}
+          </p>
         </div>
       </div>
     </>
@@ -399,10 +369,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         name={user.currentProfile?.name}
         imageName={user.currentProfile?.avatarImage?.name}
         alt="User avatar"
-        size="sm"
+        size="lg"
       />
-      <div className="absolute -end-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
-        <LuChevronDown className="size-3" />{' '}
+      <div className="absolute -end-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-muted ring-2 ring-background">
+        <LuChevronDown className="size-3 text-foreground" />
       </div>
     </button>
   );
@@ -411,17 +381,13 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     return (
       <>
         {avatarButton}
-        {/* TODO(sense): Figma nav redesign pending — the op/ui bottom-sheet
-            Modal is mapped onto a centered Dialog overridden to dock to the
-            bottom; the redesign pass should decide the final sheet treatment
-            (possibly @op/sense/Sheet). */}
         <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
           <DialogContent
             showCloseButton={false}
             className="top-auto bottom-0 left-0 max-h-[85svh] w-full max-w-none translate-x-0 translate-y-0 rounded-t rounded-b-none border-0 p-0"
           >
             <DialogTitle className="sr-only">{t('Open menu')}</DialogTitle>
-            <div className="pb-safe flex min-w-full flex-col p-4 pb-8">
+            <div className="pb-safe flex w-full flex-col gap-3 py-4 pb-8">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 setIsOrgDeletionOpen={setIsOrgDeletionOpen}
@@ -458,7 +424,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         <DropdownMenuContent
           side="bottom"
           align="end"
-          className="flex min-w-72 flex-col p-4 pb-6"
+          className="flex w-78 flex-col gap-3 p-0 py-4"
         >
           <AvatarMenuContent
             setIsProfileOpen={setIsProfileOpen}
@@ -528,12 +494,12 @@ const HeaderActions = () => {
       {user && (
         <ErrorBoundary
           fallback={
-            <div className="size-8 rounded-full border bg-white shadow" />
+            <div className="size-10 rounded-full border bg-white shadow" />
           }
         >
           <Suspense
             fallback={
-              <Skeleton className="size-8 rounded-full border bg-white shadow" />
+              <Skeleton className="size-10 rounded-full border bg-white shadow" />
             }
           >
             <UserAvatarMenu />
@@ -550,15 +516,18 @@ export const SiteHeader = () => {
 
   return (
     <>
-      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid">
+      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-border bg-background px-6 py-2 sm:grid">
         <div className="flex items-center gap-3">
-          <SidebarTrigger aria-label={t('Open menu')} />
+          <SidebarTrigger
+            aria-label={t('Open menu')}
+            className="size-11 rounded-lg"
+          />
           <Link href="/" className="flex gap-1" aria-label={t('Home')}>
             <CommonLogo />
           </Link>
         </div>
         <span className="flex items-center justify-center">
-          <ErrorBoundary fallback={<Skeleton className="h-10 w-96" />}>
+          <ErrorBoundary fallback={<Skeleton className="h-11 w-96" />}>
             <SearchInput />
           </ErrorBoundary>
         </span>
@@ -568,10 +537,13 @@ export const SiteHeader = () => {
       </header>
 
       {/* Mobile */}
-      <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
+      <header className="flex h-auto w-full items-center justify-between border-b border-border bg-background px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <div className="flex items-center gap-3">
-            <SidebarTrigger aria-label={t('Open menu')} className="p-1" />
+            <SidebarTrigger
+              aria-label={t('Open menu')}
+              className="size-8 rounded-lg"
+            />
             <Link href="/" className="flex gap-1" aria-label={t('Home')}>
               <CommonLogo />
             </Link>
@@ -579,7 +551,7 @@ export const SiteHeader = () => {
         )}
 
         <div
-          className={`flex ${isMobileSearchExpanded ? 'w-full items-center justify-between' : 'gap-4'}`}
+          className={`flex ${isMobileSearchExpanded ? 'w-full items-center justify-between' : 'gap-3'}`}
         >
           {isMobileSearchExpanded ? (
             <>
@@ -593,20 +565,21 @@ export const SiteHeader = () => {
               <button
                 type="button"
                 onClick={() => setIsMobileSearchExpanded(false)}
-                className="ms-3 whitespace-nowrap text-neutral-gray4"
+                className="ms-3 whitespace-nowrap text-muted-foreground"
               >
-                Cancel
+                {t('Cancel')}
               </button>
             </>
           ) : (
             <>
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="icon-sm"
                 onClick={() => setIsMobileSearchExpanded(true)}
-                className="flex items-center justify-center"
+                aria-label={t('Search')}
               >
-                <LuSearch className="size-4 text-neutral-gray4" />
-              </button>
+                <LuSearch className="size-4 text-muted-foreground" />
+              </Button>
 
               <div className="flex items-center gap-3">
                 <HeaderActions />
@@ -618,7 +591,3 @@ export const SiteHeader = () => {
     </>
   );
 };
-
-const MenuDivider = ({ className }: { className?: string }) => (
-  <div className={cn('mt-4 h-px w-full bg-neutral-gray1', className)} />
-);
