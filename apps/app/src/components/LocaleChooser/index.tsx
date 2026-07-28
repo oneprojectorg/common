@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,8 +57,13 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={t('Select language')}
-        className="flex size-8 items-center justify-center rounded-lg border border-input bg-background sm:size-11"
+        render={
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('Select language')}
+          />
+        }
       >
         <LuGlobe className="size-4" />
       </DropdownMenuTrigger>

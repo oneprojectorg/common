@@ -567,7 +567,15 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     return (
       <>
         <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-          <DialogTrigger className={cn('relative', className)}>
+          <DialogTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn('relative size-10 rounded-full p-0', className)}
+              />
+            }
+          >
             {avatarContent}
           </DialogTrigger>
           <DialogContent
@@ -593,7 +601,15 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   return (
     <>
       <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <DropdownMenuTrigger className={cn('relative', className)}>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('relative size-10 rounded-full p-0', className)}
+            />
+          }
+        >
           {avatarContent}
         </DropdownMenuTrigger>
         <DropdownMenuContent

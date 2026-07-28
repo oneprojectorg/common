@@ -146,7 +146,7 @@ export const SiteHeader = () => {
             <>
               <Button
                 variant="outline"
-                size="icon-sm"
+                size="icon"
                 onClick={() => setIsMobileSearchExpanded(true)}
                 aria-label={t('Search')}
               >
