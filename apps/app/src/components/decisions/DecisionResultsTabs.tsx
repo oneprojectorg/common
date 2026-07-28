@@ -9,9 +9,12 @@ import { useTranslations } from '@/lib/i18n';
 export const DecisionResultsTabs = ({
   children,
   className,
+  showBallotTab = true,
 }: {
   children: ReactNode;
   className?: string;
+  /** Whether to surface the "My Ballot" tab — only when a voting phase took place. */
+  showBallotTab?: boolean;
 }) => {
   const t = useTranslations();
 
@@ -20,7 +23,7 @@ export const DecisionResultsTabs = ({
       <TabList className="flex gap-6">
         <Tab id="funded">{t('Selected Proposals')}</Tab>
         <Tab id="all-proposals">{t('All proposals')}</Tab>
-        <Tab id="ballot">{t('My Ballot')}</Tab>
+        {showBallotTab ? <Tab id="ballot">{t('My Ballot')}</Tab> : null}
       </TabList>
       {children}
     </Tabs>

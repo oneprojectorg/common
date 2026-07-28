@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
+import { hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -40,6 +41,14 @@ interface ResultsPageInstance {
   description: string | null;
   process?: {
     description: string | null;
+  } | null;
+  instanceData?: {
+    // Legacy instances omit `rules` on phases; the ballot tab is gated by
+    // `isLegacy` there, so `hasVotingPhase` only reads it on the new schema.
+    phases?: readonly {
+      phaseId?: string;
+      rules?: { voting?: { submit?: boolean } };
+    }[];
   } | null;
 }
 
@@ -114,6 +123,11 @@ function ResultsPageContent({
 }) {
   const t = useTranslations();
 
+  // The "My Ballot" tab only makes sense when a voting phase took place.
+  // Legacy instances always had voting, so they keep showing it.
+  const showBallotTab =
+    isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
+
   // Organization-specific content
   const heroContent = match<{
     title: string;
@@ -174,7 +188,7 @@ function ResultsPageContent({
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:max-w-6xl">
-          <DecisionResultsTabs>
+          <DecisionResultsTabs showBallotTab={showBallotTab}>
             <DecisionResultsTabPanel id="funded">
               <APIErrorBoundary
                 fallbacks={{
@@ -213,21 +227,23 @@ function ResultsPageContent({
               </Suspense>
             </DecisionResultsTabPanel>
 
-            <DecisionResultsTabPanel id="ballot">
-              <APIErrorBoundary
-                fallbacks={{
-                  default: () => <NoVoteFound />,
-                }}
-              >
-                <Suspense fallback={<ProposalListSkeleton />}>
-                  <MyBallot
-                    slug={profileSlug}
-                    instanceId={instanceId}
-                    decisionSlug={decisionSlug}
-                  />
-                </Suspense>
-              </APIErrorBoundary>
-            </DecisionResultsTabPanel>
+            {showBallotTab ? (
+              <DecisionResultsTabPanel id="ballot">
+                <APIErrorBoundary
+                  fallbacks={{
+                    default: () => <NoVoteFound />,
+                  }}
+                >
+                  <Suspense fallback={<ProposalListSkeleton />}>
+                    <MyBallot
+                      slug={profileSlug}
+                      instanceId={instanceId}
+                      decisionSlug={decisionSlug}
+                    />
+                  </Suspense>
+                </APIErrorBoundary>
+              </DecisionResultsTabPanel>
+            ) : null}
           </DecisionResultsTabs>
         </div>
       </div>

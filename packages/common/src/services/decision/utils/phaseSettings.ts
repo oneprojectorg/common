@@ -31,6 +31,16 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
+/**
+ * True when any phase enables voting — i.e. the process has (or had) a voting
+ * phase. Used to gate voting-only surfaces such as the "My Ballot" results tab.
+ */
+export function hasVotingPhase(
+  phases: readonly { rules?: { voting?: { submit?: boolean } } }[],
+): boolean {
+  return phases.some(isVotingPhase);
+}
+
 /** `PhaseReviewSettings` with defaults applied (`anonymousFeedback` has none). */
 export type ReviewSettings = Required<
   Pick<PhaseReviewSettings, 'submit' | 'policy' | 'scope' | 'allowRevisions'>
