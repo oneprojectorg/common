@@ -7,11 +7,13 @@ import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@op/sense/Dialog';
 import {
   DropdownMenu,
@@ -32,7 +34,6 @@ import {
   LuChevronRight,
   LuCircleHelp,
   LuLogOut,
-  LuPencil,
 } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
@@ -78,14 +79,12 @@ const ProfileAvatar = ({
 const ProfileMenuRow = ({
   profile,
   description,
-  isEditable = false,
   asMenuItem = false,
   onClose,
   onProfileSwitch,
 }: {
   profile: Profile;
   description?: string;
-  isEditable?: boolean;
   asMenuItem?: boolean;
   onClose?: () => void;
   onProfileSwitch?: (profile: {
@@ -149,11 +148,7 @@ const ProfileMenuRow = ({
         titleClassName="font-normal"
         description={description}
       />
-      {isEditable ? (
-        <LuPencil className="size-4" />
-      ) : (
-        <LuChevronRight className="size-4" />
-      )}
+      <LuChevronRight className="size-4" />
     </>
   );
 
@@ -166,9 +161,9 @@ const ProfileMenuRow = ({
   }
 
   return (
-    <button type="button" className={className} onClick={handleSelect}>
+    <Button variant="ghost" className={className} onClick={handleSelect}>
       {content}
-    </button>
+    </Button>
   );
 };
 
@@ -247,7 +242,7 @@ const AvatarMenuContent = ({
     children: ReactNode;
   }) => {
     const shared = cn(
-      'flex h-auto w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-start outline-none',
+      'flex h-auto w-full cursor-pointer items-center justify-start gap-1.5 rounded-md px-3 py-2 text-start outline-none',
       className,
     );
 
@@ -260,13 +255,13 @@ const AvatarMenuContent = ({
     }
 
     return (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         className={cn(shared, 'hover:bg-muted')}
         onClick={onClick}
       >
         {children}
-      </button>
+      </Button>
     );
   };
 
@@ -324,7 +319,6 @@ const AvatarMenuContent = ({
             key={profile.id}
             profile={profile}
             description={profile.bio ?? undefined}
-            isEditable
             asMenuItem={asMenuItem}
             onClose={onClose}
             onProfileSwitch={onProfileSwitch}
@@ -528,12 +522,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     previousProfileId.current = user.currentProfile?.id;
   }, [user.currentProfile?.id, isSwitchingProfile]);
 
-  const avatarButton = (
-    <button
-      type="button"
-      className={cn('relative', className)}
-      onClick={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
-    >
+  const avatarContent = (
+    <>
       <ProfileAvatar
         name={user.currentProfile?.name}
         imageName={user.currentProfile?.avatarImage?.name}
@@ -543,7 +533,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       <div className="absolute -end-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-muted ring-2 ring-background">
         <LuChevronDown className="size-3 text-foreground" />
       </div>
-    </button>
+    </>
   );
 
   // Dialogs live outside the menu/sheet so they survive it closing (the
@@ -576,8 +566,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   if (isMobile) {
     return (
       <>
-        {avatarButton}
         <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <DialogTrigger className={cn('relative', className)}>
+            {avatarContent}
+          </DialogTrigger>
           <DialogContent
             showCloseButton={false}
             className="top-auto bottom-0 left-0 flex max-h-[85svh] w-full max-w-none translate-x-0 translate-y-0 flex-col rounded-t rounded-b-none border-0 p-0"
@@ -601,7 +593,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   return (
     <>
       <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <DropdownMenuTrigger render={avatarButton} />
+        <DropdownMenuTrigger className={cn('relative', className)}>
+          {avatarContent}
+        </DropdownMenuTrigger>
         <DropdownMenuContent
           side="bottom"
           sideOffset={6}

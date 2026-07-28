@@ -59,6 +59,7 @@ const NavLink = ({ href, active, children }: NavLinkProps) => {
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={active}
+        className="no-underline hover:no-underline"
         render={<Link href={href} {...pressProps} />}
       >
         {children}

@@ -134,13 +134,13 @@ export const SiteHeader = () => {
                   />
                 </ErrorBoundary>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => setIsMobileSearchExpanded(false)}
-                className="ms-3 whitespace-nowrap text-muted-foreground"
+                className="ms-3 text-muted-foreground"
               >
                 {t('Cancel')}
-              </button>
+              </Button>
             </>
           ) : (
             <>

@@ -1,12 +1,12 @@
 'use client';
 
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@op/sense/Select';
-import { cn } from '@op/sense/lib/utils';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 
@@ -27,6 +27,11 @@ const localeDisplayNames: Record<string, string> = {
   ar: 'العربية',
 };
 
+/**
+ * Language switcher. A DropdownMenu (not a Select): the globe button opens a
+ * list of languages and *navigates* on choice — it's a menu of actions, not a
+ * form value. DropdownMenuRadioGroup marks the current locale.
+ */
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations();
   const pathname = usePathname();
@@ -35,7 +40,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const currentLocale =
     (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
 
-  const handleValueChange = (value: string | null) => {
+  const handleValueChange = (value: string) => {
     if (value && value !== currentLocale) {
       // Hard navigation (not the client router) so the server applies the
       // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
@@ -49,36 +54,25 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   };
 
   return (
-    // Passing `items` gives base-ui the value→label map so any SelectValue
-    // would render "English" not "en"; the trigger here is icon-only, so the
-    // raw-value gotcha never surfaces, but the map keeps the labels correct.
-    <Select
-      value={currentLocale}
-      onValueChange={handleValueChange}
-      items={localeDisplayNames}
-    >
-      <SelectTrigger
+    <DropdownMenu>
+      <DropdownMenuTrigger
         aria-label={t('Select language')}
-        className="h-auto w-fit gap-0 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 [&>svg:last-child]:hidden"
+        className="flex size-8 items-center justify-center rounded-lg border border-input bg-background sm:size-11"
       >
-        <span className="hidden size-11 items-center justify-center rounded-lg border border-input bg-background sm:flex">
-          <LuGlobe className="size-4" />
-        </span>
-        <span className="flex size-8 items-center justify-center rounded-lg border border-input bg-background sm:hidden">
-          <LuGlobe className="size-4" />
-        </span>
-      </SelectTrigger>
-      <SelectContent align="end" alignItemWithTrigger={false}>
-        {i18nConfig.locales.map((locale) => (
-          <SelectItem
-            key={locale}
-            value={locale}
-            className={cn(currentLocale === locale && 'text-primary-teal')}
-          >
-            {localeDisplayNames[locale] || locale}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+        <LuGlobe className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuRadioGroup
+          value={currentLocale}
+          onValueChange={handleValueChange}
+        >
+          {i18nConfig.locales.map((locale) => (
+            <DropdownMenuRadioItem key={locale} value={locale}>
+              {localeDisplayNames[locale] || locale}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
