@@ -2,8 +2,7 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { EntityType, ProfileSearchResult } from '@op/api/encoders';
 import { match } from '@op/core';
-import { Avatar } from '@op/ui/Avatar';
-import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 
 import { Link } from '@/lib/i18n';
 
@@ -73,20 +72,17 @@ export const ProfileResults = ({
             <bdi>{profile.name}</bdi>
           );
 
+        const avatarSrc = profile.avatarImage?.name
+          ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
+          : undefined;
+
         const resultInner = (
           <>
-            <Avatar
-              placeholder={profile.name}
-              className="aspect-square size-8 shrink-0 group-hover/result:no-underline"
-            >
-              {profile.avatarImage?.name ? (
-                <Image
-                  src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                  alt={`${profile.name} avatar`}
-                  fill
-                  className="object-cover"
-                />
+            <Avatar className="aspect-square size-8 shrink-0 group-hover/result:no-underline">
+              {avatarSrc ? (
+                <AvatarImage src={avatarSrc} alt={`${profile.name} avatar`} />
               ) : null}
+              <AvatarFallback name={profile.name} />
             </Avatar>
 
             <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">

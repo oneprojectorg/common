@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { match } from '@op/core';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -83,28 +83,28 @@ export const TabbedProfileSearchResults = ({
 
   return (
     // Use the defaultSelectedKey as the key for the Tabs component so that it switches to the tab with available results.
-    <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
-      <TabList variant="pill">
+    <Tabs key={defaultSelectedKey} defaultValue={defaultSelectedKey}>
+      <TabsList>
         {profiles.map(({ type, results }) => {
           const label = match(type, {
             [EntityType.INDIVIDUAL]: t('Individuals'),
             [EntityType.ORG]: t('Organizations'),
           });
           return (
-            <Tab id={type} variant="pill" className="gap-2" key={`${type}-tab`}>
+            <TabsTrigger value={type} className="gap-2" key={`${type}-tab`}>
               {label}
               <span className="text-neutral-gray4">{results.length}</span>
-            </Tab>
+            </TabsTrigger>
           );
         })}
-      </TabList>
+      </TabsList>
       {profiles.map(({ type, results }) => {
         const label = match(type, {
           [EntityType.INDIVIDUAL]: t('individuals'),
           [EntityType.ORG]: t('organizations'),
         });
         return (
-          <TabPanel key={`${type}-panel`} id={type}>
+          <TabsContent key={`${type}-panel`} value={type}>
             {results.length > 0 ? (
               <ProfileSummaryList profiles={results} />
             ) : (
@@ -112,7 +112,7 @@ export const TabbedProfileSearchResults = ({
                 {t('No {type} found.', { type: label })}
               </div>
             )}
-          </TabPanel>
+          </TabsContent>
         );
       })}
     </Tabs>

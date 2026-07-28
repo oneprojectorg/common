@@ -1,4 +1,4 @@
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 
 interface SearchResultItemProps {
   children: React.ReactNode;

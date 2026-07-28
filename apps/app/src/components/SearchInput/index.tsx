@@ -2,9 +2,13 @@ import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { TextField } from '@op/ui/TextField';
-import { cn } from '@op/ui/utils';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@op/sense/InputGroup';
+import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
@@ -168,47 +172,54 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   return (
     <div ref={containerRef} className="group">
-      <TextField
-        ref={inputRef}
-        inputProps={{
-          dir: query.length > 0 ? 'auto' : undefined,
-          placeholder: t('Search'),
-          color: 'muted',
-          size: 'small',
-          icon: isSearching ? (
-            <LoadingSpinner className="size-4 text-neutral-gray4" />
-          ) : (
-            <LuSearch className="size-4 text-neutral-gray4" />
-          ),
-          className: cn(
-            'bg-transparent placeholder:text-neutral-gray4 focus-visible:bg-white active:bg-white active:text-neutral-gray3',
-            'active:border-inherit', // override TextField input styles that are used everywhere
+      <div className={cn('relative z-20', isMobile ? 'w-full' : 'w-96')}>
+        <InputGroup
+          className={cn(
+            'bg-transparent focus-within:bg-white active:bg-white',
+            'active:border-inherit', // override input styles that are used everywhere
             dropdownShowing && 'sm:rounded-b-none',
-            localeDirection === 'rtl' && 'pl-4', // override logical padding property due to dir="auto" in inputProps
-          ),
-          onKeyDown: handleKeyDown,
-          'aria-expanded': dropdownShowing,
-          'aria-haspopup': 'listbox',
-          'aria-activedescendant':
-            selectedIndex >= 0 ? `search-option-${selectedIndex}` : undefined,
-          role: 'combobox',
-          'aria-autocomplete': 'list',
-        }}
-        onChange={(e) => {
-          setQuery(e);
-          setShowResults(true);
-        }}
-        onFocus={() => setShowResults(true)}
-        onBlur={() => {
-          setTimeout(() => {
-            setShowResults(false);
-            onBlur?.();
-          }, 150);
-        }}
-        value={query}
-        className={cn('relative z-20', isMobile ? 'w-full' : 'w-96')}
-        aria-label={t('Search')}
-      >
+          )}
+        >
+          <InputGroupAddon align="inline-start">
+            {isSearching ? (
+              <Spinner className="size-4 text-neutral-gray4" />
+            ) : (
+              <LuSearch className="size-4 text-neutral-gray4" />
+            )}
+          </InputGroupAddon>
+          <InputGroupInput
+            ref={inputRef}
+            dir={query.length > 0 ? 'auto' : undefined}
+            placeholder={t('Search')}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
+            onBlur={() => {
+              setTimeout(() => {
+                setShowResults(false);
+                onBlur?.();
+              }, 150);
+            }}
+            onKeyDown={handleKeyDown}
+            aria-label={t('Search')}
+            aria-expanded={dropdownShowing}
+            aria-haspopup="listbox"
+            aria-activedescendant={
+              selectedIndex >= 0 ? `search-option-${selectedIndex}` : undefined
+            }
+            role="combobox"
+            aria-autocomplete="list"
+            className={cn(
+              'bg-transparent placeholder:text-neutral-gray4 active:text-neutral-gray3',
+              '[unicode-bidi:plaintext]',
+              localeDirection === 'rtl' && 'pl-4',
+            )}
+          />
+        </InputGroup>
+
         {dropdownShowing ? (
           <div
             className="absolute top-10 z-10 hidden !max-h-80 w-(--trigger-width) min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white text-base group-hover:border-neutral-gray2 sm:block"
@@ -252,7 +263,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             </div>
           </div>
         ) : null}
-      </TextField>
+      </div>
 
       {/* Mobile full-screen search results */}
       {dropdownShowing && (
