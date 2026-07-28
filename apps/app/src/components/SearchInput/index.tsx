@@ -118,7 +118,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const handleSearchSelect = () => {
     const term = query;
     recordSearch(term);
-    router.push(`/search?q=${term}`);
+    router.push(`/search?q=${encodeURIComponent(term)}`);
   };
 
   const handleProfileSelect = (profile: ProfileSearchResult) => {
@@ -281,11 +281,12 @@ const ProfileCommandItem = ({
   query,
   onSelect,
 }: ProfileCommandItemProps) => {
+  const t = useTranslations();
   const isIndividual = profile.type === EntityType.INDIVIDUAL;
   const profileType = match(profile.type, {
-    [EntityType.INDIVIDUAL]: 'Individual',
-    [EntityType.ORG]: 'Organization',
-    _: 'Profile',
+    [EntityType.INDIVIDUAL]: t('Individual'),
+    [EntityType.ORG]: t('Organization'),
+    _: t('Profile'),
   });
 
   const additionalInfo = isIndividual ? profile.bio : profile.city;
@@ -321,12 +322,8 @@ const ProfileCommandItem = ({
 };
 
 const highlightName = (name: string, query: string) => {
-  const nameSegments = name.toLowerCase().split(query);
-  const firstPiece = nameSegments[0];
-
-  if (firstPiece === undefined) {
-    return <bdi>{name}</bdi>;
-  }
+  // Text before the (case-insensitive) match; whole name if no match.
+  const firstPiece = name.toLowerCase().split(query.toLowerCase())[0] ?? name;
 
   return (
     <bdi>
