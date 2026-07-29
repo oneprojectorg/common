@@ -59,11 +59,6 @@ export async function backfillReviewAssignments({
 
   const instanceData = instance.instanceData as DecisionInstanceData;
 
-  const reviewsPolicy = instanceData.config?.reviewsPolicy;
-  if (reviewsPolicy && reviewsPolicy !== 'full_coverage') {
-    return skip(`reviews policy '${reviewsPolicy}' is not backfillable`);
-  }
-
   const currentPhase = assertInstancePhase({
     instance: { instanceData },
     phaseId: currentPhaseId,

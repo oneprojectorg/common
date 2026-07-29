@@ -288,22 +288,6 @@ describe.concurrent('generateReviewAssignments', () => {
     expect(assignments).toHaveLength(0);
   });
 
-  it('throws for self_selection policy', async ({ task, onTestFinished }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await createReviewInstance(testData, {
-      reviewsPolicy: 'self_selection',
-    });
-
-    await expect(
-      generateReviewAssignments({
-        instanceId: instance.instance.id,
-        phaseId: 'review',
-        selectedProposalIds: ['any-id'],
-        transitionHistoryId: 'irrelevant',
-      }),
-    ).rejects.toThrow('not implemented');
-  });
-
   it('is idempotent — calling twice does not duplicate rows', async ({
     task,
     onTestFinished,
@@ -349,24 +333,5 @@ describe.concurrent('generateReviewAssignments', () => {
       assignments.map((a) => `${a.reviewerProfileId}:${a.proposalId}`),
     );
     expect(assignments).toHaveLength(uniquePairs.size);
-  });
-
-  it('throws for random_assignment policy', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await createReviewInstance(testData, {
-      reviewsPolicy: 'random_assignment',
-    });
-
-    await expect(
-      generateReviewAssignments({
-        instanceId: instance.instance.id,
-        phaseId: 'review',
-        selectedProposalIds: ['any-id'],
-        transitionHistoryId: 'irrelevant',
-      }),
-    ).rejects.toThrow('not implemented');
   });
 });

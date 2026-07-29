@@ -405,22 +405,6 @@ describe.concurrent('backfillReviewAssignments', () => {
     expect(await getAssignments(instance.instance.id)).toHaveLength(0);
   });
 
-  it('no-ops for non-backfillable review policies instead of throwing', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await createReviewInstance(testData, {
-      reviewsPolicy: 'self_selection',
-    });
-
-    await expect(
-      backfillReviewAssignments({ instanceId: instance.instance.id }),
-    ).resolves.toEqual({
-      skipped: expect.stringContaining('self_selection'),
-    });
-  });
-
   it('no-ops when the review phase is the initial phase (no inbound transition)', async ({
     task,
     onTestFinished,
