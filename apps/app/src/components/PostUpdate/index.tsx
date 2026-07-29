@@ -726,7 +726,7 @@ const PostUpdateWithUser = ({
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <InputGroupButton
-                  size="sm"
+                  size="md"
                   variant="outline"
                   onClick={retryFailedPost}
                   disabled={

@@ -116,7 +116,6 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                   <>
                     <Button
                       variant="outline"
-                      size="sm"
                       className="w-full sm:w-auto"
                       onClick={() => {
                         remove.mutate({
@@ -130,7 +129,6 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       {t('Decline')}
                     </Button>
                     <Button
-                      size="sm"
                       className="w-full sm:w-auto"
                       onClick={() =>
                         approve.mutate({

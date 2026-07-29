@@ -1,13 +1,7 @@
 'use client';
 
 import { Button } from '@op/sense/Button';
-import { Confetti } from '@op/sense/Confetti';
-import {
-  Dialog,
-  DialogContent,
-  DialogPortal,
-  DialogTitle,
-} from '@op/sense/Dialog';
+import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
 import { Header1 } from '@op/sense/Header';
 import { CheckIcon } from '@op/sense/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,18 +15,10 @@ export const NewlyJoinedModal = () => {
   const router = useRouter();
   const isNew = searchParams.get('new');
   const [modalOpen, setModalOpen] = useState(!!isNew);
-  // Bumped each open so the Confetti remounts and replays.
-  const [burst, setBurst] = useState(0);
 
   useEffect(() => {
     setModalOpen(!!isNew);
   }, [isNew]);
-
-  useEffect(() => {
-    if (modalOpen) {
-      setBurst((n) => n + 1);
-    }
-  }, [modalOpen]);
 
   const handleModalChange = (open: boolean) => {
     setModalOpen(open);
@@ -50,18 +36,9 @@ export const NewlyJoinedModal = () => {
 
   return (
     <Dialog open={modalOpen} onOpenChange={handleModalChange}>
-      {modalOpen ? (
-        <DialogPortal>
-          {/* Viewport-fixed overlay portaled to <body>, layered between the
-              backdrop (z-50) and the card (z-60) so confetti fills the screen
-              behind the modal, not clipped inside the card. */}
-          <div className="pointer-events-none fixed inset-0 isolate z-55">
-            <Confetti key={burst} />
-          </div>
-        </DialogPortal>
-      ) : null}
       <DialogContent
-        className="z-60 shadow-green inset-shadow-none"
+        confetti
+        className="shadow-green inset-shadow-none"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">{t("You're all set!")}</DialogTitle>
