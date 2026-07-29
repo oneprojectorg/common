@@ -15,7 +15,6 @@ import {
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Sonner';
-import { Spinner } from '@op/sense/Spinner';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
@@ -107,9 +106,10 @@ const PendingDecisionInvitesSuspense = () => {
                         toast.error(t('Failed to accept invitation'));
                       })
                   }
+                  loading={isAccepting}
                   disabled={acceptInvite.isPending}
                 >
-                  {isAccepting ? <Spinner className="size-6" /> : t('Accept')}
+                  {t('Accept')}
                 </Button>
               </NotificationPanelActions>
             </NotificationPanelItem>

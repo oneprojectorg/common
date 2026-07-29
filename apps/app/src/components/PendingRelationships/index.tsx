@@ -9,7 +9,6 @@ import {
   NotificationPanelItem,
   NotificationPanelList,
 } from '@op/sense/NotificationPanel';
-import { Spinner } from '@op/sense/Spinner';
 import { relationshipMap } from '@op/types/relationships';
 import { Suspense, useState } from 'react';
 
@@ -125,13 +124,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                           ids: org.relationships?.map((r) => r.id) ?? [],
                         });
                       }}
+                      loading={remove.isPending}
                       disabled={isPending}
                     >
-                      {remove.isPending ? (
-                        <Spinner className="size-6" />
-                      ) : (
-                        t('Decline')
-                      )}
+                      {t('Decline')}
                     </Button>
                     <Button
                       size="sm"
@@ -142,13 +138,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                           targetOrganizationId: organization.id,
                         })
                       }
+                      loading={approve.isPending}
                       disabled={isPending}
                     >
-                      {approve.isPending ? (
-                        <Spinner className="size-6" />
-                      ) : (
-                        t('Accept')
-                      )}
+                      {t('Accept')}
                     </Button>
                   </>
                 ) : null}

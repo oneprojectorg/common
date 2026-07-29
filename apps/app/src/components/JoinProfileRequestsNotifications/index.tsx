@@ -12,7 +12,6 @@ import {
 } from '@op/sense/NotificationPanel';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Sonner';
-import { Spinner } from '@op/sense/Spinner';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -124,13 +123,10 @@ const JoinProfileRequestsNotificationsSuspense = ({
                       JoinProfileRequestStatus.REJECTED,
                     )
                   }
+                  loading={isLoadingReject}
                   disabled={isPendingForRequest}
                 >
-                  {isLoadingReject ? (
-                    <Spinner className="size-6" />
-                  ) : (
-                    t('Decline')
-                  )}
+                  {t('Decline')}
                 </Button>
                 <Button
                   size="sm"
@@ -141,13 +137,10 @@ const JoinProfileRequestsNotificationsSuspense = ({
                       JoinProfileRequestStatus.APPROVED,
                     )
                   }
+                  loading={isLoadingApprove}
                   disabled={isPendingForRequest}
                 >
-                  {isLoadingApprove ? (
-                    <Spinner className="size-6" />
-                  ) : (
-                    t('Accept')
-                  )}
+                  {t('Accept')}
                 </Button>
               </NotificationPanelActions>
             </NotificationPanelItem>
