@@ -249,23 +249,20 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         />
       </InputGroup>
 
-      {dropdownShowing ? (
-        isMobile ? (
-          <div
-            className="fixed inset-x-0 top-[60px] bottom-0 z-10 block overflow-y-auto bg-popover text-base"
-            aria-label={t('Search results')}
-          >
-            <div className="p-4 pt-0">{listContent}</div>
-          </div>
-        ) : (
-          <div
-            className="absolute top-12 z-10 w-full rounded border bg-popover text-base shadow"
-            aria-label={t('Search results')}
-          >
-            {listContent}
-          </div>
-        )
-      ) : null}
+      {/* Always mounted so the input's `aria-controls` target (the CommandList
+          cmdk renders) exists in the DOM even when closed; just hidden until
+          there's something to show. */}
+      <div
+        aria-label={t('Search results')}
+        className={cn(
+          !dropdownShowing && 'hidden',
+          isMobile
+            ? 'fixed inset-x-0 top-[60px] bottom-0 z-10 overflow-y-auto bg-popover text-base'
+            : 'absolute top-12 z-10 w-full rounded border bg-popover text-base shadow',
+        )}
+      >
+        {isMobile ? <div className="p-4 pt-0">{listContent}</div> : listContent}
+      </div>
     </CommandPrimitive>
   );
 };
