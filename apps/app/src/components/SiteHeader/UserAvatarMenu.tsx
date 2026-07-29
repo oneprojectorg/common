@@ -106,7 +106,7 @@ const ProfileMenuRow = ({
   };
 
   const className = cn(
-    'group/row grid h-auto w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-4 rounded-lg border p-4 text-start outline-none',
+    'group/row grid h-auto w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-4 rounded-lg border p-4 text-start outline-none hover:border-input hover:bg-muted',
     isCurrent ? 'border-accent-foreground bg-accent' : 'border-border',
   );
 
@@ -217,14 +217,12 @@ const LegalTrigger = ({
   onClick: () => void;
   children: ReactNode;
 }) => {
-  const className = 'h-auto w-full justify-start p-1 text-sm';
+  const className =
+    'h-auto w-full justify-start py-1 px-2 text-sm font-strong text-primary';
 
   if (asMenuItem) {
     return (
-      <DropdownMenuItem
-        render={<Button variant="link" size="sm" className={className} />}
-        onClick={onClick}
-      >
+      <DropdownMenuItem className={className} onClick={onClick}>
         {children}
       </DropdownMenuItem>
     );
@@ -254,7 +252,7 @@ const LinkRow = ({
   children: ReactNode;
 }) => {
   const shared = cn(
-    'flex h-auto w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-start no-underline outline-none',
+    'flex h-auto w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-start no-underline outline-none hover:no-underline',
     className,
   );
 
@@ -277,7 +275,7 @@ const LinkRow = ({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(shared, 'hover:bg-muted')}
+      className={shared}
       onClick={onClick}
     >
       {children}
@@ -362,7 +360,7 @@ const AvatarMenuContent = ({
 
       <MenuDivider asMenuItem={asMenuItem} />
 
-      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 py-2">
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 p-2">
         <LinkRow
           asMenuItem={asMenuItem}
           href="https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b"
@@ -409,14 +407,14 @@ const AvatarMenuContent = ({
         {deleteOrganizationEnabled ? (
           <ActionRow
             asMenuItem={asMenuItem}
-            className="justify-start p-1 text-sm font-strong text-foreground hover:underline"
+            className="justify-start px-2 py-1 text-sm font-strong text-foreground hover:bg-muted hover:underline"
             onClick={onDeleteAccount}
           >
             {t('Delete my account')}
           </ActionRow>
         ) : null}
 
-        <div className="flex gap-1 px-1 text-xs text-muted-foreground">
+        <div className="flex gap-1 px-2 text-xs text-muted-foreground">
           {asMenuItem ? (
             // A real menu link item (base-ui Menu.LinkItem) so it joins the
             // menu's roving focus — a bare link at the bottom made the menu
@@ -425,7 +423,7 @@ const AvatarMenuContent = ({
               href="https://github.com/oneprojectorg/common"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline h-auto rounded-none p-0 text-xs hover:underline"
+              className="inline h-auto rounded-none p-0 text-xs hover:bg-transparent hover:underline"
             >
               {t('Ethical Open Source')}
             </DropdownMenuLinkItem>
