@@ -30,10 +30,13 @@ function MediaDisplay({
   size,
 }: MediaDisplayProps) {
   const isPdf = Boolean(mimeType?.match(/application\/pdf/));
+  const isImage = Boolean(mimeType?.startsWith('image/'));
 
   const details: React.ReactNode[] = [];
 
-  if (title) {
+  // Images are shown on their own — the filename-as-title is noise. Link
+  // previews (no mimeType) and documents still surface their title.
+  if (title && !isImage) {
     details.push(
       <p key="title" className="text-base font-strong">
         {title}

@@ -4,18 +4,17 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { toast } from '@op/ui/Toast';
+} from '@op/sense/NotificationPanel';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { toast } from '@op/sense/Sonner';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
@@ -55,6 +54,9 @@ const PendingDecisionInvitesSuspense = () => {
         {invites.map((invite) => {
           const profile = invite.profile;
           const description = profile.processInstance?.description;
+          const avatarUrl = profile.avatarImage?.name
+            ? getPublicUrl(profile.avatarImage.name)
+            : undefined;
           const isAccepting =
             acceptInvite.isPending &&
             acceptInvite.variables?.inviteId === invite.id;
@@ -63,16 +65,22 @@ const PendingDecisionInvitesSuspense = () => {
             <NotificationPanelItem key={invite.id}>
               <ProfileItem
                 avatar={
-                  <Avatar className="size-12" placeholder={profile.name ?? ''}>
-                    {profile.avatarImage?.name ? (
-                      <Image
-                        src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                        alt={profile.name ?? ''}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : null}
-                  </Avatar>
+                  <ProfileAvatar
+                    name={profile.name ?? ''}
+                    src={avatarUrl}
+                    alt={profile.name ?? ''}
+                    className="size-12"
+                    imageRender={
+                      avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={profile.name ?? ''}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : undefined
+                    }
+                  />
                 }
                 title={profile.name ?? ''}
                 description={
@@ -83,28 +91,24 @@ const PendingDecisionInvitesSuspense = () => {
               />
               <NotificationPanelActions>
                 <Button
-                  size="small"
                   className="w-full sm:w-auto"
-                  onPress={() =>
+                  onClick={() =>
                     acceptInvite
                       .mutateAsync({ inviteId: invite.id })
                       .then(() => {
-                        toast.success({
-                          message: t('Invitation accepted'),
-                        });
+                        toast.success(t('Invitation accepted'));
                         if (profile.slug) {
                           router.push(`/decisions/${profile.slug}`);
                         }
                       })
                       .catch(() => {
-                        toast.error({
-                          message: t('Failed to accept invitation'),
-                        });
+                        toast.error(t('Failed to accept invitation'));
                       })
                   }
-                  isDisabled={acceptInvite.isPending}
+                  loading={isAccepting}
+                  disabled={acceptInvite.isPending}
                 >
-                  {isAccepting ? <LoadingSpinner /> : t('Accept')}
+                  {t('Accept')}
                 </Button>
               </NotificationPanelActions>
             </NotificationPanelItem>
