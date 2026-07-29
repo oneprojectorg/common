@@ -66,6 +66,7 @@
     "./PhaseConfigRow": "./src/components/PhaseConfigRow/index.tsx",
     "./PhaseStepper": "./src/components/PhaseStepper/index.tsx",
     "./Popover": "./src/components/ui/popover.tsx",
+    "./ProfileAvatar": "./src/components/ProfileAvatar/index.tsx",
     "./ProfileItem": "./src/components/ProfileItem/index.tsx",
     "./Progress": "./src/components/ui/progress.tsx",
     "./ProposalCard": "./src/components/ProposalCard/index.tsx",

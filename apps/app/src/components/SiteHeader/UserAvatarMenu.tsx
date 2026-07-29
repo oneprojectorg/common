@@ -6,7 +6,6 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
-import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -24,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
@@ -46,29 +46,6 @@ import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { ToSContent } from '../ToSContent';
 
 type LegalDialog = 'privacy' | 'tos' | 'community';
-
-const ProfileAvatar = ({
-  name,
-  imageName,
-  alt,
-  size,
-  className,
-}: {
-  name?: string | null;
-  imageName?: string | null;
-  alt: string;
-  size?: 'default' | 'sm' | 'lg';
-  className?: string;
-}) => {
-  const src = imageName ? (getPublicUrl(imageName) ?? undefined) : undefined;
-
-  return (
-    <Avatar size={size} className={className}>
-      {src ? <AvatarImage src={src} alt={alt} /> : null}
-      <AvatarFallback name={name ?? undefined} />
-    </Avatar>
-  );
-};
 
 /**
  * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
@@ -139,7 +116,11 @@ const ProfileMenuRow = ({
         avatar={
           <ProfileAvatar
             name={profile.name}
-            imageName={profile.avatarImage?.name}
+            src={
+              profile.avatarImage?.name
+                ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
+                : undefined
+            }
             alt={profile.name}
             size="lg"
           />
@@ -366,7 +347,7 @@ const AvatarMenuContent = ({
           />
         ))}
 
-        <MenuDivider asMenuItem={asMenuItem} />
+        {orgProfiles?.length ? <MenuDivider asMenuItem={asMenuItem} /> : null}
         {orgProfiles?.map((profile) => (
           <ProfileMenuRow
             key={profile.id}
@@ -570,7 +551,11 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     <>
       <ProfileAvatar
         name={user.currentProfile?.name}
-        imageName={user.currentProfile?.avatarImage?.name}
+        src={
+          user.currentProfile?.avatarImage?.name
+            ? (getPublicUrl(user.currentProfile.avatarImage.name) ?? undefined)
+            : undefined
+        }
         alt="User avatar"
         size="lg"
       />
