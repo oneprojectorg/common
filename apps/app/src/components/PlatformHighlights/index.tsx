@@ -18,15 +18,21 @@ export const PlatformHighlights = () => {
   const t = useTranslations();
 
   return (
-    <Card className="gap-0 py-0 shadow-light">
+    <Card className="gap-0 py-0">
       <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
-        <Highlight>
-          <HighlightNumber className="bg-tealGreen">
-            {stats.newOrganizations}
-          </HighlightNumber>
-          <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        {stats.newOrganizations > 0 && (
+          <>
+            <Highlight>
+              <HighlightNumber className="bg-tealGreen">
+                {stats.newOrganizations}
+              </HighlightNumber>
+              <HighlightLabel>
+                {t('new organizations to explore')}
+              </HighlightLabel>
+            </Highlight>
+            <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+          </>
+        )}
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}

@@ -1,7 +1,8 @@
 import { getPublicUrl } from '@/utils';
 import { Profile } from '@op/api/encoders';
-import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
-import { cn } from '@op/ui/utils';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -20,24 +21,24 @@ export const DecisionAvatar = ({
   }
 
   const name = profile?.name ?? '';
-  const avatarImage = profile?.avatarImage;
+  const avatarUrl = profile?.avatarImage?.name
+    ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
+    : undefined;
   const slug = profile?.slug;
 
   const avatar = (
-    <Avatar
-      className={cn(withLink && slug && 'hover:opacity-80', className)}
+    <ProfileAvatar
+      name={name}
+      src={avatarUrl}
+      alt={name}
       size="lg"
-      placeholder={name ?? ''}
-    >
-      {avatarImage?.name ? (
-        <Image
-          src={getPublicUrl(avatarImage?.name) ?? ''}
-          alt={name ?? ''}
-          fill
-          className="object-cover"
-        />
-      ) : null}
-    </Avatar>
+      className={cn(withLink && slug && 'hover:opacity-80', className)}
+      imageRender={
+        avatarUrl ? (
+          <Image src={avatarUrl} alt={name} fill className="object-cover" />
+        ) : undefined
+      }
+    />
   );
 
   return withLink && slug ? (
@@ -56,7 +57,7 @@ export const DecisionAvatarSkeleton = ({
 }) => {
   return (
     <div>
-      <AvatarSkeleton size="lg" className={className} />
+      <Skeleton className={cn('size-10 rounded-full', className)} />
     </div>
   );
 };

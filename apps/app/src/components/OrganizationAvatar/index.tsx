@@ -1,8 +1,9 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { Profile } from '@op/api/encoders';
-import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
-import { cn } from '@op/ui/utils';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -23,26 +24,26 @@ export const OrganizationAvatar = ({
   }
 
   const name = profile?.name ?? '';
-  const avatarImage = profile?.avatarImage;
+  const avatarUrl = profile?.avatarImage?.name
+    ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
+    : undefined;
   const slug = profile?.slug;
   // Public/non-member viewers can't reach the profile page, so drop the link.
   const linked = withLink && canLinkToProfile && Boolean(slug);
 
   const avatar = (
-    <Avatar
-      className={cn(linked && 'hover:opacity-80', className)}
+    <ProfileAvatar
+      name={name}
+      src={avatarUrl}
+      alt={name}
       size="lg"
-      placeholder={name ?? ''}
-    >
-      {avatarImage?.name ? (
-        <Image
-          src={getPublicUrl(avatarImage?.name) ?? ''}
-          alt={name ?? ''}
-          fill
-          className="object-cover"
-        />
-      ) : null}
-    </Avatar>
+      className={cn(linked && 'hover:opacity-80', className)}
+      imageRender={
+        avatarUrl ? (
+          <Image src={avatarUrl} alt={name} fill className="object-cover" />
+        ) : undefined
+      }
+    />
   );
 
   return linked ? (
@@ -61,7 +62,7 @@ export const OrganizationAvatarSkeleton = ({
 }) => {
   return (
     <div>
-      <AvatarSkeleton size="lg" className={className} />
+      <Skeleton className={cn('size-10 rounded-full', className)} />
     </div>
   );
 };

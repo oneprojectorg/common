@@ -7,19 +7,19 @@ import {
   type ProposalRevisionRequestItem,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
-import { ProfileItem } from '@op/ui/ProfileItem';
+} from '@op/sense/NotificationPanel';
+import { ProfileItem } from '@op/sense/ProfileItem';
 import { Suspense, useState } from 'react';
 import { LuPenLine } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { DecisionAvatar } from '../DecisionAvatar';
 import ErrorBoundary from '../ErrorBoundary';
@@ -71,15 +71,15 @@ const ActiveDecisionsNotificationsSuspense = () => {
                 }
               />
               <NotificationPanelActions>
-                <ButtonLink
-                  size="small"
+                <Button
+                  render={<Link href={`/decisions/${decision.slug}`} />}
+                  size="sm"
                   className="w-full sm:w-auto"
-                  href={`/decisions/${decision.slug}`}
-                  onPress={() => setNavigatingId(decision.id)}
-                  isLoading={isNavigating}
+                  onClick={() => setNavigatingId(decision.id)}
+                  loading={isNavigating}
                 >
                   {t('Participate')}
-                </ButtonLink>
+                </Button>
               </NotificationPanelActions>
             </NotificationPanelItem>
           );
@@ -134,22 +134,22 @@ const RevisionRequestRow = ({
       />
       <NotificationPanelActions>
         <Button
-          size="small"
-          color="secondary"
+          size="sm"
+          variant="outline"
           className="w-full sm:w-auto"
-          onPress={() => setDismissed(true)}
+          onClick={() => setDismissed(true)}
         >
           {t('Ignore')}
         </Button>
-        <ButtonLink
-          size="small"
+        <Button
+          render={<Link href={editHref} />}
+          size="sm"
           className="w-full sm:w-auto"
-          href={editHref}
-          onPress={() => setNavigating(true)}
-          isLoading={navigating}
+          onClick={() => setNavigating(true)}
+          loading={navigating}
         >
           {t('Revise proposal')}
-        </ButtonLink>
+        </Button>
       </NotificationPanelActions>
     </NotificationPanelItem>
   );

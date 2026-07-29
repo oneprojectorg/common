@@ -2,17 +2,17 @@
 
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { toast } from '@op/ui/Toast';
+} from '@op/sense/NotificationPanel';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { toast } from '@op/sense/Sonner';
+import { Spinner } from '@op/sense/Spinner';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -52,18 +52,15 @@ const JoinProfileRequestsNotificationsSuspense = ({
 
   const updateRequestMutation = trpc.profile.updateJoinRequest.useMutation({
     onSuccess: (_, variables) => {
-      toast.success({
-        title:
-          variables.status === JoinProfileRequestStatus.APPROVED
-            ? t('Request accepted')
-            : t('Request declined'),
-      });
+      toast.success(
+        variables.status === JoinProfileRequestStatus.APPROVED
+          ? t('Request accepted')
+          : t('Request declined'),
+      );
       utils.profile.listJoinRequests.invalidate();
     },
     onError: () => {
-      toast.error({
-        title: t('Failed to update request'),
-      });
+      toast.error(t('Failed to update request'));
     },
   });
 
@@ -118,31 +115,39 @@ const JoinProfileRequestsNotificationsSuspense = ({
               />
               <NotificationPanelActions>
                 <Button
-                  size="small"
-                  color="secondary"
+                  size="sm"
+                  variant="outline"
                   className="w-full sm:w-auto"
-                  onPress={() =>
+                  onClick={() =>
                     handleUpdateRequest(
                       request.id,
                       JoinProfileRequestStatus.REJECTED,
                     )
                   }
-                  isDisabled={isPendingForRequest}
+                  disabled={isPendingForRequest}
                 >
-                  {isLoadingReject ? <LoadingSpinner /> : t('Decline')}
+                  {isLoadingReject ? (
+                    <Spinner className="size-6" />
+                  ) : (
+                    t('Decline')
+                  )}
                 </Button>
                 <Button
-                  size="small"
+                  size="sm"
                   className="w-full sm:w-auto"
-                  onPress={() =>
+                  onClick={() =>
                     handleUpdateRequest(
                       request.id,
                       JoinProfileRequestStatus.APPROVED,
                     )
                   }
-                  isDisabled={isPendingForRequest}
+                  disabled={isPendingForRequest}
                 >
-                  {isLoadingApprove ? <LoadingSpinner /> : t('Accept')}
+                  {isLoadingApprove ? (
+                    <Spinner className="size-6" />
+                  ) : (
+                    t('Accept')
+                  )}
                 </Button>
               </NotificationPanelActions>
             </NotificationPanelItem>
