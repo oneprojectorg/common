@@ -123,12 +123,12 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
 const NewOrganizationsList = () => {
   return (
-    <Card className="-mx-8 flex flex-col gap-6 border-0 py-0 sm:mx-0 sm:border sm:p-6">
-      <Header3 className="px-8 font-serif text-title-sm sm:px-0">
+    <div className="flex flex-col gap-6 border-0 py-0 sm:mx-0 sm:border sm:p-5">
+      <Header3 className="px-4 font-serif text-title-sm sm:px-0">
         <TranslatedText text="New Organizations" />
       </Header3>
       <NewOrganizations />
-    </Card>
+    </div>
   );
 };
 
@@ -195,7 +195,7 @@ const LandingScreenFeeds = ({
             <TranslatedText text="Recent" />
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="discover" className="p-0">
+        <TabsContent value="discover" className="-mx-4 p-0">
           <NewOrganizationsList />
         </TabsContent>
         <TabsContent value="recent" className="p-0">

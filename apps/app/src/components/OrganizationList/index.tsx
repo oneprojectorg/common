@@ -47,7 +47,7 @@ export const OrganizationList = ({
 
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
-        <HorizontalList className="scroll-px-8">
+        <HorizontalList className="scroll-px-4">
           {organizations?.map((org) => {
             const { avatarImage, headerImage } = org.profile;
             const avatarUrl = getPublicUrl(avatarImage?.name);
@@ -63,7 +63,7 @@ export const OrganizationList = ({
             return (
               <HorizontalListItem
                 key={org.id}
-                className="snap-start first:ms-8 last:me-8"
+                className="snap-start first:ms-4 last:me-4"
               >
                 <Link
                   className="flex size-48"
