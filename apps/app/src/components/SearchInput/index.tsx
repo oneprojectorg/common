@@ -29,6 +29,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
   const locale = useLocale();
@@ -235,9 +236,16 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           }}
           dir={query.length > 0 ? 'auto' : undefined}
           placeholder={t('Search')}
-          onFocus={() => setShowResults(true)}
+          onFocus={() => {
+            // Re-focusing (e.g. selecting a recent search) must cancel a
+            // pending blur-hide, or the list vanishes ~150ms later.
+            if (blurTimeoutRef.current) {
+              clearTimeout(blurTimeoutRef.current);
+            }
+            setShowResults(true);
+          }}
           onBlur={() => {
-            setTimeout(() => {
+            blurTimeoutRef.current = setTimeout(() => {
               setShowResults(false);
               onBlur?.();
             }, 150);
