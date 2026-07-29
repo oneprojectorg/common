@@ -1,16 +1,15 @@
 'use client';
 
 import { skipBatch, trpc } from '@op/api/client';
-import { relationshipMap } from '@op/types/relationships';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
+} from '@op/sense/NotificationPanel';
+import { relationshipMap } from '@op/types/relationships';
 import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -116,31 +115,31 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                 {!isAccepted ? (
                   <>
                     <Button
-                      color="secondary"
-                      size="small"
+                      variant="outline"
                       className="w-full sm:w-auto"
-                      onPress={() => {
+                      onClick={() => {
                         remove.mutate({
                           targetOrganizationId: organization.id,
                           ids: org.relationships?.map((r) => r.id) ?? [],
                         });
                       }}
-                      isDisabled={isPending}
+                      loading={remove.isPending}
+                      disabled={isPending}
                     >
-                      {remove.isPending ? <LoadingSpinner /> : t('Decline')}
+                      {t('Decline')}
                     </Button>
                     <Button
-                      size="small"
                       className="w-full sm:w-auto"
-                      onPress={() =>
+                      onClick={() =>
                         approve.mutate({
                           sourceOrganizationId: org.id,
                           targetOrganizationId: organization.id,
                         })
                       }
-                      isDisabled={isPending}
+                      loading={approve.isPending}
+                      disabled={isPending}
                     >
-                      {approve.isPending ? <LoadingSpinner /> : t('Accept')}
+                      {t('Accept')}
                     </Button>
                   </>
                 ) : null}

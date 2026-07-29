@@ -240,6 +240,9 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         </InputGroupAddon>
         <CommandPrimitive.Input
           ref={inputRef}
+          // Tag as the InputGroup control so the group's focus-visible ring/
+          // border styles (has-[[data-slot=input-group-control]...]) apply.
+          data-slot="input-group-control"
           value={query}
           onValueChange={(value) => {
             setQuery(value);
