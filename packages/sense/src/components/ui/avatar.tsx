@@ -41,7 +41,9 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
 
 /** Single initial: the first letter of the name. */
 function initialsFromName(name: string) {
-  return (name.trim()[0] ?? '').toUpperCase();
+  // First code point, not the first UTF-16 unit — an emoji (or other astral
+  // char) is a surrogate pair, and `[0]` returns half of it as a broken glyph.
+  return (Array.from(name.trim())[0] ?? '').toUpperCase();
 }
 
 function AvatarFallback({
