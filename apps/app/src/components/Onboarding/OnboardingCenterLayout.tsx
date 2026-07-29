@@ -1,4 +1,4 @@
-import { Header1 } from '@op/ui/Header';
+import { Header1 } from '@op/sense/Header';
 import { ReactNode } from 'react';
 
 export const OnboardingCenterLayout = ({

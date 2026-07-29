@@ -3,10 +3,14 @@
 import { trpc } from '@op/api/client';
 import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { TextField } from '@op/ui/TextField';
+import { Button } from '@op/sense/Button';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@op/sense/InputGroup';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Spinner } from '@op/sense/Spinner';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
 
@@ -130,15 +134,18 @@ export const OrganizationSearchScreen = ({
       <div className="flex w-full flex-col gap-6">
         <div className="flex flex-col gap-4">
           <div ref={containerRef} className="relative">
-            <TextField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              inputProps={{
-                placeholder: t('Search or add your organization...'),
-                icon: <LuSearch className="size-4 text-neutral-gray4" />,
-              }}
-              aria-label={t('Search or add your organization...')}
-            />
+            <InputGroup>
+              <InputGroupAddon align="inline-start">
+                <LuSearch className="size-4 text-neutral-gray4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                className="[unicode-bidi:plaintext]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('Search or add your organization...')}
+                aria-label={t('Search or add your organization...')}
+              />
+            </InputGroup>
 
             {isDropdownOpen && (
               <div className="absolute start-0 end-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg">
@@ -167,13 +174,17 @@ export const OrganizationSearchScreen = ({
         </div>
 
         {hasSelectedOrgs ? (
-          <Button className="w-full" onPress={handleShowToS}>
+          <Button className="w-full" onClick={handleShowToS}>
             {continueLabel}
           </Button>
         ) : (
           <>
             <OrDivider />
-            <Button className="w-full" color="neutral" onPress={handleShowToS}>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={handleShowToS}
+            >
               {t('Skip for now')}
             </Button>
           </>
@@ -203,7 +214,7 @@ function SearchDropdown({
   if (isFetching && !searchResults) {
     return (
       <div className="flex items-center justify-center py-4">
-        <LoadingSpinner />
+        <Spinner className="size-6" />
       </div>
     );
   }

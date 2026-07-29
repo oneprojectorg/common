@@ -1,11 +1,18 @@
 import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
-import { AvatarUploader } from '@op/ui/AvatarUploader';
-import { BannerUploader } from '@op/ui/BannerUploader';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
+import { AvatarUploader } from '@op/sense/AvatarUploader';
+import { BannerUploader } from '@op/sense/BannerUploader';
+import { Field, FieldError, FieldLabel } from '@op/sense/Field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
 import { ReactNode, Suspense } from 'react';
 import { z } from 'zod';
 
@@ -208,7 +215,6 @@ export const PersonalDetailsForm = ({
             value={avatarUpload.url}
             onChange={avatarUpload.upload}
             uploading={avatarUpload.isUploading}
-            error={avatarUpload.uploadError}
           />
         </div>
         <form.AppField
@@ -248,21 +254,42 @@ export const PersonalDetailsForm = ({
         />
         <form.AppField
           name="pronouns"
-          children={(field) => (
-            <field.Select
-              label={t('Pronouns')}
-              placeholder={t('Select your preferred pronouns')}
-              selectedKey={field.state.value}
-              onBlur={field.handleBlur}
-              onSelectionChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-            >
-              <SelectItem id="she/her">{t('She/Her')}</SelectItem>
-              <SelectItem id="he/him">{t('He/Him')}</SelectItem>
-              <SelectItem id="they/them">{t('They/Them')}</SelectItem>
-              <SelectItem id="custom">{t('Custom')}</SelectItem>
-            </field.Select>
-          )}
+          children={(field) => {
+            const errorMessage = getFieldErrorMessage(field);
+            return (
+              <Field data-invalid={!!errorMessage}>
+                <FieldLabel htmlFor="pronouns">{t('Pronouns')}</FieldLabel>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(value) => field.handleChange(value)}
+                  items={{
+                    'she/her': t('She/Her'),
+                    'he/him': t('He/Him'),
+                    'they/them': t('They/Them'),
+                    custom: t('Custom'),
+                  }}
+                >
+                  <SelectTrigger
+                    id="pronouns"
+                    className="w-full"
+                    onBlur={field.handleBlur}
+                    aria-invalid={!!errorMessage}
+                  >
+                    <SelectValue
+                      placeholder={t('Select your preferred pronouns')}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="she/her">{t('She/Her')}</SelectItem>
+                    <SelectItem value="he/him">{t('He/Him')}</SelectItem>
+                    <SelectItem value="they/them">{t('They/Them')}</SelectItem>
+                    <SelectItem value="custom">{t('Custom')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+              </Field>
+            );
+          }}
         />
         <form.Subscribe
           selector={(state) => state.values.pronouns}
@@ -340,7 +367,7 @@ export const PersonalDetailsForm = ({
           {updateProfile.isPending ||
           avatarUpload.isUploading ||
           bannerUpload.isUploading ? (
-            <LoadingSpinner />
+            <Spinner className="size-6" />
           ) : (
             t('Continue')
           )}

@@ -4,9 +4,9 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { StepperProgressIndicator } from '@op/ui/Stepper';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
+import { Spinner } from '@op/sense/Spinner';
+import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -135,9 +135,10 @@ export const OnboardingFlow = ({
   const handleSearchContinue = useCallback(
     async (selectedOrgs: Array<{ id: string; profileId: string }>) => {
       if (!isOnline) {
-        toast.error({
-          title: t('No connection'),
-          message: t('Please check your internet connection and try again.'),
+        toast.error(t('No connection'), {
+          description: t(
+            'Please check your internet connection and try again.',
+          ),
         });
         return;
       }
@@ -148,9 +149,8 @@ export const OnboardingFlow = ({
         const userProfileId = userAccount?.profile?.id;
 
         if (selectedOrgs.length > 0 && !userProfileId) {
-          toast.error({
-            title: t("That didn't work"),
-            message: t('Please try submitting the form again.'),
+          toast.error(t("That didn't work"), {
+            description: t('Please try submitting the form again.'),
           });
           setIsSubmitting(false);
           return;
@@ -168,17 +168,15 @@ export const OnboardingFlow = ({
 
           const failures = results.filter((r) => r.status === 'rejected');
           if (failures.length === results.length) {
-            toast.error({
-              title: t("That didn't work"),
-              message: t('Please try submitting the form again.'),
+            toast.error(t("That didn't work"), {
+              description: t('Please try submitting the form again.'),
             });
             setIsSubmitting(false);
             return;
           }
           if (failures.length > 0) {
-            toast.error({
-              title: t("That didn't work"),
-              message: t('Please try submitting the form again.'),
+            toast.error(t("That didn't work"), {
+              description: t('Please try submitting the form again.'),
             });
           }
         }
@@ -191,14 +189,12 @@ export const OnboardingFlow = ({
         setIsSubmitting(false);
         const errorInfo = analyzeError(err);
         if (errorInfo.isConnectionError) {
-          toast.error({
-            title: t('Connection issue'),
-            message: t('Please try submitting the form again.'),
+          toast.error(t('Connection issue'), {
+            description: t('Please try submitting the form again.'),
           });
         } else {
-          toast.error({
-            title: t("That didn't work"),
-            message: errorInfo.message,
+          toast.error(t("That didn't work"), {
+            description: errorInfo.message,
           });
         }
       }
@@ -243,9 +239,8 @@ export const OnboardingFlow = ({
   // Submit org creation
   const submitOrganization = useCallback(() => {
     if (!isOnline) {
-      toast.error({
-        title: t('No connection'),
-        message: t('Please check your internet connection and try again.'),
+      toast.error(t('No connection'), {
+        description: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -278,14 +273,12 @@ export const OnboardingFlow = ({
 
         const errorInfo = analyzeError(err);
         if (errorInfo.isConnectionError) {
-          toast.error({
-            title: t('Connection issue'),
-            message: t('Please try submitting the form again.'),
+          toast.error(t('Connection issue'), {
+            description: t('Please try submitting the form again.'),
           });
         } else {
-          toast.error({
-            title: t("That didn't work"),
-            message: errorInfo.message,
+          toast.error(t("That didn't work"), {
+            description: errorInfo.message,
           });
         }
       });
@@ -313,7 +306,7 @@ export const OnboardingFlow = ({
   }
 
   if (isSubmitting) {
-    return <LoadingSpinner />;
+    return <Spinner className="size-6" />;
   }
 
   // Non-members get the org-less journey; members get the full org flow. Keyed

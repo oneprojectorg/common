@@ -1,11 +1,18 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
-import { AvatarUploader } from '@op/ui/AvatarUploader';
-import { BannerUploader } from '@op/ui/BannerUploader';
-import type { Option } from '@op/ui/MultiSelectComboBox';
-import { SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { AvatarUploader } from '@op/sense/AvatarUploader';
+import { BannerUploader } from '@op/sense/BannerUploader';
+import { Field, FieldError, FieldLabel } from '@op/sense/Field';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { toast } from '@op/sense/Sonner';
+import { type ComponentProps, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -15,6 +22,12 @@ import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
 import { createOrganizationFormValidator } from './organizationValidation';
+
+// `TermsMultiSelect` / `GeoNamesMultiSelect` still own the option shape; derive
+// it from their props rather than importing the retired @op/ui type.
+type Option = NonNullable<
+  ComponentProps<typeof TermsMultiSelect>['value']
+>[number];
 
 export interface ImageData {
   url: string;
@@ -93,22 +106,21 @@ export const OrganizationFormFields = ({
       ];
       if (!acceptedTypes.includes(file.type)) {
         const types = acceptedTypes.map((t) => t.split('/')[1]).join(', ');
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            { types },
-          ),
-        });
+        toast.error(
+          t('That file type is not supported. Accepted types: {types}', {
+            types,
+          }),
+        );
         return;
       }
 
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
+        toast.error(
+          t('File too large. Maximum size: {size}MB', {
             size: maxSizeMB,
           }),
-        });
+        );
         return;
       }
 
@@ -147,7 +159,6 @@ export const OrganizationFormFields = ({
             handleImageUpload(file, setProfileImage, uploadAvatarImage)
           }
           uploading={uploadAvatarImage.isPending}
-          error={uploadAvatarImage.error?.message || undefined}
         />
       </div>
 
@@ -217,23 +228,44 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="orgType"
-        children={(field) => (
-          <field.Select
-            label={t('Organizational Status')}
-            isRequired
-            placeholder={t('Select')}
-            selectedKey={field.state.value as string}
-            onSelectionChange={field.handleChange}
-            onBlur={field.handleBlur}
-            errorMessage={getFieldErrorMessage(field)}
-            className="w-full"
-            size="medium"
-          >
-            <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
-            <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
-            <SelectItem id="government">{t('Government Entity')}</SelectItem>
-          </field.Select>
-        )}
+        children={(field) => {
+          const errorMessage = getFieldErrorMessage(field);
+          return (
+            <Field data-invalid={!!errorMessage}>
+              <FieldLabel htmlFor="orgType">
+                {t('Organizational Status')}
+                <RequiredAsterisk />
+              </FieldLabel>
+              <Select
+                value={field.state.value as string}
+                onValueChange={(value) => field.handleChange(value)}
+                required
+                items={{
+                  nonprofit: t('Nonprofit'),
+                  forprofit: t('Forprofit'),
+                  government: t('Government Entity'),
+                }}
+              >
+                <SelectTrigger
+                  id="orgType"
+                  className="w-full"
+                  onBlur={field.handleBlur}
+                  aria-invalid={!!errorMessage}
+                >
+                  <SelectValue placeholder={t('Select')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nonprofit">{t('Nonprofit')}</SelectItem>
+                  <SelectItem value="forprofit">{t('Forprofit')}</SelectItem>
+                  <SelectItem value="government">
+                    {t('Government Entity')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+            </Field>
+          );
+        }}
       />
 
       <form.AppField

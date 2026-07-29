@@ -1,6 +1,6 @@
 import { zodUrl } from '@op/common/validation';
-import type { Option } from '@op/ui/MultiSelectComboBox';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/sense/Switch';
+import type { ComponentProps } from 'react';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -15,6 +15,12 @@ import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 import { multiSelectOptionValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
+
+// `TermsMultiSelect` still owns the option shape; derive it from that
+// component's props rather than importing the retired @op/ui type.
+type Option = NonNullable<
+  ComponentProps<typeof TermsMultiSelect>['value']
+>[number];
 
 const createFundingValidator = (t: TranslateFn) =>
   z.object({
@@ -103,9 +109,9 @@ export const FundingInformationForm = ({
               <ToggleRow>
                 <span>{t('Is your organization seeking funding?')}</span>
 
-                <ToggleButton
-                  isSelected={field.state.value as boolean}
-                  onChange={field.handleChange}
+                <Switch
+                  checked={field.state.value as boolean}
+                  onCheckedChange={(checked) => field.handleChange(checked)}
                 />
               </ToggleRow>
               {field.state.value ? (
@@ -164,9 +170,9 @@ export const FundingInformationForm = ({
             <>
               <ToggleRow>
                 <span>{t('Does your organization offer funding?')}</span>
-                <ToggleButton
-                  isSelected={field.state.value as boolean}
-                  onChange={field.handleChange}
+                <Switch
+                  checked={field.state.value as boolean}
+                  onCheckedChange={(checked) => field.handleChange(checked)}
                 />
               </ToggleRow>
 
