@@ -32,12 +32,17 @@ function FacePile({
         className={cn(
           // Ring each face in the background color so overlapping avatars read
           // as distinct instead of blurring together.
-          'flex [&_[data-slot=avatar]]:ring-2 [&_[data-slot=avatar]]:ring-background',
+          'flex [&_[data-slot=avatar]]:ring-1 [&_[data-slot=avatar]]:ring-background',
           listClassName,
         )}
       >
         {items.map((node, index) => (
-          <li key={index} className="relative -ms-2 first:ms-0">
+          // focus-within raises the focused face above its neighbors so an
+          // offset focus ring isn't clipped by the overlapping next item.
+          <li
+            key={index}
+            className="relative -ms-2 first:ms-0 focus-within:z-10"
+          >
             {node}
           </li>
         ))}

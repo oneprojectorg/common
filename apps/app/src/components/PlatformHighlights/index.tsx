@@ -5,13 +5,17 @@ import { trpc } from '@op/api/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Card } from '@op/sense/Card';
 import { GrowingFacePile } from '@op/sense/FacePile';
-import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { cn } from '@op/sense/lib/utils';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
 import { ReactNode, Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
+
+import {
+  AvatarLinkHoverTint,
+  ProfileAvatarLink,
+  avatarLinkClassName,
+} from '../ProfileAvatarLink';
 
 export const PlatformHighlights = () => {
   const [stats] = trpc.platform.getStats.useSuspenseQuery();
@@ -117,46 +121,29 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
     t.platform.getStats(),
   ]);
 
-  const items = organizations.map((org) => {
-    const avatarUrl = getPublicUrl(org.profile.avatarImage?.name);
-    return (
-      <Link
-        key={org.id}
-        href={`/org/${org.profile.slug}`}
-        className="hover:no-underline"
-      >
-        <ProfileAvatar
-          name={org.profile.name}
-          src={avatarUrl}
-          alt={org.profile.name}
-          imageRender={
-            avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={org.profile.name}
-                fill
-                className="object-cover"
-              />
-            ) : undefined
-          }
-        />
-        <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
-      </Link>
-    );
-  });
+  const items = organizations.map((org) => (
+    <ProfileAvatarLink
+      key={org.id}
+      href={`/org/${org.profile.slug}`}
+      name={org.profile.name}
+      src={getPublicUrl(org.profile.avatarImage?.name)}
+      alt={org.profile.name}
+    />
+  ));
 
   return (
     <GrowingFacePile
       items={items}
       totalCount={stats.totalOrganizations}
       renderOverflow={(count) => (
-        <Link href="/org" className="hover:no-underline">
+        <Link href="/org" className={avatarLinkClassName}>
           <Avatar>
             <AvatarFallback className="bg-neutral-charcoal text-sm text-neutral-offWhite">
               <span className="align-super">+</span>
               {count}
             </AvatarFallback>
           </Avatar>
+          <AvatarLinkHoverTint />
         </Link>
       )}
     >
