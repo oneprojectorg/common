@@ -2,7 +2,7 @@ import { TRPCProvider } from '@op/api/client';
 import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, OPURLConfig, printNFO } from '@op/core';
 import '@op/styles';
-import { Toast } from '@op/ui/Toast';
+import { Toaster } from '@op/sense/Sonner';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -98,7 +98,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             </OTelBrowserProvider>
           </I18nProvider>
           <ReactQueryDevtools initialIsOpen={false} />
-          <Toast />
+          <Toaster />
         </body>
       </TRPCProvider>
     </html>
