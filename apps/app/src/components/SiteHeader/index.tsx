@@ -452,7 +452,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       <MenuTrigger>
         {avatarButton}
         <Menu
-          className="flex min-w-72 flex-col p-4 pb-6"
+          className="flex max-w-80 min-w-72 flex-col p-4 pb-6"
           popoverClassName="min-w-[150px]"
           placement="bottom end"
         >
