@@ -629,7 +629,7 @@ const PostUpdateWithUser = ({
         <div className="flex min-w-0 flex-1 flex-col">
           <InputGroupTextarea
             ref={textareaRef as RefObject<HTMLTextAreaElement>}
-            className="field-sizing-fixed min-h-0 overflow-y-hidden ps-1 pt-1 [unicode-bidi:plaintext]"
+            className="min-h-0 overflow-y-hidden ps-1 pt-1 [unicode-bidi:plaintext]"
             placeholder={placeholder || t('Post an update…')}
             value={content}
             onChange={(e) => handleContentChange(e.target.value ?? '')}
