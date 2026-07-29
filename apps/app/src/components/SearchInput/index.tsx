@@ -213,7 +213,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       shouldFilter={false}
       loop
       label={t('Search')}
-      className={cn('group relative z-20', isMobile ? 'w-full' : 'w-112')}
+      className={cn(
+        'group relative z-20 min-w-0',
+        isMobile ? 'w-full' : 'w-112 max-w-full',
+      )}
     >
       <InputGroup className="active:border-inherit">
         <InputGroupAddon align="inline-start">
@@ -231,7 +234,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             setShowResults(true);
           }}
           dir={query.length > 0 ? 'auto' : undefined}
-          placeholder={t('Search processes, organizations, opportunities…')}
+          placeholder={t('Search')}
           onFocus={() => setShowResults(true)}
           onBlur={() => {
             setTimeout(() => {

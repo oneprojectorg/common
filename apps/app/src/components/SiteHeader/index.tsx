@@ -114,7 +114,9 @@ export const SiteHeader = () => {
       <ErrorBoundary fallback={<Skeleton className="h-11 w-96" />}>
         <div
           className={cn(
-            'flex items-center',
+            // min-w-0 lets this grid cell shrink below the field's content
+            // width so the centered search narrows instead of overflowing.
+            'flex min-w-0 items-center',
             isMobileSearchExpanded ? 'w-full' : 'hidden md:flex',
           )}
         >
