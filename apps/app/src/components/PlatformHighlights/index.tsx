@@ -2,10 +2,11 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
-import { FacePile } from '@op/ui/FacePile';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Card } from '@op/sense/Card';
+import { FacePile } from '@op/sense/FacePile';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { cn } from '@op/sense/lib/utils';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ export const PlatformHighlights = () => {
   const t = useTranslations();
 
   return (
-    <Surface className="shadow-light">
+    <Card className="gap-0 py-0 shadow-light">
       <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
         <Highlight>
           <HighlightNumber className="bg-tealGreen">
@@ -63,7 +64,7 @@ export const PlatformHighlights = () => {
           </div>
         </Suspense>
       </div>
-    </Surface>
+    </Card>
   );
 };
 
@@ -141,16 +142,21 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
           href={`/org/${org.profile.slug}`}
           className="hover:no-underline"
         >
-          <Avatar placeholder={org.profile.name}>
-            {avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={org.profile.name}
-                fill
-                className="object-cover"
-              />
-            ) : null}
-          </Avatar>
+          <ProfileAvatar
+            name={org.profile.name}
+            src={avatarUrl}
+            alt={org.profile.name}
+            imageRender={
+              avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={org.profile.name}
+                  width={32}
+                  height={32}
+                />
+              ) : undefined
+            }
+          />
           <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
         </Link>
       );
@@ -160,9 +166,11 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   if (stats.totalOrganizations > numItems) {
     items.push(
       <Link key="more" href="/org" className="hover:no-underline">
-        <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
-          <span className="align-super">+</span>
-          {stats.totalOrganizations - numItems}
+        <Avatar>
+          <AvatarFallback className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+            <span className="align-super">+</span>
+            {stats.totalOrganizations - numItems}
+          </AvatarFallback>
         </Avatar>
       </Link>,
     );

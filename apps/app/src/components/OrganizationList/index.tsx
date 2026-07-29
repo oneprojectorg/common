@@ -2,11 +2,12 @@
 
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { cn, getGradientForString } from '@op/ui/utils';
+import { Card } from '@op/sense/Card';
+import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
+import { getGradientForString } from '@op/styles/constants';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -68,7 +69,7 @@ export const OrganizationList = ({
                   className="flex size-48"
                   href={`/org/${org.profile.slug}`}
                 >
-                  <Surface className="flex size-full flex-col gap-3">
+                  <Card className="size-full gap-3 py-0">
                     <ImageHeader
                       headerImage={
                         headerUrl ? (
@@ -102,7 +103,7 @@ export const OrganizationList = ({
                         <bdi>{org.profile.name}</bdi>
                       </span>
                     </div>
-                  </Surface>
+                  </Card>
                 </Link>
               </HorizontalListItem>
             );
@@ -173,6 +174,11 @@ export const OrganizationSummaryList = ({
             ? `${org.profile.bio.slice(0, 325)}...`
             : org.profile.bio;
 
+        const orgAvatarUrl =
+          getPublicUrl(
+            org.profile.avatarImage?.name ?? org.avatarImage?.name,
+          ) ?? '';
+
         return (
           <div key={org.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
@@ -180,24 +186,22 @@ export const OrganizationSummaryList = ({
                 href={`/org/${org.profile.slug}`}
                 className="hover:no-underline"
               >
-                <Avatar
+                <ProfileAvatar
+                  name={org.profile.name ?? ''}
+                  src={orgAvatarUrl}
+                  alt={org.profile.name ?? ''}
                   className="size-8 hover:opacity-80 sm:size-12"
-                  placeholder={org.profile.name ?? ''}
-                >
-                  {org.profile?.name ? (
-                    <Image
-                      src={
-                        getPublicUrl(
-                          org.profile.avatarImage?.name ??
-                            org.avatarImage?.name,
-                        ) ?? ''
-                      }
-                      alt={org.profile.name ?? ''}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : null}
-                </Avatar>
+                  imageRender={
+                    orgAvatarUrl ? (
+                      <Image
+                        src={orgAvatarUrl}
+                        alt={org.profile.name ?? ''}
+                        width={48}
+                        height={48}
+                      />
+                    ) : undefined
+                  }
+                />
               </Link>
 
               <div className="flex flex-col gap-3 text-neutral-black">
@@ -237,8 +241,9 @@ export const OrganizationListSkeleton = () => {
           <div className="flex items-center gap-4">
             <OrganizationAvatarSkeleton className="size-8" />
 
-            <div className="flex w-full flex-col text-sm">
-              <SkeletonLine className="w-full" lines={2} />
+            <div className="flex w-full flex-col gap-2 text-sm">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
             </div>
           </div>
         </div>
@@ -260,7 +265,11 @@ export const OrganizationCardListSkeleton = () => {
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-6 w-3/4" />
               </div>
-              <SkeletonLine lines={3} randomWidth={true} className="w-full" />
+              <div className="flex w-full flex-col gap-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
             </div>
           </div>
         </div>

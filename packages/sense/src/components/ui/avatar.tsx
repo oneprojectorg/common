@@ -39,15 +39,9 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   );
 }
 
-/** Up-to-two initials: first + last word's first letter (single word → one). */
+/** Single initial: the first letter of the name. */
 function initialsFromName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return '';
-  }
-  const first = parts[0]?.[0] ?? '';
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
-  return (first + last).toUpperCase();
+  return (name.trim()[0] ?? '').toUpperCase();
 }
 
 function AvatarFallback({
@@ -58,8 +52,8 @@ function AvatarFallback({
 }: AvatarPrimitive.Fallback.Props & {
   /**
    * Display name for the "no image" fallback. Seeds the deterministic gradient
-   * fill and, when no children are given, renders derived initials (Frida
-   * Kahlo → FK). Without a name (or string children) the fill stays muted.
+   * fill and, when no children are given, renders the first initial (Frida
+   * Kahlo → F). Without a name (or string children) the fill stays muted.
    */
   name?: string;
 }) {
