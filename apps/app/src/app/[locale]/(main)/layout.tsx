@@ -40,21 +40,12 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
     <div className="flex size-full max-h-full flex-col">
       <UserProvider initialUser={user}>
         <PolicyReacceptanceModal />
-        {/* TODO(sense): Figma nav redesign pending. shadcn's canonical
-            Sidebar+SidebarInset can't express a full-width header sitting above
-            the sidebar, so we keep the op/ui arrangement: the provider is a
-            flex column (header on top), with the sidebar + content as a row
-            below. defaultOpen={false} preserves the op/ui default of a nav that
-            stays collapsed until the header trigger opens it. */}
         <SidebarProvider
           defaultOpen={false}
           className="min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SiteHeader />
           <div
-            // --header-height offsets the desktop sidebar's fixed panel so it
-            // starts below the full-width header (see SidebarNav). Matches the
-            // 60px SiteHeader.
             style={{ '--header-height': '3.75rem' } as React.CSSProperties}
             className="relative flex size-full flex-1 flex-col overflow-y-auto bg-background sm:flex-row"
           >

@@ -224,6 +224,38 @@ const ActionRow = ({
   );
 };
 
+// The legal links are `link`-variant Buttons (teal, underline on hover). On
+// desktop the Button is composed onto a DropdownMenuItem (base-ui `render`) so
+// it stays in the menu's roving keyboard focus.
+const LegalTrigger = ({
+  asMenuItem,
+  onClick,
+  children,
+}: {
+  asMenuItem?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) => {
+  const className = 'h-auto w-full justify-start p-1 text-sm';
+
+  if (asMenuItem) {
+    return (
+      <DropdownMenuItem
+        render={<Button variant="link" size="sm" className={className} />}
+        onClick={onClick}
+      >
+        {children}
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <Button variant="link" className={className} onClick={onClick}>
+      {children}
+    </Button>
+  );
+};
+
 // A menu row that navigates (opens an external link). Uses base-ui
 // Menu.LinkItem on desktop so it's a real `<a>` in the roving focus; a plain
 // anchor in the mobile sheet.
@@ -375,27 +407,24 @@ const AvatarMenuContent = ({
       <MenuDivider asMenuItem={asMenuItem} />
 
       <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-2 px-3">
-        <ActionRow
+        <LegalTrigger
           asMenuItem={asMenuItem}
-          className="justify-start p-1 text-sm font-strong text-primary hover:underline"
           onClick={() => onOpenLegal('privacy')}
         >
           {t('Privacy Policy')}
-        </ActionRow>
-        <ActionRow
+        </LegalTrigger>
+        <LegalTrigger
           asMenuItem={asMenuItem}
-          className="justify-start p-1 text-sm font-strong text-primary hover:underline"
           onClick={() => onOpenLegal('tos')}
         >
           {t('Terms of Service')}
-        </ActionRow>
-        <ActionRow
+        </LegalTrigger>
+        <LegalTrigger
           asMenuItem={asMenuItem}
-          className="justify-start p-1 text-sm font-strong text-primary hover:underline"
           onClick={() => onOpenLegal('community')}
         >
           {t('Community Commitments')}
-        </ActionRow>
+        </LegalTrigger>
         {deleteOrganizationEnabled ? (
           <ActionRow
             asMenuItem={asMenuItem}
