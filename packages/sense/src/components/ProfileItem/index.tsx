@@ -8,15 +8,17 @@ interface ProfileItemProps {
   /** Rendered avatar element (pass a sense Avatar). */
   avatar: ReactNode;
   title: string;
+  titleClassName?: string;
   description?: string;
-  /** Title emphasis: `default` (semibold foreground) or `small` (muted). */
+  descriptionClassName?: string;
+  /** Title emphasis: `default` (strong foreground) or `small` (muted). */
   size?: ProfileItemSize;
   className?: string;
   children?: ReactNode;
 }
 
 const titleClasses: Record<ProfileItemSize, string> = {
-  default: 'text-base font-semibold text-foreground',
+  default: 'text-base font-strong text-foreground',
   small: 'text-base text-muted-foreground',
 };
 
@@ -28,28 +30,31 @@ const titleClasses: Record<ProfileItemSize, string> = {
 function ProfileItem({
   avatar,
   title,
+  titleClassName,
   description,
+  descriptionClassName,
   size = 'default',
   className,
   children,
 }: ProfileItemProps) {
-  const hasAdditionalContent = Boolean(description || children);
-
   return (
-    <div
-      className={cn(
-        'flex gap-3',
-        hasAdditionalContent ? 'items-start' : 'items-center',
-        className,
-      )}
-    >
+    <div className={cn('flex min-w-0 gap-3 text-start', className)}>
       {avatar}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div dir="auto" className={titleClasses[size]}>
+        <div
+          dir="auto"
+          className={cn(titleClasses[size], 'truncate', titleClassName)}
+        >
           {title}
         </div>
         {description ? (
-          <div dir="auto" className="text-sm text-muted-foreground">
+          <div
+            dir="auto"
+            className={cn(
+              'truncate text-sm font-normal text-muted-foreground',
+              descriptionClassName,
+            )}
+          >
             {description}
           </div>
         ) : null}
