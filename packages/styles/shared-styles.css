@@ -69,12 +69,6 @@
   /* sm, md, lg, xl, 2xl use Tailwind defaults */
 
   /* ============================================
-   * Container
-   * Note: Container config requires plugin or custom CSS
-   * center: true, padding: 2rem, screens: { '2xl': '1400px' }
-   * ============================================ */
-
-  /* ============================================
    * Border Radius
    * Only the steps that deviate from Tailwind v4 defaults are declared;
    * sm/md/lg/xl/2xl match Tailwind and are inherited. --radius is the shadcn
@@ -408,16 +402,6 @@
  * Original: darkMode: ['class', 'data-theme']
  * ============================================ */
 @custom-variant dark (&:where(.dark, [data-theme="dark"] *));
-
-/* ============================================
- * Container Configuration
- * Original: center: true, padding: 2rem, screens: { '2xl': '1400px' }
- * ============================================ */
-@utility container {
-  margin-inline: auto;
-  padding-inline: 2rem;
-  max-width: 1400px;
-}
 
 /* ============================================
  * Base Layer Styles

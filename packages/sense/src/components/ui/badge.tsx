@@ -50,4 +50,18 @@ function Badge({
   });
 }
 
-export { Badge, badgeVariants };
+/**
+ * A count badge — the `Badge/Number` Figma component. A circular/pill `Badge`
+ * sized for 1+ digit counts (`min-w-5` grows into a pill for two digits).
+ * Defaults to the primary variant; pass `variant` for other colors.
+ */
+function BadgeNumber({
+  className,
+  ...props
+}: useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {
+  return (
+    <Badge className={cn('min-w-5 rounded-full px-1', className)} {...props} />
+  );
+}
+
+export { Badge, BadgeNumber, badgeVariants };

@@ -5,6 +5,7 @@ import * as React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { Confetti } from '../Confetti';
 import { Button } from './button';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -44,14 +45,30 @@ function DialogContent({
   children,
   showCloseButton = true,
   container,
+  confetti = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
   container?: DialogPrimitive.Portal.Props['container'];
+  /**
+   * Burst confetti behind the card while the dialog is open. Rendered inside
+   * the backdrop so it fills the screen (not clipped to the card) and fades
+   * with the backdrop on close. Replays on each open (the backdrop remounts).
+   */
+  confetti?: boolean;
 }) {
   return (
     <DialogPortal container={container}>
-      <DialogOverlay />
+      <DialogOverlay>
+        {/* Inside the backdrop so it inherits the open/close transition — on an
+            early close the confetti fades out with the backdrop instead of
+            being cut. pointer-events-none keeps click-to-dismiss working. */}
+        {confetti ? (
+          <div className="pointer-events-none absolute inset-0">
+            <Confetti />
+          </div>
+        ) : null}
+      </DialogOverlay>
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(

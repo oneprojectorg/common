@@ -9,14 +9,17 @@ import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
-import { Button } from '@op/ui/Button';
-import { TextArea } from '@op/ui/Field';
-import { Form } from '@op/ui/Form';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { MediaDisplay } from '@op/ui/MediaDisplay';
-import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from '@op/sense/InputGroup';
+import { MediaDisplay } from '@op/sense/MediaDisplay';
+import { Skeleton } from '@op/sense/Skeleton';
+import { toast } from '@op/sense/Sonner';
+import { cn } from '@op/sense/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
@@ -24,7 +27,6 @@ import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FeedItem, FeedMain } from '@/components/Feed';
 import { LinkPreview } from '@/components/LinkPreview';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
@@ -125,11 +127,9 @@ const PostUpdateWithUser = ({
           attachmentIds: fileUpload.getUploadedAttachmentIds(),
         });
 
-        toast.error({
-          message: errorInfo.message + ' Use the retry button to try again.',
-        });
+        toast.error(errorInfo.message + ' Use the retry button to try again.');
       } else {
-        toast.error({ message: errorInfo.message });
+        toast.error(errorInfo.message);
       }
 
       logger.error('Failed to create organization post', {
@@ -294,11 +294,9 @@ const PostUpdateWithUser = ({
           attachmentIds: fileUpload.getUploadedAttachmentIds(),
         });
 
-        toast.error({
-          message: errorInfo.message + ' Use the retry button to try again.',
-        });
+        toast.error(errorInfo.message + ' Use the retry button to try again.');
       } else {
-        toast.error({ message: errorInfo.message });
+        toast.error(errorInfo.message);
       }
 
       logger.error('Failed to create post', {
@@ -507,11 +505,9 @@ const PostUpdateWithUser = ({
     if (content.trim() || fileUpload.hasUploadedFiles()) {
       // Check if offline
       if (!isOnline) {
-        toast.error({
-          message: t(
-            'You are offline. Please check your connection and try again.',
-          ),
-        });
+        toast.error(
+          t('You are offline. Please check your connection and try again.'),
+        );
         return;
       }
 
@@ -605,35 +601,42 @@ const PostUpdateWithUser = ({
   }
 
   return (
-    <div className={cn('flex flex-col gap-2 sm:flex', className)}>
-      <FeedItem>
-        {organization ? (
-          <OrganizationAvatar
-            profile={organization.profile}
-            className="size-8 bg-white"
-          />
-        ) : user.currentProfile ? (
-          <OrganizationAvatar
-            profile={user.currentProfile}
-            className="size-8 bg-white"
-          />
-        ) : (
-          <div className="size-8 rounded-full bg-neutral-gray1" />
+    <form onSubmit={handleSubmit} className="w-full">
+      <InputGroup
+        className={cn(
+          'h-auto flex-row items-start gap-2 border-border p-3',
+          className,
         )}
-        <FeedMain className="relative">
-          <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
-            <TextArea
-              className="size-full h-6 overflow-y-hidden"
-              variant="borderless"
-              ref={textareaRef as RefObject<HTMLTextAreaElement>}
-              placeholder={placeholder || t('Post an update…')}
-              value={content}
-              onChange={(e) => handleContentChange(e.target.value ?? '')}
-              onKeyDown={handleKeyDown}
+      >
+        <InputGroupAddon
+          align="inline-start"
+          className="cursor-default items-start p-0"
+        >
+          {organization ? (
+            <OrganizationAvatar
+              profile={organization.profile}
+              className="size-8 bg-white"
             />
-          </Form>
+          ) : user.currentProfile ? (
+            <OrganizationAvatar
+              profile={user.currentProfile}
+              className="size-8 bg-white"
+            />
+          ) : (
+            <div className="size-8 rounded-full bg-neutral-gray1" />
+          )}
+        </InputGroupAddon>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <InputGroupTextarea
+            ref={textareaRef as RefObject<HTMLTextAreaElement>}
+            className="min-h-0 overflow-y-hidden ps-1 pt-1 [unicode-bidi:plaintext]"
+            placeholder={placeholder || t('Post an update…')}
+            value={content}
+            onChange={(e) => handleContentChange(e.target.value ?? '')}
+            onKeyDown={handleKeyDown}
+          />
           {fileUpload.filePreviews?.length > 0 && (
-            <div className="w-full">
+            <div className="w-full px-3">
               {fileUpload.filePreviews.map((filePreview) => (
                 <div key={filePreview.id} className="relative">
                   {filePreview.uploading ? (
@@ -650,10 +653,10 @@ const PostUpdateWithUser = ({
                         />
                       )}
                       <Button
-                        onPress={() => fileUpload.removeFile(filePreview.id)}
+                        onClick={() => fileUpload.removeFile(filePreview.id)}
                         className="absolute end-2 top-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus-visible:outline-1"
-                        size="small"
-                        color="neutral"
+                        size="sm"
+                        variant="outline"
                       >
                         <LuX className="size-4" />
                       </Button>
@@ -667,10 +670,10 @@ const PostUpdateWithUser = ({
                         size={filePreview.file.size}
                       />
                       <Button
-                        onPress={() => fileUpload.removeFile(filePreview.id)}
+                        onClick={() => fileUpload.removeFile(filePreview.id)}
                         className="absolute end-2 top-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus-visible:outline-1"
-                        size="small"
-                        color="neutral"
+                        size="sm"
+                        variant="outline"
                       >
                         <LuX className="size-3" />
                       </Button>
@@ -681,19 +684,22 @@ const PostUpdateWithUser = ({
             </div>
           )}
           {detectedUrls.length > 0 && (
-            <div className="max-w-full">
+            <div className="w-full px-3">
               {detectedUrls.map((url, index) => (
                 <LinkPreview key={index} url={url} />
               ))}
             </div>
           )}
-          <div
+          <InputGroupAddon
+            align="block-end"
             className={cn(
-              'flex w-full items-center justify-between gap-2',
-              (content || fileUpload.filePreviews?.length) && 'border-t py-2',
+              'justify-between border-t p-0',
+              content ? 'border-border' : 'border-transparent',
             )}
           >
-            <button
+            <InputGroupButton
+              size="md"
+              className="-ms-3 text-primary"
               onClick={() => {
                 const input = document.createElement('input');
                 input.type = 'file';
@@ -712,48 +718,46 @@ const PostUpdateWithUser = ({
                 };
                 input.click();
               }}
-              className="flex items-center gap-2 text-base text-neutral-charcoal transition-colors hover:text-black"
               disabled={fileUpload.filePreviews.length >= 1}
             >
-              <LuImage className="size-4" />
-              {t('Media')}
-            </button>
+              <LuImage /> {t('Media')}
+            </InputGroupButton>
             <div className="flex items-center gap-2 text-neutral-charcoal">
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
-                <Button
-                  size="small"
-                  color="secondary"
-                  onPress={retryFailedPost}
-                  isDisabled={
+                <InputGroupButton
+                  size="md"
+                  variant="outline"
+                  onClick={retryFailedPost}
+                  disabled={
                     createPost.isPending || createOrganizationPost.isPending
                   }
                 >
                   {createPost.isPending || createOrganizationPost.isPending
                     ? t('Retrying...')
                     : t('Retry Failed Post')}
-                </Button>
+                </InputGroupButton>
               )}
-              <Button
-                size="small"
-                isDisabled={
+              <InputGroupButton
+                type="submit"
+                size="md"
+                variant="default"
+                disabled={
                   !(content.length > 0 || fileUpload.hasUploadedFiles()) ||
                   content.length > characterLimit ||
                   !isOnline
                 }
-                onPress={createNewPostUpdate}
+                loading={
+                  createPost.isPending || createOrganizationPost.isPending
+                }
               >
-                {createPost.isPending || createOrganizationPost.isPending ? (
-                  <LoadingSpinner />
-                ) : (
-                  label
-                )}
-              </Button>
+                {label}
+              </InputGroupButton>
             </div>
-          </div>
-        </FeedMain>
-      </FeedItem>
-    </div>
+          </InputGroupAddon>
+        </div>
+      </InputGroup>
+    </form>
   );
 };
 

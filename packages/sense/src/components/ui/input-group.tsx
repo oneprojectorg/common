@@ -74,6 +74,7 @@ const inputGroupButtonVariants = cva(
         // Explicit: was '' when Button's default was 32px; Button's default is
         // now 44px, so sm must set its own height.
         sm: 'h-8 rounded-md px-2.5',
+        md: 'h-10 rounded-md px-4',
         'icon-xs':
           'size-6 rounded-[calc(var(--radius)-3px)] p-0 has-[>svg]:p-0',
         'icon-sm': 'size-8 p-0 has-[>svg]:p-0',

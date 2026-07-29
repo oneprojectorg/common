@@ -2,8 +2,9 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { cn, getGradientForString } from '@op/ui/utils';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { cn } from '@op/sense/lib/utils';
+import { getGradientForString } from '@op/styles/constants';
 import Image from 'next/image';
 import React from 'react';
 
