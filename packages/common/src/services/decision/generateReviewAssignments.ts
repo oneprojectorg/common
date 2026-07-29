@@ -4,7 +4,6 @@ import { logger } from '@op/logging';
 import { CommonError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { insertReviewAssignments } from './insertReviewAssignments';
-import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GenerateReviewAssignmentsInput {
   instanceId: string;
@@ -39,15 +38,6 @@ export async function generateReviewAssignments({
   if (!instance) {
     throw new CommonError(
       `generateReviewAssignments: instance ${instanceId} not found`,
-    );
-  }
-
-  const instanceData = instance.instanceData as DecisionInstanceData;
-  const reviewsPolicy = instanceData.config?.reviewsPolicy;
-
-  if (reviewsPolicy && reviewsPolicy !== 'full_coverage') {
-    throw new CommonError(
-      `Review assignment policy '${reviewsPolicy}' is not implemented`,
     );
   }
 
