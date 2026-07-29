@@ -177,7 +177,7 @@ export const OrganizationSummaryList = ({
         const orgAvatarUrl =
           getPublicUrl(
             org.profile.avatarImage?.name ?? org.avatarImage?.name,
-          ) ?? '';
+          ) ?? undefined;
 
         return (
           <div key={org.id}>
@@ -196,8 +196,8 @@ export const OrganizationSummaryList = ({
                       <Image
                         src={orgAvatarUrl}
                         alt={org.profile.name ?? ''}
-                        width={48}
-                        height={48}
+                        fill
+                        className="object-cover"
                       />
                     ) : undefined
                   }

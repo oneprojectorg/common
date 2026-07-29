@@ -56,6 +56,7 @@ function Button({
   variant = 'default',
   size = 'default',
   loading = false,
+  disabled,
   children,
   ...props
 }: ButtonPrimitive.Props &
@@ -72,8 +73,12 @@ function Button({
       data-slot="button"
       className={cn(
         buttonVariants({ variant, size, className }),
-        loading && 'pointer-events-none',
+        // `disabled` blocks the button natively (mouse + keyboard); keep
+        // pointer-events-none for the link-rendered case (an <a> ignores
+        // disabled). opacity-80 keeps the spinner readable, not greyed out.
+        loading && 'pointer-events-none disabled:opacity-80',
       )}
+      disabled={loading || disabled}
       aria-busy={loading || undefined}
       {...props}
     >
