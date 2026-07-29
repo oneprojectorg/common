@@ -138,7 +138,7 @@ function CommandSeparator({
   return (
     <CommandPrimitive.Separator
       data-slot="command-separator"
-      className={cn('-mx-1 h-px bg-border', className)}
+      className={cn('-mx-1 h-px shrink-0 bg-border', className)}
       {...props}
     />
   );
@@ -182,6 +182,7 @@ function CommandShortcut({
 
 export {
   Command,
+  CommandPrimitive,
   CommandDialog,
   CommandInput,
   CommandList,
