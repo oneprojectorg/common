@@ -74,7 +74,6 @@ const ActiveDecisionsNotificationsSuspense = () => {
               <NotificationPanelActions>
                 <ButtonLink
                   href={`/decisions/${decision.slug}`}
-                  size="sm"
                   className="w-full sm:w-auto"
                   onClick={() => setNavigatingId(decision.id)}
                   loading={isNavigating}
@@ -135,7 +134,6 @@ const RevisionRequestRow = ({
       />
       <NotificationPanelActions>
         <Button
-          size="sm"
           variant="outline"
           className="w-full sm:w-auto"
           onClick={() => setDismissed(true)}
@@ -144,7 +142,6 @@ const RevisionRequestRow = ({
         </Button>
         <ButtonLink
           href={editHref}
-          size="sm"
           className="w-full sm:w-auto"
           onClick={() => setNavigating(true)}
           loading={navigating}
