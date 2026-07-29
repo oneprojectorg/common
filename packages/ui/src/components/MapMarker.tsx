@@ -49,17 +49,6 @@ const HOVERCARD_EDGE_BUFFER_PX = 8;
 const HOVERCARD_DISMISS_DELAY_MS = 120;
 
 /**
- * Stacking order for a pin. The active pin sits above every neighbour; an
- * inactive pin returns an explicit 0 rather than leaving `zIndex` unset —
- * react-map-gl's `applyReactStyle` skips an `undefined` style, so a bare
- * `undefined` here would leave a previously-active pin stuck at 1 and covering
- * the real selection.
- */
-export function getMapMarkerZIndex(isActive: boolean): number {
-  return isActive ? 1 : 0;
-}
-
-/**
  * Decide whether the pin's hovercard renders above (default) or flipped below.
  * Flips below only when the card wouldn't fit above the pin head; falls back
  * to above when neither side fits (overflow beats obscuring the pin).
@@ -137,9 +126,12 @@ export function MapMarker({
         latitude={latitude}
         anchor="bottom"
         draggable={draggable}
-        // Lift the active pin above its neighbours so the enlarged head
-        // isn't clipped. The hovercard is portaled so it doesn't need a lift.
-        style={{ zIndex: getMapMarkerZIndex(isActive) }}
+        // Lift the active pin above its neighbours so the enlarged head isn't
+        // clipped, and reset the rest to 0 — react-map-gl skips an `undefined`
+        // style, so a bare `undefined` would leave a previously-active pin
+        // stuck at 1 and covering the real selection. The hovercard is portaled
+        // so it doesn't need a lift.
+        style={{ zIndex: isActive ? 1 : 0 }}
         onClick={
           onClick
             ? (event: MarkerEvent<MouseEvent>) => {
