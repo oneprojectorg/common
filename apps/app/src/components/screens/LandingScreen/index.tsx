@@ -149,30 +149,23 @@ const PostFeedSection = async ({
   return (
     <>
       {showPostUpdate ? (
-        <>
-          <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Card className="mb-8 gap-0 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-              <PostUpdate label={<TranslatedText text="Post" />} />
-            </Card>
-          </Suspense>
-          <hr />
-        </>
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+          <PostUpdate label={<TranslatedText text="Post" />} />
+        </Suspense>
       ) : null}
-      <div className="mt-4 sm:mt-0">
-        <ErrorBoundary
-          fallback={
-            <div className="flex flex-col items-center justify-center py-8">
-              <span className="text-neutral-charcoal">
-                <TranslatedText text="Unable to load posts. Please try refreshing." />
-              </span>
-            </div>
-          }
-        >
-          <HydrationBoundary state={dehydrate(queryClient)}>
-            <Feed />
-          </HydrationBoundary>
-        </ErrorBoundary>
-      </div>
+      <ErrorBoundary
+        fallback={
+          <div className="flex flex-col items-center justify-center py-8">
+            <span className="text-neutral-charcoal">
+              <TranslatedText text="Unable to load posts. Please try refreshing." />
+            </span>
+          </div>
+        }
+      >
+        <HydrationBoundary state={dehydrate(queryClient)}>
+          <Feed />
+        </HydrationBoundary>
+      </ErrorBoundary>
     </>
   );
 };
@@ -185,7 +178,7 @@ const LandingScreenFeeds = ({
   return (
     <>
       <div className="hidden grid-cols-15 sm:grid">
-        <div className="col-span-9 flex flex-col gap-4">
+        <div className="col-span-9 flex flex-col gap-8">
           <PostFeedSection showPostUpdate={showPostUpdate} />
         </div>
         <span />
@@ -206,7 +199,9 @@ const LandingScreenFeeds = ({
           <NewOrganizationsList />
         </TabsContent>
         <TabsContent value="recent" className="p-0">
-          <PostFeedSection showPostUpdate={showPostUpdate} />
+          <div className="flex flex-col gap-8">
+            <PostFeedSection showPostUpdate={showPostUpdate} />
+          </div>
         </TabsContent>
       </Tabs>
     </>

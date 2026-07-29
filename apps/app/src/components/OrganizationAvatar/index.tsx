@@ -36,8 +36,7 @@ export const OrganizationAvatar = ({
       name={name}
       src={avatarUrl}
       alt={name}
-      size="lg"
-      className={cn(linked && 'hover:opacity-80', className)}
+      className={cn('size-10', linked && 'hover:opacity-80', className)}
       imageRender={
         avatarUrl ? (
           <Image src={avatarUrl} alt={name} fill className="object-cover" />
