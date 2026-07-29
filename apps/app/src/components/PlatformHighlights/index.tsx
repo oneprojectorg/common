@@ -4,12 +4,12 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Card } from '@op/sense/Card';
-import { FacePile } from '@op/sense/FacePile';
+import { GrowingFacePile } from '@op/sense/FacePile';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { cn } from '@op/sense/lib/utils';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
 
@@ -116,75 +116,51 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
     t.organization.list({ limit: 100 }),
     t.platform.getStats(),
   ]);
-  const facePileRef = useRef<HTMLDivElement>(null);
-  const [numItems, setNumItems] = useState(20);
 
-  useEffect(() => {
-    if (!facePileRef.current) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver((e) => {
-      // divide by 2 rem - 0.5 rem overlap
-      setNumItems(
-        Math.min(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)), 20),
-      );
-    });
-
-    resizeObserver.observe(facePileRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [facePileRef]);
-
-  const items = organizations
-    .map((org) => {
-      const { avatarImage } = org.profile;
-      const avatarUrl = getPublicUrl(avatarImage?.name);
-      return (
-        <Link
-          key={org.id}
-          href={`/org/${org.profile.slug}`}
-          className="hover:no-underline"
-        >
-          <ProfileAvatar
-            name={org.profile.name}
-            src={avatarUrl}
-            alt={org.profile.name}
-            imageRender={
-              avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={org.profile.name}
-                  width={32}
-                  height={32}
-                />
-              ) : undefined
-            }
-          />
-          <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
-        </Link>
-      );
-    })
-    .slice(0, numItems);
-
-  if (stats.totalOrganizations > numItems) {
-    items.push(
-      <Link key="more" href="/org" className="hover:no-underline">
-        <Avatar>
-          <AvatarFallback className="bg-neutral-charcoal text-sm text-neutral-offWhite">
-            <span className="align-super">+</span>
-            {stats.totalOrganizations - numItems}
-          </AvatarFallback>
-        </Avatar>
-      </Link>,
+  const items = organizations.map((org) => {
+    const avatarUrl = getPublicUrl(org.profile.avatarImage?.name);
+    return (
+      <Link
+        key={org.id}
+        href={`/org/${org.profile.slug}`}
+        className="hover:no-underline"
+      >
+        <ProfileAvatar
+          name={org.profile.name}
+          src={avatarUrl}
+          alt={org.profile.name}
+          imageRender={
+            avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={org.profile.name}
+                fill
+                className="object-cover"
+              />
+            ) : undefined
+          }
+        />
+        <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
+      </Link>
     );
-  }
+  });
 
   return (
-    <FacePile items={items} ref={facePileRef}>
+    <GrowingFacePile
+      items={items}
+      totalCount={stats.totalOrganizations}
+      renderOverflow={(count) => (
+        <Link href="/org" className="hover:no-underline">
+          <Avatar>
+            <AvatarFallback className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+              <span className="align-super">+</span>
+              {count}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
+      )}
+    >
       {children}
-    </FacePile>
+    </GrowingFacePile>
   );
 };

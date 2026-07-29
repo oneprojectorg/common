@@ -28,7 +28,14 @@ function FacePile({
       )}
       {...props}
     >
-      <ul className={cn('flex', listClassName)}>
+      <ul
+        className={cn(
+          // Ring each face in the background color so overlapping avatars read
+          // as distinct instead of blurring together.
+          'flex [&_[data-slot=avatar]]:ring-2 [&_[data-slot=avatar]]:ring-background',
+          listClassName,
+        )}
+      >
         {items.map((node, index) => (
           <li key={index} className="relative -ms-2 first:ms-0">
             {node}
@@ -49,6 +56,11 @@ interface GrowingFacePileProps {
    * (totalCount - rendered), so a few avatars can still convey a large total.
    */
   totalCount?: number;
+  /**
+   * Render the "+N" overflow bubble yourself — e.g. to wrap it in a link. Gets
+   * the overflow count. Falls back to a plain foreground bubble when omitted.
+   */
+  renderOverflow?: (count: number) => React.ReactNode;
 }
 
 function GrowingFacePile({
@@ -56,6 +68,7 @@ function GrowingFacePile({
   items,
   maxItems = 20,
   totalCount,
+  renderOverflow,
 }: GrowingFacePileProps) {
   const facePileRef = React.useRef<HTMLDivElement>(null);
   const [numItems, setNumItems] = React.useState(maxItems);
@@ -91,11 +104,15 @@ function GrowingFacePile({
 
   if (overflowCount > 0) {
     renderedItems.push(
-      <Avatar>
-        <AvatarFallback className="bg-foreground text-sm text-background">
-          +{overflowCount}
-        </AvatarFallback>
-      </Avatar>,
+      renderOverflow ? (
+        renderOverflow(overflowCount)
+      ) : (
+        <Avatar>
+          <AvatarFallback className="bg-foreground text-sm text-background">
+            +{overflowCount}
+          </AvatarFallback>
+        </Avatar>
+      ),
     );
   }
 
