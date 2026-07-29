@@ -91,7 +91,6 @@ const PendingDecisionInvitesSuspense = () => {
               />
               <NotificationPanelActions>
                 <Button
-                  size="sm"
                   className="w-full sm:w-auto"
                   onClick={() =>
                     acceptInvite
