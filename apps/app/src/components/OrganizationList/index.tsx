@@ -4,7 +4,6 @@ import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Card } from '@op/sense/Card';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
-import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { getGradientForString } from '@op/styles/constants';
@@ -17,6 +16,7 @@ import {
   OrganizationAvatar,
   OrganizationAvatarSkeleton,
 } from '@/components/OrganizationAvatar';
+import { ProfileAvatarLink } from '@/components/ProfileAvatarLink';
 
 export const OrganizationList = ({
   organizations,
@@ -182,27 +182,13 @@ export const OrganizationSummaryList = ({
         return (
           <div key={org.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
-              <Link
+              <ProfileAvatarLink
                 href={`/org/${org.profile.slug}`}
-                className="hover:no-underline"
-              >
-                <ProfileAvatar
-                  name={org.profile.name ?? ''}
-                  src={orgAvatarUrl}
-                  alt={org.profile.name ?? ''}
-                  className="size-8 hover:opacity-80 sm:size-12"
-                  imageRender={
-                    orgAvatarUrl ? (
-                      <Image
-                        src={orgAvatarUrl}
-                        alt={org.profile.name ?? ''}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : undefined
-                  }
-                />
-              </Link>
+                name={org.profile.name ?? ''}
+                src={orgAvatarUrl}
+                alt={org.profile.name ?? ''}
+                className="size-8 sm:size-12"
+              />
 
               <div className="flex flex-col gap-3 text-neutral-black">
                 <div className="flex flex-col gap-2">
