@@ -6,6 +6,7 @@ import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { insertReviewAssignments } from './insertReviewAssignments';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
+import { isReviewPhase } from './utils/phaseSettings';
 
 export interface BackfillReviewAssignmentsInput {
   instanceId: string;
@@ -63,7 +64,7 @@ export async function backfillReviewAssignments({
     instance: { instanceData },
     phaseId: currentPhaseId,
   });
-  if (!currentPhase.rules?.proposals?.review) {
+  if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
 

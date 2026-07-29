@@ -5,6 +5,7 @@ import type { AdvancePhaseResult } from './advancePhase';
 import { processResults } from './processResults';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
+import { isReviewPhase } from './utils/phaseSettings';
 
 export interface OnPhaseAdvancedInput {
   instanceId: string;
@@ -39,7 +40,7 @@ export async function onPhaseAdvanced(
       });
     });
 
-  if (targetPhase?.rules?.proposals?.review) {
+  if (targetPhase && isReviewPhase(targetPhase)) {
     await runGenerateReviewAssignments(input);
   }
 

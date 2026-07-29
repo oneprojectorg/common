@@ -1,4 +1,4 @@
-import { SYSTEM_FIELD_KEYS } from '@op/common/client';
+import { SYSTEM_FIELD_KEYS, isReviewPhase } from '@op/common/client';
 import { z } from 'zod';
 
 import type { TranslationKey } from '@/lib/i18n';
@@ -52,7 +52,7 @@ const LOCKED_PROPOSAL_FIELD_KEYS = new Set(
 
 /** Returns true when at least one phase has review enabled. */
 function hasReviewPhase(data: ProcessBuilderInstanceData | undefined): boolean {
-  return (data?.phases ?? []).some((p) => p.rules?.proposals?.review === true);
+  return (data?.phases ?? []).some(isReviewPhase);
 }
 
 /** Returns true when the rubric template contains at least one criterion. */

@@ -28,6 +28,7 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import { isReviewPhase } from './utils/phaseSettings';
 
 export interface SubmitManualSelectionInput {
   processInstanceId: string;
@@ -264,7 +265,7 @@ export async function submitManualSelection({
     // rows and writes assignments on the pooled `db` connection, which can't see
     // this transaction's uncommitted writes (mirrors onPhaseAdvanced's ordering).
     const currentPhase = lockedPhases?.[lockedPhaseIndex];
-    if (lockedPhases && currentPhase?.rules?.proposals?.review) {
+    if (lockedPhases && currentPhase && isReviewPhase(currentPhase)) {
       reviewAssignmentInput = {
         instanceId: processInstanceId,
         fromPhaseId: lockedPreviousPhaseId,

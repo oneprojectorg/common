@@ -3,7 +3,7 @@
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { isLastPhase } from '@op/common/client';
+import { isLastPhase, isReviewPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -33,7 +33,7 @@ function ProposalViewPageContent({
   const currentPhase = phases.find(
     (phase) => phase.phaseId === instance.currentStateId,
   );
-  const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isAuthor =
     !!user?.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
