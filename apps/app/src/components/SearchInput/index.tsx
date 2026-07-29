@@ -22,6 +22,13 @@ import { LuClock, LuSearch } from 'react-icons/lu';
 
 import { getLocaleDirection, useRouter } from '@/lib/i18n';
 
+interface ProfileCommandItemProps {
+  profile: ProfileSearchResult;
+  query: string;
+  canLinkToProfile: boolean;
+  onSelect: (profile: ProfileSearchResult) => void;
+}
+
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
   const t = useTranslations();
@@ -79,6 +86,9 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const showRecents = query.length === 0 && recentSearches.length > 0;
   const showEmpty =
     query.length > 0 &&
+    // Only declare "no results" once the debounce settles, else a stale
+    // debouncedQuery flashes "No results" while the user is still typing.
+    query === debouncedQuery &&
     debouncedQuery.length > 1 &&
     !isSearching &&
     mergedProfileResults.length === 0;
@@ -175,6 +185,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 key={profile.id}
                 profile={profile}
                 query={query}
+                canLinkToProfile={canLinkToProfile}
                 onSelect={handleProfileSelect}
               />
             ))}
@@ -278,15 +289,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   );
 };
 
-interface ProfileCommandItemProps {
-  profile: ProfileSearchResult;
-  query: string;
-  onSelect: (profile: ProfileSearchResult) => void;
-}
-
 const ProfileCommandItem = ({
   profile,
   query,
+  canLinkToProfile,
   onSelect,
 }: ProfileCommandItemProps) => {
   const t = useTranslations();
@@ -309,6 +315,7 @@ const ProfileCommandItem = ({
   return (
     <CommandItem
       value={`profile-${profile.id}`}
+      disabled={!canLinkToProfile}
       onSelect={() => onSelect(profile)}
       className="gap-3 py-2.5"
     >
