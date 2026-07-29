@@ -19,8 +19,9 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Suspense, useState } from 'react';
 import { LuPenLine } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '../ButtonLink';
 import { DecisionAvatar } from '../DecisionAvatar';
 import ErrorBoundary from '../ErrorBoundary';
 
@@ -71,15 +72,15 @@ const ActiveDecisionsNotificationsSuspense = () => {
                 }
               />
               <NotificationPanelActions>
-                <Button
-                  render={<Link href={`/decisions/${decision.slug}`} />}
+                <ButtonLink
+                  href={`/decisions/${decision.slug}`}
                   size="sm"
                   className="w-full sm:w-auto"
                   onClick={() => setNavigatingId(decision.id)}
                   loading={isNavigating}
                 >
                   {t('Participate')}
-                </Button>
+                </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>
           );
@@ -141,15 +142,15 @@ const RevisionRequestRow = ({
         >
           {t('Ignore')}
         </Button>
-        <Button
-          render={<Link href={editHref} />}
+        <ButtonLink
+          href={editHref}
           size="sm"
           className="w-full sm:w-auto"
           onClick={() => setNavigating(true)}
           loading={navigating}
         >
           {t('Revise proposal')}
-        </Button>
+        </ButtonLink>
       </NotificationPanelActions>
     </NotificationPanelItem>
   );
