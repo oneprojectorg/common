@@ -114,7 +114,6 @@ const JoinProfileRequestsNotificationsSuspense = ({
               />
               <NotificationPanelActions>
                 <Button
-                  size="sm"
                   variant="outline"
                   className="w-full sm:w-auto"
                   onClick={() =>
@@ -129,7 +128,6 @@ const JoinProfileRequestsNotificationsSuspense = ({
                   {t('Decline')}
                 </Button>
                 <Button
-                  size="sm"
                   className="w-full sm:w-auto"
                   onClick={() =>
                     handleUpdateRequest(
