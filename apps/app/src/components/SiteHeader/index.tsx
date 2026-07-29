@@ -5,6 +5,7 @@ import { useUser } from '@/utils/UserProvider';
 import { Button } from '@op/sense/Button';
 import { SidebarTrigger } from '@op/sense/Sidebar';
 import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { Suspense, useState } from 'react';
 import { LuAlignJustify, LuSearch } from 'react-icons/lu';
 
@@ -78,88 +79,76 @@ const HeaderActions = () => {
   );
 };
 
+/**
+ * One responsive header for desktop and mobile. Rendered once (not a
+ * desktop/mobile pair), so shared bits — logo, menu trigger, actions — mount a
+ * single time; that's what keeps CommonLogo's inlined gradient ids unique.
+ *
+ * Layout: `gridCentered` 3-column grid on md+ (logo | centered search |
+ * actions); a flex row below md (logo ... [search icon + actions]). Below md
+ * the search icon expands to a full-width input + Cancel over the whole bar.
+ */
 export const SiteHeader = () => {
   const t = useTranslations();
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
 
   return (
-    <>
-      <header className="gridCentered relative z-20 hidden h-auto w-full items-center justify-between border-b border-border bg-background px-6 py-2 sm:grid">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger
-            aria-label={t('Open menu')}
-            className="size-11 rounded-lg"
-          >
-            <LuAlignJustify className="size-4" />
-          </SidebarTrigger>
-          <Link href="/" className="flex gap-1" aria-label={t('Home')}>
-            <CommonLogo />
-          </Link>
-        </div>
-        <span className="flex items-center justify-center">
-          <ErrorBoundary fallback={<Skeleton className="h-11 w-96" />}>
-            <SearchInput />
-          </ErrorBoundary>
-        </span>
-        <div className="flex items-center gap-3">
-          <HeaderActions />
-        </div>
-      </header>
-
-      {/* Mobile */}
-      <header className="relative z-20 flex h-auto w-full items-center justify-between border-b border-border bg-background px-4 py-2 sm:hidden">
-        {!isMobileSearchExpanded && (
-          <div className="flex items-center gap-3">
-            <SidebarTrigger
-              aria-label={t('Open menu')}
-              className="size-8 rounded-lg"
-            >
-              <LuAlignJustify className="size-4" />
-            </SidebarTrigger>
-            <Link href="/" className="flex gap-1" aria-label={t('Home')}>
-              <CommonLogo />
-            </Link>
-          </div>
+    <header className="relative z-20 flex h-auto w-full items-center justify-between gap-3 border-b border-border bg-background px-4 py-2 md:grid md:grid-cols-[1fr_auto_1fr] md:px-6">
+      <div
+        className={cn(
+          'flex items-center gap-3',
+          isMobileSearchExpanded && 'hidden',
         )}
-
-        <div
-          className={`flex ${isMobileSearchExpanded ? 'w-full items-center justify-between' : 'gap-3'}`}
+      >
+        <SidebarTrigger
+          aria-label={t('Open menu')}
+          className="size-8 rounded-lg md:size-11"
         >
-          {isMobileSearchExpanded ? (
-            <>
-              <div className="min-w-0 flex-1">
-                <ErrorBoundary fallback={<Skeleton className="h-10 w-full" />}>
-                  <SearchInput
-                    onBlur={() => setIsMobileSearchExpanded(false)}
-                  />
-                </ErrorBoundary>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={() => setIsMobileSearchExpanded(false)}
-                className="ms-3 text-muted-foreground"
-              >
-                {t('Cancel')}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsMobileSearchExpanded(true)}
-                aria-label={t('Search')}
-              >
-                <LuSearch className="size-4 text-muted-foreground" />
-              </Button>
+          <LuAlignJustify className="size-4" />
+        </SidebarTrigger>
+        <Link href="/" aria-label={t('Home')}>
+          <CommonLogo />
+        </Link>
+      </div>
 
-              <div className="flex items-center gap-3">
-                <HeaderActions />
-              </div>
-            </>
+      <ErrorBoundary fallback={<Skeleton className="h-11 w-96" />}>
+        <div
+          className={cn(
+            'flex items-center',
+            isMobileSearchExpanded ? 'w-full' : 'hidden md:flex',
           )}
+        >
+          <SearchInput />
+          <Button
+            variant="ghost"
+            onClick={() => setIsMobileSearchExpanded(false)}
+            className={cn(
+              'ms-3 text-muted-foreground',
+              !isMobileSearchExpanded && 'hidden',
+            )}
+          >
+            {t('Cancel')}
+          </Button>
         </div>
-      </header>
-    </>
+      </ErrorBoundary>
+
+      <div
+        className={cn(
+          'flex items-center gap-2 md:justify-self-end',
+          isMobileSearchExpanded && 'hidden',
+        )}
+      >
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsMobileSearchExpanded(true)}
+          aria-label={t('Search')}
+          className="md:hidden"
+        >
+          <LuSearch className="size-4 text-muted-foreground" />
+        </Button>
+        <HeaderActions />
+      </div>
+    </header>
   );
 };
