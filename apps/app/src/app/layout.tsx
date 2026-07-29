@@ -20,9 +20,10 @@ import { getLocaleDirection } from '../lib/i18n/config';
 
 const roboto = Roboto({
   subsets: ['latin'],
-  // Variable-font weight range (not a static list) so font-strong's 450 renders
-  // true instead of rounding up to the nearest static cut (500).
-  weight: '100 900',
+  // Load the variable font (full wght axis) so font-strong's 450 renders true
+  // instead of rounding up to the nearest static cut (500). next's Roboto type
+  // only accepts 'variable' here, not a range string.
+  weight: 'variable',
   variable: '--font-sans',
   display: 'swap',
 });
