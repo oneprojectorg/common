@@ -11,7 +11,11 @@ import { ReactNode, Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
 
-import { ProfileAvatarLink, avatarLinkClassName } from '../ProfileAvatarLink';
+import {
+  AvatarLinkHoverTint,
+  ProfileAvatarLink,
+  avatarLinkClassName,
+} from '../ProfileAvatarLink';
 
 export const PlatformHighlights = () => {
   const [stats] = trpc.platform.getStats.useSuspenseQuery();
@@ -139,6 +143,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
               {count}
             </AvatarFallback>
           </Avatar>
+          <AvatarLinkHoverTint />
         </Link>
       )}
     >
