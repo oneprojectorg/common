@@ -1408,5 +1408,11 @@
   "You're already signed in. Reload the page to continue.": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।",
   "An account with this email already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
   "Join Common to comment on this proposal.": "এই প্রস্তাবে মন্তব্য করতে Common-এ যোগ দিন।",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "কলম্বাসের অংশগ্রহণমূলক বাজেট এখন উন্মুক্ত। <participate>অংশ নিন</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "কলম্বাসের অংশগ্রহণমূলক বাজেট এখন উন্মুক্ত। <participate>অংশ নিন</participate>",
+  "Scope": "পরিধি",
+  "What should each reviewer be responsible for?": "প্রতিটি পর্যালোচক কীসের জন্য দায়ী থাকবেন?",
+  "Reviewers can review any submission": "পর্যালোচকরা যেকোনো প্রস্তাব পর্যালোচনা করতে পারেন",
+  "By category": "বিভাগ অনুসারে",
+  "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "প্রতিটি পর্যালোচককে এক বা একাধিক বিভাগে নিযুক্ত করা হয়। তাদের সারিতে শুধুমাত্র সেই বিভাগগুলির প্রস্তাব দেখানো হয়।",
+  "Coming soon": "শীঘ্রই আসছে"
 }

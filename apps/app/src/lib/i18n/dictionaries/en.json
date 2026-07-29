@@ -1414,5 +1414,11 @@
   "You're already signed in. Reload the page to continue.": "You're already signed in. Reload the page to continue.",
   "An account with this email already exists. Try logging in instead.": "An account with this email already exists. Try logging in instead.",
   "Join Common to comment on this proposal.": "Join Common to comment on this proposal.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Columbus' participatory budgeting is now open. <participate>Participate</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Columbus' participatory budgeting is now open. <participate>Participate</participate>",
+  "Scope": "Scope",
+  "What should each reviewer be responsible for?": "What should each reviewer be responsible for?",
+  "Reviewers can review any submission": "Reviewers can review any submission",
+  "By category": "By category",
+  "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.",
+  "Coming soon": "Coming soon"
 }

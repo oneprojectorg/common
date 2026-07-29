@@ -1407,5 +1407,11 @@
   "You're already signed in. Reload the page to continue.": "Horeyba waad u soo gashay. Dib u shub bogga si aad u sii wadato.",
   "An account with this email already exists. Try logging in instead.": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho.",
   "Join Common to comment on this proposal.": "Ku biir Common si aad faallo uga bixiso soo-jeedintan.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Miisaaniyadda wadajirka ah ee Columbus hadda waa furan tahay. <participate>Ka qaybqaado</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Miisaaniyadda wadajirka ah ee Columbus hadda waa furan tahay. <participate>Ka qaybqaado</participate>",
+  "Scope": "Baaxadda",
+  "What should each reviewer be responsible for?": "Maxaa dib-u-eege kastaa masuul ka noqon lahaa?",
+  "Reviewers can review any submission": "Dib-u-eegayaashu waxay dib u eegi karaan soo jeedin kasta",
+  "By category": "Qaybta ahaan",
+  "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Dib-u-eege kasta waxaa loo xilsaaraa hal ama in ka badan oo qaybo ah. Safkiisu wuxuu tusayaa oo kaliya soo jeedinta qaybahaas ku jira.",
+  "Coming soon": "Waa iman doonaa dhakhso"
 }

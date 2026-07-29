@@ -73,6 +73,13 @@ export type ReviewsPolicy = (typeof REVIEWS_POLICIES)[number];
 /** Coverage policy applied when neither phase rules nor legacy config set one. */
 export const DEFAULT_REVIEWS_POLICY: ReviewsPolicy = 'full_coverage';
 
+export const REVIEWS_SCOPES = ['all', 'by_category'] as const;
+
+export type ReviewsScope = (typeof REVIEWS_SCOPES)[number];
+
+/** Reviewer responsibility scope applied when phase rules don't set one. */
+export const DEFAULT_REVIEWS_SCOPE: ReviewsScope = 'all';
+
 /**
  * `PhaseRules.reviews` shape — single source for the interface, the API
  * encoder, and the resolved `ReviewSettings`.
@@ -80,6 +87,13 @@ export const DEFAULT_REVIEWS_POLICY: ReviewsPolicy = 'full_coverage';
 export const phaseReviewSettingsSchema = z.object({
   /** Enablement, like `voting.submit`. */
   submit: z.boolean().optional(),
+  /**
+   * What each reviewer is responsible for. Absent = `'all'` (any reviewer may
+   * review any submission). `'by_category'` scopes reviewers to assigned
+   * categories.
+   */
+  scope: z.enum(REVIEWS_SCOPES).optional(),
+  /** How proposals are distributed to reviewers within `scope`. */
   policy: z.enum(REVIEWS_POLICIES).optional(),
   allowRevisions: z.boolean().optional(),
   anonymousFeedback: z.boolean().optional(),
