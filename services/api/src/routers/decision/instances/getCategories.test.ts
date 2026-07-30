@@ -1,3 +1,4 @@
+import { categoryTermUri } from '@op/common';
 import { db, eq, inArray } from '@op/db/client';
 import {
   organizationUsers,
@@ -65,10 +66,9 @@ async function seedProposalTaxonomy(
   const termRecords = termLabels.map((label) => ({
     id: randomUUID(),
     taxonomyId: resolvedTaxonomyId,
-    termUri: label
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, ''),
+    // Mirror production term creation (ensureProposalTaxonomyTerms) — the same
+    // slug helper getProcessCategories looks terms up by.
+    termUri: categoryTermUri(label),
     label,
   }));
 
@@ -439,13 +439,13 @@ describe.concurrent('getCategories category matching', () => {
 
     const instance = setup.instance;
 
-    // The termUri for "Health & Wellness" after conversion:
-    // "health & wellness" -> "health--wellness" (& removed, spaces become -)
+    // The termUri for "Health & Wellness" via the strict slugify helper:
+    // "Health & Wellness" -> "health-and-wellness" (& folded to "and").
     const { termRecords } = await seedProposalTaxonomy(
       ['Health & Wellness'],
       onTestFinished,
     );
-    const expectedTermUri = 'health--wellness';
+    const expectedTermUri = 'health-and-wellness';
 
     await injectInstanceCategories(instance.instance.id, [
       {
