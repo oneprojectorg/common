@@ -12,7 +12,6 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@op/sense/InputGroup';
-import { cn } from '@op/sense/lib/utils';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
@@ -23,6 +22,7 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import {
   AnyFieldApi,
   createFormHook,
@@ -74,8 +74,7 @@ export const getFieldErrorMessage = (
   return formatErrors(errors);
 };
 
-const { fieldContext, formContext, useFieldContext } =
-  createFormHookContexts();
+const { fieldContext, formContext, useFieldContext } = createFormHookContexts();
 
 // Field components are @op/sense, wired to the TanStack field via
 // useFieldContext() — value/change/blur/error come from context, so call sites
@@ -84,8 +83,10 @@ const { fieldContext, formContext, useFieldContext } =
 
 // RAC-style size kept only as a prop alias, mapped to sense's own scale.
 type FieldSize = 'small' | 'medium' | 'large';
-const toSelectSize = (size?: FieldSize) => (size === 'small' ? 'sm' : 'default');
-const toSwitchSize = (size?: FieldSize) => (size === 'small' ? 'sm' : 'default');
+const toSelectSize = (size?: FieldSize) =>
+  size === 'small' ? 'sm' : 'default';
+const toSwitchSize = (size?: FieldSize) =>
+  size === 'small' ? 'sm' : 'default';
 
 type TextFieldProps = Omit<
   ComponentProps<'input'>,
@@ -107,7 +108,9 @@ const TextField = ({
   ...inputProps
 }: TextFieldProps) => {
   const field = useFieldContext<string>();
-  const error = getFieldErrorMessage(field as AnyFieldApi);
+  const error = getFieldErrorMessage(field as AnyFieldApi, {
+    requireBlur: true,
+  });
   const invalid = error ? true : undefined;
 
   const control = icon ? (
@@ -169,10 +172,12 @@ const TextAreaField = ({
   ...textareaProps
 }: TextAreaFieldProps) => {
   const field = useFieldContext<string>();
-  const error = getFieldErrorMessage(field as AnyFieldApi);
+  const error = getFieldErrorMessage(field as AnyFieldApi, {
+    requireBlur: true,
+  });
 
   return (
-    <Field className={className}>
+    <Field>
       {label ? (
         <FieldLabel htmlFor={field.name}>
           {label}
@@ -188,6 +193,9 @@ const TextAreaField = ({
         onBlur={field.handleBlur}
         required={isRequired}
         aria-invalid={error ? true : undefined}
+        // className routes to the control so consumers can size the textarea
+        // (e.g. min-h-*), not just the field wrapper.
+        className={className}
         {...textareaProps}
       />
       {error ? <FieldError>{error}</FieldError> : null}
@@ -222,7 +230,9 @@ const SelectField = ({
   className,
 }: SelectFieldProps) => {
   const field = useFieldContext<string>();
-  const error = getFieldErrorMessage(field as AnyFieldApi);
+  const error = getFieldErrorMessage(field as AnyFieldApi, {
+    requireBlur: true,
+  });
   // Value->label map so base-ui's SelectValue renders the label, not the id.
   const items = Object.fromEntries(options.map((o) => [o.value, o.label]));
 

@@ -3,16 +3,7 @@ import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
-import { Field, FieldError, FieldLabel } from '@op/sense/Field';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@op/sense/Select';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Spinner } from '@op/sense/Spinner';
 import { ReactNode, Suspense } from 'react';
 import { z } from 'zod';
 
@@ -23,7 +14,7 @@ import { StepProps } from '../MultiStepForm';
 import { FocusAreasField } from '../Profile/ProfileDetails/FocusAreasField';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { useAppForm } from '../form/utils';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormFields = z.infer<typeof validator>;
@@ -223,13 +214,7 @@ export const PersonalDetailsForm = ({
             <field.TextField
               isRequired
               label={t('Full Name')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              inputProps={{
-                placeholder: t('Enter your full name'),
-              }}
+              placeholder={t('Enter your full name')}
             />
           )}
         />
@@ -239,57 +224,27 @@ export const PersonalDetailsForm = ({
             <field.TextField
               isRequired
               label={t('Headline')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               description={t(
                 'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
               )}
-              inputProps={{
-                placeholder: t('Enter your headline'),
-              }}
+              placeholder={t('Enter your headline')}
             />
           )}
         />
         <form.AppField
           name="pronouns"
-          children={(field) => {
-            const errorMessage = getFieldErrorMessage(field);
-            return (
-              <Field data-invalid={!!errorMessage}>
-                <FieldLabel htmlFor="pronouns">{t('Pronouns')}</FieldLabel>
-                <Select
-                  value={field.state.value}
-                  onValueChange={(value) => field.handleChange(value)}
-                  items={{
-                    'she/her': t('She/Her'),
-                    'he/him': t('He/Him'),
-                    'they/them': t('They/Them'),
-                    custom: t('Custom'),
-                  }}
-                >
-                  <SelectTrigger
-                    id="pronouns"
-                    className="w-full"
-                    onBlur={field.handleBlur}
-                    aria-invalid={!!errorMessage}
-                  >
-                    <SelectValue
-                      placeholder={t('Select your preferred pronouns')}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="she/her">{t('She/Her')}</SelectItem>
-                    <SelectItem value="he/him">{t('He/Him')}</SelectItem>
-                    <SelectItem value="they/them">{t('They/Them')}</SelectItem>
-                    <SelectItem value="custom">{t('Custom')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-              </Field>
-            );
-          }}
+          children={(field) => (
+            <field.Select
+              label={t('Pronouns')}
+              placeholder={t('Select your preferred pronouns')}
+              options={[
+                { value: 'she/her', label: t('She/Her') },
+                { value: 'he/him', label: t('He/Him') },
+                { value: 'they/them', label: t('They/Them') },
+                { value: 'custom', label: t('Custom') },
+              ]}
+            />
+          )}
         />
         <form.Subscribe
           selector={(state) => state.values.pronouns}
@@ -300,14 +255,8 @@ export const PersonalDetailsForm = ({
                 children={(field) => (
                   <field.TextField
                     label={t('Custom Pronouns')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={field.handleChange}
-                    errorMessage={getFieldErrorMessage(field)}
                     isRequired
-                    inputProps={{
-                      placeholder: t('Enter your custom pronouns'),
-                    }}
+                    placeholder={t('Enter your custom pronouns')}
                   />
                 )}
               />
@@ -319,15 +268,9 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               label={t('Email')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               isRequired
-              inputProps={{
-                placeholder: t('Enter your email address'),
-                type: 'email',
-              }}
+              placeholder={t('Enter your email address')}
+              type="email"
             />
           )}
         />
@@ -336,19 +279,13 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               label={t('Website')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              inputProps={{
-                placeholder: t('Enter your website URL'),
-                // Not `type="url"`: our zodUrl validation accepts a bare domain
-                // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
-                // browser's native URL validation rejects the scheme-less value
-                // and silently blocks form submission. `inputMode` keeps the
-                // URL-optimized keyboard without that native constraint.
-                inputMode: 'url',
-              }}
+              placeholder={t('Enter your website URL')}
+              // Not `type="url"`: our zodUrl validation accepts a bare domain
+              // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
+              // browser's native URL validation rejects the scheme-less value
+              // and silently blocks form submission. `inputMode` keeps the
+              // URL-optimized keyboard without that native constraint.
+              inputMode="url"
             />
           )}
         />
@@ -363,14 +300,15 @@ export const PersonalDetailsForm = ({
           />
         )}
 
-        <form.SubmitButton className="sm:w-full">
-          {updateProfile.isPending ||
-          avatarUpload.isUploading ||
-          bannerUpload.isUploading ? (
-            <Spinner className="size-6" />
-          ) : (
-            t('Continue')
-          )}
+        <form.SubmitButton
+          className="sm:w-full"
+          loading={
+            updateProfile.isPending ||
+            avatarUpload.isUploading ||
+            bannerUpload.isUploading
+          }
+        >
+          {t('Continue')}
         </form.SubmitButton>
       </FormContainer>
     </form>
