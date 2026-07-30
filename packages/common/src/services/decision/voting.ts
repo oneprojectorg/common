@@ -24,6 +24,7 @@ import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { isVotingPhase } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
 interface PhaseConfig {
@@ -57,7 +58,7 @@ function getCurrentPhaseConfig(processInstance: {
 
   return {
     allowProposals: currentPhase.rules?.proposals?.submit ?? false,
-    allowDecisions: currentPhase.rules?.voting?.submit ?? false,
+    allowDecisions: isVotingPhase(currentPhase),
     maxVotesPerMember: currentPhase.rules?.voting?.maxVotesPerMember,
   };
 }

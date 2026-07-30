@@ -122,6 +122,9 @@ export * from './decisionRoles';
 // Instance utilities
 export * from './utils/instance';
 
+// Phase-level settings resolution
+export * from './utils/phaseSettings';
+
 // Voting management
 export * from './voting';
 
@@ -145,8 +148,13 @@ export { createInstanceDataFromTemplate } from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,
+  PhaseReviewSettings,
   PhaseRules,
   ProcessConfig,
   ReviewsPolicy,
 } from './schemas/types';
-export { REVIEWS_POLICIES } from './schemas/types';
+export {
+  DEFAULT_REVIEWS_POLICY,
+  REVIEWS_POLICIES,
+  phaseReviewSettingsSchema,
+} from './schemas/types';
