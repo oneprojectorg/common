@@ -40,10 +40,6 @@ export const CreateOrganizationModal = ({
     setIsSuccessOpen(true);
   };
 
-  const onSuccess = () => {
-    setIsSuccessOpen(false);
-  };
-
   const onError = () => {
     setIsSuccessOpen(false);
     setIsModalOpen(true);
@@ -51,9 +47,9 @@ export const CreateOrganizationModal = ({
 
   useEffect(() => {
     if (isNew) {
-      onSuccess();
+      setIsSuccessOpen(false);
     }
-  }, [isNew, onSuccess]);
+  }, [isNew]);
 
   return (
     <>

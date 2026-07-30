@@ -145,8 +145,10 @@ export const PersonalDetailsForm = ({
       bannerImageUrl: personalDetails?.bannerImageUrl ?? '',
     },
     validators: {
-      onChange: createValidator(t) as any,
-      onSubmit: createValidator(t) as any,
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onChange: createValidator(t),
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onSubmit: createValidator(t),
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
@@ -181,7 +183,6 @@ export const PersonalDetailsForm = ({
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
-        console.log('submit');
         void form.handleSubmit();
       }}
       className={className}
