@@ -88,6 +88,7 @@ export const FundingInformationForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();

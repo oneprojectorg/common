@@ -34,6 +34,7 @@ export const PrivacyPolicyForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();

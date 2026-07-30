@@ -180,6 +180,7 @@ export const PersonalDetailsForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         console.log('submit');

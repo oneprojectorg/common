@@ -108,6 +108,7 @@ export const BaseUpdateProfileForm = forwardRef<
 
     return (
       <form
+        noValidate
         ref={ref}
         id={formId}
         onSubmit={(e) => {

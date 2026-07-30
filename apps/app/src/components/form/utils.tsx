@@ -50,6 +50,16 @@ export const getFieldErrorMessage = (
 ): string | undefined => {
   const { isTouched, isBlurred, errors, errorMap } = field.state.meta;
 
+  // Once a submit is attempted, show errors regardless of touch/blur — the
+  // whole form has been "acted on", so gating on per-field interaction would
+  // silently swallow validation on the Submit click.
+  const submitted =
+    ((field.form?.state as { submissionAttempts?: number } | undefined)
+      ?.submissionAttempts ?? 0) > 0;
+  if (submitted) {
+    return formatErrors(errors);
+  }
+
   if (requireBlur) {
     if (!isBlurred) {
       return undefined;

@@ -139,6 +139,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         )}
       </p>
       <form
+        noValidate
         className="flex flex-col gap-6 p-8"
         onSubmit={(e) => {
           e.preventDefault();

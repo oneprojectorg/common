@@ -146,6 +146,7 @@ export function ProcessSettingsForm({
   return (
     <div className="size-full [scrollbar-gutter:stable]">
       <form
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
         }}
