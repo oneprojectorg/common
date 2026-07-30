@@ -2,15 +2,6 @@ import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
-import { Field, FieldError, FieldLabel } from '@op/sense/Field';
-import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@op/sense/Select';
 import { toast } from '@op/sense/Sonner';
 import { type ComponentProps, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -71,6 +62,7 @@ export const OrganizationFormFields = ({
     defaultValues,
     canSubmitWhenInvalid: true,
     validators: {
+      onChange: createOrganizationFormValidator(t),
       onSubmit: createOrganizationFormValidator(t),
     },
     onSubmit: async ({ value }) => {
@@ -165,14 +157,7 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="name"
         children={(field) => (
-          <field.TextField
-            label={t('Organization Name')}
-            isRequired
-            value={field.state.value as string}
-            onBlur={field.handleBlur}
-            onChange={field.handleChange}
-            errorMessage={getFieldErrorMessage(field)}
-          />
+          <field.TextField label={t('Organization Name')} isRequired />
         )}
       />
 
@@ -182,20 +167,14 @@ export const OrganizationFormFields = ({
           <field.TextField
             label={t('Website')}
             isRequired
-            value={field.state.value as string}
-            onBlur={field.handleBlur}
-            onChange={field.handleChange}
-            inputProps={{
-              icon: <LuLink className="size-4 text-neutral-black" />,
-              placeholder: t("Enter your organization's website here"),
-              // Not `type="url"`: our zodUrl validation accepts a bare domain
-              // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
-              // browser's native URL validation rejects the scheme-less value
-              // and silently blocks form submission. `inputMode` keeps the
-              // URL-optimized keyboard without that native constraint.
-              inputMode: 'url',
-            }}
-            errorMessage={getFieldErrorMessage(field)}
+            icon={<LuLink className="size-4 text-neutral-black" />}
+            placeholder={t("Enter your organization's website here")}
+            // Not `type="url"`: our zodUrl validation accepts a bare domain
+            // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
+            // browser's native URL validation rejects the scheme-less value
+            // and silently blocks form submission. `inputMode` keeps the
+            // URL-optimized keyboard without that native constraint.
+            inputMode="url"
           />
         )}
       />
@@ -203,15 +182,7 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="email"
         children={(field) => (
-          <field.TextField
-            label={t('Email')}
-            isRequired
-            type="email"
-            value={field.state.value as string}
-            onBlur={field.handleBlur}
-            onChange={field.handleChange}
-            errorMessage={getFieldErrorMessage(field)}
-          />
+          <field.TextField label={t('Email')} isRequired type="email" />
         )}
       />
 
@@ -228,61 +199,28 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="orgType"
-        children={(field) => {
-          const errorMessage = getFieldErrorMessage(field);
-          return (
-            <Field data-invalid={!!errorMessage}>
-              <FieldLabel htmlFor="orgType">
-                {t('Organizational Status')}
-                <RequiredAsterisk />
-              </FieldLabel>
-              <Select
-                value={field.state.value as string}
-                onValueChange={(value) => field.handleChange(value)}
-                required
-                items={{
-                  nonprofit: t('Nonprofit'),
-                  forprofit: t('Forprofit'),
-                  government: t('Government Entity'),
-                }}
-              >
-                <SelectTrigger
-                  id="orgType"
-                  className="w-full"
-                  onBlur={field.handleBlur}
-                  aria-invalid={!!errorMessage}
-                >
-                  <SelectValue placeholder={t('Select')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nonprofit">{t('Nonprofit')}</SelectItem>
-                  <SelectItem value="forprofit">{t('Forprofit')}</SelectItem>
-                  <SelectItem value="government">
-                    {t('Government Entity')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-            </Field>
-          );
-        }}
+        children={(field) => (
+          <field.Select
+            label={t('Organizational Status')}
+            isRequired
+            placeholder={t('Select')}
+            options={[
+              { value: 'nonprofit', label: t('Nonprofit') },
+              { value: 'forprofit', label: t('Forprofit') },
+              { value: 'government', label: t('Government Entity') },
+            ]}
+          />
+        )}
       />
 
       <form.AppField
         name="bio"
         children={(field) => (
-          <field.TextField
-            useTextArea
+          <field.TextArea
             isRequired
             label={t('Organization headline')}
-            value={field.state.value as string}
-            onBlur={field.handleBlur}
-            onChange={field.handleChange}
-            errorMessage={getFieldErrorMessage(field)}
-            textareaProps={{
-              className: 'min-h-28',
-              placeholder: t('Enter a brief description for your organization'),
-            }}
+            className="min-h-28"
+            placeholder={t('Enter a brief description for your organization')}
           />
         )}
       />
@@ -290,18 +228,10 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="mission"
         children={(field) => (
-          <field.TextField
-            useTextArea
+          <field.TextArea
             label={t('Mission statement')}
-            value={field.state.value as string}
-            onBlur={field.handleBlur}
-            onChange={field.handleChange}
-            errorMessage={getFieldErrorMessage(field)}
-            className="min-h-24"
-            textareaProps={{
-              className: 'min-h-28',
-              placeholder: t('Enter your mission statement or a brief bio'),
-            }}
+            className="min-h-28"
+            placeholder={t('Enter your mission statement or a brief bio')}
           />
         )}
       />
@@ -349,17 +279,12 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="networkOrganization"
         children={(field) => (
-          <ToggleRow>
-            {t(
+          <ToggleRow
+            label={t(
               'Does your organization serve as a network or coalition with member organizations?',
             )}
-            <field.ToggleButton
-              isSelected={field.state.value as boolean}
-              onChange={field.handleChange}
-              aria-label={t(
-                'Does your organization serve as a network or coalition with member organizations?',
-              )}
-            />
+          >
+            <field.Switch />
           </ToggleRow>
         )}
       />

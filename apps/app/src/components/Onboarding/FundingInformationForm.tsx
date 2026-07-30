@@ -1,5 +1,4 @@
 import { zodUrl } from '@op/common/validation';
-import { Switch } from '@op/sense/Switch';
 import type { ComponentProps } from 'react';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
@@ -89,6 +88,7 @@ export const FundingInformationForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
@@ -106,13 +106,8 @@ export const FundingInformationForm = ({
           name="isReceivingFunds"
           children={(field) => (
             <>
-              <ToggleRow>
-                <span>{t('Is your organization seeking funding?')}</span>
-
-                <Switch
-                  checked={field.state.value as boolean}
-                  onCheckedChange={(checked) => field.handleChange(checked)}
-                />
+              <ToggleRow label={t('Is your organization seeking funding?')}>
+                <field.Switch />
               </ToggleRow>
               {field.state.value ? (
                 <div className="flex flex-col gap-4">
@@ -137,16 +132,10 @@ export const FundingInformationForm = ({
                           label={t(
                             'Where can people contribute to your organization?',
                           )}
-                          value={field.state.value as string}
-                          onBlur={field.handleBlur}
-                          onChange={field.handleChange}
-                          errorMessage={getFieldErrorMessage(field)}
-                          inputProps={{
-                            icon: (
-                              <LuLink className="size-4 text-neutral-black" />
-                            ),
-                            placeholder: t('Add your contribution page here'),
-                          }}
+                          icon={
+                            <LuLink className="size-4 text-neutral-black" />
+                          }
+                          placeholder={t('Add your contribution page here')}
                         />
                         <span className="text-sm text-neutral-gray4">
                           {t(
@@ -168,12 +157,8 @@ export const FundingInformationForm = ({
           name="isOfferingFunds"
           children={(field) => (
             <>
-              <ToggleRow>
-                <span>{t('Does your organization offer funding?')}</span>
-                <Switch
-                  checked={field.state.value as boolean}
-                  onCheckedChange={(checked) => field.handleChange(checked)}
-                />
+              <ToggleRow label={t('Does your organization offer funding?')}>
+                <field.Switch />
               </ToggleRow>
 
               {field.state.value ? (
@@ -207,23 +192,18 @@ export const FundingInformationForm = ({
                                     ? t('Where can organizations apply?')
                                     : t('Where can organizations learn more?')
                                 }
-                                value={field.state.value as string}
-                                onBlur={field.handleBlur}
-                                onChange={field.handleChange}
-                                errorMessage={getFieldErrorMessage(field)}
-                                inputProps={{
-                                  placeholder: acceptingApplicationsField.state
-                                    .value
+                                icon={
+                                  <LuLink className="size-4 text-neutral-black" />
+                                }
+                                placeholder={
+                                  acceptingApplicationsField.state.value
                                     ? t(
                                         'Add a link where organizations can apply for funding',
                                       )
                                     : t(
                                         'Add a link to learn more about your funding process',
-                                      ),
-                                  icon: (
-                                    <LuLink className="size-4 text-neutral-black" />
-                                  ),
-                                }}
+                                      )
+                                }
                               />
                               <span className="text-sm text-neutral-gray4">
                                 {acceptingApplicationsField.state.value
@@ -245,7 +225,7 @@ export const FundingInformationForm = ({
         />
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-          <form.Button color="secondary" onPress={onBack}>
+          <form.Button variant="secondary" onClick={onBack}>
             {t('Back')}
           </form.Button>
           <form.SubmitButton>{t('Continue')}</form.SubmitButton>

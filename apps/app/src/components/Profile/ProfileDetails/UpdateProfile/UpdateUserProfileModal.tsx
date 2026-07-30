@@ -2,9 +2,14 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import type { Profile } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
 import { useRef, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';
 
@@ -32,18 +37,19 @@ export const UpdateUserProfileModal = ({
   }
 
   return (
-    <DialogTrigger>
-      <Button
-        onPress={() => setIsOpen(true)}
-        color="primary"
-        className="min-w-full sm:min-w-fit"
-      >
-        <LuPencil className="size-4" />
-        {t('Edit Profile')}
-      </Button>
-      <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
-        <ModalHeader>{t('Edit Profile')}</ModalHeader>
-
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger
+        render={
+          <Button className="min-w-full sm:min-w-fit">
+            <LuPencil className="size-4" />
+            {t('Edit Profile')}
+          </Button>
+        }
+      />
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t('Edit Profile')}</DialogTitle>
+        </DialogHeader>
         {user.currentProfile && (
           <UpdateProfileForm
             ref={formRef}
@@ -52,7 +58,7 @@ export const UpdateUserProfileModal = ({
             className="p-6"
           />
         )}
-      </Modal>
-    </DialogTrigger>
+      </DialogContent>
+    </Dialog>
   );
 };
