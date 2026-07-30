@@ -3,6 +3,8 @@ import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Sonner';
 import { useCallback, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export interface FilePreview {
   id: string;
   file: File;
@@ -38,6 +40,7 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
     maxSizePerFile = DEFAULT_MAX_SIZE,
   } = options ?? {};
 
+  const t = useTranslations();
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -45,12 +48,14 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
-      return `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`;
+      return t('That file type is not supported. Accepted types: {types}', {
+        types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
+      });
     }
 
     if (file.size > maxSizePerFile) {
       const maxSizeMB = (maxSizePerFile / 1024 / 1024).toFixed(2);
-      return `File too large. Maximum size: ${maxSizeMB}MB`;
+      return t('File too large. Maximum size: {size}MB', { size: maxSizeMB });
     }
     return null;
   };
@@ -66,7 +71,7 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   }> => {
     const validationError = validateFile(file);
     if (validationError) {
-      toast.error("That didn't work", { description: validationError });
+      toast.error(t("That didn't work"), { description: validationError });
       throw new Error(validationError);
     }
 
@@ -101,10 +106,10 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
           mimeType: file.type,
         })
         .catch((err) => {
-          toast.error("That didn't work", {
+          toast.error(t("That didn't work"), {
             description:
               err?.message ??
-              'Something went wrong on our end. Please try again',
+              t('Something went wrong on our end. Please try again'),
           });
           throw err;
         });

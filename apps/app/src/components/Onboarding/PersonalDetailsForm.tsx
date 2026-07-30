@@ -206,6 +206,7 @@ export const PersonalDetailsForm = ({
             value={avatarUpload.url}
             onChange={avatarUpload.upload}
             uploading={avatarUpload.isUploading}
+            error={avatarUpload.uploadError}
           />
         </div>
         <form.AppField
