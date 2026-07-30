@@ -12,6 +12,7 @@ import { ReactNode, Suspense, forwardRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import { FormContainer } from '../../../form/FormContainer';
 import { useAppForm } from '../../../form/utils';
@@ -97,7 +98,7 @@ export const BaseUpdateProfileForm = forwardRef<
       },
       validators: {
         // @ts-expect-error - zodUrl is not returning the right type here
-        onSubmit: validator,
+        onSubmit: createValidator(t),
       },
       onSubmit: async ({ value }: { value: FormFields }) => {
         await onSubmit(value);
@@ -255,44 +256,79 @@ export const BaseUpdateProfileForm = forwardRef<
 
 BaseUpdateProfileForm.displayName = 'BaseUpdateProfileForm';
 
+// Translated validator used at runtime (errors via t()).
+export const createValidator = (t: TranslateFn) =>
+  z
+    .object({
+      fullName: z
+        .string({
+          error: t('Enter your full name'),
+        })
+        .trim()
+        .min(1, {
+          error: t('Enter your full name'),
+        })
+        .max(200, {
+          error: t('Must be at most 200 characters'),
+        }),
+      title: z
+        .string({
+          error: t('Enter your professional title'),
+        })
+        .trim()
+        .min(1, {
+          error: t('Enter your professional title'),
+        })
+        .max(200, {
+          error: t('Must be at most 200 characters'),
+        }),
+      pronouns: z.string().trim().optional(),
+      customPronouns: z.string().trim().optional(),
+      email: z
+        .email({ error: t('Enter a valid email address') })
+        .trim()
+        .refine((val) => val.length <= 255, {
+          error: t('Must be at most 255 characters'),
+        }),
+      website: zodUrl({
+        error: t('Enter a valid website address'),
+      }),
+      focusAreas: z
+        .array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+          }),
+        )
+        .optional(),
+    })
+    .refine(
+      (data) => {
+        // If pronouns is "custom" require custom pronouns
+        if (data.pronouns === 'custom') {
+          return data.customPronouns && data.customPronouns.trim().length > 0;
+        }
+        return true;
+      },
+      {
+        message: t('Please provide your custom pronouns'),
+        path: ['customPronouns'],
+      },
+    );
+
+// Untranslated fallback — the source of truth for the FormFields type and any
+// external (non-React) callers that can't supply a `t`.
 export const validator = z
   .object({
-    fullName: z
-      .string({
-        error: 'Enter your full name',
-      })
-      .trim()
-      .min(1, {
-        error: 'Enter your full name',
-      })
-      .max(200, {
-        error: 'Must be at most 200 characters',
-      }),
-    title: z
-      .string({
-        error: 'Enter your professional title',
-      })
-      .trim()
-      .min(1, {
-        error: 'Enter your professional title',
-      })
-      .max(200, {
-        error: 'Must be at most 200 characters',
-      }),
+    fullName: z.string().trim().min(1).max(200),
+    title: z.string().trim().min(1).max(200),
     pronouns: z.string().trim().optional(),
     customPronouns: z.string().trim().optional(),
     email: z
       .email()
       .trim()
-      .refine((val) => val === '' || z.email().safeParse(val).success, {
-        error: 'Invalid email',
-      })
-      .refine((val) => val.length <= 255, {
-        error: 'Must be at most 255 characters',
-      }),
-    website: zodUrl({
-      error: 'Enter a valid website address',
-    }),
+      .refine((val) => val.length <= 255),
+    website: zodUrl({ error: 'Enter a valid website address' }),
     focusAreas: z
       .array(
         z.object({
@@ -304,16 +340,12 @@ export const validator = z
   })
   .refine(
     (data) => {
-      // If pronouns is "custom" require custom pronouns
       if (data.pronouns === 'custom') {
         return data.customPronouns && data.customPronouns.trim().length > 0;
       }
       return true;
     },
-    {
-      message: 'Please provide your custom pronouns',
-      path: ['customPronouns'],
-    },
+    { path: ['customPronouns'] },
   );
 
 export type FormFields = z.infer<typeof validator>;

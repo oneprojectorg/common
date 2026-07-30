@@ -48,40 +48,30 @@ export const getFieldErrorMessage = (
   field: AnyFieldApi,
   { requireBlur = false }: { requireBlur?: boolean } = {},
 ): string | undefined => {
-  const { isTouched, isBlurred, errors, errorMap } = field.state.meta;
+  const { isTouched, isBlurred, errorMap } = field.state.meta;
 
-  // Once a submit is attempted, show errors regardless of touch/blur — the
-  // whole form has been "acted on", so gating on per-field interaction would
-  // silently swallow validation on the Submit click.
+  // Gate on interaction — unless a submit was attempted, in which case the
+  // whole form has been "acted on" and every invalid field should surface
+  // (otherwise hitting Submit on an untouched invalid form does nothing).
   const submitted =
     ((field.form?.state as { submissionAttempts?: number } | undefined)
       ?.submissionAttempts ?? 0) > 0;
-  if (submitted) {
-    return formatErrors(errors);
-  }
-
-  if (requireBlur) {
-    if (!isBlurred) {
-      return undefined;
-    }
-    // After blur, use errorMap.onChange as the source of truth when available.
-    // It reflects the current value's validity in real-time and avoids
-    // showing stale onBlur errors after the user types a valid value.
-    // The value is an array of Zod issue objects from form-level validation.
-    if ('onChange' in errorMap) {
-      const raw = errorMap.onChange;
-      if (!raw) {
-        return undefined;
-      }
-      return formatErrors(Array.isArray(raw) ? raw : [raw]);
-    }
-    // onChange hasn't run yet (e.g., user tabbed through without typing) —
-    // fall through to flat errors below.
-  } else if (!isTouched) {
+  if (!submitted && (requireBlur ? !isBlurred : !isTouched)) {
     return undefined;
   }
 
-  return formatErrors(errors);
+  // Single source of truth: prefer the live onChange result (reflects the
+  // current value in real time), then onSubmit, then onBlur. Never merge the
+  // flat `errors` list — the same failure logged by multiple validator
+  // lifecycles would double up ("Invalid email, Invalid email address").
+  const raw =
+    'onChange' in errorMap
+      ? errorMap.onChange
+      : (errorMap.onSubmit ?? errorMap.onBlur);
+  if (!raw) {
+    return undefined;
+  }
+  return formatErrors(Array.isArray(raw) ? raw : [raw]);
 };
 
 const { fieldContext, formContext, useFieldContext } = createFormHookContexts();

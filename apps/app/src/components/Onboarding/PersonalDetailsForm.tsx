@@ -48,11 +48,8 @@ export const createValidator = (t: TranslateFn) =>
         .optional(),
       customPronouns: z.string().optional(),
       email: z
-        .email()
+        .email({ error: t('Enter a valid email address') })
         .trim()
-        .refine((val) => val === '' || z.email().safeParse(val).success, {
-          message: t('Invalid email'),
-        })
         .refine((val) => val.length <= 255, {
           message: t('Must be at most 255 characters'),
         }),
