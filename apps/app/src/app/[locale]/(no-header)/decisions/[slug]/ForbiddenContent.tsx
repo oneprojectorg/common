@@ -2,15 +2,15 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { Header1, Header2 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/sense/Button';
+import { Header1, Header2 } from '@op/sense/Header';
+import { toast } from '@op/sense/Sonner';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '@/components/ButtonLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { DecisionInvitesSkeleton } from '@/components/Onboarding/DecisionInvitesSkeleton';
 import { DecisionInviteCard } from '@/components/decisions/DecisionInviteCard';
@@ -22,14 +22,12 @@ const NoAccessMessage = () => {
   return (
     <div className="flex size-full flex-col items-center justify-center gap-4 text-center">
       <Header1>{t("You don't have access to this page")}</Header1>
-      <p className="text-neutral-gray4">
+      <p className="text-muted-foreground">
         {t(
           'Contact the person who shared this link if you think this is a mistake.',
         )}
       </p>
-      <ButtonLink href="/" color="primary">
-        {t('Go to Common')}
-      </ButtonLink>
+      <ButtonLink href="/">{t('Go to Common')}</ButtonLink>
     </div>
   );
 };
@@ -54,9 +52,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.reload();
     },
     onError: () => {
-      toast.error({
-        message: t('Failed to accept invitations'),
-      });
+      toast.error(t('Failed to accept invitations'));
     },
   });
 
@@ -65,9 +61,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.href = '/';
     },
     onError: () => {
-      toast.error({
-        message: t('Failed to decline invitation'),
-      });
+      toast.error(t('Failed to decline invitation'));
     },
   });
 
@@ -86,12 +80,12 @@ const ForbiddenWithInviteCheck = () => {
       <div className="flex w-full max-w-lg flex-col justify-center">
         <FormContainer className="gap-6">
           <div className="flex flex-col gap-2 text-center">
-            <Header1 className="font-serif">
+            <Header1>
               {t('Join {processInstanceName}', {
                 processInstanceName: matchingInvite.profile?.name,
               })}
             </Header1>
-            <Header2 className="font-sans text-neutral-gray4">
+            <Header2 className="font-sans text-muted-foreground">
               {t('A decision-making process stewarded by {stewardName}.', {
                 stewardName: steward?.name ?? '',
               })}
@@ -111,26 +105,24 @@ const ForbiddenWithInviteCheck = () => {
           <div className="flex flex-col items-center gap-2">
             <Button
               className="w-full"
-              onPress={() =>
+              onClick={() =>
                 acceptInvite.mutate({ inviteId: matchingInvite.id })
               }
-              isDisabled={acceptInvite.isPending || declineInvite.isPending}
+              disabled={acceptInvite.isPending || declineInvite.isPending}
+              loading={acceptInvite.isPending}
             >
-              {acceptInvite.isPending ? <LoadingSpinner /> : t('Accept')}
+              {t('Accept')}
             </Button>
             <Button
-              unstyled
-              className="h-10 px-2 py-2.5 text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
-              onPress={() =>
+              variant="link"
+              className="h-auto p-0 text-sm font-normal text-primary-teal underline hover:text-primary-teal/80"
+              onClick={() =>
                 declineInvite.mutate({ inviteId: matchingInvite.id })
               }
-              isDisabled={acceptInvite.isPending || declineInvite.isPending}
+              disabled={acceptInvite.isPending || declineInvite.isPending}
+              loading={declineInvite.isPending}
             >
-              {declineInvite.isPending ? (
-                <LoadingSpinner />
-              ) : (
-                t("I don't want to participate")
-              )}
+              {t("I don't want to participate")}
             </Button>
           </div>
         </FormContainer>
