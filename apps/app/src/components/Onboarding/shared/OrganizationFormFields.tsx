@@ -62,6 +62,7 @@ export const OrganizationFormFields = ({
     defaultValues,
     canSubmitWhenInvalid: true,
     validators: {
+      onChange: createOrganizationFormValidator(t),
       onSubmit: createOrganizationFormValidator(t),
     },
     onSubmit: async ({ value }) => {

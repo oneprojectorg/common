@@ -249,10 +249,17 @@ const SelectField = ({
         items={items}
         value={field.state.value ?? ''}
         onValueChange={(value) => field.handleChange(String(value))}
+        // Mark blurred when the popup closes, NOT on the trigger's DOM blur —
+        // opening the Select moves focus into the listbox and would otherwise
+        // flip isBlurred, showing a "required" error before any selection.
+        onOpenChange={(open) => {
+          if (!open) {
+            field.handleBlur();
+          }
+        }}
         disabled={disabled}
       >
         <SelectTrigger
-          onBlur={field.handleBlur}
           size={toSelectSize(size)}
           aria-required={isRequired || undefined}
           aria-invalid={error ? true : undefined}

@@ -145,6 +145,7 @@ export const PersonalDetailsForm = ({
       bannerImageUrl: personalDetails?.bannerImageUrl ?? '',
     },
     validators: {
+      onChange: createValidator(t) as any,
       onSubmit: createValidator(t) as any,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {

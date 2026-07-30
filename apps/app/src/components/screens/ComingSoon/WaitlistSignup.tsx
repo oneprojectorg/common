@@ -112,6 +112,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           return;
         }
       },
+      onChange: validator,
       onSubmit: validator,
     },
   });
