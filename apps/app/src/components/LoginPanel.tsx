@@ -155,7 +155,7 @@ export const LoginPanel = () => {
       }
       return (
         <div className="flex flex-col gap-2">
-          <span className="font-sans text-base tracking-normal text-muted-foreground">
+          <span className="font-sans text-base font-normal tracking-normal text-muted-foreground">
             {t('Welcome to')}
           </span>
           <span>
