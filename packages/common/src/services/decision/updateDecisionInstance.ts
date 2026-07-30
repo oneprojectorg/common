@@ -17,6 +17,11 @@ import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
+import {
+  type CategoryRename,
+  detectCategoryRenames,
+  reconcileCategoryRenames,
+} from './reconcileCategoryRename';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -108,6 +113,11 @@ export const updateDecisionInstance = async ({
     }
   }
 
+  // Category renames detected in this update (same config-local `id`, new
+  // label). Collected while merging config, then applied inside the write
+  // transaction so the re-point commits with the config that caused it.
+  const categoryRenames: CategoryRename[] = [];
+
   // Build update data
   const updateData: Record<string, unknown> = {};
 
@@ -172,6 +182,15 @@ export const updateDecisionInstance = async ({
       const categories = normalizedCategories.map((category) => category.label);
 
       await ensureProposalTaxonomyTerms(categories);
+
+      // The new terms now exist; the transaction re-points this instance's
+      // category-keyed rows from each old term to its replacement.
+      categoryRenames.push(
+        ...detectCategoryRenames(
+          existingInstanceData.config?.categories ?? [],
+          normalizedCategories,
+        ),
+      );
 
       updatedInstanceData.config = {
         ...existingInstanceData.config,
@@ -291,6 +310,17 @@ export const updateDecisionInstance = async ({
 
     if (!updatedInstance) {
       throw new CommonError('Failed to update decision process instance');
+    }
+
+    // Re-point the category-keyed rows for any renamed categories so proposals
+    // tagged before the rename stay discoverable under the new label and their
+    // reviewers keep covering them.
+    if (categoryRenames.length > 0) {
+      await reconcileCategoryRenames({
+        tx,
+        instanceId,
+        renames: categoryRenames,
+      });
     }
 
     // Determine the final status (updated or existing)
