@@ -106,9 +106,7 @@ export const FundingInformationForm = ({
           name="isReceivingFunds"
           children={(field) => (
             <>
-              <ToggleRow>
-                <span>{t('Is your organization seeking funding?')}</span>
-
+              <ToggleRow label={t('Is your organization seeking funding?')}>
                 <field.Switch />
               </ToggleRow>
               {field.state.value ? (
@@ -159,8 +157,7 @@ export const FundingInformationForm = ({
           name="isOfferingFunds"
           children={(field) => (
             <>
-              <ToggleRow>
-                <span>{t('Does your organization offer funding?')}</span>
+              <ToggleRow label={t('Does your organization offer funding?')}>
                 <field.Switch />
               </ToggleRow>
 

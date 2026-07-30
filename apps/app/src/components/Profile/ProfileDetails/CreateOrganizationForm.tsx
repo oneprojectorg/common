@@ -361,15 +361,12 @@ export const CreateOrganizationForm = forwardRef<
         <form.AppField
           name="networkOrganization"
           children={(field) => (
-            <ToggleRow>
-              {t(
+            <ToggleRow
+              label={t(
                 'Does your organization serve as a network or coalition with member organizations?',
               )}
-              <field.Switch
-                aria-label={t(
-                  'Does your organization serve as a network or coalition with member organizations?',
-                )}
-              />
+            >
+              <field.Switch />
             </ToggleRow>
           )}
         />
@@ -381,8 +378,7 @@ export const CreateOrganizationForm = forwardRef<
             name="isReceivingFunds"
             children={(field) => (
               <>
-                <ToggleRow>
-                  <span>{t('Is your organization seeking funding?')}</span>
+                <ToggleRow label={t('Is your organization seeking funding?')}>
                   <field.Switch />
                 </ToggleRow>
                 {field.state.value ? (
@@ -433,8 +429,7 @@ export const CreateOrganizationForm = forwardRef<
             name="isOfferingFunds"
             children={(field) => (
               <>
-                <ToggleRow>
-                  <span>{t('Does your organization offer funding?')}</span>
+                <ToggleRow label={t('Does your organization offer funding?')}>
                   <field.Switch />
                 </ToggleRow>
 
@@ -443,10 +438,11 @@ export const CreateOrganizationForm = forwardRef<
                     name="acceptingApplications"
                     children={(acceptingApplicationsField) => (
                       <>
-                        <ToggleRow>
-                          {t(
+                        <ToggleRow
+                          label={t(
                             'Are organizations currently able to apply for funding?',
                           )}
+                        >
                           <acceptingApplicationsField.Switch />
                         </ToggleRow>
                         <div className="flex flex-col gap-4">

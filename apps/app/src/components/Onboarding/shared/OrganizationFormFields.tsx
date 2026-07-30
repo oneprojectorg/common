@@ -279,15 +279,12 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="networkOrganization"
         children={(field) => (
-          <ToggleRow>
-            {t(
+          <ToggleRow
+            label={t(
               'Does your organization serve as a network or coalition with member organizations?',
             )}
-            <field.Switch
-              aria-label={t(
-                'Does your organization serve as a network or coalition with member organizations?',
-              )}
-            />
+          >
+            <field.Switch />
           </ToggleRow>
         )}
       />

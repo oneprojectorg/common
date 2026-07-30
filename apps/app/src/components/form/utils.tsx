@@ -236,15 +236,13 @@ const SelectField = ({
   // Value->label map so base-ui's SelectValue renders the label, not the id.
   const items = Object.fromEntries(options.map((o) => [o.value, o.label]));
 
-  // Names the trigger (a base-ui combobox button) — base-ui doesn't wire the
-  // label to the control the way React Aria did, so without this axe flags
-  // button-name.
-  const labelId = label ? `${field.name}-label` : undefined;
-
   return (
     <Field className={className}>
       {label ? (
-        <FieldLabel id={labelId}>
+        // htmlFor -> the trigger id names the combobox button (a labelable
+        // element), so the <label> associates cleanly (no orphan label) and
+        // axe's button-name is satisfied.
+        <FieldLabel htmlFor={field.name}>
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLabel>
@@ -265,8 +263,8 @@ const SelectField = ({
         disabled={disabled}
       >
         <SelectTrigger
+          id={field.name}
           size={toSelectSize(size)}
-          aria-labelledby={labelId}
           aria-required={isRequired || undefined}
           aria-invalid={error ? true : undefined}
           className="w-full"

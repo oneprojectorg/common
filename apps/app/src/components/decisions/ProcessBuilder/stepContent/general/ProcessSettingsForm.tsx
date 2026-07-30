@@ -11,10 +11,10 @@ import type { TranslateFn } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
-import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { useAppForm } from '@/components/form/utils';
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 const createProcessSettingsValidator = (t: TranslateFn) =>
   z.object({
