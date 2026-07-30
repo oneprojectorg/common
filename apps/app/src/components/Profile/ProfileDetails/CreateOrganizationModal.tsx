@@ -1,8 +1,12 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
@@ -53,14 +57,18 @@ export const CreateOrganizationModal = ({
 
   return (
     <>
-      <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen} isDismissable>
-        <ModalHeader>{t('Create Organization')}</ModalHeader>
-        <CreateOrganizationForm
-          onSubmit={onSubmit}
-          onError={onError}
-          className="p-6"
-        />
-      </Modal>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('Create Organization')}</DialogTitle>
+          </DialogHeader>
+          <CreateOrganizationForm
+            onSubmit={onSubmit}
+            onError={onError}
+            className="p-6"
+          />
+        </DialogContent>
+      </Dialog>
       <CreateOrganizationSuccessModal
         isOpen={isSuccessOpen}
         organizationName={orgName}
@@ -71,15 +79,18 @@ export const CreateOrganizationModal = ({
 
 export const CreateOrganizationModalTrigger = () => {
   const t = useTranslations();
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <>
-      <DialogTrigger>
-        <Button color="primary" className="min-w-full sm:min-w-fit">
-          <LuPlus className="size-4" />
-          {t('Create Organization')}
-        </Button>
-        <CreateOrganizationModal />
-      </DialogTrigger>
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="min-w-full sm:min-w-fit"
+      >
+        <LuPlus className="size-4" />
+        {t('Create Organization')}
+      </Button>
+      <CreateOrganizationModal isOpen={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 };
