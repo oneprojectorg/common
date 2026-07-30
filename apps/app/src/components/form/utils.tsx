@@ -122,7 +122,7 @@ const TextField = ({
         value={field.state.value ?? ''}
         onChange={(e) => field.handleChange(e.target.value)}
         onBlur={field.handleBlur}
-        required={isRequired}
+        aria-required={isRequired || undefined}
         aria-invalid={invalid}
         {...inputProps}
       />
@@ -134,7 +134,7 @@ const TextField = ({
       value={field.state.value ?? ''}
       onChange={(e) => field.handleChange(e.target.value)}
       onBlur={field.handleBlur}
-      required={isRequired}
+      aria-required={isRequired || undefined}
       aria-invalid={invalid}
       {...inputProps}
     />
@@ -191,7 +191,7 @@ const TextAreaField = ({
         value={field.state.value ?? ''}
         onChange={(e) => field.handleChange(e.target.value)}
         onBlur={field.handleBlur}
-        required={isRequired}
+        aria-required={isRequired || undefined}
         aria-invalid={error ? true : undefined}
         // className routes to the control so consumers can size the textarea
         // (e.g. min-h-*), not just the field wrapper.
@@ -249,12 +249,12 @@ const SelectField = ({
         items={items}
         value={field.state.value ?? ''}
         onValueChange={(value) => field.handleChange(String(value))}
-        required={isRequired}
         disabled={disabled}
       >
         <SelectTrigger
           onBlur={field.handleBlur}
           size={toSelectSize(size)}
+          aria-required={isRequired || undefined}
           aria-invalid={error ? true : undefined}
           className="w-full"
         >
