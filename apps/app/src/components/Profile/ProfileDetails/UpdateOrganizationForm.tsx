@@ -18,6 +18,8 @@ import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { createOrganizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
+
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
@@ -190,6 +192,10 @@ export const UpdateOrganizationForm = forwardRef<
 
   const form = useAppForm({
     defaultValues: initialData,
+    validators: {
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onSubmit: createOrganizationFormValidator(t),
+    },
     onSubmit: async ({ value }) => {
       await submitUpdate(value);
     },

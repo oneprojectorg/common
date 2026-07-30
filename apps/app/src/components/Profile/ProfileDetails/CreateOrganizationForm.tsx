@@ -16,7 +16,7 @@ import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { organizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
+import { createOrganizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
 import { sendOnboardingAnalytics } from '@/components/Onboarding/utils';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
@@ -117,7 +117,7 @@ export const CreateOrganizationForm = forwardRef<
       await submitCreate(value);
     },
     validators: {
-      onSubmit: organizationFormValidator,
+      onSubmit: createOrganizationFormValidator(t),
     },
   });
 
