@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import { proposalReviewAssignments } from '@op/db/schema';
 
 export interface AssignableProposal {
@@ -18,16 +18,19 @@ export interface AssignableProposal {
  * self-review — and inserts them. `onConflictDoNothing` on the (instance,
  * proposal, reviewer, phase) unique constraint makes re-runs safe and dedupes
  * overlapping per-proposal sets. Returns the number of rows inserted. Shared
- * by generation and backfill.
+ * by generation, backfill, and the on-change reconciler — the optional `db`
+ * client lets a caller run the insert inside its own transaction.
  */
 export async function insertReviewAssignments({
   instanceId,
   phaseId,
   assignableProposals,
+  db = defaultDb,
 }: {
   instanceId: string;
   phaseId: string;
   assignableProposals: AssignableProposal[];
+  db?: DbClient;
 }): Promise<number> {
   const values = assignableProposals.flatMap((proposal) =>
     proposal.reviewerProfileIds

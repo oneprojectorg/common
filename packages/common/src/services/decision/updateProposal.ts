@@ -26,6 +26,7 @@ import type {
   ProposalDataInput,
 } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
+import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
@@ -224,6 +225,14 @@ export const updateProposal = async ({
     // Mirror the resolved category set (manual + district) into the junction.
     if (categoryLabels) {
       await setProposalCategories({ tx, proposalId, labels: categoryLabels });
+      // Reconcile this proposal's by-category assignments in the same tx so a
+      // category change can't commit and leave stale assignments behind:
+      // add reviewers for new categories, prune pending for dropped ones.
+      await reconcileReviewAssignments({
+        db: tx,
+        instanceId: processInstance.id,
+        affected: { proposalIds: [proposalId] },
+      });
     }
 
     const proposal = await tx.query.proposals.findFirst({

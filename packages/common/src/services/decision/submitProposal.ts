@@ -12,6 +12,7 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
+import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -221,6 +222,15 @@ export const submitProposal = async ({
         tx,
         proposalId: submittedProposal.id,
         labels: categoryLabels,
+      });
+      // Keep by-category assignments consistent with the freshly-persisted
+      // categories, in the same tx. Normally a no-op here — submission happens
+      // before the review phase — but correct if this proposal is already in a
+      // live by_category review phase.
+      await reconcileReviewAssignments({
+        db: tx,
+        instanceId: instance.id,
+        affected: { proposalIds: [submittedProposal.id] },
       });
     }
 

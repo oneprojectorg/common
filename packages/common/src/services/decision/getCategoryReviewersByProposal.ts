@@ -1,4 +1,12 @@
-import { and, db, eq, inArray, isNull, or } from '@op/db/client';
+import {
+  type DbClient,
+  and,
+  db as defaultDb,
+  eq,
+  inArray,
+  isNull,
+  or,
+} from '@op/db/client';
 import { categoryReviewers, proposalCategories } from '@op/db/schema';
 
 /**
@@ -10,15 +18,21 @@ import { categoryReviewers, proposalCategories } from '@op/db/schema';
  * user action). Callers MUST still intersect with getEligibleReviewerProfileIds
  * — a scope row alone grants nothing (fail-closed). Scope rows resolve
  * instance-wide (`phaseId IS NULL`) unioned with rows for this review phase.
+ *
+ * The optional `db` client lets the reconciler run this join inside the same
+ * transaction that just mutated `proposalCategories`, so it reads the new
+ * category set rather than the committed one.
  */
 export async function getCategoryReviewersByProposal({
   instanceId,
   phaseId,
   proposalIds,
+  db = defaultDb,
 }: {
   instanceId: string;
   phaseId: string;
   proposalIds: string[];
+  db?: DbClient;
 }): Promise<Map<string, Set<string>>> {
   const reviewersByProposalId = new Map<string, Set<string>>();
 
