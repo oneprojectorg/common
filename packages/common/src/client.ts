@@ -8,6 +8,7 @@ export * from './services/decision/schemas/reviews';
 // phase-level settings without pulling in the server-only utils barrel.
 export {
   getPhaseReviewSettings,
+  hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
   type ReviewSettings,

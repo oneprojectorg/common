@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getPhaseReviewSettings,
+  hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
 } from './phaseSettings';
@@ -36,6 +37,28 @@ describe('isVotingPhase', () => {
     expect(isVotingPhase({ rules: { voting: { submit: true } } })).toBe(true);
     expect(isVotingPhase({ rules: { voting: { submit: false } } })).toBe(false);
     expect(isVotingPhase({})).toBe(false);
+  });
+});
+
+describe('hasVotingPhase', () => {
+  it('returns true when any phase enables voting submission', () => {
+    expect(
+      hasVotingPhase([{ rules: {} }, { rules: { voting: { submit: true } } }]),
+    ).toBe(true);
+  });
+
+  it('returns false when no phase enables voting submission', () => {
+    expect(
+      hasVotingPhase([{ rules: {} }, { rules: { voting: { submit: false } } }]),
+    ).toBe(false);
+  });
+
+  it('returns false for phases with no rules', () => {
+    expect(hasVotingPhase([{}, {}])).toBe(false);
+  });
+
+  it('returns false for an empty phases array', () => {
+    expect(hasVotingPhase([])).toBe(false);
   });
 });
 
