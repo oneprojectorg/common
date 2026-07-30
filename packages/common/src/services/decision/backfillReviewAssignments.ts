@@ -2,11 +2,15 @@ import { db } from '@op/db/client';
 import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
 
+import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { insertReviewAssignments } from './insertReviewAssignments';
+import {
+  type AssignableProposal,
+  insertReviewAssignments,
+} from './insertReviewAssignments';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
-import { isReviewPhase } from './utils/phaseSettings';
+import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
 
 export interface BackfillReviewAssignmentsInput {
   instanceId: string;
@@ -107,15 +111,40 @@ export async function backfillReviewAssignments({
     ? eligibleReviewerProfileIds.filter((id) => reviewerProfileIds.includes(id))
     : eligibleReviewerProfileIds;
 
-  const inserted = await insertReviewAssignments({
-    instanceId,
-    phaseId: currentPhaseId,
-    reviewerProfileIds: targetReviewerIds,
-    assignableProposals: attachedProposals.map((row) => ({
+  const scope = getPhaseReviewSettings(instanceData, currentPhaseId).scope;
+
+  let assignableProposals: AssignableProposal[];
+  if (scope === 'by_category') {
+    // Only backfill proposals in categories the target reviewers are scoped to.
+    const scopedByProposal = await getCategoryReviewersByProposal({
+      instanceId,
+      phaseId: currentPhaseId,
+      proposalIds: attachedProposals.map((row) => row.proposalId),
+    });
+    const targetSet = new Set(targetReviewerIds);
+
+    assignableProposals = attachedProposals.map((row) => {
+      const scoped = scopedByProposal.get(row.proposalId) ?? new Set<string>();
+      return {
+        proposalId: row.proposalId,
+        submittedByProfileId: row.proposal.submittedByProfileId,
+        assignedProposalHistoryId: row.proposalHistoryId,
+        reviewerProfileIds: [...scoped].filter((id) => targetSet.has(id)),
+      };
+    });
+  } else {
+    assignableProposals = attachedProposals.map((row) => ({
       proposalId: row.proposalId,
       submittedByProfileId: row.proposal.submittedByProfileId,
       assignedProposalHistoryId: row.proposalHistoryId,
-    })),
+      reviewerProfileIds: targetReviewerIds,
+    }));
+  }
+
+  const inserted = await insertReviewAssignments({
+    instanceId,
+    phaseId: currentPhaseId,
+    assignableProposals,
   });
 
   return {

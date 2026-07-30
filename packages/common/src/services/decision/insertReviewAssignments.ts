@@ -5,27 +5,32 @@ export interface AssignableProposal {
   proposalId: string;
   submittedByProfileId: string | null;
   assignedProposalHistoryId: string | null;
+  /**
+   * The reviewers to assign this proposal. For `all` coverage the caller fans
+   * the shared eligible list into every proposal; for `by_category` each
+   * proposal carries only its category-scoped reviewers.
+   */
+  reviewerProfileIds: string[];
 }
 
 /**
- * Fans proposals × reviewers into assignment rows — excluding self-review —
- * and inserts them. `onConflictDoNothing` on the (instance, proposal,
- * reviewer, phase) unique constraint makes re-runs safe. Returns the number
- * of rows actually inserted. Shared by generation and backfill.
+ * Fans proposals × their reviewers into assignment rows — excluding
+ * self-review — and inserts them. `onConflictDoNothing` on the (instance,
+ * proposal, reviewer, phase) unique constraint makes re-runs safe and dedupes
+ * overlapping per-proposal sets. Returns the number of rows inserted. Shared
+ * by generation and backfill.
  */
 export async function insertReviewAssignments({
   instanceId,
   phaseId,
-  reviewerProfileIds,
   assignableProposals,
 }: {
   instanceId: string;
   phaseId: string;
-  reviewerProfileIds: string[];
   assignableProposals: AssignableProposal[];
 }): Promise<number> {
   const values = assignableProposals.flatMap((proposal) =>
-    reviewerProfileIds
+    proposal.reviewerProfileIds
       // NOTE: we should revisit this logic when we have multiple authors per proposal
       .filter((profileId) => profileId !== proposal.submittedByProfileId)
       .map((profileId) => ({
