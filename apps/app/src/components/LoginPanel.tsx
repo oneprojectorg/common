@@ -155,7 +155,9 @@ export const LoginPanel = () => {
       }
       return (
         <div className="flex flex-col gap-2">
-          <span className="sm:text-base">{t('Welcome to')}</span>
+          <span className="font-sans text-base tracking-normal text-muted-foreground">
+            {t('Welcome to')}
+          </span>
           <span>
             <CommonLogo className="h-8 w-auto" />
           </span>
@@ -215,7 +217,10 @@ export const LoginPanel = () => {
 
           {!loginSuccess ? (
             <AuthEmailField
-              label={t('Organization email')}
+              label={t('Email')}
+              description={t(
+                'Use the email address associated with your organization',
+              )}
               value={email}
               isDisabled={login.isFetching || loginSuccess || !!combinedError}
               onChange={(val) => {
@@ -308,7 +313,11 @@ export const LoginPanel = () => {
             ) : (
               <>
                 <span>{t("Don't have an account?")}</span>
-                <span>{t('We will automatically create one for you.')}</span>
+                <span>
+                  {t(
+                    'We’ll create one for you with your organization’s email.',
+                  )}
+                </span>
               </>
             )}
           </div>

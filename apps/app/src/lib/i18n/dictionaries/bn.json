@@ -1411,5 +1411,7 @@
   "You're already signed in. Reload the page to continue.": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।",
   "An account with this email already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
   "Join Common to comment on this proposal.": "এই প্রস্তাবে মন্তব্য করতে Common-এ যোগ দিন।",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "কলম্বাসের অংশগ্রহণমূলক বাজেট এখন উন্মুক্ত। <participate>অংশ নিন</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "কলম্বাসের অংশগ্রহণমূলক বাজেট এখন উন্মুক্ত। <participate>অংশ নিন</participate>",
+  "Use the email address associated with your organization": "আপনার সংস্থার সাথে যুক্ত ইমেল ঠিকানা ব্যবহার করুন",
+  "We’ll create one for you with your organization’s email.": "আমরা আপনার সংস্থার ইমেল দিয়ে আপনার জন্য একটি অ্যাকাউন্ট তৈরি করব।"
 }

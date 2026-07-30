@@ -1,9 +1,10 @@
 'use client';
 
 import { Button } from '@op/sense/Button';
-import { Field, FieldLabel } from '@op/sense/Field';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import React from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { create } from 'zustand';
@@ -83,12 +84,10 @@ export const AuthPanelShell = ({
   return (
     // TODO: using a tailwind v4 class here "min-w-xs"
     <div className="flex items-center justify-center sm:block">
-      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-gray4 xs:w-96 sm:border-0 sm:px-0">
+      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans xs:w-96 sm:border-0 sm:px-0">
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
-            <Header1 className="text-center text-neutral-black">
-              {title}
-            </Header1>
+            <Header1 className="text-center">{title}</Header1>
             <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
               {subtitle}
             </div>
@@ -133,6 +132,7 @@ export const AuthDivider = () => {
 /** Email entry field wrapped in a submit-on-enter form. */
 export const AuthEmailField = ({
   label,
+  description,
   value,
   isDisabled,
   onChange,
@@ -140,6 +140,7 @@ export const AuthEmailField = ({
   placeholder = 'admin@yourorganization.org',
 }: {
   label: string;
+  description?: string;
   value: string;
   isDisabled: boolean;
   onChange: (value: string) => void;
@@ -158,7 +159,10 @@ export const AuthEmailField = ({
         }}
       >
         <Field>
-          <FieldLabel htmlFor="auth-email">{label}</FieldLabel>
+          <FieldLabel htmlFor="auth-email">
+            {label}
+            <RequiredAsterisk />
+          </FieldLabel>
           <Input
             id="auth-email"
             aria-label={t('Email')}
@@ -171,6 +175,7 @@ export const AuthEmailField = ({
             value={value}
             onChange={(e) => onChange(e.target.value)}
           />
+          {description && <FieldDescription>{description}</FieldDescription>}
         </Field>
       </form>
     </div>

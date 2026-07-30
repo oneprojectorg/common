@@ -1408,5 +1408,7 @@
   "You're already signed in. Reload the page to continue.": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة.",
   "An account with this email already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
   "Join Common to comment on this proposal.": "انضم إلى Common للتعليق على هذا المقترح.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "الموازنة التشاركية في كولومبوس مفتوحة الآن. <participate>شارك الآن</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "الموازنة التشاركية في كولومبوس مفتوحة الآن. <participate>شارك الآن</participate>",
+  "Use the email address associated with your organization": "استخدم عنوان البريد الإلكتروني المرتبط بمؤسستك",
+  "We’ll create one for you with your organization’s email.": "سننشئ لك حسابًا باستخدام البريد الإلكتروني لمؤسستك."
 }

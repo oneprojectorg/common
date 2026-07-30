@@ -1408,5 +1408,7 @@
   "You're already signed in. Reload the page to continue.": "Vous êtes déjà connecté. Rechargez la page pour continuer.",
   "An account with this email already exists. Try logging in instead.": "Un compte avec cet e-mail existe déjà. Essayez plutôt de vous connecter.",
   "Join Common to comment on this proposal.": "Rejoignez Common pour commenter cette proposition.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Le budget participatif de Columbus est maintenant ouvert. <participate>Participez</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Le budget participatif de Columbus est maintenant ouvert. <participate>Participez</participate>",
+  "Use the email address associated with your organization": "Utilisez l'adresse e-mail associée à votre organisation",
+  "We’ll create one for you with your organization’s email.": "Nous en créerons un pour vous avec l'adresse e-mail de votre organisation."
 }
