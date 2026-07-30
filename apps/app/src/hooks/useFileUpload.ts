@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useCallback, useState } from 'react';
 
 export interface FilePreview {
@@ -66,7 +66,7 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   }> => {
     const validationError = validateFile(file);
     if (validationError) {
-      toast.status({ code: 500, message: validationError });
+      toast.error("That didn't work", { description: validationError });
       throw new Error(validationError);
     }
 
@@ -101,7 +101,11 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
           mimeType: file.type,
         })
         .catch((err) => {
-          toast.status(err);
+          toast.error("That didn't work", {
+            description:
+              err?.message ??
+              'Something went wrong on our end. Please try again',
+          });
           throw err;
         });
 

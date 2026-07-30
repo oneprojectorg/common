@@ -7,7 +7,7 @@ import {
   IMAGE_UPLOAD_SIZE_LIMIT,
   isAllowedUploadMimeType,
 } from '@op/common/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -53,26 +53,26 @@ export function useProfileImageUpload({
 
   const upload = async (file: File) => {
     if (!profileId) {
-      toast.error({ message: t('Something went wrong') });
+      toast.error(t('Something went wrong'));
       return;
     }
     if (
       !isAllowedUploadMimeType(file.type) ||
       !file.type.startsWith('image/')
     ) {
-      toast.error({
-        message: t('That file type is not supported. Accepted types: {types}', {
+      toast.error(
+        t('That file type is not supported. Accepted types: {types}', {
           types: ACCEPTED_IMAGE_LABEL,
         }),
-      });
+      );
       return;
     }
     if (file.size > IMAGE_UPLOAD_SIZE_LIMIT) {
-      toast.error({
-        message: t('File too large. Maximum size: {size}MB', {
+      toast.error(
+        t('File too large. Maximum size: {size}MB', {
           size: Math.floor(IMAGE_UPLOAD_SIZE_LIMIT / 1024 / 1024),
         }),
-      });
+      );
       return;
     }
 
@@ -109,7 +109,7 @@ export function useProfileImageUpload({
       onSuccess?.();
     } catch {
       if (latestRequestRef.current === requestId) {
-        toast.error({ message: t('Something went wrong') });
+        toast.error(t('Something went wrong'));
         setUrl(initialUrl);
       }
     } finally {
