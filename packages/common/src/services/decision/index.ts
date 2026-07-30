@@ -87,6 +87,7 @@ export * from './deleteProposal';
 export * from './detachProposalForModeration';
 export * from './deleteDecision';
 export * from './getProcessCategories';
+export { categoryTermUri } from './proposalTaxonomy';
 export * from './exportProposals';
 export * from './getExportStatus';
 export * from './exports';
