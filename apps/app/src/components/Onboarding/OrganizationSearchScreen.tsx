@@ -317,7 +317,7 @@ function OrDivider() {
   return (
     <div className="flex items-center gap-4">
       <div className="h-px flex-1 bg-neutral-gray1" />
-      <span className="text-sm text-neutral-gray3">{t('or')}</span>
+      <span className="text-sm text-muted-foreground">{t('or')}</span>
       <div className="h-px flex-1 bg-neutral-gray1" />
     </div>
   );
