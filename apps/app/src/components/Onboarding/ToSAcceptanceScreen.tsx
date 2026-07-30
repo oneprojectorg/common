@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@op/sense/Dialog';
 import { FieldLabel } from '@op/sense/Field';
-import { ReactNode, useId, useState } from 'react';
+import { ReactNode, useId, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -102,6 +102,7 @@ function PolicyCheckbox({
 }) {
   const t = useTranslations();
   const checkboxId = useId();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex items-center gap-1">
@@ -121,11 +122,24 @@ function PolicyCheckbox({
             </Button>
           }
         />
-        <DialogContent className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]">
+        {/* shadcn scrollable-dialog pattern (matches SiteHeader LegalDialogs):
+            fixed header, scrollable body. `initialFocus` lands on the scroll
+            container (top) instead of the first link in the legal text, which
+            otherwise opens the dialog scrolled partway down. */}
+        <DialogContent
+          className="flex max-h-[85vh] flex-col p-0 sm:max-w-[36rem]"
+          initialFocus={scrollRef}
+        >
           <DialogHeader>
             <DialogTitle>{modalTitle}</DialogTitle>
           </DialogHeader>
-          <div className="px-6 py-4">{modalContent}</div>
+          <div
+            ref={scrollRef}
+            tabIndex={-1}
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-4 outline-none"
+          >
+            {modalContent}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
