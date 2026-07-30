@@ -1417,5 +1417,14 @@
   "Reviewers can review any submission": "Reviewers can review any submission",
   "By category": "By category",
   "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.",
+  "Add reviewer…": "Add reviewer…",
+  "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.": "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.",
+  "Everyone who can review is already assigned here.": "Everyone who can review is already assigned here.",
+  "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.": "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.",
+  "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}": "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}",
+  "Could not add reviewer. Please try again.": "Could not add reviewer. Please try again.",
+  "Could not remove reviewer. Please try again.": "Could not remove reviewer. Please try again.",
+  "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.",
+  "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.",
   "Coming soon": "Coming soon"
 }

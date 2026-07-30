@@ -20,7 +20,7 @@ export async function addCategoryReviewer({
   taxonomyTermId: string;
   reviewerProfileId: string;
   phaseId?: string;
-  user: User | undefined;
+  user: User;
 }): Promise<CategoryReviewer> {
   await assertCategoryReviewerAdmin({ processInstanceId, user });
 

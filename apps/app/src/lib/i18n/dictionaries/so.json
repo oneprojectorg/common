@@ -1410,5 +1410,14 @@
   "Reviewers can review any submission": "Dib-u-eegayaashu waxay dib u eegi karaan soo jeedin kasta",
   "By category": "Qaybta ahaan",
   "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Dib-u-eege kasta waxaa loo xilsaaraa hal ama in ka badan oo qaybo ah. Safkiisu wuxuu tusayaa oo kaliya soo jeedinta qaybahaas ku jira.",
+  "Add reviewer…": "Ku dar dib-u-eege…",
+  "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.": "Weli ma jiraan ka-qaybgalayaal wax eegi kara. Sii fasax eegis <link>Maamul Ka qaybgalayaasha</link> si aad halkan ugu darto dib-u-eegayaal.",
+  "Everyone who can review is already assigned here.": "Dhammaan kuwa wax eegi kara horey ayaa halkan loogu xilsaaray.",
+  "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.": "Weli dib-u-eege ma jiro. Soo jeedinta qaybtan lama eegi karo ilaa qof la daro.",
+  "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}": "{count, plural, =0 {0 dib-u-eege} =1 {1 dib-u-eege} other {# dib-u-eege}}",
+  "Could not add reviewer. Please try again.": "Lama darin dib-u-eegaha. Fadlan mar kale isku day.",
+  "Could not remove reviewer. Please try again.": "Lama saarin dib-u-eegaha. Fadlan mar kale isku day.",
+  "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Qaybaha waxay ka yimaadaan <link>Qaybaha Soo Jeedinta</link>. Ku dar dib-u-eegayaal mid kasta, ama ku casuum qof cusub.",
+  "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "Lama helin qaybo. Ku dar <link>Qaybaha Soo Jeedinta</link> si aad u qoondayso dib-u-eegayaal qayb ahaan.",
   "Coming soon": "Waa iman doonaa dhakhso"
 }
