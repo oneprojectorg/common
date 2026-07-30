@@ -99,6 +99,8 @@ export const BaseUpdateProfileForm = forwardRef<
       },
       validators: {
         // @ts-expect-error - zodUrl is not returning the right type here
+        onChange: createValidator(t),
+        // @ts-expect-error - zodUrl is not returning the right type here
         onSubmit: createValidator(t),
       },
       onSubmit: async ({ value }: { value: FormFields }) => {

@@ -117,6 +117,7 @@ export const CreateOrganizationForm = forwardRef<
       await submitCreate(value);
     },
     validators: {
+      onChange: createOrganizationFormValidator(t),
       onSubmit: createOrganizationFormValidator(t),
     },
   });

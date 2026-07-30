@@ -194,6 +194,8 @@ export const UpdateOrganizationForm = forwardRef<
     defaultValues: initialData,
     validators: {
       // @ts-expect-error - zodUrl is not returning the right type here
+      onChange: createOrganizationFormValidator(t),
+      // @ts-expect-error - zodUrl is not returning the right type here
       onSubmit: createOrganizationFormValidator(t),
     },
     onSubmit: async ({ value }) => {
