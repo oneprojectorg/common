@@ -1405,5 +1405,11 @@
   "You're already signed in. Reload the page to continue.": "Ya has iniciado sesión. Recarga la página para continuar.",
   "An account with this email already exists. Try logging in instead.": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión.",
   "Join Common to comment on this proposal.": "Únete a Common para comentar esta propuesta.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "El presupuesto participativo de Columbus ya está abierto. <participate>Participa</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "El presupuesto participativo de Columbus ya está abierto. <participate>Participa</participate>",
+  "Scope": "Alcance",
+  "What should each reviewer be responsible for?": "¿De qué debe ser responsable cada persona revisora?",
+  "Reviewers can review any submission": "Las personas revisoras pueden revisar cualquier propuesta",
+  "By category": "Por categoría",
+  "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Cada persona revisora se asigna a una o más categorías. Su cola muestra solo las propuestas de esas categorías.",
+  "Coming soon": "Próximamente"
 }

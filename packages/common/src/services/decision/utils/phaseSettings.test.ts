@@ -49,6 +49,7 @@ describe('getPhaseReviewSettings', () => {
     expect(result).toEqual({
       submit: false,
       policy: 'full_coverage',
+      scope: 'all',
       allowRevisions: true,
       anonymousFeedback: undefined,
     });
@@ -80,6 +81,7 @@ describe('getPhaseReviewSettings', () => {
     expect(result).toEqual({
       submit: false,
       policy: 'full_coverage',
+      scope: 'all',
       allowRevisions: false,
       anonymousFeedback: true,
     });
@@ -110,6 +112,7 @@ describe('getPhaseReviewSettings', () => {
     expect(result).toEqual({
       submit: false,
       policy: 'full_coverage',
+      scope: 'all',
       allowRevisions: false,
       anonymousFeedback: true,
     });
@@ -137,6 +140,7 @@ describe('getPhaseReviewSettings', () => {
     expect(result).toEqual({
       submit: false,
       policy: 'full_coverage',
+      scope: 'all',
       allowRevisions: true,
       anonymousFeedback: true,
     });
@@ -186,5 +190,30 @@ describe('getPhaseReviewSettings', () => {
         'review',
       ),
     ).toThrow();
+  });
+
+  it("defaults scope to 'all' when the phase has no review setting", () => {
+    const result = getPhaseReviewSettings(
+      { phases: [{ phaseId: 'review', rules: { reviews: { submit: true } } }] },
+      'review',
+    );
+
+    expect(result.scope).toBe('all');
+  });
+
+  it('round-trips a saved phase-level scope (no legacy config fallback)', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { submit: true, scope: 'by_category' } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.scope).toBe('by_category');
   });
 });

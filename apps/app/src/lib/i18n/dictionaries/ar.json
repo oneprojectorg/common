@@ -1405,5 +1405,11 @@
   "You're already signed in. Reload the page to continue.": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة.",
   "An account with this email already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
   "Join Common to comment on this proposal.": "انضم إلى Common للتعليق على هذا المقترح.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "الموازنة التشاركية في كولومبوس مفتوحة الآن. <participate>شارك الآن</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "الموازنة التشاركية في كولومبوس مفتوحة الآن. <participate>شارك الآن</participate>",
+  "Scope": "النطاق",
+  "What should each reviewer be responsible for?": "عن ماذا يجب أن يكون كل مراجع مسؤولاً؟",
+  "Reviewers can review any submission": "يمكن للمراجعين مراجعة أي مقترح",
+  "By category": "حسب الفئة",
+  "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "يتم تعيين كل مراجع لفئة واحدة أو أكثر. تعرض قائمته المقترحات ضمن تلك الفئات فقط.",
+  "Coming soon": "قريبًا"
 }

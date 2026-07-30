@@ -121,8 +121,10 @@ export {
 } from './services/decision/getRubricScoringInfo';
 export {
   REVIEWS_POLICIES,
+  REVIEWS_SCOPES,
   phaseReviewSettingsSchema,
   type PhaseReviewSettings,
+  type ReviewsScope,
 } from './services/decision/schemas/types';
 export { isLastPhase } from './services/decision/schemas/instanceData';
 export {

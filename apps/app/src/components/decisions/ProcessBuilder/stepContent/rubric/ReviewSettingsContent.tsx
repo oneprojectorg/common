@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ReviewsPolicy } from '@op/common';
+import type { InstancePhaseData } from '@op/api/encoders';
+import type { ReviewsScope } from '@op/common';
+import { isReviewPhase } from '@op/common/client';
+import { Chip } from '@op/ui/Chip';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -16,7 +19,7 @@ import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 interface ReviewSettings {
-  reviewsPolicy: ReviewsPolicy;
+  scope: ReviewsScope;
   reviewsAllowRevisions: boolean;
 }
 
@@ -28,27 +31,65 @@ export function ReviewSettingsContent({
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const config = instance.instanceData?.config;
+  const instancePhases = instance.instanceData?.phases;
 
-  const instanceData = useProcessBuilderStore(
+  const storeInstance = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
+  const storePhases = storeInstance?.phases;
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
+  // Store-first so unsaved phase edits (e.g. toggling review capability in the
+  // phase editor) are reflected here, matching PhaseDetailPage's resolution.
+  const sourcePhases: InstancePhaseData[] =
+    (storePhases?.length ? storePhases : instancePhases) ?? [];
+
+  // Scope is a per-phase review setting: there is exactly one review-capable
+  // phase today (the Reviews step is only shown when one exists).
+  const reviewPhase = sourcePhases.find(isReviewPhase);
+
   const [settings, setSettings] = useState<ReviewSettings>({
-    reviewsPolicy:
-      instanceData?.config?.reviewsPolicy ??
-      config?.reviewsPolicy ??
-      'full_coverage',
+    scope: reviewPhase?.rules?.reviews?.scope ?? 'all',
     reviewsAllowRevisions:
-      instanceData?.config?.reviewsAllowRevisions ??
+      storeInstance?.config?.reviewsAllowRevisions ??
       config?.reviewsAllowRevisions ??
       true,
   });
 
+  // The write replaces the full phases array, so every phase must be sent.
+  // Only the review phase's rules change; sibling rules keys (and other
+  // phases) are preserved untouched.
+  const phasesWithScope = (nextScope: ReviewsScope): InstancePhaseData[] =>
+    sourcePhases.map((phase) => ({
+      phaseId: phase.phaseId,
+      name: phase.name,
+      description: phase.description,
+      headline: phase.headline,
+      additionalInfo: phase.additionalInfo,
+      startDate: phase.startDate,
+      endDate: phase.endDate,
+      rules:
+        phase.phaseId === reviewPhase?.phaseId
+          ? {
+              ...phase.rules,
+              reviews: { ...phase.rules?.reviews, scope: nextScope },
+            }
+          : phase.rules,
+    }));
+
   const updateSettings = (updates: Partial<ReviewSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...updates };
-      saveChanges({ config: updated });
+      // scope and revisions write to different places: scope to the review
+      // phase's rules, revisions to legacy config. Route each independently.
+      if (updates.scope !== undefined && reviewPhase) {
+        saveChanges({ phases: phasesWithScope(updated.scope) });
+      }
+      if (updates.reviewsAllowRevisions !== undefined) {
+        saveChanges({
+          config: { reviewsAllowRevisions: updated.reviewsAllowRevisions },
+        });
+      }
       return updated;
     });
   };
@@ -63,26 +104,37 @@ export function ReviewSettingsContent({
         />
       </div>
 
-      {/* Coverage */}
+      {/* Scope */}
       <section className="space-y-4">
-        <Header3 className="font-serif text-title-sm">{t('Coverage')}</Header3>
+        <Header3 className="font-serif text-title-sm">{t('Scope')}</Header3>
         <RadioGroup
-          value={settings.reviewsPolicy}
-          onChange={(value) =>
-            updateSettings({ reviewsPolicy: value as ReviewsPolicy })
-          }
-          aria-label={t('Coverage')}
-          label={t('How should proposals get distributed to reviewers?')}
+          value={settings.scope}
+          onChange={(value) => updateSettings({ scope: value as ReviewsScope })}
+          aria-label={t('Scope')}
+          label={t('What should each reviewer be responsible for?')}
           labelClassName="text-sm font-normal text-neutral-gray4"
           orientation="vertical"
         >
-          <Radio value="full_coverage">
+          <Radio value="all">
             <div className="flex flex-col">
               <span className="text-base text-neutral-charcoal">
-                {t('Full coverage')}
+                {t('All proposals')}
               </span>
               <span className="text-sm text-neutral-gray4">
-                {t('Every reviewer scores every proposal')}
+                {t('Reviewers can review any submission')}
+              </span>
+            </div>
+          </Radio>
+          <Radio value="by_category" isDisabled className="opacity-50">
+            <div className="flex flex-col">
+              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+                {t('By category')}
+                <Chip>{t('Coming soon')}</Chip>
+              </span>
+              <span className="text-sm text-neutral-gray4">
+                {t(
+                  'Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.',
+                )}
               </span>
             </div>
           </Radio>

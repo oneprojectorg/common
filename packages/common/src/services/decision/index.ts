@@ -152,9 +152,12 @@ export type {
   PhaseRules,
   ProcessConfig,
   ReviewsPolicy,
+  ReviewsScope,
 } from './schemas/types';
 export {
   DEFAULT_REVIEWS_POLICY,
+  DEFAULT_REVIEWS_SCOPE,
   REVIEWS_POLICIES,
+  REVIEWS_SCOPES,
   phaseReviewSettingsSchema,
 } from './schemas/types';
