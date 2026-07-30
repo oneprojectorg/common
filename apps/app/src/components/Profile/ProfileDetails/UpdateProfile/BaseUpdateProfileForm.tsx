@@ -2,9 +2,10 @@ import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
 import { getPublicUrl } from '@/utils';
 import type { Profile } from '@op/api/encoders';
 import { zodUrl } from '@op/common/validation';
+import { DialogFooter } from '@op/sense/Dialog';
+import { cn } from '@op/sense/lib/utils';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
-import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { Skeleton } from '@op/ui/Skeleton';
 import { useRouter } from 'next/navigation';
@@ -116,8 +117,11 @@ export const BaseUpdateProfileForm = forwardRef<
           e.preventDefault();
           void form.handleSubmit();
         }}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <FormContainer className={className}>
+        <FormContainer
+          className={cn('min-h-0 flex-1 overflow-y-auto', className)}
+        >
           {/* Header Images */}
           <div className="relative w-full pb-12 sm:pb-20">
             <BannerUploader
@@ -237,7 +241,7 @@ export const BaseUpdateProfileForm = forwardRef<
             />
           )}
         </FormContainer>
-        <ModalFooter className="sticky">
+        <DialogFooter>
           <form.SubmitButton
             className="sm:w-auto"
             loading={
@@ -248,7 +252,7 @@ export const BaseUpdateProfileForm = forwardRef<
           >
             {t('Save')}
           </form.SubmitButton>
-        </ModalFooter>
+        </DialogFooter>
       </form>
     );
   },
