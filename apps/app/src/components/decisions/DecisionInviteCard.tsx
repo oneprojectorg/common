@@ -58,7 +58,6 @@ export const DecisionInviteCard = ({
           <ProfileItem
             size="small"
             className="items-center gap-1"
-            titleClassName="text-foreground"
             avatar={
               <ProfileAvatar
                 name={steward?.name ?? ''}
