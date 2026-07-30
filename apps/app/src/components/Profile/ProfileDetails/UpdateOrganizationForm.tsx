@@ -6,9 +6,10 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
+import { DialogFooter } from '@op/sense/Dialog';
+import { cn } from '@op/sense/lib/utils';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
-import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -262,9 +263,11 @@ export const UpdateOrganizationForm = forwardRef<
         e.preventDefault();
         void form.handleSubmit();
       }}
-      className="w-full"
+      className="flex min-h-0 w-full flex-1 flex-col"
     >
-      <FormContainer className={className}>
+      <FormContainer
+        className={cn('min-h-0 flex-1 overflow-y-auto', className)}
+      >
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
@@ -579,17 +582,15 @@ export const UpdateOrganizationForm = forwardRef<
         </div>
       </FormContainer>
 
-      <ModalFooter className="sticky">
-        <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row sm:gap-2">
-          <form.SubmitButton
-            className="w-full sm:max-w-fit"
-            disabled={form.state.isSubmitting || updateOrganization.isPending}
-            loading={form.state.isSubmitting || updateOrganization.isPending}
-          >
-            {t('Save')}
-          </form.SubmitButton>
-        </div>
-      </ModalFooter>
+      <DialogFooter>
+        <form.SubmitButton
+          className="w-full sm:max-w-fit"
+          disabled={form.state.isSubmitting || updateOrganization.isPending}
+          loading={form.state.isSubmitting || updateOrganization.isPending}
+        >
+          {t('Save')}
+        </form.SubmitButton>
+      </DialogFooter>
     </form>
   );
 });
