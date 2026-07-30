@@ -3,9 +3,9 @@
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
 import { useContext } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 
@@ -37,9 +37,7 @@ export const VoteSubmissionModal = ({
         error,
         context: 'VoteSubmissionModal.submitVote',
       });
-      toast.error({
-        message: error.message || 'Failed to submit vote',
-      });
+      toast.error(error.message || 'Failed to submit vote');
     },
   });
 

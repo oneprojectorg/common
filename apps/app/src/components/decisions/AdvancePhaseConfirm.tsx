@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
+import { toast } from '@op/sense/Sonner';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
-import { toast } from '@op/ui/Toast';
 import { useRef } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -50,13 +50,11 @@ export function AdvancePhaseConfirm({
     onSuccess: () => {
       advanceInitiatedRef.current = false;
       onClose();
-      toast.success({ message: t('Phase advanced successfully') });
+      toast.success(t('Phase advanced successfully'));
       router.refresh();
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to advance phase'),
-      });
+      toast.error(error.message || t('Failed to advance phase'));
     },
   });
 

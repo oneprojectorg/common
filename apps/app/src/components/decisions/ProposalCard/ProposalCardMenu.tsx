@@ -6,13 +6,13 @@ import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Sonner';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuList, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
@@ -79,9 +79,7 @@ export function ProposalCardMenu({
         );
       }
 
-      toast.error({
-        message: error.message || t('Failed to update proposal status'),
-      });
+      toast.error(error.message || t('Failed to update proposal status'));
     },
     onSuccess: (_, variables) => {
       if (variables.data.status) {
@@ -89,21 +87,17 @@ export function ProposalCardMenu({
           [ProposalStatus.APPROVED]: t('Proposal shortlisted successfully'),
           [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
         });
-        toast.success({ message: statusMessage });
+        toast.success(statusMessage);
       }
     },
   });
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to delete proposal'),
-      });
+      toast.error(error.message || t('Failed to delete proposal'));
     },
     onSuccess: () => {
-      toast.success({
-        message: t('Proposal deleted successfully'),
-      });
+      toast.success(t('Proposal deleted successfully'));
     },
   });
 
@@ -111,9 +105,7 @@ export function ProposalCardMenu({
 
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update proposal visibility'),
-      });
+      toast.error(error.message || t('Failed to update proposal visibility'));
     },
     onSuccess: (_, variables) => {
       if (variables.data.visibility) {
@@ -121,7 +113,7 @@ export function ProposalCardMenu({
           [Visibility.HIDDEN]: `${proposalTitle} ${t('is now hidden from active proposals.')}`,
           [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
         });
-        toast.success({ message });
+        toast.success(message);
       }
     },
   });

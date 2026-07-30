@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -61,10 +61,9 @@ export const useResourceUpload = (profileId: string) => {
       if (token !== generation.current) {
         return null;
       }
-      toast.error({
-        message:
-          err instanceof Error ? err.message : t('Could not add resource'),
-      });
+      toast.error(
+        err instanceof Error ? err.message : t('Could not add resource'),
+      );
       return null;
     } finally {
       if (token === generation.current) {

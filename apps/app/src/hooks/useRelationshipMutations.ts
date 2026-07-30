@@ -2,7 +2,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useCallback } from 'react';
 
 interface UseRelationshipMutationsOptions {
@@ -174,9 +174,7 @@ export function useRelationshipMutations({
           variables.relationshipType === ProfileRelationshipType.LIKES
             ? 'like'
             : 'follow';
-        toast.error({
-          message: `Failed to ${action}. Please try again.`,
-        });
+        toast.error(`Failed to ${action}. Please try again.`);
       },
       onSettled: invalidateAfterMutation,
     });
@@ -239,9 +237,7 @@ export function useRelationshipMutations({
           variables.relationshipType === ProfileRelationshipType.LIKES
             ? 'unlike'
             : 'unfollow';
-        toast.error({
-          message: `Failed to ${action}. Please try again.`,
-        });
+        toast.error(`Failed to ${action}. Please try again.`);
       },
       onSettled: invalidateAfterMutation,
     });

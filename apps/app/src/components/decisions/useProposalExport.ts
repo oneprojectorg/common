@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import type { ProposalFilter } from '@op/api/encoders';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useEffect, useState } from 'react';
 
 export const useProposalExport = () => {
@@ -36,9 +36,8 @@ export const useProposalExport = () => {
     if (exportStatus.status === 'failed') {
       setIsExporting(false);
       setIsDownloadReady(false);
-      toast.error({
-        title: 'Export failed',
-        message:
+      toast.error('Export failed', {
+        description:
           'errorMessage' in exportStatus
             ? exportStatus.errorMessage
             : 'Unknown error occurred',
@@ -68,15 +67,13 @@ export const useProposalExport = () => {
 
       setExportId(newExportId);
 
-      toast.status({
-        code: 200,
-        message: `Generating ${format.toUpperCase()} export...`,
-      });
+      // ponytail: the old toast.status({ code: 200 }) was a no-op (200 showed
+      // nothing), so no "generating…" toast ever appeared. Preserving that.
+      // Switch to toast.info(`Generating ${format} export…`) if we want it shown.
     } catch (error) {
       setIsExporting(false);
-      toast.error({
-        title: 'Failed to start export',
-        message: 'Please try again later.',
+      toast.error('Failed to start export', {
+        description: 'Please try again later.',
       });
     }
   };

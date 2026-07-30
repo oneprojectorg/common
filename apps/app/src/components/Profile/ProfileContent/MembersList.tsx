@@ -2,11 +2,11 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Sonner';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { toast } from '@op/ui/Toast';
 import React, { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
@@ -69,29 +69,25 @@ const MemberMenu = ({
         ? t('User changed to Admin successfully')
         : t('User changed to Member successfully');
 
-      toast.success({ message });
+      toast.success(message);
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update user role'),
-      });
+      toast.error(error.message || t('Failed to update user role'));
     },
   });
 
   const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
     onSuccess: () => {
-      toast.success({
-        message: t('User removed from organization successfully'),
-      });
+      toast.success(t('User removed from organization successfully'));
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to remove user from organization'),
-      });
+      toast.error(
+        error.message || t('Failed to remove user from organization'),
+      );
     },
   });
 
@@ -108,7 +104,7 @@ const MemberMenu = ({
       );
 
       if (!memberRole) {
-        toast.error({ message: t('Member role not found') });
+        toast.error(t('Member role not found'));
         return;
       }
 
@@ -126,7 +122,7 @@ const MemberMenu = ({
       );
 
       if (!adminRole) {
-        toast.error({ message: t('Admin role not found') });
+        toast.error(t('Admin role not found'));
         return;
       }
 

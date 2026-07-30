@@ -6,11 +6,11 @@ import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
+import { toast } from '@op/sense/Sonner';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -83,7 +83,7 @@ export const DeleteOrganizationModal = ({
         router.refresh();
         setCurrentStep(2);
       } catch (error) {
-        toast.error({ message: t('Failed to delete account') });
+        toast.error(t('Failed to delete account'));
       }
     });
   };

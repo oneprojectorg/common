@@ -1,9 +1,9 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuFlag } from 'react-icons/lu';
 
@@ -21,13 +21,11 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
 
   const reportMutation = trpc.moderation.flagItem.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Proposal reported for moderation review') });
+      toast.success(t('Proposal reported for moderation review'));
       setIsOpen(false);
     },
     onError: () => {
-      toast.error({
-        message: t('Could not report this proposal. Please try again.'),
-      });
+      toast.error(t('Could not report this proposal. Please try again.'));
     },
   });
 

@@ -4,9 +4,9 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Sonner';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
-import { toast } from '@op/ui/Toast';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -68,9 +68,8 @@ export const PromoteOnboardingFlow = ({
 
   const handleComplete = useCallback(async () => {
     if (!isOnline) {
-      toast.error({
-        title: t('No connection'),
-        message: t('Please check your internet connection and try again.'),
+      toast.error(t('No connection'), {
+        description: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -92,14 +91,16 @@ export const PromoteOnboardingFlow = ({
     } catch (err) {
       setIsSubmitting(false);
       const errorInfo = analyzeError(err);
-      toast.error({
-        title: errorInfo.isConnectionError
+      toast.error(
+        errorInfo.isConnectionError
           ? t('Connection issue')
           : t("That didn't work"),
-        message: errorInfo.isConnectionError
-          ? t('Please try submitting the form again.')
-          : errorInfo.message,
-      });
+        {
+          description: errorInfo.isConnectionError
+            ? t('Please try submitting the form again.')
+            : errorInfo.message,
+        },
+      );
     }
   }, [
     isOnline,

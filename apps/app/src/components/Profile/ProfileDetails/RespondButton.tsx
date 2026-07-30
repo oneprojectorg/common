@@ -3,9 +3,9 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
 import { Suspense } from 'react';
 import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 
@@ -38,14 +38,10 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
       utils.organization.listPendingRelationships.invalidate();
       utils.organization.listDirectedRelationships.invalidate();
       utils.organization.listRelationships.invalidate();
-      toast.success({
-        message: 'Relationship approved',
-      });
+      toast.success('Relationship approved');
     },
     onError: () => {
-      toast.error({
-        message: 'Could not approve relationship',
-      });
+      toast.error('Could not approve relationship');
     },
   });
 
@@ -55,14 +51,10 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
       utils.organization.listPendingRelationships.invalidate();
       utils.organization.listDirectedRelationships.invalidate();
       utils.organization.listRelationships.invalidate();
-      toast.success({
-        message: 'Relationship declined',
-      });
+      toast.success('Relationship declined');
     },
     onError: () => {
-      toast.error({
-        message: 'Could not decline relationship',
-      });
+      toast.error('Could not decline relationship');
     },
   });
 

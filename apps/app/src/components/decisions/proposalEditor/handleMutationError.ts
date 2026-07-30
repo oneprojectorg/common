@@ -1,5 +1,5 @@
 import { logger } from '@op/logging/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 
 import type { TranslateFn } from '@/lib/i18n';
 
@@ -26,11 +26,10 @@ export function handleMutationError(
     const errorMessages = Object.values(fieldErrors);
 
     if (errorMessages.length === 1) {
-      toast.error({ message: errorMessages[0] });
+      toast.error(errorMessages[0]);
     } else {
-      toast.error({
-        title: t('Please fix the following issues:'),
-        message: errorMessages.join(', '),
+      toast.error(t('Please fix the following issues:'), {
+        description: errorMessages.join(', '),
       });
     }
   } else {
@@ -39,9 +38,8 @@ export function handleMutationError(
       update: t('Failed to update proposal'),
       submit: t('Failed to submit proposal'),
     } as const;
-    toast.error({
-      title: titleMap[operationType],
-      message: error.message || t('An unexpected error occurred'),
+    toast.error(titleMap[operationType], {
+      description: error.message || t('An unexpected error occurred'),
     });
   }
 }

@@ -4,10 +4,10 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
-import { toast } from '@op/ui/Toast';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
@@ -131,7 +131,7 @@ export const ManualSelectionList = ({
     },
     onError: (error) => {
       setIsConfirmOpen(false);
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 

@@ -2,12 +2,12 @@
 
 import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Header1 } from '@op/ui/Header';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
-import { toast } from '@op/ui/Toast';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
@@ -59,9 +59,8 @@ const PolicyReacceptanceModalContent = () => {
       await utils.account.getMyAccount.invalidate();
     } catch {
       setIsSubmitting(false);
-      toast.error({
-        title: t("That didn't work"),
-        message: t('Please try submitting the form again.'),
+      toast.error(t("That didn't work"), {
+        description: t('Please try submitting the form again.'),
       });
     }
   };

@@ -2,13 +2,13 @@
 
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -79,13 +79,13 @@ const DuplicateFormContent = ({
 
   const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Decision duplicated successfully') });
+      toast.success(t('Decision duplicated successfully'));
       utils.decision.listDecisionProfiles.invalidate();
       onClose();
       router.push('/decisions?tab=drafts');
     },
     onError: () => {
-      toast.error({ message: t('Failed to duplicate decision') });
+      toast.error(t('Failed to duplicate decision'));
     },
   });
 

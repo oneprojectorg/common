@@ -7,9 +7,9 @@ import {
   httpUrlSchema,
 } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
@@ -28,8 +28,8 @@ export const AddResourceLinkForm = ({
 }) => {
   const t = useTranslations();
   const createLink = trpc.resources.createLink.useMutation({
-    onSuccess: () => toast.success({ message: t('Resource added') }),
-    onError: () => toast.error({ message: t('Could not add resource') }),
+    onSuccess: () => toast.success(t('Resource added')),
+    onError: () => toast.error(t('Could not add resource')),
   });
 
   const [url, setUrl] = useState('');

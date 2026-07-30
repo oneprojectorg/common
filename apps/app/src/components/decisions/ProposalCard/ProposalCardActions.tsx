@@ -5,10 +5,10 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { toast } from '@op/sense/Sonner';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 
@@ -121,12 +121,10 @@ export function ProposalCardOwnerActions({
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to delete proposal'),
-      });
+      toast.error(error.message || t('Failed to delete proposal'));
     },
     onSuccess: () => {
-      toast.success({ message: t('Proposal deleted successfully') });
+      toast.success(t('Proposal deleted successfully'));
     },
   });
 

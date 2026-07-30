@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
+import { toast } from '@op/sense/Sonner';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -15,7 +16,6 @@ import { MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import {
   EditableCell,
   Table,
@@ -119,29 +119,29 @@ function useRoleMutation({
             decisionPermissions,
           });
         } catch {
-          toast.error({ message: t('Failed to update role') });
+          toast.error(t('Failed to update role'));
           utils.profile.listRoles.invalidate();
           onComplete();
           return;
         }
       }
-      toast.success({ message: t('Role created successfully') });
+      toast.success(t('Role created successfully'));
       utils.profile.listRoles.invalidate();
       onComplete();
     },
     onError: () => {
-      toast.error({ message: t('Failed to create role') });
+      toast.error(t('Failed to create role'));
     },
   });
 
   const updateRole = trpc.profile.updateRole.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
+      toast.success(t('Role updated successfully'));
       utils.profile.listRoles.invalidate();
       onComplete();
     },
     onError: () => {
-      toast.error({ message: t('Failed to update role') });
+      toast.error(t('Failed to update role'));
     },
   });
 
@@ -466,9 +466,9 @@ function usePermissionToggle(roleId: string, profileId: string) {
               setLocalPermissions(null);
             }
             if (error) {
-              toast.error({ message: t('Failed to update role') });
+              toast.error(t('Failed to update role'));
             } else {
-              toast.success({ message: t('Role updated successfully') });
+              toast.success(t('Role updated successfully'));
             }
             utils.profile.getDecisionRole.invalidate({ roleId, profileId });
           },
@@ -768,12 +768,12 @@ function RolesTable({
 
   const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Role deleted successfully') });
+      toast.success(t('Role deleted successfully'));
       utils.profile.listRoles.invalidate();
       setRoleToDelete(null);
     },
     onError: () => {
-      toast.error({ message: t('Failed to delete role') });
+      toast.error(t('Failed to delete role'));
     },
   });
 

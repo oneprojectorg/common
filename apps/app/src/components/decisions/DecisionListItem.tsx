@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
-import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
@@ -50,11 +50,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   const deleteMutation = trpc.decision.deleteDecision.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Decision deleted successfully') });
+      toast.success(t('Decision deleted successfully'));
       utils.decision.listDecisionProfiles.invalidate();
     },
     onError: () => {
-      toast.error({ message: t('Failed to delete decision') });
+      toast.error(t('Failed to delete decision'));
     },
   });
 

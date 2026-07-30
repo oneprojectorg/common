@@ -3,6 +3,7 @@
 import type { SurveyInternalData } from '@op/api';
 import { trpc } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
+import { toast } from '@op/sense/Sonner';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
@@ -11,7 +12,6 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -147,9 +147,7 @@ export const ProcessSurveyModal = ({
       );
     },
     onError: (err) => {
-      toast.error({
-        message: err.message || t('Failed to submit survey'),
-      });
+      toast.error(err.message || t('Failed to submit survey'));
     },
   });
 

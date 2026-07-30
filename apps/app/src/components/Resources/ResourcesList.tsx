@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { Sortable } from '@op/ui/Sortable';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuUpload } from 'react-icons/lu';
 
@@ -61,13 +61,13 @@ export const ResourcesList = ({
       if (ctx?.previous && ctx?.key) {
         utils.resources.listByCollection.setData(ctx.key, ctx.previous);
       }
-      toast.error({ message: t('Could not reorder resource') });
+      toast.error(t('Could not reorder resource'));
     },
   });
 
   const remove = trpc.resources.delete.useMutation({
-    onSuccess: () => toast.success({ message: t('Resource deleted') }),
-    onError: () => toast.error({ message: t('Could not delete resource') }),
+    onSuccess: () => toast.success(t('Resource deleted')),
+    onError: () => toast.error(t('Could not delete resource')),
   });
 
   const collectionId = data.collectionId ?? null;

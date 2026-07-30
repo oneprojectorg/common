@@ -1,10 +1,10 @@
 import { trpc } from '@op/api/client';
 import type { Relationship } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
-import { toast } from '@op/ui/Toast';
 import { FormEvent, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,11 +28,9 @@ export const RemoveRelationshipModal = ({
           id: relationship.id,
         });
 
-        toast.success({
-          message: t('Relationship removed'),
-        });
+        toast.success(t('Relationship removed'));
       } catch (e) {
-        toast.error({ message: t('Could not remove relationship') });
+        toast.error(t('Could not remove relationship'));
       }
 
       close();

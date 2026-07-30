@@ -3,12 +3,12 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { Button, ButtonTooltip } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 import { Suspense, useTransition } from 'react';
 import { LuClock, LuUserPlus } from 'react-icons/lu';
 
@@ -62,9 +62,7 @@ const RequestMembershipButtonSuspense = ({
 
   const handleRequestMembership = () => {
     if (!currentProfileId) {
-      toast.error({
-        message: t('You must be logged in to request membership'),
-      });
+      toast.error(t('You must be logged in to request membership'));
       return;
     }
 
@@ -75,15 +73,13 @@ const RequestMembershipButtonSuspense = ({
           targetProfileId: profile.profile.id,
         });
 
-        toast.success({
-          message: t('Your membership request has been sent to {orgName}', {
+        toast.success(
+          t('Your membership request has been sent to {orgName}', {
             orgName: profile.profile.name,
           }),
-        });
+        );
       } catch (error) {
-        toast.error({
-          message: t('Failed to send membership request'),
-        });
+        toast.error(t('Failed to send membership request'));
       }
     });
   };
@@ -99,13 +95,9 @@ const RequestMembershipButtonSuspense = ({
           requestId: existingRequest.id,
         });
 
-        toast.success({
-          message: t('Membership request cancelled'),
-        });
+        toast.success(t('Membership request cancelled'));
       } catch (error) {
-        toast.error({
-          message: t('Failed to cancel membership request'),
-        });
+        toast.error(t('Failed to cancel membership request'));
       }
 
       close();

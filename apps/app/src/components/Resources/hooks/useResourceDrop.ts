@@ -5,7 +5,7 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   isAllowedUploadMimeType,
 } from '@op/common/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -45,7 +45,7 @@ export const useResourceDrop = ({
   const onError = () => {
     // Match the rest of the resource UI: a generic message, never raw
     // server error text.
-    toast.error({ message: t('Could not add resource') });
+    toast.error(t('Could not add resource'));
   };
   const createDocument = trpc.resources.createDocument.useMutation({ onError });
   const createLink = trpc.resources.createLink.useMutation({ onError });
@@ -89,7 +89,7 @@ export const useResourceDrop = ({
           // upload() no longer narrows the mime type; the backend enforces the
           // allowlist, but guard here so the create input stays well-typed and
           // we fail fast with a clear message instead of a server rejection.
-          toast.error({ message: t('Unsupported file type') });
+          toast.error(t('Unsupported file type'));
           continue;
         }
         const row = await createDocument.mutateAsync({

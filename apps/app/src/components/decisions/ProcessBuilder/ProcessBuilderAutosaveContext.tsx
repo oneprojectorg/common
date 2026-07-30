@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import {
   createContext,
   useCallback,
@@ -127,9 +127,8 @@ export function ProcessBuilderAutosaveProvider({
     onSuccess: () => markSaved(decisionProfileId),
     onError: (error) => {
       setSaveStatus(decisionProfileId, 'error');
-      toast.error({
-        title: t('Failed to save changes'),
-        message: error.message,
+      toast.error(t('Failed to save changes'), {
+        description: error.message,
       });
     },
     onSettled: () => {

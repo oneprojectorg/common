@@ -2,10 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { toast } from '@op/sense/Sonner';
 import { Button } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 
@@ -65,9 +65,7 @@ export const DecisionInvitesForm = ({
     try {
       await declineInvite.mutateAsync({ inviteId });
     } catch (error) {
-      toast.error({
-        message: t('Failed to decline invitation'),
-      });
+      toast.error(t('Failed to decline invitation'));
     }
   };
 
@@ -90,9 +88,7 @@ export const DecisionInvitesForm = ({
       onComplete();
     } catch (error) {
       setIsLoading(false);
-      toast.error({
-        message: t('Failed to accept invitations'),
-      });
+      toast.error(t('Failed to accept invitations'));
     }
   };
 

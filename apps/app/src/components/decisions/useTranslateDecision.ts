@@ -9,7 +9,7 @@ import {
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from '@op/common/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Sonner';
 import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
@@ -105,7 +105,7 @@ export const useTranslateDecision = ({
   );
 
   const onTranslateError = useCallback(() => {
-    toast.error({ message: t('Failed to translate content') });
+    toast.error(t('Failed to translate content'));
   }, [t]);
 
   const translateBatchMutation =
