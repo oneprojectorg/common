@@ -11,16 +11,16 @@ import {
   getSubmittedReviewScore,
   proposalRelations,
 } from './listProposalsWithReviewAggregates';
+import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
 
-export const getProposalWithReviewAggregatesInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  proposalId: z.uuid(),
-  phaseId: z.string().optional(),
-});
+export const getProposalWithReviewAggregatesInputSchema =
+  instanceOptionalPhaseRefSchema.extend({
+    proposalId: z.uuid(),
+  });
 
 export type GetProposalWithReviewAggregatesInput = z.infer<
   typeof getProposalWithReviewAggregatesInputSchema
