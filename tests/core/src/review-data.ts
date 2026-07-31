@@ -3,13 +3,17 @@ import {
   ProposalReviewRequestState,
   ProposalReviewState,
   ProposalStatus,
+  categoryReviewers,
   decisionProcesses,
+  proposalCategories,
   proposalReviewAssignments,
   proposalReviewRequests,
   proposalReviews,
   proposals,
+  taxonomies,
+  taxonomyTerms,
 } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 
 import { type CreateProposalResult, createProposal } from './decision-data';
 
@@ -259,6 +263,162 @@ export async function createReviewScenario(
     : undefined;
 
   return { proposal, assignedProposalHistoryId, assignment, revisionRequest };
+}
+
+/**
+ * Category label → taxonomy term slug. Must match production's `categoryTermUri`
+ * (slugify) for the ASCII labels the e2e suite uses so `getProcessCategories`
+ * resolves the config category to the term this helper creates.
+ */
+export function categoryTermUri(label: string): string {
+  return (
+    label
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      // Runs are already collapsed above, so a single leading/trailing dash is
+      // all that can remain — strip it without a quantifier (avoids ReDoS).
+      .replace(/^-|-$/g, '')
+  );
+}
+
+export interface EnsuredCategoryTerm {
+  label: string;
+  taxonomyTermId: string;
+}
+
+/**
+ * Ensures the shared "proposal" taxonomy exists and has a term for each label,
+ * returning the term id per label. Mirrors production
+ * `ensureProposalTaxonomyTerms`: terms are append-only and keyed on
+ * `termUri`, so a term is reused across instances/runs (scope rows and
+ * `proposalCategories` links are per-instance/per-proposal, so reuse is safe).
+ */
+export async function ensureProposalCategoryTerms(
+  labels: string[],
+): Promise<EnsuredCategoryTerm[]> {
+  let proposalTaxonomy = await db.query.taxonomies.findFirst({
+    where: { name: 'proposal' },
+  });
+
+  if (!proposalTaxonomy) {
+    const [created] = await db
+      .insert(taxonomies)
+      .values({
+        name: 'proposal',
+        description:
+          'Categories for organizing proposals in decision-making processes',
+      })
+      .onConflictDoNothing({ target: taxonomies.name })
+      .returning();
+    proposalTaxonomy =
+      created ??
+      (await db.query.taxonomies.findFirst({ where: { name: 'proposal' } }));
+  }
+
+  if (!proposalTaxonomy) {
+    throw new Error('Failed to ensure "proposal" taxonomy');
+  }
+
+  const results: EnsuredCategoryTerm[] = [];
+  for (const label of labels) {
+    const termUri = categoryTermUri(label);
+
+    // Insert-then-select is idempotent under the parallel workers that seed the
+    // same labels concurrently (a check-then-insert would race the unique index).
+    await db
+      .insert(taxonomyTerms)
+      .values({
+        taxonomyId: proposalTaxonomy.id,
+        termUri,
+        label,
+        definition: `Category for ${label} proposals`,
+      })
+      .onConflictDoNothing();
+
+    const [term] = await db
+      .select({ id: taxonomyTerms.id })
+      .from(taxonomyTerms)
+      .where(
+        and(
+          eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
+          eq(taxonomyTerms.termUri, termUri),
+        ),
+      );
+
+    if (!term) {
+      throw new Error(`Failed to ensure taxonomy term for category: ${label}`);
+    }
+    results.push({ label, taxonomyTermId: term.id });
+  }
+
+  return results;
+}
+
+/**
+ * Tags a proposal with a submission category (a `proposalCategories` link),
+ * mirroring what `setProposalCategories` writes in production. Idempotent.
+ */
+export async function addProposalToCategory(opts: {
+  proposalId: string;
+  taxonomyTermId: string;
+}): Promise<void> {
+  await db
+    .insert(proposalCategories)
+    .values({
+      proposalId: opts.proposalId,
+      taxonomyTermId: opts.taxonomyTermId,
+    })
+    .onConflictDoNothing();
+}
+
+export interface CreateCategoryReviewerOptions {
+  processInstanceId: string;
+  taxonomyTermId: string;
+  reviewerProfileId: string;
+  /** NULL (default) = instance-wide, matching the builder's assign-only write. */
+  phaseId?: string | null;
+}
+
+/**
+ * Inserts a by-category reviewer scope row (`decision_category_reviewers`),
+ * mirroring the direct-DB path the by-category generation/reconcile tests use.
+ * Idempotent via the unique (instance, term, reviewer, phase) index.
+ */
+export async function createCategoryReviewer(
+  opts: CreateCategoryReviewerOptions,
+): Promise<typeof categoryReviewers.$inferSelect> {
+  const {
+    processInstanceId,
+    taxonomyTermId,
+    reviewerProfileId,
+    phaseId = null,
+  } = opts;
+
+  const [inserted] = await db
+    .insert(categoryReviewers)
+    .values({ processInstanceId, taxonomyTermId, reviewerProfileId, phaseId })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted) {
+    return inserted;
+  }
+
+  const existing = await db.query.categoryReviewers.findFirst({
+    where: {
+      processInstanceId,
+      taxonomyTermId,
+      reviewerProfileId,
+      phaseId: phaseId ?? { isNull: true },
+    },
+  });
+
+  if (!existing) {
+    throw new Error('Failed to create category reviewer scope row');
+  }
+
+  return existing;
 }
 
 /** Creates a revision request row for a review assignment. */

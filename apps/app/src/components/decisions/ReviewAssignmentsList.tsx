@@ -69,53 +69,85 @@ export function ReviewAssignmentsList({
       },
     );
 
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: processInstanceId,
+  });
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhase = phases.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+  const isByCategory =
+    !!currentPhase &&
+    getPhaseReviewSettings({ phases }, currentPhase.phaseId).scope ===
+      'by_category';
+
+  // Show the category tag only when a by-category reviewer's queue spans more
+  // than one category (a single-category queue doesn't need the redundant tag).
+  // Default to hiding while the count loads — the conservative choice for the
+  // common single-category case avoids a show→hide flicker.
+  const { data: reviewerCategories } =
+    trpc.decision.listReviewerCategories.useQuery(
+      { processInstanceId, phaseId: currentPhase?.phaseId ?? '' },
+      { enabled: isByCategory },
+    );
+  const showCategory = isByCategory
+    ? (reviewerCategories?.length ?? 0) > 1
+    : true;
+
+  // Match the "Other proposals" tab: no toolbar when the queue is genuinely
+  // empty. A filtered-to-empty result keeps it so the filter can be cleared.
+  const showToolbar = assignments.length > 0 || Boolean(statusFilter);
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
-        <div className="flex min-w-0 flex-1 items-baseline gap-1">
-          <ProposalCount count={assignments.length} />
-          {/* decorative — a failed lookup must not take down the queue */}
-          <APIErrorBoundary fallbacks={{ default: () => null }}>
-            <Suspense fallback={null}>
-              <AssignedCategoriesSuffix processInstanceId={processInstanceId} />
-            </Suspense>
-          </APIErrorBoundary>
+      {showToolbar && (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
+          <div className="flex min-w-0 flex-1 items-baseline gap-1">
+            <ProposalCount count={assignments.length} />
+            {/* decorative — a failed lookup must not take down the queue */}
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense fallback={null}>
+                <AssignedCategoriesSuffix
+                  processInstanceId={processInstanceId}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </div>
+          <div className="grid max-w-fit grid-cols-2 justify-end gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end">
+            <ResponsiveSelect
+              selectedKey={statusFilter ?? 'all'}
+              onSelectionChange={(key) =>
+                setStatusFilter(key === 'all' ? null : key)
+              }
+              aria-label={t('Filter by status')}
+              items={[
+                { id: 'all', label: t('All statuses') },
+                { id: 'pending', label: t('Not Started') },
+                { id: 'in_progress', label: t('In Progress') },
+                { id: 'completed', label: t('Completed') },
+                {
+                  id: 'awaiting_author_revision',
+                  label: t('Revision Requested'),
+                },
+                { id: 'ready_for_re_review', label: t('Needs Review') },
+              ]}
+            />
+            <ResponsiveSelect
+              selectedKey={sort}
+              onSelectionChange={(key) =>
+                setSort(key as (typeof REVIEW_ASSIGNMENT_SORTS)[number])
+              }
+              aria-label={t('Sort order')}
+              items={[
+                { id: 'leastReviewed', label: t('Least reviewed') },
+                { id: 'newest', label: t('Newest First') },
+                { id: 'oldest', label: t('Oldest First') },
+              ]}
+            />
+          </div>
         </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end">
-          <ResponsiveSelect
-            selectedKey={statusFilter ?? 'all'}
-            onSelectionChange={(key) =>
-              setStatusFilter(key === 'all' ? null : key)
-            }
-            aria-label={t('Filter by status')}
-            items={[
-              { id: 'all', label: t('All statuses') },
-              { id: 'pending', label: t('Not Started') },
-              { id: 'in_progress', label: t('In Progress') },
-              { id: 'completed', label: t('Completed') },
-              {
-                id: 'awaiting_author_revision',
-                label: t('Revision Requested'),
-              },
-              { id: 'ready_for_re_review', label: t('Needs Review') },
-            ]}
-          />
-          <ResponsiveSelect
-            selectedKey={sort}
-            onSelectionChange={(key) =>
-              setSort(key as (typeof REVIEW_ASSIGNMENT_SORTS)[number])
-            }
-            aria-label={t('Sort order')}
-            items={[
-              { id: 'leastReviewed', label: t('Least reviewed') },
-              { id: 'newest', label: t('Newest First') },
-              { id: 'oldest', label: t('Oldest First') },
-            ]}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Cards grid */}
       {isLoading ? (
@@ -145,6 +177,7 @@ export function ReviewAssignmentsList({
                   (i) => i.proposal.id === item.assignment.proposal.id,
                 )?.aggregates.reviewers
               }
+              showCategory={showCategory}
             />
           ))}
         </ProposalMasonry>

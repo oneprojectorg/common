@@ -39,12 +39,15 @@ interface ReviewAssignmentCardProps {
   assignment: ReviewAssignmentExtended;
   viewHref?: string;
   reviewers?: Reviewers;
+  /** Whether to show the proposal's category tag (see ReviewAssignmentsList). */
+  showCategory?: boolean;
 }
 
 export function ReviewAssignmentCard({
   assignment: { assignment },
   viewHref,
   reviewers,
+  showCategory = true,
 }: ReviewAssignmentCardProps) {
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
@@ -55,7 +58,7 @@ export function ReviewAssignmentCard({
         <ProposalCardHeader proposal={proposal} viewHref={viewHref} />
         <div className="flex flex-wrap items-center gap-2">
           <ProposalCardAuthor proposal={proposal} />
-          <ProposalCardCategory proposal={proposal} />
+          {showCategory && <ProposalCardCategory proposal={proposal} />}
           {isRevised && (
             <>
               <Bullet />

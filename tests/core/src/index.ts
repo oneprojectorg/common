@@ -37,18 +37,24 @@ export {
 } from './decision-data';
 
 export {
+  addProposalToCategory,
+  categoryTermUri,
   configureProcessReviews,
+  createCategoryReviewer,
   createProposalReview,
   createReviewAssignment,
   createReviewScenario,
   createRevisionRequest,
   defaultReviewSettings,
+  ensureProposalCategoryTerms,
   getLatestProposalHistoryId,
+  type CreateCategoryReviewerOptions,
   type CreateProposalReviewOptions,
   type CreateReviewAssignmentOptions,
   type CreateReviewScenarioOptions,
   type CreateReviewScenarioResult,
   type CreateRevisionRequestOptions,
+  type EnsuredCategoryTerm,
   type ReviewSettings,
 } from './review-data';
 
