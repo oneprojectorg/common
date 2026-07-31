@@ -226,7 +226,7 @@ test.describe('Default Hidden Proposals', () => {
 
     // Banner is rendered as role="status" with the privacy copy.
     await expect(
-      authenticatedPage.getByRole('status').filter({
+      authenticatedPage.locator('[data-slot="toast"]').filter({
         hasText: 'Proposals are private during this phase',
       }),
     ).toBeVisible({ timeout: 15_000 });
@@ -286,7 +286,7 @@ test.describe('Default Hidden Proposals', () => {
 
     // Banner is shown to non-admins too.
     await expect(
-      otherMemberPage.getByRole('status').filter({
+      otherMemberPage.locator('[data-slot="toast"]').filter({
         hasText: 'Proposals are private during this phase',
       }),
     ).toBeVisible({ timeout: 15_000 });
@@ -374,7 +374,7 @@ test.describe('Default Hidden Proposals', () => {
 
     // Submitter sees the privacy banner just like everyone else.
     await expect(
-      submitterPage.getByRole('status').filter({
+      submitterPage.locator('[data-slot="toast"]').filter({
         hasText: 'Proposals are private during this phase',
       }),
     ).toBeVisible({ timeout: 15_000 });
