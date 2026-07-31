@@ -10,6 +10,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
+import { instanceOptionalPhaseRefSchema } from './instance';
 import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export {
@@ -320,13 +321,11 @@ export const removeCategoryReviewerResultSchema = z.object({
 });
 
 /** Target of an add/remove: a single (category, reviewer[, phase]) scope tuple. */
-export const categoryReviewerTargetSchema = z.object({
-  processInstanceId: z.uuid(),
-  taxonomyTermId: z.uuid(),
-  reviewerProfileId: z.uuid(),
-  // '' would collide with the instance-wide NULL key.
-  phaseId: z.string().min(1).optional(),
-});
+export const categoryReviewerTargetSchema =
+  instanceOptionalPhaseRefSchema.extend({
+    taxonomyTermId: z.uuid(),
+    reviewerProfileId: z.uuid(),
+  });
 
 /**
  * Candidate reviewer surfaced in the "Add reviewer…" picker. email is included
@@ -348,3 +347,13 @@ export type EligibleReviewerSchema = z.infer<typeof eligibleReviewerSchema>;
 export const eligibleReviewersListSchema = z.object({
   reviewers: z.array(eligibleReviewerSchema),
 });
+
+/** A category (taxonomy term id + label) the current reviewer is scoped to. */
+export const reviewerCategorySchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+});
+
+export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
+
+export const reviewerCategoriesSchema = z.array(reviewerCategorySchema);

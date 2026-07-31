@@ -1,17 +1,14 @@
-import { categoryReviewersListSchema, listCategoryReviewers } from '@op/common';
-import { z } from 'zod';
+import {
+  categoryReviewersListSchema,
+  instanceOptionalPhaseRefSchema,
+  listCategoryReviewers,
+} from '@op/common';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listCategoryReviewersRouter = router({
   listCategoryReviewers: networkAuthenticatedProcedure()
-    .input(
-      z.object({
-        processInstanceId: z.uuid(),
-        // '' would collide with the instance-wide NULL key.
-        phaseId: z.string().min(1).optional(),
-      }),
-    )
+    .input(instanceOptionalPhaseRefSchema)
     .output(categoryReviewersListSchema)
     .query(async ({ ctx, input }) => {
       const categories = await listCategoryReviewers({

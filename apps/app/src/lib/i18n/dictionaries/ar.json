@@ -1162,6 +1162,7 @@
   "Needs Review": "يحتاج إلى مراجعة",
   "Revised": "تمت المراجعة",
   "Filter by status": "تصفية حسب الحالة",
+  "in {categories}": "في {categories}",
   "Sort order": "ترتيب الفرز",
   "{count} Reviewed": "تمت مراجعة {count}",
   "{count} of {total} completed": "{count} من {total} مكتمل",
