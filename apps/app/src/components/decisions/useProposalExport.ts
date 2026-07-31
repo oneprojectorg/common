@@ -3,7 +3,10 @@ import type { ProposalFilter } from '@op/api/encoders';
 import { toast } from '@op/sense/Sonner';
 import { useEffect, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export const useProposalExport = () => {
+  const t = useTranslations();
   const [exportId, setExportId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDownloadReady, setIsDownloadReady] = useState(false);
@@ -67,9 +70,9 @@ export const useProposalExport = () => {
 
       setExportId(newExportId);
 
-      // ponytail: the old toast.status({ code: 200 }) was a no-op (200 showed
-      // nothing), so no "generating…" toast ever appeared. Preserving that.
-      // Switch to toast.info(`Generating ${format} export…`) if we want it shown.
+      toast.info(
+        t('Generating {format} export...', { format: format.toUpperCase() }),
+      );
     } catch (error) {
       setIsExporting(false);
       toast.error('Failed to start export', {
