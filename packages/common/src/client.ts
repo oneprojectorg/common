@@ -4,6 +4,12 @@
 export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
+export {
+  instancePhaseRefSchema,
+  instanceOptionalPhaseRefSchema,
+  type InstancePhaseRef,
+  type InstanceOptionalPhaseRef,
+} from './services/decision/schemas/instance';
 // Re-exported from the decision utils so client components can resolve
 // phase-level settings without pulling in the server-only utils barrel.
 export {

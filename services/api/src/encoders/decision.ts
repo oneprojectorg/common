@@ -1,6 +1,7 @@
 import {
   REVIEWS_POLICIES,
   checkpointVersionSchema,
+  instanceOptionalPhaseRefSchema,
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
@@ -660,14 +661,11 @@ export const instanceFilterSchema = z
   })
   .extend(paginationInputSchema.shape);
 
-export const proposalFilterSchema = z.object({
-  processInstanceId: z.uuid(),
+export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
   dir: z.enum(['asc', 'desc']).optional(),
-  /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
-  phaseId: z.string().optional(),
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
    * scoping so a user's ballot remains accessible after the process moves
@@ -692,16 +690,15 @@ export const proposalFilterSchema = z.object({
  * `proposalFilterSchema` minus pagination (the endpoint returns every located
  * proposal in scope) so the map applies the same filters as the list.
  */
-export const proposalLocationsFilterSchema = z.object({
-  processInstanceId: z.uuid(),
-  submittedByProfileId: z.uuid().optional(),
-  status: z.enum(ProposalStatus).optional(),
-  categoryId: z.string().optional(),
-  phaseId: z.string().optional(),
-  votedByProfileId: z.uuid().optional(),
-  excludeAssignedForReview: z.boolean().optional(),
-  phase: z.enum(['results']).optional(),
-});
+export const proposalLocationsFilterSchema =
+  instanceOptionalPhaseRefSchema.extend({
+    submittedByProfileId: z.uuid().optional(),
+    status: z.enum(ProposalStatus).optional(),
+    categoryId: z.string().optional(),
+    votedByProfileId: z.uuid().optional(),
+    excludeAssignedForReview: z.boolean().optional(),
+    phase: z.enum(['results']).optional(),
+  });
 
 // Decision Profile Encoder (profile with processInstance)
 export const decisionProfileEncoder = baseProfileEncoder.extend({

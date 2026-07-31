@@ -21,6 +21,7 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
@@ -35,14 +36,10 @@ import {
  *   - paginated: phase-scoped, cursor-paginated.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
-  z.object({
-    processInstanceId: z.uuid(),
-    phaseId: z.string().optional(),
+  instanceOptionalPhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
   }),
-  z.object({
-    processInstanceId: z.uuid(),
-    phaseId: z.string().optional(),
+  instanceOptionalPhaseRefSchema.extend({
     limit: z.number().int().min(1).max(100).default(50),
     cursor: z.string().optional(),
   }),

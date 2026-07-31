@@ -10,7 +10,10 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
-import { instanceOptionalPhaseRefSchema } from './instance';
+import {
+  instanceOptionalPhaseRefSchema,
+  instancePhaseRefSchema,
+} from './instance';
 import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export {
@@ -86,10 +89,8 @@ export type RubricReviewData = z.infer<typeof rubricReviewDataSchema>;
 
 // ── Review assignment schemas ───────────────────────────────────────────
 
-export const proposalReviewAssignmentSchema = z.object({
+export const proposalReviewAssignmentSchema = instancePhaseRefSchema.extend({
   id: z.uuid(),
-  processInstanceId: z.uuid(),
-  phaseId: z.string(),
   status: z.enum(ProposalReviewAssignmentStatus),
   proposal: proposalSchema,
 });
