@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { toast } from '@op/sense/Toast';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -14,7 +15,6 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { ListBox, ListBoxItem } from '@op/ui/RAC';
 import { SearchField } from '@op/ui/SearchField';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Suspense,
@@ -242,7 +242,7 @@ function ShareProposalModalContent({
       try {
         await removeUserMutation.mutateAsync({ profileUserId });
       } catch {
-        toast.error({ message: t('Failed to remove user') });
+        toast.error(t('Failed to remove user'));
       }
       await utils.profile.listUsers.invalidate({
         profileId: proposalProfileId,
@@ -256,7 +256,7 @@ function ShareProposalModalContent({
       try {
         await deleteInviteMutation.mutateAsync({ inviteId });
       } catch {
-        toast.error({ message: t('Failed to cancel invite') });
+        toast.error(t('Failed to cancel invite'));
       }
       await utils.profile.listProfileInvites.invalidate({
         profileId: proposalProfileId,
@@ -278,9 +278,9 @@ function ShareProposalModalContent({
           : path;
       const inviteUrl = `${window.location.origin}${basePath}/invite`;
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success({ message: t('Link copied to clipboard') });
+      toast.success(t('Link copied to clipboard'));
     } catch {
-      toast.error({ message: t('Failed to copy link') });
+      toast.error(t('Failed to copy link'));
     }
   };
 
@@ -291,7 +291,7 @@ function ShareProposalModalContent({
     }
 
     if (!memberRole) {
-      toast.error({ message: t('Failed to send invite') });
+      toast.error(t('Failed to send invite'));
       return;
     }
 
@@ -304,7 +304,7 @@ function ShareProposalModalContent({
         profileId: proposalProfileId,
       });
 
-      toast.success({ message: t('Invite sent successfully') });
+      toast.success(t('Invite sent successfully'));
       setPendingInvites([]);
       setSearchQuery('');
       onOpenChange(false);
@@ -315,7 +315,7 @@ function ShareProposalModalContent({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t('Failed to send invite');
-      toast.error({ message });
+      toast.error(message);
     }
   };
 

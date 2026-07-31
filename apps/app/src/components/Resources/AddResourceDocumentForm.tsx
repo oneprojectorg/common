@@ -8,11 +8,11 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   isAllowedUploadMimeType,
 } from '@op/common/client';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import { cn, formatFileSize } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -37,8 +37,8 @@ export const AddResourceDocumentForm = ({
 }) => {
   const t = useTranslations();
   const createDocument = trpc.resources.createDocument.useMutation({
-    onSuccess: () => toast.success({ message: t('Resource added') }),
-    onError: () => toast.error({ message: t('Could not add resource') }),
+    onSuccess: () => toast.success(t('Resource added')),
+    onError: () => toast.error(t('Could not add resource')),
   });
   const { upload, uploading, uploaded, reset } = useResourceUpload(profileId);
 
@@ -70,15 +70,15 @@ export const AddResourceDocumentForm = ({
     // rejected.
     if (selected) {
       if (!isAllowedUploadMimeType(selected.type)) {
-        toast.error({ message: t('Unsupported file type') });
+        toast.error(t('Unsupported file type'));
         return;
       }
       if (selected.size > MAX_RESOURCE_FILE_SIZE) {
-        toast.error({
-          message: t('File is too large (max {size} MB)', {
+        toast.error(
+          t('File is too large (max {size} MB)', {
             size: MAX_SIZE_MB,
           }),
-        });
+        );
         return;
       }
     }

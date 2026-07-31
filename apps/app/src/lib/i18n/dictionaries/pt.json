@@ -1407,5 +1407,10 @@
   "You're already signed in. Reload the page to continue.": "Você já está com a sessão iniciada. Recarregue a página para continuar.",
   "An account with this email already exists. Try logging in instead.": "Já existe uma conta com este e-mail. Tente fazer login.",
   "Join Common to comment on this proposal.": "Junte-se ao Common para comentar esta proposta.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "O orçamento participativo de Columbus já está aberto. <participate>Participe</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "O orçamento participativo de Columbus já está aberto. <participate>Participe</participate>",
+  "Oops! Not found": "Ops! Não encontrado",
+  "We can't seem to find that. It might have been removed.": "Não conseguimos encontrar isso. Pode ter sido removido.",
+  "Permission needed": "Permissão necessária",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "Você precisará de acesso adicional para fazer isso. Entre em contato com o administrador da sua organização para obter ajuda.",
+  "Generating {format} export...": "Gerando exportação {format}..."
 }

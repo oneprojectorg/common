@@ -4,11 +4,11 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { toast } from '@op/ui/Toast';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 import { LuUserPlus } from 'react-icons/lu';
@@ -106,14 +106,12 @@ export const InviteUserModal = ({
     const errorInfo = analyzeError(error);
 
     if (errorInfo.isConnectionError) {
-      toast.error({
-        title: t('Connection issue'),
-        message: t('Please try sending the invite again.'),
+      toast.error(t('Connection issue'), {
+        description: t('Please try sending the invite again.'),
       });
     } else {
-      toast.error({
-        title,
-        message: errorInfo.message,
+      toast.error(title, {
+        description: errorInfo.message,
       });
     }
   };
@@ -127,9 +125,8 @@ export const InviteUserModal = ({
     const { emails, roleId, organizationId, message } = props;
 
     if (!isOnline) {
-      toast.error({
-        title: t('No connection'),
-        message: t('Please check your internet connection and try again.'),
+      toast.error(t('No connection'), {
+        description: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -167,9 +164,8 @@ export const InviteUserModal = ({
 
     // Check maximum number of emails (Resend batch limit)
     if (allEmails.length > 100) {
-      toast.error({
-        title: t('Too many emails'),
-        message: t(
+      toast.error(t('Too many emails'), {
+        description: t(
           'You can invite a maximum of 100 emails at once. Please reduce the number and try again.',
         ),
       });
@@ -180,13 +176,14 @@ export const InviteUserModal = ({
     const invalidEmails = allEmails.filter((email) => !isValidEmail(email));
 
     if (invalidEmails.length > 0) {
-      toast.error({
-        title:
-          invalidEmails.length === 1
-            ? t('Invalid email address')
-            : t('Invalid email addresses'),
-        message: `${invalidEmails.join(', ')}`,
-      });
+      toast.error(
+        invalidEmails.length === 1
+          ? t('Invalid email address')
+          : t('Invalid email addresses'),
+        {
+          description: `${invalidEmails.join(', ')}`,
+        },
+      );
       return;
     }
 

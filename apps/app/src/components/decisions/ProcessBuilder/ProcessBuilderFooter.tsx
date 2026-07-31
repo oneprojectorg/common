@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { SidebarTrigger } from '@op/ui/Sidebar';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLogOut } from 'react-icons/lu';
 
@@ -70,7 +70,7 @@ export const ProcessBuilderFooter = ({
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
-      toast.success({ message: t('Changes saved successfully') });
+      toast.success(t('Changes saved successfully'));
       // Clear stale store data so the editor reseeds from fresh server data
       clearInstance(decisionProfileId);
       await utils.decision.getDecisionBySlug.invalidate({ slug });
@@ -80,9 +80,8 @@ export const ProcessBuilderFooter = ({
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
-      toast.error({
-        title: t('Failed to save changes'),
-        message: error.message,
+      toast.error(t('Failed to save changes'), {
+        description: error.message,
       });
     },
   });

@@ -4,7 +4,7 @@ import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type { Post } from '@op/api/encoders';
 import { DropdownMenuItem } from '@op/sense/DropdownMenu';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { useRouter } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';

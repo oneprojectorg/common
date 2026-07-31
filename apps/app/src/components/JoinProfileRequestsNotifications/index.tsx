@@ -11,7 +11,7 @@ import {
   NotificationPanelList,
 } from '@op/sense/NotificationPanel';
 import { ProfileItem } from '@op/sense/ProfileItem';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

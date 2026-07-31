@@ -13,8 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
-import { toast } from '@op/sense/Sonner';
 import { Spinner } from '@op/sense/Spinner';
+import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';

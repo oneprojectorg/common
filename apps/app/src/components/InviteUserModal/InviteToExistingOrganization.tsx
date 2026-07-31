@@ -2,9 +2,9 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Toast';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { toast } from '@op/ui/Toast';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -103,24 +103,26 @@ export const InviteToExistingOrganization = ({
 
         // Show error for invalid emails if any
         if (invalidEmails.length > 0) {
-          toast.error({
-            title:
-              invalidEmails.length === 1
-                ? t('Invalid email')
-                : t('Invalid emails'),
-            message: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
-          });
+          toast.error(
+            invalidEmails.length === 1
+              ? t('Invalid email')
+              : t('Invalid emails'),
+            {
+              description: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
+            },
+          );
         }
 
         // Show info for duplicate emails if any
         if (duplicateEmails.length > 0) {
-          toast.error({
-            title:
-              duplicateEmails.length === 1
-                ? t('Duplicate email')
-                : t('Duplicate emails'),
-            message: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
-          });
+          toast.error(
+            duplicateEmails.length === 1
+              ? t('Duplicate email')
+              : t('Duplicate emails'),
+            {
+              description: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
+            },
+          );
         }
       }
     }

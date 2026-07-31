@@ -24,7 +24,7 @@ import { Header3 } from '@op/sense/Header';
 import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { ReactionsButton } from '@op/sense/ReactionsButton';
 import { Skeleton } from '@op/sense/Skeleton';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { REACTION_OPTIONS } from '@op/types';
 import Image from 'next/image';

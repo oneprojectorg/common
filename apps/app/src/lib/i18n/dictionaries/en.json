@@ -1416,5 +1416,10 @@
   "You're already signed in. Reload the page to continue.": "You're already signed in. Reload the page to continue.",
   "An account with this email already exists. Try logging in instead.": "An account with this email already exists. Try logging in instead.",
   "Join Common to comment on this proposal.": "Join Common to comment on this proposal.",
-  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Columbus' participatory budgeting is now open. <participate>Participate</participate>"
+  "Columbus' participatory budgeting is now open. <participate>Participate</participate>": "Columbus' participatory budgeting is now open. <participate>Participate</participate>",
+  "Oops! Not found": "Oops! Not found",
+  "We can't seem to find that. It might have been removed.": "We can't seem to find that. It might have been removed.",
+  "Permission needed": "Permission needed",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "You'll need additional access to do that. Contact your organization's admin for help.",
+  "Generating {format} export...": "Generating {format} export..."
 }

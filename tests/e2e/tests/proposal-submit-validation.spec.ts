@@ -140,7 +140,7 @@ test.describe('Proposal Submit Validation', () => {
 
     // Helper: dismiss any visible toasts before the next submit
     const dismissToasts = async () => {
-      const toasts = authenticatedPage.locator('[data-sonner-toast]');
+      const toasts = authenticatedPage.locator('[data-slot="toast"]');
       const count = await toasts.count();
       for (let i = 0; i < count; i++) {
         const dismissBtn = toasts.nth(i).locator('button').last();
@@ -160,7 +160,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast).toBeVisible({ timeout: 6_000 });
@@ -184,7 +184,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast2 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast2).toBeVisible({ timeout: 6_000 });
@@ -213,7 +213,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast3 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast3).toBeVisible({ timeout: 6_000 });
@@ -250,7 +250,7 @@ test.describe('Proposal Submit Validation', () => {
     // dynamic field validation. The toast should list the missing dynamic
     // required fields.
     const errorToast4 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast4).toBeVisible({ timeout: 6_000 });
@@ -277,7 +277,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast5 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast5).toBeVisible({ timeout: 6_000 });
@@ -306,7 +306,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast6 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast6).toBeVisible({ timeout: 6_000 });
@@ -330,7 +330,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast7 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast7).toBeVisible({ timeout: 6_000 });
@@ -357,7 +357,7 @@ test.describe('Proposal Submit Validation', () => {
     // that the frontend schema validator accepted all fields.
     await expect(
       authenticatedPage
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Please fix the following issues:' }),
     ).not.toBeVisible({ timeout: 6_000 });
   });

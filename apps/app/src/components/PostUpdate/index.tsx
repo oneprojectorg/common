@@ -18,7 +18,7 @@ import {
 } from '@op/sense/InputGroup';
 import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { Skeleton } from '@op/sense/Skeleton';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';

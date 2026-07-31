@@ -2,10 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { toast } from '@op/sense/Toast';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1, Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -54,9 +54,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.reload();
     },
     onError: () => {
-      toast.error({
-        message: t('Failed to accept invitations'),
-      });
+      toast.error(t('Failed to accept invitations'));
     },
   });
 
@@ -65,9 +63,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.href = '/';
     },
     onError: () => {
-      toast.error({
-        message: t('Failed to decline invitation'),
-      });
+      toast.error(t('Failed to decline invitation'));
     },
   });
 

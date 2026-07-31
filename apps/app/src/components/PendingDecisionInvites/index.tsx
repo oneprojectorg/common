@@ -14,7 +14,7 @@ import {
 } from '@op/sense/NotificationPanel';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
