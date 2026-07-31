@@ -1,4 +1,4 @@
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
 export const ImageHeader = ({
@@ -20,7 +20,7 @@ export const ImageHeader = ({
       >
         {headerImage}
       </div>
-      <div className="absolute start-4 bottom-0 aspect-square size-16 overflow-hidden rounded-full border-2 border-white bg-offWhite shadow-sm sm:size-[7.5rem] sm:border-4">
+      <div className="absolute start-4 bottom-0 aspect-square size-16 overflow-hidden rounded-full border-2 border-white bg-background shadow-sm sm:size-[7.5rem] sm:border-4">
         {avatarImage}
       </div>
     </div>

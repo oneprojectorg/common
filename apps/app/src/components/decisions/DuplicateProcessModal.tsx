@@ -2,13 +2,27 @@
 
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Field, FieldLabel, FieldLegend, FieldSet } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
-import { TextField } from '@op/ui/TextField';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -26,22 +40,25 @@ export const DuplicateProcessModal = ({
   const isPendingRef = useRef(false);
 
   return (
-    <Modal
-      isOpen
-      isDismissable
+    <Dialog
+      open
       onOpenChange={(open) => !open && !isPendingRef.current && onClose()}
     >
-      <ModalHeader>{t('Duplicate process')}</ModalHeader>
-      <ErrorBoundary fallback={null}>
-        <Suspense fallback={<DuplicateFormSkeleton />}>
-          <DuplicateFormContent
-            item={item}
-            onClose={onClose}
-            isPendingRef={isPendingRef}
-          />
-        </Suspense>
-      </ErrorBoundary>
-    </Modal>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Duplicate process')}</DialogTitle>
+        </DialogHeader>
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={<DuplicateFormSkeleton />}>
+            <DuplicateFormContent
+              item={item}
+              onClose={onClose}
+              isPendingRef={isPendingRef}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -108,15 +125,21 @@ const DuplicateFormContent = ({
 
   return (
     <>
-      <ModalBody className="gap-6">
-        <div className="flex flex-col gap-6 sm:flex-row">
+      <div className="flex flex-col gap-6 px-6 py-4">
+        <div className="flex flex-col gap-6">
           <div className="flex-1">
-            <TextField
-              label={t('Process Name')}
-              isRequired
-              value={name}
-              onChange={setName}
-            />
+            <Field>
+              <FieldLabel htmlFor="duplicate-process-name">
+                {t('Process Name')} <RequiredAsterisk />
+              </FieldLabel>
+              <Input
+                id="duplicate-process-name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="[unicode-bidi:plaintext]"
+              />
+            </Field>
           </div>
           <div className="flex-1">
             <StewardSelect
@@ -127,26 +150,36 @@ const DuplicateFormContent = ({
           </div>
         </div>
 
-        <CheckboxGroup
-          label={t('Include')}
-          labelClassName="font-serif text-title-sm12"
-          className="gap-4"
-          value={selectedIncludes}
-          onChange={setSelectedIncludes}
-        >
+        <FieldSet className="gap-2">
+          <FieldLegend className="font-serif text-title-sm12">
+            {t('Include')}
+          </FieldLegend>
           {includeOptions.map((option) => (
-            <Checkbox key={option.key} value={option.key} size="small">
-              {option.label}
-            </Checkbox>
+            <Field key={option.key} orientation="horizontal">
+              <Checkbox
+                id={`duplicate-include-${option.key}`}
+                checked={selectedIncludes.includes(option.key)}
+                onCheckedChange={(checked) =>
+                  setSelectedIncludes((prev) =>
+                    checked
+                      ? [...prev, option.key]
+                      : prev.filter((key) => key !== option.key),
+                  )
+                }
+              />
+              <FieldLabel htmlFor={`duplicate-include-${option.key}`}>
+                {option.label}
+              </FieldLabel>
+            </Field>
           ))}
-        </CheckboxGroup>
-      </ModalBody>
-      <ModalFooter>
+        </FieldSet>
+      </div>
+      <DialogFooter>
         <Button
-          color="primary"
+          variant="default"
           className="w-full sm:w-auto"
-          onPress={handleDuplicate}
-          isDisabled={
+          onClick={handleDuplicate}
+          disabled={
             !name.trim() || !stewardProfileId || duplicateMutation.isPending
           }
         >
@@ -154,13 +187,13 @@ const DuplicateFormContent = ({
             ? t('Duplicating...')
             : t('Duplicate process')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </>
   );
 };
 
 const DuplicateFormSkeleton = () => (
-  <ModalBody className="gap-6">
+  <div className="flex flex-col gap-6 px-6 py-4">
     <div className="flex flex-col gap-6 sm:flex-row">
       <div className="flex-1">
         <div className="flex flex-col gap-1">
@@ -183,7 +216,7 @@ const DuplicateFormSkeleton = () => (
         ))}
       </div>
     </div>
-  </ModalBody>
+  </div>
 );
 
 const StewardSelect = ({
@@ -218,18 +251,31 @@ const StewardSelect = ({
   }, [defaultProfileId, stewardProfileId, onSelectionChange]);
 
   return (
-    <Select
-      label={t('Who is stewarding this process?')}
-      isRequired
-      placeholder={t('Select')}
-      selectedKey={stewardProfileId || defaultProfileId || null}
-      onSelectionChange={(key) => onSelectionChange(key as string)}
-    >
-      {profileItems.map((profile) => (
-        <SelectItem key={profile.id} id={profile.id}>
-          {profile.name}
-        </SelectItem>
-      ))}
-    </Select>
+    <Field>
+      <FieldLabel htmlFor="steward-select">
+        {t('Who is stewarding this process?')} <RequiredAsterisk />
+      </FieldLabel>
+      <Select
+        required
+        value={stewardProfileId || defaultProfileId || null}
+        onValueChange={(value) => onSelectionChange(value as string)}
+        // base-ui Select.Value renders the raw value; pass the id→name map so
+        // the trigger shows the steward's name, not their profile id.
+        items={Object.fromEntries(
+          profileItems.map((profile) => [profile.id, profile.name ?? '']),
+        )}
+      >
+        <SelectTrigger id="steward-select" className="w-full">
+          <SelectValue placeholder={t('Select')} />
+        </SelectTrigger>
+        <SelectContent>
+          {profileItems.map((profile) => (
+            <SelectItem key={profile.id} value={profile.id}>
+              {profile.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Field>
   );
 };

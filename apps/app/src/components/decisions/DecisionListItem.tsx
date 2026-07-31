@@ -2,15 +2,26 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-import { LuCalendar } from 'react-icons/lu';
+import { LuCalendar, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
@@ -38,7 +49,13 @@ const isClosingSoon = (dateString: string) => {
   return daysUntilClose >= 0 && daysUntilClose <= 7;
 };
 
-export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
+export const DecisionListItem = ({
+  item,
+  className,
+}: {
+  item: DecisionProfile;
+  className?: string;
+}) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const { processInstance } = item;
@@ -80,7 +97,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
       <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
-          className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
+          className={cn(
+            'flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between',
+            className,
+          )}
         >
           <DecisionCardHeader
             name={processInstance.name || item.name}
@@ -111,42 +131,51 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         </Link>
 
         {(canManage || canDelete) && (
-          <div className="flex items-center pe-2 pt-4 sm:ps-12 sm:pt-0">
-            <OptionMenu
-              aria-label={t('Decision options')}
-              variant="outline"
-              className="rounded bg-white shadow-light"
-              size="medium"
-            >
-              {canManage && (
-                <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
-                  {t('Settings')}
-                </MenuItem>
-              )}
-              {canManage && (
-                <MenuItem
-                  key="duplicate"
-                  onAction={() => setShowDuplicateModal(true)}
-                >
-                  {t('Duplicate')}
-                </MenuItem>
-              )}
-              {canDelete && (
-                <MenuItem
-                  key="delete"
-                  onAction={() => setShowDeleteModal(true)}
-                  className="text-functional-red"
-                >
-                  {t('Delete')}
-                </MenuItem>
-              )}
-            </OptionMenu>
+          <div className="flex items-center pe-4 pt-4 sm:ps-6 sm:pt-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label={t('Decision options')}
+                    variant="outline"
+                    size="icon-sm"
+                    className="aspect-square rounded bg-white shadow-light"
+                  />
+                }
+              >
+                <LuEllipsis className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="bottom" align="end">
+                {canManage && (
+                  <DropdownMenuLinkItem
+                    closeOnClick
+                    render={<Link href={`/decisions/${item.slug}/edit`} />}
+                  >
+                    {t('Settings')}
+                  </DropdownMenuLinkItem>
+                )}
+                {canManage && (
+                  <DropdownMenuItem onClick={() => setShowDuplicateModal(true)}>
+                    {t('Duplicate')}
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteModal(true)}
+                    className="text-functional-red"
+                  >
+                    {t('Delete')}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
 
-      {/* Manual state instead of DialogTrigger because the trigger is a MenuItem
-         inside a Menu popover — DialogTrigger conflicts with menu focus/close behavior */}
+      {/* Manual state instead of DialogTrigger because the trigger is a dropdown
+         menu item inside a menu popover — DialogTrigger conflicts with menu
+         focus/close behavior */}
       {showDuplicateModal && (
         <DuplicateProcessModal
           item={item}
@@ -154,46 +183,49 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         />
       )}
 
-      <Modal
-        isOpen={showDeleteModal}
+      <Dialog
+        open={showDeleteModal}
         onOpenChange={(open) => !open && setShowDeleteModal(false)}
-        surface="flat"
       >
-        <ModalHeader className="ps-6 text-start">
-          {isDraft
-            ? t('Delete draft?')
-            : t('Delete {name}?', {
-                name: processInstance.name || item.name,
-              })}
-        </ModalHeader>
-        <ModalBody>
-          <p>
-            {isDraft
-              ? t(
-                  "This draft will be permanently deleted and can't be recovered.",
-                )
-              : t(
-                  "This decision will be permanently deleted and can't be recovered.",
-                )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
-            {isDraft ? t('Keep draft') : t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            onPress={handleDeleteConfirm}
-            isDisabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending
-              ? t('Deleting...')
-              : isDraft
-                ? t('Delete draft')
-                : t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              {isDraft
+                ? t('Delete draft?')
+                : t('Delete {name}?', {
+                    name: processInstance.name || item.name,
+                  })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4">
+            <p>
+              {isDraft
+                ? t(
+                    "This draft will be permanently deleted and can't be recovered.",
+                  )
+                : t(
+                    "This decision will be permanently deleted and can't be recovered.",
+                  )}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              {isDraft ? t('Keep draft') : t('Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending
+                ? t('Deleting...')
+                : isDraft
+                  ? t('Delete draft')
+                  : t('Delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
@@ -229,12 +261,12 @@ export const ProfileDecisionListItem = ({
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
-              className="sm:flex-row sm:items-end sm:gap-1"
+              className="sm:flex-row sm:gap-1"
             />
             <DecisionStat
               number={processInstance.proposalCount ?? 0}
               label="Proposals"
-              className="sm:flex-row sm:items-end sm:gap-1"
+              className="sm:flex-row sm:gap-1"
             />
           </div>
         </div>
@@ -298,13 +330,10 @@ const DecisionStat = ({
   className?: string;
 }) => (
   <div
-    className={cn(
-      'flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0',
-      className,
-    )}
+    className={cn('flex items-center gap-1 sm:flex-col sm:gap-0', className)}
   >
     <span className="font-serif text-title-base">{number}</span>
-    <span className="text-sm">
+    <span className="text-sm text-muted-foreground">
       <TranslatedText text={label} />
     </span>
   </div>

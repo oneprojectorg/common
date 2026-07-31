@@ -147,7 +147,7 @@ function ComboboxItem({
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        "relative flex w-full cursor-default items-center gap-2 rounded-md py-2 ps-3 pe-8 text-base outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-muted data-highlighted:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex w-full cursor-pointer items-center gap-2 rounded-md py-2 ps-3 pe-8 text-base outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-muted data-highlighted:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -225,7 +225,13 @@ function ComboboxChips({
 }: React.ComponentPropsWithRef<typeof ComboboxPrimitive.Chips> &
   ComboboxPrimitive.Chips.Props) {
   return (
-    <ComboboxPrimitive.Chips
+    // Render the chips box through InputGroup so it registers as the popup's
+    // `inputGroupElement` anchor (base-ui otherwise falls back to the inner
+    // <input>, leaving the dropdown offset + mis-sized). This makes the popup
+    // span and align to the full control, and `w-(--anchor-width)` on
+    // ComboboxContent then matches the input width.
+    <ComboboxPrimitive.InputGroup
+      render={<ComboboxPrimitive.Chips />}
       data-slot="combobox-chips"
       className={cn(
         'flex min-h-11 flex-wrap items-center gap-1 rounded-lg border border-input bg-background bg-clip-padding px-3 py-1 text-base transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-disabled:cursor-not-allowed has-disabled:bg-muted has-disabled:opacity-50 has-aria-invalid:border-destructive has-aria-invalid:ring-3 has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1 dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40',
@@ -271,6 +277,7 @@ function ComboboxChip({
 
 function ComboboxChipsInput({
   className,
+  onKeyDown,
   ...props
 }: ComboboxPrimitive.Input.Props) {
   return (
@@ -280,6 +287,17 @@ function ComboboxChipsInput({
         'min-w-16 flex-1 outline-none placeholder:text-muted-foreground',
         className,
       )}
+      onKeyDown={(event) => {
+        // base-ui clears the entire value when Escape is pressed with the popup
+        // closed (it treats Escape as "clear the field"). For a multiselect that
+        // is silent data loss, so when the input is empty we cancel base-ui's
+        // handler to keep the selection. A non-empty input still lets Escape
+        // clear the typed text.
+        if (event.key === 'Escape' && event.currentTarget.value === '') {
+          event.preventBaseUIHandler();
+        }
+        onKeyDown?.(event);
+      }}
       {...props}
     />
   );

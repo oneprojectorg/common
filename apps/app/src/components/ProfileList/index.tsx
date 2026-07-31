@@ -2,8 +2,8 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { cn } from '@op/sense/lib/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -46,18 +46,18 @@ export const ProfileSummaryList = ({
 
         const avatar = (
           <Avatar
-            placeholder={profile.name}
             className={cn(
               'size-8 sm:size-12',
               canLinkToProfile && 'hover:opacity-80',
             )}
           >
+            <AvatarFallback name={profile.name} />
             {profile.avatarImage?.name ? (
               <Image
                 src={getPublicUrl(profile.avatarImage.name) ?? ''}
                 alt={`${profile.name} avatar`}
                 fill
-                className="object-cover"
+                className="rounded-full object-cover"
               />
             ) : null}
           </Avatar>

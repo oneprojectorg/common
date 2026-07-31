@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
-import { SkeletonLine } from '@op/ui/Skeleton';
+import { SkeletonText } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -60,7 +60,7 @@ export const AllOrganizationsSuspense = ({
         <div ref={ref} className="flex justify-center py-4">
           {isFetchingNextPage ? (
             <div className="text-sm text-neutral-gray4">
-              <SkeletonLine lines={3} />
+              <SkeletonText lines={3} />
             </div>
           ) : null}
         </div>
@@ -76,7 +76,7 @@ export const AllOrganizations = (props: {
 }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load organizations</div>}>
-      <Suspense fallback={<SkeletonLine lines={5} />}>
+      <Suspense fallback={<SkeletonText lines={5} />}>
         <AllOrganizationsSuspense {...props} />
       </Suspense>
     </ErrorBoundary>

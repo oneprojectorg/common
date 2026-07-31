@@ -1,7 +1,14 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@op/sense/Breadcrumb';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -34,10 +41,19 @@ export const ProfileOrganizationsSuspense = ({
     <>
       <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
-          <Breadcrumbs className="hidden sm:flex">
-            <Breadcrumb href={`/org/${slug}`}>{profile.name}</Breadcrumb>
-            <Breadcrumb>Organizations</Breadcrumb>
-          </Breadcrumbs>
+          <Breadcrumb className="hidden sm:flex">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={<Link href={`/org/${slug}`} />}>
+                  {profile.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Organizations</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
           <div className="font-serif text-title-sm sm:text-title-lg">

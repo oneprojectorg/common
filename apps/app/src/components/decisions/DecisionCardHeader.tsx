@@ -1,9 +1,8 @@
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Header3 } from '@op/ui/Header';
-import { cn } from '@op/ui/utils';
-import Image from 'next/image';
+import { Badge } from '@op/sense/Badge';
+import { Header3 } from '@op/sense/Header';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { cn } from '@op/sense/lib/utils';
 
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -27,32 +26,27 @@ export const DecisionCardHeader = ({
   className?: string;
 }) => (
   <div className={cn('flex flex-col gap-2', className)}>
-    <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
-      <Header3 className="font-serif !text-title-base text-neutral-black">
-        {name}
-      </Header3>
+    <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:justify-start">
+      <Header3 className="font-serif text-neutral-black">{name}</Header3>
       {currentState ? (
-        <Chip
+        <Badge
+          variant="secondary"
           className={
             chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
           }
         >
           <TranslatedText text={currentState as TranslationKey} />
-        </Chip>
+        </Badge>
       ) : null}
     </div>
     {stewardName ? (
       <div className="flex items-center gap-1">
-        <Avatar placeholder={stewardName} className="size-4">
-          {stewardAvatarPath ? (
-            <Image
-              src={getPublicUrl(stewardAvatarPath) ?? ''}
-              alt={stewardName}
-              fill
-              className="object-cover"
-            />
-          ) : null}
-        </Avatar>
+        <ProfileAvatar
+          name={stewardName}
+          src={getPublicUrl(stewardAvatarPath)}
+          alt={stewardName}
+          size="sm"
+        />
         <span className="text-sm text-neutral-black">{stewardName}</span>
       </div>
     ) : null}

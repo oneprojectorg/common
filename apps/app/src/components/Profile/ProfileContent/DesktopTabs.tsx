@@ -1,6 +1,6 @@
 'use client';
 
-import { Tab } from '@op/ui/Tabs';
+import { TabsTrigger } from '@op/sense/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -9,9 +9,9 @@ export const DesktopIndividualTabs = () => {
 
   return (
     <>
-      <Tab id="about">{t('About')}</Tab>
-      <Tab id="organizations">{t('Organizations')}</Tab>
-      <Tab id="following">{t('Following')}</Tab>
+      <TabsTrigger value="about">{t('About')}</TabsTrigger>
+      <TabsTrigger value="organizations">{t('Organizations')}</TabsTrigger>
+      <TabsTrigger value="following">{t('Following')}</TabsTrigger>
     </>
   );
 };
@@ -21,8 +21,8 @@ export const DesktopOrganizationTabs = () => {
 
   return (
     <>
-      <Tab id="home">{t('Updates')}</Tab>
-      <Tab id="relationships">{t('Relationships')}</Tab>
+      <TabsTrigger value="home">{t('Updates')}</TabsTrigger>
+      <TabsTrigger value="relationships">{t('Relationships')}</TabsTrigger>
     </>
   );
 };
