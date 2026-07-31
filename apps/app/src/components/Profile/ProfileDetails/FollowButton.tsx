@@ -3,9 +3,9 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 
@@ -40,9 +40,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             relationshipType: ProfileRelationshipType.FOLLOWING,
           });
 
-          toast.success({
-            message: `Unfollowed ${profile.profile.name}`,
-          });
+          toast.success(`Unfollowed ${profile.profile.name}`);
         } else {
           await addRelationship.mutateAsync({
             targetProfileId: profile.profile.id,
@@ -50,9 +48,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             pending: false,
           });
 
-          toast.success({
-            message: `Now following ${profile.profile.name}`,
-          });
+          toast.success(`Now following ${profile.profile.name}`);
         }
 
         // Invalidate all relationship-related queries
@@ -72,9 +68,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
           utils.profile.getRelationships.invalidate(),
         ]);
       } catch (error) {
-        toast.error({
-          message: isFollowing ? 'Failed to unfollow' : 'Failed to follow',
-        });
+        toast.error(isFollowing ? 'Failed to unfollow' : 'Failed to follow');
       }
     });
   };

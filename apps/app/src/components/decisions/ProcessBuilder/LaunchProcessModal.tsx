@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { toast } from '@op/sense/Toast';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -57,9 +57,8 @@ export const LaunchProcessModal = ({
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
-      toast.error({
-        message: t('Failed to launch process'),
-        title: error.message,
+      toast.error(error.message, {
+        description: t('Failed to launch process'),
       });
     },
   });

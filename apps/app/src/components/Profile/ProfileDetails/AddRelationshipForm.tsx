@@ -1,6 +1,7 @@
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { toast } from '@op/sense/Toast';
 import {
   RELATIONSHIP_OPTIONS,
   RelationshipType,
@@ -10,7 +11,6 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
-import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -50,9 +50,8 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
 
   const submitRelationships = (relationships: string[], close: () => void) => {
     if (!isOnline) {
-      toast.error({
-        title: 'No connection',
-        message: 'Please check your internet connection and try again.',
+      toast.error('No connection', {
+        description: 'Please check your internet connection and try again.',
       });
       return;
     }
@@ -64,22 +63,18 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
           relationships,
         });
 
-        toast.success({
-          message: 'Relationship requested',
-        });
+        toast.success('Relationship requested');
         close();
       } catch (e) {
         const errorInfo = analyzeError(e);
 
         if (errorInfo.isConnectionError) {
-          toast.error({
-            title: 'Connection issue',
-            message: errorInfo.message + ' Please try submitting again.',
+          toast.error('Connection issue', {
+            description: errorInfo.message + ' Please try submitting again.',
           });
         } else {
-          toast.error({
-            title: 'Could not create relationship',
-            message: errorInfo.message,
+          toast.error('Could not create relationship', {
+            description: errorInfo.message,
           });
         }
       }

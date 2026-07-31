@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { toast } from '@op/sense/Toast';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -14,7 +15,6 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { SearchField } from '@op/ui/SearchField';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Key,
@@ -331,7 +331,7 @@ function ProfileInviteModalContent({
       try {
         await deleteInviteMutation.mutateAsync({ inviteId });
       } catch {
-        toast.error({ message: t('Failed to cancel invite') });
+        toast.error(t('Failed to cancel invite'));
       }
       await utils.profile.listProfileInvites.invalidate({ profileId });
     });
@@ -343,7 +343,7 @@ function ProfileInviteModalContent({
       try {
         await removeUserMutation.mutateAsync({ profileUserId });
       } catch {
-        toast.error({ message: t('Failed to remove user') });
+        toast.error(t('Failed to remove user'));
       }
       await utils.profile.listUsers.invalidate({ profileId });
     });
@@ -368,7 +368,7 @@ function ProfileInviteModalContent({
           profileId,
         });
 
-        toast.success({ message: t('Invite sent successfully') });
+        toast.success(t('Invite sent successfully'));
         setSelectedItemsByRole({});
         setSearchQuery('');
         onOpenChange(false);
@@ -379,7 +379,7 @@ function ProfileInviteModalContent({
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');
-        toast.error({ message });
+        toast.error(message);
       }
     });
   };

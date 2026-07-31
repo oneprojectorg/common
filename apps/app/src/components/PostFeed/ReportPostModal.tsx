@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 

@@ -33,7 +33,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 - **`@op/supabase`**: Uses the client-side Supabase client for authentication and potentially other direct Supabase interactions.
 - **Tailwind CSS**: Utility-first CSS framework for styling.
 - **Zustand**: Client-side state management library.
-- **Sonner**: Library for displaying toasts/notifications.
+- **@op/sense Toast**: Toast/notification primitive (built on Base UI).
 - **Immer**: Utility for working with immutable state (often used with Zustand).
 - **`babel-plugin-react-compiler`**: Experimental React compiler (Memoization).
 - **`@next/bundle-analyzer`**: Tool for analyzing the webpack bundle size.

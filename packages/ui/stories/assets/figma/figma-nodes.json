@@ -334,9 +334,9 @@
       "page": "Alert",
       "case": "Alert, Variant=Default"
     },
-    "sonner.png": {
+    "toast.png": {
       "nodeId": "193:1386",
-      "page": "Sonner",
+      "page": "Toast",
       "case": "Toast, State=Default (export includes shadow bleed)"
     },
     "skeleton.png": {

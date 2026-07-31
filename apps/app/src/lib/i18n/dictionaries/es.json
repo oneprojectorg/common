@@ -1420,5 +1420,13 @@
   "Could not remove reviewer. Please try again.": "No se pudo quitar la persona revisora. Inténtalo de nuevo.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Las categorías provienen de <link>Categorías de propuestas</link>. Agrega personas revisoras a cada una o invita a alguien nuevo.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "No se encontraron categorías. Agrégalas en <link>Categorías de propuestas</link> para asignar personas revisoras por categoría.",
-  "Coming soon": "Próximamente"
+  "Coming soon": "Próximamente",
+  "How should proposals get distributed to reviewers?": "¿Cómo deben distribuirse las propuestas entre las personas revisoras?",
+  "Full coverage": "Cobertura completa",
+  "Every reviewer scores every proposal": "Cada persona revisora evalúa cada propuesta",
+  "Oops! Not found": "¡Vaya! No encontrado",
+  "We can't seem to find that. It might have been removed.": "No podemos encontrar eso. Es posible que se haya eliminado.",
+  "Permission needed": "Permiso necesario",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "Necesitarás acceso adicional para hacer eso. Contacta al administrador de tu organización para obtener ayuda.",
+  "Generating {format} export...": "Generando exportación {format}..."
 }

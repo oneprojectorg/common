@@ -1,10 +1,10 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Toast';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
@@ -93,22 +93,21 @@ export const OrganizationFormFields = ({
       ];
       if (!acceptedTypes.includes(file.type)) {
         const types = acceptedTypes.map((t) => t.split('/')[1]).join(', ');
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            { types },
-          ),
-        });
+        toast.error(
+          t('That file type is not supported. Accepted types: {types}', {
+            types,
+          }),
+        );
         return;
       }
 
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
+        toast.error(
+          t('File too large. Maximum size: {size}MB', {
             size: maxSizeMB,
           }),
-        });
+        );
         return;
       }
 

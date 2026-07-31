@@ -2,7 +2,7 @@ import { TRPCProvider } from '@op/api/client';
 import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, OPURLConfig, printNFO } from '@op/core';
 import '@op/styles';
-import { Toaster } from '@op/sense/Sonner';
+import { Toaster } from '@op/sense/Toast';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';

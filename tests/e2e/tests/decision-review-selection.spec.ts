@@ -190,7 +190,9 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       .click();
 
     // ── 3. Confirm the advance in the modal.
-    const advanceDialog = authenticatedPage.getByRole('dialog');
+    const advanceDialog = authenticatedPage
+      .getByRole('dialog')
+      .and(authenticatedPage.locator(':not([data-slot="toast"])'));
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Voting?')).toBeVisible();
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
@@ -322,7 +324,9 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       waitUntil: 'networkidle',
     });
     await page.getByRole('button', { name: 'Advance' }).first().click();
-    const advanceDialog = page.getByRole('dialog');
+    const advanceDialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
     await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
     await page.goto(`/en/decisions/${instance.slug}/current`, {

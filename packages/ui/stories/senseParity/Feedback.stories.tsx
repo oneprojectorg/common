@@ -7,16 +7,16 @@ import {
 import { Button } from '@op/sense/Button';
 import { Progress } from '@op/sense/Progress';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Toaster, toast } from '@op/sense/Sonner';
 import { Spinner } from '@op/sense/Spinner';
+import { Toaster, toast } from '@op/sense/Toast';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import figmaAlert from '../assets/figma/alert.png';
 import figmaProgress from '../assets/figma/progress.png';
 import figmaSkeleton from '../assets/figma/skeleton.png';
-import figmaSonner from '../assets/figma/sonner.png';
 import figmaSpinner from '../assets/figma/spinner.png';
+import figmaToast from '../assets/figma/toast.png';
 import { ParityGridHeader, ParityRow, withDesignScale } from './Parity';
 
 // Figma parity for the feedback family. See Parity.tsx for the conventions.
@@ -54,7 +54,7 @@ export const Feedback: Story = {
           inline), so there is no static live rendering to place next to the
           mock. Reviewers: click the button and compare the toast that
           appears with the Figma export. */}
-      <ParityRow label="Sonner" img={figmaSonner} imgWidth={358}>
+      <ParityRow label="Toast" img={figmaToast} imgWidth={358}>
         <Button
           variant="outline"
           size="sm"

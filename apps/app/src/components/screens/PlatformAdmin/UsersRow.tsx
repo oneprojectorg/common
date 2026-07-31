@@ -5,10 +5,10 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
+import { toast } from '@op/sense/Toast';
 import { MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
@@ -112,9 +112,8 @@ export const UsersRowCells = ({ user }: { user: User }) => {
               key="copy-auth-user-id"
               onAction={() => {
                 navigator.clipboard.writeText(user.authUserId);
-                toast.success({
-                  message: t('Auth user ID copied to your clipboard.'),
-                  dismissable: false,
+                toast.success(t('Auth user ID copied to your clipboard.'), {
+                  dismissible: false,
                 });
               }}
               className="px-3 py-1"

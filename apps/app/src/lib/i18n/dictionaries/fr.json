@@ -1420,5 +1420,13 @@
   "Could not remove reviewer. Please try again.": "Impossible de retirer l’évaluateur. Veuillez réessayer.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Les catégories proviennent de <link>Catégories de propositions</link>. Ajoutez des évaluateurs à chacune ou invitez une nouvelle personne.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "Aucune catégorie trouvée. Ajoutez-en dans <link>Catégories de propositions</link> pour affecter des évaluateurs par catégorie.",
-  "Coming soon": "Bientôt disponible"
+  "Coming soon": "Bientôt disponible",
+  "How should proposals get distributed to reviewers?": "Comment les propositions doivent-elles être réparties entre les évaluateurs ?",
+  "Full coverage": "Couverture complète",
+  "Every reviewer scores every proposal": "Chaque évaluateur note chaque proposition",
+  "Oops! Not found": "Oups ! Introuvable",
+  "We can't seem to find that. It might have been removed.": "Nous ne trouvons pas cela. Il a peut-être été supprimé.",
+  "Permission needed": "Autorisation requise",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "Vous aurez besoin d'un accès supplémentaire pour faire cela. Contactez l'administrateur de votre organisation pour obtenir de l'aide.",
+  "Generating {format} export...": "Génération de l’export {format}..."
 }

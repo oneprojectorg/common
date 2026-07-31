@@ -6,7 +6,7 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import type { ProposalData } from '@op/common/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import type { JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -36,14 +36,11 @@ export function useRestoreProposalVersion({
   const { provider } = useCollaborativeDoc();
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
-      toast.success({
-        message: t('Proposal version restored'),
-      });
+      toast.success(t('Proposal version restored'));
     },
     onError: (error) => {
-      toast.error({
-        title: t('Failed to restore proposal version'),
-        message: error.message || t('An unexpected error occurred'),
+      toast.error(t('Failed to restore proposal version'), {
+        description: error.message || t('An unexpected error occurred'),
       });
     },
   });

@@ -1423,5 +1423,13 @@
   "Could not remove reviewer. Please try again.": "পর্যালোচক সরানো যায়নি। আবার চেষ্টা করুন।",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "বিভাগগুলি <link>প্রস্তাব বিভাগসমূহ</link> থেকে আসে। প্রতিটিতে পর্যালোচক যোগ করুন, বা নতুন কাউকে আমন্ত্রণ জানান।",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "কোনো বিভাগ পাওয়া যায়নি। বিভাগ অনুযায়ী পর্যালোচক নিযুক্ত করতে <link>প্রস্তাব বিভাগসমূহ</link>-এ সেগুলি যোগ করুন।",
-  "Coming soon": "শীঘ্রই আসছে"
+  "Coming soon": "শীঘ্রই আসছে",
+  "How should proposals get distributed to reviewers?": "প্রস্তাবগুলো পর্যালোচকদের মধ্যে কীভাবে বণ্টন করা উচিত?",
+  "Full coverage": "পূর্ণ কভারেজ",
+  "Every reviewer scores every proposal": "প্রতিটি পর্যালোচক প্রতিটি প্রস্তাবের মূল্যায়ন করেন",
+  "Oops! Not found": "ওহো! খুঁজে পাওয়া যায়নি",
+  "We can't seem to find that. It might have been removed.": "আমরা সেটি খুঁজে পাচ্ছি না। এটি সরানো হয়ে থাকতে পারে।",
+  "Permission needed": "অনুমতি প্রয়োজন",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "সেটি করতে আপনার অতিরিক্ত অ্যাক্সেস প্রয়োজন হবে। সাহায্যের জন্য আপনার সংস্থার অ্যাডমিনের সাথে যোগাযোগ করুন।",
+  "Generating {format} export...": "{format} এক্সপোর্ট তৈরি করা হচ্ছে..."
 }
