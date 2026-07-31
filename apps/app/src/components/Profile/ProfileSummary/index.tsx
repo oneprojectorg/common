@@ -24,7 +24,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
   return (
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
-        <span className="font-bold text-teal">
+        <span className="text-teal">
           {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
             count,
           })}
@@ -41,7 +41,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-2 py-2">
-      <Header1>
+      <Header1 className="text-headline">
         <bdi>{profile.profile.name}</bdi>
       </Header1>
 

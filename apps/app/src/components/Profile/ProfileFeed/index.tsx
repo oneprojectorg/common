@@ -187,7 +187,7 @@ export const ProfileFeedList = ({
 }: ProfileFeedRenderProps & { className?: string }) => {
   return (
     <div className={className}>
-      <PostFeed>
+      <PostFeed className="gap-0">
         {posts.length > 0 ? (
           posts.map((postToOrg) => (
             <Fragment key={postToOrg.postId}>
@@ -198,6 +198,7 @@ export const ProfileFeedList = ({
                 withLinks={false}
                 onReactionClick={onReactionClick}
                 onCommentClick={onCommentClick}
+                className="p-4"
               />
               <hr />
             </Fragment>

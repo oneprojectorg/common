@@ -71,25 +71,29 @@ export const ProfileTabsRenderer = ({
         <MembersTab profileId={profile.id} />
         <DecisionsTab profileId={profile.id} />
       </ProfileTabList>
-
-      <TabsContent value="home" className="flex grow flex-col sm:p-0">
-        <OrganizationProfileGrid profile={organization} />
-      </TabsContent>
-      <TabsContent value="relationships" className="grow px-4 sm:px-6 sm:py-0">
-        <ProfileOrganizations>
-          <ProfileRelationshipsSuspense
-            slug={profile.slug}
-            showBreadcrumb={false}
-          />
-        </ProfileOrganizations>
-      </TabsContent>
-      <FollowersTabPanel>
-        <ProfileFollowers profileId={profile.id} />
-      </FollowersTabPanel>
-      <DecisionsTabPanel>
-        <ProfileDecisionsSuspense profileId={profile.id} />
-      </DecisionsTabPanel>
-      <MembersTabPanel profileId={profile.id} />
+      <div className="border-t">
+        <TabsContent value="home" className="flex grow flex-col sm:p-0">
+          <OrganizationProfileGrid profile={organization} />
+        </TabsContent>
+        <TabsContent
+          value="relationships"
+          className="grow px-4 sm:px-6 sm:py-0"
+        >
+          <ProfileOrganizations>
+            <ProfileRelationshipsSuspense
+              slug={profile.slug}
+              showBreadcrumb={false}
+            />
+          </ProfileOrganizations>
+        </TabsContent>
+        <FollowersTabPanel>
+          <ProfileFollowers profileId={profile.id} />
+        </FollowersTabPanel>
+        <DecisionsTabPanel>
+          <ProfileDecisionsSuspense profileId={profile.id} />
+        </DecisionsTabPanel>
+        <MembersTabPanel profileId={profile.id} />
+      </div>
     </ProfileTabs>
   );
 };

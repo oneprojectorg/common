@@ -311,13 +311,13 @@ export const OrganizationProfileGrid = ({
 
   return (
     <ProfileGridWrapper>
-      <div className="col-span-9 flex flex-col gap-8">
+      <div className="col-span-9 flex flex-col">
         {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="border-b px-4 pt-6 pb-8"
+              className="rounded-none border-x-0 border-t-0 border-b px-4 pt-6 pb-8"
             />
           </Suspense>
         ) : (

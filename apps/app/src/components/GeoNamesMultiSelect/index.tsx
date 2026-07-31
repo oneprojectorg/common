@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { useDebounce } from '@op/hooks';
 import {
   Combobox,
   ComboboxChip,
@@ -34,12 +35,13 @@ export const GeoNamesMultiSelect = ({
 }) => {
   const t = useTranslations();
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
+  const [debouncedQuery] = useDebounce(whereWeWorkQuery, 300);
   const { data: geoNames, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
     {
-      q: whereWeWorkQuery,
+      q: debouncedQuery,
     },
     {
-      enabled: whereWeWorkQuery.length >= 2,
+      enabled: debouncedQuery.length >= 2,
       placeholderData: (prev) => prev,
     },
   );
@@ -64,7 +66,7 @@ export const GeoNamesMultiSelect = ({
       })
       .filter((o) => !selectedOptions.some((s) => s.id === o.id)) ?? [];
 
-  const loading = isLoading && whereWeWorkQuery.length >= 2;
+  const loading = isLoading && debouncedQuery.length >= 2;
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -90,7 +92,11 @@ export const GeoNamesMultiSelect = ({
         </ComboboxChips>
         <ComboboxContent>
           <ComboboxEmpty>
-            {loading ? <Spinner className="size-4" /> : null}
+            {loading ? (
+              <Spinner className="size-4" />
+            ) : debouncedQuery.length >= 2 ? (
+              t('No results')
+            ) : null}
           </ComboboxEmpty>
           <ComboboxList>
             {(item: Option) => (
