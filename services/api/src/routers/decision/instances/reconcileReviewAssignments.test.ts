@@ -7,6 +7,7 @@ import {
   generateReviewAssignments,
   reconcileReviewAssignments,
   removeCategoryReviewer,
+  updateProposal,
 } from '@op/common';
 import { and, db, eq, inArray } from '@op/db/client';
 import {
@@ -505,6 +506,85 @@ describe.concurrent('reconcileReviewAssignments — 6b-prune', () => {
       .where(eq(proposalReviews.assignmentId, inProgressAssignment!.id));
     expect(survivingReview).toHaveLength(1);
   });
+
+  it('keeps a pending assignment still justified by another category (full recompute, not delta-prune)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createReviewInstance(
+      testData,
+      'by_category',
+    );
+    const reviewerRole = await createReviewerRole(instance.profileId);
+    const [termA, termB] = await seedTerms(2, onTestFinished);
+
+    // dualReviewer covers cats A AND B; soloReviewer covers cat A only.
+    const [dualReviewer, soloReviewer] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
+    ]);
+
+    // The proposal wears BOTH categories.
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Dual-category proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await tagProposal(proposal.id, termA!.id);
+    await tagProposal(proposal.id, termB!.id);
+
+    await scopeReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termA!.id,
+      reviewerProfileId: dualReviewer.profileId,
+    });
+    await scopeReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termB!.id,
+      reviewerProfileId: dualReviewer.profileId,
+    });
+    await scopeReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termA!.id,
+      reviewerProfileId: soloReviewer.profileId,
+    });
+
+    await generateBaseline(instance.instance.id);
+
+    // Both reviewers assigned, both still `pending`.
+    await removeCategoryReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termA!.id,
+      reviewerProfileId: dualReviewer.profileId,
+      user: setup.user,
+    });
+    await removeCategoryReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termA!.id,
+      reviewerProfileId: soloReviewer.profileId,
+      user: setup.user,
+    });
+
+    const reviewers =
+      reviewersByProposal(await getAssignments(instance.instance.id)).get(
+        proposal.id,
+      ) ?? new Set<string>();
+
+    // dualReviewer's pending assignment survives — the recompute still finds
+    // the cat-B justification. soloReviewer's is pruned — nothing justifies it.
+    expect(reviewers.has(dualReviewer.profileId)).toBe(true);
+    expect(reviewers.has(soloReviewer.profileId)).toBe(false);
+  });
 });
 
 describe.concurrent('reconcileReviewAssignments — recategorization', () => {
@@ -606,6 +686,74 @@ describe.concurrent('reconcileReviewAssignments — recategorization', () => {
     expect(reviewers.has(newReviewer.profileId)).toBe(true);
     expect(reviewers.has(keptReviewer.profileId)).toBe(true);
     expect(reviewers.has(pendingReviewer.profileId)).toBe(false);
+  });
+
+  it('updateProposal itself reconciles: editing categories moves the assignments in the same call', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createReviewInstance(
+      testData,
+      'by_category',
+    );
+    const reviewerRole = await createReviewerRole(instance.profileId);
+    const [termA, termB] = await seedTerms(2, onTestFinished);
+
+    const [reviewerA, reviewerB] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Edited proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await tagProposal(proposal.id, termA!.id);
+
+    await scopeReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termA!.id,
+      reviewerProfileId: reviewerA.profileId,
+    });
+    await scopeReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: termB!.id,
+      reviewerProfileId: reviewerB.profileId,
+    });
+
+    await generateBaseline(instance.instance.id);
+
+    // The real service path: updateProposal → setProposalCategories →
+    // reconcileReviewAssignments, all inside its own write transaction.
+    // Categories resolve by term LABEL here (setProposalCategories contract).
+    await updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: { title: 'Edited proposal', category: [termB!.label] },
+      },
+      user: setup.user,
+    });
+
+    const reviewers =
+      reviewersByProposal(await getAssignments(instance.instance.id)).get(
+        proposal.id,
+      ) ?? new Set<string>();
+
+    // A → B took effect without any explicit reconcile call: B's reviewer
+    // assigned, A's pending reviewer pruned.
+    expect(reviewers.has(reviewerB.profileId)).toBe(true);
+    expect(reviewers.has(reviewerA.profileId)).toBe(false);
   });
 });
 
