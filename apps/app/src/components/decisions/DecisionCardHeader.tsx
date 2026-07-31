@@ -26,7 +26,7 @@ export const DecisionCardHeader = ({
   className?: string;
 }) => (
   <div className={cn('flex flex-col gap-2', className)}>
-    <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
+    <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:justify-start">
       <Header3 className="font-serif text-neutral-black">{name}</Header3>
       {currentState ? (
         <Badge

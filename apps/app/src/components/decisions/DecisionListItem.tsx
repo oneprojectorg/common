@@ -49,7 +49,13 @@ const isClosingSoon = (dateString: string) => {
   return daysUntilClose >= 0 && daysUntilClose <= 7;
 };
 
-export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
+export const DecisionListItem = ({
+  item,
+  className,
+}: {
+  item: DecisionProfile;
+  className?: string;
+}) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const { processInstance } = item;
@@ -91,7 +97,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
       <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
-          className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
+          className={cn(
+            'flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between',
+            className,
+          )}
         >
           <DecisionCardHeader
             name={processInstance.name || item.name}
@@ -122,7 +131,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         </Link>
 
         {(canManage || canDelete) && (
-          <div className="flex items-center pe-2 pt-4 sm:ps-12 sm:pt-0">
+          <div className="flex items-center pe-4 pt-4 sm:ps-6 sm:pt-0">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -252,12 +261,12 @@ export const ProfileDecisionListItem = ({
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
-              className="sm:flex-row sm:items-end sm:gap-1"
+              className="sm:flex-row sm:gap-1"
             />
             <DecisionStat
               number={processInstance.proposalCount ?? 0}
               label="Proposals"
-              className="sm:flex-row sm:items-end sm:gap-1"
+              className="sm:flex-row sm:gap-1"
             />
           </div>
         </div>
@@ -321,13 +330,10 @@ const DecisionStat = ({
   className?: string;
 }) => (
   <div
-    className={cn(
-      'flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0',
-      className,
-    )}
+    className={cn('flex items-center gap-1 sm:flex-col sm:gap-0', className)}
   >
     <span className="font-serif text-title-base">{number}</span>
-    <span className="text-sm">
+    <span className="text-sm text-muted-foreground">
       <TranslatedText text={label} />
     </span>
   </div>

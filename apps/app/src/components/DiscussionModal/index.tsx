@@ -93,7 +93,7 @@ export function DiscussionModal({
         }
       }}
     >
-      <DialogContent className="grid max-h-[80svh] w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-w-[32rem] sm:rounded-lg">
+      <DialogContent className="grid h-svh w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-h-[80svh] sm:max-w-[32rem] sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {t.rich("<bdi>{authorName}</bdi>'s Post", {
@@ -112,6 +112,7 @@ export function DiscussionModal({
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
+              className="px-4"
             />
             <hr />
           </PostFeed>
@@ -140,6 +141,7 @@ export function DiscussionModal({
                         withLinks={false}
                         onReactionClick={handleReactionClick}
                         onCommentClick={handleCommentClick}
+                        className="px-4"
                       />
                     </div>
                     {comments.length !== i + 1 && <hr />}

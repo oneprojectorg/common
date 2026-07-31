@@ -126,7 +126,7 @@ const DuplicateFormContent = ({
   return (
     <>
       <div className="flex flex-col gap-6 px-6 py-4">
-        <div className="flex flex-col gap-6 sm:flex-row">
+        <div className="flex flex-col gap-6">
           <div className="flex-1">
             <Field>
               <FieldLabel htmlFor="duplicate-process-name">
@@ -150,7 +150,7 @@ const DuplicateFormContent = ({
           </div>
         </div>
 
-        <FieldSet className="gap-4">
+        <FieldSet className="gap-2">
           <FieldLegend className="font-serif text-title-sm12">
             {t('Include')}
           </FieldLegend>

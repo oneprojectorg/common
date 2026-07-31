@@ -27,9 +27,9 @@ const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-4 sm:gap-0">
       {data.items.map((item) => (
-        <DecisionListItem key={item.id} item={item} />
+        <DecisionListItem className="sm:p-6" key={item.id} item={item} />
       ))}
     </div>
   );
@@ -128,7 +128,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       <ErrorBoundary fallback={null}>
         <Suspense fallback={null}>
           <DecisionProfilesList profileId={profileId} />

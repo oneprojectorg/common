@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
+import { Header2 } from '@op/sense/Header';
 import { TabsContent, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
@@ -57,11 +58,16 @@ export const DecisionsTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
+  const t = useTranslations();
   return (
     <TabsContent
       value="decisions"
-      className={cn('grow px-4 pt-2 sm:px-6 sm:py-8', className)}
+      className={cn(
+        'flex grow flex-col gap-2 px-4 pt-2 sm:gap-0 sm:p-0',
+        className,
+      )}
     >
+      <Header2 className="text-title sm:hidden">{t('Decisions')}</Header2>
       {children}
     </TabsContent>
   );
