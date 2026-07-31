@@ -8,7 +8,7 @@ export const listCategoryReviewersRouter = router({
     .input(
       z.object({
         processInstanceId: z.uuid(),
-        // '' collides with the NULL instance-wide key under COALESCE(phaseId,'').
+        // '' would collide with the instance-wide NULL key.
         phaseId: z.string().min(1).optional(),
       }),
     )

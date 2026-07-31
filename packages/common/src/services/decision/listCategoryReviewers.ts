@@ -24,10 +24,8 @@ export interface CategoryWithReviewers {
 
 /**
  * Lists every category of a process instance with its reviewers. Zero-reviewer
- * categories are kept (LEFT-JOIN semantics) — the admin UI needs them for the
- * "0 reviewers" state. Category identity is the taxonomy term id (via
- * `getProcessCategories`, which also runs the decisions READ check). `phaseId`
- * omitted = instance-wide (phaseId NULL); a value selects that phase's rows.
+ * categories are kept — the admin UI needs the "0 reviewers" state.
+ * `getProcessCategories` runs the decisions READ check.
  */
 export async function listCategoryReviewers({
   processInstanceId,

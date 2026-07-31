@@ -506,11 +506,7 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  /**
-   * Category reviewer scope relations.
-   *
-   * processInstanceId, taxonomyTermId, and reviewerProfileId are all NOT NULL.
-   */
+  // Category reviewer scope relations (all FKs NOT NULL).
   categoryReviewers: {
     processInstance: r.one.processInstances({
       from: r.categoryReviewers.processInstanceId,

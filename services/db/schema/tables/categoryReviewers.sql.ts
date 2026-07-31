@@ -16,15 +16,10 @@ import { taxonomyTerms } from './taxonomies.sql';
  * Scope layer for reviews-by-category: which reviewer profile covers which
  * submission category in a process instance (optionally scoped to a phase).
  *
- * Keys on `taxonomyTermId`, not a config-local category id: taxonomy terms are
- * append-only in production (never updated/deleted), so term-id keying is
- * cross-instance-safe — a "rename" mints a new term, leaving shared-term rows
- * in other instances untouched. Per-instance meaning lives in the joins.
- *
- * `reviewerProfileId` FKs to the profile, not a role/grant row — REVIEW is a
- * computed union (see `getEligibleReviewerProfileIds`). Dangling scope rows (a
- * profile that lost the role) are tolerated and surfaced in the UI, never
- * cascaded; the only hard cascades are profile / instance / term deletion.
+ * Keyed on `taxonomyTermId` (append-only in prod) rather than a config-local
+ * category id, so it stays cross-instance-safe. `reviewerProfileId` FKs to the
+ * profile, not a role — REVIEW is a computed union (see
+ * `getEligibleReviewerProfileIds`), so dangling scope rows are tolerated.
  */
 export const categoryReviewers = pgTable(
   'decision_category_reviewers',
@@ -59,8 +54,8 @@ export const categoryReviewers = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    // COALESCE to '' so instance-wide rows collide — a plain unique index would
-    // treat each NULL phaseId as distinct and allow duplicates.
+    // COALESCE to '' so instance-wide (NULL phaseId) rows collide instead of
+    // each NULL being treated as distinct.
     uniqueIndex('category_reviewers_unique').on(
       table.processInstanceId,
       table.taxonomyTermId,

@@ -5,10 +5,7 @@ import { permission } from 'access-zones';
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 
-/**
- * Loads a process instance and asserts the caller holds decisions ADMIN on it
- * (profile-level or via the org fallback). Shared by the scope mutations.
- */
+/** Loads a process instance and asserts the caller holds decisions ADMIN on it. */
 export async function assertCategoryReviewerAdmin({
   processInstanceId,
   user,

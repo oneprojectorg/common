@@ -1,19 +1,14 @@
-import { addCategoryReviewer, categoryReviewerSchema } from '@op/common';
-import { z } from 'zod';
+import {
+  addCategoryReviewer,
+  categoryReviewerSchema,
+  categoryReviewerTargetSchema,
+} from '@op/common';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const addCategoryReviewerRouter = router({
   addCategoryReviewer: networkAuthenticatedProcedure()
-    .input(
-      z.object({
-        processInstanceId: z.uuid(),
-        taxonomyTermId: z.uuid(),
-        reviewerProfileId: z.uuid(),
-        // '' collides with the NULL instance-wide key under COALESCE(phaseId,'').
-        phaseId: z.string().min(1).optional(),
-      }),
-    )
+    .input(categoryReviewerTargetSchema)
     .output(categoryReviewerSchema)
     .mutation(async ({ ctx, input }) => {
       return await addCategoryReviewer({

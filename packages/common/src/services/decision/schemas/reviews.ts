@@ -263,10 +263,7 @@ export type ProposalWithSubmittedReviews = z.infer<
 
 // ── Reviews by category (scope layer) ──────────────────────────────────────
 
-/**
- * Full category-reviewer scope row returned by the add mutation. deletedAt is
- * deliberately omitted — never leak a soft-delete column across the wire.
- */
+/** Category-reviewer scope row returned by the add mutation (no soft-delete column). */
 export const categoryReviewerSchema = createSelectSchema(
   categoryReviewers,
 ).pick({
@@ -320,4 +317,13 @@ export const categoryReviewersListSchema = z.object({
 
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
+});
+
+/** Target of an add/remove: a single (category, reviewer[, phase]) scope tuple. */
+export const categoryReviewerTargetSchema = z.object({
+  processInstanceId: z.uuid(),
+  taxonomyTermId: z.uuid(),
+  reviewerProfileId: z.uuid(),
+  // '' would collide with the instance-wide NULL key.
+  phaseId: z.string().min(1).optional(),
 });

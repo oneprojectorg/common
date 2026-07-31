@@ -7,8 +7,7 @@ import { assertCategoryReviewerAdmin } from './categoryReviewerHelpers';
 
 /**
  * Adds a reviewer to a category's scope (admin-gated), idempotent via ON
- * CONFLICT DO NOTHING. No eligibility check — dangling scope rows are
- * deliberately tolerated (Decision 7). `phaseId` omitted = instance-wide.
+ * CONFLICT. Dangling scope rows are tolerated (no eligibility check).
  */
 export async function addCategoryReviewer({
   processInstanceId,
@@ -25,7 +24,7 @@ export async function addCategoryReviewer({
 }): Promise<CategoryReviewer> {
   await assertCategoryReviewerAdmin({ processInstanceId, user });
 
-  await db
+  const [inserted] = await db
     .insert(categoryReviewers)
     .values({
       processInstanceId,
@@ -33,8 +32,15 @@ export async function addCategoryReviewer({
       reviewerProfileId,
       phaseId: phaseId ?? null,
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning();
 
+  if (inserted) {
+    return inserted;
+  }
+
+  // Conflict: the row already existed (RETURNING is empty on DO NOTHING), so
+  // re-select it to stay idempotent.
   const row = await db.query.categoryReviewers.findFirst({
     where: {
       processInstanceId,
