@@ -183,11 +183,11 @@ export const ProfileDetails = ({
 export const ProfileDetailsSkeleton = () => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
-      <SkeletonText lines={10} className="gap-3" />
-      <SkeletonText lines={10} className="gap-3" />
+      <SkeletonText lines={4} className="gap-3" />
+      <SkeletonText lines={4} className="gap-3" />
       <div className="flex gap-4" />
 
-      <SkeletonText lines={10} className="gap-3" />
+      <SkeletonText lines={4} className="gap-3" />
     </div>
   );
 };
