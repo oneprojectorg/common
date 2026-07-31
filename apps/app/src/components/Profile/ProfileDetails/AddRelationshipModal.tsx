@@ -3,15 +3,30 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import { toast } from '@op/sense/Toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
 import { relationshipMap } from '@op/types';
-import { Button } from '@op/ui/Button';
-import { DropDownButton } from '@op/ui/DropDownButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
@@ -64,30 +79,34 @@ const RemoveRelationshipModalContent = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="contents">
-      <ModalHeader>{t('Remove relationship')}</ModalHeader>
-      <ModalBody>
-        <div>
-          {t(
-            'Are you sure you want to remove the {relationshipType} relationship?',
-            { relationshipType: relationship.relationshipType },
-          )}
+    <DialogContent className="sm:min-w-[29rem]">
+      <form onSubmit={handleSubmit} className="contents">
+        <DialogHeader>
+          <DialogTitle>{t('Remove relationship')}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-6 py-4">
+          <div>
+            {t(
+              'Are you sure you want to remove the {relationshipType} relationship?',
+              { relationshipType: relationship.relationshipType },
+            )}
+          </div>
+          <div>
+            {t(
+              "You'll need to send a new request to restore this relationship on your profile.",
+            )}
+          </div>
         </div>
-        <div>
-          {t(
-            "You'll need to send a new request to restore this relationship on your profile.",
-          )}
-        </div>
-      </ModalBody>
-      <ModalFooter>
-        <Button onPress={onClose} color="neutral" type="button">
-          {t('Cancel')}
-        </Button>
-        <Button color="destructive" type="submit" isPending={isSubmitting}>
-          {isSubmitting ? <LoadingSpinner /> : t('Remove')}
-        </Button>
-      </ModalFooter>
-    </form>
+        <DialogFooter>
+          <Button onClick={onClose} variant="outline" type="button">
+            {t('Cancel')}
+          </Button>
+          <Button variant="destructive" type="submit" loading={isSubmitting}>
+            {t('Remove')}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 };
 
@@ -102,6 +121,8 @@ export const AddRelationshipModalSuspense = ({
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
   >(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
@@ -135,96 +156,124 @@ export const AddRelationshipModalSuspense = ({
     <>
       <RespondButton profile={profile} />
       {relationships.length > 1 ? (
-        <DropDownButton
-          label={
-            <>
-              {t(
-                '{count, plural, =1 {1 relationship} other {# relationships}}',
-                { count: relationships.length },
-              )}{' '}
-              {user.currentProfile ? (
-                <>
-                  {t('with')}
-                  <OrganizationAvatar
-                    profile={user.currentProfile}
-                    className="size-6"
-                  />
-                </>
-              ) : null}
-            </>
-          }
-          items={dropdownItems}
-          chevronIcon={<LuChevronDown className="size-4" />}
-          className={cn(
-            'min-w-full sm:min-w-fit',
-            relationships.some((r) => r.pending)
-              ? 'bg-transparent'
-              : 'bg-primary-tealWhite',
-          )}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                className={cn(
+                  'min-w-full sm:min-w-fit',
+                  relationships.some((r) => r.pending)
+                    ? 'bg-transparent'
+                    : 'bg-primary-tealWhite',
+                )}
+              >
+                {t(
+                  '{count, plural, =1 {1 relationship} other {# relationships}}',
+                  { count: relationships.length },
+                )}{' '}
+                {user.currentProfile ? (
+                  <>
+                    {t('with')}
+                    <OrganizationAvatar
+                      profile={user.currentProfile}
+                      className="size-6"
+                    />
+                  </>
+                ) : null}
+                <LuChevronDown className="size-4" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="start">
+            {dropdownItems.map((item) => (
+              <DropdownMenuItem key={item.id} onClick={item.onAction}>
+                {item.icon}
+                {item.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : relationships.length === 1 ? (
         relationships.map((relationship) => (
-          <TooltipTrigger
+          <Dialog
             key={relationship.id}
-            isDisabled={!relationship.pending}
+            open={removeOpen}
+            onOpenChange={setRemoveOpen}
           >
-            <DialogTrigger>
-              <Button
-                className="w-full sm:w-auto"
-                color={relationship.pending ? 'unverified' : 'verified'}
-              >
-                {relationship.pending ? (
-                  <LuClock className="size-4" />
-                ) : (
-                  <LuCheck className="size-4" />
+            <TooltipProvider delay={500}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <DialogTrigger
+                      render={
+                        <Button
+                          className="w-full sm:w-auto"
+                          variant={relationship.pending ? 'outline' : 'default'}
+                        >
+                          {relationship.pending ? (
+                            <LuClock className="size-4" />
+                          ) : (
+                            <LuCheck className="size-4" />
+                          )}
+                          {relationshipMap[relationship.relationshipType]
+                            ?.label ?? relationship.relationshipType}
+                        </Button>
+                      }
+                    />
+                  }
+                />
+                {relationship.pending && (
+                  <TooltipContent>
+                    {t('Pending confirmation from {name}', {
+                      name: profile.profile.name,
+                    })}
+                  </TooltipContent>
                 )}
-                {relationshipMap[relationship.relationshipType]?.label ??
-                  relationship.relationshipType}
-              </Button>
-              {relationship.pending && (
-                <Tooltip>
-                  {t('Pending confirmation from {name}', {
-                    name: profile.profile.name,
-                  })}
-                </Tooltip>
-              )}
-              <RemoveRelationshipModal relationship={relationship} />
-            </DialogTrigger>
-          </TooltipTrigger>
+              </Tooltip>
+            </TooltipProvider>
+            <RemoveRelationshipModal
+              relationship={relationship}
+              onClose={() => setRemoveOpen(false)}
+            />
+          </Dialog>
         ))
       ) : (
-        <DialogTrigger>
-          <Button className="min-w-full text-nowrap sm:min-w-fit">
-            <LuPlus className="size-4" />
-            {t('Add relationship')}
-          </Button>
-          <Modal className="sm:min-w-[29rem]">
-            <AddRelationshipForm profile={profile} />
-          </Modal>
-        </DialogTrigger>
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger
+            render={
+              <Button className="min-w-full text-nowrap sm:min-w-fit">
+                <LuPlus className="size-4" />
+                {t('Add relationship')}
+              </Button>
+            }
+          />
+          {addOpen && (
+            <AddRelationshipForm
+              profile={profile}
+              onClose={() => setAddOpen(false)}
+            />
+          )}
+        </Dialog>
       )}
 
-      {selectedRelationship && (
-        <Modal
-          isOpen={true}
-          onOpenChange={() => setSelectedRelationshipId(null)}
-          className="sm:min-w-[29rem]"
-        >
-          <Dialog>
-            {({ close }) => (
-              <RemoveRelationshipModalContent
-                relationship={selectedRelationship}
-                utils={utils}
-                profileId={profile.id}
-                onClose={() => {
-                  setSelectedRelationshipId(null);
-                  close();
-                }}
-              />
-            )}
-          </Dialog>
-        </Modal>
-      )}
+      <Dialog
+        open={!!selectedRelationship}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRelationshipId(null);
+          }
+        }}
+      >
+        {selectedRelationship && (
+          <RemoveRelationshipModalContent
+            relationship={selectedRelationship}
+            utils={utils}
+            profileId={profile.id}
+            onClose={() => setSelectedRelationshipId(null)}
+          />
+        )}
+      </Dialog>
     </>
   );
 };
@@ -236,13 +285,7 @@ export const AddRelationshipModal = ({
 }) => {
   return (
     <ErrorBoundary fallback={null}>
-      <Suspense
-        fallback={
-          <Button isDisabled={true}>
-            <LoadingSpinner />
-          </Button>
-        }
-      >
+      <Suspense fallback={<Button disabled loading />}>
         <AddRelationshipModalSuspense profile={profile} />
       </Suspense>
     </ErrorBoundary>

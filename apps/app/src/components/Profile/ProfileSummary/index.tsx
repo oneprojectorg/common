@@ -2,8 +2,8 @@
 
 import { skipBatch, trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Header1 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Header1 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -58,7 +58,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
           <div className="flex gap-1 text-base text-neutral-gray4">
-            <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
+            <Suspense fallback={<Skeleton className="h-5 w-32" />}>
               <RelationshipCount profile={profile} />
             </Suspense>
           </div>

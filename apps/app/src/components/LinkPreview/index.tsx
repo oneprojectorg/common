@@ -2,9 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
@@ -62,21 +61,33 @@ export const LinkPreview = memo(
     // Loading state: show card with spinner and domain
     if (loading) {
       return (
-        <Surface className={cn('rounded-lg', className)}>
+        <div
+          className={cn(
+            'overflow-hidden rounded border bg-white',
+            'rounded-lg',
+            className,
+          )}
+        >
           <div className="flex aspect-video w-full items-center justify-center bg-neutral-gray1">
-            <LoadingSpinner className="size-8" />
+            <Spinner className="size-8" />
           </div>
           <div className="border-t border-neutral-gray2 px-4 py-3">
             <span className="text-sm text-neutral-gray4">{domain}</span>
           </div>
-        </Surface>
+        </div>
       );
     }
 
     // Error/fallback state: show URL as a simple link card
     if (error || !previewData || previewData.error) {
       return (
-        <Surface className={cn('rounded-lg', className)}>
+        <div
+          className={cn(
+            'overflow-hidden rounded border bg-white',
+            'rounded-lg',
+            className,
+          )}
+        >
           <a
             href={safeUrl}
             target="_blank"
@@ -86,15 +97,16 @@ export const LinkPreview = memo(
             <LuGlobe className="size-5 shrink-0 text-neutral-gray4" />
             <span className="truncate text-sm text-neutral-gray4">{url}</span>
           </a>
-        </Surface>
+        </div>
       );
     }
 
     const title = previewData.meta?.title;
 
     return (
-      <Surface
+      <div
         className={cn(
+          'overflow-hidden rounded border bg-white',
           'group relative rounded-lg border-neutral-gray1 bg-white',
           className,
         )}
@@ -145,7 +157,7 @@ export const LinkPreview = memo(
             </span>
           </div>
         </a>
-      </Surface>
+      </div>
     );
   },
 );

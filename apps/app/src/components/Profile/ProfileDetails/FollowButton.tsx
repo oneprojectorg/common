@@ -3,9 +3,8 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 
@@ -75,14 +74,12 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
 
   return (
     <Button
-      onPress={handleFollowToggle}
-      isPending={isPending}
-      color={isFollowing ? 'verified' : 'primary'}
+      onClick={handleFollowToggle}
+      loading={isPending}
+      variant={isFollowing ? 'outline' : 'default'}
       className="min-w-full sm:min-w-fit"
     >
-      {isPending ? (
-        <LoadingSpinner />
-      ) : isFollowing ? (
+      {isFollowing ? (
         <>
           <LuCheck className="size-4" />
           Following
@@ -100,13 +97,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
 export const FollowButton = ({ profile }: { profile: Organization }) => {
   return (
     <ErrorBoundary>
-      <Suspense
-        fallback={
-          <Button isDisabled={true}>
-            <LoadingSpinner />
-          </Button>
-        }
-      >
+      <Suspense fallback={<Button disabled loading />}>
         <FollowButtonSuspense profile={profile} />
       </Suspense>
     </ErrorBoundary>

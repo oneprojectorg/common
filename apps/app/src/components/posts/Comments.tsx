@@ -2,8 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { AvatarSkeleton } from '@op/ui/Avatar';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,7 +16,7 @@ type PostFeedUser = NonNullable<
 export function CommentSkeleton() {
   return (
     <FeedItem className="sm:px-0">
-      <AvatarSkeleton className="!size-8 max-h-8 max-w-8" />
+      <Skeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex items-baseline gap-2">
@@ -26,7 +25,10 @@ export function CommentSkeleton() {
           </div>
         </FeedHeader>
         <FeedContent>
-          <SkeletonLine lines={2} />
+          <div className="flex animate-pulse flex-col gap-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
         </FeedContent>
       </FeedMain>
     </FeedItem>

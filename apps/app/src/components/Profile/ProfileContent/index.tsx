@@ -4,13 +4,13 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
+import { Button } from '@op/sense/Button';
+import { Header2, Header3 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
+import { TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { Header2, Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
@@ -146,9 +146,9 @@ const ProfileAbout = ({
                 <ContactLink
                   button={
                     <Button
-                      color="secondary"
-                      size="small"
-                      onPress={() => {
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
                         navigator.clipboard.writeText(email);
                         toast.success(
                           t(
@@ -342,7 +342,9 @@ export const OrganizationProfileGrid = ({
 };
 
 export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabList className="shrink-0 px-4 sm:px-6">{children}</TabList>
+  <TabsList variant="line" className="shrink-0 px-4 sm:px-6">
+    {children}
+  </TabsList>
 );
 
 export const ProfileTabs = ({
@@ -417,26 +419,28 @@ export const ProfileTabsMobile = ({
       defaultTab={defaultTab}
       validTabs={validTabs}
     >
-      <TabList className="overflow-x-auto px-4">
-        {!isIndividual && <Tab id="home">{t('Home')}</Tab>}
+      <TabsList variant="line" className="overflow-x-auto px-4">
+        {!isIndividual && <TabsTrigger value="home">{t('Home')}</TabsTrigger>}
         {!isIndividual ? (
           <>
-            <Tab id="updates">{t('Updates')}</Tab>
+            <TabsTrigger value="updates">{t('Updates')}</TabsTrigger>
             <FollowersTab />
             <MembersTab profileId={profile.profile.id} />
             <DecisionsTab profileId={profile.profile.id} />
           </>
         ) : (
           <>
-            <Tab id="about">{t('About')}</Tab>
-            <Tab id="organizations">{t('Organizations')}</Tab>
-            <Tab id="following">{t('Following')}</Tab>
+            <TabsTrigger value="about">{t('About')}</TabsTrigger>
+            <TabsTrigger value="organizations">
+              {t('Organizations')}
+            </TabsTrigger>
+            <TabsTrigger value="following">{t('Following')}</TabsTrigger>
           </>
         )}
-      </TabList>
+      </TabsList>
       {!isIndividual && (
         <>
-          <TabPanel id="home" className="px-0">
+          <TabsContent value="home" className="px-0">
             <Suspense fallback={null}>
               <ProfileDecisions profileId={profile.profile.id} />
             </Suspense>
@@ -451,8 +455,8 @@ export const ProfileTabsMobile = ({
                 </ProfileFeedProvider>
               </div>
             </Suspense>
-          </TabPanel>
-          <TabPanel id="updates">
+          </TabsContent>
+          <TabsContent value="updates">
             <Suspense fallback={<Skeleton className="w-full" />}>
               <PostUpdate
                 organization={profile}
@@ -467,21 +471,21 @@ export const ProfileTabsMobile = ({
                 )}
               </ProfileFeedProvider>
             </Suspense>
-          </TabPanel>
+          </TabsContent>
         </>
       )}
 
       {isIndividual && (
         <>
-          <TabPanel id="about">
+          <TabsContent value="about">
             <ProfileAbout profile={profile} className="px-4 py-2" />
-          </TabPanel>
-          <TabPanel id="organizations" className="px-4 py-2">
+          </TabsContent>
+          <TabsContent value="organizations" className="px-4 py-2">
             <div className="flex flex-col gap-4">{children}</div>
-          </TabPanel>
-          <TabPanel id="following" className="px-4 py-2">
+          </TabsContent>
+          <TabsContent value="following" className="px-4 py-2">
             {followingContent}
-          </TabPanel>
+          </TabsContent>
         </>
       )}
       {!isIndividual && (

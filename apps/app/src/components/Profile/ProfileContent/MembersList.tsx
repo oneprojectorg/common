@@ -2,11 +2,16 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
-import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import React, { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
@@ -150,32 +155,31 @@ const MemberMenu = ({
   };
 
   return (
-    <MenuTrigger>
-      <IconButton
-        aria-label={t('Member options')}
-        variant="ghost"
-        size="small"
-        className="aria-expanded:bg-neutral-gray1"
-      >
-        <LuEllipsis className="size-4" />
-      </IconButton>
-      <Menu className="min-w-48 p-2" placement="bottom end">
-        <MenuItem
-          key="toggle-role"
-          onAction={handleRoleToggle}
-          className="px-3 py-1"
-        >
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            aria-label={t('Member options')}
+            variant="ghost"
+            size="icon-xs"
+            className="aria-expanded:bg-neutral-gray1"
+          >
+            <LuEllipsis className="size-4" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent className="min-w-48 p-2" side="bottom" align="end">
+        <DropdownMenuItem onClick={handleRoleToggle} className="px-3 py-1">
           {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
-        </MenuItem>
-        <MenuItem
-          key="remove-from-org"
-          onAction={handleRemoveFromOrganization}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleRemoveFromOrganization}
           className="px-3 py-1 text-functional-red"
         >
           {t('Remove from organization')}
-        </MenuItem>
-      </Menu>
-    </MenuTrigger>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -359,37 +363,39 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         </div>
       </div>
 
-      <Tabs>
-        <TabList className="px-4 sm:px-0" variant="pill">
-          <Tab id="all" variant="pill">
-            {t('All members')}
-          </Tab>
+      <Tabs defaultValue="all">
+        <TabsList className="px-4 sm:px-0">
+          <TabsTrigger value="all">{t('All members')}</TabsTrigger>
           {rolesSegmented.map(([roleName, roleMembers]) =>
             roleMembers?.length ? (
-              <Tab id={roleName} key={roleName} variant="pill">
+              <TabsTrigger value={roleName} key={roleName}>
                 {roleName}s
-              </Tab>
+              </TabsTrigger>
             ) : null,
           )}
-        </TabList>
+        </TabsList>
 
-        <TabPanel id="all" className="px-4 sm:px-0">
+        <TabsContent value="all" className="px-4 sm:px-0">
           <MembersListContent
             members={members}
             organizationId={organizationId}
             profileId={profileId}
           />
-        </TabPanel>
+        </TabsContent>
 
         {rolesSegmented.map(([roleName, roleMembers]) =>
           roleMembers?.length ? (
-            <TabPanel id={roleName} key={roleName} className="px-4 sm:px-0">
+            <TabsContent
+              value={roleName}
+              key={roleName}
+              className="px-4 sm:px-0"
+            >
               <MembersListContent
                 members={roleMembers}
                 organizationId={organizationId}
                 profileId={profileId}
               />
-            </TabPanel>
+            </TabsContent>
           ) : null,
         )}
       </Tabs>

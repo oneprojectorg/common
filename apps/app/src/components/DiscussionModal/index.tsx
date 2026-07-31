@@ -3,8 +3,14 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
-import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Surface } from '@op/ui/Surface';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { cn } from '@op/sense/lib/utils';
 import { useCallback, useRef } from 'react';
 import React from 'react';
 
@@ -73,20 +79,24 @@ export function DiscussionModal({
     sourcePostProfile?.name ?? organization?.profile.name ?? '';
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={onClose}
-      isDismissable
-      className="h-svh text-start"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
     >
-      <ModalHeader>
-        {t.rich("<bdi>{authorName}</bdi>'s Post", {
-          authorName,
-          bdi: (chunks: React.ReactNode) => <bdi>{chunks}</bdi>,
-        })}
-      </ModalHeader>
+      <DialogContent className="grid h-svh max-h-svh w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-w-[32rem] sm:rounded-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {t.rich("<bdi>{authorName}</bdi>'s Post", {
+              authorName,
+              bdi: (chunks: React.ReactNode) => <bdi>{chunks}</bdi>,
+            })}
+          </DialogTitle>
+        </DialogHeader>
 
-      <div className="flex flex-col gap-4">
         <div
           className="flex-1 overflow-y-auto px-4 pt-6"
           ref={commentsContainerRef}
@@ -147,8 +157,13 @@ export function DiscussionModal({
         </div>
 
         {/* Comment Input using PostUpdate */}
-        <ModalFooter className="sticky">
-          <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
+        <DialogFooter className="sticky">
+          <div
+            className={cn(
+              'overflow-hidden rounded border bg-white',
+              'w-full border-0 p-0 pt-5 sm:border sm:p-4',
+            )}
+          >
             <PostUpdate
               parentPostId={post.id}
               placeholder={
@@ -161,9 +176,9 @@ export function DiscussionModal({
               label={t('Comment')}
               onSuccess={scrollToOriginalPost}
             />
-          </Surface>
-        </ModalFooter>
-      </div>
-    </Modal>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

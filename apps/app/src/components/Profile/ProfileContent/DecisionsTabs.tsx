@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
-import { Tab, TabPanel } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
+import { TabsContent, TabsTrigger } from '@op/sense/Tabs';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,12 +41,12 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <Tab id="decisions">
+    <TabsTrigger value="decisions">
       {t('Decisions')}
       {hasPublishedDecisions && (
         <span className="ms-1.5 inline-block size-1 rounded-full bg-functional-green" />
       )}
-    </Tab>
+    </TabsTrigger>
   );
 };
 
@@ -58,12 +58,12 @@ export const DecisionsTabPanel = ({
   className?: string;
 }) => {
   return (
-    <TabPanel
-      id="decisions"
+    <TabsContent
+      value="decisions"
       className={cn('grow px-4 pt-2 sm:px-6 sm:py-8', className)}
     >
       {children}
-    </TabPanel>
+    </TabsContent>
   );
 };
 
@@ -71,17 +71,17 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   return (
     <AccessBoundary required={{ admin: { read: true } }} profileId={profileId}>
-      <Tab id="members">{t('Members')}</Tab>
+      <TabsTrigger value="members">{t('Members')}</TabsTrigger>
     </AccessBoundary>
   );
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
   return (
-    <TabPanel id="members" className="grow px-4 sm:px-6 sm:py-0">
+    <TabsContent value="members" className="grow px-4 sm:px-6 sm:py-0">
       <ProfileOrganizations>
         <MembersList profileId={profileId} />
       </ProfileOrganizations>
-    </TabPanel>
+    </TabsContent>
   );
 };

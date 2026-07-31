@@ -1,8 +1,8 @@
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Header3 } from '@op/ui/Header';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Badge } from '@op/sense/Badge';
+import { Header3 } from '@op/sense/Header';
+import { cn } from '@op/sense/lib/utils';
 import Image from 'next/image';
 
 import type { TranslationKey } from '@/lib/i18n';
@@ -32,18 +32,20 @@ export const DecisionCardHeader = ({
         {name}
       </Header3>
       {currentState ? (
-        <Chip
+        <Badge
+          variant="secondary"
           className={
             chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
           }
         >
           <TranslatedText text={currentState as TranslationKey} />
-        </Chip>
+        </Badge>
       ) : null}
     </div>
     {stewardName ? (
       <div className="flex items-center gap-1">
-        <Avatar placeholder={stewardName} className="size-4">
+        <Avatar className="size-4 overflow-hidden">
+          <AvatarFallback name={stewardName} />
           {stewardAvatarPath ? (
             <Image
               src={getPublicUrl(stewardAvatarPath) ?? ''}

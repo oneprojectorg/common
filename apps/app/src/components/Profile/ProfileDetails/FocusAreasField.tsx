@@ -1,13 +1,13 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { Option } from '@op/ui/MultiSelectComboBox';
 import { useEffect, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { getFieldErrorMessage } from '../../form/utils';
+import type { Option } from '../../multiSelectOption';
 
 interface FocusAreasFieldProps {
   profileId: string;

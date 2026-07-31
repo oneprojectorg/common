@@ -1,19 +1,32 @@
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@op/sense/Breadcrumb';
+import { Skeleton } from '@op/sense/Skeleton';
 import React from 'react';
 
 import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
 
 const BreadcrumbsSkeleton = () => (
   <div className="flex flex-col gap-4">
-    <Breadcrumbs>
-      <Breadcrumb>
-        <Skeleton className="w-20" />
-      </Breadcrumb>
-      <Breadcrumb>
-        <Skeleton className="w-20" />
-      </Breadcrumb>
-    </Breadcrumbs>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbPage>
+            <Skeleton className="h-4 w-20" />
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>
+            <Skeleton className="h-4 w-20" />
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
   </div>
 );
 
@@ -90,12 +103,11 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
                       <Skeleton className="h-4 w-32" />
                     </div>
                   </div>
-                  {/* Using SkeletonLine for description content */}
-                  <SkeletonLine
-                    lines={2}
-                    randomWidth={true}
-                    className="w-full max-w-md"
-                  />
+                  {/* Skeleton rows for description content */}
+                  <div className="flex w-full max-w-md flex-col gap-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
                 </div>
               </li>
             ))}

@@ -1,9 +1,8 @@
 'use client';
 
-import { Tabs } from '@op/ui/Tabs';
+import { Tabs } from '@op/sense/Tabs';
 import { useSearchParams } from 'next/navigation';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import type { Key } from 'react-aria-components';
 
 import { usePathname } from '@/lib/i18n';
 
@@ -51,8 +50,8 @@ export const ProfileTabsWithQuery = ({
   }, [getCurrentSelectedTab]);
 
   const handleSelectionChange = useCallback(
-    (key: Key) => {
-      const keyString = String(key);
+    (value: string) => {
+      const keyString = value;
       setSelectedKey(keyString);
 
       // Set flag to prevent the useEffect from reacting to our URL change
@@ -88,8 +87,8 @@ export const ProfileTabsWithQuery = ({
   return (
     <Tabs
       className={className}
-      selectedKey={selectedKey}
-      onSelectionChange={handleSelectionChange}
+      value={selectedKey}
+      onValueChange={handleSelectionChange}
     >
       {children}
     </Tabs>

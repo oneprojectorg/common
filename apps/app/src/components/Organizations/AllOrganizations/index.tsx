@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
-import { SkeletonLine } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -60,7 +60,7 @@ export const AllOrganizationsSuspense = ({
         <div ref={ref} className="flex justify-center py-4">
           {isFetchingNextPage ? (
             <div className="text-sm text-neutral-gray4">
-              <SkeletonLine lines={3} />
+              <SkeletonLines lines={3} />
             </div>
           ) : null}
         </div>
@@ -76,9 +76,22 @@ export const AllOrganizations = (props: {
 }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load organizations</div>}>
-      <Suspense fallback={<SkeletonLine lines={5} />}>
+      <Suspense fallback={<SkeletonLines lines={5} />}>
         <AllOrganizationsSuspense {...props} />
       </Suspense>
     </ErrorBoundary>
+  );
+};
+
+const SkeletonLines = ({ lines }: { lines: number }) => {
+  return (
+    <div className="flex animate-pulse flex-col gap-2">
+      {Array.from({ length: lines }).map((_, index) => (
+        <Skeleton
+          key={index}
+          className={`h-4 ${index === lines - 1 ? 'w-2/3' : 'w-full'}`}
+        />
+      ))}
+    </div>
   );
 };

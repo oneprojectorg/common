@@ -1,6 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { handleServerError } from '@/utils/handleServerError';
-import { cn, getGradientForString } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
+import { getGradientForString } from '@op/styles/constants';
 import Image from 'next/image';
 import { LuArrowLeft } from 'react-icons/lu';
 
