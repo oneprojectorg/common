@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Toast';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
@@ -11,7 +12,6 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   FormEvent,
@@ -74,9 +74,7 @@ const AddUserToOrgModalContent = ({
     e.preventDefault();
 
     if (!selectedOrgId || !selectedRoleId) {
-      toast.error({
-        message: t('Please select both an organization and a role'),
-      });
+      toast.error(t('Please select both an organization and a role'));
       return;
     }
 
@@ -94,9 +92,7 @@ const AddUserToOrgModalContent = ({
 
         onOpenChange(false);
 
-        toast.success({
-          message: t('User added to organization successfully'),
-        });
+        toast.success(t('User added to organization successfully'));
 
         utils.platform.admin.listAllUsers.invalidate();
 
@@ -104,9 +100,7 @@ const AddUserToOrgModalContent = ({
         setSelectedOrgId('');
         setSelectedRoleId('');
       } catch (error) {
-        toast.error({
-          message: t('Failed to add user to organization'),
-        });
+        toast.error(t('Failed to add user to organization'));
       }
     });
   };

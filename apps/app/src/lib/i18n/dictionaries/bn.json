@@ -1441,5 +1441,13 @@
   "Reviewers can see each other's reviews on a proposal": "পর্যালোচকরা একটি প্রস্তাবে একে অপরের পর্যালোচনা দেখতে পারেন",
   "Turn on Open Reviews?": "উন্মুক্ত পর্যালোচনা চালু করবেন?",
   "This can lead reviewers to agree with each other more than they would independently.": "এটি পর্যালোচকদের স্বাধীনভাবে যতটা একমত হতেন তার চেয়ে বেশি একে অপরের সাথে একমত হতে পরিচালিত করতে পারে।",
-  "Enable": "চালু করুন"
+  "Enable": "চালু করুন",
+  "How should proposals get distributed to reviewers?": "প্রস্তাবগুলো পর্যালোচকদের মধ্যে কীভাবে বণ্টন করা উচিত?",
+  "Full coverage": "পূর্ণ কভারেজ",
+  "Every reviewer scores every proposal": "প্রতিটি পর্যালোচক প্রতিটি প্রস্তাবের মূল্যায়ন করেন",
+  "Oops! Not found": "ওহো! খুঁজে পাওয়া যায়নি",
+  "We can't seem to find that. It might have been removed.": "আমরা সেটি খুঁজে পাচ্ছি না। এটি সরানো হয়ে থাকতে পারে।",
+  "Permission needed": "অনুমতি প্রয়োজন",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "সেটি করতে আপনার অতিরিক্ত অ্যাক্সেস প্রয়োজন হবে। সাহায্যের জন্য আপনার সংস্থার অ্যাডমিনের সাথে যোগাযোগ করুন।",
+  "Generating {format} export...": "{format} এক্সপোর্ট তৈরি করা হচ্ছে..."
 }

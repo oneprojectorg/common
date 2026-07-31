@@ -260,7 +260,9 @@ test.describe('Review Submit', () => {
 
     await page.getByRole('button', { name: 'Request revision' }).click();
 
-    const requestModal = page.getByRole('dialog');
+    const requestModal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await expect(requestModal).toBeVisible();
 
     await requestModal
@@ -273,7 +275,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Revision requested' }),
     ).toBeVisible({ timeout: 10_000 });
 
@@ -303,7 +305,9 @@ test.describe('Review Submit', () => {
     // hidden and the rubric pane's alert banner exposes "View feedback".
     await page.getByRole('button', { name: 'View feedback' }).click();
 
-    const viewModal = page.getByRole('dialog');
+    const viewModal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await expect(viewModal).toBeVisible();
     await expect(
       viewModal.getByRole('heading', { name: 'Revision request' }),
@@ -316,7 +320,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Revision request cancelled' }),
     ).toBeVisible({ timeout: 10_000 });
 
@@ -414,7 +418,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Review submitted successfully' }),
     ).toBeVisible({ timeout: 10_000 });
 

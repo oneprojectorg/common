@@ -3,13 +3,13 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { Header2 } from '@op/ui/Header';
 import { MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 import {
   Table,
   TableBody,
@@ -95,10 +95,10 @@ export const UsersTable = () => {
         }));
 
         exportUsersToCSV(allUsers);
-        toast.success({ message: t('Users exported successfully') });
+        toast.success(t('Users exported successfully'));
       } catch (error) {
         logger.error('Export failed', { error, context: 'UsersTable.export' });
-        toast.error({ message: t('Failed to export users') });
+        toast.error(t('Failed to export users'));
       }
     });
   }, [utils, t, includeAnonymous]);

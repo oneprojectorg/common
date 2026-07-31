@@ -72,7 +72,9 @@ test.describe('Join account flow (public decision header)', () => {
     ).toBeVisible({ timeout: 15000 });
 
     const email = `join-${randomUUID().slice(0, 8)}@example.com`;
-    const dialog = page.getByRole('dialog');
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await dialog.getByLabel('Email').fill(email);
 
     // Confirmations are off in e2e, so submitting the email claims the account
@@ -121,7 +123,9 @@ test.describe('Join account flow (public decision header)', () => {
     ).toBeVisible({ timeout: 15000 });
 
     const email = `join-${randomUUID().slice(0, 8)}@example.com`;
-    const dialog = page.getByRole('dialog');
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await dialog.getByLabel('Email').fill(email);
     await dialog.getByRole('button', { name: 'Join' }).click();
     await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });

@@ -4,13 +4,13 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';
 import type { ProfileUser } from '@op/common/client';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 import {
   Table,
   TableBody,
@@ -148,26 +148,22 @@ const ProfileUserRoleSelect = ({
 
   const updateRoles = trpc.profile.updateUserRoles.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
+      toast.success(t('Role updated successfully'));
       void utils.profile.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update role'),
-      });
+      toast.error(error.message || t('Failed to update role'));
     },
   });
 
   const removeUser = trpc.profile.removeUser.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('User removed from process') });
+      toast.success(t('User removed from process'));
       void utils.profile.listUsers.invalidate({ profileId });
       setIsRemoveModalOpen(false);
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to remove user'),
-      });
+      toast.error(error.message || t('Failed to remove user'));
     },
   });
 
@@ -277,26 +273,22 @@ const InviteRoleSelect = ({
 
   const updateInvite = trpc.profile.updateProfileInvite.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
+      toast.success(t('Role updated successfully'));
       void utils.profile.listProfileInvites.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update role'),
-      });
+      toast.error(error.message || t('Failed to update role'));
     },
   });
 
   const deleteInvite = trpc.profile.deleteProfileInvite.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Invite removed from process') });
+      toast.success(t('Invite removed from process'));
       void utils.profile.listProfileInvites.invalidate({ profileId });
       setIsRemoveModalOpen(false);
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to remove invite'),
-      });
+      toast.error(error.message || t('Failed to remove invite'));
     },
   });
 

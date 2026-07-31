@@ -1438,5 +1438,13 @@
   "Reviewers can see each other's reviews on a proposal": "Les évaluateurs peuvent voir les évaluations des autres sur une proposition",
   "Turn on Open Reviews?": "Activer les évaluations ouvertes ?",
   "This can lead reviewers to agree with each other more than they would independently.": "Cela peut amener les évaluateurs à être davantage d’accord entre eux qu’ils ne le seraient de manière indépendante.",
-  "Enable": "Activer"
+  "Enable": "Activer",
+  "How should proposals get distributed to reviewers?": "Comment les propositions doivent-elles être réparties entre les évaluateurs ?",
+  "Full coverage": "Couverture complète",
+  "Every reviewer scores every proposal": "Chaque évaluateur note chaque proposition",
+  "Oops! Not found": "Oups ! Introuvable",
+  "We can't seem to find that. It might have been removed.": "Nous ne trouvons pas cela. Il a peut-être été supprimé.",
+  "Permission needed": "Autorisation requise",
+  "You'll need additional access to do that. Contact your organization's admin for help.": "Vous aurez besoin d'un accès supplémentaire pour faire cela. Contactez l'administrateur de votre organisation pour obtenir de l'aide.",
+  "Generating {format} export...": "Génération de l’export {format}..."
 }

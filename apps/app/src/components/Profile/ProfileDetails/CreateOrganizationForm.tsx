@@ -4,13 +4,13 @@ import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
@@ -69,9 +69,8 @@ export const CreateOrganizationForm = forwardRef<
 
   const submitCreate = async (formData: any) => {
     if (!isOnline) {
-      toast.error({
-        title: t('No connection'),
-        message: t('Please check your internet connection and try again.'),
+      toast.error(t('No connection'), {
+        description: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -100,14 +99,12 @@ export const CreateOrganizationForm = forwardRef<
       const errorInfo = analyzeError(err);
 
       if (errorInfo.isConnectionError) {
-        toast.error({
-          title: t('Connection issue'),
-          message: t('Please try submitting the form again.'),
+        toast.error(t('Connection issue'), {
+          description: t('Please try submitting the form again.'),
         });
       } else {
-        toast.error({
-          title: t("That didn't work"),
-          message: errorInfo.message,
+        toast.error(t("That didn't work"), {
+          description: errorInfo.message,
         });
       }
     }
@@ -144,24 +141,21 @@ export const CreateOrganizationForm = forwardRef<
         'image/webp',
       ];
       if (!acceptedTypes.includes(file.type)) {
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            {
-              types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
-            },
-          ),
-        });
+        toast.error(
+          t('That file type is not supported. Accepted types: {types}', {
+            types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
+          }),
+        );
         return;
       }
 
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
+        toast.error(
+          t('File too large. Maximum size: {size}MB', {
             size: maxSizeMB,
           }),
-        });
+        );
         return;
       }
 
