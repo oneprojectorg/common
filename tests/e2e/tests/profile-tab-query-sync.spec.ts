@@ -22,24 +22,33 @@ test.describe('Profile tab ?tab= query sync', () => {
     const slug = org.organizationProfile.slug;
     await authenticatedPage.setViewportSize({ width: 1280, height: 800 });
 
-    // Deep-link to a non-default tab → selected on load.
+    // Deep-link to a non-default tab → selected on load. `exact` avoids the
+    // inner relationships tablist ("All relationships" etc.) which also matches
+    // "Relationships" as a substring.
     await authenticatedPage.goto(`/en/org/${slug}?tab=relationships`);
     await expect(
-      authenticatedPage.getByRole('tab', { name: 'Relationships' }),
+      authenticatedPage.getByRole('tab', {
+        name: 'Relationships',
+        exact: true,
+      }),
     ).toHaveAttribute('aria-selected', 'true', { timeout: 15000 });
 
     // Switch to another non-default tab → URL reflects it (replaceState).
-    await authenticatedPage.getByRole('tab', { name: 'Followers' }).click();
+    await authenticatedPage
+      .getByRole('tab', { name: 'Followers', exact: true })
+      .click();
     await expect(authenticatedPage).toHaveURL(/[?&]tab=followers\b/);
     await expect(
-      authenticatedPage.getByRole('tab', { name: 'Followers' }),
+      authenticatedPage.getByRole('tab', { name: 'Followers', exact: true }),
     ).toHaveAttribute('aria-selected', 'true');
 
     // Back to the default tab ("Updates" = `home`) → the param is removed.
-    await authenticatedPage.getByRole('tab', { name: 'Updates' }).click();
+    await authenticatedPage
+      .getByRole('tab', { name: 'Updates', exact: true })
+      .click();
     await expect(authenticatedPage).not.toHaveURL(/[?&]tab=/);
     await expect(
-      authenticatedPage.getByRole('tab', { name: 'Updates' }),
+      authenticatedPage.getByRole('tab', { name: 'Updates', exact: true }),
     ).toHaveAttribute('aria-selected', 'true');
   });
 });
