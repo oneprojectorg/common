@@ -10,9 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { cn } from '@op/sense/lib/utils';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyDescription,
+  EmptyMedia,
+} from '@op/sense/Empty';
 import { useCallback, useRef } from 'react';
 import React from 'react';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -87,7 +93,7 @@ export function DiscussionModal({
         }
       }}
     >
-      <DialogContent className="grid h-svh max-h-svh w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-w-[32rem] sm:rounded-lg">
+      <DialogContent className="grid max-h-[80svh] w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-w-[32rem] sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {t.rich("<bdi>{authorName}</bdi>'s Post", {
@@ -97,12 +103,9 @@ export function DiscussionModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div
-          className="flex-1 overflow-y-auto px-4 pt-6"
-          ref={commentsContainerRef}
-        >
+        <div className="flex-1 overflow-y-auto pt-6" ref={commentsContainerRef}>
           {/* Original Post Display */}
-          <PostFeed className="originalPost border-none">
+          <PostFeed className="originalPost border-none pb-0">
             <PostItem
               post={post}
               organization={organization ?? null}
@@ -122,7 +125,7 @@ export function DiscussionModal({
               role="feed"
               aria-label={t('{count} comments', { count: comments.length })}
             >
-              <PostFeed className="border-none">
+              <PostFeed className="border-none pt-6">
                 {comments.map((comment, i) => (
                   <React.Fragment key={comment.id}>
                     <div
@@ -137,7 +140,6 @@ export function DiscussionModal({
                         withLinks={false}
                         onReactionClick={handleReactionClick}
                         onCommentClick={handleCommentClick}
-                        className="sm:px-0"
                       />
                     </div>
                     {comments.length !== i + 1 && <hr />}
@@ -146,37 +148,33 @@ export function DiscussionModal({
               </PostFeed>
             </div>
           ) : (
-            <div
-              className="py-8 text-center text-gray-500"
-              role="status"
-              aria-label={t('No comments')}
-            >
-              {t('No comments yet. Be the first to comment!')}
-            </div>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LuLeaf />
+                </EmptyMedia>
+                <EmptyDescription>
+                  {t('No comments yet. Be the first to comment!')}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           )}
         </div>
 
         {/* Comment Input using PostUpdate */}
         <DialogFooter className="sticky">
-          <div
-            className={cn(
-              'overflow-hidden rounded border bg-white',
-              'w-full border-0 p-0 pt-5 sm:border sm:p-4',
-            )}
-          >
-            <PostUpdate
-              parentPostId={post.id}
-              placeholder={
-                user?.currentProfile?.name
-                  ? t('Comment as {name}...', {
-                      name: user.currentProfile.name,
-                    })
-                  : t('Comment...')
-              }
-              label={t('Comment')}
-              onSuccess={scrollToOriginalPost}
-            />
-          </div>
+          <PostUpdate
+            parentPostId={post.id}
+            placeholder={
+              user?.currentProfile?.name
+                ? t('Comment as {name}...', {
+                    name: user.currentProfile.name,
+                  })
+                : t('Comment...')
+            }
+            label={t('Comment')}
+            onSuccess={scrollToOriginalPost}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>
