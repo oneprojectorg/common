@@ -51,10 +51,14 @@ const FocusAreas = ({
 
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3 className="font-sans">{t('Focus Areas')}</Header3>
+      <Header3 className="font-sans text-base font-strong">
+        {t('Focus Areas')}
+      </Header3>
       <TagGroup>
         {focusAreas.map((term) => (
-          <Tag key={term.label}>{term.label}</Tag>
+          <Tag key={term.label} variant="secondary">
+            {term.label}
+          </Tag>
         ))}
       </TagGroup>
     </section>
@@ -97,10 +101,14 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
 
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3 className="font-sans">{t('Communities We Serve')}</Header3>
+      <Header3 className="font-sans text-base font-strong">
+        {t('Communities We Serve')}
+      </Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
-          <Tag key={term.label}>{term.label}</Tag>
+          <Tag key={term.label} variant="secondary">
+            {term.label}
+          </Tag>
         ))}
       </TagGroup>
     </section>
@@ -121,14 +129,16 @@ const ProfileAbout = ({
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
       {orgType ? (
-        <Header2 className="font-serif text-title-sm leading-normal">
+        <Header2 className="font-serif text-label leading-normal">
           {t('About')}
         </Header2>
       ) : null}
-      <div className="flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
+      <div className="flex flex-col gap-10 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
-            <Header3 className="font-sans">{t('Contact')}</Header3>
+            <Header3 className="font-sans text-base font-strong">
+              {t('Contact')}
+            </Header3>
             <div className="flex flex-col text-teal">
               {website ? (
                 <ContactLink>
@@ -177,29 +187,35 @@ const ProfileAbout = ({
 
         {orgType ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">
+            <Header3 className="font-sans text-base font-strong">
               {t('Organizational Status')}
             </Header3>
             <TagGroup>
-              <Tag className="capitalize">{orgType}</Tag>
+              <Tag className="capitalize" variant="secondary">
+                {orgType}
+              </Tag>
             </TagGroup>
           </section>
         ) : null}
 
         {mission ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">{t('Mission Statement')}</Header3>
+            <Header3 className="font-sans text-base font-strong">
+              {t('Mission Statement')}
+            </Header3>
             <p>{mission}</p>
           </section>
         ) : null}
 
         {strategies?.length > 0 ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">{t('Strategies')}</Header3>
+            <Header3 className="font-sans text-base font-strong">
+              {t('Strategies')}
+            </Header3>
             <TagGroup>
               {strategies.map((strategy) =>
                 strategy ? (
-                  <Tag key={strategy.id}>
+                  <Tag key={strategy.id} variant="secondary">
                     {/* @ts-ignore - odd TS bug that only shows in CI */}
                     {strategy.label}
                   </Tag>
@@ -213,7 +229,9 @@ const ProfileAbout = ({
           <Suspense
             fallback={
               <section className="flex flex-col gap-2 text-neutral-charcoal">
-                <Header3 className="font-sans">{t('Focus Areas')}</Header3>
+                <Header3 className="font-sans text-base font-strong">
+                  {t('Focus Areas')}
+                </Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-16" />
                   <Skeleton className="h-6 w-20" />
@@ -234,7 +252,7 @@ const ProfileAbout = ({
           <Suspense
             fallback={
               <section className="flex flex-col gap-2 text-neutral-charcoal">
-                <Header3 className="font-sans">
+                <Header3 className="font-sans text-base font-strong">
                   {t('Communities We Serve')}
                 </Header3>
                 <div className="flex flex-wrap gap-2">
@@ -267,8 +285,8 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-2 px-4 pt-0 pb-2 sm:gap-0 sm:border-b sm:p-0 sm:pt-4">
-      <Header2 className="px-6 font-serif text-title-sm leading-normal">
+    <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
+      <Header2 className="font-serif text-label leading-normal sm:px-6">
         {t('Decisions')}
       </Header2>
       {data.items.map((item, index) => (
@@ -277,7 +295,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
             item={item}
             className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary-tealWhite"
           />
-          {index < data.items.length - 1 && <hr />}
+          {index < data.items.length - 1 && <hr className="hidden sm:block" />}
         </Fragment>
       ))}
     </div>
@@ -419,34 +437,38 @@ export const ProfileTabsMobile = ({
       defaultTab={defaultTab}
       validTabs={validTabs}
     >
-      <TabsList variant="line" className="overflow-x-auto px-4">
-        {!isIndividual && <TabsTrigger value="home">{t('Home')}</TabsTrigger>}
-        {!isIndividual ? (
-          <>
-            <TabsTrigger value="updates">{t('Updates')}</TabsTrigger>
-            <FollowersTab />
-            <MembersTab profileId={profile.profile.id} />
-            <DecisionsTab profileId={profile.profile.id} />
-          </>
-        ) : (
-          <>
-            <TabsTrigger value="about">{t('About')}</TabsTrigger>
-            <TabsTrigger value="organizations">
-              {t('Organizations')}
-            </TabsTrigger>
-            <TabsTrigger value="following">{t('Following')}</TabsTrigger>
-          </>
-        )}
-      </TabsList>
+      <div className="scrollbar-none w-full overflow-x-auto border-b px-4">
+        <TabsList variant="line">
+          {!isIndividual && <TabsTrigger value="home">{t('Home')}</TabsTrigger>}
+          {!isIndividual ? (
+            <>
+              <TabsTrigger value="updates">{t('Updates')}</TabsTrigger>
+              <FollowersTab />
+              <MembersTab profileId={profile.profile.id} />
+              <DecisionsTab profileId={profile.profile.id} />
+            </>
+          ) : (
+            <>
+              <TabsTrigger value="about">{t('About')}</TabsTrigger>
+              <TabsTrigger value="organizations">
+                {t('Organizations')}
+              </TabsTrigger>
+              <TabsTrigger value="following">{t('Following')}</TabsTrigger>
+            </>
+          )}
+        </TabsList>
+      </div>
       {!isIndividual && (
         <>
-          <TabsContent value="home" className="px-0">
+          <TabsContent value="home" className="flex flex-col gap-6 px-4">
             <Suspense fallback={null}>
               <ProfileDecisions profileId={profile.profile.id} />
             </Suspense>
-            <ProfileAbout profile={profile} className="px-4 py-2" />
+            <hr />
+            <ProfileAbout profile={profile} />
+            <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-              <div>
+              <div className="-mx-4">
                 <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
                   {t('Posts')}
                 </Header2>
@@ -461,13 +483,13 @@ export const ProfileTabsMobile = ({
               <PostUpdate
                 organization={profile}
                 label={t('Post')}
-                className="border-b px-4 pt-2 pb-6"
+                className="rounded-none border-x-0 border-t-0 border-b px-4 pt-2 pb-6"
               />
             </Suspense>
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <ProfileFeedProvider profile={profile}>
                 {(props) => (
-                  <ProfileFeedList {...props} className="p-4 sm:py-6" />
+                  <ProfileFeedList {...props} className="sm:p-4 sm:py-6" />
                 )}
               </ProfileFeedProvider>
             </Suspense>
