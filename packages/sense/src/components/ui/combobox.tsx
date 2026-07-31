@@ -277,6 +277,7 @@ function ComboboxChip({
 
 function ComboboxChipsInput({
   className,
+  onKeyDown,
   ...props
 }: ComboboxPrimitive.Input.Props) {
   return (
@@ -286,6 +287,17 @@ function ComboboxChipsInput({
         'min-w-16 flex-1 outline-none placeholder:text-muted-foreground',
         className,
       )}
+      onKeyDown={(event) => {
+        // base-ui clears the entire value when Escape is pressed with the popup
+        // closed (it treats Escape as "clear the field"). For a multiselect that
+        // is silent data loss, so when the input is empty we cancel base-ui's
+        // handler to keep the selection. A non-empty input still lets Escape
+        // clear the typed text.
+        if (event.key === 'Escape' && event.currentTarget.value === '') {
+          event.preventBaseUIHandler();
+        }
+        onKeyDown?.(event);
+      }}
       {...props}
     />
   );
