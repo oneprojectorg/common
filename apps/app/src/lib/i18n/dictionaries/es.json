@@ -1249,6 +1249,7 @@
   "Needs Review": "Necesita revisión",
   "Revised": "Revisado",
   "Filter by status": "Filtrar por estado",
+  "in {categories}": "en {categories}",
   "Sort order": "Orden",
   "{count} Reviewed": "{count} Revisados",
   "{count} of {total} completed": "{count} de {total} completados",

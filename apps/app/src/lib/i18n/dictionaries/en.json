@@ -1262,6 +1262,7 @@
   "Needs Review": "Needs Review",
   "Revised": "Revised",
   "Filter by status": "Filter by status",
+  "in {categories}": "in {categories}",
   "Sort order": "Sort order",
   "{count} Reviewed": "{count} Reviewed",
   "{count} of {total} completed": "{count} of {total} completed",

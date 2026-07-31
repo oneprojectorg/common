@@ -1250,6 +1250,7 @@
   "Needs Review": "পর্যালোচনা প্রয়োজন",
   "Revised": "সংশোধিত",
   "Filter by status": "স্ট্যাটাস অনুযায়ী ফিল্টার",
+  "in {categories}": "{categories}-এ",
   "Sort order": "সাজানোর ক্রম",
   "{count} Reviewed": "{count} পর্যালোচিত",
   "{count} of {total} completed": "{count} / {total} সম্পন্ন",
