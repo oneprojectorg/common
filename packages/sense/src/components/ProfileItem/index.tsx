@@ -19,7 +19,7 @@ interface ProfileItemProps {
 
 const titleClasses: Record<ProfileItemSize, string> = {
   default: 'text-base font-strong text-foreground',
-  small: 'text-base text-muted-foreground',
+  small: 'text-sm text-foreground',
 };
 
 /**

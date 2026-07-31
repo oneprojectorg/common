@@ -1,7 +1,7 @@
 'use client';
 
 import { useForesight } from '@/hooks/useForesight';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import type { AnchorHTMLAttributes } from 'react';
 
 import { NavLink, useRouter } from './routing';

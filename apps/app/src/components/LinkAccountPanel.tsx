@@ -7,9 +7,9 @@ import {
 } from '@/hooks/useClaimAccount';
 import { isSafeRedirectPath } from '@op/common/client';
 import { useMount } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
+import { Spinner } from '@op/sense/Spinner';
+import { CheckIcon } from '@op/sense/icons';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 
@@ -196,7 +196,7 @@ export const LinkAccountPanel = () => {
       <AuthPanelShell title={title} subtitle={subtitle}>
         <Button
           className="flex w-full items-center justify-center"
-          onPress={() => {
+          onClick={() => {
             setLinkError(undefined);
             setTokenError(undefined);
           }}
@@ -223,19 +223,23 @@ export const LinkAccountPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              isDisabled={isSubmitting || !isValidOtpLength(token)}
-              onPress={async () => {
+              disabled={isSubmitting || !isValidOtpLength(token)}
+              onClick={async () => {
                 if (isValidOtpLength(token)) {
                   await handleTokenSubmit();
                 }
               }}
             >
-              {isSubmitting ? <LoadingSpinner /> : t('Create profile')}
+              {isSubmitting ? (
+                <Spinner className="size-6" />
+              ) : (
+                t('Create profile')
+              )}
             </Button>
             <Button
-              color="secondary"
+              variant="secondary"
               className="flex w-full items-center justify-center"
-              onPress={goBack}
+              onClick={goBack}
             >
               {t('Go back')}
             </Button>
@@ -264,12 +268,12 @@ export const LinkAccountPanel = () => {
         <Button
           type="button"
           className="flex w-full items-center justify-center"
-          isDisabled={isSubmitting || !emailIsValid}
-          onPress={() => {
+          disabled={isSubmitting || !emailIsValid}
+          onClick={() => {
             void submitEmail();
           }}
         >
-          {isSubmitting ? <LoadingSpinner /> : t('Continue')}
+          {isSubmitting ? <Spinner className="size-6" /> : t('Continue')}
         </Button>
       </div>
     </AuthPanelShell>

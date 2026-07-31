@@ -12,6 +12,7 @@ interface AvatarUploaderProps {
   value?: string | null;
   onChange?: (file: File) => Promise<void> | void;
   uploading?: boolean;
+  error?: string | null;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ function AvatarUploader({
   value,
   onChange,
   uploading = false,
+  error = null,
   className,
 }: AvatarUploaderProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -71,8 +73,13 @@ function AvatarUploader({
         />
       </div>
 
-      {label ? (
-        <p className="text-center text-sm font-strong">{label}</p>
+      {label || error ? (
+        <div className="text-center">
+          {label ? <p className="text-sm font-strong">{label}</p> : null}
+          {error ? (
+            <p className="mt-1 text-sm text-destructive">{error}</p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

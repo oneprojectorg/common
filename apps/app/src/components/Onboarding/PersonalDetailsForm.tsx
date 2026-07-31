@@ -1,11 +1,9 @@
 import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
-import { AvatarUploader } from '@op/ui/AvatarUploader';
-import { BannerUploader } from '@op/ui/BannerUploader';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
+import { AvatarUploader } from '@op/sense/AvatarUploader';
+import { BannerUploader } from '@op/sense/BannerUploader';
+import { Skeleton } from '@op/sense/Skeleton';
 import { ReactNode, Suspense } from 'react';
 import { z } from 'zod';
 
@@ -16,7 +14,7 @@ import { StepProps } from '../MultiStepForm';
 import { FocusAreasField } from '../Profile/ProfileDetails/FocusAreasField';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { useAppForm } from '../form/utils';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormFields = z.infer<typeof validator>;
@@ -50,11 +48,8 @@ export const createValidator = (t: TranslateFn) =>
         .optional(),
       customPronouns: z.string().optional(),
       email: z
-        .email()
+        .email({ error: t('Enter a valid email address') })
         .trim()
-        .refine((val) => val === '' || z.email().safeParse(val).success, {
-          message: t('Invalid email'),
-        })
         .refine((val) => val.length <= 255, {
           message: t('Must be at most 255 characters'),
         }),
@@ -150,7 +145,10 @@ export const PersonalDetailsForm = ({
       bannerImageUrl: personalDetails?.bannerImageUrl ?? '',
     },
     validators: {
-      onSubmit: createValidator(t) as any,
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onChange: createValidator(t),
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onSubmit: createValidator(t),
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
@@ -182,15 +180,15 @@ export const PersonalDetailsForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
-        console.log('submit');
         void form.handleSubmit();
       }}
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Set up your individual profile.')}>
+        <FormHeader text={t('Add your personal details')}>
           {t('Tell us about yourself so others can find you.')}
         </FormHeader>
 
@@ -216,14 +214,8 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               isRequired
-              label={t('Full Name')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              inputProps={{
-                placeholder: t('Enter your full name'),
-              }}
+              label={t('Full name')}
+              placeholder={t('Enter your full name')}
             />
           )}
         />
@@ -233,16 +225,10 @@ export const PersonalDetailsForm = ({
             <field.TextField
               isRequired
               label={t('Headline')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               description={t(
                 'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
               )}
-              inputProps={{
-                placeholder: t('Enter your headline'),
-              }}
+              placeholder={t('Enter your headline')}
             />
           )}
         />
@@ -252,16 +238,13 @@ export const PersonalDetailsForm = ({
             <field.Select
               label={t('Pronouns')}
               placeholder={t('Select your preferred pronouns')}
-              selectedKey={field.state.value}
-              onBlur={field.handleBlur}
-              onSelectionChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-            >
-              <SelectItem id="she/her">{t('She/Her')}</SelectItem>
-              <SelectItem id="he/him">{t('He/Him')}</SelectItem>
-              <SelectItem id="they/them">{t('They/Them')}</SelectItem>
-              <SelectItem id="custom">{t('Custom')}</SelectItem>
-            </field.Select>
+              options={[
+                { value: 'she/her', label: t('She/Her') },
+                { value: 'he/him', label: t('He/Him') },
+                { value: 'they/them', label: t('They/Them') },
+                { value: 'custom', label: t('Custom') },
+              ]}
+            />
           )}
         />
         <form.Subscribe
@@ -273,14 +256,8 @@ export const PersonalDetailsForm = ({
                 children={(field) => (
                   <field.TextField
                     label={t('Custom Pronouns')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={field.handleChange}
-                    errorMessage={getFieldErrorMessage(field)}
                     isRequired
-                    inputProps={{
-                      placeholder: t('Enter your custom pronouns'),
-                    }}
+                    placeholder={t('Enter your custom pronouns')}
                   />
                 )}
               />
@@ -292,15 +269,9 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               label={t('Email')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               isRequired
-              inputProps={{
-                placeholder: t('Enter your email address'),
-                type: 'email',
-              }}
+              placeholder={t('Enter your email address')}
+              type="email"
             />
           )}
         />
@@ -309,19 +280,13 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               label={t('Website')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              inputProps={{
-                placeholder: t('Enter your website URL'),
-                // Not `type="url"`: our zodUrl validation accepts a bare domain
-                // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
-                // browser's native URL validation rejects the scheme-less value
-                // and silently blocks form submission. `inputMode` keeps the
-                // URL-optimized keyboard without that native constraint.
-                inputMode: 'url',
-              }}
+              placeholder={t('Enter your website URL')}
+              // Not `type="url"`: our zodUrl validation accepts a bare domain
+              // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
+              // browser's native URL validation rejects the scheme-less value
+              // and silently blocks form submission. `inputMode` keeps the
+              // URL-optimized keyboard without that native constraint.
+              inputMode="url"
             />
           )}
         />
@@ -336,14 +301,15 @@ export const PersonalDetailsForm = ({
           />
         )}
 
-        <form.SubmitButton className="sm:w-full">
-          {updateProfile.isPending ||
-          avatarUpload.isUploading ||
-          bannerUpload.isUploading ? (
-            <LoadingSpinner />
-          ) : (
-            t('Continue')
-          )}
+        <form.SubmitButton
+          className="sm:w-full"
+          loading={
+            updateProfile.isPending ||
+            avatarUpload.isUploading ||
+            bannerUpload.isUploading
+          }
+        >
+          {t('Continue')}
         </form.SubmitButton>
       </FormContainer>
     </form>

@@ -31,6 +31,7 @@ export const OrganizationDetailsForm = ({
     >
       {({ form, formFields }) => (
         <form
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
             void form.handleSubmit();

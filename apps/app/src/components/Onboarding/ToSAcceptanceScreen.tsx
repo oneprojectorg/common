@@ -1,11 +1,16 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
-import { ReactNode, useState } from 'react';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
+import { FieldLabel } from '@op/sense/Field';
+import { ReactNode, useId, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -57,15 +62,20 @@ export const ToSAcceptanceScreen = ({
         </div>
 
         <div className="flex flex-col gap-3">
-          <Button className="w-full" isDisabled={!canSubmit} onPress={onAccept}>
-            {isSubmitting ? <LoadingSpinner /> : t('Join Common')}
+          <Button
+            className="w-full"
+            disabled={!canSubmit}
+            loading={isSubmitting}
+            onClick={onAccept}
+          >
+            {t('Join Common')}
           </Button>
 
           <Button
             className="w-full"
-            color="neutral"
-            onPress={onGoBack}
-            isDisabled={isSubmitting}
+            variant="outline"
+            onClick={onGoBack}
+            disabled={isSubmitting}
           >
             {t('Go back')}
           </Button>
@@ -91,26 +101,47 @@ function PolicyCheckbox({
   modalContent: ReactNode;
 }) {
   const t = useTranslations();
+  const checkboxId = useId();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex items-center gap-1">
-      <Checkbox size="small" value={'' + checked} onChange={onChange}>
-        {t('I accept the')}{' '}
-      </Checkbox>
-      <DialogTrigger>
-        <Button unstyled className="text-sm text-primary-teal hover:underline">
-          {label}
-        </Button>
-        <Modal
-          className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
-          isDismissable
+      <Checkbox
+        id={checkboxId}
+        checked={checked}
+        onCheckedChange={(value) => onChange(value)}
+      />
+      <FieldLabel htmlFor={checkboxId} className="text-sm">
+        {t('I accept the')}
+      </FieldLabel>
+      <Dialog>
+        <DialogTrigger
+          render={
+            <Button variant="link" className="h-auto p-0 text-sm">
+              {label}
+            </Button>
+          }
+        />
+        {/* shadcn scrollable-dialog pattern (matches SiteHeader LegalDialogs):
+            fixed header, scrollable body. `initialFocus` lands on the scroll
+            container (top) instead of the first link in the legal text, which
+            otherwise opens the dialog scrolled partway down. */}
+        <DialogContent
+          className="flex max-h-[85vh] flex-col p-0 sm:max-w-[36rem]"
+          initialFocus={scrollRef}
         >
-          <Dialog>
-            <ModalHeader>{modalTitle}</ModalHeader>
-            <ModalBody>{modalContent}</ModalBody>
-          </Dialog>
-        </Modal>
-      </DialogTrigger>
+          <DialogHeader>
+            <DialogTitle>{modalTitle}</DialogTitle>
+          </DialogHeader>
+          <div
+            ref={scrollRef}
+            tabIndex={-1}
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-4 outline-none"
+          >
+            {modalContent}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

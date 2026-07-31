@@ -4,17 +4,19 @@ import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import { SocialLinks } from '@op/sense/SocialLinks';
+import { Spinner } from '@op/sense/Spinner';
+import { CheckIcon } from '@op/sense/icons';
+import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { SocialLinks } from '@op/ui/SocialLinks';
-import { cn } from '@op/ui/utils';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import {
   AuthCodeField,
@@ -153,7 +155,9 @@ export const LoginPanel = () => {
       }
       return (
         <div className="flex flex-col gap-2">
-          <span className="sm:text-base">{t('Welcome to')}</span>
+          <span className="font-sans text-base font-normal tracking-normal text-muted-foreground">
+            {t('Welcome to')}
+          </span>
           <span>
             <CommonLogo className="h-8 w-auto" />
           </span>
@@ -213,7 +217,10 @@ export const LoginPanel = () => {
 
           {!loginSuccess ? (
             <AuthEmailField
-              label={t('Organization email')}
+              label={t('Email')}
+              description={t(
+                'Use the email address associated with your organization',
+              )}
               value={email}
               isDisabled={login.isFetching || loginSuccess || !!combinedError}
               onChange={(val) => {
@@ -237,7 +244,7 @@ export const LoginPanel = () => {
         {!isErrorState ? (
           isConnectionError ? (
             <Button
-              onPress={() => {
+              onClick={() => {
                 void refetchUser().then(({ data }) => {
                   if (data && data.user) {
                     window.location.reload();
@@ -255,12 +262,12 @@ export const LoginPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              isDisabled={
+              disabled={
                 !emailIsValid ||
                 login.isFetching ||
                 (!!token && !isValidOtpLength(token))
               }
-              onPress={async () => {
+              onClick={async () => {
                 if (!loginSuccess) {
                   requestEmailCode();
                 } else if (loginSuccess && isValidOtpLength(token)) {
@@ -269,7 +276,7 @@ export const LoginPanel = () => {
               }}
             >
               {login.isFetching ? (
-                <LoadingSpinner />
+                <Spinner className="size-6" />
               ) : loginSuccess ? (
                 isSignup ? (
                   t('Sign up')
@@ -285,7 +292,7 @@ export const LoginPanel = () => {
           <div className="flex flex-col items-center justify-center gap-4">
             <ButtonLink
               href={`${OPURLConfig('APP').ENV_URL}/login`}
-              color="gradient"
+              variant="default"
               className="flex w-full items-center justify-center"
             >
               {t('Back to home')}
@@ -306,7 +313,11 @@ export const LoginPanel = () => {
             ) : (
               <>
                 <span>{t("Don't have an account?")}</span>
-                <span>{t('We will automatically create one for you.')}</span>
+                <span>
+                  {t(
+                    'We’ll create one for you with your organization’s email.',
+                  )}
+                </span>
               </>
             )}
           </div>

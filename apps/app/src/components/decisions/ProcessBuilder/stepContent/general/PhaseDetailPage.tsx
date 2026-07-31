@@ -18,10 +18,10 @@ import { LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
