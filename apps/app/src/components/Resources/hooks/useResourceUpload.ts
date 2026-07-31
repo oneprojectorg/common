@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

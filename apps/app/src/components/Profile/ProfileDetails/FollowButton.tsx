@@ -3,7 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Suspense, useTransition } from 'react';

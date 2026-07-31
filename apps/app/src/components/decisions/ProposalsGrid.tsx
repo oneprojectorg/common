@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';

@@ -2,7 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';

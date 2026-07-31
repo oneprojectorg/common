@@ -2,7 +2,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { useCallback } from 'react';
 
 interface UseRelationshipMutationsOptions {

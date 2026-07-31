@@ -3,7 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { relationshipMap } from '@op/types';
 import { Button } from '@op/ui/Button';
 import { DropDownButton } from '@op/ui/DropDownButton';

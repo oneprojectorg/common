@@ -84,7 +84,7 @@
     "./Skeleton": "./src/components/ui/skeleton.tsx",
     "./Slider": "./src/components/ui/slider.tsx",
     "./SocialLinks": "./src/components/SocialLinks/index.tsx",
-    "./Sonner": "./src/components/ui/sonner.tsx",
+    "./Toast": "./src/components/ui/toast.tsx",
     "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane/index.tsx",
     "./Spinner": "./src/components/ui/spinner.tsx",

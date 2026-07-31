@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import type { Relationship } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';

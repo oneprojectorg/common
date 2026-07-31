@@ -6,7 +6,7 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';

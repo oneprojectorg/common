@@ -4,7 +4,7 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';

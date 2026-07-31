@@ -12,7 +12,7 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { SplitPane } from '@op/ui/SplitPane';
 import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';

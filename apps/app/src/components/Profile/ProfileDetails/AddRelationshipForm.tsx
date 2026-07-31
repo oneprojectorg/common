@@ -1,7 +1,7 @@
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import {
   RELATIONSHIP_OPTIONS,
   RelationshipType,

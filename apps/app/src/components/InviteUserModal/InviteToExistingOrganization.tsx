@@ -2,7 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import React from 'react';

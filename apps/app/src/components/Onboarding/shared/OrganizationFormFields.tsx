@@ -1,6 +1,6 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';

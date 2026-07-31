@@ -4,7 +4,7 @@ import type { PostFeedUser } from '@/utils/optimisticUpdates';
 import { createOptimisticUpdater } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { REACTION_OPTIONS } from '@op/types';
 
 import { useTranslations } from '@/lib/i18n';

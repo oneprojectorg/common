@@ -5,7 +5,7 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';

@@ -1,5 +1,5 @@
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 
 import type { TranslateFn } from '@/lib/i18n';
 

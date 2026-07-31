@@ -5,7 +5,7 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';

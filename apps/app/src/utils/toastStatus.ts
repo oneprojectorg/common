@@ -1,9 +1,9 @@
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 
 import type { TranslateFn } from '@/lib/i18n';
 
 /**
- * Replacement for `@op/ui`'s `toast.status(...)` on sonner. Maps an HTTP-ish
+ * Replacement for `@op/ui`'s `toast.status(...)`. Maps an HTTP-ish
  * status code to a titled error toast, mirroring the old @op/ui behavior:
  * 200 is a no-op, 404/403 get specific titles, everything else falls back to a
  * generic failure. Titles/fallbacks are translated (pass the caller's `t`).

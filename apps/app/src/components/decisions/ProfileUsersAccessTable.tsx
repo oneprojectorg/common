@@ -4,7 +4,7 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';
 import type { ProfileUser } from '@op/common/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';

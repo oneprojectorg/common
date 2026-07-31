@@ -6,7 +6,7 @@ import {
   MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
   isAllowedUploadMimeType,
 } from '@op/common/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 

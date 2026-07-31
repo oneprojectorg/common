@@ -7,7 +7,7 @@ import {
   httpUrlSchema,
 } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { TextField } from '@op/ui/TextField';
 import { useState } from 'react';

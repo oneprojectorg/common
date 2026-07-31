@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import type { ProposalFilter } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

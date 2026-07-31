@@ -4,7 +4,7 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';

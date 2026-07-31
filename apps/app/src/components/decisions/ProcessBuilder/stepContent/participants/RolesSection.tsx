@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';

@@ -3,7 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button, ButtonTooltip } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';

@@ -2,7 +2,7 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';

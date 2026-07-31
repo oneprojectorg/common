@@ -1,11 +1,11 @@
 import { Button } from '@op/sense/Button';
-import { Toaster, toast } from '@op/sense/Sonner';
+import { Toaster, toast } from '@op/sense/Toast';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { withSense } from './sense';
 
 const meta: Meta<typeof Toaster> = {
-  title: 'Sense/Primitives/Sonner',
+  title: 'Sense/Primitives/Toast',
   component: Toaster,
   decorators: [withSense],
   tags: ['autodocs'],
@@ -22,12 +22,12 @@ export const Default: Story = {
     <div className="flex flex-wrap gap-4">
       <Button
         variant="outline"
-        onClick={() =>
-          toast('Event created', {
+        onClick={() => {
+          const id = toast('Event created', {
             description: 'Friday, July 17 at 10:00 AM',
-            action: { label: 'Undo', onClick: () => {} },
-          })
-        }
+            action: { label: 'Undo', onClick: () => toast.close(id) },
+          });
+        }}
       >
         Show toast
       </Button>

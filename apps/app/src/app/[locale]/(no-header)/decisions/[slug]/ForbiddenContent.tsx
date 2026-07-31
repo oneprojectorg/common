@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1, Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';

@@ -6,7 +6,7 @@ import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';

@@ -2,7 +2,7 @@
 
 import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Header1 } from '@op/ui/Header';

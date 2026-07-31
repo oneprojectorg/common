@@ -4,7 +4,7 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter, useSearchParams } from 'next/navigation';

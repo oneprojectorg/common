@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';

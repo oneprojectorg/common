@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { useMount } from '@op/hooks';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useTransition } from 'react';
 

@@ -8,7 +8,7 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   isAllowedUploadMimeType,
 } from '@op/common/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Skeleton } from '@op/ui/Skeleton';

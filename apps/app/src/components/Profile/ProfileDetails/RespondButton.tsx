@@ -3,7 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Suspense } from 'react';

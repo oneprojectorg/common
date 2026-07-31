@@ -1,7 +1,7 @@
 'use client';
 
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';

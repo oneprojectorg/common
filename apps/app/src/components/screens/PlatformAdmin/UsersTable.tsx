@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Header2 } from '@op/ui/Header';
 import { MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';

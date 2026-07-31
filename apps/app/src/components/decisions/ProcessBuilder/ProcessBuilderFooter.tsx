@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { useState } from 'react';

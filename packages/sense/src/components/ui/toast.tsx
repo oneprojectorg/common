@@ -14,9 +14,8 @@ import {
 import { cn } from '../../lib/utils';
 import { Button } from './button';
 
-// Base UI's toast manager, driven outside React so the `toast.*` facade below
-// can fire from anywhere (matches the old sonner global). Replaces the `sonner`
-// dependency with the base-ui primitive we already ship.
+// Base UI's toast manager, created outside React so the `toast.*` facade below
+// can fire from anywhere (a global, framework-agnostic entry point).
 const manager = ToastPrimitive.createToastManager();
 
 type ToastOptions = {
@@ -24,7 +23,7 @@ type ToastOptions = {
   /** ms before auto-dismiss; 0 keeps it until closed. */
   duration?: number;
   id?: string;
-  /** Accepted for sonner API compat; base-ui has no per-toast flag, so no-op. */
+  /** Accepted for call-site compat; base-ui has no per-toast flag, so no-op. */
   dismissible?: boolean;
   action?: { label: React.ReactNode; onClick: () => void };
 };
@@ -43,8 +42,8 @@ const emit =
         : undefined,
     });
 
-// Facade preserving the sonner-style API used across the app
-// (`toast.error(msg, { description })`, etc.) on top of the base-ui manager.
+// Facade exposing the app's `toast.error(msg, { description })` API (and
+// friends) on top of the base-ui manager.
 const toast = Object.assign(emit(undefined), {
   message: emit(undefined),
   success: emit('success'),
@@ -53,6 +52,7 @@ const toast = Object.assign(emit(undefined), {
   warning: emit('warning'),
   loading: emit('loading'),
   add: manager.add,
+  close: (id?: string) => manager.close(id),
   dismiss: (id?: string) => manager.close(id),
   update: manager.update,
   promise: manager.promise,
@@ -115,7 +115,7 @@ function ToastTitle({ className, ...props }: ToastPrimitive.Title.Props) {
   return (
     <ToastPrimitive.Title
       data-slot="toast-title"
-      className={cn('text-sm font-strong', className)}
+      className={cn('text-base font-strong', className)}
       {...props}
     />
   );

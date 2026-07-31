@@ -4,7 +4,7 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { useState } from 'react';
 import { LuCheck, LuUserPlus } from 'react-icons/lu';

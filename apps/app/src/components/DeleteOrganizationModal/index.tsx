@@ -6,7 +6,7 @@ import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
