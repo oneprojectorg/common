@@ -5,7 +5,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Field, FieldLabel, FieldLegend, FieldSet } from '@op/sense/Field';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { useState, useTransition } from 'react';
 
@@ -50,54 +56,50 @@ export const FundingRoleModal = ({
             value={selectedRole ?? ''}
             onValueChange={(value) => setSelectedRole(value as FundingRole)}
           >
-            <Field orientation="horizontal">
-              <RadioGroupItem id="funder" value="funder" />
-              <FieldLabel htmlFor="funder">
-                <div className="flex flex-col">
-                  <div>
-                    {t('Your organization funds {organizationName}', {
-                      organizationName,
-                    })}
-                  </div>
-                  <div className="text-sm text-neutral-gray4">
-                    {t(
-                      'Your organization provides financial support to {organizationName}.',
-                      { organizationName },
-                    )}
-                  </div>
-                </div>
-              </FieldLabel>
+            <Field>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="funder" value="funder" />
+                <FieldLabel htmlFor="funder">
+                  {t('Your organization funds {organizationName}', {
+                    organizationName,
+                  })}
+                </FieldLabel>
+              </div>
+              <FieldDescription className="ps-6">
+                {t(
+                  'Your organization provides financial support to {organizationName}.',
+                  { organizationName },
+                )}
+              </FieldDescription>
             </Field>
-            <Field orientation="horizontal">
-              <RadioGroupItem id="fundee" value="fundee" />
-              <FieldLabel htmlFor="fundee">
-                <div className="flex flex-col">
-                  <div>
-                    {t('{organizationName} funds your organization', {
-                      organizationName,
-                    })}
-                  </div>
-                  <div className="text-sm text-neutral-gray4">
-                    {t(
-                      '{organizationName} provides financial support to your organization.',
-                      { organizationName },
-                    )}
-                  </div>
-                </div>
-              </FieldLabel>
+            <Field>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="fundee" value="fundee" />
+                <FieldLabel htmlFor="fundee">
+                  {t('{organizationName} funds your organization', {
+                    organizationName,
+                  })}
+                </FieldLabel>
+              </div>
+              <FieldDescription className="ps-6">
+                {t(
+                  '{organizationName} provides financial support to your organization.',
+                  { organizationName },
+                )}
+              </FieldDescription>
             </Field>
-            <Field orientation="horizontal">
-              <RadioGroupItem id="funderAndFundee" value="funderAndFundee" />
-              <FieldLabel htmlFor="funderAndFundee">
-                <div className="flex flex-col">
-                  <div>{t('Mutual funding')}</div>
-                  <div className="text-sm text-neutral-gray4">
-                    {t(
-                      'Both organizations provide financial support to each other.',
-                    )}
-                  </div>
-                </div>
-              </FieldLabel>
+            <Field>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="funderAndFundee" value="funderAndFundee" />
+                <FieldLabel htmlFor="funderAndFundee">
+                  {t('Mutual funding')}
+                </FieldLabel>
+              </div>
+              <FieldDescription className="ps-6">
+                {t(
+                  'Both organizations provide financial support to each other.',
+                )}
+              </FieldDescription>
             </Field>
           </RadioGroup>
         </FieldSet>

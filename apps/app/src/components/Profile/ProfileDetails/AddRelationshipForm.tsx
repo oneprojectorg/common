@@ -9,6 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@op/sense/Field';
 import { toast } from '@op/sense/Toast';
 import { RELATIONSHIP_OPTIONS } from '@op/types/relationships';
 import { FormEvent, useState, useTransition } from 'react';
@@ -138,39 +144,45 @@ export const AddRelationshipForm = ({
           <DialogTitle>{t('Add relationship')}</DialogTitle>
         </DialogHeader>
         <div className="px-6 py-4">
-          <div>
+          <p>
             {t("Choose how you're in relationship with")}{' '}
-            <span className="font-semibold">{profile.profile.name}:</span>
-            <ul>
-              {filteredRelationshipOptions.map((option) => (
-                <li key={option.key} className="flex gap-3 py-2">
-                  <Checkbox
-                    checked={selectedRelations.includes(option.key)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        const newSet = new Set(selectedRelations);
-                        newSet.add(option.key);
-                        setSelectedRelations(Array.from(newSet));
-                      } else {
-                        setSelectedRelations(
-                          selectedRelations.filter(
-                            (relationship) => relationship !== option.key,
-                          ),
-                        );
-                      }
-                    }}
-                  />
+            <span className="font-strong">{profile.profile.name}:</span>
+          </p>
+          <FieldGroup className="mt-3 gap-4">
+            {filteredRelationshipOptions.map((option) => {
+              const id = `add-relationship-${option.key}`;
 
-                  <div className="flex flex-col text-neutral-charcoal">
-                    <span>{option.label}</span>
-                    <span className="text-sm text-neutral-gray4">
-                      {option.description(profile.profile.name)}
-                    </span>
+              return (
+                <Field key={option.key} className="gap-0">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={id}
+                      checked={selectedRelations.includes(option.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedRelations(
+                            Array.from(
+                              new Set(selectedRelations).add(option.key),
+                            ),
+                          );
+                        } else {
+                          setSelectedRelations(
+                            selectedRelations.filter(
+                              (relationship) => relationship !== option.key,
+                            ),
+                          );
+                        }
+                      }}
+                    />
+                    <FieldLabel htmlFor={id}>{option.label}</FieldLabel>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <FieldDescription className="ps-6">
+                    {option.description(profile.profile.name)}
+                  </FieldDescription>
+                </Field>
+              );
+            })}
+          </FieldGroup>
         </div>
         <DialogFooter>
           <Button
