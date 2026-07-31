@@ -106,12 +106,6 @@ export function CategoryReviewerCard({
 
   const count = reviewers.length;
   const isEmpty = count === 0;
-  // Eligible reviewers exist decision-wide, but this category has already
-  // claimed all of them — the picker has nothing left to offer. (The
-  // decision-wide "no role-holders at all" case is surfaced once, above the
-  // cards, so it isn't repeated here.)
-  const allEligibleAssigned =
-    eligibleReviewers.length > 0 && options.length === 0;
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -142,12 +136,6 @@ export function CategoryReviewerCard({
         placeholder={t('Add reviewer…')}
         isLoading={addReviewer.isPending}
       />
-
-      {allEligibleAssigned && (
-        <p className="text-sm text-neutral-gray4">
-          {t('Everyone who can review is already assigned here.')}
-        </p>
-      )}
 
       {isEmpty ? (
         <p className="text-sm text-primary-orange2">
