@@ -9,7 +9,7 @@ import { logger } from '@op/logging/client';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
 import { DialogFooter } from '@op/sense/Dialog';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { useRouter } from 'next/navigation';

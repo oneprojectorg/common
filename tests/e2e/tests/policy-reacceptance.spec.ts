@@ -51,7 +51,9 @@ test.describe('Policy re-acceptance modal', () => {
 
     await page.goto('/en/', { waitUntil: 'domcontentloaded' });
 
-    const dialog = page.getByRole('dialog');
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await expect(
       dialog.getByRole('heading', { name: "We've updated our policies." }),
     ).toBeVisible({ timeout: 20000 });

@@ -1,9 +1,12 @@
 import { trpc } from '@op/api/client';
 import type { ProposalFilter } from '@op/api/encoders';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import { useEffect, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export const useProposalExport = () => {
+  const t = useTranslations();
   const [exportId, setExportId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDownloadReady, setIsDownloadReady] = useState(false);
@@ -36,9 +39,8 @@ export const useProposalExport = () => {
     if (exportStatus.status === 'failed') {
       setIsExporting(false);
       setIsDownloadReady(false);
-      toast.error({
-        title: 'Export failed',
-        message:
+      toast.error('Export failed', {
+        description:
           'errorMessage' in exportStatus
             ? exportStatus.errorMessage
             : 'Unknown error occurred',
@@ -68,15 +70,13 @@ export const useProposalExport = () => {
 
       setExportId(newExportId);
 
-      toast.status({
-        code: 200,
-        message: `Generating ${format.toUpperCase()} export...`,
-      });
+      toast.info(
+        t('Generating {format} export...', { format: format.toUpperCase() }),
+      );
     } catch (error) {
       setIsExporting(false);
-      toast.error({
-        title: 'Failed to start export',
-        message: 'Please try again later.',
+      toast.error('Failed to start export', {
+        description: 'Please try again later.',
       });
     }
   };

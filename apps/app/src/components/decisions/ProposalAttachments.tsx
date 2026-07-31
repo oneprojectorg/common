@@ -6,8 +6,8 @@ import {
   MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
   isAllowedUploadMimeType,
 } from '@op/common/client';
+import { toast } from '@op/sense/Toast';
 import { FileDropZone } from '@op/ui/FileDropZone';
-import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -78,7 +78,7 @@ export function ProposalAttachments({
   const recordMutation = trpc.decision.uploadProposalAttachment.useMutation({
     onSuccess: onMutate,
     onError: (err) => {
-      toast.error({ message: err.message });
+      toast.error(err.message);
       onMutate(); // Refetch to clear optimistic state on error
     },
   });
@@ -86,7 +86,7 @@ export function ProposalAttachments({
   const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({
     onSuccess: onMutate,
     onError: (err) => {
-      toast.error({ message: err.message });
+      toast.error(err.message);
       onMutate(); // Refetch to restore deleted item on error
     },
   });
@@ -99,16 +99,12 @@ export function ProposalAttachments({
 
     for (const file of filesToUpload) {
       if (file.size > MAX_PROPOSAL_ATTACHMENT_FILE_SIZE) {
-        toast.error({
-          message: t('File too large: {name}', { name: file.name }),
-        });
+        toast.error(t('File too large: {name}', { name: file.name }));
         continue;
       }
       const mimeType = file.type;
       if (!isAllowedUploadMimeType(mimeType)) {
-        toast.error({
-          message: t('Unsupported file type: {name}', { name: file.name }),
-        });
+        toast.error(t('Unsupported file type: {name}', { name: file.name }));
         continue;
       }
 
@@ -149,12 +145,11 @@ export function ProposalAttachments({
             proposalId,
           });
         } catch (err) {
-          toast.error({
-            message:
-              err instanceof Error
-                ? err.message
-                : t('Could not upload attachment'),
-          });
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : t('Could not upload attachment'),
+          );
           onMutate();
         }
       });

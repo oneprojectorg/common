@@ -1,9 +1,9 @@
 'use client';
 
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import {
   Dialog,
@@ -105,9 +105,10 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
             context: 'WaitlistSignup',
             response: JSON.stringify(errorBody),
           });
-          toast.error({
-            title: t('Something went wrong'),
-            message: t('We were not able to sign you up. Please try again.'),
+          toast.error(t('Something went wrong'), {
+            description: t(
+              'We were not able to sign you up. Please try again.',
+            ),
           });
           return;
         }

@@ -3,13 +3,13 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
+import { toast } from '@op/sense/Toast';
 import { relationshipMap } from '@op/types';
 import { Button } from '@op/ui/Button';
 import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
-import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
@@ -55,12 +55,10 @@ const RemoveRelationshipModalContent = ({
           from: profileId,
         });
 
-        toast.success({
-          message: t('Relationship removed'),
-        });
+        toast.success(t('Relationship removed'));
         onClose();
       } catch (e) {
-        toast.error({ message: t('Could not remove relationship') });
+        toast.error(t('Could not remove relationship'));
       }
     });
   };

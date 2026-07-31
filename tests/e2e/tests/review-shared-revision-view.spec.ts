@@ -195,7 +195,9 @@ test.describe('Review — shared revision request view', () => {
 
     await page.getByRole('button', { name: 'View feedback' }).first().click();
 
-    const modal = page.getByRole('dialog');
+    const modal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await expect(modal).toBeVisible();
     await expect(
       modal.getByRole('heading', { name: 'Revision request' }),

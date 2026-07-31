@@ -12,8 +12,8 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { SplitPane } from '@op/ui/SplitPane';
-import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import {
@@ -351,9 +351,8 @@ function ProposalEditorInner({
     // -- Client-side schema validation (validates ALL template fields) --------
     const result = validate();
     if (!result.valid) {
-      toast.error({
-        title: t('Please fix the following issues:'),
-        message: Object.values(result.errors).join(', '),
+      toast.error(t('Please fix the following issues:'), {
+        description: Object.values(result.errors).join(', '),
       });
       return;
     }

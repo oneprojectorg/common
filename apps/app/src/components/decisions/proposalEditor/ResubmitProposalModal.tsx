@@ -1,11 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -30,13 +30,13 @@ export function ResubmitProposalModal({
   const submitRevisionResponse =
     trpc.decision.submitRevisionResponse.useMutation({
       onSuccess: () => {
-        toast.success({ message: t('Proposal resubmitted') });
+        toast.success(t('Proposal resubmitted'));
         onOpenChange(false);
         setComment('');
         router.push(backHref);
       },
       onError: () => {
-        toast.error({ message: t('Failed to resubmit proposal') });
+        toast.error(t('Failed to resubmit proposal'));
       },
     });
 

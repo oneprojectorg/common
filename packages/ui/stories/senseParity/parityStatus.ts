@@ -78,7 +78,7 @@ export const parityStatus: Record<
 
   // Feedback
   alert: { family: 'feedback', status: 'done' },
-  sonner: { family: 'feedback', status: 'done' },
+  toast: { family: 'feedback', status: 'done' },
   skeleton: { family: 'feedback', status: 'done' },
   spinner: { family: 'feedback', status: 'done' },
   progress: { family: 'feedback', status: 'done' },

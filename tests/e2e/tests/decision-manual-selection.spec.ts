@@ -317,7 +317,9 @@ test.describe('Decision Manual Selection — full flow', () => {
       .getByRole('button', { name: 'Advance' })
       .first()
       .click();
-    const advanceDialog = authenticatedPage.getByRole('dialog');
+    const advanceDialog = authenticatedPage
+      .getByRole('dialog')
+      .and(authenticatedPage.locator(':not([data-slot="toast"])'));
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Final?')).toBeVisible();
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();

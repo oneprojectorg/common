@@ -2,7 +2,7 @@ import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { type ComponentProps, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 

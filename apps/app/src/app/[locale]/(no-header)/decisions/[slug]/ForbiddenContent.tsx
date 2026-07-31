@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { Header1, Header2 } from '@op/sense/Header';
-import { toast } from '@op/sense/Sonner';
+import { toast } from '@op/sense/Toast';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 

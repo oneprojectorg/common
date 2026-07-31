@@ -4,12 +4,12 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
+import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
@@ -150,12 +150,12 @@ const ProfileAbout = ({
                       size="small"
                       onPress={() => {
                         navigator.clipboard.writeText(email);
-                        toast.success({
-                          message: t(
+                        toast.success(
+                          t(
                             'This email address has been copied to your clipboard.',
                           ),
-                          dismissable: false,
-                        });
+                          { dismissible: false },
+                        );
                       }}
                     >
                       <LuCopy /> {t('Copy')}
