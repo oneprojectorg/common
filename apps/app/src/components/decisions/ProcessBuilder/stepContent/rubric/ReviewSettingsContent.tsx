@@ -32,7 +32,7 @@ export function ReviewSettingsContent({
   const t = useTranslations();
   // Gates the by-category scope. When off, the radio stays disabled with a
   // "Coming soon" chip (pre-flag behavior) and the reviewer cards never render.
-  const byCategoryEnabled = useFeatureFlag('reviews_by_category');
+  const byCategoryEnabled = useFeatureFlag('reviews-v2');
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const config = instance.instanceData?.config;

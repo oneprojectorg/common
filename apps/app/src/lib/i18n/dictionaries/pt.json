@@ -1418,5 +1418,10 @@
   "Could not remove reviewer. Please try again.": "Não foi possível remover o avaliador. Tente novamente.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "As categorias vêm de <link>Categorias de propostas</link>. Adicione avaliadores a cada uma ou convide alguém novo.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "Nenhuma categoria encontrada. Adicione-as em <link>Categorias de propostas</link> para atribuir avaliadores por categoria.",
-  "Coming soon": "Em breve"
+  "Coming soon": "Em breve",
+  "Open reviews": "Avaliações abertas",
+  "Reviewers can see each other's reviews on a proposal": "Os avaliadores podem ver as avaliações uns dos outros em uma proposta",
+  "Turn on Open Reviews?": "Ativar avaliações abertas?",
+  "This can lead reviewers to agree with each other more than they would independently.": "Isso pode levar os avaliadores a concordarem mais uns com os outros do que fariam de forma independente.",
+  "Enable": "Ativar"
 }

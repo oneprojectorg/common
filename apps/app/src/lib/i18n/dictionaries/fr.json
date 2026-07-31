@@ -1418,5 +1418,10 @@
   "Could not remove reviewer. Please try again.": "Impossible de retirer l’évaluateur. Veuillez réessayer.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Les catégories proviennent de <link>Catégories de propositions</link>. Ajoutez des évaluateurs à chacune ou invitez une nouvelle personne.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "Aucune catégorie trouvée. Ajoutez-en dans <link>Catégories de propositions</link> pour affecter des évaluateurs par catégorie.",
-  "Coming soon": "Bientôt disponible"
+  "Coming soon": "Bientôt disponible",
+  "Open reviews": "Évaluations ouvertes",
+  "Reviewers can see each other's reviews on a proposal": "Les évaluateurs peuvent voir les évaluations des autres sur une proposition",
+  "Turn on Open Reviews?": "Activer les évaluations ouvertes ?",
+  "This can lead reviewers to agree with each other more than they would independently.": "Cela peut amener les évaluateurs à être davantage d’accord entre eux qu’ils ne le seraient de manière indépendante.",
+  "Enable": "Activer"
 }

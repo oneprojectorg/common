@@ -1421,5 +1421,10 @@
   "Could not remove reviewer. Please try again.": "পর্যালোচক সরানো যায়নি। আবার চেষ্টা করুন।",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "বিভাগগুলি <link>প্রস্তাব বিভাগসমূহ</link> থেকে আসে। প্রতিটিতে পর্যালোচক যোগ করুন, বা নতুন কাউকে আমন্ত্রণ জানান।",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "কোনো বিভাগ পাওয়া যায়নি। বিভাগ অনুযায়ী পর্যালোচক নিযুক্ত করতে <link>প্রস্তাব বিভাগসমূহ</link>-এ সেগুলি যোগ করুন।",
-  "Coming soon": "শীঘ্রই আসছে"
+  "Coming soon": "শীঘ্রই আসছে",
+  "Open reviews": "উন্মুক্ত পর্যালোচনা",
+  "Reviewers can see each other's reviews on a proposal": "পর্যালোচকরা একটি প্রস্তাবে একে অপরের পর্যালোচনা দেখতে পারেন",
+  "Turn on Open Reviews?": "উন্মুক্ত পর্যালোচনা চালু করবেন?",
+  "This can lead reviewers to agree with each other more than they would independently.": "এটি পর্যালোচকদের স্বাধীনভাবে যতটা একমত হতেন তার চেয়ে বেশি একে অপরের সাথে একমত হতে পরিচালিত করতে পারে।",
+  "Enable": "চালু করুন"
 }

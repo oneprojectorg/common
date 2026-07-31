@@ -1418,5 +1418,10 @@
   "Could not remove reviewer. Please try again.": "تعذّرت إزالة المراجع. يرجى المحاولة مرة أخرى.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "تأتي الفئات من <link>فئات المقترحات</link>. أضف مراجعين إلى كل فئة أو ادعُ شخصًا جديدًا.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "لم يتم العثور على فئات. أضفها في <link>فئات المقترحات</link> لتعيين المراجعين حسب الفئة.",
-  "Coming soon": "قريبًا"
+  "Coming soon": "قريبًا",
+  "Open reviews": "المراجعات المفتوحة",
+  "Reviewers can see each other's reviews on a proposal": "يمكن للمراجعين رؤية مراجعات بعضهم البعض على المقترح",
+  "Turn on Open Reviews?": "تفعيل المراجعات المفتوحة؟",
+  "This can lead reviewers to agree with each other more than they would independently.": "قد يؤدي ذلك إلى اتفاق المراجعين مع بعضهم البعض أكثر مما لو كانوا مستقلين.",
+  "Enable": "تفعيل"
 }

@@ -1427,5 +1427,10 @@
   "Could not remove reviewer. Please try again.": "Could not remove reviewer. Please try again.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.",
-  "Coming soon": "Coming soon"
+  "Coming soon": "Coming soon",
+  "Open reviews": "Open reviews",
+  "Reviewers can see each other's reviews on a proposal": "Reviewers can see each other's reviews on a proposal",
+  "Turn on Open Reviews?": "Turn on Open Reviews?",
+  "This can lead reviewers to agree with each other more than they would independently.": "This can lead reviewers to agree with each other more than they would independently.",
+  "Enable": "Enable"
 }
