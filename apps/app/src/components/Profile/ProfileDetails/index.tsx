@@ -5,7 +5,7 @@ import type { Organization } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
 import { Button } from '@op/sense/Button';
-import { Skeleton } from '@op/sense/Skeleton';
+import { SkeletonText } from '@op/sense/Skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -180,24 +180,14 @@ export const ProfileDetails = ({
   );
 };
 
-const SkeletonLines = ({ lines = 10 }: { lines?: number }) => {
-  return (
-    <div className="flex flex-col gap-3">
-      {Array.from({ length: lines }).map((_, index) => (
-        <Skeleton key={index} className="h-4 w-full" />
-      ))}
-    </div>
-  );
-};
-
 export const ProfileDetailsSkeleton = () => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
-      <SkeletonLines />
-      <SkeletonLines />
+      <SkeletonText lines={10} className="gap-3" />
+      <SkeletonText lines={10} className="gap-3" />
       <div className="flex gap-4" />
 
-      <SkeletonLines />
+      <SkeletonText lines={10} className="gap-3" />
     </div>
   );
 };

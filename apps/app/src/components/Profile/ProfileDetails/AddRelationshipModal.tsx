@@ -38,6 +38,10 @@ import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 import { AddRelationshipForm } from './AddRelationshipForm';
 import { RemoveRelationshipModal } from './RemoveRelationshipModal';
 import { RespondButton } from './RespondButton';
+import {
+  relationshipActiveButtonClass,
+  relationshipPendingButtonClass,
+} from './relationshipButton';
 
 const RemoveRelationshipModalContent = ({
   relationship,
@@ -164,8 +168,8 @@ export const AddRelationshipModalSuspense = ({
                 className={cn(
                   'min-w-full sm:min-w-fit',
                   relationships.some((r) => r.pending)
-                    ? 'bg-transparent'
-                    : 'bg-primary-tealWhite',
+                    ? relationshipPendingButtonClass
+                    : relationshipActiveButtonClass,
                 )}
               >
                 {t(
@@ -208,8 +212,13 @@ export const AddRelationshipModalSuspense = ({
                     <DialogTrigger
                       render={
                         <Button
-                          className="w-full sm:w-auto"
-                          variant={relationship.pending ? 'outline' : 'default'}
+                          className={cn(
+                            'w-full sm:w-auto',
+                            relationship.pending
+                              ? relationshipPendingButtonClass
+                              : relationshipActiveButtonClass,
+                          )}
+                          variant="outline"
                         >
                           {relationship.pending ? (
                             <LuClock className="size-4" />

@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Skeleton } from '@op/sense/Skeleton';
+import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,10 +25,7 @@ export function CommentSkeleton() {
           </div>
         </FeedHeader>
         <FeedContent>
-          <div className="flex animate-pulse flex-col gap-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
+          <SkeletonText lines={2} />
         </FeedContent>
       </FeedMain>
     </FeedItem>

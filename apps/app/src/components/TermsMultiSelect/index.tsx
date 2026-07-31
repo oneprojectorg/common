@@ -18,6 +18,7 @@ import {
 } from '@op/sense/Combobox';
 import { Label } from '@op/sense/Label';
 import { Spinner } from '@op/sense/Spinner';
+import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -128,6 +129,7 @@ export const TermsMultiSelect = ({
         isItemEqualToValue={(a: Option, b: Option) => a.id === b.id}
       >
         <ComboboxChips>
+          <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
           {selectedOptions.map((option) => (
             <ComboboxChip key={option.id}>{option.label}</ComboboxChip>
           ))}

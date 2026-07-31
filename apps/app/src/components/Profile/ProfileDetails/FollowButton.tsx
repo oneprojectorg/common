@@ -5,10 +5,13 @@ import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+
+import { relationshipActiveButtonClass } from './relationshipButton';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useRequiredUser();
@@ -77,7 +80,10 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
       onClick={handleFollowToggle}
       loading={isPending}
       variant={isFollowing ? 'outline' : 'default'}
-      className="min-w-full sm:min-w-fit"
+      className={cn(
+        'min-w-full sm:min-w-fit',
+        isFollowing && relationshipActiveButtonClass,
+      )}
     >
       {isFollowing ? (
         <>

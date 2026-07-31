@@ -10,7 +10,7 @@ import type {
 } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
-import { Skeleton } from '@op/sense/Skeleton';
+import { SkeletonText } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { Fragment, type RefCallback, useCallback } from 'react';
 
@@ -155,12 +155,7 @@ export const ProfileFeedCards = ({
         {shouldShowTrigger && (
           <HorizontalListItem>
             <div ref={infiniteScrollRef}>
-              {isFetchingNextPage ? (
-                <div className="flex flex-col gap-2 text-sm text-neutral-gray4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-2/3" />
-                </div>
-              ) : null}
+              {isFetchingNextPage ? <SkeletonText lines={2} /> : null}
             </div>
           </HorizontalListItem>
         )}
@@ -214,12 +209,7 @@ export const ProfileFeedList = ({
       </PostFeed>
       {shouldShowTrigger && (
         <div ref={infiniteScrollRef} className="flex justify-center py-4">
-          {isFetchingNextPage ? (
-            <div className="flex flex-col gap-2 text-sm text-neutral-gray4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          ) : null}
+          {isFetchingNextPage ? <SkeletonText lines={2} /> : null}
         </div>
       )}
     </div>

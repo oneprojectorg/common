@@ -5,7 +5,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
-import { Skeleton } from '@op/sense/Skeleton';
+import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 import React from 'react';
 
 import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
@@ -104,10 +104,7 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
                     </div>
                   </div>
                   {/* Skeleton rows for description content */}
-                  <div className="flex w-full max-w-md flex-col gap-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
+                  <SkeletonText lines={2} className="max-w-md" />
                 </div>
               </li>
             ))}
