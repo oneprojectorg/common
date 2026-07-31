@@ -16,11 +16,13 @@ import { LuChevronRight } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
-import type { RubricSummary } from './ReviewSummaryPanel';
+import { AverageScoreBar } from './AverageScoreBar';
+import type { RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
 
 interface ReviewerListProps {
   proposalWithReviews: ProposalWithSubmittedReviews;
+  reviews: SubmittedReviewItem[];
   rubricTemplate: RubricTemplateSchema | null;
   rubricSummary: RubricSummary;
   onSelectAssignment: (assignmentId: string) => void;
@@ -28,6 +30,7 @@ interface ReviewerListProps {
 
 export function ReviewerList({
   proposalWithReviews,
+  reviews,
   rubricTemplate,
   rubricSummary,
   onSelectAssignment,
@@ -51,15 +54,8 @@ export function ReviewerList({
     if (!hasOverallRecommendation) {
       return null;
     }
-    return getReviewsGroupedByRecommendation(
-      proposalWithReviews.reviews,
-      recommendationOptions,
-    );
-  }, [
-    proposalWithReviews.reviews,
-    hasOverallRecommendation,
-    recommendationOptions,
-  ]);
+    return getReviewsGroupedByRecommendation(reviews, recommendationOptions);
+  }, [reviews, hasOverallRecommendation, recommendationOptions]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -74,15 +70,10 @@ export function ReviewerList({
       </header>
 
       {hasScoring && (
-        <div className="flex items-center justify-between rounded-lg bg-neutral-offWhite p-4">
-          <span className="font-serif text-title-sm text-neutral-black">
-            {t('Average Score')}
-          </span>
-          <span className="font-serif text-title-sm text-neutral-black">
-            {formatScore(averageScore)}
-            <span className="text-neutral-gray4">/{totalPoints}pts</span>
-          </span>
-        </div>
+        <AverageScoreBar
+          averageScore={averageScore}
+          totalPoints={totalPoints}
+        />
       )}
 
       {groups ? (
@@ -112,7 +103,7 @@ export function ReviewerList({
             {t('Submitted Reviews')}
           </Header3>
           <div className="flex flex-col gap-2">
-            {proposalWithReviews.reviews.map((item) => (
+            {reviews.map((item) => (
               <ReviewerRow
                 key={item.review.assignmentId}
                 item={item}
@@ -161,10 +152,6 @@ function getReviewsGroupedByRecommendation(
       label: titles.get(value) ?? value,
       items,
     }));
-}
-
-function formatScore(value: number): string {
-  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }
 
 function RecommendationGroup({

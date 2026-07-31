@@ -10,8 +10,8 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
+import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
-import { ReviewSummaryPanel } from './ReviewSummaryPanel';
 
 interface ReviewSummaryViewProps {
   decisionSlug: string;
@@ -66,7 +66,7 @@ export function ReviewSummaryView({
           id="summary"
           label={<TranslatedText text="Review Summary" />}
         >
-          <ReviewSummaryPanel
+          <ReviewsPanel
             proposalWithReviews={proposalWithReviews}
             rubricTemplate={rubricTemplate}
             selectedAssignmentId={selectedAssignmentId}
