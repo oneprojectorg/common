@@ -3,10 +3,13 @@ import { categoryReviewers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { assertCategoryReviewerAdmin } from './categoryReviewerHelpers';
+import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 
 /**
  * Removes a reviewer from a category's scope (admin-gated), idempotent (no
- * match reports `removed: false`). Only the scope row is touched.
+ * match reports `removed: false`). The scope row is deleted, then the
+ * reconciler prunes this category's now-unjustified `pending` assignments
+ * (§3 — non-pending assignments are kept). `phaseId` omitted = instance-wide.
  */
 export async function removeCategoryReviewer({
   processInstanceId,
@@ -37,5 +40,17 @@ export async function removeCategoryReviewer({
     )
     .returning({ id: categoryReviewers.id });
 
-  return { removed: deleted.length > 0 };
+  const removed = deleted.length > 0;
+
+  // Only reconcile when a scope row actually went away: prune the pending
+  // assignments this category no longer justifies. A no-op unless the instance
+  // is in a live by_category review phase.
+  if (removed) {
+    await reconcileReviewAssignments({
+      instanceId: processInstanceId,
+      affected: { taxonomyTermId },
+    });
+  }
+
+  return { removed };
 }

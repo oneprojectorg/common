@@ -64,6 +64,10 @@ vi.mock('./setProposalCategories', () => ({
   setProposalCategories: vi.fn(),
 }));
 
+vi.mock('./reconcileReviewAssignments', () => ({
+  reconcileReviewAssignments: vi.fn(),
+}));
+
 vi.mock('./syncProposalProfileLocation', () => ({
   syncProposalProfileLocation: vi.fn(),
 }));
