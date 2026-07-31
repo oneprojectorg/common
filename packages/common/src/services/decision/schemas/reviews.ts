@@ -327,3 +327,24 @@ export const categoryReviewerTargetSchema = z.object({
   // '' would collide with the instance-wide NULL key.
   phaseId: z.string().min(1).optional(),
 });
+
+/**
+ * Candidate reviewer surfaced in the "Add reviewer…" picker. email is included
+ * so the admin can disambiguate people sharing a display name.
+ */
+export const eligibleReviewerSchema = createSelectSchema(profiles)
+  .pick({
+    name: true,
+    slug: true,
+    avatarImageId: true,
+    email: true,
+  })
+  .extend({
+    id: z.uuid(),
+  });
+
+export type EligibleReviewerSchema = z.infer<typeof eligibleReviewerSchema>;
+
+export const eligibleReviewersListSchema = z.object({
+  reviewers: z.array(eligibleReviewerSchema),
+});

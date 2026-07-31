@@ -1408,5 +1408,14 @@
   "Reviewers can review any submission": "يمكن للمراجعين مراجعة أي مقترح",
   "By category": "حسب الفئة",
   "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "يتم تعيين كل مراجع لفئة واحدة أو أكثر. تعرض قائمته المقترحات ضمن تلك الفئات فقط.",
+  "Add reviewer…": "إضافة مراجع…",
+  "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.": "لا يوجد مشاركون يمكنهم المراجعة بعد. امنح صلاحية المراجعة في <link>إدارة المشاركين</link> لإضافة مراجعين هنا.",
+  "Everyone who can review is already assigned here.": "جميع من يمكنهم المراجعة معيّنون هنا بالفعل.",
+  "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.": "لا يوجد مراجعون بعد. لا يمكن مراجعة المقترحات في هذه الفئة حتى تتم إضافة شخص ما.",
+  "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}": "{count, plural, =0 {0 مراجعين} =1 {مراجع واحد} other {# مراجعين}}",
+  "Could not add reviewer. Please try again.": "تعذّرت إضافة المراجع. يرجى المحاولة مرة أخرى.",
+  "Could not remove reviewer. Please try again.": "تعذّرت إزالة المراجع. يرجى المحاولة مرة أخرى.",
+  "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "تأتي الفئات من <link>فئات المقترحات</link>. أضف مراجعين إلى كل فئة أو ادعُ شخصًا جديدًا.",
+  "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "لم يتم العثور على فئات. أضفها في <link>فئات المقترحات</link> لتعيين المراجعين حسب الفئة.",
   "Coming soon": "قريبًا"
 }

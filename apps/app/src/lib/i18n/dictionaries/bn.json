@@ -1411,5 +1411,14 @@
   "Reviewers can review any submission": "পর্যালোচকরা যেকোনো প্রস্তাব পর্যালোচনা করতে পারেন",
   "By category": "বিভাগ অনুসারে",
   "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "প্রতিটি পর্যালোচককে এক বা একাধিক বিভাগে নিযুক্ত করা হয়। তাদের সারিতে শুধুমাত্র সেই বিভাগগুলির প্রস্তাব দেখানো হয়।",
+  "Add reviewer…": "পর্যালোচক যোগ করুন…",
+  "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.": "এখনও কোনো অংশগ্রহণকারী পর্যালোচনা করতে পারেন না। এখানে পর্যালোচক যোগ করতে <link>অংশগ্রহণকারীদের পরিচালনা করুন</link>-এ পর্যালোচনার অ্যাক্সেস দিন।",
+  "Everyone who can review is already assigned here.": "যারা পর্যালোচনা করতে পারেন সবাই ইতিমধ্যে এখানে নিযুক্ত।",
+  "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.": "এখনও কোনো পর্যালোচক নেই। কেউ যোগ না হওয়া পর্যন্ত এই বিভাগের প্রস্তাবগুলি পর্যালোচনা করা যাবে না।",
+  "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}": "{count, plural, =0 {0 জন পর্যালোচক} =1 {1 জন পর্যালোচক} other {# জন পর্যালোচক}}",
+  "Could not add reviewer. Please try again.": "পর্যালোচক যোগ করা যায়নি। আবার চেষ্টা করুন।",
+  "Could not remove reviewer. Please try again.": "পর্যালোচক সরানো যায়নি। আবার চেষ্টা করুন।",
+  "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "বিভাগগুলি <link>প্রস্তাব বিভাগসমূহ</link> থেকে আসে। প্রতিটিতে পর্যালোচক যোগ করুন, বা নতুন কাউকে আমন্ত্রণ জানান।",
+  "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "কোনো বিভাগ পাওয়া যায়নি। বিভাগ অনুযায়ী পর্যালোচক নিযুক্ত করতে <link>প্রস্তাব বিভাগসমূহ</link>-এ সেগুলি যোগ করুন।",
   "Coming soon": "শীঘ্রই আসছে"
 }

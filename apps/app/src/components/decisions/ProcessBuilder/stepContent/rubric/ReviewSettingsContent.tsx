@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
 import type { ReviewsScope } from '@op/common';
@@ -17,6 +18,7 @@ import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { CategoryReviewerCards } from './CategoryReviewerCards';
 
 interface ReviewSettings {
   scope: ReviewsScope;
@@ -28,6 +30,9 @@ export function ReviewSettingsContent({
   decisionProfileId,
 }: SectionProps) {
   const t = useTranslations();
+  // Gates the by-category scope. When off, the radio stays disabled with a
+  // "Coming soon" chip (pre-flag behavior) and the reviewer cards never render.
+  const byCategoryEnabled = useFeatureFlag('reviews_by_category');
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const config = instance.instanceData?.config;
@@ -125,11 +130,15 @@ export function ReviewSettingsContent({
               </span>
             </div>
           </Radio>
-          <Radio value="by_category" isDisabled className="opacity-50">
+          <Radio
+            value="by_category"
+            isDisabled={!byCategoryEnabled}
+            className={byCategoryEnabled ? undefined : 'opacity-50'}
+          >
             <div className="flex flex-col">
               <span className="flex items-center gap-2 text-base text-neutral-charcoal">
                 {t('By category')}
-                <Chip>{t('Coming soon')}</Chip>
+                {!byCategoryEnabled && <Chip>{t('Coming soon')}</Chip>}
               </span>
               <span className="text-sm text-neutral-gray4">
                 {t(
@@ -139,6 +148,13 @@ export function ReviewSettingsContent({
             </div>
           </Radio>
         </RadioGroup>
+
+        {byCategoryEnabled && settings.scope === 'by_category' && (
+          <>
+            <hr className="border-neutral-gray1" />
+            <CategoryReviewerCards instanceId={instanceId} />
+          </>
+        )}
       </section>
 
       <hr className="border-neutral-gray1" />

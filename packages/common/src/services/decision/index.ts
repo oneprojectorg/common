@@ -74,6 +74,7 @@ export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './listCategoryReviewers';
+export * from './listEligibleReviewers';
 export * from './addCategoryReviewer';
 export * from './removeCategoryReviewer';
 export * from './listProposalsWithReviewAggregates';

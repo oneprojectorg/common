@@ -34,7 +34,7 @@ export async function listCategoryReviewers({
 }: {
   processInstanceId: string;
   phaseId?: string;
-  user: User | undefined;
+  user: User;
 }): Promise<CategoryWithReviewers[]> {
   const categories = await getProcessCategories({ processInstanceId, user });
 

@@ -1408,5 +1408,14 @@
   "Reviewers can review any submission": "Las personas revisoras pueden revisar cualquier propuesta",
   "By category": "Por categoría",
   "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Cada persona revisora se asigna a una o más categorías. Su cola muestra solo las propuestas de esas categorías.",
+  "Add reviewer…": "Agregar persona revisora…",
+  "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.": "Aún no hay participantes que puedan evaluar. Otorga acceso de evaluación en <link>Gestionar Participantes</link> para agregar personas revisoras aquí.",
+  "Everyone who can review is already assigned here.": "Todas las personas que pueden evaluar ya están asignadas aquí.",
+  "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.": "Aún no hay personas revisoras. Las propuestas de esta categoría no se pueden evaluar hasta que se agregue a alguien.",
+  "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}": "{count, plural, =0 {0 personas revisoras} =1 {1 persona revisora} other {# personas revisoras}}",
+  "Could not add reviewer. Please try again.": "No se pudo agregar la persona revisora. Inténtalo de nuevo.",
+  "Could not remove reviewer. Please try again.": "No se pudo quitar la persona revisora. Inténtalo de nuevo.",
+  "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Las categorías provienen de <link>Categorías de propuestas</link>. Agrega personas revisoras a cada una o invita a alguien nuevo.",
+  "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "No se encontraron categorías. Agrégalas en <link>Categorías de propuestas</link> para asignar personas revisoras por categoría.",
   "Coming soon": "Próximamente"
 }

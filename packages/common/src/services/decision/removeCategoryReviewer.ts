@@ -19,7 +19,7 @@ export async function removeCategoryReviewer({
   taxonomyTermId: string;
   reviewerProfileId: string;
   phaseId?: string;
-  user: User | undefined;
+  user: User;
 }): Promise<{ removed: boolean }> {
   await assertCategoryReviewerAdmin({ processInstanceId, user });
 

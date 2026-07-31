@@ -1408,5 +1408,14 @@
   "Reviewers can review any submission": "Les évaluateurs peuvent évaluer n’importe quelle proposition",
   "By category": "Par catégorie",
   "Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.": "Chaque évaluateur est affecté à une ou plusieurs catégories. Sa file d’attente n’affiche que les propositions de ces catégories.",
+  "Add reviewer…": "Ajouter un évaluateur…",
+  "No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.": "Aucun participant ne peut encore évaluer. Accordez l’accès d’évaluation dans <link>Gérer les Participants</link> pour ajouter des évaluateurs ici.",
+  "Everyone who can review is already assigned here.": "Toutes les personnes pouvant évaluer sont déjà affectées ici.",
+  "No reviewers yet. Proposals in this category can’t be reviewed until someone is added.": "Aucun évaluateur pour l’instant. Les propositions de cette catégorie ne peuvent pas être évaluées tant que personne n’est ajouté.",
+  "{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}": "{count, plural, =0 {0 évaluateur} =1 {1 évaluateur} other {# évaluateurs}}",
+  "Could not add reviewer. Please try again.": "Impossible d’ajouter l’évaluateur. Veuillez réessayer.",
+  "Could not remove reviewer. Please try again.": "Impossible de retirer l’évaluateur. Veuillez réessayer.",
+  "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Les catégories proviennent de <link>Catégories de propositions</link>. Ajoutez des évaluateurs à chacune ou invitez une nouvelle personne.",
+  "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "Aucune catégorie trouvée. Ajoutez-en dans <link>Catégories de propositions</link> pour affecter des évaluateurs par catégorie.",
   "Coming soon": "Bientôt disponible"
 }
