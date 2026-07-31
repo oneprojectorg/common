@@ -80,12 +80,12 @@ const ForbiddenWithInviteCheck = () => {
       <div className="flex w-full max-w-lg flex-col justify-center">
         <FormContainer className="gap-6">
           <div className="flex flex-col gap-2 text-center">
-            <Header1>
+            <Header1 className="text-headline">
               {t('Join {processInstanceName}', {
                 processInstanceName: matchingInvite.profile?.name,
               })}
             </Header1>
-            <Header2 className="font-sans text-muted-foreground">
+            <Header2 className="font-sans text-base text-muted-foreground">
               {t('A decision-making process stewarded by {stewardName}.', {
                 stewardName: steward?.name ?? '',
               })}

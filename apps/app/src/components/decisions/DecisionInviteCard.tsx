@@ -54,7 +54,7 @@ export const DecisionInviteCard = ({
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4 rounded-lg border p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-2">
-          <Header2 className="font-serif">{profile.name}</Header2>
+          <Header2 className="font-serif text-title">{profile.name}</Header2>
           <ProfileItem
             size="small"
             className="items-center gap-1"
