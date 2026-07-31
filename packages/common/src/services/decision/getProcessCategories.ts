@@ -6,6 +6,7 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
+import { categoryTermUri } from './proposalTaxonomy';
 import type { DecisionInstanceData } from './schemas';
 
 export interface ProcessCategory {
@@ -76,10 +77,10 @@ export const getProcessCategories = async ({
     const categories: ProcessCategory[] = [];
 
     for (const category of instanceCategories) {
-      const expectedTermUri = category.label
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+      // Same slug helper term creation uses, so accented/unicode labels resolve
+      // (see categoryTermUri). A hand-rolled regex here would strip accents the
+      // strict slugify folds, silently dropping the category.
+      const expectedTermUri = categoryTermUri(category.label);
 
       const taxonomyTerm = proposalTaxonomy.taxonomyTerms.find(
         (term: { termUri: string }) => term.termUri === expectedTermUri,

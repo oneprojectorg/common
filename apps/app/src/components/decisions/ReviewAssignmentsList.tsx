@@ -1,15 +1,18 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
   ProposalReviewAssignmentStatus,
   REVIEW_ASSIGNMENT_SORTS,
+  getPhaseReviewSettings,
 } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -70,7 +73,16 @@ export function ReviewAssignmentsList({
     <div className="flex flex-col gap-6">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <ProposalCount count={assignments.length} />
+        {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
+        <div className="flex min-w-0 flex-1 items-baseline gap-1">
+          <ProposalCount count={assignments.length} />
+          {/* decorative — a failed lookup must not take down the queue */}
+          <APIErrorBoundary fallbacks={{ default: () => null }}>
+            <Suspense fallback={null}>
+              <AssignedCategoriesSuffix processInstanceId={processInstanceId} />
+            </Suspense>
+          </APIErrorBoundary>
+        </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end">
           <ResponsiveSelect
             selectedKey={statusFilter ?? 'all'}
@@ -140,6 +152,70 @@ export function ReviewAssignmentsList({
     </div>
   );
 }
+
+/** "in District 1, District 2" suffix after the count on by-category phases. */
+const AssignedCategoriesSuffix = ({
+  processInstanceId,
+}: {
+  processInstanceId: string;
+}) => {
+  // cached from the page-level suspense query — no extra request
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: processInstanceId,
+  });
+
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhase = phases.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+
+  if (
+    !currentPhase ||
+    getPhaseReviewSettings({ phases }, currentPhase.phaseId).scope !==
+      'by_category'
+  ) {
+    return null;
+  }
+
+  return (
+    <AssignedCategoriesLabel
+      processInstanceId={processInstanceId}
+      phaseId={currentPhase.phaseId}
+    />
+  );
+};
+
+const AssignedCategoriesLabel = ({
+  processInstanceId,
+  phaseId,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+}) => {
+  const t = useTranslations();
+
+  const [categories] = trpc.decision.listReviewerCategories.useSuspenseQuery({
+    processInstanceId,
+    phaseId,
+  });
+
+  if (categories.length === 0) {
+    return null;
+  }
+
+  const label = t('in {categories}', {
+    categories: categories.map((category) => category.name).join(', '),
+  });
+
+  return (
+    <span
+      className="min-w-0 truncate text-base text-neutral-gray4"
+      title={label}
+    >
+      {label}
+    </span>
+  );
+};
 
 const ReviewAssignmentCardSkeleton = () => (
   <Surface className="relative w-full space-y-3 p-4 pb-4">

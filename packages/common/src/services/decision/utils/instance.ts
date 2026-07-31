@@ -1,24 +1,22 @@
-import { NotFoundError } from '../../../utils';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
-} from '../schemas/instanceData';
+// Direct module import (not the barrel) to stay client-safe.
+import { NotFoundError } from '../../../utils/error';
 
 /**
  * Throws NotFoundError when `phaseId` is not configured on the instance's
- * `instanceData.phases`. Use this in routes/services that accept a phaseId
- * from the caller, so an unknown phase fails loudly instead of silently
- * resolving to empty results. Returns the matched phase so callers can
- * read its config without a second `find`.
+ * `instanceData.phases`, so an unknown phase fails loudly instead of silently
+ * resolving to empty results. Returns the matched phase. Generic/structural so
+ * it accepts both domain and API-encoder instance data.
  */
-export function assertInstancePhase({
+export function assertInstancePhase<Phase extends { phaseId: string }>({
   instance,
   phaseId,
 }: {
-  instance: { instanceData: DecisionInstanceData };
+  instance: { instanceData: { phases?: readonly Phase[] } };
   phaseId: string;
-}): PhaseInstanceData {
-  const phase = instance.instanceData.phases.find((p) => p.phaseId === phaseId);
+}): Phase {
+  const phase = instance.instanceData.phases?.find(
+    (p) => p.phaseId === phaseId,
+  );
   if (!phase) {
     throw new NotFoundError('Phase', phaseId);
   }

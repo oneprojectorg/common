@@ -26,15 +26,16 @@ export default meta;
 
 type Story = StoryObj<typeof Drawer>;
 
-// Drawer is vaul-based, so triggers compose with asChild rather than render.
+// Drawer is Base UI based: triggers compose via `render` (not asChild), and the
+// slide-in edge is set with `swipeDirection` (up / right / down / left).
 const VOTE_BUDGET = 10;
 
 function AllocateVotesDemo() {
   const [votes, setVotes] = React.useState(3);
   return (
-    <Drawer>
-      <DrawerTrigger asChild>
-        <Button variant="outline">Allocate votes</Button>
+    <Drawer showSwipeHandle>
+      <DrawerTrigger render={<Button variant="outline" />}>
+        Allocate votes
       </DrawerTrigger>
       <DrawerContent className="sense">
         <DrawerHeader>
@@ -74,8 +75,8 @@ function AllocateVotesDemo() {
         </div>
         <DrawerFooter>
           <Button>Confirm allocation</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
+          <DrawerClose render={<Button variant="outline" />}>
+            Cancel
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
@@ -90,10 +91,10 @@ export const Default: Story = {
 export const Directions: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
-      {(['top', 'right', 'bottom', 'left'] as const).map((direction) => (
-        <Drawer key={direction} direction={direction}>
-          <DrawerTrigger asChild>
-            <Button variant="outline">{direction}</Button>
+      {(['up', 'right', 'down', 'left'] as const).map((direction) => (
+        <Drawer key={direction} swipeDirection={direction} showSwipeHandle>
+          <DrawerTrigger render={<Button variant="outline" />}>
+            {direction}
           </DrawerTrigger>
           <DrawerContent className="sense">
             <DrawerHeader>
@@ -103,8 +104,8 @@ export const Directions: Story = {
               </DrawerDescription>
             </DrawerHeader>
             <DrawerFooter>
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
+              <DrawerClose render={<Button variant="outline" />}>
+                Close
               </DrawerClose>
             </DrawerFooter>
           </DrawerContent>

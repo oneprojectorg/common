@@ -1,6 +1,7 @@
 import {
   REVIEWS_POLICIES,
   checkpointVersionSchema,
+  phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
 } from '@op/common/client';
@@ -80,6 +81,7 @@ const phaseRulesEncoder = z.object({
       endDate: z.string().optional(),
     })
     .optional(),
+  reviews: phaseReviewSettingsSchema.optional(),
 }) satisfies z.ZodType<CommonPhaseRules>;
 
 /** Selection pipeline block encoder */

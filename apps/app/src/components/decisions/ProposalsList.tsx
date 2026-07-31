@@ -15,6 +15,8 @@ import {
   type Proposal,
   ProposalReviewRequestState,
   getLocationFieldMapView,
+  isReviewPhase,
+  isVotingPhase,
   templateCollectsLocation,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -373,8 +375,8 @@ const ProposalsListContent = ({
   sortOrder,
   setSortOrder,
 }: ProposalsListContentProps) => {
-  const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
-  const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
+  const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
+  const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
   const t = useTranslations();
   const { user } = useUser();
 
@@ -441,7 +443,7 @@ const ProposalsListContent = ({
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },
-      { enabled: !!isReviewPhase },
+      { enabled: isInReviewPhase },
     );
 
   const revisionRequestIdByProposalId = useMemo(
@@ -619,7 +621,7 @@ const ProposalsListContent = ({
             permissions={permissions}
             votedProposalIds={selectedProposalIds}
             hasFilter={hasActiveFilter}
-            isVotingPhase={isVotingPhase}
+            isVotingPhase={isInVotingPhase}
             proposalsHidden={proposalsHidden}
             excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}

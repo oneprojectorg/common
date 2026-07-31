@@ -2,8 +2,14 @@ import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
+import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { insertReviewAssignments } from './insertReviewAssignments';
+import {
+  type AssignableProposal,
+  insertReviewAssignments,
+} from './insertReviewAssignments';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 export interface GenerateReviewAssignmentsInput {
   instanceId: string;
@@ -12,14 +18,20 @@ export interface GenerateReviewAssignmentsInput {
   transitionHistoryId: string;
 }
 
+interface SelectedProposal {
+  id: string;
+  submittedByProfileId: string | null;
+}
+
 /**
  * Generate review assignment rows for proposals entering a review-capable phase.
  *
  * Only members with the REVIEW capability on the `decisions` access zone are
  * eligible. Reviewers are never assigned their own proposals.
  *
- * Currently supports the `full_coverage` policy (every eligible reviewer is
- * assigned every proposal). Throws for unsupported policies.
+ * Scope `all`: every eligible reviewer is assigned every proposal. Scope
+ * `by_category`: each proposal is assigned only the eligible reviewers whose
+ * scope rows cover its categories. Insert-only — never prunes.
  */
 export async function generateReviewAssignments({
   instanceId,
@@ -73,14 +85,100 @@ export async function generateReviewAssignments({
     transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
   );
 
+  const scope = getPhaseReviewSettings(
+    instance.instanceData as DecisionInstanceData,
+    phaseId,
+  ).scope;
+
+  const assignableProposals =
+    scope === 'by_category'
+      ? await buildByCategoryProposals({
+          instanceId,
+          phaseId,
+          selectedProposalIds,
+          selectedProposals,
+          eligibleReviewerProfileIds: reviewerProfileIds,
+          historyByProposalId,
+        })
+      : selectedProposals.map((proposal) => ({
+          proposalId: proposal.id,
+          submittedByProfileId: proposal.submittedByProfileId,
+          assignedProposalHistoryId:
+            historyByProposalId.get(proposal.id) ?? null,
+          reviewerProfileIds,
+        }));
+
   await insertReviewAssignments({
     instanceId,
     phaseId,
-    reviewerProfileIds,
-    assignableProposals: selectedProposals.map((proposal) => ({
+    assignableProposals,
+  });
+}
+
+/**
+ * Builds per-proposal reviewer sets for the `by_category` scope: scope rows
+ * covering the proposal's categories ∩ eligible reviewers. Proposals that end
+ * up with zero reviewers (uncategorized, or a category with no eligible scoped
+ * reviewer) are logged but still proceed with an empty set — never blocked.
+ */
+async function buildByCategoryProposals({
+  instanceId,
+  phaseId,
+  selectedProposalIds,
+  selectedProposals,
+  eligibleReviewerProfileIds,
+  historyByProposalId,
+}: {
+  instanceId: string;
+  phaseId: string;
+  selectedProposalIds: string[];
+  selectedProposals: SelectedProposal[];
+  eligibleReviewerProfileIds: string[];
+  historyByProposalId: Map<string, string>;
+}): Promise<AssignableProposal[]> {
+  const [scopedByProposal, categorizedRows] = await Promise.all([
+    getCategoryReviewersByProposal({
+      instanceId,
+      phaseId,
+      proposalIds: selectedProposalIds,
+    }),
+    db.query.proposalCategories.findMany({
+      where: { proposalId: { in: selectedProposalIds } },
+      columns: { proposalId: true },
+    }),
+  ]);
+
+  const categorizedProposalIds = new Set(
+    categorizedRows.map((row) => row.proposalId),
+  );
+  const eligibleSet = new Set(eligibleReviewerProfileIds);
+
+  return selectedProposals.map((proposal) => {
+    const scoped = scopedByProposal.get(proposal.id) ?? new Set<string>();
+    const reviewerProfileIds = [...scoped].filter((id) => eligibleSet.has(id));
+
+    // Mirror the downstream self-review exclusion to detect a truly
+    // uncoverable proposal.
+    const coveringReviewers = reviewerProfileIds.filter(
+      (id) => id !== proposal.submittedByProfileId,
+    );
+
+    if (coveringReviewers.length === 0) {
+      logger.warn('generateReviewAssignments: proposal has zero reviewers', {
+        instanceId,
+        phaseId,
+        proposalId: proposal.id,
+        reason: categorizedProposalIds.has(proposal.id)
+          ? 'category_has_no_eligible_reviewers'
+          : 'uncategorized',
+      });
+    }
+
+    return {
       proposalId: proposal.id,
       submittedByProfileId: proposal.submittedByProfileId,
       assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
-    })),
+      reviewerProfileIds,
+    };
   });
 }

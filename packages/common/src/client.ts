@@ -4,6 +4,15 @@
 export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
+// Re-exported from the decision utils so client components can resolve
+// phase-level settings without pulling in the server-only utils barrel.
+export {
+  getPhaseReviewSettings,
+  hasVotingPhase,
+  isReviewPhase,
+  isVotingPhase,
+  type ReviewSettings,
+} from './services/decision/utils/phaseSettings';
 export {
   attachmentSchema,
   documentContentSchema,
@@ -111,7 +120,13 @@ export {
   type RecommendationValue,
   isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
-export { REVIEWS_POLICIES } from './services/decision/schemas/types';
+export {
+  REVIEWS_POLICIES,
+  REVIEWS_SCOPES,
+  phaseReviewSettingsSchema,
+  type PhaseReviewSettings,
+  type ReviewsScope,
+} from './services/decision/schemas/types';
 export { isLastPhase } from './services/decision/schemas/instanceData';
 export {
   VOTING_INELIGIBLE_STATUSES,

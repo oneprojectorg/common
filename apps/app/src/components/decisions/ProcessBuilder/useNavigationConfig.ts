@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { isReviewPhase } from '@op/common/client';
 import { useMemo } from 'react';
 
 import {
@@ -33,9 +34,7 @@ export function useNavigationConfig(
     true;
 
   const phases = storePhases ?? instance?.instanceData?.phases ?? [];
-  const hasReviewPhase = phases.some(
-    (p) => p.rules?.proposals?.review === true,
-  );
+  const hasReviewPhase = phases.some(isReviewPhase);
 
   return useMemo(
     () => ({

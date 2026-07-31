@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { isLastPhase } from '@op/common/client';
+import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
@@ -45,8 +45,8 @@ function DecisionStateRouterNew({
   const { currentStateId } = instance;
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find((p) => p.phaseId === currentStateId);
-  const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
-  const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
+  const isVotingEnabled = !!currentPhase && isVotingPhase(currentPhase);
+  const isReviewEnabled = !!currentPhase && isReviewPhase(currentPhase);
   const isAdmin = Boolean(instance.access?.admin);
 
   if (!instance.selectionsAreConfirmed) {
@@ -56,7 +56,7 @@ function DecisionStateRouterNew({
     // Everyone else falls back to the generic manual-selection prompt.
     const currentIdx = phases.findIndex((p) => p.phaseId === currentStateId);
     const previousPhase = currentIdx > 0 ? phases[currentIdx - 1] : null;
-    const previousWasReview = previousPhase?.rules?.proposals?.review === true;
+    const previousWasReview = !!previousPhase && isReviewPhase(previousPhase);
 
     if (previousWasReview && previousPhase && isAdmin) {
       return (

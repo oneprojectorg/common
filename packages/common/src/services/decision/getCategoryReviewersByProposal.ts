@@ -1,0 +1,58 @@
+import { and, db, eq, inArray, isNull, or } from '@op/db/client';
+import { categoryReviewers, proposalCategories } from '@op/db/schema';
+
+/**
+ * System-context resolution of which scoped reviewers cover each proposal, for
+ * the `by_category` scope. Returns Map<proposalId, Set<reviewerProfileId>>;
+ * proposals with no covering scope row are absent from the map.
+ *
+ * Runs no access check (generation is a system-context phase transition, not a
+ * user action). Callers MUST still intersect with getEligibleReviewerProfileIds
+ * — a scope row alone grants nothing (fail-closed). Scope rows resolve
+ * instance-wide (`phaseId IS NULL`) unioned with rows for this review phase.
+ */
+export async function getCategoryReviewersByProposal({
+  instanceId,
+  phaseId,
+  proposalIds,
+}: {
+  instanceId: string;
+  phaseId: string;
+  proposalIds: string[];
+}): Promise<Map<string, Set<string>>> {
+  const reviewersByProposalId = new Map<string, Set<string>>();
+
+  if (proposalIds.length === 0) {
+    return reviewersByProposalId;
+  }
+
+  const rows = await db
+    .select({
+      proposalId: proposalCategories.proposalId,
+      reviewerProfileId: categoryReviewers.reviewerProfileId,
+    })
+    .from(categoryReviewers)
+    .innerJoin(
+      proposalCategories,
+      eq(proposalCategories.taxonomyTermId, categoryReviewers.taxonomyTermId),
+    )
+    .where(
+      and(
+        eq(categoryReviewers.processInstanceId, instanceId),
+        or(
+          isNull(categoryReviewers.phaseId),
+          eq(categoryReviewers.phaseId, phaseId),
+        ),
+        inArray(proposalCategories.proposalId, proposalIds),
+      ),
+    );
+
+  for (const row of rows) {
+    const bucket =
+      reviewersByProposalId.get(row.proposalId) ?? new Set<string>();
+    bucket.add(row.reviewerProfileId);
+    reviewersByProposalId.set(row.proposalId, bucket);
+  }
+
+  return reviewersByProposalId;
+}

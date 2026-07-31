@@ -3,6 +3,7 @@
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
+import { isReviewPhase, isVotingPhase } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
@@ -391,10 +392,10 @@ function PhaseDetailForm({
           )}
         >
           <ToggleButton
-            isSelected={phase.rules?.proposals?.review ?? false}
+            isSelected={isReviewPhase(phase)}
             onChange={(val) =>
               updateRules({
-                proposals: { ...phase.rules?.proposals, review: val },
+                reviews: { ...phase.rules?.reviews, submit: val },
               })
             }
             size="small"
@@ -407,7 +408,7 @@ function PhaseDetailForm({
           )}
         >
           <ToggleButton
-            isSelected={phase.rules?.voting?.submit ?? false}
+            isSelected={isVotingPhase(phase)}
             onChange={(val) => {
               const nextVoting: PhaseRules['voting'] = {
                 ...phase.rules?.voting,
@@ -423,7 +424,7 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
-        {phase.rules?.voting?.submit && (
+        {isVotingPhase(phase) && (
           <ToggleRow
             label={t('Voting limit')}
             description={t('Number of proposals each participant can vote on')}

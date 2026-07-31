@@ -6,6 +6,18 @@ import { CommonError } from '../../utils';
 import { linkBoundaryToCategoryTerm } from './linkBoundaryToCategory';
 
 /**
+ * Canonical label → `taxonomyTerms.termUri` slug. This is the single join key
+ * between a config category label and its global taxonomy term, so term
+ * creation ({@link ensureProposalTaxonomyTerms}) and every lookup
+ * ({@link getProcessCategories}, rename reconciliation) MUST derive the slug
+ * the same way — otherwise a term can exist but resolve to nothing (e.g.
+ * "Café" folds to "cafe" here, but a hand-rolled regex would strip it to
+ * "caf").
+ */
+export const categoryTermUri = (label: string): string =>
+  slugify(label.trim(), { lower: true, strict: true, trim: true });
+
+/**
  * Ensures the proposal taxonomy exists and that each category label has a
  * matching taxonomy term.
  */
@@ -45,11 +57,7 @@ export async function ensureProposalTaxonomyTerms(
     }
 
     const categoryLabel = categoryName.trim();
-    const termUri = slugify(categoryLabel, {
-      lower: true,
-      strict: true,
-      trim: true,
-    });
+    const termUri = categoryTermUri(categoryLabel);
 
     // taxonomyTerms V2 types are broken due to self-referential parentId
     let existingTerm = await db._query.taxonomyTerms.findFirst({

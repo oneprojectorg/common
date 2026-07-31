@@ -5,6 +5,7 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
+import { isReviewPhase } from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 
 import { ReviewSummaryView } from './ReviewSummaryView';
@@ -118,7 +119,7 @@ function resolveReviewPhaseId(instance: {
   const startIdx = currentIdx === -1 ? phases.length - 1 : currentIdx;
   for (let i = startIdx; i >= 0; i--) {
     const phase = phases[i];
-    if (phase?.rules?.proposals?.review === true) {
+    if (phase && isReviewPhase(phase)) {
       return phase.phaseId;
     }
   }

@@ -73,6 +73,11 @@ export * from './getEligibleReviewerProfileIds';
 export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
+export * from './listCategoryReviewers';
+export * from './listEligibleReviewers';
+export * from './listReviewerCategories';
+export * from './addCategoryReviewer';
+export * from './removeCategoryReviewer';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
 export * from './getPhaseReviewProgress';
@@ -87,6 +92,7 @@ export * from './deleteProposal';
 export * from './detachProposalForModeration';
 export * from './deleteDecision';
 export * from './getProcessCategories';
+export { categoryTermUri } from './proposalTaxonomy';
 export * from './exportProposals';
 export * from './getExportStatus';
 export * from './exports';
@@ -122,6 +128,9 @@ export * from './decisionRoles';
 // Instance utilities
 export * from './utils/instance';
 
+// Phase-level settings resolution
+export * from './utils/phaseSettings';
+
 // Voting management
 export * from './voting';
 
@@ -145,8 +154,16 @@ export { createInstanceDataFromTemplate } from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,
+  PhaseReviewSettings,
   PhaseRules,
   ProcessConfig,
   ReviewsPolicy,
+  ReviewsScope,
 } from './schemas/types';
-export { REVIEWS_POLICIES } from './schemas/types';
+export {
+  DEFAULT_REVIEWS_POLICY,
+  DEFAULT_REVIEWS_SCOPE,
+  REVIEWS_POLICIES,
+  REVIEWS_SCOPES,
+  phaseReviewSettingsSchema,
+} from './schemas/types';

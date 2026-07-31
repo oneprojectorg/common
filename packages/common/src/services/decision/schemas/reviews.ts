@@ -2,11 +2,15 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalReviewState,
+  categoryReviewers,
+  profiles,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
+import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
+import { instanceOptionalPhaseRefSchema } from './instance';
 import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export {
@@ -257,3 +261,99 @@ export type SubmittedReviewItem = z.infer<typeof submittedReviewItemSchema>;
 export type ProposalWithSubmittedReviews = z.infer<
   typeof proposalWithSubmittedReviewsSchema
 >;
+
+// ── Reviews by category (scope layer) ──────────────────────────────────────
+
+/** Category-reviewer scope row returned by the add mutation (no soft-delete column). */
+export const categoryReviewerSchema = createSelectSchema(
+  categoryReviewers,
+).pick({
+  id: true,
+  processInstanceId: true,
+  taxonomyTermId: true,
+  reviewerProfileId: true,
+  phaseId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CategoryReviewerSchema = z.infer<typeof categoryReviewerSchema>;
+
+/** Minimal reviewer profile surfaced in a category card. */
+export const categoryReviewerProfileSchema = createSelectSchema(profiles)
+  .pick({
+    name: true,
+    slug: true,
+    avatarImageId: true,
+  })
+  .extend({
+    id: z.uuid(),
+  });
+
+/** One reviewer entry within a category card. */
+export const categoryReviewerEntrySchema = z.object({
+  scopeId: z.uuid(),
+  reviewerProfileId: z.uuid(),
+  phaseId: z.string().nullable(),
+  profile: categoryReviewerProfileSchema,
+});
+
+/** A category with its (possibly empty) reviewer list. */
+export const categoryWithReviewersSchema = z.object({
+  category: z.object({
+    id: z.string(),
+    name: z.string(),
+    termUri: z.string(),
+  }),
+  reviewers: z.array(categoryReviewerEntrySchema),
+});
+
+export type CategoryWithReviewersSchema = z.infer<
+  typeof categoryWithReviewersSchema
+>;
+
+export const categoryReviewersListSchema = z.object({
+  categories: z.array(categoryWithReviewersSchema),
+});
+
+export const removeCategoryReviewerResultSchema = z.object({
+  removed: z.boolean(),
+});
+
+/** Target of an add/remove: a single (category, reviewer[, phase]) scope tuple. */
+export const categoryReviewerTargetSchema =
+  instanceOptionalPhaseRefSchema.extend({
+    taxonomyTermId: z.uuid(),
+    reviewerProfileId: z.uuid(),
+  });
+
+/**
+ * Candidate reviewer surfaced in the "Add reviewer…" picker. email is included
+ * so the admin can disambiguate people sharing a display name.
+ */
+export const eligibleReviewerSchema = createSelectSchema(profiles)
+  .pick({
+    name: true,
+    slug: true,
+    avatarImageId: true,
+    email: true,
+  })
+  .extend({
+    id: z.uuid(),
+  });
+
+export type EligibleReviewerSchema = z.infer<typeof eligibleReviewerSchema>;
+
+export const eligibleReviewersListSchema = z.object({
+  reviewers: z.array(eligibleReviewerSchema),
+});
+
+/** A category (taxonomy term id + label) the current reviewer is scoped to. */
+export const reviewerCategorySchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+});
+
+export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
+
+export const reviewerCategoriesSchema = z.array(reviewerCategorySchema);

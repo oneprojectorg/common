@@ -154,9 +154,7 @@ const drawerBody = (
     </div>
     <DrawerFooter>
       <Button>Submit</Button>
-      <DrawerClose asChild>
-        <Button variant="outline">Cancel</Button>
-      </DrawerClose>
+      <DrawerClose render={<Button variant="outline" />}>Cancel</DrawerClose>
     </DrawerFooter>
   </>
 );
@@ -269,7 +267,7 @@ export const Overlays: Story = {
       <ParityRow label="Drawer" img={figmaDrawer} imgWidth={424}>
         <OverlayModes
           preview={(container) => (
-            <Drawer open modal={false} dismissible={false}>
+            <Drawer open modal={false}>
               <DrawerContent
                 container={container}
                 className={`${staticPanel} mt-16! h-auto! max-h-full transform-none!`}
@@ -280,8 +278,8 @@ export const Overlays: Story = {
           )}
         >
           <Drawer>
-            <DrawerTrigger asChild>
-              <Button variant="outline">Open drawer</Button>
+            <DrawerTrigger render={<Button variant="outline" />}>
+              Open drawer
             </DrawerTrigger>
             <DrawerContent className="sense">{drawerBody}</DrawerContent>
           </Drawer>

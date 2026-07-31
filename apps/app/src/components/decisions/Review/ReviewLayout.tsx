@@ -5,6 +5,7 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
+import { getPhaseReviewSettings } from '@op/common/client';
 import { SplitPane } from '@op/ui/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
@@ -29,14 +30,27 @@ export async function ReviewLayout({
     createServerUtils(),
   ]);
 
-  let decisionProfile;
+  let allowRevisions: boolean;
   try {
-    [decisionProfile] = await Promise.all([
+    const [decisionProfile, reviewAssignment] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
       utils.decision.getReviewAssignment.fetch({ assignmentId }),
     ]);
+
+    // Throws NotFoundError when the assignment's phase is no longer in the
+    // instance's phase list (stale assignment) — mapped to notFound() below.
+    ({ allowRevisions } = getPhaseReviewSettings(
+      decisionProfile.processInstance.instanceData,
+      reviewAssignment.assignment.phaseId,
+    ));
   } catch (error) {
-    const cause = error instanceof Error ? error.cause : null;
+    // tRPC errors carry the CommonError in `cause`; local throws are the error itself.
+    const cause =
+      error instanceof CommonError
+        ? error
+        : error instanceof Error
+          ? error.cause
+          : null;
     if (cause instanceof CommonError && cause.statusCode === 403) {
       forbidden();
     }
@@ -45,10 +59,6 @@ export async function ReviewLayout({
     }
     throw error;
   }
-
-  const allowRevisions =
-    decisionProfile.processInstance.instanceData.config
-      ?.reviewsAllowRevisions ?? true;
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
