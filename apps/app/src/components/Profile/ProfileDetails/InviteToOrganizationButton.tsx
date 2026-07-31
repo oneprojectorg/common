@@ -4,8 +4,8 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
 import { useState } from 'react';
 import { LuCheck, LuUserPlus } from 'react-icons/lu';
 
@@ -115,7 +115,7 @@ export const InviteToOrganizationButton = ({
 
   if (isMember) {
     return (
-      <Button color="secondary" isDisabled>
+      <Button variant="outline" disabled>
         <LuCheck className="size-4" />
         Member
       </Button>
@@ -124,9 +124,9 @@ export const InviteToOrganizationButton = ({
 
   return user.currentProfile ? (
     <Button
-      color="secondary"
-      onPress={handleInvite}
-      isDisabled={inviteUser.isPending}
+      variant="outline"
+      onClick={handleInvite}
+      disabled={inviteUser.isPending}
       className="min-w-fit"
     >
       {inviteUser.isPending ? (

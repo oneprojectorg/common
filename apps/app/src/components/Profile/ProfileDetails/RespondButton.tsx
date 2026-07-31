@@ -3,9 +3,14 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import { toast } from '@op/sense/Toast';
-import { DropDownButton } from '@op/ui/DropDownButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Suspense } from 'react';
 import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 
@@ -97,22 +102,27 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
   const isPending = approve.isPending || decline.isPending;
 
   return (
-    <DropDownButton
-      color="primary"
-      label={
-        isPending ? (
-          <LoadingSpinner />
-        ) : (
-          <>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            loading={isPending}
+            className="min-w-full bg-primary-teal text-neutral-offWhite sm:min-w-fit"
+          >
             <LuUserPlus className="size-4" />
             Respond
-          </>
-        )
-      }
-      items={dropdownItems}
-      className="min-w-full bg-primary-teal text-neutral-offWhite sm:min-w-fit"
-      isDisabled={isPending}
-    />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="start">
+        {dropdownItems.map((item) => (
+          <DropdownMenuItem key={item.id} onClick={item.onAction}>
+            {item.icon}
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

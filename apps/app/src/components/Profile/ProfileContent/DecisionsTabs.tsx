@@ -3,8 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
-import { Tab, TabPanel } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
+import { Header2 } from '@op/sense/Header';
+import { TabsContent, TabsTrigger } from '@op/sense/Tabs';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,12 +42,12 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <Tab id="decisions">
+    <TabsTrigger value="decisions">
       {t('Decisions')}
       {hasPublishedDecisions && (
         <span className="ms-1.5 inline-block size-1 rounded-full bg-functional-green" />
       )}
-    </Tab>
+    </TabsTrigger>
   );
 };
 
@@ -57,13 +58,18 @@ export const DecisionsTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
+  const t = useTranslations();
   return (
-    <TabPanel
-      id="decisions"
-      className={cn('grow px-4 pt-2 sm:px-6 sm:py-8', className)}
+    <TabsContent
+      value="decisions"
+      className={cn(
+        'flex grow flex-col gap-2 px-4 pt-2 sm:gap-0 sm:p-0',
+        className,
+      )}
     >
+      <Header2 className="text-title sm:hidden">{t('Decisions')}</Header2>
       {children}
-    </TabPanel>
+    </TabsContent>
   );
 };
 
@@ -71,17 +77,17 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   return (
     <AccessBoundary required={{ admin: { read: true } }} profileId={profileId}>
-      <Tab id="members">{t('Members')}</Tab>
+      <TabsTrigger value="members">{t('Members')}</TabsTrigger>
     </AccessBoundary>
   );
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
   return (
-    <TabPanel id="members" className="grow px-4 sm:px-6 sm:py-0">
+    <TabsContent value="members" className="grow px-4 sm:px-6 sm:py-0">
       <ProfileOrganizations>
         <MembersList profileId={profileId} />
       </ProfileOrganizations>
-    </TabPanel>
+    </TabsContent>
   );
 };

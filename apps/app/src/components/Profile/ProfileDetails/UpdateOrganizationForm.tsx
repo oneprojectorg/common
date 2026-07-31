@@ -11,7 +11,6 @@ import { BannerUploader } from '@op/sense/BannerUploader';
 import { DialogFooter } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import type { Option } from '@op/ui/MultiSelectComboBox';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -26,6 +25,7 @@ import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { FormContainer } from '../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
+import type { Option } from '../../multiSelectOption';
 
 interface UpdateOrganizationFormProps {
   profile: Organization;
