@@ -15,8 +15,9 @@ export default meta;
 
 type Story = StoryObj<typeof Toaster>;
 
-// The toaster renders inline (position:fixed, no portal), so it inherits the
-// `.sense` scope from the story wrapper — no re-scoping needed.
+// base-ui's Toaster portals its viewport to document.body, so it renders
+// outside the withSense `.sense` shim. That only matters in Storybook — sense
+// tokens live at :root in the app, so production toasts are styled correctly.
 export const Default: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">

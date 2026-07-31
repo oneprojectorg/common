@@ -17,6 +17,8 @@ export const toastStatus = (
   const code = arg?.code;
   const message = arg?.message;
 
+  // Only 404 and 403 get bespoke copy; every other numeric code (500, 401,
+  // 422, etc.) and the absence of a code both fall to the generic default.
   switch (code) {
     case 200:
       return;
