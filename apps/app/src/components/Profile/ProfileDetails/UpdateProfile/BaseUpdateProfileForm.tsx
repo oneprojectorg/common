@@ -2,21 +2,21 @@ import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
 import { getPublicUrl } from '@/utils';
 import type { Profile } from '@op/api/encoders';
 import { zodUrl } from '@op/common/validation';
-import { AvatarUploader } from '@op/ui/AvatarUploader';
-import { BannerUploader } from '@op/ui/BannerUploader';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ModalFooter } from '@op/ui/Modal';
+import { AvatarUploader } from '@op/sense/AvatarUploader';
+import { BannerUploader } from '@op/sense/BannerUploader';
+import { DialogFooter } from '@op/sense/Dialog';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
 import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, forwardRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import { FormContainer } from '../../../form/FormContainer';
-import { getFieldErrorMessage, useAppForm } from '../../../form/utils';
+import { useAppForm } from '../../../form/utils';
 import { FocusAreasField } from '../FocusAreasField';
 
 interface BaseUpdateProfileFormProps {
@@ -99,7 +99,9 @@ export const BaseUpdateProfileForm = forwardRef<
       },
       validators: {
         // @ts-expect-error - zodUrl is not returning the right type here
-        onSubmit: validator,
+        onChange: createValidator(t),
+        // @ts-expect-error - zodUrl is not returning the right type here
+        onSubmit: createValidator(t),
       },
       onSubmit: async ({ value }: { value: FormFields }) => {
         await onSubmit(value);
@@ -110,14 +112,18 @@ export const BaseUpdateProfileForm = forwardRef<
 
     return (
       <form
+        noValidate
         ref={ref}
         id={formId}
         onSubmit={(e) => {
           e.preventDefault();
           void form.handleSubmit();
         }}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <FormContainer className={className}>
+        <FormContainer
+          className={cn('min-h-0 flex-1 overflow-y-auto', className)}
+        >
           {/* Header Images */}
           <div className="relative w-full pb-12 sm:pb-20">
             <BannerUploader
@@ -141,14 +147,9 @@ export const BaseUpdateProfileForm = forwardRef<
               <field.TextField
                 isRequired
                 label={t('Name')}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={field.handleChange}
-                errorMessage={getFieldErrorMessage(field)}
-                inputProps={{
-                  placeholder:
-                    placeholders?.fullName ?? t('Enter your full name'),
-                }}
+                placeholder={
+                  placeholders?.fullName ?? t('Enter your full name')
+                }
               />
             )}
           />
@@ -158,19 +159,13 @@ export const BaseUpdateProfileForm = forwardRef<
               <field.TextField
                 isRequired
                 label={t('Headline')}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={field.handleChange}
-                errorMessage={getFieldErrorMessage(field)}
                 description={
                   placeholders?.titleDescription ??
                   t(
                     'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
                   )
                 }
-                inputProps={{
-                  placeholder: placeholders?.title ?? t('Enter your headline'),
-                }}
+                placeholder={placeholders?.title ?? t('Enter your headline')}
               />
             )}
           />
@@ -180,16 +175,13 @@ export const BaseUpdateProfileForm = forwardRef<
               <field.Select
                 label={t('Pronouns')}
                 placeholder={t('Select your preferred pronouns')}
-                selectedKey={field.state.value}
-                onBlur={field.handleBlur}
-                onSelectionChange={(key) => field.handleChange(String(key))}
-                errorMessage={getFieldErrorMessage(field)}
-              >
-                <SelectItem id="she/her">{t('She/Her')}</SelectItem>
-                <SelectItem id="he/him">{t('He/Him')}</SelectItem>
-                <SelectItem id="they/them">{t('They/Them')}</SelectItem>
-                <SelectItem id="custom">{t('Custom')}</SelectItem>
-              </field.Select>
+                options={[
+                  { value: 'she/her', label: t('She/Her') },
+                  { value: 'he/him', label: t('He/Him') },
+                  { value: 'they/them', label: t('They/Them') },
+                  { value: 'custom', label: t('Custom') },
+                ]}
+              />
             )}
           />
           <form.Subscribe
@@ -201,14 +193,8 @@ export const BaseUpdateProfileForm = forwardRef<
                   children={(field) => (
                     <field.TextField
                       label={t('Custom Pronouns')}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={field.handleChange}
-                      errorMessage={getFieldErrorMessage(field)}
                       isRequired
-                      inputProps={{
-                        placeholder: t('Enter your custom pronouns'),
-                      }}
+                      placeholder={t('Enter your custom pronouns')}
                     />
                   )}
                 />
@@ -220,16 +206,11 @@ export const BaseUpdateProfileForm = forwardRef<
             children={(field) => (
               <field.TextField
                 label={t('Email')}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={field.handleChange}
-                errorMessage={getFieldErrorMessage(field)}
                 isRequired
-                inputProps={{
-                  placeholder:
-                    placeholders?.email ?? t('Enter your email address'),
-                  type: 'email',
-                }}
+                type="email"
+                placeholder={
+                  placeholders?.email ?? t('Enter your email address')
+                }
               />
             )}
           />
@@ -238,21 +219,16 @@ export const BaseUpdateProfileForm = forwardRef<
             children={(field) => (
               <field.TextField
                 label={t('Website')}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={field.handleChange}
-                errorMessage={getFieldErrorMessage(field)}
-                inputProps={{
-                  placeholder:
-                    placeholders?.website ?? t('Enter your website URL'),
-                  // Not `type="url"`: our zodUrl validation accepts a bare
-                  // domain (e.g. "venuecms.com") and auto-prefixes `https://`,
-                  // but the browser's native URL validation rejects the
-                  // scheme-less value and silently blocks form submission.
-                  // `inputMode` keeps the URL-optimized keyboard without that
-                  // native constraint.
-                  inputMode: 'url',
-                }}
+                placeholder={
+                  placeholders?.website ?? t('Enter your website URL')
+                }
+                // Not `type="url"`: our zodUrl validation accepts a bare
+                // domain (e.g. "venuecms.com") and auto-prefixes `https://`,
+                // but the browser's native URL validation rejects the
+                // scheme-less value and silently blocks form submission.
+                // `inputMode` keeps the URL-optimized keyboard without that
+                // native constraint.
+                inputMode="url"
               />
             )}
           />
@@ -267,17 +243,18 @@ export const BaseUpdateProfileForm = forwardRef<
             />
           )}
         </FormContainer>
-        <ModalFooter className="sticky">
-          <form.SubmitButton className="sm:w-auto">
-            {isSubmitting ||
-            avatarUpload.isUploading ||
-            bannerUpload.isUploading ? (
-              <LoadingSpinner />
-            ) : (
-              t('Save')
-            )}
+        <DialogFooter>
+          <form.SubmitButton
+            className="sm:w-auto"
+            loading={
+              isSubmitting ||
+              avatarUpload.isUploading ||
+              bannerUpload.isUploading
+            }
+          >
+            {t('Save')}
           </form.SubmitButton>
-        </ModalFooter>
+        </DialogFooter>
       </form>
     );
   },
@@ -285,44 +262,79 @@ export const BaseUpdateProfileForm = forwardRef<
 
 BaseUpdateProfileForm.displayName = 'BaseUpdateProfileForm';
 
+// Translated validator used at runtime (errors via t()).
+export const createValidator = (t: TranslateFn) =>
+  z
+    .object({
+      fullName: z
+        .string({
+          error: t('Enter your full name'),
+        })
+        .trim()
+        .min(1, {
+          error: t('Enter your full name'),
+        })
+        .max(200, {
+          error: t('Must be at most 200 characters'),
+        }),
+      title: z
+        .string({
+          error: t('Enter your professional title'),
+        })
+        .trim()
+        .min(1, {
+          error: t('Enter your professional title'),
+        })
+        .max(200, {
+          error: t('Must be at most 200 characters'),
+        }),
+      pronouns: z.string().trim().optional(),
+      customPronouns: z.string().trim().optional(),
+      email: z
+        .email({ error: t('Enter a valid email address') })
+        .trim()
+        .refine((val) => val.length <= 255, {
+          error: t('Must be at most 255 characters'),
+        }),
+      website: zodUrl({
+        error: t('Enter a valid website address'),
+      }),
+      focusAreas: z
+        .array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+          }),
+        )
+        .optional(),
+    })
+    .refine(
+      (data) => {
+        // If pronouns is "custom" require custom pronouns
+        if (data.pronouns === 'custom') {
+          return data.customPronouns && data.customPronouns.trim().length > 0;
+        }
+        return true;
+      },
+      {
+        message: t('Please provide your custom pronouns'),
+        path: ['customPronouns'],
+      },
+    );
+
+// Untranslated fallback — the source of truth for the FormFields type and any
+// external (non-React) callers that can't supply a `t`.
 export const validator = z
   .object({
-    fullName: z
-      .string({
-        error: 'Enter your full name',
-      })
-      .trim()
-      .min(1, {
-        error: 'Enter your full name',
-      })
-      .max(200, {
-        error: 'Must be at most 200 characters',
-      }),
-    title: z
-      .string({
-        error: 'Enter your professional title',
-      })
-      .trim()
-      .min(1, {
-        error: 'Enter your professional title',
-      })
-      .max(200, {
-        error: 'Must be at most 200 characters',
-      }),
+    fullName: z.string().trim().min(1).max(200),
+    title: z.string().trim().min(1).max(200),
     pronouns: z.string().trim().optional(),
     customPronouns: z.string().trim().optional(),
     email: z
       .email()
       .trim()
-      .refine((val) => val === '' || z.email().safeParse(val).success, {
-        error: 'Invalid email',
-      })
-      .refine((val) => val.length <= 255, {
-        error: 'Must be at most 255 characters',
-      }),
-    website: zodUrl({
-      error: 'Enter a valid website address',
-    }),
+      .refine((val) => val.length <= 255),
+    website: zodUrl({ error: 'Enter a valid website address' }),
     focusAreas: z
       .array(
         z.object({
@@ -334,16 +346,12 @@ export const validator = z
   })
   .refine(
     (data) => {
-      // If pronouns is "custom" require custom pronouns
       if (data.pronouns === 'custom') {
         return data.customPronouns && data.customPronouns.trim().length > 0;
       }
       return true;
     },
-    {
-      message: 'Please provide your custom pronouns',
-      path: ['customPronouns'],
-    },
+    { path: ['customPronouns'] },
   );
 
 export type FormFields = z.infer<typeof validator>;

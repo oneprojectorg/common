@@ -37,7 +37,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
 
     // Should see the personal details form first
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     // Fill in required fields
@@ -120,7 +120,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
 
     // Fill personal details
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     await page.getByLabel('Full Name').fill('Test User Search');
@@ -264,7 +264,7 @@ test.describe('Onboarding - Domain-matched organization', () => {
 
     // Fill personal details
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     await page.getByLabel('Full Name').fill('Domain Match User');

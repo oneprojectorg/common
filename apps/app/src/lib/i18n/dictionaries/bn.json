@@ -1449,5 +1449,9 @@
   "We can't seem to find that. It might have been removed.": "আমরা সেটি খুঁজে পাচ্ছি না। এটি সরানো হয়ে থাকতে পারে।",
   "Permission needed": "অনুমতি প্রয়োজন",
   "You'll need additional access to do that. Contact your organization's admin for help.": "সেটি করতে আপনার অতিরিক্ত অ্যাক্সেস প্রয়োজন হবে। সাহায্যের জন্য আপনার সংস্থার অ্যাডমিনের সাথে যোগাযোগ করুন।",
-  "Generating {format} export...": "{format} এক্সপোর্ট তৈরি করা হচ্ছে..."
+  "Generating {format} export...": "{format} এক্সপোর্ট তৈরি করা হচ্ছে...",
+  "Full name": "পূর্ণ নাম",
+  "Enter a valid email address": "একটি বৈধ ইমেল ঠিকানা লিখুন",
+  "Use the email address associated with your organization": "আপনার সংস্থার সাথে যুক্ত ইমেল ঠিকানা ব্যবহার করুন",
+  "We’ll create one for you with your organization’s email.": "আমরা আপনার সংস্থার ইমেল দিয়ে আপনার জন্য একটি অ্যাকাউন্ট তৈরি করব।"
 }

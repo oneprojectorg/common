@@ -4,9 +4,9 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { Spinner } from '@op/sense/Spinner';
+import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { toast } from '@op/sense/Toast';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -306,7 +306,7 @@ export const OnboardingFlow = ({
   }
 
   if (isSubmitting) {
-    return <LoadingSpinner />;
+    return <Spinner className="size-6" />;
   }
 
   // Non-members get the org-less journey; members get the full org flow. Keyed

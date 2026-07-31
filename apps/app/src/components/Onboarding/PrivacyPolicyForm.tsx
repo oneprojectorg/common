@@ -34,6 +34,7 @@ export const PrivacyPolicyForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
@@ -51,7 +52,7 @@ export const PrivacyPolicyForm = ({
         <PrivacyPolicyContent />
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-          <form.Button color="secondary" onPress={onBack}>
+          <form.Button variant="secondary" onClick={onBack}>
             {t('Back')}
           </form.Button>
           <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>

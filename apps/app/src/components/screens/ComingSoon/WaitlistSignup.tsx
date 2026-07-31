@@ -4,7 +4,6 @@ import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useState } from 'react';
 import {
   Dialog,
@@ -19,7 +18,7 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
+import { useAppForm } from '@/components/form/utils';
 
 const overlayStyles = tv({
   base: 'absolute start-0 top-0 isolate z-20 h-(--page-height) w-full bg-black/10 text-center backdrop-blur-[3px]',
@@ -114,6 +113,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           return;
         }
       },
+      onChange: validator,
       onSubmit: validator,
     },
   });
@@ -141,6 +141,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         )}
       </p>
       <form
+        noValidate
         className="flex flex-col gap-6 p-8"
         onSubmit={(e) => {
           e.preventDefault();
@@ -153,16 +154,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           children={(field) => (
             <field.TextField
               autoFocus
-              id="firstName"
               label={t('First name')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               isRequired
-              inputProps={{
-                placeholder: t('First name here'),
-              }}
+              placeholder={t('First name here')}
             />
           )}
         />
@@ -170,16 +164,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           name="lastName"
           children={(field) => (
             <field.TextField
-              id="lastName"
               label={t('Last name')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               isRequired
-              inputProps={{
-                placeholder: t('Last name here'),
-              }}
+              placeholder={t('Last name here')}
             />
           )}
         />
@@ -187,17 +174,10 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           name="email"
           children={(field) => (
             <field.TextField
-              id="email"
               label={t('Email address')}
               type="email"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
               isRequired
-              inputProps={{
-                placeholder: 'mail@example.com',
-              }}
+              placeholder="mail@example.com"
             />
           )}
         />
@@ -205,15 +185,8 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           name="organizationName"
           children={(field) => (
             <field.TextField
-              id="organizationName"
               label={t('Organization')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              inputProps={{
-                placeholder: t('Organization name'),
-              }}
+              placeholder={t('Organization name')}
             />
           )}
         />
@@ -222,9 +195,10 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           {([isSubmitting]) => (
             <form.SubmitButton
               className="w-auto sm:w-auto"
-              isDisabled={isSubmitting}
+              disabled={isSubmitting}
+              loading={isSubmitting}
             >
-              {isSubmitting ? <LoadingSpinner /> : t('Join the waitlist')}
+              {t('Join the waitlist')}
             </form.SubmitButton>
           )}
         </form.Subscribe>

@@ -1446,5 +1446,9 @@
   "We can't seem to find that. It might have been removed.": "Nous ne trouvons pas cela. Il a peut-être été supprimé.",
   "Permission needed": "Autorisation requise",
   "You'll need additional access to do that. Contact your organization's admin for help.": "Vous aurez besoin d'un accès supplémentaire pour faire cela. Contactez l'administrateur de votre organisation pour obtenir de l'aide.",
-  "Generating {format} export...": "Génération de l’export {format}..."
+  "Generating {format} export...": "Génération de l’export {format}...",
+  "Full name": "Nom complet",
+  "Enter a valid email address": "Entrez une adresse e-mail valide",
+  "Use the email address associated with your organization": "Utilisez l'adresse e-mail associée à votre organisation",
+  "We’ll create one for you with your organization’s email.": "Nous en créerons un pour vous avec l'adresse e-mail de votre organisation."
 }

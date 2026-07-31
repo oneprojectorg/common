@@ -101,7 +101,7 @@ test.describe('Walled garden — anonymous sessions can log in', () => {
 
     await page.goto('/login');
 
-    await expect(page.getByLabel('Organization email')).toBeVisible({
+    await expect(page.getByLabel('Email', { exact: true })).toBeVisible({
       timeout: 15000,
     });
     await expect(page).toHaveURL(/\/login/);

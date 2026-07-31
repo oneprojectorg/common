@@ -15,9 +15,10 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
+
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { CategoryReviewerCards } from './CategoryReviewerCards';

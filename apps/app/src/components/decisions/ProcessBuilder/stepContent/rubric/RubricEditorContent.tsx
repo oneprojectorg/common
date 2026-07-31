@@ -19,7 +19,6 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
-import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import type {
@@ -49,6 +48,7 @@ import {
   updateScoreLabel,
   updateScoredMaxPoints,
 } from '@/components/decisions/rubricTemplate';
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import {
   RubricCriterionCard,

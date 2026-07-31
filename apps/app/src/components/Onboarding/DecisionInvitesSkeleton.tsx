@@ -1,6 +1,6 @@
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Card } from '@op/sense/Card';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 
 import { FormContainer } from '../form/FormContainer';
 
@@ -21,12 +21,12 @@ export const DecisionInvitesSkeleton = ({
         <Skeleton className="mx-auto h-5 w-full" />
       </div>
       <div className="flex flex-col gap-6">
-        <Surface className="flex items-center gap-6 p-6">
+        <Card className="flex flex-row items-center gap-6 p-6">
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-4 w-32" />
           </div>
-        </Surface>
+        </Card>
       </div>
       <Skeleton className="h-10 w-full" />
     </FormContainer>
