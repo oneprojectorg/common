@@ -97,6 +97,8 @@ export const phaseReviewSettingsSchema = z.object({
   policy: z.enum(REVIEWS_POLICIES).optional(),
   allowRevisions: z.boolean().optional(),
   anonymousFeedback: z.boolean().optional(),
+  /** Reviewers can see each other's submitted reviews during this phase. */
+  openReviews: z.boolean().optional(),
 });
 
 export type PhaseReviewSettings = z.infer<typeof phaseReviewSettingsSchema>;

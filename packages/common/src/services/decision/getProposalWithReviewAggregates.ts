@@ -16,6 +16,7 @@ import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
+import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 export const getProposalWithReviewAggregatesInputSchema =
   instanceOptionalPhaseRefSchema.extend({
@@ -37,10 +38,27 @@ export async function getProposalWithReviewAggregates(
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
+  // Admins always read the full review set. Resolve their access first and
+  // short-circuit before touching phase settings — `getPhaseReviewSettings`
+  // throws NotFound on an instance whose `currentStateId` matches no phase,
+  // and admins must keep reading regardless of phase configuration.
+  //
+  // Otherwise reviewers get proposal-wide read only when the instance's
+  // current phase opts into open reviews — and this grant is deliberately
+  // process-wide: ANY reviewer (access.review) of the process can read, not
+  // only those assigned to this proposal.
   if (!instance.access.admin) {
-    throw new UnauthorizedError(
-      "You don't have admin access to this process instance",
-    );
+    const openReviewsForReviewers =
+      instance.access.review &&
+      instance.currentStateId != null &&
+      getPhaseReviewSettings(instance.instanceData, instance.currentStateId)
+        .openReviews;
+
+    if (!openReviewsForReviewers) {
+      throw new UnauthorizedError(
+        "You don't have access to read reviews for this process instance",
+      );
+    }
   }
 
   const rubricTemplate = instance.instanceData.rubricTemplate;
