@@ -336,6 +336,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.proposalReviewAssignments.reviewerProfileId,
     }),
+    reviewerCategoryScopes: r.many.categoryReviewers({
+      from: r.profiles.id,
+      to: r.categoryReviewers.reviewerProfileId,
+    }),
     locations: r.many.profilesLocations({
       from: r.profiles.id,
       to: r.profilesLocations.profileId,
@@ -392,6 +396,10 @@ export const relations = defineRelations(schema, (r) => ({
     reviewAssignments: r.many.proposalReviewAssignments({
       from: r.processInstances.id,
       to: r.proposalReviewAssignments.processInstanceId,
+    }),
+    categoryReviewers: r.many.categoryReviewers({
+      from: r.processInstances.id,
+      to: r.categoryReviewers.processInstanceId,
     }),
     surveyResponses: r.many.decisionProcessSurveyResponses({
       from: r.processInstances.id,
@@ -494,6 +502,28 @@ export const relations = defineRelations(schema, (r) => ({
     assignment: r.one.proposalReviewAssignments({
       from: r.proposalReviews.assignmentId,
       to: r.proposalReviewAssignments.id,
+      optional: false,
+    }),
+  },
+
+  // Category reviewer scope relations (all FKs NOT NULL).
+  categoryReviewers: {
+    processInstance: r.one.processInstances({
+      from: r.categoryReviewers.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    term: r.one.taxonomyTerms({
+      from: r.categoryReviewers.taxonomyTermId,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.id,
+      optional: false,
+    }),
+    reviewer: r.one.profiles({
+      from: r.categoryReviewers.reviewerProfileId,
+      to: r.profiles.id,
+      alias: 'categoryReviewer_reviewer',
       optional: false,
     }),
   },

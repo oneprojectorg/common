@@ -201,6 +201,8 @@ export type {
   ProposalReviewAssignment,
   ProposalReviewRequest,
 } from './tables/proposalReviews.sql';
+export { categoryReviewers } from './tables/categoryReviewers.sql';
+export type { CategoryReviewer } from './tables/categoryReviewers.sql';
 
 export {
   decisionsVoteSubmissions,
