@@ -5,7 +5,7 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { getPhaseReviewSettings } from '@op/common/client';
+import { getPhaseReviewSettings, getPreviousPhases } from '@op/common/client';
 import { SplitPane } from '@op/ui/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
@@ -15,6 +15,7 @@ import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewProposalPane } from './ReviewProposalPane';
 import { ReviewRubricForm } from './ReviewRubricForm';
+import type { PreviousReviewPhase } from './ReviewTabs';
 
 interface ReviewLayoutProps {
   decisionSlug: string;
@@ -32,18 +33,36 @@ export async function ReviewLayout({
 
   let allowRevisions: boolean;
   let openReviews: boolean;
+  let previousReviewPhases: PreviousReviewPhase[];
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
       utils.decision.getReviewAssignment.fetch({ assignmentId }),
     ]);
 
+    const instanceData = decisionProfile.processInstance.instanceData;
+    const assignmentPhaseId = reviewAssignment.assignment.phaseId;
+
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
     ({ allowRevisions, openReviews } = getPhaseReviewSettings(
-      decisionProfile.processInstance.instanceData,
-      reviewAssignment.assignment.phaseId,
+      instanceData,
+      assignmentPhaseId,
     ));
+
+    // Earlier review phases whose `openReviews` keeps their reviews readable
+    // from this screen. Strictly before the assignment's phase in the
+    // instance's phase ordering, so the phase this screen reviews in never
+    // doubles up with its own "Other reviews" tab.
+    previousReviewPhases = getPreviousPhases(instanceData, assignmentPhaseId)
+      .filter((phase) => {
+        const settings = getPhaseReviewSettings(instanceData, phase.phaseId);
+        return settings.submit && settings.openReviews;
+      })
+      .map((phase) => ({
+        id: phase.phaseId,
+        name: phase.name ?? phase.phaseId,
+      }));
   } catch (error) {
     // tRPC errors carry the CommonError in `cause`; local throws are the error itself.
     const cause =
@@ -82,7 +101,10 @@ export async function ReviewLayout({
               id="review"
               label={<TranslatedText text="Review" />}
             >
-              <ReviewRubricForm openReviews={openReviews} />
+              <ReviewRubricForm
+                openReviews={openReviews}
+                previousReviewPhases={previousReviewPhases}
+              />
             </SplitPane.Pane>
           </SplitPane>
         </div>

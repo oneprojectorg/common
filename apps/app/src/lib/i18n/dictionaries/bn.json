@@ -1327,6 +1327,8 @@
   "Other reviews": "অন্যান্য পর্যালোচনা",
   "No other reviews yet": "এখনও অন্য কোনো পর্যালোচনা নেই",
   "Failed to load reviews": "পর্যালোচনা লোড করতে ব্যর্থ হয়েছে",
+  "Reviews from {phase}": "{phase} থেকে পর্যালোচনা",
+  "No reviews were submitted in this phase": "এই পর্যায়ে কোনো পর্যালোচনা জমা দেওয়া হয়নি",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{total} জন পর্যালোচকের মধ্যে {submitted} জন এই প্রস্তাবের জন্য একটি পর্যালোচনা জমা দিয়েছেন",
   "View review by {name}": "{name} এর পর্যালোচনা দেখুন",
   "Results are live!": "ফলাফল প্রকাশিত হয়েছে!",

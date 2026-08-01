@@ -1326,6 +1326,8 @@
   "Other reviews": "Autres évaluations",
   "No other reviews yet": "Aucune autre évaluation pour le moment",
   "Failed to load reviews": "Échec du chargement des évaluations",
+  "Reviews from {phase}": "Évaluations de {phase}",
+  "No reviews were submitted in this phase": "Aucune évaluation n'a été soumise durant cette phase",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} évaluateurs sur {total} ont soumis une révision pour cette proposition",
   "View review by {name}": "Voir la révision de {name}",
   "Results are live!": "Les résultats sont publiés !",
