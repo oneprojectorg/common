@@ -31,6 +31,7 @@ export async function ReviewLayout({
   ]);
 
   let allowRevisions: boolean;
+  let openReviews: boolean;
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
@@ -39,7 +40,7 @@ export async function ReviewLayout({
 
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
-    ({ allowRevisions } = getPhaseReviewSettings(
+    ({ allowRevisions, openReviews } = getPhaseReviewSettings(
       decisionProfile.processInstance.instanceData,
       reviewAssignment.assignment.phaseId,
     ));
@@ -81,7 +82,7 @@ export async function ReviewLayout({
               id="review"
               label={<TranslatedText text="Review" />}
             >
-              <ReviewRubricForm />
+              <ReviewRubricForm openReviews={openReviews} />
             </SplitPane.Pane>
           </SplitPane>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   ProposalReviewState,
   type XFormatPropertySchema,
@@ -24,13 +25,39 @@ import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
+import { ReviewTabs } from './ReviewTabs';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
- * Schema-driven review rubric form renderer.
+ * Right-hand "Review Proposal" panel. When open reviews are enabled (reviews-v2
+ * flag + the current phase's `openReviews` setting), the reviewer's own form is
+ * shown under a "My review" tab alongside an "Other reviews" tab; otherwise the
+ * form renders on its own exactly as before.
  */
-export function ReviewRubricForm() {
+export function ReviewRubricForm({ openReviews }: { openReviews: boolean }) {
+  const reviewsV2Enabled = useFeatureFlag('reviews-v2');
+  const showTabs = reviewsV2Enabled && openReviews;
+
+  if (!showTabs) {
+    return (
+      <FormShell>
+        <MyReviewForm />
+      </FormShell>
+    );
+  }
+
+  return (
+    <FormShell>
+      <ReviewTabs myReview={<MyReviewForm />} />
+    </FormShell>
+  );
+}
+
+/**
+ * Schema-driven review rubric form renderer (the reviewer's own review).
+ */
+function MyReviewForm() {
   const t = useTranslations();
   const {
     rubricTemplate: template,
@@ -52,15 +79,15 @@ export function ReviewRubricForm() {
 
   if (review?.state === ProposalReviewState.SUBMITTED) {
     return (
-      <FormShell>
+      <>
         <SubmittedReviewView rubricTemplate={template} review={review} />
         <TotalScoreCard rubricTemplate={template} values={values} />
-      </FormShell>
+      </>
     );
   }
 
   return (
-    <FormShell>
+    <>
       {isPausedForRevision && (
         <>
           <AlertBanner
@@ -147,7 +174,7 @@ export function ReviewRubricForm() {
           <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
-    </FormShell>
+    </>
   );
 }
 
