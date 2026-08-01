@@ -18,7 +18,7 @@ export async function generateMetadata({
 
 const DecisionsListingPage = () => {
   return (
-    <ListPageLayout className="gap-4 pt-8 sm:gap-6 sm:pt-12">
+    <ListPageLayout className="max-w-none gap-4 pt-8 sm:gap-6 sm:pt-12">
       <div className="flex flex-col gap-2">
         <Header1 className="text-headline">
           <TranslatedText text="Decision-making processes" />
