@@ -1,16 +1,25 @@
 'use client';
 
 import type { XFormatPropertySchema } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
-} from '@op/ui/CollapsibleConfigCard';
-import { Select, SelectItem } from '@op/ui/Select';
-import type { SortableItemControls } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { cn } from '@op/ui/utils';
+} from '@op/sense/CollapsibleConfigCard';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import type { SortableItemControls } from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import type { Key } from 'react';
 import { useEffect, useRef } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -30,7 +39,7 @@ interface FieldCardProps {
   field: FieldView;
   fieldSchema: XFormatPropertySchema;
   errors?: string[];
-  controls?: SortableItemControls;
+  controls: SortableItemControls;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onRemove?: (fieldId: string) => void;
@@ -94,6 +103,16 @@ export function FieldCard({
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
   const isLocation = field.fieldType === 'location';
 
+  const fieldNameId = `field-name-${field.id}`;
+  const fieldTypeId = `field-type-${field.id}`;
+  const fieldDescId = `field-description-${field.id}`;
+
+  // value → label map so base-ui `SelectValue` shows the type label, not the
+  // raw stored type key.
+  const typeItems = Object.fromEntries(
+    FIELD_TYPE_OPTIONS.map((opt) => [opt.type, t(opt.labelKey)]),
+  );
+
   // Only trigger validation when focus leaves the card entirely,
   // not when moving between inputs within the card.
   const handleBlur = (e: React.FocusEvent) => {
@@ -139,46 +158,56 @@ export function FieldCard({
         <div className="space-y-4 px-8">
           {/* Field name + Type selector row */}
           <div className="flex items-start gap-3">
-            <TextField
-              ref={fieldNameRef}
-              label={t('Field name')}
-              value={field.label}
-              onChange={(value) => onUpdateLabel?.(field.id, value)}
-              maxLength={50}
-              inputProps={{
-                className: 'bg-white',
-              }}
-              className="min-w-0 flex-1"
-              isRequired
-            />
+            <Field className="min-w-0 flex-1">
+              <FieldLabel htmlFor={fieldNameId}>
+                {t('Field name')}
+                <RequiredAsterisk />
+              </FieldLabel>
+              <Input
+                ref={fieldNameRef}
+                id={fieldNameId}
+                value={field.label}
+                onChange={(e) => onUpdateLabel?.(field.id, e.target.value)}
+                maxLength={50}
+                required
+                aria-required
+                className="bg-white [unicode-bidi:plaintext]"
+              />
+            </Field>
             {!isLocation && (
-              <Select
-                label={t('Type')}
-                selectedKey={field.fieldType}
-                onSelectionChange={handleTypeChange}
-                buttonClassName="bg-white"
-                className="w-40"
-              >
-                {FIELD_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.type} id={opt.type}>
-                    {t(opt.labelKey)}
-                  </SelectItem>
-                ))}
-              </Select>
+              <Field className="w-40">
+                <FieldLabel htmlFor={fieldTypeId}>{t('Type')}</FieldLabel>
+                <Select
+                  value={field.fieldType}
+                  onValueChange={(value) => handleTypeChange(value)}
+                  items={typeItems}
+                >
+                  <SelectTrigger id={fieldTypeId} className="w-full bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FIELD_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.type} value={opt.type}>
+                        {t(opt.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
             )}
           </div>
 
           {/* Description */}
-          <TextField
-            label={t('Description')}
-            value={field.description ?? ''}
-            onChange={(desc) => onUpdateDescription?.(field.id, desc)}
-            useTextArea
-            textareaProps={{
-              placeholder: t('Provide additional guidance for participants...'),
-              className: 'min-h-24 resize-none bg-white',
-            }}
-          />
+          <Field>
+            <FieldLabel htmlFor={fieldDescId}>{t('Description')}</FieldLabel>
+            <Textarea
+              id={fieldDescId}
+              value={field.description ?? ''}
+              onChange={(e) => onUpdateDescription?.(field.id, e.target.value)}
+              placeholder={t('Provide additional guidance for participants...')}
+              className="min-h-24 resize-none bg-white [unicode-bidi:plaintext]"
+            />
+          </Field>
 
           {/* Type-specific config */}
           {ConfigComponent && (
@@ -206,11 +235,11 @@ export function FieldCard({
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
               <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={isLocation || field.required}
-                isDisabled={isLocation}
-                onChange={(isSelected) =>
+              <Switch
+                size="sm"
+                checked={isLocation || field.required}
+                disabled={isLocation}
+                onCheckedChange={(isSelected) =>
                   onUpdateRequired?.(field.id, isSelected)
                 }
                 aria-label={t('Required')}
@@ -218,9 +247,9 @@ export function FieldCard({
             </div>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
-                onPress={() => onRemove(field.id)}
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemove(field.id)}
                 aria-label={t('Delete')}
                 className="text-neutral-gray4 hover:text-functional-red"
               >

@@ -1,6 +1,6 @@
 'use client';
 
-import { Header4 } from '@op/ui/Header';
+import { Header4 } from '@op/sense/Header';
 import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

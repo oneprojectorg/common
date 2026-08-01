@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2 } from '@op/ui/Header';
-import { Sortable } from '@op/ui/Sortable';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Button } from '@op/sense/Button';
+import { Empty, EmptyMedia } from '@op/sense/Empty';
+import { Header2 } from '@op/sense/Header';
+import { Sortable } from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -312,7 +312,10 @@ export function RubricEditorContent({
 
           {criteria.length === 0 ? (
             <div className="rounded-lg border p-16">
-              <EmptyState icon={<LuLeaf className="size-5" />}>
+              <Empty className="border-0 p-0">
+                <EmptyMedia variant="icon">
+                  <LuLeaf className="size-5" />
+                </EmptyMedia>
                 <div className="flex flex-col items-center gap-2 text-center">
                   <span className="font-medium text-neutral-charcoal">
                     {t('No review criteria yet')}
@@ -322,16 +325,12 @@ export function RubricEditorContent({
                       'Add criteria to help reviewers evaluate proposals consistently',
                     )}
                   </span>
-                  <Button
-                    color="primary"
-                    className="mt-2"
-                    onPress={handleAddCriterion}
-                  >
+                  <Button className="mt-2" onClick={handleAddCriterion}>
                     <LuPlus className="size-4" />
                     {t('Add your first criterion')}
                   </Button>
                 </div>
-              </EmptyState>
+              </Empty>
             </div>
           ) : (
             <>
@@ -384,9 +383,9 @@ export function RubricEditorContent({
               </Sortable>
 
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full"
-                onPress={handleAddCriterion}
+                onClick={handleAddCriterion}
               >
                 <LuPlus className="size-4" />
                 {t('Add criterion')}
@@ -402,10 +401,10 @@ export function RubricEditorContent({
               'Reviewers recommend Yes, Maybe, or No per proposal',
             )}
           >
-            <ToggleButton
-              isSelected={overallRecommendationEnabled}
-              onChange={handleOverallRecommendationToggle}
-              size="small"
+            <Switch
+              size="sm"
+              checked={overallRecommendationEnabled}
+              onCheckedChange={handleOverallRecommendationToggle}
             />
           </ToggleRow>
         </div>

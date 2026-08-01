@@ -844,6 +844,7 @@
   "Proposers can select more than one category": "يمكن للمقترحين اختيار أكثر من فئة واحدة",
   "Save changes": "حفظ التغييرات",
   "At least two options are required": "يلزم وجود خيارين على الأقل",
+  "Must be at least {min}": "يجب أن يكون {min} على الأقل",
   "Field label is required": "تسمية الحقل مطلوبة",
   "Options cannot be empty": "لا يمكن أن تكون الخيارات فارغة",
   "Minimum must be less than or equal to maximum": "يجب أن يكون الحد الأدنى أقل من أو يساوي الحد الأقصى",

@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeTiptapDoc } from '@op/common/client';
-import { RichTextEditor } from '@op/ui/RichTextEditor';
-import { Skeleton } from '@op/ui/Skeleton';
+import { RichTextEditor } from '@op/sense/RichTextEditor';
+import { Skeleton } from '@op/sense/Skeleton';
 import type { JSONContent } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import { Suspense, useMemo, useRef, useState } from 'react';

@@ -2,11 +2,22 @@
 
 import { trpc } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Header2, Header3 } from '@op/sense/Header';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -175,26 +186,25 @@ export function ProposalCategoriesSectionContent({
 
       {showEmptyState && (
         <div className="rounded-lg border p-16">
-          <EmptyState icon={<LuLeaf className="size-5" />}>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <span className="font-medium text-neutral-charcoal">
-                {t('No categories defined yet')}
-              </span>
-              <span>
+          <Empty className="border-0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuLeaf className="size-5" />
+              </EmptyMedia>
+              <EmptyTitle>{t('No categories defined yet')}</EmptyTitle>
+              <EmptyDescription>
                 {t(
                   'Categories help proposers understand what outcomes this process is trying to achieve.',
                 )}
-              </span>
-              <Button
-                color="primary"
-                className="mt-2"
-                onPress={() => setIsFormVisible(true)}
-              >
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button className="mt-2" onClick={() => setIsFormVisible(true)}>
                 <LuPlus className="size-4" />
                 {t('Create first category')}
               </Button>
-            </div>
-          </EmptyState>
+            </EmptyContent>
+          </Empty>
         </div>
       )}
 
@@ -213,19 +223,19 @@ export function ProposalCategoriesSectionContent({
               </div>
               <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
-                  variant="icon"
-                  color="ghost"
+                  variant="ghost"
+                  size="icon-xs"
                   className="size-5 p-0 text-neutral-charcoal"
-                  onPress={() => handleEdit(category)}
+                  onClick={() => handleEdit(category)}
                   aria-label={`Edit ${category.label}`}
                 >
                   <LuPencil className="size-4" />
                 </Button>
                 <Button
-                  variant="icon"
-                  color="ghost"
+                  variant="ghost"
+                  size="icon-xs"
                   className="size-5 p-0 text-neutral-charcoal hover:text-red"
-                  onPress={() => handleDelete(category.id)}
+                  onClick={() => handleDelete(category.id)}
                   aria-label={`Delete ${category.label}`}
                 >
                   <LuTrash2 className="size-4" />
@@ -235,9 +245,9 @@ export function ProposalCategoriesSectionContent({
           ))}
           {!isFormVisible && (
             <Button
-              color="ghost"
+              variant="ghost"
               className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
-              onPress={() => setIsFormVisible(true)}
+              onClick={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />
               {t('Add category')}
@@ -252,40 +262,34 @@ export function ProposalCategoriesSectionContent({
             {editingId ? t('Edit category') : t('Add category')}
           </Header3>
           <div className="space-y-4">
-            <TextField
+            <CategoryField
+              id="category-shorthand"
               label={t('Shorthand')}
               isRequired
               value={formLabel}
               onChange={setFormLabel}
-              inputProps={{
-                placeholder: t('e.g., Education'),
-              }}
+              placeholder={t('e.g., Education')}
               description={t('1-3 words. Appears in dropdowns and cards.')}
               maxLength={CATEGORY_TITLE_MAX_LENGTH}
             />
-            <TextField
-              useTextArea
+            <CategoryField
+              id="category-description"
+              multiline
               label={t('Full description')}
               value={formDescription}
               onChange={setFormDescription}
-              textareaProps={{
-                placeholder: t(
-                  'e.g., Expand access to quality education and workforce development in underserved communities',
-                ),
-              }}
+              placeholder={t(
+                'e.g., Expand access to quality education and workforce development in underserved communities',
+              )}
               description={t(
                 'Help proposers understand what this category means',
               )}
             />
             <div className="flex items-center justify-end gap-2">
-              <Button color="secondary" onPress={resetForm}>
+              <Button variant="outline" onClick={resetForm}>
                 {t('Cancel')}
               </Button>
-              <Button
-                color="primary"
-                onPress={handleAddOrUpdate}
-                isDisabled={!formLabel.trim()}
-              >
+              <Button onClick={handleAddOrUpdate} disabled={!formLabel.trim()}>
                 {editingId ? t('Save changes') : t('Add category')}
               </Button>
             </div>
@@ -304,10 +308,10 @@ export function ProposalCategoriesSectionContent({
                 {t('Proposers must select at least one category')}
               </p>
             </div>
-            <ToggleButton
-              isSelected={requireCategorySelection}
-              onChange={handleRequireCategoryChange}
-              size="small"
+            <Switch
+              checked={requireCategorySelection}
+              onCheckedChange={handleRequireCategoryChange}
+              size="sm"
             />
           </div>
           <div className="flex items-center justify-between gap-4">
@@ -319,14 +323,84 @@ export function ProposalCategoriesSectionContent({
                 {t('Proposers can select more than one category')}
               </p>
             </div>
-            <ToggleButton
-              isSelected={allowMultipleCategories}
-              onChange={handleAllowMultipleChange}
-              size="small"
+            <Switch
+              checked={allowMultipleCategories}
+              onCheckedChange={handleAllowMultipleChange}
+              size="sm"
             />
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+// Labelled text/textarea field with an optional live character counter —
+// composes the sense Field + Input/Textarea primitives to reproduce the
+// batteries-included @op/ui TextField this screen previously used.
+function CategoryField({
+  id,
+  label,
+  isRequired,
+  value,
+  onChange,
+  placeholder,
+  description,
+  maxLength,
+  multiline,
+}: {
+  id: string;
+  label: string;
+  isRequired?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  description?: string;
+  maxLength?: number;
+  multiline?: boolean;
+}) {
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {isRequired && <RequiredAsterisk />}
+      </FieldLabel>
+      {multiline ? (
+        <Textarea
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="[unicode-bidi:plaintext]"
+        />
+      ) : (
+        <Input
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="[unicode-bidi:plaintext]"
+        />
+      )}
+      {(description || maxLength != null) && (
+        <div className="flex items-baseline justify-between gap-4">
+          <div>
+            {description && <FieldDescription>{description}</FieldDescription>}
+          </div>
+          {maxLength != null && (
+            <span
+              className={cn(
+                'text-sm text-neutral-gray4',
+                value.length === maxLength && 'text-functional-red',
+              )}
+            >
+              {value.length}/{maxLength}
+            </span>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }

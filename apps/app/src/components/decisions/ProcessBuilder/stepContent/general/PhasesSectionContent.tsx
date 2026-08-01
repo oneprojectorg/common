@@ -2,12 +2,17 @@
 
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { DragHandle, Sortable } from '@op/ui/Sortable';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Header2 } from '@op/sense/Header';
+import { DragHandle, Sortable } from '@op/sense/Sortable';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 import { LuCheck, LuPlus, LuTrash2 } from 'react-icons/lu';
@@ -136,9 +141,9 @@ export function PhasesSectionContent({
             <p className="text-neutral-gray4">{t('No phases defined')}</p>
           </div>
           <Button
-            color="ghost"
+            variant="ghost"
             className="text-primary-teal hover:text-primary-tealBlack"
-            onPress={addPhase}
+            onClick={addPhase}
           >
             <LuPlus className="size-4" />
             {t('Add phase')}
@@ -193,21 +198,21 @@ export function PhasesSectionContent({
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <Button
-                        color="secondary"
-                        size="small"
-                        onPress={() => setSection(phaseToSectionId(phase.id))}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSection(phaseToSectionId(phase.id))}
                       >
                         {t('Configure')}
                       </Button>
-                      <IconButton
+                      <Button
                         variant="outline"
-                        size="medium"
+                        size="icon-sm"
                         className="text-primary-teal hover:text-functional-red"
-                        onPress={() => setPhaseToDelete(phase.id)}
+                        onClick={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
                         <LuTrash2 className="size-4" />
-                      </IconButton>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -215,9 +220,9 @@ export function PhasesSectionContent({
             }}
           </Sortable>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full text-primary-teal hover:text-primary-tealBlack"
-            onPress={addPhase}
+            onClick={addPhase}
           >
             <LuPlus className="size-4" />
             {t('Add phase')}
@@ -225,40 +230,43 @@ export function PhasesSectionContent({
         </div>
       )}
 
-      <Modal
-        isDismissable
-        isOpen={phaseToDelete !== null}
+      <Dialog
+        open={phaseToDelete !== null}
         onOpenChange={(open) => {
           if (!open) {
             setPhaseToDelete(null);
           }
         }}
       >
-        <ModalHeader>{t('Delete phase?')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this phase? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setPhaseToDelete(null)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmRemovePhase}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Delete phase?')}</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4">
+            <p>
+              {t(
+                'Are you sure you want to delete this phase? This action cannot be undone.',
+              )}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="w-full sm:w-fit"
+              onClick={() => setPhaseToDelete(null)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-fit"
+              onClick={confirmRemovePhase}
+            >
+              {t('Delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -291,17 +299,17 @@ const PhaseDragPreview = ({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Button color="secondary" size="small">
+          <Button variant="outline" size="sm">
             {t('Configure')}
           </Button>
-          <IconButton
+          <Button
             aria-label={t('Delete phase')}
             variant="outline"
-            size="medium"
+            size="icon-sm"
             className="text-primary-teal"
           >
             <LuTrash2 className="size-4" />
-          </IconButton>
+          </Button>
         </div>
       </div>
     </div>

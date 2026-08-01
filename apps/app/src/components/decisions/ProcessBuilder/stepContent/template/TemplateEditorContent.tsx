@@ -7,12 +7,12 @@ import type {
   XFormatPropertySchema,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
+import { Header2 } from '@op/sense/Header';
+import { SidebarProvider } from '@op/sense/Sidebar';
+import { Sortable } from '@op/sense/Sortable';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
-import { Header2 } from '@op/ui/Header';
-import { SidebarProvider } from '@op/ui/Sidebar';
-import { Sortable } from '@op/ui/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
@@ -372,7 +372,7 @@ export function TemplateEditorContent({
   /** Render a FieldCard for a given field view. */
   const renderFieldCard = (
     field: FieldView,
-    controls?: Parameters<Parameters<typeof Sortable>[0]['children']>[1],
+    controls: Parameters<Parameters<typeof Sortable>[0]['children']>[1],
   ) => {
     const snapshotErrors = fieldErrors.get(field.id) ?? [];
     const liveErrors = getFieldErrors(field);
@@ -405,7 +405,10 @@ export function TemplateEditorContent({
   };
 
   return (
-    <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
+    // TODO(sense-migration): sense's SidebarProvider injects a `flex min-h-svh`
+    // wrapper div (the @op/ui one rendered no DOM), which shifts this
+    // content-area layout — needs a visual QA pass.
+    <SidebarProvider open={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
       <div className="flex h-full flex-col overflow-hidden md:flex-row">
         <div className="flex items-center justify-between gap-2 p-4 md:hidden">
           <Header2 className="font-serif text-title-sm">
@@ -464,8 +467,8 @@ export function TemplateEditorContent({
                       {t('These are the categories you defined in')}{' '}
                       <Button
                         variant="link"
-                        size="inline"
-                        onPress={() => {
+                        className="h-auto p-0"
+                        onClick={() => {
                           void setStep('general');
                           void setSection('proposalCategories');
                         }}

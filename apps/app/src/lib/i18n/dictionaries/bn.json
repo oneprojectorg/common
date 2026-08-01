@@ -928,6 +928,7 @@
   "Proposers can select more than one category": "প্রস্তাবকারীরা একাধিক বিভাগ নির্বাচন করতে পারেন",
   "Save changes": "পরিবর্তন সংরক্ষণ করুন",
   "At least two options are required": "কমপক্ষে দুটি বিকল্প প্রয়োজন",
+  "Must be at least {min}": "কমপক্ষে {min} হতে হবে",
   "Field label is required": "ক্ষেত্রের লেবেল আবশ্যক",
   "Options cannot be empty": "বিকল্পগুলি খালি হতে পারে না",
   "Minimum must be less than or equal to maximum": "সর্বনিম্ন অবশ্যই সর্বোচ্চের সমান বা কম হতে হবে",

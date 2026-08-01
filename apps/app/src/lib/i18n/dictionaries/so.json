@@ -861,6 +861,7 @@
   "Proposers can select more than one category": "Soo jeediyayaashu waxay dooran karaan ka badan hal qayb",
   "Save changes": "Kaydi isbeddelada",
   "At least two options are required": "Ugu yaraan laba ikhtiyaar ayaa loo baahan yahay",
+  "Must be at least {min}": "Waa inuu ugu yaraan {min} yahay",
   "Field label is required": "Sumadda goobta waa loo baahan yahay",
   "Options cannot be empty": "Ikhtiyaaradu ma noqon karaan ebar",
   "Minimum must be less than or equal to maximum": "Ugu yaraan waa inay ka yar tahay ama la mid tahay ugu badan",

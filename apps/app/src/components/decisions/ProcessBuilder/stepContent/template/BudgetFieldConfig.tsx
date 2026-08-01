@@ -1,12 +1,23 @@
 'use client';
 
 import { ProposalTemplateSchema } from '@op/common';
-import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
-import { Select, SelectItem } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
+import { Field, FieldLabel } from '@op/sense/Field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@op/sense/InputGroup';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
 import type { Key } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -39,6 +50,38 @@ const CURRENCY_SYMBOL_MAP = new Map<string, string>(
   CURRENCIES.map((c) => [c.code, c.symbol]),
 );
 
+// value → label map so base-ui `SelectValue` renders "USD $" instead of the
+// raw stored code ("USD").
+const CURRENCY_ITEMS: Record<string, string> = Object.fromEntries(
+  CURRENCIES.map((c) => [c.code, `${c.code} ${c.symbol}`]),
+);
+
+// Numeric-input helpers ported from the former @op/ui NumberField (sense has no
+// NumberField equivalent). They normalize non-ASCII numerals to ASCII so the
+// field accepts Arabic-Indic / Persian digits, then keep only valid numeric
+// characters.
+const normalizeDigits = (value: string) =>
+  value
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/٫/g, '.') // Arabic decimal separator
+    .replace(/٬/g, ''); // Arabic thousands separator
+
+const filterNumericInput = (value: string) =>
+  normalizeDigits(value)
+    .replace(/[^0-9.-]/g, '') // Keep only digits, minus, and decimal
+    .replace(/(?!^)-/g, '') // Remove minus signs that aren't at the beginning
+    .replace(/\.(?=.*\.)/g, ''); // Remove decimal points except the last one
+
+const parseNumericValue = (value: string): number | null => {
+  const filtered = filterNumericInput(value);
+  if (filtered === '' || filtered === '-') {
+    return null;
+  }
+  const parsed = parseFloat(filtered);
+  return isNaN(parsed) ? null : parsed;
+};
+
 export function BudgetFieldConfig({
   template,
   onTemplateChange,
@@ -64,6 +107,16 @@ export function BudgetFieldConfig({
       ? t('Required')
       : t('Optional')
     : undefined;
+
+  // Local display string for the max-budget input; synced when the stored
+  // value changes externally (mirrors the old NumberField's value → display
+  // effect).
+  const [budgetMaxDisplay, setBudgetMaxDisplay] = useState(
+    budgetMaxAmount?.toString() ?? '',
+  );
+  useEffect(() => {
+    setBudgetMaxDisplay(budgetMaxAmount?.toString() ?? '');
+  }, [budgetMaxAmount]);
 
   const handleShowBudgetChange = useCallback(
     (show: boolean) => {
@@ -175,37 +228,57 @@ export function BudgetFieldConfig({
       <div className="space-y-4 px-8">
         {showBudget && (
           <>
-            <Select
-              label={t('Currency')}
-              selectedKey={budgetCurrency}
-              onSelectionChange={handleBudgetCurrencyChange}
-              buttonClassName="bg-white"
-            >
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} id={c.code}>
-                  {c.code} {c.symbol}
-                </SelectItem>
-              ))}
-            </Select>
-            <NumberField
-              label={t('Max budget')}
-              value={budgetMaxAmount ?? null}
-              onChange={handleBudgetMaxChange}
-              prefixText={budgetCurrencySymbol}
-              inputProps={{
-                placeholder: t('Set maximum budget'),
-              }}
-            />
+            <Field>
+              <FieldLabel htmlFor="budget-currency">{t('Currency')}</FieldLabel>
+              <Select
+                value={budgetCurrency}
+                onValueChange={(currency) =>
+                  handleBudgetCurrencyChange(currency)
+                }
+                items={CURRENCY_ITEMS}
+              >
+                <SelectTrigger id="budget-currency" className="w-full bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} {c.symbol}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="budget-max">{t('Max budget')}</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon align="inline-start">
+                  {budgetCurrencySymbol}
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="budget-max"
+                  inputMode="decimal"
+                  dir="ltr"
+                  placeholder={t('Set maximum budget')}
+                  value={budgetMaxDisplay}
+                  onChange={(e) => {
+                    const filtered = filterNumericInput(e.target.value);
+                    setBudgetMaxDisplay(filtered);
+                    handleBudgetMaxChange(parseNumericValue(filtered));
+                  }}
+                />
+              </InputGroup>
+            </Field>
           </>
         )}
         <div className="flex items-center justify-between">
           <span className="text-neutral-charcoal">
             {t('Show in template?')}
           </span>
-          <ToggleButton
-            size="small"
-            isSelected={showBudget}
-            onChange={handleShowBudgetChange}
+          <Switch
+            size="sm"
+            checked={showBudget}
+            onCheckedChange={handleShowBudgetChange}
             aria-label={t('Show in template?')}
             data-testid="budget-show-in-template-toggle"
           />
@@ -213,10 +286,10 @@ export function BudgetFieldConfig({
         {showBudget && (
           <div className="flex items-center justify-between">
             <span className="text-neutral-charcoal">{t('Required?')}</span>
-            <ToggleButton
-              size="small"
-              isSelected={budgetRequired}
-              onChange={handleBudgetRequiredChange}
+            <Switch
+              size="sm"
+              checked={budgetRequired}
+              onCheckedChange={handleBudgetRequiredChange}
               aria-label={t('Required?')}
             />
           </div>

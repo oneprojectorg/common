@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
+import { Button } from '@op/sense/Button';
+import { Header2 } from '@op/sense/Header';
 import { useQueryState } from 'nuqs';
 import React from 'react';
 
@@ -106,9 +106,9 @@ export function SummarySectionInner({
                   {t(item.labelKey)}
                 </span>
                 <Button
-                  color="secondary"
+                  variant="outline"
                   className="shrink-0"
-                  onPress={() => {
+                  onClick={() => {
                     const sectionId = checklistSectionMap[item.id];
                     if (sectionId) {
                       void setSectionParam(sectionId);

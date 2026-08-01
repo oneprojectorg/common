@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 
 // Borderless, document-style text inputs for the Overview page (headline +
 // short description). Not @op/ui TextField — those are labeled/bordered; these

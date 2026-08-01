@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
+import { SidebarTrigger } from '@op/sense/Sidebar';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { SidebarTrigger } from '@op/ui/Sidebar';
 import { useState } from 'react';
 import { LuLogOut } from 'react-icons/lu';
 
@@ -139,8 +139,8 @@ export const ProcessBuilderFooter = ({
             </Link>
             {hasPrev && (
               <Button
-                color="secondary"
-                onPress={goBack}
+                variant="outline"
+                onClick={goBack}
                 className="hidden md:inline-flex"
               >
                 {t('Back')}
@@ -165,7 +165,7 @@ export const ProcessBuilderFooter = ({
                 </span>
               )}
               {hasNext && (
-                <Button color="secondary" onPress={goNext}>
+                <Button variant="outline" onClick={goNext}>
                   {t('Next')}
                 </Button>
               )}
@@ -173,8 +173,8 @@ export const ProcessBuilderFooter = ({
               {(!isDraft ||
                 (validation.isReadyToLaunch && !isTerminalStatus)) && (
                 <Button
-                  onPress={handleLaunchOrSave}
-                  isDisabled={updateInstance.isPending}
+                  onClick={handleLaunchOrSave}
+                  disabled={updateInstance.isPending}
                 >
                   {isDraft ? t('Launch Process') : t('Update Process')}
                 </Button>
@@ -186,12 +186,12 @@ export const ProcessBuilderFooter = ({
           <div className="flex items-center justify-end gap-2 md:hidden">
             <SidebarTrigger aria-label={t('Open process steps')} />
             {hasPrev && (
-              <Button color="secondary" onPress={goBack}>
+              <Button variant="outline" onClick={goBack}>
                 {t('Back')}
               </Button>
             )}
             {hasNext && (
-              <Button color="secondary" onPress={goNext}>
+              <Button variant="outline" onClick={goNext}>
                 {t('Next')}
               </Button>
             )}
@@ -199,8 +199,8 @@ export const ProcessBuilderFooter = ({
               (validation.isReadyToLaunch && !isTerminalStatus)) && (
               <Button
                 className="h-8 rounded-lg"
-                onPress={handleLaunchOrSave}
-                isDisabled={updateInstance.isPending}
+                onClick={handleLaunchOrSave}
+                disabled={updateInstance.isPending}
               >
                 {isDraft ? t('Launch') : t('Update')}
               </Button>

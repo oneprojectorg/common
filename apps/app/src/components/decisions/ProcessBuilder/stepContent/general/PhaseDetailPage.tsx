@@ -1,16 +1,36 @@
 'use client';
 
-import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { isReviewPhase, isVotingPhase } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { DatePicker } from '@op/ui/DatePicker';
-import { Header2 } from '@op/ui/Header';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Button } from '@op/sense/Button';
+import { DatePicker } from '@op/sense/DatePicker';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@op/sense/Field';
+import { Header2 } from '@op/sense/Header';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -180,11 +200,8 @@ function PhaseDetailForm({
     if (!dateStr) {
       return undefined;
     }
-    try {
-      return toCalendarDate(parseAbsoluteToLocal(dateStr));
-    } catch {
-      return undefined;
-    }
+    const parsed = new Date(dateStr);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
   };
 
   const getErrors = () => {
@@ -207,7 +224,7 @@ function PhaseDetailForm({
     if (phase.startDate && phase.endDate) {
       const start = safeParseLocal(phase.startDate);
       const end = safeParseLocal(phase.endDate);
-      if (start && end && end.compare(start) < 0) {
+      if (start && end && end.getTime() < start.getTime()) {
         errors.endDate = t('End date must be on or after the start date');
       }
     }
@@ -218,13 +235,7 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
-  const formatDateValue = (date: {
-    year: number;
-    month: number;
-    day: number;
-  }) => {
-    return new Date(date.year, date.month - 1, date.day).toISOString();
-  };
+  const formatDateValue = (date: Date) => date.toISOString();
 
   if (!phase) {
     return null;
@@ -251,7 +262,8 @@ function PhaseDetailForm({
       </div>
 
       <div className="space-y-4">
-        <TextField
+        <PhaseField
+          id="phase-name"
           label={t('Short name')}
           isRequired
           value={phase.name ?? ''}
@@ -263,7 +275,8 @@ function PhaseDetailForm({
           )}
           maxLength={50}
         />
-        <TextField
+        <PhaseField
+          id="phase-headline"
           label={t('Headline')}
           isRequired
           value={phase.headline ?? ''}
@@ -273,15 +286,16 @@ function PhaseDetailForm({
           description={t('This text appears as the header of the page.')}
           maxLength={50}
         />
-        <TextField
+        <PhaseField
+          id="phase-description"
           label={t('Description')}
           isRequired
-          useTextArea
+          multiline
+          rows={3}
           value={phase.description ?? ''}
           onChange={(value) => updatePhase({ description: value })}
           onBlur={() => markTouched('description')}
           errorMessage={getErrorMessage('description')}
-          textareaProps={{ rows: 3 }}
           description={t(
             'This text appears below the headline on the phase page.',
           )}
@@ -307,20 +321,24 @@ function PhaseDetailForm({
             <DatePicker
               label={t('Start date')}
               value={safeParseLocal(phase.startDate)}
-              maxValue={safeParseLocal(phase.endDate)}
-              onChange={(date) =>
-                updatePhase({ startDate: formatDateValue(date) })
-              }
+              maxDate={safeParseLocal(phase.endDate)}
+              onChange={(date) => {
+                if (date) {
+                  updatePhase({ startDate: formatDateValue(date) });
+                }
+              }}
             />
           </div>
           <div className="flex-1" onBlur={() => markTouched('endDate')}>
             <DatePicker
               label={t('End date')}
-              isRequired
+              required
               value={safeParseLocal(phase.endDate)}
-              minValue={safeParseLocal(phase.startDate)}
+              minDate={safeParseLocal(phase.startDate)}
               onChange={(date) => {
-                updatePhase({ endDate: formatDateValue(date) });
+                if (date) {
+                  updatePhase({ endDate: formatDateValue(date) });
+                }
                 markTouched('endDate');
               }}
               errorMessage={getErrorMessage('endDate')}
@@ -337,14 +355,14 @@ function PhaseDetailForm({
             'Participants can submit new proposals during this phase.',
           )}
         >
-          <ToggleButton
-            isSelected={phase.rules?.proposals?.submit ?? false}
-            onChange={(val) =>
+          <Switch
+            checked={phase.rules?.proposals?.submit ?? false}
+            onCheckedChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, submit: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         {phase.rules?.proposals?.submit && (
@@ -354,9 +372,9 @@ function PhaseDetailForm({
               'New proposals are hidden from other participants until an admin makes them visible.',
             )}
           >
-            <ToggleButton
-              isSelected={phase.rules?.proposals?.defaults?.hidden ?? false}
-              onChange={(val) =>
+            <Switch
+              checked={phase.rules?.proposals?.defaults?.hidden ?? false}
+              onCheckedChange={(val) =>
                 updateRules({
                   proposals: {
                     ...phase.rules?.proposals,
@@ -367,7 +385,7 @@ function PhaseDetailForm({
                   },
                 })
               }
-              size="small"
+              size="sm"
             />
           </ToggleRow>
         )}
@@ -375,14 +393,14 @@ function PhaseDetailForm({
           label={t('Proposal editing')}
           description={t('Authors can edit their proposals after submitting')}
         >
-          <ToggleButton
-            isSelected={phase.rules?.proposals?.edit ?? false}
-            onChange={(val) =>
+          <Switch
+            checked={phase.rules?.proposals?.edit ?? false}
+            onCheckedChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, edit: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -391,14 +409,14 @@ function PhaseDetailForm({
             'Proposals can be assessed and scored during this phase.',
           )}
         >
-          <ToggleButton
-            isSelected={isReviewPhase(phase)}
-            onChange={(val) =>
+          <Switch
+            checked={isReviewPhase(phase)}
+            onCheckedChange={(val) =>
               updateRules({
                 reviews: { ...phase.rules?.reviews, submit: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -407,9 +425,9 @@ function PhaseDetailForm({
             'Participants can vote on proposals during this phase.',
           )}
         >
-          <ToggleButton
-            isSelected={isVotingPhase(phase)}
-            onChange={(val) => {
+          <Switch
+            checked={isVotingPhase(phase)}
+            onCheckedChange={(val) => {
               const nextVoting: PhaseRules['voting'] = {
                 ...phase.rules?.voting,
                 submit: val,
@@ -421,7 +439,7 @@ function PhaseDetailForm({
               }
               updateRules({ voting: nextVoting });
             }}
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         {isVotingPhase(phase) && (
@@ -444,49 +462,52 @@ function PhaseDetailForm({
       {/* Delete */}
       <div className="border-t pt-4">
         <Button
-          color="secondary"
+          variant="outline"
           className="text-functional-red"
-          onPress={() => setShowDeleteModal(true)}
+          onClick={() => setShowDeleteModal(true)}
         >
           <LuTrash2 className="size-4" />
           {t('Delete phase')}
         </Button>
       </div>
 
-      <Modal
-        isDismissable
-        isOpen={showDeleteModal}
+      <Dialog
+        open={showDeleteModal}
         onOpenChange={(open) => {
           if (!open) {
             setShowDeleteModal(false);
           }
         }}
       >
-        <ModalHeader>{t('Delete phase')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this phase? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setShowDeleteModal(false)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmDelete}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Delete phase')}</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4">
+            <p>
+              {t(
+                'Are you sure you want to delete this phase? This action cannot be undone.',
+              )}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="w-full sm:w-fit"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-fit"
+              onClick={confirmDelete}
+            >
+              {t('Delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -511,24 +532,115 @@ function VoteLimitSelect({
     ? VOTE_LIMIT_OPTIONS
     : [selectedKey, ...VOTE_LIMIT_OPTIONS];
 
+  const labelFor = (key: string) =>
+    key === 'none'
+      ? t('No limit')
+      : t('{count, plural, one {# vote} other {# votes}}', {
+          count: Number(key),
+        });
+
   return (
     <Select
-      selectedKey={selectedKey}
-      size="small"
-      aria-label={t('Voting limit')}
-      onSelectionChange={(key) => {
+      value={selectedKey}
+      // Value→label map so SelectValue renders the label, not the raw id.
+      items={Object.fromEntries(options.map((key) => [key, labelFor(key)]))}
+      onValueChange={(key) => {
         onChange(key === 'none' ? undefined : Number(key));
       }}
     >
-      {options.map((key) => (
-        <SelectItem key={key} id={key}>
-          {key === 'none'
-            ? t('No limit')
-            : t('{count, plural, one {# vote} other {# votes}}', {
-                count: Number(key),
-              })}
-        </SelectItem>
-      ))}
+      <SelectTrigger size="sm" aria-label={t('Voting limit')}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent size="sm">
+        {options.map((key) => (
+          <SelectItem key={key} value={key}>
+            {labelFor(key)}
+          </SelectItem>
+        ))}
+      </SelectContent>
     </Select>
+  );
+}
+
+// Labelled text/textarea field with error, description, and a live character
+// counter — composes the sense Field + Input/Textarea primitives to reproduce
+// the batteries-included @op/ui TextField this form previously used.
+function PhaseField({
+  id,
+  label,
+  isRequired,
+  value,
+  onChange,
+  onBlur,
+  errorMessage,
+  description,
+  maxLength,
+  multiline,
+  rows,
+}: {
+  id: string;
+  label: string;
+  isRequired?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  errorMessage?: string;
+  description?: string;
+  maxLength?: number;
+  multiline?: boolean;
+  rows?: number;
+}) {
+  const isInvalid = !!errorMessage;
+  return (
+    <Field data-invalid={isInvalid || undefined}>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {isRequired && <RequiredAsterisk />}
+      </FieldLabel>
+      {multiline ? (
+        <Textarea
+          id={id}
+          rows={rows}
+          value={value}
+          maxLength={maxLength}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          aria-invalid={isInvalid || undefined}
+          className="[unicode-bidi:plaintext]"
+        />
+      ) : (
+        <Input
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          aria-invalid={isInvalid || undefined}
+          className="[unicode-bidi:plaintext]"
+        />
+      )}
+      {(description || errorMessage || maxLength != null) && (
+        <div className="flex items-baseline justify-between gap-4">
+          <div>
+            {errorMessage ? (
+              <FieldError>{errorMessage}</FieldError>
+            ) : description ? (
+              <FieldDescription>{description}</FieldDescription>
+            ) : null}
+          </div>
+          {maxLength != null && (
+            <span
+              className={cn(
+                'text-sm text-neutral-gray4',
+                (value.length === maxLength || isInvalid) &&
+                  'text-functional-red',
+              )}
+            >
+              {value.length}/{maxLength}
+            </span>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }

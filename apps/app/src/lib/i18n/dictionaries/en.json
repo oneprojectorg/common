@@ -940,6 +940,7 @@
   "Proposers can select more than one category": "Proposers can select more than one category",
   "Save changes": "Save changes",
   "At least two options are required": "At least two options are required",
+  "Must be at least {min}": "Must be at least {min}",
   "Field label is required": "Field label is required",
   "Options cannot be empty": "Options cannot be empty",
   "Minimum must be less than or equal to maximum": "Minimum must be less than or equal to maximum",

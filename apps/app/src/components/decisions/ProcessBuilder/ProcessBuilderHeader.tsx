@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Sheet, SheetBody } from '@op/ui/Sheet';
-import { useSidebar } from '@op/ui/Sidebar';
+import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
+import { useSidebar } from '@op/sense/Sidebar';
 import { LuChevronRight, LuHouse, LuList } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -128,8 +128,9 @@ const MobileSidebar = ({
   instanceId: string;
   decisionProfileId?: string;
 }) => {
+  const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
-  const { open, setOpen } = useSidebar();
+  const { openMobile, setOpenMobile } = useSidebar();
   const { sections: validationSections } =
     useProcessBuilderValidation(decisionProfileId);
   const phases = useProcessPhases(instanceId, decisionProfileId);
@@ -142,7 +143,7 @@ const MobileSidebar = ({
 
   const handleSectionClick = (sectionId: string) => {
     setSection(sectionId);
-    setOpen(false);
+    setOpenMobile(false);
   };
 
   if (visibleSections.length === 0) {
@@ -150,13 +151,9 @@ const MobileSidebar = ({
   }
 
   return (
-    <Sheet
-      isOpen={open}
-      onOpenChange={setOpen}
-      side="bottom"
-      className="md:hidden"
-    >
-      <SheetBody>
+    <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+      <SheetContent side="bottom" showCloseButton={false} className="md:hidden">
+        <SheetTitle className="sr-only">{t('Process steps')}</SheetTitle>
         <nav className="flex flex-col gap-2 p-4">
           <SidebarNavItems
             visibleSections={visibleSections}
@@ -167,7 +164,7 @@ const MobileSidebar = ({
             onSectionClick={handleSectionClick}
           />
         </nav>
-      </SheetBody>
+      </SheetContent>
     </Sheet>
   );
 };

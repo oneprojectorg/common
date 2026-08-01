@@ -1,17 +1,25 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
-} from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import type { SortableItemControls } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { cn } from '@op/ui/utils';
-import { useRef, useState } from 'react';
+} from '@op/sense/CollapsibleConfigCard';
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import type { SortableItemControls } from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
+import { useEffect, useId, useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,13 +36,43 @@ import {
 } from './rubricCriterionRegistry';
 
 // ---------------------------------------------------------------------------
+// Numeric input helpers (ported from the removed op-ui NumberField, which has
+// no sense equivalent — keeps Arabic/Persian digit normalization + filtering)
+// ---------------------------------------------------------------------------
+
+// Normalize non-ASCII numerals to ASCII so the field accepts Arabic input.
+const normalizeDigits = (value: string) =>
+  value
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/٫/g, '.')
+    .replace(/٬/g, '');
+
+const filterNumericInput = (value: string) =>
+  normalizeDigits(value)
+    .replace(/[^0-9.-]/g, '')
+    .replace(/(?!^)-/g, '')
+    .replace(/\.(?=.*\.)/g, '');
+
+const parseNumericValue = (value: string): number | null => {
+  const filtered = filterNumericInput(value);
+  if (filtered === '' || filtered === '-') {
+    return null;
+  }
+  const parsed = parseFloat(filtered);
+  return isNaN(parsed) ? null : parsed;
+};
+
+// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 interface RubricCriterionCardProps {
   criterion: CriterionView;
   errors?: TranslationKey[];
-  controls?: SortableItemControls;
+  // Required by @op/sense CollapsibleConfigCard's editable-card union (always
+  // supplied by the Sortable render prop that mounts this card).
+  controls: SortableItemControls;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onRemove?: (criterionId: string) => void;
@@ -112,43 +150,49 @@ export function RubricCriterionCard({
       <CollapsibleConfigCard
         label={displayLabel}
         badgeLabel={badgeLabel}
-        badgeClassName="group-data-[expanded]/accordion-item:hidden"
+        badgeClassName="group-data-panel-open/config-card:hidden"
         isCollapsible
         isExpanded={isExpanded}
         onExpandedChange={onExpandedChange}
         controls={controls}
         dragHandleAriaLabel={t('Drag to reorder criterion')}
         className={cn(
-          'data-[expanded]:bg-neutral-offWhite',
+          'data-open:bg-neutral-offWhite',
           isNew && 'animate-border-highlight',
           errors.length > 0 && 'border-functional-red',
         )}
       >
         <div className="space-y-2.5 px-8">
           {/* Field name */}
-          <TextField
-            label={t('Field name')}
-            isRequired
-            value={criterion.label}
-            onChange={(value) => onUpdateLabel?.(criterion.id, value)}
-            maxLength={50}
-            inputProps={{
-              className: 'bg-white',
-            }}
-            className="min-w-0 flex-1"
-          />
+          <Field className="min-w-0 flex-1">
+            <FieldLabel htmlFor={`${criterion.id}-label`}>
+              {t('Field name')} <RequiredAsterisk />
+            </FieldLabel>
+            <Input
+              id={`${criterion.id}-label`}
+              required
+              maxLength={50}
+              value={criterion.label}
+              onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
+              className="bg-white [unicode-bidi:plaintext]"
+            />
+          </Field>
 
           {/* Description */}
-          <TextField
-            label={t('Description')}
-            useTextArea
-            value={criterion.description ?? ''}
-            onChange={(value) => onUpdateDescription?.(criterion.id, value)}
-            textareaProps={{
-              placeholder: t('Provide additional guidance for participants...'),
-              className: 'min-h-24 resize-none bg-white',
-            }}
-          />
+          <Field>
+            <FieldLabel htmlFor={`${criterion.id}-description`}>
+              {t('Description')}
+            </FieldLabel>
+            <Textarea
+              id={`${criterion.id}-description`}
+              value={criterion.description ?? ''}
+              onChange={(e) =>
+                onUpdateDescription?.(criterion.id, e.target.value)
+              }
+              placeholder={t('Provide additional guidance for participants...')}
+              className="min-h-24 resize-none bg-white [unicode-bidi:plaintext]"
+            />
+          </Field>
 
           <hr />
 
@@ -189,10 +233,10 @@ export function RubricCriterionCard({
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
               <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={criterion.required}
-                onChange={(isSelected) =>
+              <Switch
+                size="sm"
+                checked={criterion.required}
+                onCheckedChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
                 }
                 aria-label={t('Required')}
@@ -200,9 +244,9 @@ export function RubricCriterionCard({
             </div>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
-                onPress={() => onRemove(criterion.id)}
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
                 className="text-neutral-charcoal hover:text-functional-red"
               >
@@ -229,33 +273,40 @@ function CriterionTypeSelector({
   onChange: (type: RubricCriterionType) => void;
 }) {
   const t = useTranslations();
+  const groupId = useId();
 
   return (
-    <RadioGroup
-      label={t('How should reviewers score this?')}
-      value={value}
-      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
-      orientation="vertical"
-      labelClassName="text-base"
-    >
-      {CRITERION_TYPES.map((type) => {
-        const entry = CRITERION_TYPE_REGISTRY[type];
-        return (
-          <Radio
-            key={type}
-            value={type}
-            className="group flex items-start gap-2 py-2"
-          >
-            <div className="relative -top-0.5">
-              <span>{t(entry.labelKey)}</span>
-              <p className="text-sm text-neutral-gray4">
-                {t(entry.descriptionKey)}
-              </p>
-            </div>
-          </Radio>
-        );
-      })}
-    </RadioGroup>
+    <FieldSet>
+      <FieldLegend className="text-base">
+        {t('How should reviewers score this?')}
+      </FieldLegend>
+      <RadioGroup
+        value={value}
+        onValueChange={(newValue) => onChange(newValue as RubricCriterionType)}
+      >
+        {CRITERION_TYPES.map((type) => {
+          const entry = CRITERION_TYPE_REGISTRY[type];
+          const id = `${groupId}-${type}`;
+          return (
+            <Field
+              key={type}
+              orientation="horizontal"
+              className="items-start py-2"
+            >
+              <RadioGroupItem id={id} value={type} className="mt-0.5" />
+              <FieldLabel htmlFor={id}>
+                <div className="relative -top-0.5">
+                  <span>{t(entry.labelKey)}</span>
+                  <p className="text-sm text-neutral-gray4">
+                    {t(entry.descriptionKey)}
+                  </p>
+                </div>
+              </FieldLabel>
+            </Field>
+          );
+        })}
+      </RadioGroup>
+    </FieldSet>
   );
 }
 
@@ -274,6 +325,13 @@ function ScoredCriterionConfig({
 }) {
   const t = useTranslations();
   const max = criterion.maxPoints ?? 5;
+
+  // Local display string for the numeric input (the old NumberField owned this
+  // internally). Kept in sync when `max` changes from elsewhere.
+  const [displayValue, setDisplayValue] = useState(String(max));
+  useEffect(() => {
+    setDisplayValue(String(max));
+  }, [max]);
 
   // Cache descriptions that would be lost when maxPoints decreases.
   const [cachedDescriptions, setCachedDescriptions] = useState<
@@ -323,13 +381,25 @@ function ScoredCriterionConfig({
 
   return (
     <div className="space-y-4">
-      <NumberField
-        label={t('Max points')}
-        value={max}
-        onChange={handleMaxPointsChange}
-        errorMessage={max < 2 ? t('Minimum is 2') : undefined}
-        inputProps={{ className: 'w-20' }}
-      />
+      <Field data-invalid={max < 2}>
+        <FieldLabel htmlFor={`${criterion.id}-max-points`}>
+          {t('Max points')}
+        </FieldLabel>
+        <Input
+          id={`${criterion.id}-max-points`}
+          inputMode="numeric"
+          dir="ltr"
+          className="w-20"
+          value={displayValue}
+          onChange={(e) => {
+            const filtered = filterNumericInput(e.target.value);
+            setDisplayValue(filtered);
+            handleMaxPointsChange(parseNumericValue(filtered));
+          }}
+          aria-invalid={max < 2}
+        />
+        {max < 2 && <FieldError>{t('Minimum is 2')}</FieldError>}
+      </Field>
 
       <div className="space-y-2">
         <h4 className="text-neutral-charcoal">
@@ -350,16 +420,15 @@ function ScoredCriterionConfig({
                 <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-end font-serif text-title-base text-neutral-gray4">
                   {scoreValue}
                 </span>
-                <TextField
-                  useTextArea
+                <Textarea
                   value={label}
-                  onChange={(value) => onUpdateScoreLabel(scoreValue, value)}
-                  textareaProps={{
-                    placeholder: t('Describe what earns {number} points...', {
-                      number: scoreValue,
-                    }),
-                  }}
-                  className="w-full"
+                  onChange={(e) =>
+                    onUpdateScoreLabel(scoreValue, e.target.value)
+                  }
+                  placeholder={t('Describe what earns {number} points...', {
+                    number: scoreValue,
+                  })}
+                  className="w-full [unicode-bidi:plaintext]"
                 />
               </div>
             );

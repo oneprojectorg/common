@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { DragHandle, Sortable } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/sense/Button';
+import { Input } from '@op/sense/Input';
+import { DragHandle, Sortable } from '@op/sense/Sortable';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
@@ -141,51 +141,55 @@ function FieldConfigDropdownOptions({
                 aria-label={t('Drag to reorder option')}
                 className="text-neutral-gray3 hover:text-neutral-gray4"
               />
-              <TextField
+              <Input
                 value={option.value}
-                onChange={(value) => handleUpdateOption(option.id, value)}
+                onChange={(e) => handleUpdateOption(option.id, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, option)}
-                inputProps={{
-                  placeholder: t('Option {number}', { number: index + 1 }),
-                }}
-                className="w-full"
+                placeholder={t('Option {number}', { number: index + 1 })}
+                className="w-full [unicode-bidi:plaintext]"
               />
-              <TooltipTrigger isDisabled={options.length > 2}>
-                <Button
-                  color="ghost"
-                  size="small"
-                  aria-label={t('Remove option')}
-                  aria-disabled={options.length <= 2 || undefined}
-                  aria-description={
-                    options.length <= 2
-                      ? t('At least two options are required')
-                      : undefined
+              <Tooltip disabled={options.length > 2}>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t('Remove option')}
+                      aria-disabled={options.length <= 2 || undefined}
+                      aria-description={
+                        options.length <= 2
+                          ? t('At least two options are required')
+                          : undefined
+                      }
+                      tabIndex={options.length <= 2 ? -1 : undefined}
+                      onClick={() => {
+                        if (options.length > 2) {
+                          handleRemoveOption(option.id);
+                        }
+                      }}
+                      className={`p-2 ${
+                        options.length <= 2
+                          ? 'cursor-default text-neutral-gray3 opacity-30'
+                          : 'text-neutral-gray3 hover:text-neutral-charcoal'
+                      }`}
+                    >
+                      <LuX className="size-4" />
+                    </Button>
                   }
-                  excludeFromTabOrder={options.length <= 2}
-                  onPress={() => {
-                    if (options.length > 2) {
-                      handleRemoveOption(option.id);
-                    }
-                  }}
-                  className={`p-2 ${
-                    options.length <= 2
-                      ? 'cursor-default text-neutral-gray3 opacity-30'
-                      : 'text-neutral-gray3 hover:text-neutral-charcoal'
-                  }`}
-                >
-                  <LuX className="size-4" />
-                </Button>
-                <Tooltip>{t('At least two options are required')}</Tooltip>
-              </TooltipTrigger>
+                />
+                <TooltipContent>
+                  {t('At least two options are required')}
+                </TooltipContent>
+              </Tooltip>
             </div>
           );
         }}
       </Sortable>
 
       <Button
-        color="ghost"
-        size="small"
-        onPress={handleAddOption}
+        variant="ghost"
+        size="sm"
+        onClick={handleAddOption}
         className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
       >
         <LuPlus className="size-4" />

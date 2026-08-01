@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Header2 } from '@op/sense/Header';
 import { Switch } from '@op/sense/Switch';
-import { Header2 } from '@op/ui/Header';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 

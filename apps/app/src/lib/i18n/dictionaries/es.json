@@ -926,6 +926,7 @@
   "Proposers can select more than one category": "Los proponentes pueden seleccionar más de una categoría",
   "Save changes": "Guardar cambios",
   "At least two options are required": "Se requieren al menos dos opciones",
+  "Must be at least {min}": "Debe ser al menos {min}",
   "Field label is required": "La etiqueta del campo es obligatoria",
   "Options cannot be empty": "Las opciones no pueden estar vacías",
   "Minimum must be less than or equal to maximum": "El mínimo debe ser menor o igual al máximo",
