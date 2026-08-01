@@ -1,13 +1,11 @@
 import { EntityType } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
+import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
-import {
-  ListPageLayout,
-  ListPageLayoutHeader,
-} from '@/components/layout/ListPageLayout';
+import { ListPageLayout } from '@/components/layout/ListPageLayout';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +29,7 @@ const ProfileListingPage = async () => {
 
     return (
       <ListPageLayout>
-        <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
+        <Header1 className="text-headline">Organizations</Header1>
 
         <AllOrganizations
           initialData={organizations}
@@ -43,7 +41,7 @@ const ProfileListingPage = async () => {
   } catch (error) {
     return (
       <ListPageLayout>
-        <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
+        <Header1 className="text-headline">Organizations</Header1>
 
         <AllOrganizations
           initialData={{ items: [], next: null }}

@@ -2,12 +2,11 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
-import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Skeleton } from '@op/sense/Skeleton';
-import { cn } from '@op/sense/lib/utils';
-import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
+
+import { ProfileAvatarLink } from '../ProfileAvatarLink';
 
 type Profiles = RouterOutput['profile']['list']['items'];
 
@@ -45,35 +44,17 @@ export const ProfileSummaryList = ({
             ? `/profile/${profile.slug}`
             : `/org/${profile.slug}`;
 
-        const avatar = (
-          <Avatar
-            className={cn(
-              'size-8 sm:size-12',
-              canLinkToProfile && 'hover:opacity-80',
-            )}
-          >
-            <AvatarFallback name={profile.name} />
-            {profile.avatarImage?.name ? (
-              <Image
-                src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                alt={`${profile.name} avatar`}
-                fill
-                className="rounded-full object-cover"
-              />
-            ) : null}
-          </Avatar>
-        );
-
         return (
           <div key={profile.id}>
-            <div className="flex items-start gap-2 py-2 sm:gap-6">
-              {canLinkToProfile ? (
-                <Link href={profileHref} className="hover:no-underline">
-                  {avatar}
-                </Link>
-              ) : (
-                avatar
-              )}
+            <div className="flex items-start gap-2 py-2 sm:gap-4">
+              <ProfileAvatarLink
+                href={profileHref}
+                name={profile.name}
+                src={getPublicUrl(profile.avatarImage?.name) ?? ''}
+                alt={profile.name}
+                size="lg"
+                className="size-8 sm:size-12"
+              />
 
               <div className="flex flex-col gap-3 text-foreground">
                 <div className="flex flex-col gap-2">
@@ -112,7 +93,7 @@ export const ProfileSummaryList = ({
 
 export const ProfileListSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4">
       {Array.from({ length: 6 }).map((_, index) => (
         <div key={index} className="rounded-lg border bg-card p-4 shadow-xs">
           <div className="flex items-start gap-4">
