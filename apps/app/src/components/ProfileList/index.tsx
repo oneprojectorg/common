@@ -48,7 +48,7 @@ export const ProfileSummaryList = ({
           <div key={profile.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-4">
               <ProfileAvatarLink
-                href={profileHref}
+                href={canLinkToProfile ? profileHref : undefined}
                 name={profile.name}
                 src={getPublicUrl(profile.avatarImage?.name) ?? ''}
                 alt={profile.name}
