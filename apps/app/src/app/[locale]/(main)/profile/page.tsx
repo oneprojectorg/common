@@ -19,7 +19,13 @@ export async function generateMetadata({
   return { title: t('People') };
 }
 
-const ProfileListingPage = async () => {
+const ProfileListingPage = async ({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) => {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
   try {
     const client = await createClient();
     const organizations = await client.profile.list({
@@ -29,8 +35,7 @@ const ProfileListingPage = async () => {
 
     return (
       <ListPageLayout>
-        <Header1 className="text-headline">Organizations</Header1>
-
+        <Header1 className="text-headline">{t('People')}</Header1>
         <AllOrganizations
           initialData={organizations}
           types={[EntityType.INDIVIDUAL]}
@@ -41,8 +46,7 @@ const ProfileListingPage = async () => {
   } catch (error) {
     return (
       <ListPageLayout>
-        <Header1 className="text-headline">Organizations</Header1>
-
+        <Header1 className="text-headline">{t('People')}</Header1>
         <AllOrganizations
           initialData={{ items: [], next: null }}
           types={[EntityType.USER]}

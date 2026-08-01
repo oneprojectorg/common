@@ -19,7 +19,14 @@ export async function generateMetadata({
   return { title: t('Organizations') };
 }
 
-const OrgListingPage = async () => {
+const OrgListingPage = async ({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) => {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+
   try {
     const client = await createClient();
     const organizations = await client.profile.list({
@@ -29,16 +36,14 @@ const OrgListingPage = async () => {
 
     return (
       <ListPageLayout>
-        <Header1 className="text-headline">Organizations</Header1>
-
+        <Header1 className="text-headline">{t('Organizations')}</Header1>
         <AllOrganizations initialData={organizations} limit={20} />
       </ListPageLayout>
     );
   } catch (error) {
     return (
       <ListPageLayout>
-        <Header1 className="text-headline">Organizations</Header1>
-
+        <Header1 className="text-headline">{t('Organizations')}</Header1>
         <AllOrganizations initialData={{ items: [], next: null }} limit={20} />
       </ListPageLayout>
     );

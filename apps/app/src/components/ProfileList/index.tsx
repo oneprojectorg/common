@@ -27,7 +27,7 @@ export const ProfileSummaryList = ({
   // avatars as plain text/images without links.
   const canLinkToProfile = useCanLinkToProfile();
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       {profiles.map((profile) => {
         const whereWeWork =
           profile.organization?.whereWeWork
@@ -56,17 +56,17 @@ export const ProfileSummaryList = ({
                 className="size-8 sm:size-12"
               />
 
-              <div className="flex flex-col gap-3 text-foreground">
-                <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 text-foreground">
+                <div className="flex flex-col gap-1">
                   {canLinkToProfile ? (
                     <Link
                       href={`/profile/${profile.slug}`}
-                      className="leading-base font-semibold"
+                      className="leading-5 font-strong"
                     >
                       <bdi>{profile.name}</bdi>
                     </Link>
                   ) : (
-                    <span className="leading-base font-semibold">
+                    <span className="leading-5 font-strong">
                       <bdi>{profile.name}</bdi>
                     </span>
                   )}
@@ -79,7 +79,7 @@ export const ProfileSummaryList = ({
                     </span>
                   ) : null}
                 </div>
-                <span dir="auto" className="text-foreground">
+                <span dir="auto" className="leading-5 text-foreground">
                   {trimmedBio}
                 </span>
               </div>
