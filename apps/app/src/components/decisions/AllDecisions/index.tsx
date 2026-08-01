@@ -5,8 +5,8 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 
@@ -127,44 +127,38 @@ const AllDecisionsTabs = () => {
 
   return (
     <Tabs
-      selectedKey={selectedTab}
-      onSelectionChange={(key) => {
-        setTab(key === 'active' ? null : String(key));
+      value={selectedTab}
+      onValueChange={(value) => {
+        setTab(value === 'active' ? null : value);
       }}
     >
-      <TabList variant="pill" className="gap-4 border-none">
-        <Tab id="active" variant="pill">
-          {t('Your active processes')}
-        </Tab>
+      <TabsList>
+        <TabsTrigger value="active">{t('Your active processes')}</TabsTrigger>
         {hasDrafts && (
-          <Tab id="drafts" variant="pill">
-            {t('Your drafts')}
-          </Tab>
+          <TabsTrigger value="drafts">{t('Your drafts')}</TabsTrigger>
         )}
-        <Tab id="other" variant="pill">
-          {t('Other processes')}
-        </Tab>
-      </TabList>
-      <TabPanel id="active" className="p-0 sm:p-0">
+        <TabsTrigger value="other">{t('Other processes')}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="active">
         <Suspense fallback={<DecisionsListSkeleton />}>
           <DecisionsListSuspense status={[ProcessStatus.PUBLISHED]} />
         </Suspense>
-      </TabPanel>
+      </TabsContent>
       {hasDrafts && (
-        <TabPanel id="drafts" className="p-0 sm:p-0">
+        <TabsContent value="drafts">
           <Suspense fallback={<DecisionsListSkeleton />}>
             <DecisionsListSuspense
               status={[ProcessStatus.DRAFT]}
               ownerProfileId={ownerProfileId}
             />
           </Suspense>
-        </TabPanel>
+        </TabsContent>
       )}
-      <TabPanel id="other" className="p-0 sm:p-0">
+      <TabsContent value="other">
         <Suspense fallback={<DecisionsListSkeleton />}>
           <DecisionsListSuspense status={[ProcessStatus.COMPLETED]} />
         </Suspense>
-      </TabPanel>
+      </TabsContent>
     </Tabs>
   );
 };

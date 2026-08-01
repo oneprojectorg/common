@@ -1,12 +1,10 @@
+import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { TranslatedText } from '@/components/TranslatedText';
 import { AllDecisions } from '@/components/decisions/AllDecisions';
-import {
-  ListPageLayout,
-  ListPageLayoutHeader,
-} from '@/components/layout/ListPageLayout';
+import { ListPageLayout } from '@/components/layout/ListPageLayout';
 
 export async function generateMetadata({
   params,
@@ -20,11 +18,11 @@ export async function generateMetadata({
 
 const DecisionsListingPage = () => {
   return (
-    <ListPageLayout className="gap-4 pt-8 sm:gap-6 sm:pt-12">
+    <ListPageLayout className="max-w-none gap-4 pt-8 sm:gap-6 sm:pt-12">
       <div className="flex flex-col gap-2">
-        <ListPageLayoutHeader>
+        <Header1 className="text-headline">
           <TranslatedText text="Decision-making processes" />
-        </ListPageLayoutHeader>
+        </Header1>
         <p className="text-neutral-charcoal">
           <TranslatedText text="Discover new ways to collectively decide together." />
         </p>
