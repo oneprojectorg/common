@@ -30,10 +30,7 @@ export const ListPageLayoutHeader = ({
   return (
     <div className="flex flex-col px-0">
       <div
-        className={cn(
-          'font-serif !text-title-md text-neutral-black sm:!text-title-lg',
-          className,
-        )}
+        className={cn('font-serif text-headline text-foreground', className)}
       >
         {children}
       </div>

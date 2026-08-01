@@ -3,6 +3,7 @@ import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import Image from 'next/image';
 
@@ -74,7 +75,7 @@ export const ProfileSummaryList = ({
                 avatar
               )}
 
-              <div className="flex flex-col gap-3 text-neutral-black">
+              <div className="flex flex-col gap-3 text-foreground">
                 <div className="flex flex-col gap-2">
                   {canLinkToProfile ? (
                     <Link
@@ -91,13 +92,13 @@ export const ProfileSummaryList = ({
                   {whereWeWork?.length > 0 ? (
                     <span
                       dir="auto"
-                      className="text-sm text-neutral-gray4 sm:text-base"
+                      className="text-sm text-muted-foreground sm:text-base"
                     >
                       {whereWeWork}
                     </span>
                   ) : null}
                 </div>
-                <span dir="auto" className="text-neutral-charcoal">
+                <span dir="auto" className="text-foreground">
                   {trimmedBio}
                 </span>
               </div>
@@ -113,14 +114,14 @@ export const ProfileListSkeleton = () => {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="rounded-lg border bg-white p-4 shadow-xs">
+        <div key={index} className="rounded-lg border bg-card p-4 shadow-xs">
           <div className="flex items-start gap-4">
-            <div className="size-12 shrink-0 animate-pulse rounded-full bg-gray-200" />
+            <Skeleton className="size-12 shrink-0 rounded-full" />
             <div className="min-w-0 flex-1">
-              <div className="mb-2 h-4 animate-pulse rounded bg-gray-200" />
-              <div className="mb-2 h-3 w-2/3 animate-pulse rounded bg-gray-200" />
-              <div className="mb-1 h-3 w-full animate-pulse rounded bg-gray-200" />
-              <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
+              <Skeleton className="mb-2 h-4" />
+              <Skeleton className="mb-2 h-3 w-2/3" />
+              <Skeleton className="mb-1 h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
             </div>
           </div>
         </div>
