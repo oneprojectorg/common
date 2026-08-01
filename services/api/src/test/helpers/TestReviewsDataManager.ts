@@ -20,6 +20,10 @@ import { eq } from 'drizzle-orm';
 import { supabaseTestAdminClient } from '../supabase-utils';
 import { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
+type DecisionProcessSchema = NonNullable<
+  Parameters<TestDecisionsDataManager['createDecisionSetup']>[0]
+>['processSchema'];
+
 interface ReviewParticipant {
   authUserId: string;
   email: string;
@@ -45,6 +49,8 @@ interface CreateReviewAssignmentOptions {
   title?: string;
   description?: string;
   status?: ProposalReviewAssignmentStatus;
+  /** Phase the assignment is pinned to (defaults to `'review'`). */
+  phaseId?: string;
 }
 
 /** Creates review-focused test fixtures on top of the decision test setup. */
@@ -61,11 +67,13 @@ export class TestReviewsDataManager {
   }
 
   /** Creates a configured review context for review API tests. */
-  async createContext(): Promise<ReviewAssignmentContext> {
+  async createContext(
+    opts: { processSchema?: DecisionProcessSchema } = {},
+  ): Promise<ReviewAssignmentContext> {
     const setup = await this.decisions.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
-      processSchema: testSimpleVotingSchema,
+      processSchema: opts.processSchema ?? testSimpleVotingSchema,
     });
 
     const instance = setup.instance;
@@ -320,6 +328,7 @@ export class TestReviewsDataManager {
         ...(opts.description ? { description: opts.description } : {}),
       },
       assignmentStatus: opts.status,
+      phaseId: opts.phaseId,
     });
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
