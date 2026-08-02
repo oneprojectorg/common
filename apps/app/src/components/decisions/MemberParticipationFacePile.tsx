@@ -1,9 +1,8 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { GrowingFacePile } from '@op/ui/GrowingFacePile';
-import { cn } from '@op/ui/utils';
-import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { GrowingFacePile } from '@op/sense/FacePile';
+import { cn } from '@op/sense/lib/utils';
 
 import { Link, useTranslations } from '@/lib/i18n/routing';
 
@@ -40,15 +39,17 @@ export const MemberParticipationFacePile = ({
         maxItems={20}
         totalCount={hasSubmitters ? total : undefined}
         items={submitters.map((submitter) => {
-          const avatarImage = submitter.avatarImage?.name ? (
-            <Image
-              src={getPublicUrl(submitter.avatarImage.name) ?? ''}
-              alt={submitter.name || submitter.slug || ''}
-              width={32}
-              height={32}
-              className="aspect-square object-cover"
-            />
-          ) : null;
+          const avatarChildren = (
+            <>
+              {submitter.avatarImage?.name ? (
+                <AvatarImage
+                  src={getPublicUrl(submitter.avatarImage.name) ?? ''}
+                  alt={submitter.name || submitter.slug || ''}
+                />
+              ) : null}
+              <AvatarFallback name={submitter.name || submitter.slug || 'U'} />
+            </>
+          );
 
           // Public/non-member viewers can't reach the profile page, so render
           // the avatar without a link.
@@ -58,18 +59,11 @@ export const MemberParticipationFacePile = ({
               href={`/profile/${submitter.slug}`}
               className="hover:no-underline"
             >
-              <Avatar placeholder={submitter.name || submitter.slug || 'U'}>
-                {avatarImage}
-              </Avatar>
+              <Avatar>{avatarChildren}</Avatar>
               <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
             </Link>
           ) : (
-            <Avatar
-              key={submitter.slug}
-              placeholder={submitter.name || submitter.slug || 'U'}
-            >
-              {avatarImage}
-            </Avatar>
+            <Avatar key={submitter.slug}>{avatarChildren}</Avatar>
           );
         })}
       >

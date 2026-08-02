@@ -1,8 +1,14 @@
 'use client';
 
 import type { BoundaryShape } from '@op/api/encoders';
-import { Layer, type LayerProps, type LngLat, Map, Source } from '@op/ui/Map';
-import { MapMarker } from '@op/ui/MapMarker';
+import {
+  Layer,
+  type LayerProps,
+  type LngLat,
+  Map,
+  MapMarker,
+  Source,
+} from '@op/sense/Map';
 import { useMemo } from 'react';
 
 export interface MapCanvasProps {
@@ -58,7 +64,7 @@ const BOUNDARY_OUTLINE_LAYER: LayerProps = {
 };
 
 /**
- * The only module that imports `maplibre-gl` (via `@op/ui/Map`). It is loaded
+ * The only module that imports `maplibre-gl` (via `@op/sense/Map`). It is loaded
  * exclusively through `next/dynamic({ ssr: false })` so the heavy, browser-only
  * map library never enters the server bundle — which both avoids SSR `window`
  * access and keeps it out of the route's server compile (a static import here

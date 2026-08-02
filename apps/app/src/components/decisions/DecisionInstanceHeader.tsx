@@ -2,11 +2,10 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { ButtonLink } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { Header2 } from '@op/sense/Header';
+import { MegaphoneIcon } from '@op/sense/icons';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
@@ -120,15 +119,15 @@ export const DecisionInstanceHeader = ({
             />
           </Suspense>
           {isAdmin && decisionSlug && (
-            <ButtonLink
-              href={`/decisions/${decisionSlug}/edit`}
-              color="secondary"
-              size="small"
+            <Button
+              render={<Link href={`/decisions/${decisionSlug}/edit`} />}
+              variant="outline"
+              size="sm"
               className="p-2"
               aria-label={t('Settings')}
             >
               <LuSettings className="size-4" />
-            </ButtonLink>
+            </Button>
           )}
           <SupportLink />
           <LocaleChooser />
@@ -180,10 +179,10 @@ const DecisionUpdatesToggle = ({
   const isOpen = panel !== null;
 
   return (
-    <IconButton
+    <Button
       variant="outline"
-      size="medium"
-      onPress={() => setPanel(isOpen ? null : 'updates')}
+      size="icon-sm"
+      onClick={() => setPanel(isOpen ? null : 'updates')}
       aria-label={ariaLabel}
       aria-pressed={isOpen}
       className={
@@ -191,6 +190,6 @@ const DecisionUpdatesToggle = ({
       }
     >
       <MegaphoneIcon className="size-4" />
-    </IconButton>
+    </Button>
   );
 };

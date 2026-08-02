@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { LuFileQuestion } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

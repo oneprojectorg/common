@@ -1,11 +1,12 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { Checkbox } from '@op/ui/Checkbox';
-import { Header1 } from '@op/ui/Header';
-import { Modal } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import { Dialog, DialogContent } from '@op/sense/Dialog';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Header1 } from '@op/sense/Header';
+import { CheckIcon } from '@op/sense/icons';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
 import { LuUserRoundMinus, LuUserRoundPlus } from 'react-icons/lu';
@@ -38,18 +39,14 @@ export const PromoteAccountModal = () => {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={(open) => (open ? null : close())}
-      isDismissable={false}
-      isKeyboardDismissDisabled
-      className="sm:max-w-[29rem]"
-    >
-      <PromoteAccountModalContent
-        onContinueAsGuest={close}
-        proposalId={proposalId}
-      />
-    </Modal>
+    <Dialog open={isOpen}>
+      <DialogContent showCloseButton={false} className="sm:max-w-[29rem]">
+        <PromoteAccountModalContent
+          onContinueAsGuest={close}
+          proposalId={proposalId}
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -110,26 +107,33 @@ const PromoteAccountModalContent = ({
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
               acceptance isn't persisted for the anon account. Pending team
               decision on what accepting terms means for an anonymous user. */}
-          <Checkbox size="small" isSelected={agreed} onChange={setAgreed}>
-            <span className="text-sm">
-              {t.rich(
-                'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
-                {
-                  tos: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/tos">{chunks}</PolicyLink>
-                  ),
-                  privacy: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
-                  ),
-                },
-              )}
-            </span>
-          </Checkbox>
+          <Field orientation="horizontal">
+            <Checkbox
+              id="promote-tos"
+              checked={agreed}
+              onCheckedChange={setAgreed}
+            />
+            <FieldLabel htmlFor="promote-tos">
+              <span className="text-sm">
+                {t.rich(
+                  'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
+                  {
+                    tos: (chunks: ReactNode) => (
+                      <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+                    ),
+                    privacy: (chunks: ReactNode) => (
+                      <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+                    ),
+                  },
+                )}
+              </span>
+            </FieldLabel>
+          </Field>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full"
-            isDisabled={!agreed}
-            onPress={onContinueAsGuest}
+            disabled={!agreed}
+            onClick={onContinueAsGuest}
           >
             {t('Continue as guest')}
           </Button>
@@ -150,7 +154,7 @@ const PromoteAccountModalContent = ({
               'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
             )}
           </p>
-          <Button className="w-full" onPress={goToLogin}>
+          <Button className="w-full" onClick={goToLogin}>
             {t('Create account')}
           </Button>
         </section>

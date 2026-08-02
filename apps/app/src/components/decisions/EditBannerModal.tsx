@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import { useState } from 'react';
 import { LuImage } from 'react-icons/lu';
 
@@ -26,10 +26,10 @@ export function EditBannerModal({
   return (
     <>
       <Button
-        color="secondary"
-        size="small"
+        variant="outline"
+        size="sm"
         className="absolute top-4 right-4 z-10 hidden md:flex"
-        onPress={() => setIsOpen(true)}
+        onClick={() => setIsOpen(true)}
       >
         <LuImage className="size-4" aria-hidden="true" />
         {t('Edit banner')}

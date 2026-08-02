@@ -1,5 +1,5 @@
-import { GradientHeader, Header1 } from '@op/ui/Header';
-import { cn } from '@op/ui/utils';
+import { GradientHeader, Header1 } from '@op/sense/Header';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 export function DecisionHero({

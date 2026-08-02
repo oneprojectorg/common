@@ -7,9 +7,14 @@ import {
 } from '@/hooks/useClaimAccount';
 import { useUser } from '@/utils/UserProvider';
 import type { CommonUser } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Spinner } from '@op/sense/Spinner';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
@@ -51,15 +56,11 @@ export const JoinAccountModal = () => {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={(open) => (open ? null : close())}
-      isDismissable
-      surface="flat"
-      className="sm:max-w-128"
-    >
-      <JoinAccountModalContent />
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={(open) => (open ? null : close())}>
+      <DialogContent className="sm:max-w-128">
+        <JoinAccountModalContent />
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -76,10 +77,10 @@ export const JoinDecisionButton = ({
 
   return (
     <Button
-      color="primary"
-      size="small"
+      variant="default"
+      size="sm"
       aria-describedby={ariaDescribedBy}
-      onPress={() => {
+      onClick={() => {
         void setJoin('1');
       }}
     >
@@ -96,9 +97,9 @@ export const JoinDecisionButtonFallback = () => {
   const t = useTranslations();
 
   return (
-    <ButtonLink href="?join=1" color="primary" size="small">
+    <Button render={<a href="?join=1" />} variant="default" size="sm">
       {t('Join')}
-    </ButtonLink>
+    </Button>
   );
 };
 
@@ -212,13 +213,13 @@ const JoinAccountModalContent = () => {
 
   return (
     <>
-      {/* ModalHeader renders the dismiss X (Modal's isDismissable) and a
-          slot="title" heading that names the dialog. pt compensates for the
-          flat surface's built-in pt-6 to hit p-8 / sm:pt-12 overall. */}
-      <ModalHeader className="pt-2 text-title-lg text-neutral-black sm:pt-6 sm:text-title-lg">
-        {otpSent ? t('Email sent!') : t('Claim your account')}
-      </ModalHeader>
-      <ModalBody className="gap-6 px-8 pt-2 pb-8 text-center sm:px-12 sm:pb-12">
+      {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
+      <DialogHeader>
+        <DialogTitle className="pt-2 text-title-lg text-neutral-black sm:pt-6 sm:text-title-lg">
+          {otpSent ? t('Email sent!') : t('Claim your account')}
+        </DialogTitle>
+      </DialogHeader>
+      <div className="flex flex-col gap-6 px-8 pt-2 pb-8 text-center sm:px-12 sm:pb-12">
         <p className="text-base text-neutral-charcoal">
           {otpSent
             ? t(
@@ -248,14 +249,14 @@ const JoinAccountModalContent = () => {
             />
             <Button
               className="w-full"
-              isDisabled={isSubmitting || !isValidOtpLength(token)}
-              onPress={() => {
+              disabled={isSubmitting || !isValidOtpLength(token)}
+              onClick={() => {
                 void submitToken();
               }}
             >
-              {isSubmitting ? <LoadingSpinner /> : t('Create profile')}
+              {isSubmitting ? <Spinner /> : t('Create profile')}
             </Button>
-            <Button color="secondary" className="w-full" onPress={goBack}>
+            <Button variant="outline" className="w-full" onClick={goBack}>
               {t('Go back')}
             </Button>
           </div>
@@ -276,12 +277,12 @@ const JoinAccountModalContent = () => {
             </div>
             <Button
               className="w-full"
-              isDisabled={isSubmitting || !emailIsValid}
-              onPress={() => {
+              disabled={isSubmitting || !emailIsValid}
+              onClick={() => {
                 void submitEmail();
               }}
             >
-              {isSubmitting ? <LoadingSpinner /> : t('Join')}
+              {isSubmitting ? <Spinner /> : t('Join')}
             </Button>
             <p className="text-neutral-charcoal">
               {t.rich('Already have an account? <login>Log in</login>', {
@@ -294,7 +295,7 @@ const JoinAccountModalContent = () => {
             </p>
           </div>
         )}
-      </ModalBody>
+      </div>
     </>
   );
 };

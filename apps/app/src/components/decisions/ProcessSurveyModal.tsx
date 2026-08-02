@@ -3,15 +3,35 @@
 import type { SurveyInternalData } from '@op/api';
 import { trpc } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
-import { Form } from '@op/ui/Form';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
 import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -224,211 +244,327 @@ export const ProcessSurveyModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} className="flex flex-col">
-      <ModalHeader>{t('Your voice shapes Common.')}</ModalHeader>
-      <Form
-        onSubmit={handleSubmit}
-        validationBehavior="aria"
-        className="flex flex-1 flex-col gap-0"
+    <Dialog open={isOpen}>
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0"
       >
-        <ModalBody className="flex-1 gap-6">
-          <p className="text-base text-neutral-charcoal">
-            {t(
-              'Take our 1-minute survey. Your responses are always anonymous.',
-            )}
-          </p>
+        <DialogHeader>
+          <DialogTitle>{t('Your voice shapes Common.')}</DialogTitle>
+        </DialogHeader>
+        <form
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col gap-0"
+        >
+          <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
+            <p className="text-base text-neutral-charcoal">
+              {t(
+                'Take our 1-minute survey. Your responses are always anonymous.',
+              )}
+            </p>
 
-          <RadioGroup
-            label={t('Were you an admin during this process?')}
-            isRequired
-            value={wasAdmin}
-            onChange={(value) => {
-              setWasAdmin(value);
-              setErrors((prev) => ({ ...prev, wasAdmin: undefined }));
-            }}
-            errorMessage={errors.wasAdmin}
-            isInvalid={!!errors.wasAdmin}
-            orientation="horizontal"
-          >
-            <Radio value="yes">{t('Yes')}</Radio>
-            <Radio value="no">{t('No')}</Radio>
-          </RadioGroup>
+            <FieldSet>
+              <FieldLegend>
+                {t('Were you an admin during this process?')}{' '}
+                <RequiredAsterisk />
+              </FieldLegend>
+              <RadioGroup
+                value={wasAdmin}
+                onValueChange={(value) => {
+                  setWasAdmin(value == null ? null : String(value));
+                  setErrors((prev) => ({ ...prev, wasAdmin: undefined }));
+                }}
+                aria-invalid={!!errors.wasAdmin}
+                className="flex flex-row gap-4"
+              >
+                <Field orientation="horizontal">
+                  <RadioGroupItem id="was-admin-yes" value="yes" />
+                  <FieldLabel htmlFor="was-admin-yes">{t('Yes')}</FieldLabel>
+                </Field>
+                <Field orientation="horizontal">
+                  <RadioGroupItem id="was-admin-no" value="no" />
+                  <FieldLabel htmlFor="was-admin-no">{t('No')}</FieldLabel>
+                </Field>
+              </RadioGroup>
+              {errors.wasAdmin ? (
+                <FieldError>{errors.wasAdmin}</FieldError>
+              ) : null}
+            </FieldSet>
 
-          {isMobile ? (
-            <Select
-              label={t(
-                'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
-              )}
-              isRequired
-              selectedKey={npsScore}
-              onSelectionChange={(key) => {
-                setNpsScore(key == null ? null : String(key));
-                setErrors((prev) => ({ ...prev, npsScore: undefined }));
-              }}
-              description={t(
-                '0 ("Not at all likely") to 10 ("Extremely likely")',
-              )}
-              errorMessage={errors.npsScore}
-              placeholder={t('Select a rating')}
-            >
-              {NPS_SCORES.map((score) => (
-                <SelectItem key={score} id={score}>
-                  {score}
-                </SelectItem>
-              ))}
-            </Select>
-          ) : (
-            <RadioGroup
-              label={t(
-                'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
-              )}
-              isRequired
-              value={npsScore}
-              onChange={(value) => {
-                setNpsScore(value);
-                setErrors((prev) => ({ ...prev, npsScore: undefined }));
-              }}
-              description={t(
-                '0 ("Not at all likely") to 10 ("Extremely likely")',
-              )}
-              errorMessage={errors.npsScore}
-              isInvalid={!!errors.npsScore}
-              orientation="horizontal"
-              className="[&>div]:w-full [&>div]:justify-between [&>div]:gap-0"
-            >
-              {NPS_SCORES.map((score) => (
-                <Radio
-                  key={score}
-                  value={score}
-                  labelPosition="bottom"
-                  className="flex-1"
+            {isMobile ? (
+              <Field data-invalid={!!errors.npsScore}>
+                <FieldLabel htmlFor="nps-select">
+                  {t(
+                    'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
+                  )}{' '}
+                  <RequiredAsterisk />
+                </FieldLabel>
+                <Select
+                  required
+                  value={npsScore}
+                  onValueChange={(value) => {
+                    setNpsScore(value == null ? null : String(value));
+                    setErrors((prev) => ({ ...prev, npsScore: undefined }));
+                  }}
                 >
-                  {score}
-                </Radio>
-              ))}
-            </RadioGroup>
-          )}
-
-          {isPromoterCohort && (
-            <CheckboxGroup
-              label={t('What makes Common worth recommending?')}
-              description={t('Select all that apply')}
-              isRequired
-              value={promoterReasons}
-              onChange={(value) => {
-                setPromoterReasons(value);
-                setErrors((prev) => ({ ...prev, promoterReasons: undefined }));
-              }}
-              errorMessage={errors.promoterReasons}
-              isInvalid={!!errors.promoterReasons}
-            >
-              {promoterOrder.map((id) => (
-                <Checkbox key={id} value={id} size="small">
-                  {promoterLabels[id]}
-                </Checkbox>
-              ))}
-              <Checkbox value={OTHER_OPTION_ID} size="small">
-                {t('Other')}
-              </Checkbox>
-              {promoterReasons.includes(OTHER_OPTION_ID) && (
-                <TextField
-                  aria-label={t('Other')}
-                  useTextArea
-                  value={promoterReasonsOther}
-                  onChange={(value) => {
-                    setPromoterReasonsOther(value);
-                    setErrors((prev) => ({
-                      ...prev,
-                      promoterReasonsOther: undefined,
-                    }));
+                  <SelectTrigger
+                    id="nps-select"
+                    className="w-full"
+                    aria-invalid={!!errors.npsScore}
+                  >
+                    <SelectValue placeholder={t('Select a rating')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NPS_SCORES.map((score) => (
+                      <SelectItem key={score} value={score}>
+                        {score}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  {t('0 ("Not at all likely") to 10 ("Extremely likely")')}
+                </FieldDescription>
+                {errors.npsScore ? (
+                  <FieldError>{errors.npsScore}</FieldError>
+                ) : null}
+              </Field>
+            ) : (
+              <FieldSet>
+                <FieldLegend>
+                  {t(
+                    'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
+                  )}{' '}
+                  <RequiredAsterisk />
+                </FieldLegend>
+                <RadioGroup
+                  value={npsScore}
+                  onValueChange={(value) => {
+                    setNpsScore(value == null ? null : String(value));
+                    setErrors((prev) => ({ ...prev, npsScore: undefined }));
                   }}
-                  errorMessage={errors.promoterReasonsOther}
-                  textareaProps={{ rows: 2, placeholder: t('Tell us more') }}
-                />
-              )}
-            </CheckboxGroup>
-          )}
-
-          {isDetractorCohort && (
-            <CheckboxGroup
-              label={t('What prevents you from recommending Common?')}
-              description={t('Select all that apply')}
-              isRequired
-              value={detractorReasons}
-              onChange={(value) => {
-                setDetractorReasons(value);
-                setErrors((prev) => ({ ...prev, detractorReasons: undefined }));
-              }}
-              errorMessage={errors.detractorReasons}
-              isInvalid={!!errors.detractorReasons}
-            >
-              {detractorOrder.map((id) => (
-                <Checkbox key={id} value={id} size="small">
-                  {detractorLabels[id]}
-                </Checkbox>
-              ))}
-              <Checkbox value={OTHER_OPTION_ID} size="small">
-                {t('Other')}
-              </Checkbox>
-              {detractorReasons.includes(OTHER_OPTION_ID) && (
-                <TextField
-                  aria-label={t('Other')}
-                  useTextArea
-                  value={detractorReasonsOther}
-                  onChange={(value) => {
-                    setDetractorReasonsOther(value);
-                    setErrors((prev) => ({
-                      ...prev,
-                      detractorReasonsOther: undefined,
-                    }));
-                  }}
-                  errorMessage={errors.detractorReasonsOther}
-                  textareaProps={{ rows: 2, placeholder: t('Tell us more') }}
-                />
-              )}
-            </CheckboxGroup>
-          )}
-
-          <TextField
-            label={t(
-              'Any specific features we should fix, improve or keep? Any features we should add? We actually read these!',
+                  aria-invalid={!!errors.npsScore}
+                  className="flex w-full flex-row justify-between gap-0"
+                >
+                  {NPS_SCORES.map((score) => (
+                    <Field key={score} className="flex-1 items-center gap-1">
+                      <RadioGroupItem id={`nps-${score}`} value={score} />
+                      <FieldLabel htmlFor={`nps-${score}`}>{score}</FieldLabel>
+                    </Field>
+                  ))}
+                </RadioGroup>
+                <FieldDescription>
+                  {t('0 ("Not at all likely") to 10 ("Extremely likely")')}
+                </FieldDescription>
+                {errors.npsScore ? (
+                  <FieldError>{errors.npsScore}</FieldError>
+                ) : null}
+              </FieldSet>
             )}
-            useTextArea
-            value={additionalFeedback}
-            onChange={setAdditionalFeedback}
-            textareaProps={{ rows: 3 }}
-          />
 
-          <TextField
-            label={t("Anything else you'd like to share?")}
-            useTextArea
-            value={additionalComments}
-            onChange={setAdditionalComments}
-            textareaProps={{ rows: 3 }}
-          />
-        </ModalBody>
-        <ModalFooter className="sticky">
-          <Button
-            type="button"
-            variant="link"
-            onPress={onSkip}
-            isDisabled={submitSurvey.isPending}
-            className="w-full sm:w-auto"
-          >
-            {t('Maybe later')}
-          </Button>
-          <Button
-            type="submit"
-            color="primary"
-            className="w-full sm:w-auto"
-            isDisabled={submitSurvey.isPending}
-          >
-            {submitSurvey.isPending
-              ? t('Submitting...')
-              : t('Submit & view results')}
-          </Button>
-        </ModalFooter>
-      </Form>
-    </Modal>
+            {isPromoterCohort && (
+              <FieldSet>
+                <FieldLegend>
+                  {t('What makes Common worth recommending?')}{' '}
+                  <RequiredAsterisk />
+                </FieldLegend>
+                <FieldDescription>
+                  {t('Select all that apply')}
+                </FieldDescription>
+                {promoterOrder.map((id) => (
+                  <Field key={id} orientation="horizontal">
+                    <Checkbox
+                      id={`promoter-${id}`}
+                      checked={promoterReasons.includes(id)}
+                      onCheckedChange={(checked) => {
+                        setPromoterReasons((prev) =>
+                          checked
+                            ? [...prev, id]
+                            : prev.filter((v) => v !== id),
+                        );
+                        setErrors((prev) => ({
+                          ...prev,
+                          promoterReasons: undefined,
+                        }));
+                      }}
+                    />
+                    <FieldLabel htmlFor={`promoter-${id}`}>
+                      {promoterLabels[id]}
+                    </FieldLabel>
+                  </Field>
+                ))}
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="promoter-other"
+                    checked={promoterReasons.includes(OTHER_OPTION_ID)}
+                    onCheckedChange={(checked) => {
+                      setPromoterReasons((prev) =>
+                        checked
+                          ? [...prev, OTHER_OPTION_ID]
+                          : prev.filter((v) => v !== OTHER_OPTION_ID),
+                      );
+                      setErrors((prev) => ({
+                        ...prev,
+                        promoterReasons: undefined,
+                      }));
+                    }}
+                  />
+                  <FieldLabel htmlFor="promoter-other">{t('Other')}</FieldLabel>
+                </Field>
+                {promoterReasons.includes(OTHER_OPTION_ID) && (
+                  <Textarea
+                    aria-label={t('Other')}
+                    rows={2}
+                    placeholder={t('Tell us more')}
+                    value={promoterReasonsOther}
+                    onChange={(e) => {
+                      setPromoterReasonsOther(e.target.value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        promoterReasonsOther: undefined,
+                      }));
+                    }}
+                    aria-invalid={!!errors.promoterReasonsOther}
+                    className="[unicode-bidi:plaintext]"
+                  />
+                )}
+                {errors.promoterReasons ? (
+                  <FieldError>{errors.promoterReasons}</FieldError>
+                ) : null}
+                {errors.promoterReasonsOther ? (
+                  <FieldError>{errors.promoterReasonsOther}</FieldError>
+                ) : null}
+              </FieldSet>
+            )}
+
+            {isDetractorCohort && (
+              <FieldSet>
+                <FieldLegend>
+                  {t('What prevents you from recommending Common?')}{' '}
+                  <RequiredAsterisk />
+                </FieldLegend>
+                <FieldDescription>
+                  {t('Select all that apply')}
+                </FieldDescription>
+                {detractorOrder.map((id) => (
+                  <Field key={id} orientation="horizontal">
+                    <Checkbox
+                      id={`detractor-${id}`}
+                      checked={detractorReasons.includes(id)}
+                      onCheckedChange={(checked) => {
+                        setDetractorReasons((prev) =>
+                          checked
+                            ? [...prev, id]
+                            : prev.filter((v) => v !== id),
+                        );
+                        setErrors((prev) => ({
+                          ...prev,
+                          detractorReasons: undefined,
+                        }));
+                      }}
+                    />
+                    <FieldLabel htmlFor={`detractor-${id}`}>
+                      {detractorLabels[id]}
+                    </FieldLabel>
+                  </Field>
+                ))}
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="detractor-other"
+                    checked={detractorReasons.includes(OTHER_OPTION_ID)}
+                    onCheckedChange={(checked) => {
+                      setDetractorReasons((prev) =>
+                        checked
+                          ? [...prev, OTHER_OPTION_ID]
+                          : prev.filter((v) => v !== OTHER_OPTION_ID),
+                      );
+                      setErrors((prev) => ({
+                        ...prev,
+                        detractorReasons: undefined,
+                      }));
+                    }}
+                  />
+                  <FieldLabel htmlFor="detractor-other">
+                    {t('Other')}
+                  </FieldLabel>
+                </Field>
+                {detractorReasons.includes(OTHER_OPTION_ID) && (
+                  <Textarea
+                    aria-label={t('Other')}
+                    rows={2}
+                    placeholder={t('Tell us more')}
+                    value={detractorReasonsOther}
+                    onChange={(e) => {
+                      setDetractorReasonsOther(e.target.value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        detractorReasonsOther: undefined,
+                      }));
+                    }}
+                    aria-invalid={!!errors.detractorReasonsOther}
+                    className="[unicode-bidi:plaintext]"
+                  />
+                )}
+                {errors.detractorReasons ? (
+                  <FieldError>{errors.detractorReasons}</FieldError>
+                ) : null}
+                {errors.detractorReasonsOther ? (
+                  <FieldError>{errors.detractorReasonsOther}</FieldError>
+                ) : null}
+              </FieldSet>
+            )}
+
+            <Field>
+              <FieldLabel htmlFor="additional-feedback">
+                {t(
+                  'Any specific features we should fix, improve or keep? Any features we should add? We actually read these!',
+                )}
+              </FieldLabel>
+              <Textarea
+                id="additional-feedback"
+                rows={3}
+                value={additionalFeedback}
+                onChange={(e) => setAdditionalFeedback(e.target.value)}
+                className="[unicode-bidi:plaintext]"
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="additional-comments">
+                {t("Anything else you'd like to share?")}
+              </FieldLabel>
+              <Textarea
+                id="additional-comments"
+                rows={3}
+                value={additionalComments}
+                onChange={(e) => setAdditionalComments(e.target.value)}
+                className="[unicode-bidi:plaintext]"
+              />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="link"
+              onClick={onSkip}
+              disabled={submitSurvey.isPending}
+              className="w-full sm:w-auto"
+            >
+              {t('Maybe later')}
+            </Button>
+            <Button
+              type="submit"
+              variant="default"
+              className="w-full sm:w-auto"
+              disabled={submitSurvey.isPending}
+            >
+              {submitSurvey.isPending
+                ? t('Submitting...')
+                : t('Submit & view results')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

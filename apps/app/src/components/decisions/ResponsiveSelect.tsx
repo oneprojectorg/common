@@ -1,18 +1,19 @@
 'use client';
 
 import { useMediaQuery } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import { Dialog, DialogContent } from '@op/sense/Dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { MenuItem, MenuList } from '@op/ui/Menu';
-import { Modal, ModalBody } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
-
-const BOTTOM_SHEET_OVERLAY_CLASS =
-  'p-0 items-end justify-center animate-in fade-in-0 duration-300';
-const BOTTOM_SHEET_CLASS =
-  'm-0 h-auto max-h-[calc(100svh-5rem)] w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full';
 
 interface SelectOption<T extends string> {
   id: T;
@@ -55,6 +56,7 @@ export function ResponsiveSelect<T extends string>({
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isOpen, setIsOpen] = useState(false);
 
+  const triggerSize = size === 'small' ? 'sm' : 'default';
   const selectedItem = items.find((item) => item.id === selectedKey);
   const displayLabel = renderSelectedLabel
     ? renderSelectedLabel(selectedItem)
@@ -64,70 +66,79 @@ export function ResponsiveSelect<T extends string>({
     return (
       <>
         <Button
-          color="secondary"
-          size={size}
+          variant="outline"
+          size={triggerSize}
           className={`${className} max-w-48 shrink-0 justify-between shadow-none`}
-          onPress={() => setIsOpen(true)}
+          onClick={() => setIsOpen(true)}
         >
           <span className="min-w-0 overflow-hidden whitespace-nowrap">
             {displayLabel}
           </span>
           <LuChevronDown className="size-4 shrink-0" />
         </Button>
-        <Modal
-          isOpen={isOpen}
-          onOpenChange={setIsOpen}
-          isDismissable={true}
-          isKeyboardDismissDisabled={false}
-          overlayClassName={BOTTOM_SHEET_OVERLAY_CLASS}
-          className={BOTTOM_SHEET_CLASS}
-        >
-          <ModalBody className="pb-safe p-0">
-            <MenuList
-              selectionMode="single"
-              selectedKeys={[selectedKey]}
-              className="flex min-w-full flex-col border-0 p-0 shadow-none"
-            >
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent
+            aria-label={ariaLabel}
+            showCloseButton={false}
+            className="top-auto bottom-0 left-1/2 m-0 h-auto max-h-[calc(100svh-5rem)] w-screen max-w-none -translate-x-1/2 translate-y-0 gap-0 rounded-t-2xl rounded-b-none border-0 p-0 duration-300 ease-out data-open:slide-in-from-bottom-full"
+          >
+            {/* TODO(sense-migration): the @op/ui Modal + MenuList bottom sheet
+                had no sense structural equivalent; this reproduces the sheet
+                with a Dialog + native option buttons. Roving keyboard
+                selection from react-aria's MenuList is replaced by native
+                button focus. */}
+            <div className="pb-safe flex flex-col p-0">
               {items.map((item, index) => (
-                <MenuItem
+                <button
                   key={item.id}
-                  id={item.id}
-                  textValue={item.textValue}
-                  isDisabled={item.isDisabled}
-                  className={`bg-transparent px-6 py-4 outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-                  onAction={() => {
+                  type="button"
+                  disabled={item.isDisabled}
+                  className={cn(
+                    'bg-transparent px-6 py-4 text-start outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal disabled:pointer-events-none disabled:opacity-50',
+                    index === 0
+                      ? 'rounded-t-2xl rounded-b-none'
+                      : 'rounded-none',
+                    index < items.length - 1 && 'border-b border-neutral-gray1',
+                    item.id === selectedKey && 'bg-primary-tealWhite',
+                  )}
+                  onClick={() => {
                     onSelectionChange(item.id);
                     setIsOpen(false);
                   }}
                 >
                   {item.label}
-                </MenuItem>
+                </button>
               ))}
-            </MenuList>
-          </ModalBody>
-        </Modal>
+            </div>
+          </DialogContent>
+        </Dialog>
       </>
     );
   }
 
   return (
     <Select
-      selectedKey={selectedKey}
-      size={size}
-      className={className}
-      onSelectionChange={(key) => onSelectionChange(key as T)}
-      aria-label={ariaLabel}
+      value={selectedKey}
+      onValueChange={(value) => {
+        if (value !== null) {
+          onSelectionChange(value);
+        }
+      }}
     >
-      {items.map((item) => (
-        <SelectItem
-          key={item.id}
-          id={item.id}
-          textValue={item.textValue}
-          isDisabled={item.isDisabled}
-        >
-          {item.label}
-        </SelectItem>
-      ))}
+      <SelectTrigger
+        size={triggerSize}
+        className={className}
+        aria-label={ariaLabel}
+      >
+        <SelectValue>{() => displayLabel}</SelectValue>
+      </SelectTrigger>
+      <SelectContent size={triggerSize}>
+        {items.map((item) => (
+          <SelectItem key={item.id} value={item.id} disabled={item.isDisabled}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
     </Select>
   );
 }

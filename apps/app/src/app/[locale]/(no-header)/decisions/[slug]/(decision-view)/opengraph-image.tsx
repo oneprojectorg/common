@@ -1,6 +1,6 @@
 import { OPURLConfig, getTextPreview } from '@op/core';
 import { logger } from '@op/logging';
-import { getAvatarColorForString } from '@op/ui/utils';
+import { getAvatarColorForString } from '@op/styles/constants';
 import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 

@@ -3,8 +3,13 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { Suspense } from 'react';
 import { LuClock, LuTriangleAlert } from 'react-icons/lu';
 
@@ -114,26 +119,36 @@ export function StandardDecisionPage({
         )}
         <div className="flex w-full flex-col gap-6 p-4 sm:max-w-6xl sm:p-8">
           {isAwaitingFinalResults ? (
-            <EmptyState icon={<LuClock className="size-6" />}>
-              <Header3 className="font-serif font-light">
-                {t('Results pending')}
-              </Header3>
-              <p className="text-base text-neutral-charcoal">
-                {t("Results for this process haven't been processed yet.")}
-              </p>
-            </EmptyState>
+            <Empty className="border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LuClock className="size-6" />
+                </EmptyMedia>
+                <EmptyTitle className="font-light">
+                  {t('Results pending')}
+                </EmptyTitle>
+                <EmptyDescription className="text-base text-neutral-charcoal">
+                  {t("Results for this process haven't been processed yet.")}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : !instance.selectionsAreConfirmed && isAdmin && decisionSlug ? (
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                    <Header3 className="font-serif font-light">
-                      {t("Couldn't load manual selection")}
-                    </Header3>
-                    <p className="text-base text-neutral-charcoal">
-                      {t('Refresh the page to try again.')}
-                    </p>
-                  </EmptyState>
+                  <Empty className="border-0">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <LuTriangleAlert className="size-6" />
+                      </EmptyMedia>
+                      <EmptyTitle className="font-light">
+                        {t("Couldn't load manual selection")}
+                      </EmptyTitle>
+                      <EmptyDescription className="text-base text-neutral-charcoal">
+                        {t('Refresh the page to try again.')}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ),
               }}
             >
@@ -148,14 +163,19 @@ export function StandardDecisionPage({
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                    <Header3 className="font-serif font-light">
-                      {t("Couldn't load proposals")}
-                    </Header3>
-                    <p className="text-base text-neutral-charcoal">
-                      {t('Refresh the page to try again.')}
-                    </p>
-                  </EmptyState>
+                  <Empty className="border-0">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <LuTriangleAlert className="size-6" />
+                      </EmptyMedia>
+                      <EmptyTitle className="font-light">
+                        {t("Couldn't load proposals")}
+                      </EmptyTitle>
+                      <EmptyDescription className="text-base text-neutral-charcoal">
+                        {t('Refresh the page to try again.')}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ),
               }}
             >

@@ -2,7 +2,7 @@
  * Pin the edge cases of the pure placement helper — fits, flips, just-fits,
  * cramped container, caller-supplied gap/buffer.
  */
-import { getMapPinHovercardPlacement } from '@op/ui/MapMarker';
+import { getMapPinHovercardPlacement } from '@op/sense/Map';
 import { describe, expect, it } from 'vitest';
 
 describe('getMapPinHovercardPlacement', () => {

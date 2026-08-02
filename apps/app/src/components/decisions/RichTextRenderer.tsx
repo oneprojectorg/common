@@ -7,7 +7,7 @@ import { logger } from '@op/logging';
 // Import from the viewerStyles subpath (not editorConfig or the barrel) so
 // this server component pulls neither the client editor nor the TipTap
 // extension set into the RSC graph — viewerProseStyles is a plain style string.
-import { viewerProseStyles } from '@op/ui/RichTextEditor/viewerStyles';
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import type { JSONContent } from '@tiptap/core';
 import { renderToReactElement } from '@tiptap/static-renderer/pm/react';
 import type { ReactNode } from 'react';

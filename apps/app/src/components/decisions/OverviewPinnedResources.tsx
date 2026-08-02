@@ -1,9 +1,9 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
 

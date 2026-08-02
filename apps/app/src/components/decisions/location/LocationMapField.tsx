@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { LocationData, MapDefaultView } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import type { LngLat } from '@op/ui/Map';
+import { Button } from '@op/sense/Button';
+import type { LngLat } from '@op/sense/Map';
 import { useCallback, useEffect, useState } from 'react';
 import { LuLocate } from 'react-icons/lu';
 
@@ -189,10 +189,9 @@ export function LocationMapField({
             )}
           </div>
           <Button
-            variant="icon"
-            color="secondary"
-            size="small"
-            onPress={handleUseMyLocation}
+            variant="outline"
+            size="sm"
+            onClick={handleUseMyLocation}
             className="shrink-0"
           >
             <LuLocate aria-hidden className="size-4" />

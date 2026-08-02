@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
-import { AlertBanner } from '@op/ui/AlertBanner';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import { useLocale } from 'next-intl';
 import { LuLock } from 'react-icons/lu';
 
@@ -35,16 +35,14 @@ export function HiddenProposalsBanner({
       : t('Proposals are private during this phase.');
 
   return (
-    <AlertBanner
-      variant="banner"
-      intent="warning"
-      fullWidth
-      icon={<LuLock className="size-4" />}
-      className="border-t-0 border-b-neutral-gray1"
+    <Alert
+      variant="warning"
+      className="rounded-none border-x-0 border-t-0 border-b-neutral-gray1"
       role="status"
       aria-live="polite"
     >
-      {message}
-    </AlertBanner>
+      <LuLock className="size-4" />
+      <AlertDescription>{message}</AlertDescription>
+    </Alert>
   );
 }
