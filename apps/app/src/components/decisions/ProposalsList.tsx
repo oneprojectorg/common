@@ -43,7 +43,6 @@ import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
 import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
 import { getProposalDetectionText } from './translationDetectionText';
-import { useProposalExport } from './useProposalExport';
 import { useTranslateDecision } from './useTranslateDecision';
 
 export interface ProposalsListProps {
@@ -430,14 +429,6 @@ const ProposalsListContent = ({
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
-  const {
-    startExport,
-    isExporting,
-    isDownloadReady,
-    downloadUrl,
-    downloadFileName,
-  } = useProposalExport();
-
   const canManageProposals = permissions?.admin ?? false;
 
   const { data: revisionRequestsData } =
@@ -470,19 +461,6 @@ const ProposalsListContent = ({
     decisionProfileId,
     needsTranslation,
   });
-
-  const handleExport = () => {
-    startExport(
-      {
-        processInstanceId: instanceId,
-        categoryId:
-          selectedCategory !== 'all-categories' ? selectedCategory : undefined,
-        dir: sortOrder === 'newest' ? 'desc' : 'asc',
-        proposalFilter,
-      },
-      'csv',
-    );
-  };
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
@@ -539,12 +517,6 @@ const ProposalsListContent = ({
           setSelectedCategory={setSelectedCategory}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
-          canManageProposals={canManageProposals}
-          isExporting={isExporting}
-          isDownloadReady={isDownloadReady}
-          downloadUrl={downloadUrl}
-          downloadFileName={downloadFileName}
-          onExport={handleExport}
           hasLocationField={hasLocationField}
           effectiveView={effectiveView}
           onViewChange={handleViewChange}

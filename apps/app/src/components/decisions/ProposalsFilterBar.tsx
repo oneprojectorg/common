@@ -1,8 +1,6 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { LuArrowDownToLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -43,12 +41,6 @@ export const ProposalsFilterBar = ({
   onSelectCategory,
   sortOrder,
   onSelectSort,
-  canManageProposals,
-  isExporting,
-  isDownloadReady,
-  downloadUrl,
-  downloadFileName,
-  onExport,
 }: {
   hasVoted: boolean;
   currentProfileId: string | undefined;
@@ -60,12 +52,6 @@ export const ProposalsFilterBar = ({
   onSelectCategory: (category: string) => void;
   sortOrder: string;
   onSelectSort: (sort: string) => void;
-  canManageProposals: boolean;
-  isExporting: boolean;
-  isDownloadReady: boolean;
-  downloadUrl?: string | null;
-  downloadFileName?: string | null;
-  onExport: () => void;
 }) => {
   const t = useTranslations();
   const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
@@ -99,29 +85,6 @@ export const ProposalsFilterBar = ({
           { id: 'oldest', label: t('Oldest First') },
         ]}
       />
-      {canManageProposals ? (
-        isDownloadReady && downloadUrl ? (
-          <ButtonLink
-            href={downloadUrl}
-            download={downloadFileName ?? undefined}
-            color="secondary"
-            size="small"
-          >
-            <LuArrowDownToLine className="size-4" />
-            {t('Click to download')}
-          </ButtonLink>
-        ) : (
-          <Button
-            onPress={onExport}
-            isDisabled={isExporting}
-            color="secondary"
-            size="small"
-          >
-            <LuArrowDownToLine className="size-4" />
-            {isExporting ? t('Exporting...') : t('Export')}
-          </Button>
-        )
-      ) : null}
     </>
   );
 };
