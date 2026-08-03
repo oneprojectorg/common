@@ -8,7 +8,7 @@ import {
 import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { getEligibleReviewerProfileIds } from './generateReviewAssignments';
+import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 
 const phaseOrderData = z
   .object({ phases: z.array(z.object({ phaseId: z.string() })).optional() })
@@ -63,7 +63,9 @@ export async function assignReviewsToReviewer({
   // Mirror the automatic path: only members holding the REVIEW capability on
   // the decision profile can be assigned reviews.
   const eligibleReviewerProfileIds = instance.profileId
-    ? await getEligibleReviewerProfileIds(instance.profileId)
+    ? await getEligibleReviewerProfileIds({
+        decisionProfileId: instance.profileId,
+      })
     : [];
 
   if (!eligibleReviewerProfileIds.includes(reviewerProfileId)) {

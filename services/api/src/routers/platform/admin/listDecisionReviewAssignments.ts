@@ -76,7 +76,9 @@ export const listDecisionReviewAssignmentsRouter = router({
             orderBy: { assignedAt: 'asc' },
           }),
           instance.profileId
-            ? getEligibleReviewerProfileIds(instance.profileId)
+            ? getEligibleReviewerProfileIds({
+                decisionProfileId: instance.profileId,
+              })
             : Promise.resolve<string[]>([]),
           // Same phase-scoped proposal set the product uses (transition
           // attachments + non-drafts created during the phase window) — a
