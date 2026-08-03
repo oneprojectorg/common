@@ -224,15 +224,20 @@ test.describe('Create Process Instance', () => {
       timeout: 6_000,
     });
 
-    // 12. Verify the participant preview shows the budget field
-    //     The preview renders an "Add budget" button when budget is enabled
+    // 12. Open the Participant Preview modal (toolbar "Preview" button) and
+    //     verify it renders the budget field's "Add budget" entry.
+    await authenticatedPage.getByRole('button', { name: 'Preview' }).click();
+    const previewDialog = authenticatedPage.getByRole('dialog', {
+      name: 'Participant Preview',
+    });
+    await expect(previewDialog).toBeVisible({ timeout: 6_000 });
     await expect(
-      authenticatedPage.getByText('Participant Preview'),
+      previewDialog.getByRole('button', { name: 'Add budget' }),
     ).toBeVisible({ timeout: 6_000 });
 
-    await expect(
-      authenticatedPage.getByRole('button', { name: 'Add budget' }),
-    ).toBeVisible({ timeout: 6_000 });
+    // Close the modal so it doesn't overlay the launch-ready check.
+    await authenticatedPage.keyboard.press('Escape');
+    await expect(previewDialog).not.toBeVisible({ timeout: 6_000 });
 
     // ── Final: Verify Launch Process button is enabled ──────────────────
 

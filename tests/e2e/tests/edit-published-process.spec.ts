@@ -84,12 +84,14 @@ test.describe('Edit Published Process', () => {
     await expect(addFirstButton).toBeVisible({ timeout: 6_000 });
     await addFirstButton.click();
     await expect(
-      authenticatedPage.getByText('Untitled', { exact: true }).first(),
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
     // 9. Navigate away to Process Settings and back to verify criterion survives
+    // Sidebar nav item is labeled "General Information"; the page heading it
+    // opens is still "Process Settings".
     const processSettingsButton = sidebarNav.getByRole('button', {
-      name: 'Process Settings',
+      name: 'General Information',
     });
     await processSettingsButton.click();
     await expect(
@@ -106,12 +108,12 @@ test.describe('Edit Published Process', () => {
 
     // Verify the criterion survived navigation
     await expect(
-      authenticatedPage.getByText('Untitled', { exact: true }).first(),
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
     // 10. Expand the first criterion and toggle Required off
     await authenticatedPage
-      .getByText('Untitled', { exact: true })
+      .getByText('Untitled field', { exact: true })
       .first()
       .click();
     const firstRequiredToggle = authenticatedPage.getByRole('switch', {
@@ -127,7 +129,7 @@ test.describe('Edit Published Process', () => {
     await addMoreButton.click();
 
     // Wait for the second criterion to appear in the UI
-    const criterionLabels = authenticatedPage.getByText('Untitled', {
+    const criterionLabels = authenticatedPage.getByText('Untitled field', {
       exact: true,
     });
     await expect(criterionLabels.nth(1)).toBeVisible({ timeout: 6_000 });
@@ -193,7 +195,7 @@ test.describe('Edit Published Process', () => {
 
     // Verify at least one criterion card is visible (DB already verified count=2)
     await expect(
-      authenticatedPage.getByText('Untitled', { exact: true }).first(),
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
   });
 
@@ -249,9 +251,10 @@ test.describe('Edit Published Process', () => {
       { timeout: 6_000 },
     );
 
-    // 7. Navigate away to Process Settings
+    // 7. Navigate away to Process Settings (nav item labeled "General
+    //    Information"; the page it opens is headed "Process Settings").
     const settingsButton = sidebarNav.getByRole('button', {
-      name: 'Process Settings',
+      name: 'General Information',
     });
     await settingsButton.click();
     await expect(

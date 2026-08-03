@@ -110,8 +110,10 @@ test.describe('Proposal template — multi-select category', () => {
     //    entered), so its section MUST show the incomplete dot. This proves the
     //    selector matches real indicators, so the assertion below is meaningful
     //    rather than a never-matching selector.
+    // Sidebar nav item is labeled "General Information" (page heading is still
+    // "Process Settings"). Left blank, so its section shows the incomplete dot.
     const settingsNav = sidebarNav.getByRole('button', {
-      name: 'Process Settings',
+      name: 'General Information',
     });
     await expect(settingsNav.locator('span.bg-primary-teal')).toHaveCount(1);
 
