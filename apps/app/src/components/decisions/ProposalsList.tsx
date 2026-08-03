@@ -20,7 +20,7 @@ import {
   templateCollectsLocation,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 

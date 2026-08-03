@@ -35,7 +35,7 @@ interface ResponsiveSelectProps<T extends string> {
   /** Additional class for the trigger button/select */
   className?: string;
   /** Size variant */
-  size?: 'small' | 'medium';
+  size?: 'sm' | 'default';
   /** Render custom label for selected item (defaults to item.label) */
   renderSelectedLabel?: (item: SelectOption<T> | undefined) => ReactNode;
 }
@@ -50,13 +50,12 @@ export function ResponsiveSelect<T extends string>({
   items,
   'aria-label': ariaLabel,
   className = 'min-w-36',
-  size = 'small',
+  size = 'default',
   renderSelectedLabel,
 }: ResponsiveSelectProps<T>) {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isOpen, setIsOpen] = useState(false);
 
-  const triggerSize = size === 'small' ? 'sm' : 'default';
   const selectedItem = items.find((item) => item.id === selectedKey);
   const displayLabel = renderSelectedLabel
     ? renderSelectedLabel(selectedItem)
@@ -67,7 +66,7 @@ export function ResponsiveSelect<T extends string>({
       <>
         <Button
           variant="outline"
-          size={triggerSize}
+          size={size}
           className={`${className} max-w-48 shrink-0 justify-between shadow-none`}
           onClick={() => setIsOpen(true)}
         >
@@ -125,14 +124,10 @@ export function ResponsiveSelect<T extends string>({
         }
       }}
     >
-      <SelectTrigger
-        size={triggerSize}
-        className={className}
-        aria-label={ariaLabel}
-      >
+      <SelectTrigger size={size} className={className} aria-label={ariaLabel}>
         <SelectValue>{() => displayLabel}</SelectValue>
       </SelectTrigger>
-      <SelectContent size={triggerSize}>
+      <SelectContent size={size}>
         {items.map((item) => (
           <SelectItem key={item.id} value={item.id} disabled={item.isDisabled}>
             {item.label}

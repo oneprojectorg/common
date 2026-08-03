@@ -1,5 +1,5 @@
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
+import { Card } from '@op/sense/Card';
+import { Skeleton } from '@op/sense/Skeleton';
 
 export const ProposalListSkeletonGrid = () => (
   <div className="columns-1 gap-6 md:columns-2 lg:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
@@ -31,7 +31,7 @@ export const ProposalListSkeleton = () => {
 
 export const ProposalCardSkeleton = () => {
   return (
-    <Surface className="relative w-full space-y-3 p-4 pb-4">
+    <Card className="relative w-full space-y-3 p-4 pb-4 shadow-none">
       {/* Header with title and budget skeleton */}
       <div className="flex flex-col gap-2">
         <Skeleton className="h-6 w-3/4" />
@@ -62,6 +62,6 @@ export const ProposalCardSkeleton = () => {
         </div>
         <Skeleton className="h-8 w-full" />
       </div>
-    </Surface>
+    </Card>
   );
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 
 import { Link } from '@/lib/i18n/routing';
 

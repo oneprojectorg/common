@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProposalFilter } from '@op/api/encoders';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';

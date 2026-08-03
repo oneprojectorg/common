@@ -1,7 +1,7 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import { LuArrowDownToLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -101,22 +101,17 @@ export const ProposalsFilterBar = ({
       />
       {canManageProposals ? (
         isDownloadReady && downloadUrl ? (
-          <ButtonLink
-            href={downloadUrl}
-            download={downloadFileName ?? undefined}
-            color="secondary"
-            size="small"
+          <Button
+            render={
+              <a href={downloadUrl} download={downloadFileName ?? undefined} />
+            }
+            variant="outline"
           >
             <LuArrowDownToLine className="size-4" />
             {t('Click to download')}
-          </ButtonLink>
+          </Button>
         ) : (
-          <Button
-            onPress={onExport}
-            isDisabled={isExporting}
-            color="secondary"
-            size="small"
-          >
+          <Button onClick={onExport} disabled={isExporting} variant="outline">
             <LuArrowDownToLine className="size-4" />
             {isExporting ? t('Exporting...') : t('Export')}
           </Button>
