@@ -681,7 +681,7 @@ const ProfileUsersAccessTableContent = ({
           <Skeleton className="h-8 w-full" />
         </div>
       )}
-      <Table aria-label={t('Participants list')} className="w-full table-fixed">
+      <Table aria-label={t('Participants list')} className="w-full">
         <TableHeader>
           <TableRow>
             <SortableHead
@@ -689,7 +689,7 @@ const ProfileUsersAccessTableContent = ({
               label={t('Name')}
               sortDescriptor={sortDescriptor}
               onSortChange={onSortChange}
-              className="sm:w-52"
+              className="max-w-1/3"
             />
             <SortableHead
               column="email"
@@ -713,14 +713,14 @@ const ProfileUsersAccessTableContent = ({
 
             return (
               <TableRow key={`invite-${invite.id}`}>
-                <TableCell>
+                <TableCell className="max-w-1/3">
                   <div className="flex items-center gap-2">
                     <ProfileAvatar
-                      className="size-8"
+                      className="size-8 shrink-0"
                       profile={invite.inviteeProfile ?? { email: invite.email }}
                     />
-                    <div className="flex flex-col">
-                      <span className="text-base text-foreground">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-base text-foreground">
                         {displayName}
                       </span>
                       <InviteStatusLabel
@@ -731,7 +731,7 @@ const ProfileUsersAccessTableContent = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-base text-foreground">
+                  <span className="block truncate text-base text-foreground">
                     {invite.email}
                   </span>
                 </TableCell>
@@ -759,22 +759,22 @@ const ProfileUsersAccessTableContent = ({
 
             return (
               <TableRow key={profileUser.id}>
-                <TableCell>
+                <TableCell className="max-w-1/3">
                   <div className="flex items-center gap-2">
                     <ProfileAvatar
                       profile={profileUser.profile}
-                      className="size-8"
+                      className="size-8 shrink-0"
                     />
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col">
                       {profileSlug && canLinkToProfile ? (
                         <Link
                           href={`/profile/${profileSlug}`}
-                          className="text-base text-foreground hover:underline"
+                          className="truncate text-base text-foreground hover:underline"
                         >
                           {displayName}
                         </Link>
                       ) : (
-                        <span className="text-base text-foreground">
+                        <span className="truncate text-base text-foreground">
                           {displayName}
                         </span>
                       )}
@@ -785,7 +785,7 @@ const ProfileUsersAccessTableContent = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-base text-foreground">
+                  <span className="block truncate text-base text-foreground">
                     {profileUser.email}
                   </span>
                 </TableCell>
