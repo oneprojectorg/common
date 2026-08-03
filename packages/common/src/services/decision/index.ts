@@ -132,6 +132,9 @@ export * from './utils/instance';
 // Phase-level settings resolution
 export * from './utils/phaseSettings';
 
+// Phase-order navigation
+export * from './utils/phaseOrder';
+
 // Voting management
 export * from './voting';
 

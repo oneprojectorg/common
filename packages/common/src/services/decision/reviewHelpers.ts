@@ -9,7 +9,11 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
+import type { DecisionRolePermissions } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { isPhaseAtOrBefore } from './utils/phaseOrder';
+import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
@@ -90,6 +94,64 @@ export function getActiveRevisionRequest(
     requests[0] ??
     null
   );
+}
+
+/**
+ * The slice of a loaded decision instance (`getInstance`'s return) that the
+ * phase-reviews read gate needs: the viewer's resolved capabilities plus the
+ * instance's phase configuration.
+ */
+export interface PhaseReviewsReadContext {
+  access: DecisionRolePermissions;
+  currentStateId: string | null;
+  instanceData: DecisionInstanceData;
+}
+
+/**
+ * Whether the caller may read a phase's submitted review set on this
+ * instance. Admins always can — any phase, or all phases when `phaseId` is
+ * omitted — and return before any phase-settings resolution (which throws
+ * NotFound on a phase the instance doesn't have). Reviewers (`access.review`)
+ * must name a phase — without one the caller would read reviews blended
+ * across ALL phases — and that phase's resolved `openReviews` must be on. An
+ * open phase stays readable after it ends (later-phase reviewers read the
+ * earlier phase's reviews), but phases after the current one are never
+ * readable. The reviewer grant is deliberately process-wide: ANY reviewer of
+ * the process can read, not only those assigned to a given proposal.
+ */
+export function canReadPhaseReviews(
+  instance: PhaseReviewsReadContext,
+  phaseId: string | undefined,
+): boolean {
+  if (instance.access.admin) {
+    return true;
+  }
+
+  if (!instance.access.review || !phaseId || instance.currentStateId == null) {
+    return false;
+  }
+
+  // No peeking past the current phase: the target must be the current phase
+  // or an earlier one in the instance's phase ordering.
+  if (
+    !isPhaseAtOrBefore(instance.instanceData, phaseId, instance.currentStateId)
+  ) {
+    return false;
+  }
+
+  return getPhaseReviewSettings(instance.instanceData, phaseId).openReviews;
+}
+
+/** `canReadPhaseReviews`, but throws `UnauthorizedError` on denial. */
+export function assertCanReadPhaseReviews(
+  instance: PhaseReviewsReadContext,
+  phaseId: string | undefined,
+): void {
+  if (!canReadPhaseReviews(instance, phaseId)) {
+    throw new UnauthorizedError(
+      "You don't have access to read reviews for this process instance",
+    );
+  }
 }
 
 /** Loads and authorizes access to a single review assignment for the current reviewer. */

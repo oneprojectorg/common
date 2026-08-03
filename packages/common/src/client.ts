@@ -20,6 +20,11 @@ export {
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
 export {
+  getPhaseIndex,
+  getPreviousPhases,
+  isPhaseAtOrBefore,
+} from './services/decision/utils/phaseOrder';
+export {
   attachmentSchema,
   documentContentSchema,
   proposalAccessSchema,

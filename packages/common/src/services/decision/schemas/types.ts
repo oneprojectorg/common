@@ -97,7 +97,10 @@ export const phaseReviewSettingsSchema = z.object({
   policy: z.enum(REVIEWS_POLICIES).optional(),
   allowRevisions: z.boolean().optional(),
   anonymousFeedback: z.boolean().optional(),
-  /** Reviewers can see each other's submitted reviews during this phase. */
+  /**
+   * The phase's submitted reviews are open: visible to peer reviewers while
+   * the phase is current, and to reviewers in later phases afterwards.
+   */
   openReviews: z.boolean().optional(),
 });
 

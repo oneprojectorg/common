@@ -2,7 +2,7 @@ import { and, db, eq, isNull } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { getInstance } from './getInstance';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import {
@@ -11,12 +11,12 @@ import {
   getSubmittedReviewScore,
   proposalRelations,
 } from './listProposalsWithReviewAggregates';
+import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
-import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 export const getProposalWithReviewAggregatesInputSchema =
   instanceOptionalPhaseRefSchema.extend({
@@ -30,36 +30,21 @@ export type GetProposalWithReviewAggregatesInput = z.infer<
 /**
  * Submitted-only by design: drafts and unstarted assignments contribute to
  * `aggregates.assignmentsCount` but are not surfaced in `reviews[]`.
+ *
+ * `phaseId` scopes the review set to assignments pinned to that phase, so all
+ * derived values (reviews[], aggregates) are per-source-phase. Omitted means
+ * all phases — admin-only; reviewers must always name a phase.
  */
 export async function getProposalWithReviewAggregates(
   input: GetProposalWithReviewAggregatesInput & { user: User },
 ): Promise<ProposalWithSubmittedReviews> {
-  const { user, processInstanceId, proposalId } = input;
+  const { user, processInstanceId, proposalId, phaseId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  // Admins always read the full review set. Resolve their access first and
-  // short-circuit before touching phase settings — `getPhaseReviewSettings`
-  // throws NotFound on an instance whose `currentStateId` matches no phase,
-  // and admins must keep reading regardless of phase configuration.
-  //
-  // Otherwise reviewers get proposal-wide read only when the instance's
-  // current phase opts into open reviews — and this grant is deliberately
-  // process-wide: ANY reviewer (access.review) of the process can read, not
-  // only those assigned to this proposal.
-  if (!instance.access.admin) {
-    const openReviewsForReviewers =
-      instance.access.review &&
-      instance.currentStateId != null &&
-      getPhaseReviewSettings(instance.instanceData, instance.currentStateId)
-        .openReviews;
-
-    if (!openReviewsForReviewers) {
-      throw new UnauthorizedError(
-        "You don't have access to read reviews for this process instance",
-      );
-    }
-  }
+  // Read gate: admin, or the process-wide reviewer grant on an open phase at
+  // or before the current one — see `canReadPhaseReviews` for the semantics.
+  assertCanReadPhaseReviews(instance, phaseId);
 
   const rubricTemplate = instance.instanceData.rubricTemplate;
   const scoredCriterionKeys = rubricTemplate
@@ -67,8 +52,6 @@ export async function getProposalWithReviewAggregates(
         .criteria.filter((c) => c.scored)
         .map((c) => c.key)
     : [];
-
-  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
   const [proposal, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findFirst({

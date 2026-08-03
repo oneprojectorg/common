@@ -1,4 +1,7 @@
-import type { RubricTemplateSchema } from '@op/common';
+import type {
+  DecisionSchemaDefinition,
+  RubricTemplateSchema,
+} from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -65,6 +68,105 @@ async function advanceToReviewPhase(instanceId: string) {
     .update(processInstances)
     .set({ currentStateId: 'review' })
     .where(eq(processInstances.id, instanceId));
+}
+
+// --- Two back-to-back review phases (Columbus: feasibility → community) ----
+
+const FEASIBILITY_PHASE = 'feasibility';
+const COMMUNITY_PHASE = 'community';
+
+const twoReviewPhaseSchema = {
+  id: 'two-review-phases',
+  version: '1.0.0',
+  name: 'Two Review Phases',
+  description: 'Feasibility review followed by a community impact review.',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Proposal Submission',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'date' as const, endDate: '2026-01-01' },
+      },
+    },
+    {
+      id: FEASIBILITY_PHASE,
+      name: 'Feasibility Review',
+      rules: {
+        reviews: { submit: true },
+        advancement: { method: 'date' as const, endDate: '2026-01-02' },
+      },
+    },
+    {
+      id: COMMUNITY_PHASE,
+      name: 'Community Impact Review',
+      rules: {
+        reviews: { submit: true },
+        advancement: { method: 'date' as const, endDate: '2026-01-03' },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
+/**
+ * One proposal with a submitted review pinned to each of the two review
+ * phases; the instance ends up sitting in the community phase. `openReviews`
+ * is left unset (off) on both phases — tests flip it per scenario.
+ */
+async function seedTwoPhaseReviews(testData: TestReviewsDataManager) {
+  const context = await testData.createContext({
+    processSchema: twoReviewPhaseSchema,
+  });
+  await testData.setRubricTemplate(context, rubricTemplate);
+
+  const feasibilityScenario = await testData.createReviewAssignment({
+    context,
+    title: 'Two-phase reviews',
+    phaseId: FEASIBILITY_PHASE,
+  });
+  await createProposalReview({
+    assignmentId: feasibilityScenario.assignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: {
+      answers: {
+        impact: 7,
+        feasibility: 4,
+        [OVERALL_RECOMMENDATION_KEY]: 'yes',
+      },
+      rationales: {},
+    },
+    submittedAt: new Date().toISOString(),
+  });
+
+  const communityReviewer = await testData.createReviewer(context);
+  const communityAssignment = await createReviewAssignment({
+    processInstanceId: context.instance.instance.id,
+    proposalId: feasibilityScenario.proposal.id,
+    reviewerProfileId: communityReviewer.profileId,
+    phaseId: COMMUNITY_PHASE,
+  });
+  await createProposalReview({
+    assignmentId: communityAssignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: {
+      answers: {
+        impact: 3,
+        feasibility: 2,
+        [OVERALL_RECOMMENDATION_KEY]: 'no',
+      },
+      rationales: {},
+    },
+    submittedAt: new Date().toISOString(),
+  });
+
+  await testData.setCurrentPhase(context.instance.instance.id, COMMUNITY_PHASE);
+
+  return {
+    context,
+    proposal: feasibilityScenario.proposal,
+    feasibilityReviewerProfileId: feasibilityScenario.reviewer.profileId,
+    communityReviewerProfileId: communityReviewer.profileId,
+  };
 }
 
 describe.concurrent('getProposalWithReviewAggregates', () => {
@@ -308,8 +410,11 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
     });
   });
 
-  // --- Open Reviews read gate (PR 1/5) -------------------------------------
-  // Admin OR (REVIEW access AND the current phase's `openReviews` is on).
+  // --- Open Reviews read gate ------------------------------------------------
+  // Admin OR (REVIEW access AND an explicit `phaseId` whose `openReviews` is
+  // on). These cases exercise the single-review-phase shape where the named
+  // phase is the current one; the phase-scoping describe below covers the
+  // multi-phase matrix.
 
   it('admits an admin even when the current phase has openReviews off', async ({
     task,
@@ -386,6 +491,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: scenario.proposal.id,
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
@@ -438,6 +544,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       await reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: scenario.proposal.id,
+        phaseId: 'review',
       });
 
     expect(result.reviews).toHaveLength(1);
@@ -489,6 +596,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       await reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: scenario.proposal.id,
+        phaseId: 'review',
       });
 
     expect(result.proposal.id).toBe(scenario.proposal.id);
@@ -522,6 +630,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       memberCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: scenario.proposal.id,
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
@@ -589,6 +698,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       await reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: scenario.proposal.id,
+        phaseId: 'review',
       });
 
     expect(result.reviews).toHaveLength(1);
@@ -596,6 +706,219 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
     expect(
       result.reviews.some((r) => r.reviewer.id === draftPeer.profileId),
     ).toBe(false);
+  });
+});
+
+// --- Phase-scoped aggregates + previous-phase visibility (PR 6) -------------
+// `phaseId` scopes the review set to that phase's assignments. Reviewers must
+// name a phase and get it only when THAT phase's `openReviews` is on — which
+// keeps an open earlier phase readable after it ends (Columbus budget
+// delegates reading feasibility reviews) without exposing any closed phase.
+
+describe.concurrent('getProposalWithReviewAggregates phase scoping', () => {
+  it('admin without phaseId reads submitted reviews across all phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+
+    const adminCaller = await createAuthenticatedCaller(
+      seeded.context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
+      processInstanceId: seeded.context.instance.instance.id,
+      proposalId: seeded.proposal.id,
+    });
+
+    expect(result.aggregates.assignmentsCount).toBe(2);
+    expect(result.reviews).toHaveLength(2);
+    expect(result.reviews.map((r) => r.reviewer.id).sort()).toEqual(
+      [
+        seeded.feasibilityReviewerProfileId,
+        seeded.communityReviewerProfileId,
+      ].sort(),
+    );
+  });
+
+  it('admin with phaseId reads only that phase, aggregates included', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+
+    const adminCaller = await createAuthenticatedCaller(
+      seeded.context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
+      processInstanceId: seeded.context.instance.instance.id,
+      proposalId: seeded.proposal.id,
+      phaseId: FEASIBILITY_PHASE,
+    });
+
+    expect(result.aggregates.assignmentsCount).toBe(1);
+    expect(result.aggregates.reviewsSubmittedCount).toBe(1);
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0]!.reviewer.id).toBe(
+      seeded.feasibilityReviewerProfileId,
+    );
+  });
+
+  it('reviewer naming the current phase with openReviews on sees only current-phase reviews', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+    await testData.setPhaseOpenReviews(
+      seeded.context.instance.instance.id,
+      COMMUNITY_PHASE,
+      true,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(
+      seeded.context,
+    );
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    const result =
+      await reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: seeded.context.instance.instance.id,
+        proposalId: seeded.proposal.id,
+        phaseId: COMMUNITY_PHASE,
+      });
+
+    // The feasibility review on the same proposal must NOT be blended in.
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0]!.reviewer.id).toBe(
+      seeded.communityReviewerProfileId,
+    );
+  });
+
+  it('reviewer reads an earlier open phase even while the current phase is closed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+    // Feasibility ran open; the community phase (current) keeps its own
+    // reviews closed — the budget-delegate configuration.
+    await testData.setPhaseOpenReviews(
+      seeded.context.instance.instance.id,
+      FEASIBILITY_PHASE,
+      true,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(
+      seeded.context,
+    );
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    const result =
+      await reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: seeded.context.instance.instance.id,
+        proposalId: seeded.proposal.id,
+        phaseId: FEASIBILITY_PHASE,
+      });
+
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0]!.reviewer.id).toBe(
+      seeded.feasibilityReviewerProfileId,
+    );
+  });
+
+  it('denies a reviewer naming an earlier phase whose openReviews is off', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+    // The CURRENT phase being open must not leak the closed earlier phase.
+    await testData.setPhaseOpenReviews(
+      seeded.context.instance.instance.id,
+      COMMUNITY_PHASE,
+      true,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(
+      seeded.context,
+    );
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: seeded.context.instance.instance.id,
+        proposalId: seeded.proposal.id,
+        phaseId: FEASIBILITY_PHASE,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('denies a reviewer who names no phase, even when every phase is open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+    await testData.setPhaseOpenReviews(
+      seeded.context.instance.instance.id,
+      FEASIBILITY_PHASE,
+      true,
+    );
+    await testData.setPhaseOpenReviews(
+      seeded.context.instance.instance.id,
+      COMMUNITY_PHASE,
+      true,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(
+      seeded.context,
+    );
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    // No phaseId would blend reviews across ALL phases — reviewer-tier callers
+    // are rejected outright.
+    await expect(
+      reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: seeded.context.instance.instance.id,
+        proposalId: seeded.proposal.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('denies a reviewer naming a phase later than the current one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedTwoPhaseReviews(testData);
+    // Wind the instance back to feasibility; the (open) community phase now
+    // lies in the future and must not be readable.
+    await testData.setPhaseOpenReviews(
+      seeded.context.instance.instance.id,
+      COMMUNITY_PHASE,
+      true,
+    );
+    await testData.setCurrentPhase(
+      seeded.context.instance.instance.id,
+      FEASIBILITY_PHASE,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(
+      seeded.context,
+    );
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: seeded.context.instance.instance.id,
+        proposalId: seeded.proposal.id,
+        phaseId: COMMUNITY_PHASE,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });
 
