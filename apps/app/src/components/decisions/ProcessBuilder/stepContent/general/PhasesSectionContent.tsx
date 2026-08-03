@@ -2,20 +2,24 @@
 
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
-import { Button } from '@op/sense/Button';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
-import { Header2 } from '@op/sense/Header';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
+import { Button } from '@op/sense/Button';
+import { Header1 } from '@op/sense/Header';
 import { DragHandle, Sortable } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
-import { LuCheck, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuCheck, LuCircleAlert, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
@@ -125,7 +129,7 @@ export function PhasesSectionContent({
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm">{t('Phases')}</Header2>
+        <Header1 className="text-headline">{t('Phases')}</Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}
@@ -227,7 +231,7 @@ export function PhasesSectionContent({
         </div>
       )}
 
-      <Dialog
+      <AlertDialog
         open={phaseToDelete !== null}
         onOpenChange={(open) => {
           if (!open) {
@@ -235,35 +239,29 @@ export function PhasesSectionContent({
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('Delete phase?')}</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-4">
-            <p>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-red-50">
+              <LuCircleAlert className="text-destructive" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>{t('Delete phase?')}</AlertDialogTitle>
+            <AlertDialogDescription>
               {t(
                 'Are you sure you want to delete this phase? This action cannot be undone.',
               )}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className="w-full sm:w-fit"
-              onClick={() => setPhaseToDelete(null)}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
-              className="w-full sm:w-fit"
               onClick={confirmRemovePhase}
             >
               {t('Delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -279,7 +277,10 @@ const PhaseDragPreview = ({
   t: TranslateFn;
 }) => {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-md">
+    <div
+      aria-hidden
+      className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-md"
+    >
       <DragHandle tabIndex={-1} aria-hidden />
       <div className="flex flex-1 items-center justify-between gap-3">
         <div className="flex-1">
@@ -295,18 +296,16 @@ const PhaseDragPreview = ({
             </span>
           )}
         </div>
+        {/* Inert placeholders — this is the drag ghost, so no handlers and
+            no tab stops (aria-hidden on the wrapper below). */}
         <div className="flex shrink-0 items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSection(phaseToSectionId(phase.id))}
-          >
+          <Button variant="outline" size="sm" tabIndex={-1}>
             {configured ? t('Edit') : t('Configure')}
           </Button>
           <Button
             variant="destructive"
             size="icon-sm"
-            onClick={() => setPhaseToDelete(phase.id)}
+            tabIndex={-1}
             aria-label={t('Delete phase?')}
           >
             <LuTrash2 className="size-4" />

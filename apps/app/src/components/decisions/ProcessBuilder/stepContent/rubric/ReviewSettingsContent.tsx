@@ -14,7 +14,7 @@ import {
   FieldDescription,
   FieldContent,
 } from '@op/sense/Field';
-import { Header2, Header3 } from '@op/sense/Header';
+import { Header1, Header3 } from '@op/sense/Header';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Switch } from '@op/sense/Switch';
 import { useState } from 'react';
@@ -111,7 +111,7 @@ export function ReviewSettingsContent({
   return (
     <div className="mx-auto w-full space-y-8 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-base">{t('Reviews')}</Header2>
+        <Header1 className="text-headline">{t('Reviews')}</Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}

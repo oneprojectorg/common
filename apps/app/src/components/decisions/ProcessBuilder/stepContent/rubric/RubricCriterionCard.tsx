@@ -7,8 +7,6 @@ import {
 } from '@op/sense/CollapsibleConfigCard';
 import {
   Field,
-  FieldContent,
-  FieldDescription,
   FieldError,
   FieldLabel,
   FieldLegend,

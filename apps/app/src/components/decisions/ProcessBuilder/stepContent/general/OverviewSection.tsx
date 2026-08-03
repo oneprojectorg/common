@@ -14,7 +14,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
 import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
-import { OverviewHeroImageField } from '@/components/decisions/OverviewHeroImageField';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
@@ -108,14 +107,6 @@ function OverviewSectionContent({
             savedAt={autosaveStatus.savedAt}
           />
         </div>
-
-        <OverviewHeroImageField
-          instanceId={instanceId}
-          initialPath={
-            storeOverview?.heroImage ??
-            instance.instanceData?.overview?.heroImage
-          }
-        />
 
         <div className="flex flex-col gap-2">
           <OverviewTextField

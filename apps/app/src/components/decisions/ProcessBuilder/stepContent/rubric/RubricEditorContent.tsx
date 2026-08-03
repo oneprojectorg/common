@@ -3,12 +3,11 @@
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import { Empty, EmptyMedia } from '@op/sense/Empty';
-import { Header2 } from '@op/sense/Header';
+import { Header1 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuLeaf, LuPlus } from 'react-icons/lu';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -301,9 +300,7 @@ export function RubricEditorContent({
       <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
         <div className="mx-auto max-w-160 space-y-6">
           <div className="mb-10 flex items-center justify-between">
-            <Header2 className="font-serif text-title-sm">
-              {t('Review Rubric')}
-            </Header2>
+            <Header1 className="text-headline">{t('Review Rubric')}</Header1>
             <SaveStatusIndicator
               status={autosaveStatus.status}
               savedAt={autosaveStatus.savedAt}
