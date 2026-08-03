@@ -1,3 +1,4 @@
+import { trackRevisionResponseSubmitted } from '@op/analytics';
 import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
 import { db } from '@op/db/client';
 import {
@@ -197,6 +198,19 @@ export async function submitRevisionResponse({
       }),
     );
   }
+
+  waitUntil(
+    trackRevisionResponseSubmitted(
+      user.id,
+      request.assignment.processInstanceId,
+      proposal.id,
+      {
+        assignment_id: request.assignmentId,
+        phase_id: request.assignment.phaseId,
+        revision_request_id: revisionRequestId,
+      },
+    ),
+  );
 
   return {
     ...updatedRequest,

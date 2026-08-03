@@ -1,4 +1,4 @@
-import { trackProposalReviewed, trackReviewListFinished } from '@op/analytics';
+import { trackReviewQueueCompleted, trackReviewSubmitted } from '@op/analytics';
 import { and, db, eq, ne } from '@op/db/client';
 import {
   type ProposalReview,
@@ -12,6 +12,8 @@ import { waitUntil } from '@vercel/functions';
 import { count } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
+import { getRubricScoringInfo } from './getRubricScoringInfo';
+import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
@@ -86,11 +88,31 @@ export async function submitReview({
 
   const processInstanceId = context.assignment.processInstanceId;
 
+  const scoredCriterionKeys = getRubricScoringInfo(context.rubricTemplate)
+    .criteria.filter((criterion) => criterion.scored)
+    .map((criterion) => criterion.key);
+  const scored = getSubmittedReviewScore(review, scoredCriterionKeys);
+
+  const assignedAtMs = context.assignment.assignedAt
+    ? Date.parse(context.assignment.assignedAt)
+    : Number.NaN;
+  const secondsToComplete = Number.isFinite(assignedAtMs)
+    ? Math.round((Date.parse(submittedAt) - assignedAtMs) / 1000)
+    : null;
+
   waitUntil(
-    trackProposalReviewed(
+    trackReviewSubmitted(
       user.id,
       processInstanceId,
       context.assignment.proposalId,
+      {
+        assignment_id: assignmentId,
+        phase_id: context.assignment.phaseId,
+        recommendation: scored?.overallRecommendation ?? null,
+        score: scored?.score ?? null,
+        revision_requested: context.assignment.requests.length > 0,
+        seconds_to_complete: secondsToComplete,
+      },
     ),
   );
 
@@ -117,9 +139,9 @@ export async function submitReview({
         );
 
       // Default to 1 (not 0) on a missing row so a count failure cannot
-      // falsely trigger review_list_finished.
+      // falsely trigger review_queue_completed.
       if ((remaining?.value ?? 1) === 0) {
-        await trackReviewListFinished(user.id, processInstanceId);
+        await trackReviewQueueCompleted(user.id, processInstanceId);
       }
     })(),
   );

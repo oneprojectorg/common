@@ -2,6 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { isReviewPhase, isVotingPhase } from '@op/common/client';
@@ -13,6 +14,7 @@ import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useQueryState } from 'nuqs';
+import { usePostHog } from 'posthog-js/react';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
@@ -160,6 +162,16 @@ function PhaseDetailForm({
   // Open reviews opt-in is gated behind a confirmation dialog (enabling it
   // changes reviewer behavior), so turning it ON opens this modal first.
   const [showOpenReviewsModal, setShowOpenReviewsModal] = useState(false);
+
+  const posthog = usePostHog();
+  const trackOpenReviewsToggled = (enabled: boolean) =>
+    posthog.capture(
+      'open_reviews_toggled',
+      getDecisionCommonProperties({
+        decisionInstanceId: instanceId,
+        additionalProps: { phase_id: phaseId, enabled },
+      }),
+    );
 
   // Delete phase
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -429,6 +441,7 @@ function PhaseDetailForm({
                 if (val) {
                   setShowOpenReviewsModal(true);
                 } else {
+                  trackOpenReviewsToggled(false);
                   updateRules({
                     reviews: { ...phase.rules?.reviews, openReviews: false },
                   });
@@ -519,6 +532,7 @@ function PhaseDetailForm({
             color="primary"
             className="w-full sm:w-fit"
             onPress={() => {
+              trackOpenReviewsToggled(true);
               updateRules({
                 reviews: { ...phase.rules?.reviews, openReviews: true },
               });

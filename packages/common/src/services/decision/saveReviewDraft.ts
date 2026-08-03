@@ -1,3 +1,4 @@
+import { trackReviewStarted } from '@op/analytics';
 import { db } from '@op/db/client';
 import {
   type ProposalReview,
@@ -7,6 +8,7 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
@@ -86,6 +88,22 @@ export async function saveReviewDraft({
 
     return draft;
   });
+
+  // First draft save flips PENDING → IN_PROGRESS: the "review started" signal.
+  // Later autosaves find a non-PENDING status, so this fires once per assignment.
+  if (context.assignment.status === ProposalReviewAssignmentStatus.PENDING) {
+    waitUntil(
+      trackReviewStarted(
+        user.id,
+        context.assignment.processInstanceId,
+        context.assignment.proposalId,
+        {
+          assignment_id: assignmentId,
+          phase_id: context.assignment.phaseId,
+        },
+      ),
+    );
+  }
 
   return {
     review,

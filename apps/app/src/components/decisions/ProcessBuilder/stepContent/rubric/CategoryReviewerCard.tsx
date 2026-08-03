@@ -1,5 +1,6 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
@@ -9,6 +10,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { toast } from '@op/ui/Toast';
+import { usePostHog } from 'posthog-js/react';
 import { useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -40,6 +42,7 @@ export function CategoryReviewerCard({
 }: CategoryReviewerCardProps) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const posthog = usePostHog();
 
   const invalidate = () =>
     utils.decision.listCategoryReviewers.invalidate({ processInstanceId });
@@ -97,6 +100,16 @@ export function CategoryReviewerCard({
     if (!added) {
       return;
     }
+    posthog.capture(
+      'category_reviewer_added',
+      getDecisionCommonProperties({
+        decisionInstanceId: processInstanceId,
+        additionalProps: {
+          category_id: category.id,
+          reviewer_profile_id: added.id,
+        },
+      }),
+    );
     addReviewer.mutate({
       processInstanceId,
       taxonomyTermId: category.id,
@@ -168,13 +181,23 @@ export function CategoryReviewerCard({
                 <IconButton
                   size="small"
                   isDisabled={isRemoving}
-                  onPress={() =>
+                  onPress={() => {
+                    posthog.capture(
+                      'category_reviewer_removed',
+                      getDecisionCommonProperties({
+                        decisionInstanceId: processInstanceId,
+                        additionalProps: {
+                          category_id: category.id,
+                          reviewer_profile_id: reviewer.reviewerProfileId,
+                        },
+                      }),
+                    );
                     removeReviewer.mutate({
                       processInstanceId,
                       taxonomyTermId: category.id,
                       reviewerProfileId: reviewer.reviewerProfileId,
-                    })
-                  }
+                    });
+                  }}
                   aria-label={t('Remove {name}', {
                     name: reviewer.profile.name,
                   })}
