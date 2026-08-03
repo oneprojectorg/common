@@ -181,7 +181,11 @@ const AvatarMenuContent = ({
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            {t('Logged in as')} <bdi>{user.profile?.name ?? user.name}</bdi> (
+            {t('Logged in as')}{' '}
+            <bdi className="inline-block max-w-40 truncate align-bottom">
+              {user.profile?.name ?? user.name}
+            </bdi>{' '}
+            (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -448,7 +452,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       <MenuTrigger>
         {avatarButton}
         <Menu
-          className="flex min-w-72 flex-col p-4 pb-6"
+          className="flex max-w-80 min-w-72 flex-col p-4 pb-6"
           popoverClassName="min-w-[150px]"
           placement="bottom end"
         >

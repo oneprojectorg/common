@@ -12,7 +12,7 @@ export const CommunityCommitmentsModal = () => {
   return (
     <DialogTrigger>
       <Button unstyled className="text-primary-teal hover:underline">
-        {t('Community Commitments')}
+        {t('Commitments')}
       </Button>
 
       <Modal
