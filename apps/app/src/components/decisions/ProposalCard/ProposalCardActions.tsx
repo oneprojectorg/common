@@ -6,21 +6,14 @@ import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@op/sense/Dialog';
-import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
+
+import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 /**
  * Like/Follow actions for viewing other users' proposals
@@ -130,20 +123,6 @@ export function ProposalCardOwnerActions({
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('Failed to delete proposal'));
-    },
-    onSuccess: () => {
-      toast.success(t('Proposal deleted successfully'));
-    },
-  });
-
-  const handleDelete = async () => {
-    await deleteProposalMutation.mutateAsync({ proposalId: proposal.id });
-    setIsDeleteModalOpen(false);
-  };
-
   return (
     <div className="flex w-full items-center gap-4">
       <ButtonLink
@@ -155,50 +134,17 @@ export function ProposalCardOwnerActions({
         <LuPencil className="size-4" />
         {t('Edit')}
       </ButtonLink>
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogTrigger
-          render={
-            <Button
-              variant="destructive"
-              size="sm"
-              className="flex-1"
-              disabled={deleteProposalMutation.isPending}
-            >
-              <LuTrash2 className="size-4" />
-              {t('Delete')}
-            </Button>
-          }
-        />
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('Delete Proposal')}</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-4">
-            <p>
-              {t(
-                'Are you sure you want to delete this proposal? This action cannot be undone.',
-              )}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteProposalMutation.isPending}
-            >
-              {deleteProposalMutation.isPending
-                ? t('Deleting...')
-                : t('Delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteProposalDialog
+        proposalId={proposal.id}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        trigger={
+          <Button variant="destructive" size="sm" className="flex-1">
+            <LuTrash2 className="size-4" />
+            {t('Delete')}
+          </Button>
+        }
+      />
     </div>
   );
 }

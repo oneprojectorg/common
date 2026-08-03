@@ -67,8 +67,8 @@ export const DecisionInstanceHeader = ({
   // Fixed height (48/56px) keeps the header steady as the center toggle grows,
   // and matches DecisionSidePanel's sm:top-12 md:top-14 so the panel meets it.
   return (
-    <header className="sticky top-0 z-80 border-b bg-white">
-      <div className="grid h-12 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:h-14 md:px-6">
+    <header className="sticky top-0 z-30 border-b bg-white">
+      <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           {canInteract && (
             <Link

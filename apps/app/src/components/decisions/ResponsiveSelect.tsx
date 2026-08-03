@@ -2,7 +2,6 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
-import { Dialog, DialogContent } from '@op/sense/Dialog';
 import {
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
+import { Sheet, SheetContent } from '@op/sense/Sheet';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import { type ReactNode, useState } from 'react';
@@ -75,18 +75,17 @@ export function ResponsiveSelect<T extends string>({
           </span>
           <LuChevronDown className="size-4 shrink-0" />
         </Button>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          {/* Native bottom sheet (side="bottom"). Keyboard nav is plain tab
+              order through the option buttons, not react-aria's roving
+              selection — acceptable for this short single-select list. */}
+          <SheetContent
+            side="bottom"
             aria-label={ariaLabel}
             showCloseButton={false}
-            className="top-auto bottom-0 left-1/2 m-0 h-auto max-h-[calc(100svh-5rem)] w-screen max-w-none -translate-x-1/2 translate-y-0 gap-0 rounded-t-2xl rounded-b-none border-0 p-0 duration-300 ease-out data-open:slide-in-from-bottom-full"
+            className="max-h-[calc(100svh-5rem)] gap-0 overflow-hidden rounded-t-lg border-0 p-0"
           >
-            {/* TODO(sense-migration): the @op/ui Modal + MenuList bottom sheet
-                had no sense structural equivalent; this reproduces the sheet
-                with a Dialog + native option buttons. Roving keyboard
-                selection from react-aria's MenuList is replaced by native
-                button focus. */}
-            <div className="pb-safe flex flex-col p-0">
+            <div className="pb-safe flex flex-col overflow-y-auto">
               {items.map((item, index) => (
                 <button
                   key={item.id}
@@ -94,9 +93,6 @@ export function ResponsiveSelect<T extends string>({
                   disabled={item.isDisabled}
                   className={cn(
                     'bg-transparent px-6 py-4 text-start outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal disabled:pointer-events-none disabled:opacity-50',
-                    index === 0
-                      ? 'rounded-t-2xl rounded-b-none'
-                      : 'rounded-none',
                     index < items.length - 1 && 'border-b border-neutral-gray1',
                     item.id === selectedKey && 'bg-primary-tealWhite',
                   )}
@@ -109,8 +105,8 @@ export function ResponsiveSelect<T extends string>({
                 </button>
               ))}
             </div>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
       </>
     );
   }

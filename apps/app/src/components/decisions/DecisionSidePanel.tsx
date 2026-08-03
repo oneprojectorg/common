@@ -10,6 +10,7 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
+  EmptyTitle,
 } from '@op/sense/Empty';
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
@@ -75,6 +76,8 @@ export const DecisionSidePanel = ({
       <SheetContent
         side="right"
         showCloseButton={false}
+        // Desktop: sit below the fixed decision header (h-12/h-14) instead of
+        // running full-height under it. Mobile stays full-screen.
         className="gap-0 p-0 sm:max-w-[22.5rem]"
       >
         <SheetTitle className="sr-only">
@@ -138,7 +141,7 @@ const PanelContents = ({
         </TabsList>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-sm"
           onClick={onClose}
           aria-label={t('Close')}
         >
@@ -263,12 +266,15 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   if (posts.length === 0) {
     return (
-      <Empty className="border-0">
+      <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <MegaphoneIcon />
           </EmptyMedia>
-          <EmptyDescription>{t('No updates yet')}</EmptyDescription>
+          <EmptyTitle>{t('No updates yet')}</EmptyTitle>
+          <EmptyDescription className="max-w-72">
+            {t("The organizers haven't posted any updates yet")}
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );

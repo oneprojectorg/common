@@ -5,15 +5,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
-import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +21,8 @@ import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 export function ProposalCardMenu({
   proposal,
@@ -103,15 +97,6 @@ export function ProposalCardMenu({
     },
   });
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('Failed to delete proposal'));
-    },
-    onSuccess: () => {
-      toast.success(t('Proposal deleted successfully'));
-    },
-  });
-
   const proposalTitle = proposal.profile.name || t('Untitled Proposal');
 
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
@@ -156,31 +141,8 @@ export function ProposalCardMenu({
 
   const isHidden = proposal.visibility === Visibility.HIDDEN;
 
-  const handleDeleteConfirm = async () => {
-    if (!proposal.id) {
-      logger.error('No proposal ID provided for delete action', {
-        context: 'ProposalCardMenu.delete',
-      });
-      return;
-    }
-
-    try {
-      await deleteProposalMutation.mutateAsync({
-        proposalId: proposal.id,
-      });
-      setIsDeleteModalOpen(false); // Close modal after successful deletion
-    } catch (error) {
-      logger.error('Error in ProposalCardMenu handleDeleteConfirm', {
-        error,
-        context: 'ProposalCardMenu.handleDeleteConfirm',
-      });
-    }
-  };
-
   const isLoading =
-    updateStatusMutation.isPending ||
-    deleteProposalMutation.isPending ||
-    updateVisibilityMutation.isPending;
+    updateStatusMutation.isPending || updateVisibilityMutation.isPending;
 
   const getMenuItems = () => {
     const items: Array<{
@@ -333,39 +295,11 @@ export function ProposalCardMenu({
         </DropdownMenu>
       )}
       {(proposal.isEditable || canManage) && (
-        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('Delete Proposal')}</DialogTitle>
-            </DialogHeader>
-            <div className="px-6 py-4">
-              <p>
-                {t(
-                  'Are you sure you want to delete this proposal? This action cannot be undone.',
-                )}
-              </p>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                className="w-full sm:w-fit"
-                onClick={() => setIsDeleteModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteConfirm}
-                className="w-full sm:w-fit"
-                disabled={deleteProposalMutation.isPending}
-              >
-                {deleteProposalMutation.isPending
-                  ? t('Deleting...')
-                  : t('Delete')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DeleteProposalDialog
+          proposalId={proposal.id}
+          open={isDeleteModalOpen}
+          onOpenChange={setIsDeleteModalOpen}
+        />
       )}
     </>
   );

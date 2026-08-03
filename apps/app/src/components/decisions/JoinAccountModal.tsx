@@ -11,10 +11,11 @@ import { Button } from '@op/sense/Button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Spinner } from '@op/sense/Spinner';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
@@ -77,8 +78,6 @@ export const JoinDecisionButton = ({
 
   return (
     <Button
-      variant="default"
-      size="sm"
       aria-describedby={ariaDescribedBy}
       onClick={() => {
         void setJoin('1');
@@ -96,11 +95,7 @@ export const JoinDecisionButton = ({
 export const JoinDecisionButtonFallback = () => {
   const t = useTranslations();
 
-  return (
-    <Button render={<a href="?join=1" />} variant="default" size="sm">
-      {t('Join')}
-    </Button>
-  );
+  return <Button render={<a href="?join=1" />}>{t('Join')}</Button>;
 };
 
 /**
@@ -215,12 +210,10 @@ const JoinAccountModalContent = () => {
     <>
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
       <DialogHeader>
-        <DialogTitle className="pt-2 text-title-lg text-neutral-black sm:pt-6 sm:text-title-lg">
+        <DialogTitle>
           {otpSent ? t('Email sent!') : t('Claim your account')}
         </DialogTitle>
-      </DialogHeader>
-      <div className="flex flex-col gap-6 px-8 pt-2 pb-8 text-center sm:px-12 sm:pb-12">
-        <p className="text-base text-neutral-charcoal">
+        <DialogDescription>
           {otpSent
             ? t(
                 'A code was sent to {email}. Type the code below to create your profile.',
@@ -229,73 +222,81 @@ const JoinAccountModalContent = () => {
             : t(
                 'Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.',
               )}
-        </p>
+        </DialogDescription>
+      </DialogHeader>
 
+      <div className="flex flex-col gap-4 px-6 py-4">
         {/* role="alert" so async claim errors are announced while focus stays on
           the submit button. */}
         {error ? (
-          <p role="alert" className="text-sm text-functional-red">
+          <p role="alert" className="text-destructive">
             {error}
           </p>
         ) : null}
 
         {otpSent ? (
-          <div className="flex flex-col gap-3 text-start">
-            <AuthCodeField
-              value={token}
-              isDisabled={isSubmitting}
-              onChange={setToken}
-              onSubmit={submitToken}
-            />
-            <Button
-              className="w-full"
-              disabled={isSubmitting || !isValidOtpLength(token)}
-              onClick={() => {
-                void submitToken();
-              }}
-            >
-              {isSubmitting ? <Spinner /> : t('Create profile')}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={goBack}>
-              {t('Go back')}
-            </Button>
-          </div>
+          <AuthCodeField
+            value={token}
+            isDisabled={isSubmitting}
+            onChange={setToken}
+            onSubmit={submitToken}
+          />
         ) : (
-          <div className="flex flex-col gap-4">
-            <div className="text-start">
-              <AuthEmailField
-                label={t('Email')}
-                // Example-email placeholders are deliberately untranslated.
-                placeholder="your@email.com"
-                value={email}
-                isDisabled={isSubmitting}
-                onChange={setEmail}
-                onSubmit={() => {
-                  void submitEmail();
-                }}
-              />
-            </div>
-            <Button
-              className="w-full"
-              disabled={isSubmitting || !emailIsValid}
-              onClick={() => {
+          <>
+            <AuthEmailField
+              label={t('Email')}
+              // Example-email placeholders are deliberately untranslated.
+              placeholder="your@email.com"
+              value={email}
+              isDisabled={isSubmitting}
+              onChange={setEmail}
+              onSubmit={() => {
                 void submitEmail();
               }}
-            >
-              {isSubmitting ? <Spinner /> : t('Join')}
-            </Button>
-            <p className="text-neutral-charcoal">
+            />
+            <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
-                  <a href={loginHref} className="text-primary-teal underline">
+                  <a href={loginHref} className="underline">
                     {chunks}
                   </a>
                 ),
               })}
             </p>
-          </div>
+          </>
         )}
       </div>
+
+      <DialogFooter className="flex-col sm:flex-col">
+        {otpSent ? (
+          <>
+            <Button
+              className="w-full"
+              loading={isSubmitting}
+              disabled={isSubmitting || !isValidOtpLength(token)}
+              onClick={() => {
+                void submitToken();
+              }}
+            >
+              {t('Create profile')}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={goBack}>
+              {t('Go back')}
+            </Button>
+          </>
+        ) : (
+          <Button
+            className="w-full"
+            loading={isSubmitting}
+            disabled={isSubmitting || !emailIsValid}
+            onClick={() => {
+              void submitEmail();
+            }}
+          >
+            {t('Join')}
+          </Button>
+        )}
+      </DialogFooter>
     </>
   );
 };

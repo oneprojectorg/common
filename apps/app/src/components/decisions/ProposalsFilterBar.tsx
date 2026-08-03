@@ -82,18 +82,20 @@ export const ProposalsFilterBar = ({
         }}
         aria-label={t('Filter proposals')}
         items={filterItems}
+        className="min-w-40"
       />
       <CategoryFilterSelect
         decisionSlug={decisionSlug}
         categories={categories}
         selectedCategory={selectedCategory}
         onSelectCategory={onSelectCategory}
+        className="min-w-40"
       />
       <ResponsiveSelect
         selectedKey={sortOrder}
         onSelectionChange={onSelectSort}
         aria-label={t('Sort proposals')}
-        className="min-w-32"
+        className="min-w-40"
         items={[
           { id: 'newest', label: t('Newest First') },
           { id: 'oldest', label: t('Oldest First') },

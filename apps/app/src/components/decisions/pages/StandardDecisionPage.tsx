@@ -85,7 +85,7 @@ export function StandardDecisionPage({
   const hasHeroImage = Boolean(heroImagePath);
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full bg-muted">
       <DecisionHeroBanner heroImagePath={heroImagePath}>
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
@@ -110,7 +110,7 @@ export function StandardDecisionPage({
         </div>
       </DecisionHeroBanner>
 
-      <div className="flex w-full flex-col items-center border-t bg-white">
+      <div className="flex w-full flex-col items-center bg-white">
         {proposalsHidden && (
           <HiddenProposalsBanner
             nextPhaseName={nextPhase?.name}

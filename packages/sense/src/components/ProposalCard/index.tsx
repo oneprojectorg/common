@@ -1,6 +1,16 @@
 'use client';
 
 import type { ComponentProps, ElementType, ReactNode } from 'react';
+
+/** Props the title/author link element must accept (a plain `<a>`, an i18n
+ *  `Link`, a router `Link`, …). Typing `linkComponent` as `ElementType<this>`
+ *  keeps the rendered element's props concrete — a bare `ElementType` infers
+ *  them as `never`. */
+type ProposalCardLinkProps = {
+  href: string;
+  className?: string;
+  children?: ReactNode;
+};
 import type { IconType } from 'react-icons';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
@@ -47,7 +57,7 @@ export interface ProposalCardProps extends Omit<
    * `Link` to preserve client-side navigation and locale prefixing. Defaults to
    * a plain `<a>`. Must accept `href`, `className`, and children.
    */
-  linkComponent?: ElementType;
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
   headerBadge?: ReactNode;
   /** Alert below the title — typically a `StatusBadge` (e.g. "Revision requested"). */
@@ -230,7 +240,7 @@ function TitleLink({
   children,
 }: {
   href?: string;
-  linkComponent?: ElementType;
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   children: ReactNode;
 }) {
   if (!href) {
@@ -252,7 +262,7 @@ function AuthorRow({
   compact,
 }: {
   authors: ProposalCardAuthor[];
-  linkComponent?: ElementType;
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   compact?: boolean;
 }) {
   const first = authors[0];
