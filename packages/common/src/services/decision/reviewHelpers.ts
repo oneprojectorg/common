@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
+  ProposalReviewState,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
@@ -12,6 +13,7 @@ import { getInstance } from './getInstance';
 import type { DecisionRolePermissions } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
@@ -83,6 +85,27 @@ export function proposalWithRevisionRequestsConfig(
       },
     },
   } as const;
+}
+
+/**
+ * A submitted review is editable only while its assignment's phase is still the
+ * instance's current phase. Backs the read-side `canEditReview` signal; the
+ * `updateReview` service re-checks against the live phase before writing.
+ */
+export function canEditSubmittedReview({
+  assignment,
+  instance,
+  review,
+}: {
+  assignment: { phaseId: string };
+  instance: { currentStateId: string | null };
+  // Raw enum column infers as `string`.
+  review: { state: string } | null;
+}): boolean {
+  return (
+    review?.state === ProposalReviewState.SUBMITTED &&
+    isInstanceCurrentPhase(instance, assignment.phaseId)
+  );
 }
 
 /** Returns the active (REQUESTED) revision request, falling back to the most recent one. */

@@ -1,5 +1,8 @@
 import { type RubricTemplateSchema, createDecisionRole } from '@op/common';
-import { assertInstancePhase } from '@op/common/src/services/decision';
+import {
+  assertInstancePhase,
+  invalidateDecisionInstance,
+} from '@op/common/src/services/decision';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -206,6 +209,9 @@ export class TestReviewsDataManager {
       .update(processInstances)
       .set({ currentStateId: phaseId })
       .where(eq(processInstances.id, instanceId));
+    // Mirror advancePhase, which busts the getInstance cache; a direct write
+    // otherwise leaves an earlier getInstance serving a stale currentStateId.
+    await invalidateDecisionInstance(instanceId);
   }
 
   /** Sets `endDate` on a phase entry in `instanceData.phases`. */

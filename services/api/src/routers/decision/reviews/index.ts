@@ -13,6 +13,7 @@ import { requestRevisionRouter } from './requestRevision';
 import { saveReviewDraftRouter } from './saveReviewDraft';
 import { submitReviewRouter } from './submitReview';
 import { submitRevisionResponseRouter } from './submitRevisionResponse';
+import { updateReviewRouter } from './updateReview';
 
 export const reviewsRouter = mergeRouters(
   addCategoryReviewerRouter,
@@ -29,4 +30,5 @@ export const reviewsRouter = mergeRouters(
   saveReviewDraftRouter,
   submitRevisionResponseRouter,
   submitReviewRouter,
+  updateReviewRouter,
 );

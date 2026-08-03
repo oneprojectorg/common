@@ -68,6 +68,7 @@ function MyReviewForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
+    isEditing,
     review,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
@@ -77,7 +78,9 @@ function MyReviewForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  if (review?.state === ProposalReviewState.SUBMITTED) {
+  // A submitted review shows the read-only result unless the reviewer has
+  // switched it back into the form via "Edit review".
+  if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
       <>
         <SubmittedReviewView rubricTemplate={template} review={review} />
