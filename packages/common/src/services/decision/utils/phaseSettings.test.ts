@@ -75,6 +75,7 @@ describe('getPhaseReviewSettings', () => {
       scope: 'all',
       allowRevisions: true,
       anonymousFeedback: undefined,
+      openReviews: false,
     });
   });
 
@@ -107,6 +108,7 @@ describe('getPhaseReviewSettings', () => {
       scope: 'all',
       allowRevisions: false,
       anonymousFeedback: true,
+      openReviews: false,
     });
   });
 
@@ -138,6 +140,7 @@ describe('getPhaseReviewSettings', () => {
       scope: 'all',
       allowRevisions: false,
       anonymousFeedback: true,
+      openReviews: false,
     });
   });
 
@@ -166,6 +169,7 @@ describe('getPhaseReviewSettings', () => {
       scope: 'all',
       allowRevisions: true,
       anonymousFeedback: true,
+      openReviews: false,
     });
   });
 
@@ -238,5 +242,59 @@ describe('getPhaseReviewSettings', () => {
     );
 
     expect(result.scope).toBe('by_category');
+  });
+
+  it('defaults openReviews to false when the phase has no review setting', () => {
+    const result = getPhaseReviewSettings(
+      { phases: [{ phaseId: 'review', rules: { reviews: { submit: true } } }] },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(false);
+  });
+
+  it('resolves openReviews true from the phase rules', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { submit: true, openReviews: true } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(true);
+  });
+
+  it('resolves openReviews false when explicitly set on the phase', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { submit: true, openReviews: false } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(false);
+  });
+
+  it('never reads a legacy config counterpart for openReviews (phase-only)', () => {
+    const result = getPhaseReviewSettings(
+      {
+        // A stray legacy-style flag must not leak into the phase-only resolution.
+        config: { reviewsAllowRevisions: false },
+        phases: [{ phaseId: 'review', rules: { reviews: { submit: true } } }],
+      },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import { type RubricTemplateSchema, createDecisionRole } from '@op/common';
+import { assertInstancePhase } from '@op/common/src/services/decision';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -211,6 +212,48 @@ export class TestReviewsDataManager {
     const phases = (instanceData.phases ?? []).map((p) =>
       p?.phaseId === phaseId ? { ...p, endDate } : p,
     );
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases,
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+  }
+
+  /**
+   * Opts a phase into (or out of) open reviews by merging
+   * `rules.reviews.openReviews` into that phase entry in `instanceData.phases`.
+   */
+  async setPhaseOpenReviews(
+    instanceId: string,
+    phaseId: string,
+    openReviews: boolean,
+  ) {
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const instanceData =
+      (instanceRecord?.instanceData as {
+        phases?: Array<{ phaseId: string; rules?: Record<string, unknown> }>;
+      } | null) ?? {};
+    // Mirror the service posture: an unknown phase is a hard error, not a
+    // silent no-op. Throws NotFoundError, exactly like production reads.
+    assertInstancePhase({ instance: { instanceData }, phaseId });
+    const phases = (instanceData.phases ?? []).map((p) => {
+      if (p.phaseId !== phaseId) {
+        return p;
+      }
+      const rules = p.rules ?? {};
+      const reviews =
+        (rules.reviews as Record<string, unknown> | undefined) ?? {};
+      return {
+        ...p,
+        rules: { ...rules, reviews: { ...reviews, openReviews } },
+      };
+    });
     await db
       .update(processInstances)
       .set({

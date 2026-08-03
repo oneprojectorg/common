@@ -43,7 +43,10 @@ export function hasVotingPhase(
 
 /** `PhaseReviewSettings` with defaults applied (`anonymousFeedback` has none). */
 export type ReviewSettings = Required<
-  Pick<PhaseReviewSettings, 'submit' | 'policy' | 'scope' | 'allowRevisions'>
+  Pick<
+    PhaseReviewSettings,
+    'submit' | 'policy' | 'scope' | 'allowRevisions' | 'openReviews'
+  >
 > & { anonymousFeedback: PhaseReviewSettings['anonymousFeedback'] };
 
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
@@ -72,5 +75,8 @@ export function getPhaseReviewSettings(
       reviews?.allowRevisions ?? config?.reviewsAllowRevisions ?? true,
     anonymousFeedback:
       reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback,
+    // Open reviews is phase-only (no legacy config counterpart), like scope,
+    // and defaults to false.
+    openReviews: reviews?.openReviews ?? false,
   };
 }

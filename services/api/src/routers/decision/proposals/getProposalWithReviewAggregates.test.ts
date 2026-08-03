@@ -307,6 +307,296 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       feasibility: 2,
     });
   });
+
+  // --- Open Reviews read gate (PR 1/5) -------------------------------------
+  // Admin OR (REVIEW access AND the current phase's `openReviews` is on).
+
+  it('admits an admin even when the current phase has openReviews off', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      false,
+    );
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const scenario = await testData.createReviewAssignment({
+      context,
+      title: 'Admin reads with openReviews off',
+    });
+    await createProposalReview({
+      assignmentId: scenario.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: {
+          impact: 7,
+          feasibility: 4,
+          [OVERALL_RECOMMENDATION_KEY]: 'yes',
+        },
+        rationales: {},
+      },
+      submittedAt: new Date().toISOString(),
+    });
+
+    // defaultReviewer holds profile-admin access on the instance.
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalId: scenario.proposal.id,
+    });
+
+    expect(result.proposal.id).toBe(scenario.proposal.id);
+    expect(result.reviews).toHaveLength(1);
+  });
+
+  it('denies a reviewer (REVIEW, no admin) when openReviews is off', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      false,
+    );
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    // The reviewer even holds an assignment on this proposal — still denied,
+    // because the own-assignment review flow is a separate gate.
+    const scenario = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Reviewer blocked while openReviews off',
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalId: scenario.proposal.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('admits a reviewer with an assignment when openReviews is on, exposing peers reviews', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const scenario = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Open reviews visible to peer reviewer',
+    });
+
+    // A different reviewer submits a review on the same proposal.
+    const peerReviewer = await testData.createReviewer(context);
+    const peerAssignment = await createReviewAssignment({
+      processInstanceId: context.instance.instance.id,
+      proposalId: scenario.proposal.id,
+      reviewerProfileId: peerReviewer.profileId,
+    });
+    await createProposalReview({
+      assignmentId: peerAssignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: {
+          impact: 6,
+          feasibility: 3,
+          [OVERALL_RECOMMENDATION_KEY]: 'yes',
+        },
+        rationales: {},
+      },
+      submittedAt: new Date().toISOString(),
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    const result =
+      await reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalId: scenario.proposal.id,
+      });
+
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0]!.reviewer.id).toBe(peerReviewer.profileId);
+    expect(result.reviews[0]!.review.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('admits a reviewer with NO assignment on the proposal when openReviews is on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    // Proposal + a submitted review owned by someone else entirely.
+    const scenario = await testData.createReviewAssignment({
+      context,
+      title: 'Process-wide open reviews',
+    });
+    await createProposalReview({
+      assignmentId: scenario.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: {
+          impact: 8,
+          feasibility: 5,
+          [OVERALL_RECOMMENDATION_KEY]: 'yes',
+        },
+        rationales: {},
+      },
+      submittedAt: new Date().toISOString(),
+    });
+
+    // An unrelated reviewer: REVIEW access in the process, no assignment here.
+    const outsideReviewer =
+      await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(
+      outsideReviewer.email,
+    );
+
+    const result =
+      await reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalId: scenario.proposal.id,
+      });
+
+    expect(result.proposal.id).toBe(scenario.proposal.id);
+    expect(result.reviews).toHaveLength(1);
+  });
+
+  it('denies a participant without REVIEW access even when openReviews is on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const scenario = await testData.createReviewAssignment({
+      context,
+      title: 'Member cannot read reviews',
+    });
+
+    // READ-only member: no REVIEW, no ADMIN.
+    const member = await testData.createInstanceMember(context);
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalId: scenario.proposal.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('never surfaces draft reviews even when openReviews is on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const scenario = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Draft stays hidden under open reviews',
+    });
+
+    // One peer with a SUBMITTED review, one with a DRAFT review.
+    const submittedPeer = await testData.createReviewer(context);
+    const submittedAssignment = await createReviewAssignment({
+      processInstanceId: context.instance.instance.id,
+      proposalId: scenario.proposal.id,
+      reviewerProfileId: submittedPeer.profileId,
+    });
+    await createProposalReview({
+      assignmentId: submittedAssignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: {
+          impact: 5,
+          feasibility: 2,
+          [OVERALL_RECOMMENDATION_KEY]: 'no',
+        },
+        rationales: {},
+      },
+      submittedAt: new Date().toISOString(),
+    });
+
+    const draftPeer = await testData.createReviewer(context);
+    const draftAssignment = await createReviewAssignment({
+      processInstanceId: context.instance.instance.id,
+      proposalId: scenario.proposal.id,
+      reviewerProfileId: draftPeer.profileId,
+    });
+    await createProposalReview({
+      assignmentId: draftAssignment.id,
+      state: ProposalReviewState.DRAFT,
+      reviewData: {
+        answers: { impact: 9, feasibility: 5 },
+        rationales: {},
+      },
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    const result =
+      await reviewerCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalId: scenario.proposal.id,
+      });
+
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0]!.reviewer.id).toBe(submittedPeer.profileId);
+    expect(
+      result.reviews.some((r) => r.reviewer.id === draftPeer.profileId),
+    ).toBe(false);
+  });
 });
 
 describeDecisionAccessTierGating('getProposalWithReviewAggregates', {
