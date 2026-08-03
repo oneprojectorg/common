@@ -19,6 +19,10 @@ const toggleVariants = cva(
           'h-11 min-w-11 px-4 has-data-[icon=inline-end]:pe-3 has-data-[icon=inline-start]:ps-3',
         sm: "h-8 min-w-8 rounded-md px-3 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4",
         lg: 'h-12 min-w-12 px-4 has-data-[icon=inline-end]:pe-3 has-data-[icon=inline-start]:ps-3',
+        // Square icon-only toggles (no horizontal padding), sized to match the
+        // Button icon variants.
+        icon: 'size-11 p-0',
+        'icon-sm': "size-8 rounded-md p-0 [&_svg:not([class*='size-'])]:size-4",
       },
     },
     defaultVariants: {
