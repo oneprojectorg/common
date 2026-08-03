@@ -1,6 +1,8 @@
 import { createClient } from '@op/api/serverClient';
+import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { forbidden, notFound } from 'next/navigation';
 
 import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
 
@@ -33,7 +35,18 @@ export async function generateMetadata({
     return {
       title: decisionName ? `${reviewLabel} | ${decisionName}` : reviewLabel,
     };
-  } catch {
+  } catch (error) {
+    // Auth failures become the same interrupts ReviewLayout uses; anything
+    // else falls through to empty metadata and lets the page render decide.
+    const cause = error instanceof Error ? error.cause : null;
+    if (cause instanceof CommonError) {
+      if (cause.statusCode === 401 || cause.statusCode === 403) {
+        forbidden();
+      }
+      if (cause.statusCode === 404) {
+        notFound();
+      }
+    }
     return {};
   }
 }
