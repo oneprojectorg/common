@@ -8,11 +8,13 @@ import {
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import type { SortableItemControls } from '@op/ui/Sortable';
+import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
-import { useRef, useState } from 'react';
-import { LuTrash2 } from 'react-icons/lu';
+import { useEffect, useRef, useState } from 'react';
+import { LuGripVertical, LuPlus, LuTrash2, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -20,6 +22,7 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 import type {
   CriterionView,
   RubricCriterionType,
+  SelectOption,
 } from '@/components/decisions/rubricTemplate';
 
 import {
@@ -48,6 +51,7 @@ interface RubricCriterionCardProps {
     scoreValue: number,
     label: string,
   ) => void;
+  onUpdateOptions?: (criterionId: string, options: SelectOption[]) => void;
   onUpdateRequired: (criterionId: string, required: boolean) => void;
   isNew?: boolean;
   onNewComplete?: (criterionId: string) => void;
@@ -77,6 +81,7 @@ export function RubricCriterionCard({
   onChangeType,
   onUpdateMaxPoints,
   onUpdateScoreLabel,
+  onUpdateOptions,
   onUpdateRequired,
   isNew,
   onNewComplete,
@@ -169,6 +174,18 @@ export function RubricCriterionCard({
                 }
                 onUpdateScoreLabel={(scoreValue, label) =>
                   onUpdateScoreLabel?.(criterion.id, scoreValue, label)
+                }
+              />
+            </>
+          )}
+
+          {criterion.criterionType === 'single_select' && (
+            <>
+              <hr />
+              <SingleSelectCriterionConfig
+                criterion={criterion}
+                onUpdateOptions={(options) =>
+                  onUpdateOptions?.(criterion.id, options)
                 }
               />
             </>
@@ -366,6 +383,192 @@ function ScoredCriterionConfig({
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Single-select criterion config (option list)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sortable row: `id` is the stored option id, `value` its display label.
+ * `description` isn't editable here but is carried through so edits never
+ * strip per-option descriptions authored outside the builder.
+ */
+interface OptionRow {
+  id: string;
+  value: string;
+  description?: string;
+}
+
+/**
+ * Options editor for single-select criteria. Mirrors the proposal template's
+ * FieldConfigDropdown UI: drag to reorder, min-2 removal guard, Enter adds
+ * the next option. Manages its own row state (initialized on mount) and
+ * reports the full option list on every change; row ids are the stored
+ * option ids so relabels/reorders never break saved answers.
+ */
+function SingleSelectCriterionConfig({
+  criterion,
+  onUpdateOptions,
+}: {
+  criterion: CriterionView;
+  onUpdateOptions: (options: SelectOption[]) => void;
+}) {
+  const t = useTranslations();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const shouldFocusNewRef = useRef(false);
+
+  const [options, setOptions] = useState<OptionRow[]>(() =>
+    criterion.options.map((o) => ({
+      id: o.value,
+      value: o.title,
+      ...(o.description !== undefined ? { description: o.description } : {}),
+    })),
+  );
+
+  const updateOptions = (next: OptionRow[]) => {
+    setOptions(next);
+    onUpdateOptions(
+      next.map((row) => ({
+        value: row.id,
+        title: row.value,
+        ...(row.description !== undefined
+          ? { description: row.description }
+          : {}),
+      })),
+    );
+  };
+
+  // Focus the last input when a new option is added
+  useEffect(() => {
+    if (shouldFocusNewRef.current && containerRef.current) {
+      const inputs = containerRef.current.querySelectorAll(
+        'input[type="text"]',
+      ) as NodeListOf<HTMLInputElement>;
+      const lastInput = inputs[inputs.length - 1];
+      lastInput?.focus();
+      shouldFocusNewRef.current = false;
+    }
+  }, [options.length]);
+
+  const renderDragPreview = (items: OptionRow[]) => {
+    const item = items[0];
+    if (!item) {
+      return null;
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <LuGripVertical className="size-4 text-neutral-gray3" />
+        <span className="me-12 grow rounded-lg border border-neutral-gray2 bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
+          {item.value || t('Option')}
+        </span>
+      </div>
+    );
+  };
+
+  const handleAddOption = () => {
+    shouldFocusNewRef.current = true;
+    updateOptions([
+      ...options,
+      { id: crypto.randomUUID().slice(0, 8), value: '' },
+    ]);
+  };
+
+  const handleUpdateOption = (id: string, value: string) => {
+    updateOptions(
+      options.map((opt) => (opt.id === id ? { ...opt, value } : opt)),
+    );
+  };
+
+  const handleRemoveOption = (id: string) => {
+    updateOptions(options.filter((opt) => opt.id !== id));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, option: OptionRow) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const isLastOption = options[options.length - 1]?.id === option.id;
+      if (isLastOption && option.value.trim()) {
+        handleAddOption();
+      }
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="space-y-2">
+      <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
+
+      <Sortable
+        items={options}
+        onChange={updateOptions}
+        dragTrigger="handle"
+        getItemLabel={(item) => item.value || t('Option')}
+        renderDragPreview={renderDragPreview}
+        className="gap-2"
+        aria-label={t('Options')}
+      >
+        {(option, controls) => {
+          const index = options.findIndex((o) => o.id === option.id);
+          return (
+            <div className="flex items-center gap-2">
+              <DragHandle
+                {...controls.dragHandleProps}
+                aria-label={t('Drag to reorder option')}
+                className="text-neutral-gray3 hover:text-neutral-gray4"
+              />
+              <TextField
+                value={option.value}
+                onChange={(value) => handleUpdateOption(option.id, value)}
+                onKeyDown={(e) => handleKeyDown(e, option)}
+                inputProps={{
+                  placeholder: t('Option {number}', { number: index + 1 }),
+                  className: 'bg-white',
+                }}
+                className="w-full"
+              />
+              <TooltipTrigger isDisabled={options.length > 2}>
+                <Button
+                  color="ghost"
+                  size="small"
+                  aria-label={t('Remove option')}
+                  aria-disabled={options.length <= 2 || undefined}
+                  aria-description={
+                    options.length <= 2
+                      ? t('At least two options are required')
+                      : undefined
+                  }
+                  excludeFromTabOrder={options.length <= 2}
+                  onPress={() => {
+                    if (options.length > 2) {
+                      handleRemoveOption(option.id);
+                    }
+                  }}
+                  className={`p-2 ${
+                    options.length <= 2
+                      ? 'cursor-default text-neutral-gray3 opacity-30'
+                      : 'text-neutral-gray3 hover:text-neutral-charcoal'
+                  }`}
+                >
+                  <LuX className="size-4" />
+                </Button>
+                <Tooltip>{t('At least two options are required')}</Tooltip>
+              </TooltipTrigger>
+            </div>
+          );
+        }}
+      </Sortable>
+
+      <Button
+        color="ghost"
+        size="small"
+        onPress={handleAddOption}
+        className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
+      >
+        <LuPlus className="size-4" />
+        <span>{t('Add option')}</span>
+      </Button>
     </div>
   );
 }

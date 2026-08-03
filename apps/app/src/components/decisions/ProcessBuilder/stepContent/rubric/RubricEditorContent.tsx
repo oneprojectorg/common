@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { RubricTemplateSchema } from '@op/common/client';
+import type {
+  RubricTemplateSchema,
+  XFormatPropertySchema,
+} from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
@@ -22,6 +25,7 @@ import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/st
 import type {
   CriterionView,
   RubricCriterionType,
+  SelectOption,
 } from '@/components/decisions/rubricTemplate';
 import {
   addCriterion,
@@ -38,6 +42,7 @@ import {
   removeCriterion,
   reorderCriteria,
   setCriterionRequired,
+  setSelectOptions,
   updateCriterionDescription,
   updateCriterionJsonSchema,
   updateCriterionLabel,
@@ -103,6 +108,12 @@ export function RubricEditorContent({
     Map<string, { maximum: number; oneOf: { const: number; title: string }[] }>
   >(new Map());
 
+  // Cache single-select options (the `oneOf` list) so switching type and
+  // back doesn't lose them
+  const singleSelectOptionsCacheRef = useRef<
+    Map<string, XFormatPropertySchema['oneOf']>
+  >(new Map());
+
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Derive criterion views from the template
@@ -156,6 +167,7 @@ export function RubricEditorContent({
       return next;
     });
     scoredConfigCacheRef.current.delete(criterionToDelete);
+    singleSelectOptionsCacheRef.current.delete(criterionToDelete);
     setCriterionToDelete(null);
   }, [criterionToDelete]);
 
@@ -206,8 +218,21 @@ export function RubricEditorContent({
           });
         }
 
-        // Change the type (rebuilds schema from scratch)
-        let updated = changeCriterionType(prev, criterionId, newType);
+        // Stash single-select options before switching away from single_select
+        if (getCriterionType(prev, criterionId) === 'single_select') {
+          const schema = getCriterionSchema(prev, criterionId);
+          if (schema?.oneOf) {
+            singleSelectOptionsCacheRef.current.set(criterionId, schema.oneOf);
+          }
+        }
+
+        // Change the type (rebuilds schema from scratch). Fresh single-select
+        // criteria start pre-filled with editable Yes/Maybe/No options.
+        let updated = changeCriterionType(prev, criterionId, newType, [
+          t('Yes'),
+          t('Maybe'),
+          t('No'),
+        ]);
 
         // Restore cached scored config when switching back to scored
         if (newType === 'scored') {
@@ -220,10 +245,20 @@ export function RubricEditorContent({
           }
         }
 
+        // Restore cached options when switching back to single_select
+        if (newType === 'single_select') {
+          const cached = singleSelectOptionsCacheRef.current.get(criterionId);
+          if (cached) {
+            updated = updateCriterionJsonSchema(updated, criterionId, {
+              oneOf: cached,
+            });
+          }
+        }
+
         return updated;
       });
     },
-    [],
+    [t],
   );
 
   const handleUpdateMaxPoints = useCallback(
@@ -240,6 +275,13 @@ export function RubricEditorContent({
       setTemplate((prev) =>
         updateScoreLabel(prev, criterionId, scoreValue, label),
       );
+    },
+    [],
+  );
+
+  const handleUpdateOptions = useCallback(
+    (criterionId: string, options: SelectOption[]) => {
+      setTemplate((prev) => setSelectOptions(prev, criterionId, options));
     },
     [],
   );
@@ -378,6 +420,7 @@ export function RubricEditorContent({
                       onChangeType={handleChangeType}
                       onUpdateMaxPoints={handleUpdateMaxPoints}
                       onUpdateScoreLabel={handleUpdateScoreLabel}
+                      onUpdateOptions={handleUpdateOptions}
                     />
                   );
                 }}

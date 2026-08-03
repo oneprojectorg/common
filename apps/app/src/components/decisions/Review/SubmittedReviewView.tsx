@@ -135,6 +135,17 @@ function RubricFieldResult({
       );
     }
 
+    // Single-select options store an opaque id as the value, so show the
+    // option's title instead.
+    if (inferCriterionType(field.schema) === 'single_select') {
+      return (
+        <ResultCard
+          value={selected ? selected.title || String(selected.value) : '—'}
+          description={rationale}
+        />
+      );
+    }
+
     return (
       <ResultCard
         value={selected?.value}

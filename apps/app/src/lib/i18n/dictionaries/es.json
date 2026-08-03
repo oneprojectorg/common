@@ -1151,6 +1151,7 @@
   "Criterion name": "Nombre del criterio",
   "Criterion description is required": "La descripción del criterio es obligatoria",
   "Criterion label is required": "La etiqueta del criterio es obligatoria",
+  "Reviewers select one option": "Los revisores seleccionan una opción",
   "Drag to reorder criterion": "Arrastrar para reordenar criterio",
   "e.g., Goal Alignment": "p. ej., Alineación con objetivos",
   "Add a short, clear name for this evaluation criterion": "Agregue un nombre corto y claro para este criterio de evaluación",

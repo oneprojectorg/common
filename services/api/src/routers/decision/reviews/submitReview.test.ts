@@ -41,6 +41,24 @@ const rubricTemplate: RubricTemplateSchema = {
   required: ['impact'],
 };
 
+const singleSelectRubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['department'],
+  properties: {
+    department: {
+      type: 'string',
+      title: 'Department',
+      'x-format': 'dropdown',
+      oneOf: [
+        { const: 'a1b2c3d4', title: 'Parks' },
+        { const: 'e5f6a7b8', title: 'Transportation' },
+        { const: 'c9d0e1f2', title: 'Public Health' },
+      ],
+    },
+  },
+  required: ['department'],
+};
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
@@ -112,6 +130,88 @@ describe.concurrent('submitReview', () => {
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.reviewData.rationales).toEqual({});
+  });
+
+  it('accepts a single-select answer with a known option id', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(
+      created.context,
+      singleSelectRubricTemplate,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { department: 'a1b2c3d4' },
+        rationales: {},
+      },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(result.reviewData.answers).toEqual({ department: 'a1b2c3d4' });
+  });
+
+  it('rejects a single-select answer with an unknown option id', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(
+      created.context,
+      singleSelectRubricTemplate,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { department: 'not-an-option' },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('accepts an array answer for a single-select field by coercing to its first element', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // `coerceToSchema` unwraps an array to `value[0]` before validation, so
+    // a single-item array of a known option id passes; the stored answer
+    // keeps its original array shape since only the validation copy is
+    // coerced.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(
+      created.context,
+      singleSelectRubricTemplate,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { department: ['e5f6a7b8'] },
+        rationales: {},
+      },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(result.reviewData.answers).toEqual({ department: ['e5f6a7b8'] });
   });
 
   it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {

@@ -25,6 +25,10 @@ export const CRITERION_TYPE_REGISTRY: Record<
     labelKey: 'Yes/No',
     descriptionKey: 'Simple binary assessment',
   },
+  single_select: {
+    labelKey: 'Multiple choice',
+    descriptionKey: 'Reviewers select one option',
+  },
   long_text: {
     labelKey: 'Text response only',
     descriptionKey: 'No score, just written feedback',
@@ -37,5 +41,6 @@ export const CRITERION_TYPE_REGISTRY: Record<
 export const CRITERION_TYPES: RubricCriterionType[] = [
   'scored',
   'yes_no',
+  'single_select',
   'long_text',
 ];
