@@ -4,6 +4,7 @@ import { Button } from '@op/sense/Button';
 import { Input } from '@op/sense/Input';
 import { DragHandle, Sortable } from '@op/sense/Sortable';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
@@ -150,17 +151,19 @@ function FieldConfigDropdownOptions({
               <Tooltip disabled={options.length > 2}>
                 <TooltipTrigger
                   render={
+                    // aria-disabled (not the `disabled` attr) so the button
+                    // still receives hover/focus — a disabled <button> eats
+                    // pointer events, so the tooltip explaining WHY would never
+                    // fire. The onClick guard keeps it inert when blocked.
                     <Button
                       variant="outline"
                       size="icon"
                       aria-label={t('Remove option')}
-                      disabled={options.length <= 2 || undefined}
-                      aria-description={
-                        options.length <= 2
-                          ? t('At least two options are required')
-                          : undefined
-                      }
-                      tabIndex={options.length <= 2 ? -1 : undefined}
+                      aria-disabled={options.length <= 2 || undefined}
+                      className={cn(
+                        options.length <= 2 &&
+                          'cursor-not-allowed opacity-50 hover:bg-transparent',
+                      )}
                       onClick={() => {
                         if (options.length > 2) {
                           handleRemoveOption(option.id);
