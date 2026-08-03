@@ -1,5 +1,8 @@
 import { NotFoundError } from '@op/common';
-import { adminDecisionInstanceDetailSchema } from '@op/common/client';
+import {
+  adminDecisionInstanceDetailSchema,
+  isReviewPhase,
+} from '@op/common/client';
 import { db } from '@op/db/client';
 import { z } from 'zod';
 
@@ -18,6 +21,9 @@ const phaseRulesSchema = z
       })
       .partial()
       .optional(),
+    // Canonical review-enablement location; `proposals.review` is its
+    // deprecated read fallback. Kept so `isReviewPhase` resolves both shapes.
+    reviews: z.object({ submit: z.boolean().optional() }).partial().optional(),
     voting: z
       .object({
         submit: z.boolean().optional(),
@@ -157,7 +163,7 @@ export const getDecisionInstanceRouter = router({
             endDate: phase.endDate ?? null,
             isCurrent: phase.phaseId === instance.currentStateId,
             hasProposals: rules?.proposals?.submit ?? false,
-            hasReviews: rules?.proposals?.review ?? false,
+            hasReviews: isReviewPhase({ rules }),
             hasVoting: rules?.voting?.submit ?? false,
             canEditProposals: rules?.proposals?.edit ?? false,
             canEditVotes: rules?.voting?.edit ?? false,
