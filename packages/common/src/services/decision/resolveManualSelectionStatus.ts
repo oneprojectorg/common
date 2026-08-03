@@ -4,6 +4,7 @@ import type { DbClient } from '@op/db/client';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
+import { getPreviousPhase } from './utils/phaseOrder';
 
 export type InstanceForStatusResolution = {
   id: string;
@@ -45,14 +46,7 @@ export async function resolveManualSelectionStatus({
     return { selectionsAreConfirmed: true };
   }
 
-  const currentPhaseIndex = phases.findIndex(
-    (p) => p.phaseId === currentStateId,
-  );
-  if (currentPhaseIndex <= 0) {
-    return { selectionsAreConfirmed: true };
-  }
-
-  const previousPhase = phases[currentPhaseIndex - 1];
+  const previousPhase = getPreviousPhase({ phases }, currentStateId);
   if (!previousPhase) {
     return { selectionsAreConfirmed: true };
   }

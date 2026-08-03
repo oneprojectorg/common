@@ -28,6 +28,7 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import { getPhaseIndex, getPreviousPhase } from './utils/phaseOrder';
 import { isReviewPhase } from './utils/phaseSettings';
 
 export interface SubmitManualSelectionInput {
@@ -135,12 +136,14 @@ export async function submitManualSelection({
     const lockedData =
       lockedInstance.instanceData as DecisionInstanceData | null;
     const lockedPhases = lockedData?.phases;
-    const lockedPhaseIndex =
-      lockedPhases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
-    const lockedPreviousPhase =
-      lockedPhases && lockedPhaseIndex > 0
-        ? lockedPhases[lockedPhaseIndex - 1]
-        : undefined;
+    const lockedPhaseIndex = getPhaseIndex(
+      { phases: lockedPhases },
+      currentStateId,
+    );
+    const lockedPreviousPhase = getPreviousPhase(
+      { phases: lockedPhases },
+      currentStateId,
+    );
     if (!lockedPreviousPhase) {
       throw new ValidationError(
         'Manual selection is not available for this instance',

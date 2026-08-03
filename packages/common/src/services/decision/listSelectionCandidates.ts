@@ -10,6 +10,7 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { Proposal } from './schemas/proposal';
+import { getPreviousPhase } from './utils/phaseOrder';
 
 export interface SelectionCandidates {
   proposals: Proposal[];
@@ -127,10 +128,5 @@ function resolvePreviousPhaseId(instance: {
     return undefined;
   }
 
-  const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
-  if (currentIndex <= 0) {
-    return undefined;
-  }
-
-  return phases[currentIndex - 1]?.phaseId;
+  return getPreviousPhase({ phases }, currentStateId)?.phaseId;
 }

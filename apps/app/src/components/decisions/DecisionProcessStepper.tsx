@@ -41,6 +41,8 @@ export function DecisionProcessStepper({
     currentPhaseAdvancement,
     currentPhaseEndDate,
   } = useMemo(() => {
+    // phaseOrder: intentionally ad-hoc — legacy ProcessPhase is keyed by `id`,
+    // not `phaseId`, so the shared utils' input type doesn't fit.
     const idx = phases.findIndex((p) => p.id === currentStateId);
     const currentPhase = idx >= 0 ? phases[idx] : undefined;
     const nextPhase = idx >= 0 ? phases[idx + 1] : undefined;

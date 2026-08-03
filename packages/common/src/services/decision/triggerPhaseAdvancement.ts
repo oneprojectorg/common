@@ -14,6 +14,7 @@ import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { getNextPhase, getPhaseIndex } from './utils/phaseOrder';
 
 export interface TriggerPhaseAdvancementInput {
   instanceId: string;
@@ -92,17 +93,17 @@ export async function triggerPhaseAdvancement({
     );
   }
 
-  const currentPhaseIndex = phases.findIndex((p) => p.phaseId === fromPhaseId);
-
-  if (currentPhaseIndex === -1) {
+  if (getPhaseIndex(instanceData, fromPhaseId) === -1) {
     throw new CommonError('Current phase not found in instance phases');
   }
 
-  if (currentPhaseIndex === phases.length - 1) {
+  const nextPhase = getNextPhase(instanceData, fromPhaseId);
+
+  if (!nextPhase) {
     throw new ValidationError('Already on final phase');
   }
 
-  const toPhaseId = phases[currentPhaseIndex + 1]!.phaseId;
+  const toPhaseId = nextPhase.phaseId;
 
   const advanceResult = await db.transaction(async (tx) => {
     const result = await advancePhase({

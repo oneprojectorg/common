@@ -1,7 +1,12 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
+import {
+  getPreviousPhase,
+  isLastPhase,
+  isReviewPhase,
+  isVotingPhase,
+} from '@op/common/client';
 import { notFound } from 'next/navigation';
 
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
@@ -54,8 +59,7 @@ function DecisionStateRouterNew({
     // When the *previous* phase was a review phase, an admin can advance
     // proposals using rich review aggregates — that's the ReviewSelection view.
     // Everyone else falls back to the generic manual-selection prompt.
-    const currentIdx = phases.findIndex((p) => p.phaseId === currentStateId);
-    const previousPhase = currentIdx > 0 ? phases[currentIdx - 1] : null;
+    const previousPhase = getPreviousPhase({ phases }, currentStateId);
     const previousWasReview = !!previousPhase && isReviewPhase(previousPhase);
 
     if (previousWasReview && previousPhase && isAdmin) {

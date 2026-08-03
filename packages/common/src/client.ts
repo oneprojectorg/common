@@ -20,7 +20,9 @@ export {
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
 export {
+  getNextPhase,
   getPhaseIndex,
+  getPreviousPhase,
   getPreviousPhases,
   isPhaseAtOrBefore,
 } from './services/decision/utils/phaseOrder';

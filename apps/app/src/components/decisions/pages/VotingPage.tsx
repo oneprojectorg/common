@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type InstancePhaseData } from '@op/api/encoders';
+import { getNextPhase, getPhaseIndex } from '@op/common/client';
 import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
 
@@ -41,17 +41,10 @@ export function VotingPage({
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
-  const currentPhaseIndex = phases.findIndex(
-    (p) => p.phaseId === currentPhaseId,
-  );
+  const currentPhaseIndex = getPhaseIndex({ phases }, currentPhaseId);
   const currentPhase =
-    currentPhaseIndex >= 0
-      ? (phases[currentPhaseIndex] as InstancePhaseData)
-      : undefined;
-  const nextPhase =
-    currentPhaseIndex >= 0
-      ? (phases[currentPhaseIndex + 1] as InstancePhaseData | undefined)
-      : undefined;
+    currentPhaseIndex >= 0 ? phases[currentPhaseIndex] : undefined;
+  const nextPhase = getNextPhase({ phases }, currentPhaseId);
 
   const hasVoted = voteStatus.hasVoted;
 

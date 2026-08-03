@@ -113,6 +113,8 @@ function resolveReviewPhaseId(instance: {
   } | null;
 }): string | undefined {
   const phases = instance.instanceData?.phases ?? [];
+  // phaseOrder: intentionally ad-hoc — an unknown current phase falls back to
+  // scanning from the LAST phase, unlike the utils' fail-closed -1/empty.
   const currentIdx = phases.findIndex(
     (p) => p.phaseId === instance.currentStateId,
   );
