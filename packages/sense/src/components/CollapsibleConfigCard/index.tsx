@@ -106,7 +106,8 @@ function CollapsibleConfigCard({
   // (the exact ramp step, not --muted, which sits darker since #1615).
   const cardClasses = cn(
     'rounded-lg border bg-background transition-colors',
-    isCollapsible && !locked && 'hover:bg-gray-50 data-open:bg-gray-50',
+    isCollapsible &&
+      'hover:bg-gray-50 data-open:border-input data-open:bg-gray-50',
     isDragging && 'opacity-50',
     className,
   );
