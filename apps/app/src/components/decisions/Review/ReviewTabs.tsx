@@ -2,9 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { usePostHog } from 'posthog-js/react';
 import { type ReactNode, Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,9 +49,37 @@ export function ReviewTabs({
 }) {
   const t = useTranslations();
   const { assignment } = useReviewForm();
+  const posthog = usePostHog();
 
   return (
-    <Tabs defaultSelectedKey={MY_REVIEW_TAB}>
+    <Tabs
+      defaultSelectedKey={MY_REVIEW_TAB}
+      onSelectionChange={(key) => {
+        // One event covers every tab, split by `tab`: the reviewer's own form,
+        // the current phase's "Other reviews", and the previous-phase
+        // "Reviews from {phase}" tabs.
+        const isPreviousPhase =
+          key !== MY_REVIEW_TAB && key !== OTHER_REVIEWS_TAB;
+        posthog.capture(
+          'review_tab_opened',
+          getDecisionCommonProperties({
+            decisionInstanceId: assignment.processInstanceId,
+            proposalId: assignment.proposal.id,
+            additionalProps: {
+              tab:
+                key === MY_REVIEW_TAB
+                  ? 'my_review'
+                  : key === OTHER_REVIEWS_TAB
+                    ? 'other_reviews'
+                    : 'previous_phase',
+              phase_id: isPreviousPhase
+                ? String(key).slice(PHASE_TAB_PREFIX.length)
+                : assignment.phaseId,
+            },
+          }),
+        );
+      }}
+    >
       <TabList aria-label={t('Review Proposal')}>
         <Tab id={MY_REVIEW_TAB}>{t('My review')}</Tab>
         {showOtherReviews ? (
@@ -138,6 +168,7 @@ function PhaseReviews({
 }) {
   const { assignment, rubricTemplate } = useReviewForm();
   const { user } = useUser();
+  const posthog = usePostHog();
   const excludeProfileId = excludeOwnReview
     ? (user?.currentProfileId ?? undefined)
     : undefined;
@@ -145,6 +176,25 @@ function PhaseReviews({
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<
     string | null
   >(null);
+
+  const handleSelectAssignment = (reviewAssignmentId: string | null) => {
+    // Non-null = drilling into another reviewer's full review; null = back.
+    if (reviewAssignmentId !== null) {
+      posthog.capture(
+        'review_viewed',
+        getDecisionCommonProperties({
+          decisionInstanceId: assignment.processInstanceId,
+          proposalId: assignment.proposal.id,
+          additionalProps: {
+            phase_id: phaseId,
+            phase_kind: phaseId === assignment.phaseId ? 'current' : 'previous',
+            review_assignment_id: reviewAssignmentId,
+          },
+        }),
+      );
+    }
+    setSelectedAssignmentId(reviewAssignmentId);
+  };
 
   const [proposalWithReviews] =
     trpc.decision.getProposalWithReviewAggregates.useSuspenseQuery({
@@ -172,7 +222,7 @@ function PhaseReviews({
       proposalWithReviews={proposalWithReviews}
       rubricTemplate={rubricTemplate}
       selectedAssignmentId={selectedAssignmentId}
-      onSelectAssignment={setSelectedAssignmentId}
+      onSelectAssignment={handleSelectAssignment}
       excludeProfileId={excludeProfileId}
       hideSummaryHeader
     />

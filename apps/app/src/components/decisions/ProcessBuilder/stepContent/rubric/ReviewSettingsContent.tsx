@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
 import type { ReviewsScope } from '@op/common';
@@ -9,6 +10,7 @@ import { Chip } from '@op/ui/Chip';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,6 +32,7 @@ export function ReviewSettingsContent({
   decisionProfileId,
 }: SectionProps) {
   const t = useTranslations();
+  const posthog = usePostHog();
   // Gates the by-category scope. When off, the radio stays disabled with a
   // "Coming soon" chip (pre-flag behavior) and the reviewer cards never render.
   const byCategoryEnabled = useFeatureFlag('reviews-v2');
@@ -114,7 +117,20 @@ export function ReviewSettingsContent({
         <Header3 className="font-serif text-title-sm">{t('Scope')}</Header3>
         <RadioGroup
           value={settings.scope}
-          onChange={(value) => updateSettings({ scope: value as ReviewsScope })}
+          onChange={(value) => {
+            posthog.capture(
+              'review_scope_changed',
+              getDecisionCommonProperties({
+                decisionInstanceId: instanceId,
+                additionalProps: {
+                  phase_id: reviewPhase?.phaseId ?? null,
+                  scope: value,
+                  previous_scope: settings.scope,
+                },
+              }),
+            );
+            updateSettings({ scope: value as ReviewsScope });
+          }}
           aria-label={t('Scope')}
           label={t('What should each reviewer be responsible for?')}
           labelClassName="text-sm font-normal text-neutral-gray4"

@@ -390,9 +390,69 @@ export async function trackUserVoted(
 }
 
 /**
+ * Track a reviewer's first draft save on an assignment (PENDING → IN_PROGRESS)
+ */
+export async function trackReviewStarted(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, unknown>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'review_started',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
+  );
+}
+
+/**
+ * Track when a reviewer asks the author to revise a proposal
+ */
+export async function trackRevisionRequested(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, unknown>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'review_revision_requested',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
+  );
+}
+
+/**
+ * Track when an author resubmits a proposal in response to a revision request
+ */
+export async function trackRevisionResponseSubmitted(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, unknown>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'review_revision_submitted',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
+  );
+}
+
+/**
  * Track when a reviewer submits a review for one proposal
  */
-export async function trackProposalReviewed(
+export async function trackReviewSubmitted(
   userId: string,
   processId: string,
   proposalId: string,
@@ -400,7 +460,7 @@ export async function trackProposalReviewed(
 ): Promise<void> {
   await trackEventWithContext(
     userId,
-    'user_reviewed_proposal',
+    'review_submitted',
     getDecisionCommonProperties({
       decisionInstanceId: processId,
       proposalId,
@@ -412,14 +472,14 @@ export async function trackProposalReviewed(
 /**
  * Track when a reviewer finishes their entire review assignment list for a process
  */
-export async function trackReviewListFinished(
+export async function trackReviewQueueCompleted(
   userId: string,
   processId: string,
   additionalProps?: Record<string, any>,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
-    'user_finished_review',
+    'review_queue_completed',
     getDecisionCommonProperties({
       decisionInstanceId: processId,
       additionalProps,

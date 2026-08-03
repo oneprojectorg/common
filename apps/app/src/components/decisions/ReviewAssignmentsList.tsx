@@ -1,6 +1,8 @@
 'use client';
 
+import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -80,6 +82,18 @@ export function ReviewAssignmentsList({
     !!currentPhase &&
     getPhaseReviewSettings({ phases }, currentPhase.phaseId).scope ===
       'by_category';
+
+  useTrackPageView(
+    'review_queue_viewed',
+    getDecisionCommonProperties({
+      decisionInstanceId: processInstanceId,
+      additionalProps: {
+        scope: isByCategory ? 'by_category' : 'all',
+        phase_id: currentPhase?.phaseId ?? null,
+      },
+    }),
+    [processInstanceId],
+  );
 
   // Show the category tag only when a by-category reviewer's queue spans more
   // than one category (a single-category queue doesn't need the redundant tag).
