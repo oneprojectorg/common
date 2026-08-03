@@ -96,7 +96,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
                   {schema.description}
                 </p>
               )}
-              <Switch size="sm" className="ms-auto shrink-0" />
+              <Switch className="ms-auto shrink-0" />
             </div>
           </div>
         );

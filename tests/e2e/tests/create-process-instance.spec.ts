@@ -204,11 +204,11 @@ test.describe('Create Process Instance', () => {
     await addFieldButton.click();
     await templateFieldSaved;
 
-    // 11. Expand the Budget card — budget is enabled by default in the template
-    //     Use a regex to match "Budget Optional" or "Budget Required" while
-    //     excluding the "Add budget" button in the preview panel.
+    // 11. Expand the Funding amount card — budget is enabled by default in the
+    //     template. Match "Funding amount Optional/Required" (the card header
+    //     button), not the "Add budget" button in the preview panel.
     await authenticatedPage
-      .getByRole('button', { name: /^Budget (Optional|Required)$/ })
+      .getByRole('button', { name: /^Funding amount (Optional|Required)$/ })
       .click();
 
     // Verify the toggle is already ON

@@ -266,6 +266,7 @@ export function FieldCard({
           {onRemove && (
             <Button
               variant="destructive"
+              size="sm"
               onClick={() => onRemove(field.id)}
               aria-label={t('Delete')}
             >
@@ -298,5 +299,5 @@ export function FieldCardDragPreview({ field }: { field: FieldView }) {
  * Drop indicator shown where a field will be placed.
  */
 export function FieldCardDropIndicator() {
-  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
+  return <div className="h-16 rounded-lg border bg-muted" />;
 }

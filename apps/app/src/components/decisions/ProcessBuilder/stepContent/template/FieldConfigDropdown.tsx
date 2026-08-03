@@ -152,8 +152,9 @@ function FieldConfigDropdownOptions({
                   render={
                     <Button
                       variant="outline"
+                      size="icon"
                       aria-label={t('Remove option')}
-                      aria-disabled={options.length <= 2 || undefined}
+                      disabled={options.length <= 2 || undefined}
                       aria-description={
                         options.length <= 2
                           ? t('At least two options are required')

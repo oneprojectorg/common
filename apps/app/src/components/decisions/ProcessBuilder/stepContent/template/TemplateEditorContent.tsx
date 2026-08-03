@@ -18,7 +18,7 @@ import { Header2 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuAlignLeft, LuChevronDown, LuEye, LuPlus } from 'react-icons/lu';
+import { LuEye, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -392,26 +392,24 @@ export function TemplateEditorContent({
           {/* Locked system fields (stored in schema) */}
           <div className="space-y-4">
             <CollapsibleConfigCard
-              icon={LuAlignLeft}
               label={t('Proposal title')}
               badgeLabel={t('Required')}
               locked
             />
             {hasCategories && (
               <CollapsibleConfigCard
-                icon={LuChevronDown}
                 label={t('Category')}
                 badgeLabel={
                   requireCategorySelection ? t('Required') : t('Optional')
                 }
                 locked
               >
-                <div className="px-8 pt-2">
-                  <p className="text-neutral-charcoal">
+                <div className="px-8 py-2">
+                  <p className="m-0">
                     {t('These are the categories you defined in')}{' '}
                     <Button
                       variant="link"
-                      className="h-auto p-0"
+                      className="inline h-auto p-0"
                       onClick={() => {
                         void setStep('general');
                         void setSection('proposalCategories');

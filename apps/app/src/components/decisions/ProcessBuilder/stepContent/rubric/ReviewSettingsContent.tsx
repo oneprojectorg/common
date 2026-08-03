@@ -144,8 +144,15 @@ export function ReviewSettingsContent({
                 </FieldDescription>
               </FieldContent>
             </Field>
-            <Field orientation="horizontal">
-              <RadioGroupItem id="scope-by_category" value="by_category" />
+            <Field
+              orientation="horizontal"
+              data-disabled={!byCategoryEnabled || undefined}
+            >
+              <RadioGroupItem
+                id="scope-by_category"
+                value="by_category"
+                disabled={!byCategoryEnabled}
+              />
               <FieldContent>
                 <FieldLabel htmlFor="scope-by_category">
                   {t('By category')}
