@@ -74,17 +74,17 @@ test.describe('Edit Published Process', () => {
     await reviewRubricButton.click();
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
+      authenticatedPage.getByRole('heading', { name: 'Review Rubric' }),
     ).toBeVisible({ timeout: 12_000 });
 
     // 8. Add the first rubric criterion (defaults to required=true)
     const addFirstButton = authenticatedPage.getByRole('button', {
-      name: 'Add your first criterion',
+      name: 'Add criterion',
     });
     await expect(addFirstButton).toBeVisible({ timeout: 6_000 });
     await addFirstButton.click();
     await expect(
-      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
+      authenticatedPage.getByText('Untitled', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
     // 9. Navigate away to Process Settings and back to verify criterion survives
@@ -101,20 +101,20 @@ test.describe('Edit Published Process', () => {
     await expect(reviewRubricButton).toBeVisible({ timeout: 6_000 });
     await reviewRubricButton.click();
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
+      authenticatedPage.getByRole('heading', { name: 'Review Rubric' }),
     ).toBeVisible({ timeout: 12_000 });
 
     // Verify the criterion survived navigation
     await expect(
-      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
+      authenticatedPage.getByText('Untitled', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
     // 10. Expand the first criterion and toggle Required off
     await authenticatedPage
-      .getByText('Untitled field', { exact: true })
+      .getByText('Untitled', { exact: true })
       .first()
       .click();
-    const firstRequiredToggle = authenticatedPage.getByRole('button', {
+    const firstRequiredToggle = authenticatedPage.getByRole('switch', {
       name: 'Required',
     });
     await expect(firstRequiredToggle).toBeVisible({ timeout: 3_000 });
@@ -127,7 +127,7 @@ test.describe('Edit Published Process', () => {
     await addMoreButton.click();
 
     // Wait for the second criterion to appear in the UI
-    const criterionLabels = authenticatedPage.getByText('Untitled field', {
+    const criterionLabels = authenticatedPage.getByText('Untitled', {
       exact: true,
     });
     await expect(criterionLabels.nth(1)).toBeVisible({ timeout: 6_000 });
@@ -187,13 +187,13 @@ test.describe('Edit Published Process', () => {
       .getByRole('button', { name: 'Review Rubric' });
     await expect(rubricButton).toBeVisible({ timeout: 6_000 });
     await rubricButton.click();
-    await expect(authenticatedPage.getByText('Review Criteria')).toBeVisible({
+    await expect(authenticatedPage.getByText('Review Rubric')).toBeVisible({
       timeout: 12_000,
     });
 
     // Verify at least one criterion card is visible (DB already verified count=2)
     await expect(
-      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
+      authenticatedPage.getByText('Untitled', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
   });
 

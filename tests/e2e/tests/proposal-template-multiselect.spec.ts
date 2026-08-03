@@ -84,11 +84,12 @@ test.describe('Proposal template — multi-select category', () => {
     const multiRow = page.locator('div.flex.items-center.justify-between', {
       has: page.getByText('Allow multiple categories', { exact: true }),
     });
-    const multiToggle = multiRow.getByRole('button');
+    const multiToggle = multiRow.getByRole('switch');
     const multiSaved = waitForAutoSave(page, 'allowMultipleCategories');
     await multiToggle.click();
     await multiSaved;
-    await expect(multiToggle).toHaveAttribute('aria-pressed', 'true');
+    // sense Switch exposes role="switch" + aria-checked (not aria-pressed).
+    await expect(multiToggle).toBeChecked();
 
     // 5. Open the Proposal Template editor and make one edit so the normalized
     //    template (now carrying the multi-select category) is persisted — the

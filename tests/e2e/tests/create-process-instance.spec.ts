@@ -216,7 +216,8 @@ test.describe('Create Process Instance', () => {
       'budget-show-in-template-toggle',
     );
     await expect(showInTemplateToggle).toBeVisible({ timeout: 6_000 });
-    await expect(showInTemplateToggle).toHaveAttribute('aria-pressed', 'true');
+    // sense Switch exposes role="switch" + aria-checked (not aria-pressed).
+    await expect(showInTemplateToggle).toBeChecked();
 
     // Verify the budget config is visible (Currency select should appear)
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
