@@ -25,7 +25,7 @@ function Header2({ className, dir = 'auto', ...props }: HeaderProps) {
   return (
     <h2
       dir={dir}
-      className={cn('font-serif text-headline', className)}
+      className={cn('font-serif text-headline font-light', className)}
       {...props}
     />
   );

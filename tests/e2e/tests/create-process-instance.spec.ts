@@ -91,7 +91,7 @@ test.describe('Create Process Instance', () => {
 
     await expect(
       authenticatedPage.getByText(
-        'Define the phases of your decision-making process',
+        'Arrange the stages of your decision process. Drag to reorder, click to configure.',
       ),
     ).toBeVisible({ timeout: 12_000 });
 
@@ -193,26 +193,22 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 10b. Add a custom field so the template passes validation (requires at
-    //       least 1 non-system field). Click "Add field" in the sidebar, then
-    //       pick "Short text" from the menu.
+    //       least 1 non-system field). "Add field" adds a short-text field
+    //       directly (no type menu — change type via the card's Type select).
     const addFieldButton = authenticatedPage.getByRole('button', {
       name: 'Add field',
     });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
-    await addFieldButton.click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Short text' })
-      .click();
-
-    // Wait for the autosave to persist the new field
+    // Arm the autosave wait before the click that triggers it.
     const templateFieldSaved = waitForAutoSave(authenticatedPage);
+    await addFieldButton.click();
     await templateFieldSaved;
 
-    // 11. Expand the Budget card — budget is enabled by default in the template
-    //     Use a regex to match "Budget Optional" or "Budget Required" while
-    //     excluding the "Add budget" button in the preview panel.
+    // 11. Expand the Funding amount card — budget is enabled by default in the
+    //     template. Match "Funding amount Optional/Required" (the card header
+    //     button), not the "Add budget" button in the preview panel.
     await authenticatedPage
-      .getByRole('button', { name: /^Budget (Optional|Required)$/ })
+      .getByRole('button', { name: /^Funding amount (Optional|Required)$/ })
       .click();
 
     // Verify the toggle is already ON
@@ -220,22 +216,28 @@ test.describe('Create Process Instance', () => {
       'budget-show-in-template-toggle',
     );
     await expect(showInTemplateToggle).toBeVisible({ timeout: 6_000 });
-    await expect(showInTemplateToggle).toHaveAttribute('aria-pressed', 'true');
+    // sense Switch exposes role="switch" + aria-checked (not aria-pressed).
+    await expect(showInTemplateToggle).toBeChecked();
 
     // Verify the budget config is visible (Currency select should appear)
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
       timeout: 6_000,
     });
 
-    // 12. Verify the participant preview shows the budget field
-    //     The preview renders an "Add budget" button when budget is enabled
+    // 12. Open the Participant Preview modal (toolbar "Preview" button) and
+    //     verify it renders the budget field's "Add budget" entry.
+    await authenticatedPage.getByRole('button', { name: 'Preview' }).click();
+    const previewDialog = authenticatedPage.getByRole('dialog', {
+      name: 'Participant Preview',
+    });
+    await expect(previewDialog).toBeVisible({ timeout: 6_000 });
     await expect(
-      authenticatedPage.getByText('Participant Preview'),
+      previewDialog.getByRole('button', { name: 'Add budget' }),
     ).toBeVisible({ timeout: 6_000 });
 
-    await expect(
-      authenticatedPage.getByRole('button', { name: 'Add budget' }),
-    ).toBeVisible({ timeout: 6_000 });
+    // Close the modal so it doesn't overlay the launch-ready check.
+    await authenticatedPage.keyboard.press('Escape');
+    await expect(previewDialog).not.toBeVisible({ timeout: 6_000 });
 
     // ── Final: Verify Launch Process button is enabled ──────────────────
 

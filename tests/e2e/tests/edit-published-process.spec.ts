@@ -56,12 +56,12 @@ test.describe('Edit Published Process', () => {
       timeout: 12_000,
     });
 
-    // Toggle "Proposal review" on
+    // Toggle "Proposal review" on (sense Switch has role="switch")
     const reviewToggle = authenticatedPage
       .getByText('Proposal review')
       .locator('..')
       .locator('..')
-      .getByRole('button');
+      .getByRole('switch');
     await reviewToggle.click();
 
     // 6. Verify Review Rubric now appears in the sidebar
@@ -74,12 +74,12 @@ test.describe('Edit Published Process', () => {
     await reviewRubricButton.click();
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
+      authenticatedPage.getByRole('heading', { name: 'Review Rubric' }),
     ).toBeVisible({ timeout: 12_000 });
 
     // 8. Add the first rubric criterion (defaults to required=true)
     const addFirstButton = authenticatedPage.getByRole('button', {
-      name: 'Add your first criterion',
+      name: 'Add criterion',
     });
     await expect(addFirstButton).toBeVisible({ timeout: 6_000 });
     await addFirstButton.click();
@@ -88,8 +88,10 @@ test.describe('Edit Published Process', () => {
     ).toBeVisible({ timeout: 6_000 });
 
     // 9. Navigate away to Process Settings and back to verify criterion survives
+    // Sidebar nav item is labeled "General Information"; the page heading it
+    // opens is still "Process Settings".
     const processSettingsButton = sidebarNav.getByRole('button', {
-      name: 'Process Settings',
+      name: 'General Information',
     });
     await processSettingsButton.click();
     await expect(
@@ -101,7 +103,7 @@ test.describe('Edit Published Process', () => {
     await expect(reviewRubricButton).toBeVisible({ timeout: 6_000 });
     await reviewRubricButton.click();
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
+      authenticatedPage.getByRole('heading', { name: 'Review Rubric' }),
     ).toBeVisible({ timeout: 12_000 });
 
     // Verify the criterion survived navigation
@@ -114,7 +116,7 @@ test.describe('Edit Published Process', () => {
       .getByText('Untitled field', { exact: true })
       .first()
       .click();
-    const firstRequiredToggle = authenticatedPage.getByRole('button', {
+    const firstRequiredToggle = authenticatedPage.getByRole('switch', {
       name: 'Required',
     });
     await expect(firstRequiredToggle).toBeVisible({ timeout: 3_000 });
@@ -187,7 +189,10 @@ test.describe('Edit Published Process', () => {
       .getByRole('button', { name: 'Review Rubric' });
     await expect(rubricButton).toBeVisible({ timeout: 6_000 });
     await rubricButton.click();
-    await expect(authenticatedPage.getByText('Review Criteria')).toBeVisible({
+    // Scope to the heading — the sidebar nav item is also "Review Rubric".
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Review Rubric' }),
+    ).toBeVisible({
       timeout: 12_000,
     });
 
@@ -241,19 +246,18 @@ test.describe('Edit Published Process', () => {
       name: 'Add field',
     });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
+    // "Add field" adds a short-text field directly (no type menu).
     await addFieldButton.click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Short text' })
-      .click();
 
     // 6. Verify the field was added (card appears in the sortable list)
     await expect(authenticatedPage.getByText('Short text').first()).toBeVisible(
       { timeout: 6_000 },
     );
 
-    // 7. Navigate away to Process Settings
+    // 7. Navigate away to Process Settings (nav item labeled "General
+    //    Information"; the page it opens is headed "Process Settings").
     const settingsButton = sidebarNav.getByRole('button', {
-      name: 'Process Settings',
+      name: 'General Information',
     });
     await settingsButton.click();
     await expect(

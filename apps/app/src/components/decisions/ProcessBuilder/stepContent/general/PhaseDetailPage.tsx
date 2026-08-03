@@ -1,19 +1,30 @@
 'use client';
 
-import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { isReviewPhase, isVotingPhase } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { DatePicker } from '@op/ui/DatePicker';
-import { Header2 } from '@op/ui/Header';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { DatePicker } from '@op/sense/DatePicker';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@op/sense/Field';
+import { Header2 } from '@op/sense/Header';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
-import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,7 +41,7 @@ export function PhaseDetailPage({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
-  const [sectionParam, setSectionParam] = useQueryState('section', {
+  const [sectionParam] = useQueryState('section', {
     history: 'push',
   });
   const phaseId =
@@ -48,7 +59,6 @@ export function PhaseDetailPage({
       instanceId={instanceId}
       decisionProfileId={decisionProfileId}
       phaseId={phaseId}
-      onDelete={() => setSectionParam('phases')}
     />
   );
 }
@@ -69,12 +79,10 @@ function PhaseDetailForm({
   instanceId,
   decisionProfileId,
   phaseId,
-  onDelete,
 }: {
   instanceId: string;
   decisionProfileId: string;
   phaseId: string;
-  onDelete: () => void;
 }) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
@@ -84,8 +92,7 @@ function PhaseDetailForm({
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const { saveChanges, autosaveStatus, flushPendingChanges } =
-    useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Resolve the initial phase data (same priority as PhasesSectionContent)
   const allPhases: PhaseDefinition[] = (() => {
@@ -116,16 +123,19 @@ function PhaseDetailForm({
   allPhasesRef.current = allPhases;
 
   const updatePhase = (updates: Partial<PhaseDefinition>) => {
-    setPhase((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      const updated = { ...prev, ...updates };
-      const phasesPayload = toPayload(
+    if (!phase) {
+      return;
+    }
+    const updated = { ...phase, ...updates };
+    // Side effects (saveChanges → store update) must run in the event handler,
+    // never inside the setState updater — the updater executes during render,
+    // and writing the store there updates subscribers (e.g. MobileSidebar)
+    // mid-render.
+    setPhase(updated);
+    saveChanges({
+      phases: toPayload(
         allPhasesRef.current.map((p) => (p.id === phaseId ? updated : p)),
-      );
-      saveChanges({ phases: phasesPayload });
-      return updated;
+      ),
     });
   };
 
@@ -155,21 +165,6 @@ function PhaseDetailForm({
     });
   };
 
-  // Delete phase
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const confirmDelete = async () => {
-    const remainingPhases = allPhases.filter((p) => p.id !== phaseId);
-    saveChanges({ phases: toPayload(remainingPhases) });
-    const flushed = await flushPendingChanges();
-    if (flushed) {
-      onDelete();
-    } else {
-      // Revert the optimistic removal so store matches server
-      saveChanges({ phases: toPayload(allPhases) });
-      setShowDeleteModal(false);
-    }
-  };
-
   // Validation
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const markTouched = (field: string) => {
@@ -180,11 +175,8 @@ function PhaseDetailForm({
     if (!dateStr) {
       return undefined;
     }
-    try {
-      return toCalendarDate(parseAbsoluteToLocal(dateStr));
-    } catch {
-      return undefined;
-    }
+    const parsed = new Date(dateStr);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
   };
 
   const getErrors = () => {
@@ -207,7 +199,7 @@ function PhaseDetailForm({
     if (phase.startDate && phase.endDate) {
       const start = safeParseLocal(phase.startDate);
       const end = safeParseLocal(phase.endDate);
-      if (start && end && end.compare(start) < 0) {
+      if (start && end && end.getTime() < start.getTime()) {
         errors.endDate = t('End date must be on or after the start date');
       }
     }
@@ -218,20 +210,12 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
-  const formatDateValue = (date: {
-    year: number;
-    month: number;
-    day: number;
-  }) => {
-    return new Date(date.year, date.month - 1, date.day).toISOString();
-  };
-
   if (!phase) {
     return null;
   }
 
   return (
-    <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
+    <div className="mx-auto w-full space-y-10 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-neutral-gray4">
@@ -250,8 +234,9 @@ function PhaseDetailForm({
         />
       </div>
 
-      <div className="space-y-4">
-        <TextField
+      <div className="space-y-8">
+        <PhaseField
+          id="phase-name"
           label={t('Short name')}
           isRequired
           value={phase.name ?? ''}
@@ -263,7 +248,8 @@ function PhaseDetailForm({
           )}
           maxLength={50}
         />
-        <TextField
+        <PhaseField
+          id="phase-headline"
           label={t('Headline')}
           isRequired
           value={phase.headline ?? ''}
@@ -273,27 +259,30 @@ function PhaseDetailForm({
           description={t('This text appears as the header of the page.')}
           maxLength={50}
         />
-        <TextField
+        <PhaseField
+          id="phase-description"
           label={t('Description')}
           isRequired
-          useTextArea
+          multiline
+          rows={3}
           value={phase.description ?? ''}
           onChange={(value) => updatePhase({ description: value })}
           onBlur={() => markTouched('description')}
           errorMessage={getErrorMessage('description')}
-          textareaProps={{ rows: 3 }}
           description={t(
             'This text appears below the headline on the phase page.',
           )}
           maxLength={250}
         />
         <div className="space-y-2">
-          <label className="block text-sm">{t('Additional information')}</label>
+          <label className="block font-strong">
+            {t('Additional information')}
+          </label>
           <RichTextEditorWithToolbar
             content={phase.additionalInfo ?? ''}
             onChange={(content) => updatePhase({ additionalInfo: content })}
             toolbarPosition="bottom"
-            className="rounded-lg border border-border"
+            className="rounded-lg border border-input"
             editorClassName="min-h-24 p-3"
           />
           <p className="text-sm text-neutral-gray4">
@@ -307,44 +296,59 @@ function PhaseDetailForm({
             <DatePicker
               label={t('Start date')}
               value={safeParseLocal(phase.startDate)}
-              maxValue={safeParseLocal(phase.endDate)}
-              onChange={(date) =>
-                updatePhase({ startDate: formatDateValue(date) })
-              }
+              maxDate={safeParseLocal(phase.endDate)}
+              onChange={(date) => {
+                if (date) {
+                  updatePhase({ startDate: date.toISOString() });
+                }
+              }}
             />
           </div>
-          <div className="flex-1" onBlur={() => markTouched('endDate')}>
+          <div
+            className="flex-1"
+            onBlur={(e) => {
+              const next = e.relatedTarget as HTMLElement | null;
+              // Opening the calendar moves focus into the portaled popover
+              // (and moving between the input and its icon stays in-field) —
+              // neither is a real blur, so don't flag the field as touched yet.
+              if (
+                e.currentTarget.contains(next) ||
+                next?.closest('[data-slot=popover-content]')
+              ) {
+                return;
+              }
+              markTouched('endDate');
+            }}
+          >
             <DatePicker
               label={t('End date')}
-              isRequired
+              required
               value={safeParseLocal(phase.endDate)}
-              minValue={safeParseLocal(phase.startDate)}
+              minDate={safeParseLocal(phase.startDate)}
               onChange={(date) => {
-                updatePhase({ endDate: formatDateValue(date) });
+                if (date) {
+                  updatePhase({ endDate: date.toISOString() });
+                }
                 markTouched('endDate');
               }}
               errorMessage={getErrorMessage('endDate')}
             />
           </div>
         </div>
-      </div>
 
-      {/* Phase controls */}
-      <div className="space-y-2">
         <ToggleRow
           label={t('Proposal submission')}
           description={t(
             'Participants can submit new proposals during this phase.',
           )}
         >
-          <ToggleButton
-            isSelected={phase.rules?.proposals?.submit ?? false}
-            onChange={(val) =>
+          <Switch
+            checked={phase.rules?.proposals?.submit ?? false}
+            onCheckedChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, submit: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
         {phase.rules?.proposals?.submit && (
@@ -354,9 +358,9 @@ function PhaseDetailForm({
               'New proposals are hidden from other participants until an admin makes them visible.',
             )}
           >
-            <ToggleButton
-              isSelected={phase.rules?.proposals?.defaults?.hidden ?? false}
-              onChange={(val) =>
+            <Switch
+              checked={phase.rules?.proposals?.defaults?.hidden ?? false}
+              onCheckedChange={(val) =>
                 updateRules({
                   proposals: {
                     ...phase.rules?.proposals,
@@ -367,7 +371,6 @@ function PhaseDetailForm({
                   },
                 })
               }
-              size="small"
             />
           </ToggleRow>
         )}
@@ -375,14 +378,13 @@ function PhaseDetailForm({
           label={t('Proposal editing')}
           description={t('Authors can edit their proposals after submitting')}
         >
-          <ToggleButton
-            isSelected={phase.rules?.proposals?.edit ?? false}
-            onChange={(val) =>
+          <Switch
+            checked={phase.rules?.proposals?.edit ?? false}
+            onCheckedChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, edit: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
         <ToggleRow
@@ -391,14 +393,13 @@ function PhaseDetailForm({
             'Proposals can be assessed and scored during this phase.',
           )}
         >
-          <ToggleButton
-            isSelected={isReviewPhase(phase)}
-            onChange={(val) =>
+          <Switch
+            checked={isReviewPhase(phase)}
+            onCheckedChange={(val) =>
               updateRules({
                 reviews: { ...phase.rules?.reviews, submit: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
         <ToggleRow
@@ -407,9 +408,9 @@ function PhaseDetailForm({
             'Participants can vote on proposals during this phase.',
           )}
         >
-          <ToggleButton
-            isSelected={isVotingPhase(phase)}
-            onChange={(val) => {
+          <Switch
+            checked={isVotingPhase(phase)}
+            onCheckedChange={(val) => {
               const nextVoting: PhaseRules['voting'] = {
                 ...phase.rules?.voting,
                 submit: val,
@@ -421,7 +422,6 @@ function PhaseDetailForm({
               }
               updateRules({ voting: nextVoting });
             }}
-            size="small"
           />
         </ToggleRow>
         {isVotingPhase(phase) && (
@@ -440,53 +440,6 @@ function PhaseDetailForm({
           </ToggleRow>
         )}
       </div>
-
-      {/* Delete */}
-      <div className="border-t pt-4">
-        <Button
-          color="secondary"
-          className="text-functional-red"
-          onPress={() => setShowDeleteModal(true)}
-        >
-          <LuTrash2 className="size-4" />
-          {t('Delete phase')}
-        </Button>
-      </div>
-
-      <Modal
-        isDismissable
-        isOpen={showDeleteModal}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowDeleteModal(false);
-          }
-        }}
-      >
-        <ModalHeader>{t('Delete phase')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this phase? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setShowDeleteModal(false)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmDelete}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }
@@ -511,24 +464,115 @@ function VoteLimitSelect({
     ? VOTE_LIMIT_OPTIONS
     : [selectedKey, ...VOTE_LIMIT_OPTIONS];
 
+  const labelFor = (key: string) =>
+    key === 'none'
+      ? t('No limit')
+      : t('{count, plural, one {# vote} other {# votes}}', {
+          count: Number(key),
+        });
+
   return (
     <Select
-      selectedKey={selectedKey}
-      size="small"
-      aria-label={t('Voting limit')}
-      onSelectionChange={(key) => {
+      value={selectedKey}
+      // Value→label map so SelectValue renders the label, not the raw id.
+      items={Object.fromEntries(options.map((key) => [key, labelFor(key)]))}
+      onValueChange={(key) => {
         onChange(key === 'none' ? undefined : Number(key));
       }}
     >
-      {options.map((key) => (
-        <SelectItem key={key} id={key}>
-          {key === 'none'
-            ? t('No limit')
-            : t('{count, plural, one {# vote} other {# votes}}', {
-                count: Number(key),
-              })}
-        </SelectItem>
-      ))}
+      <SelectTrigger aria-label={t('Voting limit')}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((key) => (
+          <SelectItem key={key} value={key}>
+            {labelFor(key)}
+          </SelectItem>
+        ))}
+      </SelectContent>
     </Select>
+  );
+}
+
+// Labelled text/textarea field with error, description, and a live character
+// counter — composes the sense Field + Input/Textarea primitives to reproduce
+// the batteries-included @op/ui TextField this form previously used.
+function PhaseField({
+  id,
+  label,
+  isRequired,
+  value,
+  onChange,
+  onBlur,
+  errorMessage,
+  description,
+  maxLength,
+  multiline,
+  rows,
+}: {
+  id: string;
+  label: string;
+  isRequired?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  errorMessage?: string;
+  description?: string;
+  maxLength?: number;
+  multiline?: boolean;
+  rows?: number;
+}) {
+  const isInvalid = !!errorMessage;
+  return (
+    <Field data-invalid={isInvalid || undefined}>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {isRequired && <RequiredAsterisk />}
+      </FieldLabel>
+      {multiline ? (
+        <Textarea
+          id={id}
+          rows={rows}
+          value={value}
+          maxLength={maxLength}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          aria-invalid={isInvalid || undefined}
+          className="[unicode-bidi:plaintext]"
+        />
+      ) : (
+        <Input
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          aria-invalid={isInvalid || undefined}
+          className="[unicode-bidi:plaintext]"
+        />
+      )}
+      {(description || errorMessage || maxLength != null) && (
+        <div className="flex items-baseline justify-between gap-4">
+          <div>
+            {errorMessage ? (
+              <FieldError>{errorMessage}</FieldError>
+            ) : description ? (
+              <FieldDescription>{description}</FieldDescription>
+            ) : null}
+          </div>
+          {maxLength != null && (
+            <span
+              className={cn(
+                'text-sm text-neutral-gray4',
+                (value.length === maxLength || isInvalid) &&
+                  'text-functional-red',
+              )}
+            >
+              {value.length}/{maxLength}
+            </span>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }

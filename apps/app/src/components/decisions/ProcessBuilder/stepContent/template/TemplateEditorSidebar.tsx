@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Header4 } from '@op/ui/Header';
-import { Sidebar, useSidebar } from '@op/ui/Sidebar';
+import { Button } from '@op/sense/Button';
+import { Header4 } from '@op/sense/Header';
+import { Sidebar, useSidebar } from '@op/sense/Sidebar';
 import type { IconType } from 'react-icons';
 import { LuAlignJustify } from 'react-icons/lu';
 
@@ -37,10 +37,10 @@ export function FieldListTrigger() {
 
   return (
     <Button
-      color="secondary"
+      variant="outline"
       className="gap-2 text-neutral-charcoal"
-      size="small"
-      onPress={toggleSidebar}
+      size="sm"
+      onClick={toggleSidebar}
     >
       <LuAlignJustify className="size-4" />
       {t('Field list')}
@@ -61,14 +61,12 @@ export function TemplateEditorSidebar({
   disabledTypes,
   side,
 }: TemplateEditorSidebarProps) {
-  const t = useTranslations();
-
   return (
-    <Sidebar
-      label={t('Template editor sidebar')}
-      className="border-e"
-      side={side}
-    >
+    // TODO(sense-migration): the sense shadcn Sidebar is an app-shell component
+    // (fixed desktop positioning; SidebarProvider injects a `min-h-svh` wrapper)
+    // whereas @op/ui's Sidebar was an inline sticky panel. The inline
+    // content-area layout used here needs a visual QA pass.
+    <Sidebar className="border-e" side={side}>
       <SidebarContent
         fields={fields}
         onAddField={onAddField}
@@ -87,12 +85,12 @@ function SidebarContent({
   disabledTypes,
 }: Omit<TemplateEditorSidebarProps, 'side'>) {
   const t = useTranslations();
-  const { setOpen, isMobile } = useSidebar();
+  const { setOpenMobile, isMobile } = useSidebar();
 
   const handleAddField = (type: FieldType) => {
     onAddField(type);
     if (isMobile) {
-      setOpen(false);
+      setOpenMobile(false);
     }
   };
 

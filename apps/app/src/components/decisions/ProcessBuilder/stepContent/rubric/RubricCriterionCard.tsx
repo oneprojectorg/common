@@ -1,17 +1,25 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
-} from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import type { SortableItemControls } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { cn } from '@op/ui/utils';
-import { useRef, useState } from 'react';
+} from '@op/sense/CollapsibleConfigCard';
+import { Field, FieldLabel, FieldLegend, FieldSet } from '@op/sense/Field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupTextarea,
+} from '@op/sense/InputGroup';
+import { NumberField } from '@op/sense/NumberField';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import type { SortableItemControls } from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
+import { useId, useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,6 +35,9 @@ import {
   CRITERION_TYPE_REGISTRY,
 } from './rubricCriterionRegistry';
 
+const MAX_LABEL_LENGTH = 50;
+const MAX_DESCRIPTION_LENGTH = 250;
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -34,7 +45,9 @@ import {
 interface RubricCriterionCardProps {
   criterion: CriterionView;
   errors?: TranslationKey[];
-  controls?: SortableItemControls;
+  // Required by @op/sense CollapsibleConfigCard's editable-card union (always
+  // supplied by the Sortable render prop that mounts this card).
+  controls: SortableItemControls;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onRemove?: (criterionId: string) => void;
@@ -83,8 +96,9 @@ export function RubricCriterionCard({
 }: RubricCriterionCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
+  const requiredToggleId = useId();
 
-  const displayLabel = criterion.label || t('Untitled field');
+  const displayLabel = criterion.label || t('Untitled');
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
@@ -112,43 +126,67 @@ export function RubricCriterionCard({
       <CollapsibleConfigCard
         label={displayLabel}
         badgeLabel={badgeLabel}
-        badgeClassName="group-data-[expanded]/accordion-item:hidden"
         isCollapsible
         isExpanded={isExpanded}
         onExpandedChange={onExpandedChange}
         controls={controls}
         dragHandleAriaLabel={t('Drag to reorder criterion')}
         className={cn(
-          'data-[expanded]:bg-neutral-offWhite',
+          'data-open:bg-muted',
           isNew && 'animate-border-highlight',
-          errors.length > 0 && 'border-functional-red',
+          errors.length > 0 && 'border-destructive',
         )}
       >
-        <div className="space-y-2.5 px-8">
-          {/* Field name */}
-          <TextField
-            label={t('Field name')}
-            isRequired
-            value={criterion.label}
-            onChange={(value) => onUpdateLabel?.(criterion.id, value)}
-            maxLength={50}
-            inputProps={{
-              className: 'bg-white',
-            }}
-            className="min-w-0 flex-1"
-          />
+        <div className="space-y-2.5">
+          {/* Label */}
+          <Field className="min-w-0 flex-1">
+            <FieldLabel htmlFor={`${criterion.id}-label`}>
+              {t('Label')} <RequiredAsterisk />
+            </FieldLabel>
+            <InputGroup className="bg-white">
+              <InputGroupInput
+                id={`${criterion.id}-label`}
+                required
+                maxLength={MAX_LABEL_LENGTH}
+                value={criterion.label}
+                onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
+                className="[unicode-bidi:plaintext]"
+              />
+              <InputGroupAddon align="inline-end">
+                {t('{count}/{max}', {
+                  count: criterion.label.length,
+                  max: MAX_LABEL_LENGTH,
+                })}
+              </InputGroupAddon>
+            </InputGroup>
+          </Field>
 
           {/* Description */}
-          <TextField
-            label={t('Description')}
-            useTextArea
-            value={criterion.description ?? ''}
-            onChange={(value) => onUpdateDescription?.(criterion.id, value)}
-            textareaProps={{
-              placeholder: t('Provide additional guidance for participants...'),
-              className: 'min-h-24 resize-none bg-white',
-            }}
-          />
+          <Field>
+            <FieldLabel htmlFor={`${criterion.id}-description`}>
+              {t('Description')}
+            </FieldLabel>
+            <InputGroup className="bg-white">
+              <InputGroupTextarea
+                id={`${criterion.id}-description`}
+                value={criterion.description ?? ''}
+                onChange={(e) =>
+                  onUpdateDescription?.(criterion.id, e.target.value)
+                }
+                maxLength={MAX_DESCRIPTION_LENGTH}
+                placeholder={t(
+                  'Provide additional guidance for participants...',
+                )}
+                className="min-h-24 [unicode-bidi:plaintext]"
+              />
+              <InputGroupAddon align="block-end" className="justify-end">
+                {t('{count}/{max}', {
+                  count: criterion.description?.length ?? 0,
+                  max: MAX_DESCRIPTION_LENGTH,
+                })}
+              </InputGroupAddon>
+            </InputGroup>
+          </Field>
 
           <hr />
 
@@ -161,7 +199,6 @@ export function RubricCriterionCard({
           {/* Type-specific configuration */}
           {criterion.criterionType === 'scored' && (
             <>
-              <hr />
               <ScoredCriterionConfig
                 criterion={criterion}
                 onUpdateMaxPoints={(max) =>
@@ -178,7 +215,7 @@ export function RubricCriterionCard({
           {errors.length > 0 && (
             <div className="space-y-1">
               {errors.map((error) => (
-                <p key={error} className="text-sm text-functional-red">
+                <p key={error} className="text-sm text-destructive">
                   {t(error)}
                 </p>
               ))}
@@ -186,25 +223,29 @@ export function RubricCriterionCard({
           )}
 
           {/* Footer: Required toggle + Delete button */}
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={criterion.required}
-                onChange={(isSelected) =>
+          <div className="flex items-center justify-between gap-4 border-t pt-4">
+            <Field orientation="horizontal" className="w-auto">
+              <FieldLabel
+                className="text-neutral-charcoal"
+                htmlFor={requiredToggleId}
+              >
+                {t('Required?')}
+              </FieldLabel>
+              <Switch
+                id={requiredToggleId}
+                checked={criterion.required}
+                onCheckedChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
                 }
                 aria-label={t('Required')}
               />
-            </div>
+            </Field>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
-                onPress={() => onRemove(criterion.id)}
+                variant="destructive"
+                size="sm"
+                onClick={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
-                className="text-neutral-charcoal hover:text-functional-red"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -229,33 +270,40 @@ function CriterionTypeSelector({
   onChange: (type: RubricCriterionType) => void;
 }) {
   const t = useTranslations();
+  const groupId = useId();
 
   return (
-    <RadioGroup
-      label={t('How should reviewers score this?')}
-      value={value}
-      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
-      orientation="vertical"
-      labelClassName="text-base"
-    >
-      {CRITERION_TYPES.map((type) => {
-        const entry = CRITERION_TYPE_REGISTRY[type];
-        return (
-          <Radio
-            key={type}
-            value={type}
-            className="group flex items-start gap-2 py-2"
-          >
-            <div className="relative -top-0.5">
-              <span>{t(entry.labelKey)}</span>
-              <p className="text-sm text-neutral-gray4">
-                {t(entry.descriptionKey)}
-              </p>
-            </div>
-          </Radio>
-        );
-      })}
-    </RadioGroup>
+    <FieldSet>
+      <FieldLegend className="text-base">
+        {t('How should reviewers score this?')}
+      </FieldLegend>
+      <RadioGroup
+        value={value}
+        onValueChange={(newValue) => onChange(newValue as RubricCriterionType)}
+      >
+        {CRITERION_TYPES.map((type) => {
+          const entry = CRITERION_TYPE_REGISTRY[type];
+          const id = `${groupId}-${type}`;
+          return (
+            <Field
+              key={type}
+              orientation="horizontal"
+              className="items-start py-2"
+            >
+              <RadioGroupItem id={id} value={type} className="mt-0.5" />
+              <FieldLabel htmlFor={id}>
+                <div className="relative -top-0.5">
+                  <span>{t(entry.labelKey)}</span>
+                  <p className="text-sm text-muted-foreground">
+                    {t(entry.descriptionKey)}
+                  </p>
+                </div>
+              </FieldLabel>
+            </Field>
+          );
+        })}
+      </RadioGroup>
+    </FieldSet>
   );
 }
 
@@ -324,17 +372,16 @@ function ScoredCriterionConfig({
   return (
     <div className="space-y-4">
       <NumberField
+        id={`${criterion.id}-max-points`}
         label={t('Max points')}
+        className="w-32"
         value={max}
         onChange={handleMaxPointsChange}
         errorMessage={max < 2 ? t('Minimum is 2') : undefined}
-        inputProps={{ className: 'w-20' }}
       />
 
       <div className="space-y-2">
-        <h4 className="text-neutral-charcoal">
-          {t('Define what each score means')}
-        </h4>
+        <h4 className="text-foreground">{t('Define what each score means')}</h4>
         <p className="text-sm">
           {t(
             'Help reviewers score consistently by describing what each point value represents',
@@ -347,19 +394,18 @@ function ScoredCriterionConfig({
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-end font-serif text-title-base text-neutral-gray4">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-secondary text-center font-serif text-label font-strong text-muted-foreground">
                   {scoreValue}
                 </span>
-                <TextField
-                  useTextArea
+                <Textarea
                   value={label}
-                  onChange={(value) => onUpdateScoreLabel(scoreValue, value)}
-                  textareaProps={{
-                    placeholder: t('Describe what earns {number} points...', {
-                      number: scoreValue,
-                    }),
-                  }}
-                  className="w-full"
+                  onChange={(e) =>
+                    onUpdateScoreLabel(scoreValue, e.target.value)
+                  }
+                  placeholder={t('Describe what earns {number} points...', {
+                    number: scoreValue,
+                  })}
+                  className="w-full [unicode-bidi:plaintext]"
                 />
               </div>
             );
@@ -382,7 +428,7 @@ export function RubricCriterionDragPreview({
   const t = useTranslations();
   return (
     <CollapsibleConfigCardDragPreview
-      label={criterion.label || t('Untitled field')}
+      label={criterion.label || t('Untitled')}
       badgeLabel={
         criterion.criterionType === 'scored' && criterion.maxPoints
           ? `${criterion.maxPoints} ${t('pts')}`
@@ -393,5 +439,5 @@ export function RubricCriterionDragPreview({
 }
 
 export function RubricCriterionDropIndicator() {
-  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
+  return <div className="h-16 rounded-lg border bg-muted" />;
 }

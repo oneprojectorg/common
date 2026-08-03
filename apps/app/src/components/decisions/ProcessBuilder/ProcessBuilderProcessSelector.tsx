@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProcess } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { Header1, Header2 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Avatar } from '@op/sense/Avatar';
+import { Header1, Header2 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -78,7 +78,7 @@ export const ProcessBuilderProcessCard = ({
       onClick={onSelect}
     >
       <div className="flex gap-2 md:flex-col md:items-center md:gap-6">
-        <Avatar className="shrink-0 md:size-20">{}</Avatar>
+        <Avatar className="shrink-0 md:size-20" />
         <Header2 className="font-serif text-xl leading-6 font-light">
           {name}
         </Header2>

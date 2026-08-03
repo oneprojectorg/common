@@ -1,4 +1,4 @@
-import { defaultEditorExtensions } from '@op/ui/RichTextEditor';
+import { defaultEditorExtensions } from '@op/sense/RichTextEditor';
 import Link from '@tiptap/extension-link';
 import type { AnyExtension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';

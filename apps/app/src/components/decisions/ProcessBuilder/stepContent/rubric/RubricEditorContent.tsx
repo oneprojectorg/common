@@ -2,13 +2,18 @@
 
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2 } from '@op/ui/Header';
-import { Sortable } from '@op/ui/Sortable';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Header1 } from '@op/sense/Header';
+import { Sortable } from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuLeaf, LuPlus } from 'react-icons/lu';
+import { LuEye, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -97,6 +102,9 @@ export function RubricEditorContent({
   const [criterionToDelete, setCriterionToDelete] = useState<string | null>(
     null,
   );
+
+  // Reviewer preview modal
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Cache scored config so switching type and back doesn't lose score labels
   const scoredConfigCacheRef = useRef<
@@ -297,121 +305,111 @@ export function RubricEditorContent({
   }, []);
 
   return (
-    <div className="flex h-full flex-col md:flex-row">
-      <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
-        <div className="mx-auto max-w-160 space-y-4">
-          <div className="flex items-center justify-between">
-            <Header2 className="font-serif text-title-sm">
-              {t('Review Criteria')}
-            </Header2>
-            <SaveStatusIndicator
-              status={autosaveStatus.status}
-              savedAt={autosaveStatus.savedAt}
-            />
-          </div>
-
-          {criteria.length === 0 ? (
-            <div className="rounded-lg border p-16">
-              <EmptyState icon={<LuLeaf className="size-5" />}>
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <span className="font-medium text-neutral-charcoal">
-                    {t('No review criteria yet')}
-                  </span>
-                  <span>
-                    {t(
-                      'Add criteria to help reviewers evaluate proposals consistently',
-                    )}
-                  </span>
-                  <Button
-                    color="primary"
-                    className="mt-2"
-                    onPress={handleAddCriterion}
-                  >
-                    <LuPlus className="size-4" />
-                    {t('Add your first criterion')}
-                  </Button>
-                </div>
-              </EmptyState>
-            </div>
-          ) : (
-            <>
-              <Sortable
-                items={criteria}
-                onChange={handleReorderCriteria}
-                dragTrigger="handle"
-                getItemLabel={(criterion) => criterion.label}
-                className="gap-3"
-                renderDragPreview={(items) => {
-                  const item = items[0];
-                  if (!item) {
-                    return null;
-                  }
-                  return <RubricCriterionDragPreview criterion={item} />;
-                }}
-                renderDropIndicator={RubricCriterionDropIndicator}
-                aria-label={t('Rubric criteria')}
-              >
-                {(criterion, controls) => {
-                  const snapshotErrors =
-                    criterionErrors.get(criterion.id) ?? [];
-                  const liveErrors = getCriterionErrors(criterion);
-                  const displayedErrors = snapshotErrors.filter((e) =>
-                    liveErrors.includes(e),
-                  );
-
-                  return (
-                    <RubricCriterionCard
-                      criterion={criterion}
-                      errors={displayedErrors}
-                      controls={controls}
-                      isExpanded={expandedCriterionIds.has(criterion.id)}
-                      onExpandedChange={(expanded) =>
-                        handleExpandedChange(criterion.id, expanded)
-                      }
-                      isNew={newCriterionIds.has(criterion.id)}
-                      onNewComplete={handleNewComplete}
-                      onRemove={handleRemoveCriterion}
-                      onBlur={handleCriterionBlur}
-                      onUpdateLabel={handleUpdateLabel}
-                      onUpdateDescription={handleUpdateDescription}
-                      onUpdateRequired={handleUpdateRequired}
-                      onChangeType={handleChangeType}
-                      onUpdateMaxPoints={handleUpdateMaxPoints}
-                      onUpdateScoreLabel={handleUpdateScoreLabel}
-                    />
-                  );
-                }}
-              </Sortable>
-
+    <div className="flex h-full flex-col">
+      <main className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="mx-auto w-full max-w-160 space-y-6 p-4 pb-24 md:p-8 md:pb-8">
+          <div className="mb-10 flex items-center justify-between gap-4">
+            <Header1 className="text-headline">{t('Review Rubric')}</Header1>
+            <div className="flex items-center gap-3">
+              <SaveStatusIndicator
+                status={autosaveStatus.status}
+                savedAt={autosaveStatus.savedAt}
+              />
               <Button
-                color="secondary"
-                className="w-full"
-                onPress={handleAddCriterion}
+                variant="outline"
+                size="sm"
+                onClick={() => setPreviewOpen(true)}
               >
-                <LuPlus className="size-4" />
-                {t('Add criterion')}
+                <LuEye className="size-4" />
+                {t('Preview')}
               </Button>
-            </>
-          )}
-
-          <hr className="border-neutral-gray1" />
+            </div>
+          </div>
 
           <ToggleRow
             label={t('Overall Recommendation')}
             description={t(
               'Reviewers recommend Yes, Maybe, or No per proposal',
             )}
+            className="p-0"
           >
-            <ToggleButton
-              isSelected={overallRecommendationEnabled}
-              onChange={handleOverallRecommendationToggle}
-              size="small"
+            <Switch
+              checked={overallRecommendationEnabled}
+              onCheckedChange={handleOverallRecommendationToggle}
             />
           </ToggleRow>
+
+          <hr className="border-neutral-gray1" />
+          {criteria.length > 0 && (
+            <Sortable
+              items={criteria}
+              onChange={handleReorderCriteria}
+              dragTrigger="handle"
+              getItemLabel={(criterion) => criterion.label}
+              className="gap-3"
+              renderDragPreview={(items) => {
+                const item = items[0];
+                if (!item) {
+                  return null;
+                }
+                return <RubricCriterionDragPreview criterion={item} />;
+              }}
+              renderDropIndicator={RubricCriterionDropIndicator}
+              aria-label={t('Rubric criteria')}
+            >
+              {(criterion, controls) => {
+                const snapshotErrors = criterionErrors.get(criterion.id) ?? [];
+                const liveErrors = getCriterionErrors(criterion);
+                const displayedErrors = snapshotErrors.filter((e) =>
+                  liveErrors.includes(e),
+                );
+
+                return (
+                  <RubricCriterionCard
+                    criterion={criterion}
+                    errors={displayedErrors}
+                    controls={controls}
+                    isExpanded={expandedCriterionIds.has(criterion.id)}
+                    onExpandedChange={(expanded) =>
+                      handleExpandedChange(criterion.id, expanded)
+                    }
+                    isNew={newCriterionIds.has(criterion.id)}
+                    onNewComplete={handleNewComplete}
+                    onRemove={handleRemoveCriterion}
+                    onBlur={handleCriterionBlur}
+                    onUpdateLabel={handleUpdateLabel}
+                    onUpdateDescription={handleUpdateDescription}
+                    onUpdateRequired={handleUpdateRequired}
+                    onChangeType={handleChangeType}
+                    onUpdateMaxPoints={handleUpdateMaxPoints}
+                    onUpdateScoreLabel={handleUpdateScoreLabel}
+                  />
+                );
+              }}
+            </Sortable>
+          )}
+
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleAddCriterion}
+          >
+            <LuPlus className="size-4" />
+            {t('Add criterion')}
+          </Button>
         </div>
       </main>
 
-      <RubricParticipantPreview template={template} />
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('Participant Preview')}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto">
+            <RubricParticipantPreview template={template} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDeleteModal
         isOpen={criterionToDelete !== null}

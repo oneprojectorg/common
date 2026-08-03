@@ -2,15 +2,26 @@
 
 import { trpc } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Header2, Header3 } from '@op/sense/Header';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
@@ -18,6 +29,7 @@ import type { SectionProps } from '@/components/decisions/ProcessBuilder/content
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { ensureLockedFields } from '@/components/decisions/proposalTemplate';
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 const CATEGORY_TITLE_MAX_LENGTH = 50;
 
@@ -175,69 +187,86 @@ export function ProposalCategoriesSectionContent({
 
       {showEmptyState && (
         <div className="rounded-lg border p-16">
-          <EmptyState icon={<LuLeaf className="size-5" />}>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <span className="font-medium text-neutral-charcoal">
-                {t('No categories defined yet')}
-              </span>
-              <span>
+          <Empty className="border-0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuLeaf className="size-5" />
+              </EmptyMedia>
+              <EmptyTitle>{t('No categories defined yet')}</EmptyTitle>
+              <EmptyDescription>
                 {t(
                   'Categories help proposers understand what outcomes this process is trying to achieve.',
                 )}
-              </span>
-              <Button
-                color="primary"
-                className="mt-2"
-                onPress={() => setIsFormVisible(true)}
-              >
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button className="mt-2" onClick={() => setIsFormVisible(true)}>
                 <LuPlus className="size-4" />
                 {t('Create first category')}
               </Button>
-            </div>
-          </EmptyState>
+            </EmptyContent>
+          </Empty>
         </div>
       )}
 
       {showList && (
         <div>
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="group flex items-start gap-2 border-b py-3"
-            >
-              <div className="min-w-0 flex-1">
-                <span className="text-neutral-charcoal">{category.label}</span>
-                <p className="text-sm text-neutral-gray4">
-                  {category.description}
-                </p>
+          {categories.map((category) =>
+            editingId === category.id ? (
+              // Editing a category swaps its row for the form in place.
+              <div key={category.id} className="border-b py-3">
+                <CategoryForm
+                  isEditing
+                  label={formLabel}
+                  description={formDescription}
+                  onLabelChange={setFormLabel}
+                  onDescriptionChange={setFormDescription}
+                  onSubmit={handleAddOrUpdate}
+                  onCancel={resetForm}
+                  t={t}
+                />
               </div>
-              <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button
-                  variant="icon"
-                  color="ghost"
-                  className="size-5 p-0 text-neutral-charcoal"
-                  onPress={() => handleEdit(category)}
-                  aria-label={`Edit ${category.label}`}
-                >
-                  <LuPencil className="size-4" />
-                </Button>
-                <Button
-                  variant="icon"
-                  color="ghost"
-                  className="size-5 p-0 text-neutral-charcoal hover:text-red"
-                  onPress={() => handleDelete(category.id)}
-                  aria-label={`Delete ${category.label}`}
-                >
-                  <LuTrash2 className="size-4" />
-                </Button>
+            ) : (
+              <div
+                key={category.id}
+                className="group flex items-start gap-2 border-b py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="text-neutral-charcoal">
+                    {category.label}
+                  </span>
+                  <p className="text-sm text-neutral-gray4">
+                    {category.description}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-5 p-0 text-neutral-charcoal"
+                    onClick={() => handleEdit(category)}
+                    aria-label={`Edit ${category.label}`}
+                  >
+                    <LuPencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-5 p-0 text-neutral-charcoal hover:text-red"
+                    onClick={() => handleDelete(category.id)}
+                    aria-label={`Delete ${category.label}`}
+                  >
+                    <LuTrash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
           {!isFormVisible && (
             <Button
-              color="ghost"
+              variant="ghost"
               className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
-              onPress={() => setIsFormVisible(true)}
+              onClick={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />
               {t('Add category')}
@@ -246,87 +275,174 @@ export function ProposalCategoriesSectionContent({
         </div>
       )}
 
-      {isFormVisible && (
-        <div className="rounded border p-4">
-          <Header3 className="mb-4 font-serif text-title-xs">
-            {editingId ? t('Edit category') : t('Add category')}
-          </Header3>
-          <div className="space-y-4">
-            <TextField
-              label={t('Shorthand')}
-              isRequired
-              value={formLabel}
-              onChange={setFormLabel}
-              inputProps={{
-                placeholder: t('e.g., Education'),
-              }}
-              description={t('1-3 words. Appears in dropdowns and cards.')}
-              maxLength={CATEGORY_TITLE_MAX_LENGTH}
-            />
-            <TextField
-              useTextArea
-              label={t('Full description')}
-              value={formDescription}
-              onChange={setFormDescription}
-              textareaProps={{
-                placeholder: t(
-                  'e.g., Expand access to quality education and workforce development in underserved communities',
-                ),
-              }}
-              description={t(
-                'Help proposers understand what this category means',
-              )}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <Button color="secondary" onPress={resetForm}>
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="primary"
-                onPress={handleAddOrUpdate}
-                isDisabled={!formLabel.trim()}
-              >
-                {editingId ? t('Save changes') : t('Add category')}
-              </Button>
-            </div>
-          </div>
-        </div>
+      {/* Add form lives at the bottom; the edit form renders inline in the
+          list (see above), so only show this when adding a new category. */}
+      {isFormVisible && !editingId && (
+        <CategoryForm
+          isEditing={false}
+          label={formLabel}
+          description={formDescription}
+          onLabelChange={setFormLabel}
+          onDescriptionChange={setFormDescription}
+          onSubmit={handleAddOrUpdate}
+          onCancel={resetForm}
+          t={t}
+        />
       )}
 
       {categories.length > 0 && (
         <div className="space-y-4 border-t pt-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="text-base">
-                {t('Require category selection')}
-              </span>
-              <p className="text-sm text-neutral-gray4">
-                {t('Proposers must select at least one category')}
-              </p>
-            </div>
-            <ToggleButton
-              isSelected={requireCategorySelection}
-              onChange={handleRequireCategoryChange}
-              size="small"
+          <ToggleRow
+            label={t('Require category selection')}
+            description={t('Proposers must select at least one category')}
+          >
+            <Switch
+              checked={requireCategorySelection}
+              onCheckedChange={handleRequireCategoryChange}
             />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="text-base">
-                {t('Allow multiple categories')}
-              </span>
-              <p className="text-sm text-neutral-gray4">
-                {t('Proposers can select more than one category')}
-              </p>
-            </div>
-            <ToggleButton
-              isSelected={allowMultipleCategories}
-              onChange={handleAllowMultipleChange}
-              size="small"
+          </ToggleRow>
+          <ToggleRow
+            label={t('Allow multiple categories')}
+            description={t('Proposers can select more than one category')}
+          >
+            <Switch
+              checked={allowMultipleCategories}
+              onCheckedChange={handleAllowMultipleChange}
             />
-          </div>
+          </ToggleRow>
         </div>
       )}
     </div>
+  );
+}
+
+// Add/edit category form. Rendered at the bottom when adding, or inline in
+// place of a category row when editing that category.
+function CategoryForm({
+  isEditing,
+  label,
+  description,
+  onLabelChange,
+  onDescriptionChange,
+  onSubmit,
+  onCancel,
+  t,
+}: {
+  isEditing: boolean;
+  label: string;
+  description: string;
+  onLabelChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  t: TranslateFn;
+}) {
+  return (
+    <div className="rounded border p-4">
+      <Header3 className="mb-4">
+        {isEditing ? t('Edit category') : t('Add category')}
+      </Header3>
+      <div className="space-y-4">
+        <CategoryField
+          id="category-shorthand"
+          label={t('Shorthand')}
+          isRequired
+          value={label}
+          onChange={onLabelChange}
+          placeholder={t('e.g., Education')}
+          description={t('1-3 words. Appears in dropdowns and cards.')}
+          maxLength={CATEGORY_TITLE_MAX_LENGTH}
+        />
+        <CategoryField
+          id="category-description"
+          multiline
+          label={t('Full description')}
+          value={description}
+          onChange={onDescriptionChange}
+          placeholder={t(
+            'e.g., Expand access to quality education and workforce development in underserved communities',
+          )}
+          description={t('Help proposers understand what this category means')}
+        />
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            {t('Cancel')}
+          </Button>
+          <Button onClick={onSubmit} disabled={!label.trim()}>
+            {isEditing ? t('Save changes') : t('Add category')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Labelled text/textarea field with an optional live character counter —
+// composes the sense Field + Input/Textarea primitives to reproduce the
+// batteries-included @op/ui TextField this screen previously used.
+function CategoryField({
+  id,
+  label,
+  isRequired,
+  value,
+  onChange,
+  placeholder,
+  description,
+  maxLength,
+  multiline,
+}: {
+  id: string;
+  label: string;
+  isRequired?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  description?: string;
+  maxLength?: number;
+  multiline?: boolean;
+}) {
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {isRequired && <RequiredAsterisk />}
+      </FieldLabel>
+      {multiline ? (
+        <Textarea
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="[unicode-bidi:plaintext]"
+        />
+      ) : (
+        <Input
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="[unicode-bidi:plaintext]"
+        />
+      )}
+      {(description || maxLength != null) && (
+        <div className="flex items-baseline justify-between gap-4">
+          <div>
+            {description && <FieldDescription>{description}</FieldDescription>}
+          </div>
+          {maxLength != null && (
+            <span
+              className={cn(
+                'text-sm text-neutral-gray4',
+                value.length === maxLength && 'text-functional-red',
+              )}
+            >
+              {value.length}/{maxLength}
+            </span>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }

@@ -81,7 +81,6 @@ function CollapsibleConfigCard({
       <span
         className={cn(
           'truncate text-base font-strong',
-          locked ? 'text-muted-foreground' : 'text-foreground',
           !locked && isCollapsible && 'group-hover/config-card:underline',
         )}
       >
@@ -107,8 +106,8 @@ function CollapsibleConfigCard({
   // (the exact ramp step, not --muted, which sits darker since #1615).
   const cardClasses = cn(
     'rounded-lg border bg-background transition-colors',
-    isCollapsible && !locked && 'hover:bg-gray-50 data-open:bg-gray-50',
-    locked && 'bg-muted',
+    isCollapsible &&
+      'hover:bg-gray-50 data-open:border-input data-open:bg-gray-50',
     isDragging && 'opacity-50',
     className,
   );

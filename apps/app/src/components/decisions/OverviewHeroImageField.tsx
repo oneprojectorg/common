@@ -1,7 +1,7 @@
 'use client';
 
 import { IMAGE_UPLOAD_SIZE_LIMIT } from '@op/common/client';
-import { BannerImageField } from '@op/ui/BannerImageField';
+import { BannerImageField } from '@op/sense/BannerImageField';
 import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';

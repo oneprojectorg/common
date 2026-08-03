@@ -1,8 +1,16 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { Button } from '@op/ui/Button';
-import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import { Fragment } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
@@ -35,45 +43,44 @@ export function AddFieldMenu({ onAddField, disabledTypes }: AddFieldMenuProps) {
       })).filter((category) => category.types.length > 0);
 
   return (
-    <MenuTrigger>
-      <Button color="neutral" className="w-full justify-center gap-2">
-        <LuPlus className="size-4" />
-        {t('Add field')}
-      </Button>
-      <Menu
-        onAction={(key) => onAddField(key as FieldType)}
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="outline" className="w-full justify-center gap-2">
+            <LuPlus className="size-4" />
+            {t('Add field')}
+          </Button>
+        }
+      />
+      <DropdownMenuContent
         aria-label={t('Add field')}
-        placement="bottom start"
-        popoverClassName="w-56"
+        align="start"
+        className="w-56"
       >
         {categories.map((category, categoryIndex) => (
           <Fragment key={category.id}>
-            {categoryIndex > 0 && <MenuSeparator />}
-            <MenuItem
-              id={`header-${category.id}`}
-              isDisabled
-              className="px-4 py-1 text-xs font-medium text-neutral-gray4"
-            >
-              {t(category.labelKey)}
-            </MenuItem>
-            {category.types.map((type) => {
-              const config = FIELD_TYPE_REGISTRY[type];
-              const Icon = config.icon;
-              return (
-                <MenuItem
-                  key={type}
-                  id={type}
-                  className="gap-2"
-                  isDisabled={disabledTypes?.includes(type)}
-                >
-                  <Icon className="size-4 text-neutral-gray4" />
-                  {t(config.labelKey)}
-                </MenuItem>
-              );
-            })}
+            {categoryIndex > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t(category.labelKey)}</DropdownMenuLabel>
+              {category.types.map((type) => {
+                const config = FIELD_TYPE_REGISTRY[type];
+                const Icon = config.icon;
+                return (
+                  <DropdownMenuItem
+                    key={type}
+                    className="gap-2"
+                    disabled={disabledTypes?.includes(type)}
+                    onClick={() => onAddField(type)}
+                  >
+                    <Icon className="size-4 text-neutral-gray4" />
+                    {t(config.labelKey)}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
           </Fragment>
         ))}
-      </Menu>
-    </MenuTrigger>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

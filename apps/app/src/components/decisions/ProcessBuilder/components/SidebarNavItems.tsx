@@ -1,6 +1,14 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from '@op/sense/Sidebar';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -12,7 +20,6 @@ import {
   phaseToSectionId,
 } from '../navigationConfig';
 import type { ProcessPhase } from '../useProcessPhases';
-import { CornerDownRight } from './CornerDownRight';
 
 type StaticSidebarItem = Extract<SidebarItem, { isDynamic?: false }>;
 
@@ -25,6 +32,39 @@ interface SidebarNavItemsProps {
   onSectionClick: (sectionId: string) => void;
 }
 
+// Teal dot flagging a section that still needs configuration.
+function IncompleteDot() {
+  return <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />;
+}
+
+// A single nav row built on the (context-free) sense SidebarMenuSubButton —
+// `isActive` drives the sidebar-accent selected styling. Rendered as a
+// <button> since these navigate in-page rather than following an href.
+// justify-between keeps the incomplete dot at the trailing edge.
+function NavRow({
+  label,
+  isActive,
+  incomplete,
+  onClick,
+}: {
+  label: string;
+  isActive: boolean;
+  incomplete: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <SidebarMenuSubButton
+      render={<button type="button" />}
+      isActive={isActive}
+      onClick={onClick}
+      className="w-full cursor-pointer justify-between gap-2"
+    >
+      <span className="truncate">{label}</span>
+      {incomplete && <IncompleteDot />}
+    </SidebarMenuSubButton>
+  );
+}
+
 export function SidebarNavItems({
   visibleSections,
   phases,
@@ -33,29 +73,36 @@ export function SidebarNavItems({
   validationSections,
   onSectionClick,
 }: SidebarNavItemsProps) {
+  const t = useTranslations();
+
   return (
-    <ul className="flex flex-col gap-1">
-      {visibleSections
-        .filter(
-          (section): section is StaticSidebarItem =>
-            !section.isDynamic && !section.parentSectionId,
-        )
-        .map((section) => (
-          <SectionItem
-            key={section.id}
-            section={section}
-            childSections={visibleSections.filter(
-              (s): s is StaticSidebarItem =>
-                !s.isDynamic && s.parentSectionId === section.id,
-            )}
-            phases={phases}
-            currentSectionId={currentSectionId}
-            phaseValidation={phaseValidation}
-            validationSections={validationSections}
-            onSectionClick={onSectionClick}
-          />
-        ))}
-    </ul>
+    <SidebarGroup className="p-0">
+      <SidebarGroupLabel className="text-sm text-muted-foreground">
+        {t('Process Settings')}
+      </SidebarGroupLabel>
+      <SidebarMenu className="gap-1">
+        {visibleSections
+          .filter(
+            (section): section is StaticSidebarItem =>
+              !section.isDynamic && !section.parentSectionId,
+          )
+          .map((section) => (
+            <SectionItem
+              key={section.id}
+              section={section}
+              childSections={visibleSections.filter(
+                (s): s is StaticSidebarItem =>
+                  !s.isDynamic && s.parentSectionId === section.id,
+              )}
+              phases={phases}
+              currentSectionId={currentSectionId}
+              phaseValidation={phaseValidation}
+              validationSections={validationSections}
+              onSectionClick={onSectionClick}
+            />
+          ))}
+      </SidebarMenu>
+    </SidebarGroup>
   );
 }
 
@@ -79,28 +126,19 @@ function SectionItem({
   onSectionClick,
 }: SectionItemProps) {
   const t = useTranslations();
-  const isActive = currentSectionId === section.id;
 
   return (
-    <li>
-      <button
-        type="button"
+    <SidebarMenuItem>
+      <NavRow
+        label={t(section.labelKey)}
+        isActive={currentSectionId === section.id}
+        incomplete={
+          isSectionId(section.id) && validationSections[section.id] === false
+        }
         onClick={() => onSectionClick(section.id)}
-        className={cn(
-          'flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-start text-base transition-colors',
-          isActive
-            ? 'bg-primary-tealWhite text-primary'
-            : 'text-neutral-black hover:bg-neutral-gray1',
-        )}
-      >
-        {t(section.labelKey)}
-        {isSectionId(section.id) &&
-          validationSections[section.id] === false && (
-            <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />
-          )}
-      </button>
+      />
       {section.id === 'phases' && phases.length > 0 && (
-        <ul className="mt-0.5 flex flex-col gap-0.5">
+        <SidebarMenuSub className="me-0 pe-0">
           {phases.map((phase) => (
             <PhaseItem
               key={phase.phaseId}
@@ -110,30 +148,26 @@ function SectionItem({
               onSectionClick={onSectionClick}
             />
           ))}
-        </ul>
+        </SidebarMenuSub>
       )}
       {childSections.length > 0 && (
-        <ul className="mt-0.5 flex flex-col gap-0.5">
+        <SidebarMenuSub className="me-0 pe-0">
           {childSections.map((child) => (
-            <li key={child.id}>
-              <button
-                type="button"
+            <SidebarMenuSubItem key={child.id}>
+              <NavRow
+                label={t(child.labelKey)}
+                isActive={currentSectionId === child.id}
+                incomplete={
+                  isSectionId(child.id) &&
+                  validationSections[child.id] === false
+                }
                 onClick={() => onSectionClick(child.id)}
-                className={cn(
-                  'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-start text-sm transition-colors',
-                  currentSectionId === child.id
-                    ? 'bg-primary-tealWhite text-primary'
-                    : 'text-neutral-black hover:bg-neutral-gray1',
-                )}
-              >
-                <CornerDownRight className="shrink-0 opacity-50" />
-                <span className="truncate">{t(child.labelKey)}</span>
-              </button>
-            </li>
+              />
+            </SidebarMenuSubItem>
           ))}
-        </ul>
+        </SidebarMenuSub>
       )}
-    </li>
+    </SidebarMenuItem>
   );
 }
 
@@ -158,23 +192,13 @@ function PhaseItem({
     currentSectionId === phaseSectionId;
 
   return (
-    <li>
-      <button
-        type="button"
+    <SidebarMenuSubItem>
+      <NavRow
+        label={phase.name || t('Untitled phase')}
+        isActive={isActive}
+        incomplete={phaseValidation[phase.phaseId] === false}
         onClick={() => onSectionClick(phaseSectionId)}
-        className={cn(
-          'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-start text-sm transition-colors',
-          isActive
-            ? 'bg-primary-tealWhite text-primary'
-            : 'text-neutral-black hover:bg-neutral-gray1',
-        )}
-      >
-        <CornerDownRight className="shrink-0 opacity-50" />
-        <span className="truncate">{phase.name || t('Untitled phase')}</span>
-        {phaseValidation[phase.phaseId] === false && (
-          <span className="ms-auto size-1.5 shrink-0 rounded-full bg-primary-teal" />
-        )}
-      </button>
-    </li>
+      />
+    </SidebarMenuSubItem>
   );
 }
