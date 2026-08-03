@@ -255,7 +255,6 @@ export function FieldCard({
             </FieldLabel>
             <Switch
               id={requiredToggleId}
-              size="sm"
               checked={isLocation || field.required}
               disabled={isLocation}
               onCheckedChange={(isSelected) =>
@@ -267,7 +266,6 @@ export function FieldCard({
           {onRemove && (
             <Button
               variant="destructive"
-              size="sm"
               onClick={() => onRemove(field.id)}
               aria-label={t('Delete')}
             >

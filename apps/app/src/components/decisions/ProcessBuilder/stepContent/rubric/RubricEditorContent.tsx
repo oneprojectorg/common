@@ -3,11 +3,17 @@
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 import { Header1 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuPlus } from 'react-icons/lu';
+import { LuEye, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -96,6 +102,9 @@ export function RubricEditorContent({
   const [criterionToDelete, setCriterionToDelete] = useState<string | null>(
     null,
   );
+
+  // Reviewer preview modal
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Cache scored config so switching type and back doesn't lose score labels
   const scoredConfigCacheRef = useRef<
@@ -296,15 +305,25 @@ export function RubricEditorContent({
   }, []);
 
   return (
-    <div className="flex h-full flex-col md:flex-row">
-      <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
+    <div className="flex h-full flex-col">
+      <main className="flex-1 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
         <div className="mx-auto max-w-160 space-y-6">
-          <div className="mb-10 flex items-center justify-between">
+          <div className="mb-10 flex items-center justify-between gap-4">
             <Header1 className="text-headline">{t('Review Rubric')}</Header1>
-            <SaveStatusIndicator
-              status={autosaveStatus.status}
-              savedAt={autosaveStatus.savedAt}
-            />
+            <div className="flex items-center gap-3">
+              <SaveStatusIndicator
+                status={autosaveStatus.status}
+                savedAt={autosaveStatus.savedAt}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPreviewOpen(true)}
+              >
+                <LuEye className="size-4" />
+                {t('Preview')}
+              </Button>
+            </div>
           </div>
 
           <ToggleRow
@@ -381,7 +400,16 @@ export function RubricEditorContent({
         </div>
       </main>
 
-      <RubricParticipantPreview template={template} />
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('Participant Preview')}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto">
+            <RubricParticipantPreview template={template} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDeleteModal
         isOpen={criterionToDelete !== null}

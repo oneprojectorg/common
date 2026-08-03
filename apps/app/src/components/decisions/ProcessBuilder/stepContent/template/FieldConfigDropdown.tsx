@@ -151,8 +151,7 @@ function FieldConfigDropdownOptions({
                 <TooltipTrigger
                   render={
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="outline"
                       aria-label={t('Remove option')}
                       aria-disabled={options.length <= 2 || undefined}
                       aria-description={

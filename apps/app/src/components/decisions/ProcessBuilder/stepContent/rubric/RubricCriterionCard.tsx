@@ -96,6 +96,7 @@ export function RubricCriterionCard({
 }: RubricCriterionCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
+  const requiredToggleId = useId();
 
   const displayLabel = criterion.label || t('Untitled');
 
@@ -198,7 +199,6 @@ export function RubricCriterionCard({
           {/* Type-specific configuration */}
           {criterion.criterionType === 'scored' && (
             <>
-              <hr />
               <ScoredCriterionConfig
                 criterion={criterion}
                 onUpdateMaxPoints={(max) =>
@@ -223,25 +223,28 @@ export function RubricCriterionCard({
           )}
 
           {/* Footer: Required toggle + Delete button */}
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-foreground">{t('Required?')}</span>
+          <div className="flex items-center justify-between gap-4 border-t pt-4">
+            <Field orientation="horizontal" className="w-auto">
+              <FieldLabel
+                className="text-neutral-charcoal"
+                htmlFor={requiredToggleId}
+              >
+                {t('Required?')}
+              </FieldLabel>
               <Switch
-                size="sm"
+                id={requiredToggleId}
                 checked={criterion.required}
                 onCheckedChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
                 }
                 aria-label={t('Required')}
               />
-            </div>
+            </Field>
             {onRemove && (
               <Button
-                variant="ghost"
-                size="sm"
+                variant="destructive"
                 onClick={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
-                className="text-destructive hover:text-destructive"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
