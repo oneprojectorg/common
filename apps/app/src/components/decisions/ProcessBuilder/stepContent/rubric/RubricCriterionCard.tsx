@@ -243,6 +243,7 @@ export function RubricCriterionCard({
             {onRemove && (
               <Button
                 variant="destructive"
+                size="sm"
                 onClick={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
               >

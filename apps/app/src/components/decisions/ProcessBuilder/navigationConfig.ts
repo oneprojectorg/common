@@ -27,7 +27,7 @@ export const SECTIONS_BY_STEP = {
     { id: 'reviewRubric', labelKey: 'Review Rubric' },
   ],
   participants: [
-    { id: 'roles', labelKey: 'Roles & permissions' },
+    { id: 'roles', labelKey: 'Roles & Permissions' },
     { id: 'participants', labelKey: 'Participants' },
   ],
   summary: [{ id: 'summary', labelKey: 'Summary' }],
@@ -112,7 +112,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'roles',
-    labelKey: 'Roles & permissions',
+    labelKey: 'Roles & Permissions',
     parentStepId: 'participants',
   },
   {

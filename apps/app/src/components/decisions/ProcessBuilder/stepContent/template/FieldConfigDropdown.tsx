@@ -121,7 +121,7 @@ function FieldConfigDropdownOptions({
   };
 
   return (
-    <div ref={containerRef} className="space-y-2">
+    <div ref={containerRef} className="space-y-4">
       <h4 className="text-strong">{t('Options')}</h4>
 
       <Sortable
@@ -183,7 +183,11 @@ function FieldConfigDropdownOptions({
         }}
       </Sortable>
 
-      <Button variant="ghost" onClick={handleAddOption}>
+      <Button
+        variant="ghost"
+        onClick={handleAddOption}
+        className="hover:bg-secondary"
+      >
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>
       </Button>
