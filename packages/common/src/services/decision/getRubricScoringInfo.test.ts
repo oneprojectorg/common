@@ -172,6 +172,45 @@ describe('getRubricScoringInfo', () => {
     expect(info.summary).toEqual({ dropdown: 1 });
   });
 
+  it('treats single-select criteria as unscored without changing totalPoints', () => {
+    const schema: RubricTemplateSchema = {
+      type: 'object',
+      properties: {
+        innovation: {
+          type: 'integer',
+          title: 'Innovation',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 5, title: 'Excellent' },
+          ],
+        },
+        department: {
+          type: 'string',
+          title: 'Department',
+          'x-format': 'dropdown',
+          oneOf: [
+            { const: 'a1b2c3d4', title: 'Parks' },
+            { const: 'e5f6a7b8', title: 'Transportation' },
+          ],
+        },
+      },
+    };
+
+    const info = getRubricScoringInfo(schema);
+
+    expect(info.totalPoints).toBe(5);
+    const singleSelect = info.criteria.find((c) => c.key === 'department');
+    expect(singleSelect).toEqual({
+      key: 'department',
+      maxPoints: 0,
+      scored: false,
+    });
+    expect(info.summary).toEqual({ dropdown: 2 });
+  });
+
   it('treats non-integer types as qualitative (0 points)', () => {
     const schema: RubricTemplateSchema = {
       type: 'object',

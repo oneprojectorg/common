@@ -350,6 +350,34 @@ function RubricFieldInput({
         );
       }
 
+      if (criterionType === 'single_select') {
+        const options = parseSchemaOptions(field.schema);
+        return (
+          <Select
+            aria-label={field.schema.title}
+            placeholder={t('Select an option')}
+            selectedKey={typeof value === 'string' ? value : null}
+            onSelectionChange={(key) => {
+              onChange(key === null ? null : String(key));
+            }}
+            className="w-full"
+          >
+            {options.map((option) => {
+              const label = option.title || String(option.value);
+              return (
+                <SelectItem
+                  key={String(option.value)}
+                  id={String(option.value)}
+                  textValue={label}
+                >
+                  {label}
+                </SelectItem>
+              );
+            })}
+          </Select>
+        );
+      }
+
       if (criterionType === 'scored') {
         // Highest score first (to match the process builder); each option
         // renders the score with its description below so reviewers can

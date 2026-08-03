@@ -98,6 +98,8 @@ function RubricField({ field }: { field: FieldDescriptor }) {
         );
       }
 
+      // Non-scored dropdowns (single-select included) fall through to the
+      // generic pill select placeholder below, with no points badge.
       const badge = isScoredField(schema)
         ? `${schema.maximum} ${t('pts')}`
         : undefined;

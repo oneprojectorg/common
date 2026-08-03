@@ -44,7 +44,24 @@ export type { RubricTemplateSchema };
 // Criterion types
 // ---------------------------------------------------------------------------
 
-export type RubricCriterionType = 'scored' | 'yes_no' | 'long_text';
+export type RubricCriterionType =
+  | 'scored'
+  | 'yes_no'
+  | 'single_select'
+  | 'long_text';
+
+/** A single admin-defined option on a single-select criterion. */
+export interface SelectOption {
+  /** Stable generated id stored as the answer value. */
+  value: string;
+  /** Admin-editable display label. */
+  title: string;
+  /**
+   * Optional per-option explanation (e.g. what "Maybe" means for this
+   * criterion). Carried in the schema but not yet editable in the builder.
+   */
+  description?: string;
+}
 
 /**
  * Flat read-only view of a single rubric criterion, derived from the template.
@@ -61,6 +78,8 @@ export interface CriterionView {
   maxPoints?: number;
   /** Labels for each score level (index 0 = score 1, ascending). Scored criteria only. */
   scoreLabels: string[];
+  /** Admin-defined options. Single-select criteria only (empty for other types). */
+  options: SelectOption[];
 }
 
 // ---------------------------------------------------------------------------
@@ -80,15 +99,39 @@ function getOneOfEntries(schema: XFormatPropertySchema): JSONSchema7[] {
   return schema.oneOf.filter(isSchemaObject);
 }
 
+/**
+ * Extract `oneOf` option entries with string consts and string titles
+ * (the single-select option encoding).
+ */
+function getSelectOptionEntries(schema: XFormatPropertySchema): SelectOption[] {
+  return getOneOfEntries(schema)
+    .filter(
+      (e): e is JSONSchema7 & { const: string; title: string } =>
+        typeof e.const === 'string' && typeof e.title === 'string',
+    )
+    .map((e) => ({
+      value: e.const,
+      title: e.title,
+      ...(typeof e.description === 'string'
+        ? { description: e.description }
+        : {}),
+    }));
+}
+
 // ---------------------------------------------------------------------------
 // Criterion type ↔ JSON Schema mapping
 // ---------------------------------------------------------------------------
 
 /**
  * Create the JSON Schema for a given criterion type.
+ *
+ * `selectOptionLabels` seeds the options of a `single_select` criterion
+ * (one option per label, each with a fresh id); ignored for other types.
+ * Callers with i18n access pass translated labels (e.g. Yes/Maybe/No).
  */
 export function createCriterionJsonSchema(
   type: RubricCriterionType,
+  selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
     case 'scored': {
@@ -114,6 +157,17 @@ export function createCriterionJsonSchema(
           { const: 'no', title: 'No' },
         ],
       };
+    case 'single_select': {
+      const labels = selectOptionLabels ?? ['', ''];
+      return {
+        type: 'string',
+        'x-format': 'dropdown',
+        oneOf: labels.map((title) => ({
+          const: crypto.randomUUID().slice(0, 8),
+          title,
+        })),
+      };
+    }
     case 'long_text':
       return {
         type: 'string',
@@ -151,6 +205,14 @@ export function inferCriterionType(
         values.includes('no')
       ) {
         return 'yes_no';
+      }
+
+      // Any other string dropdown with options is a single-select
+      // "multiple choice" criterion. Note the overall recommendation field
+      // matches this shape too — callers exclude it by key before relying
+      // on the inferred type.
+      if (values.some((value) => typeof value === 'string')) {
+        return 'single_select';
       }
     }
   }
@@ -233,6 +295,21 @@ export function getCriterionScoreLabels(
     .map((e) => e.title);
 }
 
+/**
+ * Options of a single-select criterion, in stored order.
+ * Empty for other criterion types.
+ */
+export function getCriterionOptions(
+  template: RubricTemplateSchema,
+  criterionId: string,
+): SelectOption[] {
+  const schema = getCriterionSchema(template, criterionId);
+  if (!schema || inferCriterionType(schema) !== 'single_select') {
+    return [];
+  }
+  return getSelectOptionEntries(schema);
+}
+
 // ---------------------------------------------------------------------------
 // Composite readers
 // ---------------------------------------------------------------------------
@@ -254,6 +331,7 @@ export function getCriterion(
     required: isCriterionRequired(template, criterionId),
     maxPoints: getCriterionMaxPoints(template, criterionId),
     scoreLabels: getCriterionScoreLabels(template, criterionId),
+    options: getCriterionOptions(template, criterionId),
   };
 }
 
@@ -285,6 +363,15 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
     errors.push('Criterion label is required');
   }
 
+  if (criterion.criterionType === 'single_select') {
+    if (criterion.options.length < 2) {
+      errors.push('At least two options are required');
+    }
+    if (criterion.options.some((option) => !option.title.trim())) {
+      errors.push('Options cannot be empty');
+    }
+  }
+
   return errors;
 }
 
@@ -297,8 +384,12 @@ export function addCriterion(
   criterionId: string,
   type: RubricCriterionType,
   label: string,
+  selectOptionLabels?: string[],
 ): RubricTemplateSchema {
-  const jsonSchema = { ...createCriterionJsonSchema(type), title: label };
+  const jsonSchema = {
+    ...createCriterionJsonSchema(type, selectOptionLabels),
+    title: label,
+  };
   return addProperty(template, criterionId, jsonSchema);
 }
 
@@ -348,10 +439,11 @@ export function changeCriterionType(
   template: RubricTemplateSchema,
   criterionId: string,
   newType: RubricCriterionType,
+  selectOptionLabels?: string[],
 ): RubricTemplateSchema {
   return updateProperty(template, criterionId, (existing) => {
     const newSchema: XFormatPropertySchema = {
-      ...createCriterionJsonSchema(newType),
+      ...createCriterionJsonSchema(newType, selectOptionLabels),
       title: existing.title,
     };
     if (existing.description) {
@@ -425,6 +517,34 @@ export function updateScoreLabel(
     }
     return entry;
   });
+
+  return updateProperty(template, criterionId, (s) => ({ ...s, oneOf }));
+}
+
+/**
+ * Replace the full option list of a single-select criterion — labels, order,
+ * additions, and removals in one call (mirrors the proposal template's
+ * dropdown options editor). Callers pass existing option ids through
+ * unchanged so stored answers keep matching; only relabels/reorders/removals
+ * affect the schema. No-op when the criterion isn't a single-select.
+ */
+export function setSelectOptions(
+  template: RubricTemplateSchema,
+  criterionId: string,
+  options: SelectOption[],
+): RubricTemplateSchema {
+  const schema = getCriterionSchema(template, criterionId);
+  if (!schema || inferCriterionType(schema) !== 'single_select') {
+    return template;
+  }
+
+  const oneOf = options.map((option) => ({
+    const: option.value,
+    title: option.title,
+    ...(option.description !== undefined
+      ? { description: option.description }
+      : {}),
+  }));
 
   return updateProperty(template, criterionId, (s) => ({ ...s, oneOf }));
 }
