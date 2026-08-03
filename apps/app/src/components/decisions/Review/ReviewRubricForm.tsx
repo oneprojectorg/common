@@ -25,21 +25,29 @@ import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
-import { ReviewTabs } from './ReviewTabs';
+import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
- * Right-hand "Review Proposal" panel. When open reviews are enabled (reviews-v2
- * flag + the current phase's `openReviews` setting), the reviewer's own form is
- * shown under a "My review" tab alongside an "Other reviews" tab; otherwise the
- * form renders on its own exactly as before.
+ * Right-hand "Review Proposal" panel. Behind the reviews-v2 flag, the
+ * reviewer's own form is shown under a "My review" tab alongside an "Other
+ * reviews" tab (when the current phase's `openReviews` is on) and one
+ * "Reviews from {phase}" tab per earlier open review phase. With no tab
+ * beyond "My review", the form renders on its own exactly as before.
  */
-export function ReviewRubricForm({ openReviews }: { openReviews: boolean }) {
-  const reviewsV2Enabled = useFeatureFlag('reviews-v2');
-  const showTabs = reviewsV2Enabled && openReviews;
+export function ReviewRubricForm({
+  openReviews,
+  previousReviewPhases,
+}: {
+  openReviews: boolean;
+  previousReviewPhases: PreviousReviewPhase[];
+}) {
+  const reviewsV2Enabled = useFeatureFlag('reviews-v2') ?? false;
+  const showOtherReviews = reviewsV2Enabled && openReviews;
+  const previousPhases = reviewsV2Enabled ? previousReviewPhases : [];
 
-  if (!showTabs) {
+  if (!showOtherReviews && previousPhases.length === 0) {
     return (
       <FormShell>
         <MyReviewForm />
@@ -49,7 +57,11 @@ export function ReviewRubricForm({ openReviews }: { openReviews: boolean }) {
 
   return (
     <FormShell>
-      <ReviewTabs myReview={<MyReviewForm />} />
+      <ReviewTabs
+        myReview={<MyReviewForm />}
+        showOtherReviews={showOtherReviews}
+        previousPhases={previousPhases}
+      />
     </FormShell>
   );
 }

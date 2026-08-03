@@ -1376,6 +1376,8 @@
   "Other reviews": "Dib-u-eegisyo kale",
   "No other reviews yet": "Wali ma jiraan dib-u-eegisyo kale",
   "Failed to load reviews": "Waa lagu guuldareystay soo-dejinta dib-u-eegisyada",
+  "Reviews from {phase}": "Dib-u-eegisyada {phase}",
+  "No reviews were submitted in this phase": "Wax dib-u-eegis ah laguma gudbin marxaladdan",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} ka mid ah {total} dib-u-eegayaal ayaa soo gudbiyay dib-u-eegis soo jeedintan",
   "View review by {name}": "Eeg dib-u-eegista {name}",
   "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {1 raacaye} other {# raacayaal}}",

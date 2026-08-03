@@ -14,25 +14,52 @@ import { useReviewForm } from './ReviewFormContext';
 
 const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
+const PHASE_TAB_PREFIX = 'phase-reviews-';
+
+/** An earlier review phase whose `openReviews` keeps its reviews readable here. */
+export interface PreviousReviewPhase {
+  id: string;
+  name: string;
+}
 
 /**
- * Two-tab shell for the "Review Proposal" panel when open reviews are enabled:
- * the reviewer's own form ("My review") and a read-only view of everyone else's
- * submitted reviews ("Other reviews").
+ * Tab shell for the "Review Proposal" panel:
  *
- * The "My review" panel is force-mounted so the form (autosave, submit, and
- * revision flows) keeps its state while the reviewer browses other reviews. The
- * "Other reviews" panel mounts lazily, so its aggregates query only runs once
- * the reviewer opens the tab.
+ * - "My review" — the reviewer's own form. Force-mounted so the form
+ *   (autosave, submit, and revision flows) keeps its state while the reviewer
+ *   browses the other tabs.
+ * - "Other reviews" — the current phase's submitted reviews with the viewer's
+ *   own excluded; rendered only when the current phase has open reviews.
+ * - "Reviews from {phase}" — one per earlier open review phase. These are a
+ *   historical record, so the viewer's own review (if any) is included.
+ *
+ * Every panel except "My review" mounts lazily, so its aggregates query only
+ * runs once the reviewer opens the tab.
  */
-export function ReviewTabs({ myReview }: { myReview: ReactNode }) {
+export function ReviewTabs({
+  myReview,
+  showOtherReviews,
+  previousPhases,
+}: {
+  myReview: ReactNode;
+  showOtherReviews: boolean;
+  previousPhases: PreviousReviewPhase[];
+}) {
   const t = useTranslations();
+  const { assignment } = useReviewForm();
 
   return (
     <Tabs defaultSelectedKey={MY_REVIEW_TAB}>
       <TabList aria-label={t('Review Proposal')}>
         <Tab id={MY_REVIEW_TAB}>{t('My review')}</Tab>
-        <Tab id={OTHER_REVIEWS_TAB}>{t('Other reviews')}</Tab>
+        {showOtherReviews ? (
+          <Tab id={OTHER_REVIEWS_TAB}>{t('Other reviews')}</Tab>
+        ) : null}
+        {previousPhases.map((phase) => (
+          <Tab key={phase.id} id={`${PHASE_TAB_PREFIX}${phase.id}`}>
+            {t('Reviews from {phase}', { phase: phase.name })}
+          </Tab>
+        ))}
       </TabList>
 
       {/* Force-mounted panels only get an `inert` attribute from React Aria
@@ -46,30 +73,74 @@ export function ReviewTabs({ myReview }: { myReview: ReactNode }) {
         {myReview}
       </TabPanel>
 
-      <TabPanel id={OTHER_REVIEWS_TAB} className="sm:p-0">
-        <APIErrorBoundary
-          fallbacks={{
-            default: () => (
-              <p className="py-8 text-center text-base text-neutral-gray4">
-                {t('Failed to load reviews')}
-              </p>
-            ),
-          }}
-        >
-          <Suspense fallback={<OtherReviewsSkeleton />}>
-            <OtherReviews />
-          </Suspense>
-        </APIErrorBoundary>
-      </TabPanel>
+      {showOtherReviews ? (
+        <ReviewsTabPanel id={OTHER_REVIEWS_TAB}>
+          <PhaseReviews
+            phaseId={assignment.phaseId}
+            excludeOwnReview
+            emptyMessage={t('No other reviews yet')}
+          />
+        </ReviewsTabPanel>
+      ) : null}
+
+      {previousPhases.map((phase) => (
+        <ReviewsTabPanel key={phase.id} id={`${PHASE_TAB_PREFIX}${phase.id}`}>
+          <PhaseReviews
+            phaseId={phase.id}
+            emptyMessage={t('No reviews were submitted in this phase')}
+          />
+        </ReviewsTabPanel>
+      ))}
     </Tabs>
   );
 }
 
-function OtherReviews() {
+/** Lazily mounted reviews panel with its own error boundary + suspense fallback. */
+function ReviewsTabPanel({
+  id,
+  children,
+}: {
+  id: string;
+  children: ReactNode;
+}) {
   const t = useTranslations();
+
+  return (
+    <TabPanel id={id} className="sm:p-0">
+      <APIErrorBoundary
+        fallbacks={{
+          default: () => (
+            <p className="py-8 text-center text-base text-neutral-gray4">
+              {t('Failed to load reviews')}
+            </p>
+          ),
+        }}
+      >
+        <Suspense fallback={<PhaseReviewsSkeleton />}>{children}</Suspense>
+      </APIErrorBoundary>
+    </TabPanel>
+  );
+}
+
+/**
+ * One phase's submitted reviews for this proposal (average bar, recommendation
+ * groups, drill-in). `excludeOwnReview` hides the viewer's own review — used by
+ * the current phase's "Other reviews" tab; earlier phases show the full record.
+ */
+function PhaseReviews({
+  phaseId,
+  emptyMessage,
+  excludeOwnReview = false,
+}: {
+  phaseId: string;
+  emptyMessage: string;
+  excludeOwnReview?: boolean;
+}) {
   const { assignment, rubricTemplate } = useReviewForm();
   const { user } = useUser();
-  const excludeProfileId = user?.currentProfileId ?? undefined;
+  const excludeProfileId = excludeOwnReview
+    ? (user?.currentProfileId ?? undefined)
+    : undefined;
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<
     string | null
@@ -79,19 +150,19 @@ function OtherReviews() {
     trpc.decision.getProposalWithReviewAggregates.useSuspenseQuery({
       processInstanceId: assignment.processInstanceId,
       proposalId: assignment.proposal.id,
-      phaseId: assignment.phaseId,
+      phaseId,
     });
 
-  const otherReviews = excludeProfileId
+  const visibleReviews = excludeProfileId
     ? proposalWithReviews.reviews.filter(
         (review) => review.reviewer.id !== excludeProfileId,
       )
     : proposalWithReviews.reviews;
 
-  if (otherReviews.length === 0) {
+  if (visibleReviews.length === 0) {
     return (
       <p className="py-8 text-center text-base text-neutral-gray4">
-        {t('No other reviews yet')}
+        {emptyMessage}
       </p>
     );
   }
@@ -108,7 +179,7 @@ function OtherReviews() {
   );
 }
 
-function OtherReviewsSkeleton() {
+function PhaseReviewsSkeleton() {
   return (
     <div className="flex flex-col gap-4">
       <Skeleton className="h-14 w-full" />

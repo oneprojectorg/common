@@ -1345,6 +1345,8 @@
   "Other reviews": "Other reviews",
   "No other reviews yet": "No other reviews yet",
   "Failed to load reviews": "Failed to load reviews",
+  "Reviews from {phase}": "Reviews from {phase}",
+  "No reviews were submitted in this phase": "No reviews were submitted in this phase",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} out of {total} reviewers submitted a review for this proposal",
   "View review by {name}": "View review by {name}",
   "Results are live!": "Results are live!",

@@ -1330,6 +1330,8 @@
   "Other reviews": "Outras avaliações",
   "No other reviews yet": "Ainda não há outras avaliações",
   "Failed to load reviews": "Falha ao carregar as avaliações",
+  "Reviews from {phase}": "Avaliações de {phase}",
+  "No reviews were submitted in this phase": "Nenhuma avaliação foi enviada nesta fase",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} de {total} avaliadores enviaram uma avaliação para esta proposta",
   "View review by {name}": "Ver avaliação de {name}",
   "Results are live!": "Os resultados estão disponíveis!",
