@@ -1418,5 +1418,10 @@
   "Could not remove reviewer. Please try again.": "No se pudo quitar la persona revisora. Inténtalo de nuevo.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Las categorías provienen de <link>Categorías de propuestas</link>. Agrega personas revisoras a cada una o invita a alguien nuevo.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "No se encontraron categorías. Agrégalas en <link>Categorías de propuestas</link> para asignar personas revisoras por categoría.",
-  "Coming soon": "Próximamente"
+  "Coming soon": "Próximamente",
+  "Open reviews": "Revisiones abiertas",
+  "Reviewers can see each other's reviews on a proposal": "Las personas revisoras pueden ver las revisiones de las demás en una propuesta",
+  "Turn on Open Reviews?": "¿Activar las revisiones abiertas?",
+  "This can lead reviewers to agree with each other more than they would independently.": "Esto puede llevar a que las personas revisoras estén de acuerdo entre sí más de lo que lo harían de forma independiente.",
+  "Enable": "Activar"
 }

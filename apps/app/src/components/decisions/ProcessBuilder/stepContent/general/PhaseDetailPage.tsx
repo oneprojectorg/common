@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
@@ -77,6 +78,7 @@ function PhaseDetailForm({
   onDelete: () => void;
 }) {
   const t = useTranslations();
+  const reviewsV2Enabled = useFeatureFlag('reviews-v2');
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
@@ -154,6 +156,10 @@ function PhaseDetailForm({
       };
     });
   };
+
+  // Open reviews opt-in is gated behind a confirmation dialog (enabling it
+  // changes reviewer behavior), so turning it ON opens this modal first.
+  const [showOpenReviewsModal, setShowOpenReviewsModal] = useState(false);
 
   // Delete phase
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -393,14 +399,45 @@ function PhaseDetailForm({
         >
           <ToggleButton
             isSelected={isReviewPhase(phase)}
-            onChange={(val) =>
-              updateRules({
-                reviews: { ...phase.rules?.reviews, submit: val },
-              })
-            }
+            onChange={(val) => {
+              const nextReviews: PhaseRules['reviews'] = {
+                ...phase.rules?.reviews,
+                submit: val,
+              };
+              // Clear any "open reviews" opt-in when review is disabled so a
+              // hidden-but-true setting can't silently re-open reviews if
+              // review is turned back on later.
+              if (!val && phase.rules?.reviews?.openReviews) {
+                nextReviews.openReviews = false;
+              }
+              updateRules({ reviews: nextReviews });
+            }}
             size="small"
           />
         </ToggleRow>
+        {reviewsV2Enabled && isReviewPhase(phase) && (
+          <ToggleRow
+            label={t('Open reviews')}
+            description={t(
+              "Reviewers can see each other's reviews on a proposal",
+            )}
+          >
+            <ToggleButton
+              isSelected={phase.rules?.reviews?.openReviews ?? false}
+              onChange={(val) => {
+                // Turning ON is confirmed via a dialog; turning OFF is immediate.
+                if (val) {
+                  setShowOpenReviewsModal(true);
+                } else {
+                  updateRules({
+                    reviews: { ...phase.rules?.reviews, openReviews: false },
+                  });
+                }
+              }}
+              size="small"
+            />
+          </ToggleRow>
+        )}
         <ToggleRow
           label={t('Voting')}
           description={t(
@@ -452,6 +489,46 @@ function PhaseDetailForm({
           {t('Delete phase')}
         </Button>
       </div>
+
+      <Modal
+        isDismissable
+        isOpen={showOpenReviewsModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowOpenReviewsModal(false);
+          }
+        }}
+      >
+        <ModalHeader>{t('Turn on Open Reviews?')}</ModalHeader>
+        <ModalBody>
+          <p>
+            {t(
+              'This can lead reviewers to agree with each other more than they would independently.',
+            )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="secondary"
+            className="w-full sm:w-fit"
+            onPress={() => setShowOpenReviewsModal(false)}
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="primary"
+            className="w-full sm:w-fit"
+            onPress={() => {
+              updateRules({
+                reviews: { ...phase.rules?.reviews, openReviews: true },
+              });
+              setShowOpenReviewsModal(false);
+            }}
+          >
+            {t('Enable')}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       <Modal
         isDismissable

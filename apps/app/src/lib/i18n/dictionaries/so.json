@@ -1420,5 +1420,10 @@
   "Could not remove reviewer. Please try again.": "Lama saarin dib-u-eegaha. Fadlan mar kale isku day.",
   "Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.": "Qaybaha waxay ka yimaadaan <link>Qaybaha Soo Jeedinta</link>. Ku dar dib-u-eegayaal mid kasta, ama ku casuum qof cusub.",
   "No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.": "Lama helin qaybo. Ku dar <link>Qaybaha Soo Jeedinta</link> si aad u qoondayso dib-u-eegayaal qayb ahaan.",
-  "Coming soon": "Waa iman doonaa dhakhso"
+  "Coming soon": "Waa iman doonaa dhakhso",
+  "Open reviews": "Dib-u-eegisyada furan",
+  "Reviewers can see each other's reviews on a proposal": "Dib-u-eegayaashu waxay ku arki karaan dib-u-eegisyada midba midka kale ee soo jeedin",
+  "Turn on Open Reviews?": "Shid dib-u-eegisyada furan?",
+  "This can lead reviewers to agree with each other more than they would independently.": "Tani waxay u horseedi kartaa in dib-u-eegayaashu isku raacaan midba midka kale in ka badan intii ay si madax-bannaan u samayn lahaayeen.",
+  "Enable": "Shid"
 }
