@@ -404,7 +404,7 @@ export function TemplateEditorContent({
                 }
                 locked
               >
-                <div className="px-8 py-2">
+                <div className="-mt-6 px-8 pb-4">
                   <p className="m-0">
                     {t('These are the categories you defined in')}{' '}
                     <Button

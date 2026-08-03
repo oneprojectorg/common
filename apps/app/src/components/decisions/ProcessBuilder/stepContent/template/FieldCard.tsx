@@ -157,7 +157,7 @@ export function FieldCard({
         })}
         className={cn(
           isNew && 'animate-border-highlight',
-          errors.length > 0 && 'border-functional-red',
+          errors.length > 0 && 'border-destructive',
         )}
       >
         {/* Field name + Type selector row */}

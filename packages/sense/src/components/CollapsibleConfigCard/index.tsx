@@ -81,7 +81,6 @@ function CollapsibleConfigCard({
       <span
         className={cn(
           'truncate text-base font-strong',
-          locked ? 'text-muted-foreground' : 'text-foreground',
           !locked && isCollapsible && 'group-hover/config-card:underline',
         )}
       >
