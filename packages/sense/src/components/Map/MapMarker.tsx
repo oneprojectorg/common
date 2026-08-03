@@ -126,9 +126,12 @@ export function MapMarker({
         latitude={latitude}
         anchor="bottom"
         draggable={draggable}
-        // Lift the active pin above its neighbours so the enlarged head
-        // isn't clipped. The hovercard is portaled so it doesn't need a lift.
-        style={isActive ? { zIndex: 1 } : undefined}
+        // Lift the active pin above its neighbours so the enlarged head isn't
+        // clipped, and reset the rest to 0 — react-map-gl skips an `undefined`
+        // style, so a bare `undefined` would leave a previously-active pin
+        // stuck at 1 and covering the real selection. The hovercard is portaled
+        // so it doesn't need a lift.
+        style={{ zIndex: isActive ? 1 : 0 }}
         onClick={
           onClick
             ? (event: MarkerEvent<MouseEvent>) => {
