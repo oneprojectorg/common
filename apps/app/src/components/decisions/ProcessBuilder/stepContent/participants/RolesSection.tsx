@@ -101,8 +101,8 @@ export default function RolesSection({
   decisionName,
 }: SectionProps) {
   return (
-    <div className="px-4 py-6 md:px-24 md:py-16">
-      <div className="mx-auto max-w-5xl">
+    <div className="p-4 md:p-8">
+      <div className="w-full">
         <RolesSectionContent
           decisionProfileId={decisionProfileId}
           instanceId={instanceId}
@@ -748,7 +748,7 @@ function AddRoleRow({
         />
       </TableCell>
       {PERMISSION_COLUMNS.map(({ key, label }) => (
-        <TableCell key={key} className="text-center">
+        <TableCell key={key} className="p-0 text-center">
           <div className="flex justify-center">
             <Checkbox
               checked={permissions[key]}

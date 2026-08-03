@@ -365,8 +365,8 @@ export function TemplateEditorContent({
 
   return (
     <>
-      <div className="p-4 pb-24 md:p-8 md:pb-8">
-        <div className="mx-auto max-w-136 space-y-8">
+      <div>
+        <div className="mx-auto w-full max-w-160 space-y-8 p-4 pb-24 md:p-8 md:pb-8">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <Header2>{t('Proposal template')}</Header2>

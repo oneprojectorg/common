@@ -257,15 +257,15 @@ const RoleSelectWithRemove = ({
           render={
             <Button
               variant="ghost"
-              className="border border-input sm:border-none"
+              className="justify-between border border-input sm:border-none sm:hover:bg-secondary sm:data-[pressed]:bg-secondary"
               aria-label={t('Role')}
             >
               <span>{currentRoleName ?? t('Role')}</span>
-              <LuChevronDown className="size-4 text-muted-foreground" />
+              <LuChevronDown className="size-4" />
             </Button>
           }
         />
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="min-w-(--anchor-width)">
           <DropdownMenuRadioGroup value={value} onValueChange={onRoleChange}>
             {roles.map((role) => (
               <DropdownMenuRadioItem key={role.id} value={role.id} closeOnClick>

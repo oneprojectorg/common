@@ -306,8 +306,8 @@ export function RubricEditorContent({
 
   return (
     <div className="flex h-full flex-col">
-      <main className="flex-1 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
-        <div className="mx-auto max-w-160 space-y-6">
+      <main className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="mx-auto w-full max-w-160 space-y-6 p-4 pb-24 md:p-8 md:pb-8">
           <div className="mb-10 flex items-center justify-between gap-4">
             <Header1 className="text-headline">{t('Review Rubric')}</Header1>
             <div className="flex items-center gap-3">
