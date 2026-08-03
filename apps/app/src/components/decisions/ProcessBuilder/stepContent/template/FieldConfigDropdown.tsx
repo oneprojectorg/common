@@ -121,7 +121,7 @@ function FieldConfigDropdownOptions({
 
   return (
     <div ref={containerRef} className="space-y-2">
-      <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
+      <h4 className="text-strong">{t('Options')}</h4>
 
       <Sortable
         items={options}
@@ -139,7 +139,6 @@ function FieldConfigDropdownOptions({
               <DragHandle
                 {...controls.dragHandleProps}
                 aria-label={t('Drag to reorder option')}
-                className="text-neutral-gray3 hover:text-neutral-gray4"
               />
               <Input
                 value={option.value}
@@ -167,11 +166,6 @@ function FieldConfigDropdownOptions({
                           handleRemoveOption(option.id);
                         }
                       }}
-                      className={`p-2 ${
-                        options.length <= 2
-                          ? 'cursor-default text-neutral-gray3 opacity-30'
-                          : 'text-neutral-gray3 hover:text-neutral-charcoal'
-                      }`}
                     >
                       <LuX className="size-4" />
                     </Button>
@@ -186,12 +180,7 @@ function FieldConfigDropdownOptions({
         }}
       </Sortable>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleAddOption}
-        className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
-      >
+      <Button variant="ghost" onClick={handleAddOption}>
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>
       </Button>

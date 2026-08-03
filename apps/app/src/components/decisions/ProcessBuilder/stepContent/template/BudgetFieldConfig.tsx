@@ -3,11 +3,7 @@
 import { ProposalTemplateSchema } from '@op/common';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
 import { Field, FieldLabel } from '@op/sense/Field';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@op/sense/InputGroup';
+import { NumberField } from '@op/sense/NumberField';
 import {
   Select,
   SelectContent,
@@ -17,7 +13,7 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import type { Key } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -56,32 +52,6 @@ const CURRENCY_ITEMS: Record<string, string> = Object.fromEntries(
   CURRENCIES.map((c) => [c.code, `${c.code} ${c.symbol}`]),
 );
 
-// Numeric-input helpers ported from the former @op/ui NumberField (sense has no
-// NumberField equivalent). They normalize non-ASCII numerals to ASCII so the
-// field accepts Arabic-Indic / Persian digits, then keep only valid numeric
-// characters.
-const normalizeDigits = (value: string) =>
-  value
-    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
-    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
-    .replace(/٫/g, '.') // Arabic decimal separator
-    .replace(/٬/g, ''); // Arabic thousands separator
-
-const filterNumericInput = (value: string) =>
-  normalizeDigits(value)
-    .replace(/[^0-9.-]/g, '') // Keep only digits, minus, and decimal
-    .replace(/(?!^)-/g, '') // Remove minus signs that aren't at the beginning
-    .replace(/\.(?=.*\.)/g, ''); // Remove decimal points except the last one
-
-const parseNumericValue = (value: string): number | null => {
-  const filtered = filterNumericInput(value);
-  if (filtered === '' || filtered === '-') {
-    return null;
-  }
-  const parsed = parseFloat(filtered);
-  return isNaN(parsed) ? null : parsed;
-};
-
 export function BudgetFieldConfig({
   template,
   onTemplateChange,
@@ -107,16 +77,6 @@ export function BudgetFieldConfig({
       ? t('Required')
       : t('Optional')
     : undefined;
-
-  // Local display string for the max-budget input; synced when the stored
-  // value changes externally (mirrors the old NumberField's value → display
-  // effect).
-  const [budgetMaxDisplay, setBudgetMaxDisplay] = useState(
-    budgetMaxAmount?.toString() ?? '',
-  );
-  useEffect(() => {
-    setBudgetMaxDisplay(budgetMaxAmount?.toString() ?? '');
-  }, [budgetMaxAmount]);
 
   const handleShowBudgetChange = useCallback(
     (show: boolean) => {
@@ -249,26 +209,14 @@ export function BudgetFieldConfig({
                 </SelectContent>
               </Select>
             </Field>
-            <Field>
-              <FieldLabel htmlFor="budget-max">{t('Max budget')}</FieldLabel>
-              <InputGroup>
-                <InputGroupAddon align="inline-start">
-                  {budgetCurrencySymbol}
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="budget-max"
-                  inputMode="decimal"
-                  dir="ltr"
-                  placeholder={t('Set maximum budget')}
-                  value={budgetMaxDisplay}
-                  onChange={(e) => {
-                    const filtered = filterNumericInput(e.target.value);
-                    setBudgetMaxDisplay(filtered);
-                    handleBudgetMaxChange(parseNumericValue(filtered));
-                  }}
-                />
-              </InputGroup>
-            </Field>
+            <NumberField
+              id="budget-max"
+              label={t('Max budget')}
+              prefixText={budgetCurrencySymbol}
+              placeholder={t('Set maximum budget')}
+              value={budgetMaxAmount ?? null}
+              onChange={handleBudgetMaxChange}
+            />
           </>
         )}
         <div className="flex items-center justify-between">

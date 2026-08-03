@@ -5,27 +5,21 @@ import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
 } from '@op/sense/CollapsibleConfigCard';
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from '@op/sense/Field';
-import { Input } from '@op/sense/Input';
+import { Field, FieldLabel, FieldLegend, FieldSet } from '@op/sense/Field';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
   InputGroupTextarea,
 } from '@op/sense/InputGroup';
+import { NumberField } from '@op/sense/NumberField';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import type { SortableItemControls } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,34 +34,6 @@ import {
   CRITERION_TYPES,
   CRITERION_TYPE_REGISTRY,
 } from './rubricCriterionRegistry';
-
-// ---------------------------------------------------------------------------
-// Numeric input helpers (ported from the removed op-ui NumberField, which has
-// no sense equivalent — keeps Arabic/Persian digit normalization + filtering)
-// ---------------------------------------------------------------------------
-
-// Normalize non-ASCII numerals to ASCII so the field accepts Arabic input.
-const normalizeDigits = (value: string) =>
-  value
-    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
-    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
-    .replace(/٫/g, '.')
-    .replace(/٬/g, '');
-
-const filterNumericInput = (value: string) =>
-  normalizeDigits(value)
-    .replace(/[^0-9.-]/g, '')
-    .replace(/(?!^)-/g, '')
-    .replace(/\.(?=.*\.)/g, '');
-
-const parseNumericValue = (value: string): number | null => {
-  const filtered = filterNumericInput(value);
-  if (filtered === '' || filtered === '-') {
-    return null;
-  }
-  const parsed = parseFloat(filtered);
-  return isNaN(parsed) ? null : parsed;
-};
 
 const MAX_LABEL_LENGTH = 50;
 const MAX_DESCRIPTION_LENGTH = 250;
@@ -353,13 +319,6 @@ function ScoredCriterionConfig({
   const t = useTranslations();
   const max = criterion.maxPoints ?? 5;
 
-  // Local display string for the numeric input (the old NumberField owned this
-  // internally). Kept in sync when `max` changes from elsewhere.
-  const [displayValue, setDisplayValue] = useState(String(max));
-  useEffect(() => {
-    setDisplayValue(String(max));
-  }, [max]);
-
   // Cache descriptions that would be lost when maxPoints decreases.
   const [cachedDescriptions, setCachedDescriptions] = useState<
     Record<number, string>
@@ -408,25 +367,14 @@ function ScoredCriterionConfig({
 
   return (
     <div className="space-y-4">
-      <Field data-invalid={max < 2}>
-        <FieldLabel htmlFor={`${criterion.id}-max-points`}>
-          {t('Max points')}
-        </FieldLabel>
-        <Input
-          id={`${criterion.id}-max-points`}
-          inputMode="numeric"
-          dir="ltr"
-          className="w-20"
-          value={displayValue}
-          onChange={(e) => {
-            const filtered = filterNumericInput(e.target.value);
-            setDisplayValue(filtered);
-            handleMaxPointsChange(parseNumericValue(filtered));
-          }}
-          aria-invalid={max < 2}
-        />
-        {max < 2 && <FieldError>{t('Minimum is 2')}</FieldError>}
-      </Field>
+      <NumberField
+        id={`${criterion.id}-max-points`}
+        label={t('Max points')}
+        className="w-32"
+        value={max}
+        onChange={handleMaxPointsChange}
+        errorMessage={max < 2 ? t('Minimum is 2') : undefined}
+      />
 
       <div className="space-y-2">
         <h4 className="text-foreground">{t('Define what each score means')}</h4>
