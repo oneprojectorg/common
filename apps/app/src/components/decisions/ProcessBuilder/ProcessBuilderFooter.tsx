@@ -6,7 +6,7 @@ import { Button } from '@op/sense/Button';
 import { SidebarTrigger } from '@op/sense/Sidebar';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import { LuAlignJustify } from 'react-icons/lu';
+import { LuAlignJustify, LuArrowRight, LuArrowLeft } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -141,6 +141,7 @@ export const ProcessBuilderFooter = ({
                 onClick={goBack}
                 className="hidden md:inline-flex"
               >
+                <LuArrowLeft />
                 {t('Back')}
               </Button>
             )}
@@ -165,6 +166,7 @@ export const ProcessBuilderFooter = ({
               {hasNext && (
                 <Button variant="outline" onClick={goNext}>
                   {t('Next')}
+                  <LuArrowRight />
                 </Button>
               )}
 
