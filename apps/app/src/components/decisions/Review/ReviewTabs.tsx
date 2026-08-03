@@ -166,7 +166,7 @@ function PhaseReviews({
   emptyMessage: string;
   excludeOwnReview?: boolean;
 }) {
-  const { assignment, rubricTemplate } = useReviewForm();
+  const { assignment } = useReviewForm();
   const { user } = useUser();
   const posthog = usePostHog();
   const excludeProfileId = excludeOwnReview
@@ -220,7 +220,7 @@ function PhaseReviews({
   return (
     <ReviewsPanel
       proposalWithReviews={proposalWithReviews}
-      rubricTemplate={rubricTemplate}
+      rubricTemplate={proposalWithReviews.rubricTemplate}
       selectedAssignmentId={selectedAssignmentId}
       onSelectAssignment={handleSelectAssignment}
       excludeProfileId={excludeProfileId}

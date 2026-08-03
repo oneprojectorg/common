@@ -118,6 +118,8 @@ const phaseDefinitionEncoder = z.object({
   rules: phaseRulesEncoder,
   selectionPipeline: selectionPipelineEncoder.optional(),
   settings: jsonSchemaEncoder.optional(),
+  // Phase-specific rubric (overrides the schema-level rubricTemplate)
+  rubricTemplate: rubricTemplateSchema.optional(),
   // Instance-specific dates (merged from instanceData.phases)
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -196,6 +198,9 @@ export const instancePhaseDataEncoder = z.object({
   selectionPipeline: selectionPipelineEncoder.optional(),
   settingsSchema: jsonSchemaEncoder.optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
+  // Phase-specific rubric; resolve via getPhaseRubricTemplate (instance-level
+  // rubricTemplate is the fallback)
+  rubricTemplate: rubricTemplateSchema.optional(),
 });
 
 /**
@@ -524,6 +529,8 @@ export const createInstanceFromTemplateInputSchema = z.object({
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
+  // `null` clears the phase-level rubric; omitted leaves it unchanged.
+  rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
 
 export const updateDecisionInstanceInputSchema = z.object({

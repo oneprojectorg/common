@@ -187,6 +187,12 @@ function buildInstanceData(
         copied.rules = phase.rules;
       }
 
+      // Phase-level rubrics travel with the rubric flag, like the
+      // instance-level template below.
+      if (include.reviewRubric && phase.rubricTemplate) {
+        copied.rubricTemplate = phase.rubricTemplate;
+      }
+
       return copied;
     });
   } else if (source.phases.length > 0) {
@@ -195,7 +201,11 @@ function buildInstanceData(
       (phase): PhaseInstanceData => ({
         phaseId: phase.phaseId,
         name: phase.name,
-        // Minimal phase - just identity
+        // Minimal phase - just identity, plus the phase rubric when the
+        // rubric flag asks for it.
+        ...(include.reviewRubric && phase.rubricTemplate
+          ? { rubricTemplate: phase.rubricTemplate }
+          : {}),
       }),
     );
   }

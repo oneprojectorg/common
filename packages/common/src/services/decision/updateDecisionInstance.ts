@@ -101,6 +101,13 @@ export const updateDecisionInstance = async ({
     schemaValidator.validateJsonSchema(rubricTemplate);
   }
 
+  // Same validation for phase-level rubric templates (null = clear, skipped)
+  for (const phase of phases ?? []) {
+    if (phase.rubricTemplate != null) {
+      schemaValidator.validateJsonSchema(phase.rubricTemplate);
+    }
+  }
+
   // Build update data
   const updateData: Record<string, unknown> = {};
 
@@ -206,7 +213,7 @@ export const updateDecisionInstance = async ({
 
       updatedInstanceData.phases = phases.map((phase) => {
         const existing = existingPhaseMap.get(phase.phaseId);
-        return {
+        const merged = {
           ...existing,
           phaseId: phase.phaseId,
           ...(phase.name !== undefined && { name: phase.name }),
@@ -221,7 +228,15 @@ export const updateDecisionInstance = async ({
           ...(phase.startDate !== undefined && { startDate: phase.startDate }),
           ...(phase.endDate !== undefined && { endDate: phase.endDate }),
           ...(phase.settings !== undefined && { settings: phase.settings }),
+          ...(phase.rubricTemplate != null && {
+            rubricTemplate: phase.rubricTemplate,
+          }),
         };
+        // `null` clears the phase rubric (falls back to the instance-level template).
+        if (phase.rubricTemplate === null) {
+          delete merged.rubricTemplate;
+        }
+        return merged;
       });
     }
 

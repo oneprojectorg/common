@@ -136,6 +136,9 @@ export * from './utils/phaseSettings';
 // Phase-order navigation
 export * from './utils/phaseOrder';
 
+// Phase-scoped template resolution
+export * from './utils/phaseTemplates';
+
 // Voting management
 export * from './voting';
 

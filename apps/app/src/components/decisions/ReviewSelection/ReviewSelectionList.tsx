@@ -46,14 +46,13 @@ export function ReviewSelectionList({
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [{ items, total }] =
+  const [{ items, total, rubricTemplate }] =
     trpc.decision.listWithReviewAggregates.useSuspenseQuery({
       processInstanceId,
       phaseId: previousPhaseId,
     });
   const utils = trpc.useUtils();
 
-  const rubricTemplate = instance.instanceData?.rubricTemplate ?? null;
   const totalPoints = useMemo(
     () =>
       rubricTemplate ? getRubricScoringInfo(rubricTemplate).totalPoints : 0,

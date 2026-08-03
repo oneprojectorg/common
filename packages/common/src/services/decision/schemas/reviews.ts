@@ -196,6 +196,8 @@ export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
   total: z.number().int(),
   next: z.string().nullable(),
+  /** The phase-resolved rubric the items' aggregates were scored against. */
+  rubricTemplate: rubricTemplateSchema.nullable(),
 });
 
 // ── Single proposal with submitted reviews ─────────────────────────────
@@ -212,6 +214,8 @@ export const submittedReviewItemSchema = z.object({
 export const proposalWithSubmittedReviewsSchema =
   proposalWithAggregatesSchema.extend({
     reviews: z.array(submittedReviewItemSchema),
+    /** The phase-resolved rubric the returned reviews were scored against. */
+    rubricTemplate: rubricTemplateSchema.nullable(),
   });
 
 // ── Instance-level review progress (admin overview header) ─────────────

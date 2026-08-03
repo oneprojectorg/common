@@ -271,6 +271,104 @@ describe.concurrent('duplicateInstance', () => {
     }
   });
 
+  it('should copy phase-level rubric templates in both include.phases branches when include.reviewRubric is true', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const phaseRubric = {
+      type: 'object' as const,
+      properties: {
+        viability: { type: 'integer' as const, title: 'Viability' },
+      },
+    };
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      phases: [{ phaseId: 'submission', rubricTemplate: phaseRubric }],
+    });
+
+    const fullCopy = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'Phase Rubric Full Copy',
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(fullCopy.id);
+
+    const fullInstance = await db.query.processInstances.findFirst({
+      where: { id: fullCopy.processInstance.id },
+    });
+    const fullData = fullInstance!.instanceData as DecisionInstanceData;
+    expect(
+      fullData.phases.find((p) => p.phaseId === 'submission')?.rubricTemplate,
+    ).toMatchObject({ properties: { viability: { title: 'Viability' } } });
+
+    // Minimal-phase branch: identity-only phases still carry the rubric.
+    const minimalCopy = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'Phase Rubric Minimal Copy',
+      include: { ...ALL_INCLUDED, phases: false },
+    });
+    testData.trackProfileForCleanup(minimalCopy.id);
+
+    const minimalInstance = await db.query.processInstances.findFirst({
+      where: { id: minimalCopy.processInstance.id },
+    });
+    const minimalData = minimalInstance!.instanceData as DecisionInstanceData;
+    const minimalPhase = minimalData.phases.find(
+      (p) => p.phaseId === 'submission',
+    );
+    expect(minimalPhase?.rubricTemplate).toMatchObject({
+      properties: { viability: { title: 'Viability' } },
+    });
+    expect(minimalPhase?.rules).toBeUndefined();
+  });
+
+  it('should not copy phase-level rubric templates when include.reviewRubric is false', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      phases: [
+        {
+          phaseId: 'submission',
+          rubricTemplate: {
+            type: 'object',
+            properties: {
+              viability: { type: 'integer', title: 'Viability' },
+            },
+          },
+        },
+      ],
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'No Phase Rubric Test',
+      include: { ...ALL_INCLUDED, reviewRubric: false },
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+    for (const phase of instanceData.phases) {
+      expect(phase.rubricTemplate).toBeUndefined();
+    }
+  });
+
   it('should not copy proposalTemplate when include.proposalTemplate is false', async ({
     task,
     onTestFinished,

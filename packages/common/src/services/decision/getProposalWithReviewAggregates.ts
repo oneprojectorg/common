@@ -17,6 +17,7 @@ import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
+import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 export const getProposalWithReviewAggregatesInputSchema =
   instanceOptionalPhaseRefSchema.extend({
@@ -46,7 +47,12 @@ export async function getProposalWithReviewAggregates(
   // or before the current one — see `canReadPhaseReviews` for the semantics.
   assertCanReadPhaseReviews(instance, phaseId);
 
-  const rubricTemplate = instance.instanceData.rubricTemplate;
+  // Resolved by the requested phase so each phase's reviews are scored (and
+  // rendered by clients) against that phase's rubric. When an admin omits
+  // `phaseId` (all phases) this falls back to the instance-level rubric —
+  // aggregates blended across phases with different rubrics are inherently
+  // approximate.
+  const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)
@@ -97,5 +103,6 @@ export async function getProposalWithReviewAggregates(
     aggregates,
     categories: categoriesByProposalId.get(proposal.id) ?? [],
     reviews,
+    rubricTemplate,
   });
 }

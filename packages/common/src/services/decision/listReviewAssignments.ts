@@ -22,6 +22,7 @@ import {
   type ReviewAssignmentSort,
   reviewAssignmentListSchema,
 } from './schemas/reviews';
+import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /**
  * Status priority for the "least reviewed" secondary sort — lower ranks first,
@@ -149,7 +150,6 @@ export async function listReviewAssignments({
     instance.instanceData,
     instance.process.id,
   );
-  const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
 
   const docContentInputs: Array<{
     id: string;
@@ -200,7 +200,11 @@ export async function listReviewAssignments({
           htmlContent,
         },
       },
-      rubricTemplate,
+      // Assignments in this list can span phases, each with its own rubric.
+      rubricTemplate: getPhaseRubricTemplate(
+        instance.instanceData,
+        assignment.phaseId,
+      ),
       review,
       revisionRequest: getActiveRevisionRequest(assignment.requests),
       canEditReview: canEditSubmittedReview({ assignment, instance, review }),

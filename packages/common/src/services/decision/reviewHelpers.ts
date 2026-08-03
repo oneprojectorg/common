@@ -16,6 +16,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
+import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
@@ -224,7 +225,12 @@ export async function assertReviewAssignmentContext({
     instance,
     review: assignment.reviews[0] ?? null,
     revisionRequest: getActiveRevisionRequest(assignment.requests),
-    rubricTemplate: instance.instanceData.rubricTemplate ?? null,
+    // Reviews are validated and rendered against the rubric of the phase
+    // their assignment belongs to.
+    rubricTemplate: getPhaseRubricTemplate(
+      instance.instanceData,
+      assignment.phaseId,
+    ),
   };
 }
 

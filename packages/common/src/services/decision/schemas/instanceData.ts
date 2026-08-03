@@ -42,6 +42,8 @@ export interface PhaseInstanceData {
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
+  /** Phase-specific rubric; resolve via `getPhaseRubricTemplate`, never directly. */
+  rubricTemplate?: RubricTemplateSchema;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */
@@ -91,6 +93,8 @@ export interface PhaseOverride {
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
+  /** Phase rubric override; `null` clears it, `undefined` leaves it unchanged. */
+  rubricTemplate?: RubricTemplateSchema | null;
 }
 
 /**
@@ -152,6 +156,7 @@ export function createInstanceDataFromTemplate(input: {
           selectionPipeline: phase.selectionPipeline,
         }),
         ...(phase.settings && { settingsSchema: phase.settings }),
+        ...(phase.rubricTemplate && { rubricTemplate: phase.rubricTemplate }),
         ...(override?.startDate && {
           startDate: override.startDate,
         }),

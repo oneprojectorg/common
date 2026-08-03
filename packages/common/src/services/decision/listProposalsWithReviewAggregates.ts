@@ -27,6 +27,8 @@ import {
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
+import type { RubricTemplateSchema } from './types';
+import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -74,14 +76,16 @@ export async function listProposalsWithReviewAggregates(
     );
   }
 
-  const rubricTemplate = instance.instanceData.rubricTemplate;
+  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+
+  // Scoring follows the effective phase's rubric (the list is always
+  // phase-scoped: explicit `phaseId`, else the current phase).
+  const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)
         .map((c) => c.key)
     : [];
-
-  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
   const phaseProposalIds = await getProposalIdsForPhase({
     instance,
     phaseId,
@@ -94,6 +98,7 @@ export async function listProposalsWithReviewAggregates(
       processInstanceId,
       phaseId,
       scoredCriterionKeys,
+      rubricTemplate,
     });
   }
 
@@ -104,6 +109,7 @@ export async function listProposalsWithReviewAggregates(
     limit: input.limit,
     cursor: input.cursor,
     scoredCriterionKeys,
+    rubricTemplate,
   });
 }
 
@@ -115,12 +121,14 @@ async function listProposalsFiltered({
   processInstanceId,
   phaseId,
   scoredCriterionKeys,
+  rubricTemplate,
 }: {
   proposalIds: string[];
   phaseProposalIds: string[];
   processInstanceId: string;
   phaseId: string | undefined;
   scoredCriterionKeys: string[];
+  rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   const phaseProposalIdSet = new Set(phaseProposalIds);
   const filteredProposalIds = proposalIds.filter((id) =>
@@ -128,7 +136,7 @@ async function listProposalsFiltered({
   );
 
   if (filteredProposalIds.length === 0) {
-    return { items: [], total: 0, next: null };
+    return { items: [], total: 0, next: null, rubricTemplate };
   }
 
   const [proposalsFull, categoriesByProposalId] = await Promise.all([
@@ -161,6 +169,7 @@ async function listProposalsFiltered({
     items,
     total: items.length,
     next: null,
+    rubricTemplate,
   });
 }
 
@@ -173,6 +182,7 @@ async function listProposalsPaginated({
   limit,
   cursor,
   scoredCriterionKeys,
+  rubricTemplate,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
@@ -180,9 +190,10 @@ async function listProposalsPaginated({
   limit: number;
   cursor: string | undefined;
   scoredCriterionKeys: string[];
+  rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   if (phaseProposalIds.length === 0) {
-    return { items: [], total: 0, next: null };
+    return { items: [], total: 0, next: null, rubricTemplate };
   }
 
   const decodedCursor = cursor
@@ -229,7 +240,7 @@ async function listProposalsPaginated({
   const total = Number(totalRows[0]?.count ?? 0);
 
   if (pageRows.length === 0) {
-    return { items: [], total, next: null };
+    return { items: [], total, next: null, rubricTemplate };
   }
 
   const pageIds = pageRows.map((p) => p.id);
@@ -257,6 +268,7 @@ async function listProposalsPaginated({
     items,
     total,
     next,
+    rubricTemplate,
   });
 }
 

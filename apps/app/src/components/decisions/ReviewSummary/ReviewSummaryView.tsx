@@ -29,19 +29,16 @@ export function ReviewSummaryView({
   phaseId,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
-  const [[instance, proposalWithReviews, proposal]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.getInstance({ instanceId }),
-      t.decision.getProposalWithReviewAggregates({
-        processInstanceId: instanceId,
-        proposalId,
-        phaseId,
-      }),
-      t.decision.getProposal({ profileId: proposalProfileId }),
-    ],
-  );
+  const [[proposalWithReviews, proposal]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposalWithReviewAggregates({
+      processInstanceId: instanceId,
+      proposalId,
+      phaseId,
+    }),
+    t.decision.getProposal({ profileId: proposalProfileId }),
+  ]);
 
-  const rubricTemplate = instance.instanceData?.rubricTemplate ?? null;
+  const rubricTemplate = proposalWithReviews.rubricTemplate;
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useQueryState(
     'assignment',
