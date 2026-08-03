@@ -65,7 +65,7 @@ export function ProposalCardActions({
   }
 
   return (
-    <div className="flex w-full items-center gap-4 sm:w-auto">
+    <div className="flex w-full items-center gap-4">
       {/* TODO(sense-migration): @op/ui `color="verified"` (teal-tinted active
           state) has no sense Button variant; `default` (solid teal) preserves
           the liked/unliked distinction — revisit against Figma. */}
@@ -73,7 +73,7 @@ export function ProposalCardActions({
         onClick={handleLikeClick}
         size="sm"
         variant={isLikedByUser ? 'default' : 'outline'}
-        className="w-full text-nowrap"
+        className="flex-1 text-nowrap"
         disabled={isLoading}
       >
         <LuHeart className="size-4" />
@@ -83,7 +83,7 @@ export function ProposalCardActions({
         onClick={handleFollowClick}
         size="sm"
         variant={isFollowedByUser ? 'default' : 'outline'}
-        className="w-full text-nowrap"
+        className="flex-1 text-nowrap"
         disabled={isLoading}
       >
         <LuBookmark className="size-4" />
@@ -146,7 +146,12 @@ export function ProposalCardOwnerActions({
 
   return (
     <div className="flex w-full items-center gap-4">
-      <ButtonLink href={editHref} variant="outline" size="sm">
+      <ButtonLink
+        href={editHref}
+        variant="outline"
+        size="sm"
+        className="flex-1"
+      >
         <LuPencil className="size-4" />
         {t('Edit')}
       </ButtonLink>
@@ -154,8 +159,9 @@ export function ProposalCardOwnerActions({
         <DialogTrigger
           render={
             <Button
-              variant="outline"
+              variant="destructive"
               size="sm"
+              className="flex-1"
               disabled={deleteProposalMutation.isPending}
             >
               <LuTrash2 className="size-4" />

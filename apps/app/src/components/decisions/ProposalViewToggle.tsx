@@ -44,7 +44,7 @@ export function ProposalViewToggle({
         }
       }}
       variant="outline"
-      size="icon-sm"
+      size="icon"
       spacing={0}
       aria-label={t('Proposal view')}
       className={className}

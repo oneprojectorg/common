@@ -3,6 +3,7 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import {
   type DecisionAccess,
@@ -125,6 +126,7 @@ const ProposalCardView = ({
   actions,
   showMetrics = false,
   revisionRequested = false,
+  className,
 }: {
   proposal: Proposal;
   href?: string;
@@ -132,6 +134,7 @@ const ProposalCardView = ({
   actions?: ReactNode;
   showMetrics?: boolean;
   revisionRequested?: boolean;
+  className?: string;
 }) => {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
@@ -196,6 +199,7 @@ const ProposalCardView = ({
       title={titleText}
       href={href}
       linkComponent={Link}
+      className={className}
       headerBadge={
         revisionRequested ? undefined : (
           <ProposalStatusBadge proposal={proposal} />
@@ -669,6 +673,7 @@ const ViewProposalsList = ({
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
+  const { user } = useUser();
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
@@ -710,13 +715,16 @@ const ViewProposalsList = ({
           />
         ) : undefined;
 
+        // Only pass `actions` when something will actually render — otherwise
+        // the card draws a separator + empty row. Like/Follow render nothing
+        // for non-interacting (anonymous) users, so gate that branch.
         const actions = hasRevisionRequest ? (
           <ProposalCardReviseAction editHref={reviseHref} />
         ) : isDraft || isEditable ? (
           <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
-        ) : (
+        ) : userCanInteract(user) ? (
           <ProposalCardActions proposal={proposal} />
-        );
+        ) : undefined;
 
         return (
           <ProposalCardView
@@ -727,6 +735,7 @@ const ViewProposalsList = ({
             actions={actions}
             showMetrics={!isDraft}
             revisionRequested={hasRevisionRequest}
+            className={isDraft ? 'bg-muted' : undefined}
           />
         );
       })}

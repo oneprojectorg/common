@@ -214,7 +214,10 @@ export function ProposalCard({
         </div>
       ) : null}
       {actions ? (
-        <div className="relative z-10 flex items-center gap-3">{actions}</div>
+        // Equal-width actions in a row — each top-level action fills its share.
+        <div className="relative z-10 flex items-center gap-3 [&>*]:flex-1">
+          {actions}
+        </div>
       ) : null}
     </div>
   );

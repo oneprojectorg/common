@@ -132,9 +132,6 @@ export const ProposalsStickyFilterBar = ({
           // Bottom hairline fades in on pin — all breakpoints.
           "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
           'data-[pinned=true]:after:opacity-100',
-          // Break the bar out to full viewport width on mobile so the filter row
-          // can scroll edge-to-edge. Content keeps its gutter via px-4.
-          'max-md:ml-[calc(50%_-_50vw)] max-md:w-screen max-md:px-4',
         )}
       >
         {/* Full-bleed white that fades in once pinned — covers the bar and its
@@ -156,7 +153,7 @@ export const ProposalsStickyFilterBar = ({
           total={totalProposalCount}
         />
         {!hideFilters && (
-          <div className="flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
+          <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
             <ProposalsFilterBar
               hasVoted={hasVoted}
               currentProfileId={currentProfileId}

@@ -187,7 +187,7 @@ function ResultsPageContent({
       </div>
 
       <div className="flex w-full justify-center border-t bg-white">
-        <div className="w-full p-4 sm:max-w-6xl">
+        <div className="w-full p-4">
           <DecisionResultsTabs showBallotTab={showBallotTab}>
             <DecisionResultsTabPanel id="funded">
               <APIErrorBoundary

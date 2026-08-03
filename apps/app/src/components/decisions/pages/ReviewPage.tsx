@@ -120,7 +120,7 @@ export function ReviewPage({
       </DecisionHeroBanner>
 
       <div className="flex w-full justify-center bg-white">
-        <div className="w-full p-4 sm:max-w-6xl sm:p-8">
+        <div className="w-full p-4 sm:p-8">
           {canReview ? (
             <Tabs className="gap-6" defaultSelectedKey="to-review">
               <TabList className="flex gap-6">

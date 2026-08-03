@@ -117,7 +117,7 @@ export function StandardDecisionPage({
             currentPhaseEndDate={currentPhase?.endDate}
           />
         )}
-        <div className="flex w-full flex-col gap-6 p-4 sm:max-w-6xl sm:p-8">
+        <div className="flex w-full flex-col gap-6 p-4 sm:p-8">
           {isAwaitingFinalResults ? (
             <Empty className="border-0">
               <EmptyHeader>
