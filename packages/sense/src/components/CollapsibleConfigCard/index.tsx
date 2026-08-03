@@ -107,7 +107,6 @@ function CollapsibleConfigCard({
   const cardClasses = cn(
     'rounded-lg border bg-background transition-colors',
     isCollapsible && !locked && 'hover:bg-gray-50 data-open:bg-gray-50',
-    locked && 'bg-muted',
     isDragging && 'opacity-50',
     className,
   );
