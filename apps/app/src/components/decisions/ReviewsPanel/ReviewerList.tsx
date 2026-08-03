@@ -26,6 +26,7 @@ interface ReviewerListProps {
   rubricTemplate: RubricTemplateSchema | null;
   rubricSummary: RubricSummary;
   onSelectAssignment: (assignmentId: string) => void;
+  hideSummaryHeader?: boolean;
 }
 
 export function ReviewerList({
@@ -34,6 +35,7 @@ export function ReviewerList({
   rubricTemplate,
   rubricSummary,
   onSelectAssignment,
+  hideSummaryHeader,
 }: ReviewerListProps) {
   const t = useTranslations();
   const { reviewsSubmittedCount, assignmentsCount, averageScore } =
@@ -59,15 +61,17 @@ export function ReviewerList({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <Header3 className="font-serif">{t('Review Summary')}</Header3>
-        <p className="text-base text-neutral-charcoal">
-          {t(
-            '{submitted} out of {total} reviewers submitted a review for this proposal',
-            { submitted: reviewsSubmittedCount, total: assignmentsCount },
-          )}
-        </p>
-      </header>
+      {!hideSummaryHeader && (
+        <header className="flex flex-col gap-2">
+          <Header3 className="font-serif">{t('Review Summary')}</Header3>
+          <p className="text-base text-neutral-charcoal">
+            {t(
+              '{submitted} out of {total} reviewers submitted a review for this proposal',
+              { submitted: reviewsSubmittedCount, total: assignmentsCount },
+            )}
+          </p>
+        </header>
+      )}
 
       {hasScoring && (
         <AverageScoreBar

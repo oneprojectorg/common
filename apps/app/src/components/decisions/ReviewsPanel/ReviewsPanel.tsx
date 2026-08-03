@@ -25,6 +25,8 @@ interface ReviewsPanelProps {
   onSelectAssignment: (assignmentId: string | null) => void;
   /** When set, that reviewer's review is omitted from the list and detail. */
   excludeProfileId?: string;
+  /** Hides the "Review Summary" header + submitted-count line in the list view. */
+  hideSummaryHeader?: boolean;
 }
 
 export function ReviewsPanel({
@@ -33,6 +35,7 @@ export function ReviewsPanel({
   selectedAssignmentId,
   onSelectAssignment,
   excludeProfileId,
+  hideSummaryHeader,
 }: ReviewsPanelProps) {
   const rubricSummary = useMemo<RubricSummary>(() => {
     if (!rubricTemplate) {
@@ -87,6 +90,7 @@ export function ReviewsPanel({
       rubricTemplate={rubricTemplate}
       rubricSummary={rubricSummary}
       onSelectAssignment={onSelectAssignment}
+      hideSummaryHeader={hideSummaryHeader}
     />
   );
 }
