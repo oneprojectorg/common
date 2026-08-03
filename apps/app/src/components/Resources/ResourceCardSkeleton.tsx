@@ -1,7 +1,7 @@
 'use client';
 
-import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 
 // The drop placeholder: a single card-sized box shown while dragging a
 // file/link over a collection and while the dropped resource uploads. Reuses

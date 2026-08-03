@@ -3,8 +3,8 @@
 import { formatDate } from '@/utils/formatting';
 import type { ResourceInCollection } from '@op/api/encoders';
 import { match, sanitizeUrl } from '@op/core/utils';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Card } from '@op/sense/Card';
+import { cn } from '@op/sense/lib/utils';
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -186,7 +186,7 @@ const ResourceCardShell = ({
   );
 
   return (
-    <Surface className="relative rounded-lg p-4">
+    <Card className="relative rounded-lg p-4 shadow-none">
       {href ? (
         <a
           href={href}
@@ -205,7 +205,7 @@ const ResourceCardShell = ({
           {trailing}
         </div>
       ) : null}
-    </Surface>
+    </Card>
   );
 };
 

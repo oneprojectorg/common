@@ -8,12 +8,15 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   isAllowedUploadMimeType,
 } from '@op/common/client';
+import { Button } from '@op/sense/Button';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
+import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Skeleton } from '@op/ui/Skeleton';
-import { TextField } from '@op/ui/TextField';
-import { cn, formatFileSize } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { LuFilePlus2, LuFileText, LuX } from 'react-icons/lu';
@@ -161,14 +164,14 @@ export const AddResourceDocumentForm = ({
                 ) : null}
                 {uploading ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-                    <LoadingSpinner />
+                    <Spinner className="size-6" />
                   </div>
                 ) : null}
                 <Button
-                  color="ghost"
-                  size="small"
-                  onPress={handleRemoveFile}
-                  isDisabled={uploading}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveFile}
+                  disabled={uploading}
                   className="absolute end-2 top-2 bg-white/90 shadow-sm hover:bg-white"
                   aria-label={t('Remove file')}
                 >
@@ -198,10 +201,10 @@ export const AddResourceDocumentForm = ({
                   )}
                 </div>
                 <Button
-                  color="ghost"
-                  size="small"
-                  onPress={handleRemoveFile}
-                  isDisabled={uploading}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveFile}
+                  disabled={uploading}
                   className="shrink-0"
                   aria-label={t('Remove file')}
                 >
@@ -255,41 +258,51 @@ export const AddResourceDocumentForm = ({
             </div>
           )}
         </div>
-        <TextField
-          label={t('Title')}
-          value={title}
-          onChange={setTitleInput}
-          isRequired
-          maxLength={RESOURCE_TITLE_MAX_LEN}
-          isDisabled={!uploaded}
-          inputProps={{ placeholder: t('Resource name') }}
-        />
-        <TextField
-          label={t('Description')}
-          value={description}
-          onChange={setDescription}
-          maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
-          useTextArea
-          isDisabled={!uploaded}
-          textareaProps={{
-            placeholder: t('Brief description of this resource'),
-          }}
-        />
+        <Field>
+          <FieldLabel htmlFor="document-title">
+            {t('Title')}
+            <RequiredAsterisk />
+          </FieldLabel>
+          <Input
+            id="document-title"
+            value={title}
+            onChange={(event) => setTitleInput(event.target.value)}
+            required
+            maxLength={RESOURCE_TITLE_MAX_LEN}
+            disabled={!uploaded}
+            placeholder={t('Resource name')}
+            className="[unicode-bidi:plaintext]"
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="document-description">
+            {t('Description')}
+          </FieldLabel>
+          <Textarea
+            id="document-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
+            disabled={!uploaded}
+            placeholder={t('Brief description of this resource')}
+            className="[unicode-bidi:plaintext]"
+          />
+        </Field>
       </div>
       <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 bg-white px-4 py-4 sm:px-6">
         <Button
-          color="secondary"
-          size="small"
-          onPress={onCancel}
-          isDisabled={submitting}
+          variant="outline"
+          size="sm"
+          onClick={onCancel}
+          disabled={submitting}
           className="flex-1 justify-center"
         >
           {t('Cancel')}
         </Button>
         <Button
           type="submit"
-          size="small"
-          isDisabled={!uploaded || !title.trim() || submitting}
+          size="sm"
+          disabled={!uploaded || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
           {submitting ? t('Adding...') : t('Add resource')}
@@ -303,4 +316,16 @@ const fileMetaLabel = (file: File): string => {
   const ext = getExtension(file.name);
   const sizeLabel = formatFileSize(file.size);
   return ext ? `${ext} • ${sizeLabel}` : sizeLabel;
+};
+
+// Inlined from @op/ui utils (no @op/sense equivalent — sense keeps this helper
+// private to MediaDisplay). Same formatting the rest of the app used.
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) {
+    return '0 Bytes';
+  }
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };

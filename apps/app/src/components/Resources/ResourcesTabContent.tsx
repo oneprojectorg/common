@@ -1,10 +1,9 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Accordion } from '@op/ui/Accordion';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Accordion } from '@op/sense/Accordion';
+import { Button } from '@op/sense/Button';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
@@ -40,9 +39,6 @@ export const ResourcesTabContent = ({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
-        <Header2 className="font-serif text-title-base">
-          {t('Resources')}
-        </Header2>
         <div className="mt-4">
           {canRead ? (
             <ErrorBoundary>
@@ -69,9 +65,9 @@ export const ResourcesTabContent = ({
       {canManage && !adding && !isEmpty ? (
         <div className="shrink-0 border-t border-neutral-gray1 bg-white px-4 py-6 sm:px-6">
           <Button
-            color="secondary"
-            size="small"
-            onPress={() => setAdding(true)}
+            variant="outline"
+            size="sm"
+            onClick={() => setAdding(true)}
             className="w-full justify-center"
           >
             <LuPlus className="size-4" />
@@ -137,8 +133,8 @@ const ResourcesFeed = ({
 
   return (
     <Accordion
-      allowsMultipleExpanded
-      defaultExpandedKeys={collections.items.map((c) => c.id)}
+      multiple
+      defaultValue={collections.items.map((c) => c.id)}
       className="gap-4"
     >
       {collections.items.map((collection) => (

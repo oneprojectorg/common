@@ -1,7 +1,13 @@
 'use client';
 
-import { MenuItem } from '@op/ui/Menu';
-import { OptionMenu } from '@op/ui/OptionMenu';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -13,19 +19,23 @@ export const ResourceOverflowMenu = ({
   const t = useTranslations();
 
   return (
-    <OptionMenu
-      aria-label={t('Resource options')}
-      variant="ghost"
-      size="small"
-      menuClassName="min-w-36 p-2"
-    >
-      <MenuItem
-        key="delete"
-        onAction={onDelete}
-        className="text-functional-red"
-      >
-        {t('Delete resource')}
-      </MenuItem>
-    </OptionMenu>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t('Resource options')}
+          >
+            <LuEllipsis className="size-4" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent side="bottom" align="end" className="min-w-36">
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          {t('Delete resource')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

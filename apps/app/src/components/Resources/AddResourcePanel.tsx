@@ -1,9 +1,8 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { ButtonGroup } from '@op/ui/ButtonGroup';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
+import { Button } from '@op/sense/Button';
+import { ButtonGroup } from '@op/sense/ButtonGroup';
+import { Header2 } from '@op/sense/Header';
 import { useState } from 'react';
 import { LuFile, LuLink, LuX } from 'react-icons/lu';
 
@@ -31,32 +30,38 @@ export const AddResourcePanel = ({
         <Header2 className="font-serif text-title-sm">
           {t('Add Resource')}
         </Header2>
-        <IconButton
+        <Button
           variant="ghost"
-          size="small"
-          onPress={onClose}
+          size="icon-xs"
+          onClick={onClose}
           aria-label={t('Close')}
         >
           <LuX className="size-4" />
-        </IconButton>
+        </Button>
       </div>
       <div className="shrink-0 px-4 pt-4 sm:px-6">
+        {/* TODO(sense-migration): @op/ui ButtonGroup styled the aria-pressed
+            selected state; @op/sense ButtonGroup is visual grouping only, so the
+            selected look is driven manually via `variant`. Consider migrating to
+            @op/sense/ToggleGroup for true segmented-toggle semantics. */}
         <ButtonGroup className="w-full" aria-label={t('Resource type')}>
           <Button
-            color="secondary"
-            size="small"
+            variant={selectedResourceType === 'link' ? 'default' : 'outline'}
+            size="sm"
             aria-pressed={selectedResourceType === 'link'}
-            onPress={() => setSelectedResourceType('link')}
+            onClick={() => setSelectedResourceType('link')}
             className="flex-1"
           >
             <LuLink className="size-4" />
             {t('Link')}
           </Button>
           <Button
-            color="secondary"
-            size="small"
+            variant={
+              selectedResourceType === 'document' ? 'default' : 'outline'
+            }
+            size="sm"
             aria-pressed={selectedResourceType === 'document'}
-            onPress={() => setSelectedResourceType('document')}
+            onClick={() => setSelectedResourceType('document')}
             className="flex-1"
           >
             <LuFile className="size-4" />

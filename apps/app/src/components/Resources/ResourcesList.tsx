@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
+import { Sortable } from '@op/sense/Sortable';
 import { toast } from '@op/sense/Toast';
-import { Sortable } from '@op/ui/Sortable';
 import { useState } from 'react';
 import { LuUpload } from 'react-icons/lu';
 
