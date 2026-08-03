@@ -614,7 +614,16 @@ const SortableHead = ({
 }) => {
   const active = sortDescriptor.column === column;
   return (
-    <TableHead className={className}>
+    <TableHead
+      className={className}
+      aria-sort={
+        active
+          ? sortDescriptor.direction === 'ascending'
+            ? 'ascending'
+            : 'descending'
+          : 'none'
+      }
+    >
       <button
         type="button"
         className="flex items-center gap-1"

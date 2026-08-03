@@ -116,59 +116,6 @@ export function RichTextEditorToolbar({
 
   const noEditor = !editor;
 
-  // Toolbar toggle: pressed reflects the editor's active state; onToggle runs
-  // the command (the editor is the source of truth, so this is controlled).
-  const ToggleButton = ({
-    active,
-    onToggle,
-    label,
-    disabled,
-    children,
-  }: {
-    active: boolean;
-    onToggle: () => void;
-    label: string;
-    disabled?: boolean;
-    children: ReactNode;
-  }) => (
-    <Toggle
-      size="icon-sm"
-      pressed={active}
-      onPressedChange={onToggle}
-      disabled={disabled ?? noEditor}
-      aria-label={label}
-      title={label}
-      className="shrink-0"
-    >
-      {children}
-    </Toggle>
-  );
-
-  // Toolbar action (no pressed state): undo/redo, embeds, image, rule.
-  const ActionButton = ({
-    onClick,
-    label,
-    disabled,
-    children,
-  }: {
-    onClick: () => void;
-    label: string;
-    disabled?: boolean;
-    children: ReactNode;
-  }) => (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      onClick={onClick}
-      disabled={disabled ?? noEditor}
-      aria-label={label}
-      title={label}
-      className="shrink-0"
-    >
-      {children}
-    </Button>
-  );
-
   const divider = (
     <Separator orientation="vertical" className="mx-2 h-6 shrink-0" />
   );
@@ -310,6 +257,7 @@ export function RichTextEditorToolbar({
         <ActionButton
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={noEditor || !editor.can().undo()}
+          noEditor={noEditor}
           label={t('Undo')}
         >
           <LuUndo className="size-4" />
@@ -317,6 +265,7 @@ export function RichTextEditorToolbar({
         <ActionButton
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={noEditor || !editor.can().redo()}
+          noEditor={noEditor}
           label={t('Redo')}
         >
           <LuRedo className="size-4" />
@@ -428,18 +377,28 @@ export function RichTextEditorToolbar({
         <ToggleButton
           active={editor?.isActive('link') ?? false}
           onToggle={addLink}
+          noEditor={noEditor}
           label={t('Add Link')}
         >
           <LuLink className="size-4" />
         </ToggleButton>
-        <ActionButton onClick={addEmbedLink} label={t('Embed Link Preview')}>
+        <ActionButton
+          onClick={addEmbedLink}
+          noEditor={noEditor}
+          label={t('Embed Link Preview')}
+        >
           <LuLink2 className="size-4" />
         </ActionButton>
-        <ActionButton onClick={handleImageUpload} label={t('Add Image')}>
+        <ActionButton
+          onClick={handleImageUpload}
+          noEditor={noEditor}
+          label={t('Add Image')}
+        >
           <LuImage className="size-4" />
         </ActionButton>
         <ActionButton
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+          noEditor={noEditor}
           label={t('Add Horizontal Rule')}
         >
           <LuMinus className="size-4" />
@@ -455,5 +414,69 @@ export function RichTextEditorToolbar({
         className="hidden"
       />
     </div>
+  );
+}
+
+// Toolbar toggle: pressed reflects the editor's active state; onToggle runs the
+// command (the editor is the source of truth, so this is controlled). Defined at
+// module level so its identity is stable across the toolbar's frequent
+// re-renders — otherwise a new component type each render would remount the
+// button and drop focus mid-interaction.
+function ToggleButton({
+  active,
+  onToggle,
+  label,
+  disabled,
+  noEditor,
+  children,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  label: string;
+  disabled?: boolean;
+  noEditor: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Toggle
+      size="icon-sm"
+      pressed={active}
+      onPressedChange={onToggle}
+      disabled={disabled ?? noEditor}
+      aria-label={label}
+      title={label}
+      className="shrink-0"
+    >
+      {children}
+    </Toggle>
+  );
+}
+
+// Toolbar action (no pressed state): undo/redo, embeds, image, rule.
+function ActionButton({
+  onClick,
+  label,
+  disabled,
+  noEditor,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  disabled?: boolean;
+  noEditor: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onClick={onClick}
+      disabled={disabled ?? noEditor}
+      aria-label={label}
+      title={label}
+      className="shrink-0"
+    >
+      {children}
+    </Button>
   );
 }
