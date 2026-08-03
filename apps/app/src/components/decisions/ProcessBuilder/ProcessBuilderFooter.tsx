@@ -8,7 +8,7 @@ import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuAlignJustify } from 'react-icons/lu';
 
-import { Link, useRouter, useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 

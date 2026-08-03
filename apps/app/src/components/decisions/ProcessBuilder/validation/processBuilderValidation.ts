@@ -96,7 +96,7 @@ function validateTemplateEditor(
 }
 
 const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
-  processSettings: (data) => processSettingsSchema.safeParse(data).success,
+  generalInformation: (data) => processSettingsSchema.safeParse(data).success,
   // Overview content (headline, description, body) is optional
   overview: () => true,
   phases: (data) => phasesSchema.safeParse(data).success,

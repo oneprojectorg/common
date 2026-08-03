@@ -41,7 +41,7 @@ export function PhaseDetailPage({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
-  const [sectionParam, setSectionParam] = useQueryState('section', {
+  const [sectionParam] = useQueryState('section', {
     history: 'push',
   });
   const phaseId =
@@ -59,7 +59,6 @@ export function PhaseDetailPage({
       instanceId={instanceId}
       decisionProfileId={decisionProfileId}
       phaseId={phaseId}
-      onDelete={() => setSectionParam('phases')}
     />
   );
 }
@@ -80,12 +79,10 @@ function PhaseDetailForm({
   instanceId,
   decisionProfileId,
   phaseId,
-  onDelete,
 }: {
   instanceId: string;
   decisionProfileId: string;
   phaseId: string;
-  onDelete: () => void;
 }) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
@@ -95,8 +92,7 @@ function PhaseDetailForm({
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const { saveChanges, autosaveStatus, flushPendingChanges } =
-    useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Resolve the initial phase data (same priority as PhasesSectionContent)
   const allPhases: PhaseDefinition[] = (() => {
