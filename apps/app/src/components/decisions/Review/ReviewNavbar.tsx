@@ -47,7 +47,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
           {isEditing ? (
             <Button
               color="primary"
-              size="small"
+              size="medium"
               onPress={handleUpdate}
               isDisabled={!canUpdate || isUpdating}
             >
@@ -60,7 +60,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             </Button>
           ) : isSubmitted ? (
             canEditReview && (
-              <Button color="secondary" size="small" onPress={startEditing}>
+              <Button color="secondary" size="medium" onPress={startEditing}>
                 <LuPencil className="size-4" />
                 {t('Edit review')}
               </Button>

@@ -209,10 +209,8 @@ export class TestReviewsDataManager {
       .update(processInstances)
       .set({ currentStateId: phaseId })
       .where(eq(processInstances.id, instanceId));
-    // Production advances phases through advancePhase, which busts the
-    // getInstance cache. A direct write here must do the same, or a
-    // getInstance call warmed earlier in the test (e.g. by submitReview) would
-    // keep serving the stale currentStateId.
+    // Mirror advancePhase, which busts the getInstance cache; a direct write
+    // otherwise leaves an earlier getInstance serving a stale currentStateId.
     await invalidateDecisionInstance(instanceId);
   }
 

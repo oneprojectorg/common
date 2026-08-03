@@ -159,9 +159,7 @@ function ReviewFormProviderInner({
   const canRequestRevision =
     allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 
-  // Editing switches a submitted review back into the interactive form. Kept
-  // local: it never persists until "Update review", so navigating away (the
-  // only exit besides updating) discards unsaved edits.
+  // Local: unsaved until "Update review", so navigating away discards edits.
   const [isEditing, setIsEditing] = useState(false);
 
   const submitReview = trpc.decision.submitReview.useMutation({
@@ -178,9 +176,8 @@ function ReviewFormProviderInner({
 
   const updateReview = trpc.decision.updateReview.useMutation({
     onSuccess: () => {
-      // Stay on the page; the mutation's registered review channels invalidate
-      // getReviewAssignment locally, refreshing the read-only view and
-      // canEditReview (same pattern as requestRevision/cancelRevision).
+      // The mutation's review channels invalidate getReviewAssignment locally,
+      // refreshing the read-only view in place (as requestRevision does).
       setIsEditing(false);
       toast.success({ message: t('Review updated successfully') });
     },
@@ -196,8 +193,8 @@ function ReviewFormProviderInner({
     answers: values,
     rationales,
     overallComment,
-    // Drafts are pre-submission only; a submitted review (even while being
-    // edited) never autosaves — edits persist solely via "Update review".
+    // Drafts are pre-submission only; edits to a submitted review persist
+    // solely via "Update review", never autosave.
     enabled: !isSubmitted && !isPausedForRevision,
   });
 

@@ -7,23 +7,16 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { ValidationError } from '../../utils';
-import {
-  assertReviewAssignmentContext,
-  canEditSubmittedReview,
-} from './reviewHelpers';
+import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
+import { isInstanceCurrentPhase } from './utils/instance';
 
 /**
- * Edits an already-submitted review for the current reviewer. Overwrites the
- * rubric answers and feedback in place — no version history — while leaving
- * `submittedAt`, the review `state`, and the assignment status untouched. The
- * row's `updatedAt` advances on the UPDATE, keeping "was this review edited"
- * derivable (`updatedAt > submittedAt`).
- *
- * Only permitted while the assignment's phase is still the instance's current
- * phase (see {@link canEditSubmittedReview}); once the process advances past
- * the review phase the review is frozen.
+ * Edits an already-submitted review in place — no version history — leaving
+ * `submittedAt`, `state`, and the assignment status untouched (`updatedAt`
+ * advances, so an edit stays derivable). Only while the assignment's phase is
+ * still the instance's current phase; frozen once the process advances past it.
  */
 export async function updateReview({
   assignmentId,
@@ -45,12 +38,18 @@ export async function updateReview({
     throw new ValidationError('Review has not been submitted yet');
   }
 
+  // getInstance's currentStateId is cached and can lag a phase advance, so
+  // re-read the live phase directly rather than trust context.instance.
+  const liveInstance = await db.query.processInstances.findFirst({
+    where: { id: context.assignment.processInstanceId },
+    columns: { currentStateId: true },
+  });
+
   if (
-    !canEditSubmittedReview({
-      assignment: context.assignment,
-      instance: context.instance,
-      review: context.review,
-    })
+    !isInstanceCurrentPhase(
+      { currentStateId: liveInstance?.currentStateId ?? null },
+      context.assignment.phaseId,
+    )
   ) {
     throw new ValidationError(
       'This review can no longer be edited because the review phase has ended',
@@ -69,9 +68,7 @@ export async function updateReview({
       reviewData,
       overallComment: overallComment ?? null,
     })
-    // Atomic guard: the row must still be SUBMITTED. If it was concurrently
-    // moved off SUBMITTED between the check above and here, the UPDATE matches
-    // nothing and `.returning()` is empty — surfaced as the same error.
+    // Defensive: the row must still be SUBMITTED (nothing un-submits today).
     .where(
       and(
         eq(proposalReviews.assignmentId, assignmentId),
@@ -81,7 +78,9 @@ export async function updateReview({
     .returning();
 
   if (!updatedReview) {
-    throw new ValidationError('Review has not been submitted yet');
+    throw new ValidationError(
+      'This review can no longer be edited; please refresh and try again',
+    );
   }
 
   return {

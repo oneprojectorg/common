@@ -88,11 +88,9 @@ export function proposalWithRevisionRequestsConfig(
 }
 
 /**
- * A submitted review stays editable only while its assignment's phase is still
- * the instance's current phase. Once the instance advances past that phase,
- * downstream surfaces (score aggregates, results) are considered settled, so
- * edits are refused. This is the single predicate behind both the read-side
- * `canEditReview` signal and the `updateReview` service guard.
+ * A submitted review is editable only while its assignment's phase is still the
+ * instance's current phase. Backs the read-side `canEditReview` signal; the
+ * `updateReview` service re-checks against the live phase before writing.
  */
 export function canEditSubmittedReview({
   assignment,
@@ -101,8 +99,7 @@ export function canEditSubmittedReview({
 }: {
   assignment: { phaseId: string };
   instance: { currentStateId: string | null };
-  // `state` is the raw enum column, which infers as `string`; compared against
-  // the enum value (also a string) below.
+  // Raw enum column infers as `string`.
   review: { state: string } | null;
 }): boolean {
   return (
