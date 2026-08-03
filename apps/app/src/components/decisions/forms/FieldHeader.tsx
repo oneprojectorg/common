@@ -1,5 +1,5 @@
-import { Header4 } from '@op/ui/Header';
-import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
+import { Header4 } from '@op/sense/Header';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 
 /** Renders title + description header for a form field. */
 export function FieldHeader({

@@ -2,15 +2,25 @@
 
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { DragHandle, Sortable } from '@op/ui/Sortable';
-import { cn } from '@op/ui/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
+import { Button } from '@op/sense/Button';
+import { Header1 } from '@op/sense/Header';
+import { DragHandle, Sortable } from '@op/sense/Sortable';
+import { cn } from '@op/sense/lib/utils';
+import { useLocale } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { useState } from 'react';
-import { LuCheck, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { useMemo, useState } from 'react';
+import { LuCheck, LuCircleAlert, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
@@ -52,8 +62,29 @@ export function PhasesSectionContent({
   })();
   const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
+  const locale = useLocale();
   const [, setSectionParam] = useQueryState('section', { history: 'push' });
   const setSection = (sectionId: string) => setSectionParam(sectionId);
+
+  // "Jan 15 – Feb 15" for a configured phase — formatRange handles locale,
+  // same-month collapsing, and RTL; falls back to the end date alone.
+  const dateFormat = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }),
+    [locale],
+  );
+  const phaseDateRange = (phase: PhaseDefinition): string | null => {
+    if (!phase.endDate) {
+      return null;
+    }
+    const end = new Date(phase.endDate);
+    if (phase.startDate) {
+      const start = new Date(phase.startDate);
+      if (start.getTime() <= end.getTime()) {
+        return dateFormat.formatRange(start, end);
+      }
+    }
+    return dateFormat.format(end);
+  };
 
   const toPayload = (data: PhaseDefinition[]) =>
     data.map((phase) => ({
@@ -120,14 +151,16 @@ export function PhasesSectionContent({
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm">{t('Phases')}</Header2>
+        <Header1 className="text-headline">{t('Phases')}</Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}
         />
       </div>
-      <p className="text-neutral-charcoal">
-        {t('Define the phases of your decision-making process')}
+      <p className="mb-10 text-muted-foreground">
+        {t(
+          'Arrange the stages of your decision process. Drag to reorder, click to configure.',
+        )}
       </p>
 
       {phases.length === 0 ? (
@@ -136,9 +169,9 @@ export function PhasesSectionContent({
             <p className="text-neutral-gray4">{t('No phases defined')}</p>
           </div>
           <Button
-            color="ghost"
+            variant="ghost"
             className="text-primary-teal hover:text-primary-tealBlack"
-            onPress={addPhase}
+            onClick={addPhase}
           >
             <LuPlus className="size-4" />
             {t('Add phase')}
@@ -151,7 +184,7 @@ export function PhasesSectionContent({
             onChange={updatePhases}
             dragTrigger="handle"
             getItemLabel={(phase) => phase.name}
-            className="gap-2"
+            className="gap-4"
             renderDragPreview={(items) => {
               const phase = items[0];
               if (!phase) {
@@ -161,6 +194,7 @@ export function PhasesSectionContent({
                 <PhaseDragPreview
                   phase={phase}
                   configured={isPhaseConfigured(phase)}
+                  dateRange={phaseDateRange(phase)}
                   t={t}
                 />
               );
@@ -183,7 +217,7 @@ export function PhasesSectionContent({
                       {configured ? (
                         <span className="flex items-center gap-1 text-sm text-primary-teal">
                           <LuCheck className="size-3" />
-                          {t('Configured')}
+                          {phaseDateRange(phase)}
                         </span>
                       ) : (
                         <span className="text-sm text-neutral-gray4">
@@ -193,72 +227,64 @@ export function PhasesSectionContent({
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <Button
-                        color="secondary"
-                        size="small"
-                        onPress={() => setSection(phaseToSectionId(phase.id))}
-                      >
-                        {t('Configure')}
-                      </Button>
-                      <IconButton
                         variant="outline"
-                        size="medium"
-                        className="text-primary-teal hover:text-functional-red"
-                        onPress={() => setPhaseToDelete(phase.id)}
+                        size="sm"
+                        onClick={() => setSection(phaseToSectionId(phase.id))}
+                      >
+                        {configured ? t('Edit') : t('Configure')}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon-sm"
+                        onClick={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
                         <LuTrash2 className="size-4" />
-                      </IconButton>
+                      </Button>
                     </div>
                   </div>
                 </div>
               );
             }}
           </Sortable>
-          <Button
-            color="secondary"
-            className="w-full text-primary-teal hover:text-primary-tealBlack"
-            onPress={addPhase}
-          >
+          <Button variant="outline" className="w-full" onClick={addPhase}>
             <LuPlus className="size-4" />
             {t('Add phase')}
           </Button>
         </div>
       )}
 
-      <Modal
-        isDismissable
-        isOpen={phaseToDelete !== null}
+      <AlertDialog
+        open={phaseToDelete !== null}
         onOpenChange={(open) => {
           if (!open) {
             setPhaseToDelete(null);
           }
         }}
       >
-        <ModalHeader>{t('Delete phase?')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this phase? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setPhaseToDelete(null)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmRemovePhase}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-red-50">
+              <LuCircleAlert className="text-destructive" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>{t('Delete phase?')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                'Are you sure you want to delete this phase? This action cannot be undone.',
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmRemovePhase}
+            >
+              {t('Delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -267,14 +293,19 @@ export function PhasesSectionContent({
 const PhaseDragPreview = ({
   phase,
   configured,
+  dateRange,
   t,
 }: {
   phase: PhaseDefinition;
   configured: boolean;
+  dateRange: string | null;
   t: TranslateFn;
 }) => {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-md">
+    <div
+      aria-hidden
+      className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-md"
+    >
       <DragHandle tabIndex={-1} aria-hidden />
       <div className="flex flex-1 items-center justify-between gap-3">
         <div className="flex-1">
@@ -282,7 +313,7 @@ const PhaseDragPreview = ({
           {configured ? (
             <span className="flex items-center gap-1 text-sm text-primary-teal">
               <LuCheck className="size-3" />
-              {t('Configured')}
+              {dateRange}
             </span>
           ) : (
             <span className="text-sm text-neutral-gray4">
@@ -290,18 +321,20 @@ const PhaseDragPreview = ({
             </span>
           )}
         </div>
+        {/* Inert placeholders — this is the drag ghost, so no handlers and
+            no tab stops (aria-hidden on the wrapper below). */}
         <div className="flex shrink-0 items-center gap-3">
-          <Button color="secondary" size="small">
-            {t('Configure')}
+          <Button variant="outline" size="sm" tabIndex={-1}>
+            {configured ? t('Edit') : t('Configure')}
           </Button>
-          <IconButton
-            aria-label={t('Delete phase')}
-            variant="outline"
-            size="medium"
-            className="text-primary-teal"
+          <Button
+            variant="destructive"
+            size="icon-sm"
+            tabIndex={-1}
+            aria-label={t('Delete phase?')}
           >
             <LuTrash2 className="size-4" />
-          </IconButton>
+          </Button>
         </div>
       </div>
     </div>

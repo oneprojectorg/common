@@ -32,7 +32,7 @@ type SectionComponent = ComponentType<SectionProps>;
 // Keyed by SectionId so adding a section without a component is a compile
 // error instead of a blank screen at runtime.
 const FLAT_CONTENT_REGISTRY: Record<SectionId, SectionComponent> = {
-  processSettings: ProcessSettingsSection,
+  generalInformation: ProcessSettingsSection,
   overview: OverviewSection,
   phases: PhasesSection,
   proposalCategories: ProposalCategoriesSection,

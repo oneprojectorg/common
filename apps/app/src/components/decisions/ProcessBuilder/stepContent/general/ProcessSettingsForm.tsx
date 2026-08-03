@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Header1, Header3 } from '@op/sense/Header';
 import { Switch } from '@op/sense/Switch';
-import { Header2 } from '@op/ui/Header';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 
@@ -167,9 +167,9 @@ export function ProcessSettingsForm({
           <section className="space-y-6">
             <div>
               <div className="flex items-center justify-between">
-                <Header2 className="font-serif text-title-sm">
+                <Header1 className="text-headline">
                   {t('Process Settings')}
-                </Header2>
+                </Header1>
                 <SaveStatusIndicator
                   status={autosaveStatus.status}
                   savedAt={autosaveStatus.savedAt}
@@ -247,7 +247,6 @@ export function ProcessSettingsForm({
                           config: { organizeByCategories: value },
                         });
                       }}
-                      size="sm"
                     />
                   </ToggleRow>
                 )}
@@ -262,7 +261,7 @@ export function ProcessSettingsForm({
                       'Require proposals to be co-authored by at least 2 participants.',
                     )}
                   >
-                    <field.Switch size="small" />
+                    <field.Switch />
                   </ToggleRow>
                 )}
               />
@@ -271,9 +270,7 @@ export function ProcessSettingsForm({
 
           {/* Visibility Section */}
           <section className="space-y-6">
-            <Header2 className="font-serif text-title-sm">
-              {t('Visibility')}
-            </Header2>
+            <Header3>{t('Visibility')}</Header3>
 
             <form.AppField
               name="isPrivate"
@@ -287,7 +284,6 @@ export function ProcessSettingsForm({
                   <Switch
                     checked={!field.state.value}
                     onCheckedChange={(value) => field.handleChange(!value)}
-                    size="sm"
                   />
                 </ToggleRow>
               )}

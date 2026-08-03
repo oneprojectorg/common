@@ -2,8 +2,13 @@
 
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { logger } from '@op/logging/client';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { Separator } from '@op/sense/Separator';
+import { Toggle } from '@op/sense/Toggle';
+import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
+import { cn } from '@op/sense/lib/utils';
 import type { Editor } from '@tiptap/react';
+import type { ReactNode } from 'react';
 import { useCallback, useRef } from 'react';
 import {
   LuAlignCenter,
@@ -111,214 +116,293 @@ export function RichTextEditorToolbar({
 
   const noEditor = !editor;
 
-  const btnClass = (active: boolean) =>
-    `shrink-0 rounded p-2 hover:bg-gray-100 ${active ? 'bg-gray-200' : ''}`;
+  const divider = (
+    <Separator orientation="vertical" className="mx-2 h-6 shrink-0" />
+  );
+
+  // --- Derived active state (the editor is the source of truth). Every group
+  // is a base-ui multi-toggle group; each option carries the command to run
+  // when its membership flips (see runChanged). ---
+  const headingOptions = [
+    {
+      value: '1',
+      label: t('Heading {level}', { level: 1 }),
+      Icon: LuHeading1,
+      run: () => editor?.chain().focus().toggleHeading({ level: 1 }).run(),
+    },
+    {
+      value: '2',
+      label: t('Heading {level}', { level: 2 }),
+      Icon: LuHeading2,
+      run: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
+    },
+    {
+      value: '3',
+      label: t('Heading {level}', { level: 3 }),
+      Icon: LuHeading3,
+      run: () => editor?.chain().focus().toggleHeading({ level: 3 }).run(),
+    },
+  ];
+  const activeHeadings = headingOptions
+    .filter((h) => editor?.isActive('heading', { level: Number(h.value) }))
+    .map((h) => h.value);
+
+  const alignOptions = [
+    {
+      value: 'left',
+      label: t('Align Left'),
+      Icon: LuAlignLeft,
+      run: () => editor?.chain().focus().setTextAlign('left').run(),
+    },
+    {
+      value: 'center',
+      label: t('Align Center'),
+      Icon: LuAlignCenter,
+      run: () => editor?.chain().focus().setTextAlign('center').run(),
+    },
+    {
+      value: 'right',
+      label: t('Align Right'),
+      Icon: LuAlignRight,
+      run: () => editor?.chain().focus().setTextAlign('right').run(),
+    },
+  ];
+  const activeAligns = alignOptions
+    .filter((a) => editor?.isActive({ textAlign: a.value }))
+    .map((a) => a.value);
+
+  const markOptions = [
+    {
+      value: 'bold',
+      label: t('Bold'),
+      Icon: LuBold,
+      run: () => editor?.chain().focus().toggleBold().run(),
+    },
+    {
+      value: 'italic',
+      label: t('Italic'),
+      Icon: LuItalic,
+      run: () => editor?.chain().focus().toggleItalic().run(),
+    },
+    {
+      value: 'underline',
+      label: t('Underline'),
+      Icon: LuUnderline,
+      run: () => editor?.chain().focus().toggleUnderline().run(),
+    },
+    {
+      value: 'strike',
+      label: t('Strikethrough'),
+      Icon: LuStrikethrough,
+      run: () => editor?.chain().focus().toggleStrike().run(),
+    },
+    {
+      value: 'code',
+      label: t('Code'),
+      Icon: LuCode,
+      run: () => editor?.chain().focus().toggleCode().run(),
+    },
+  ];
+  const activeMarks = markOptions
+    .filter((m) => editor?.isActive(m.value))
+    .map((m) => m.value);
+
+  const listOptions = [
+    {
+      value: 'bulletList',
+      label: t('Bullet List'),
+      Icon: LuList,
+      run: () => editor?.chain().focus().toggleBulletList().run(),
+    },
+    {
+      value: 'orderedList',
+      label: t('Numbered List'),
+      Icon: LuListOrdered,
+      run: () => editor?.chain().focus().toggleOrderedList().run(),
+    },
+    {
+      value: 'blockquote',
+      label: t('Blockquote'),
+      Icon: LuQuote,
+      run: () => editor?.chain().focus().toggleBlockquote().run(),
+    },
+  ];
+  const activeLists = listOptions
+    .filter((l) => editor?.isActive(l.value))
+    .map((l) => l.value);
+
+  // Multiple-select groups: exactly one item flips per interaction, so run the
+  // command for the value whose membership changed between prev and next.
+  const runChanged = (
+    opts: { value: string; run: () => void }[],
+    active: string[],
+    next: string[],
+  ) => {
+    opts
+      .find((o) => next.includes(o.value) !== active.includes(o.value))
+      ?.run();
+  };
 
   return (
-    <div
-      className={cn(
-        'justify-between border-b px-6 py-2 text-neutral-charcoal',
-        className,
-      )}
-    >
-      <div className="mx-auto scrollbar-hide flex max-w-fit min-w-0 items-center gap-1 overflow-x-auto">
+    <div className={cn('border-b px-6 py-2', className)}>
+      <div
+        role="toolbar"
+        aria-label={t('Formatting toolbar')}
+        aria-orientation="horizontal"
+        // overflow-x-auto also clips overflow-y (cutting off each control's
+        // focus ring); p-1 + scroll-p-1 give the ring-3 room to paint.
+        className="mx-auto scrollbar-hide flex max-w-fit min-w-0 scroll-p-1 items-center gap-1 overflow-x-auto p-1"
+      >
         {/* Undo/Redo */}
-        <button
+        <ActionButton
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={noEditor || !editor.can().undo()}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Undo')}
+          noEditor={noEditor}
+          label={t('Undo')}
         >
           <LuUndo className="size-4" />
-        </button>
-        <button
+        </ActionButton>
+        <ActionButton
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={noEditor || !editor.can().redo()}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Redo')}
+          noEditor={noEditor}
+          label={t('Redo')}
         >
-          <LuRedo className="h-4 w-4" />
-        </button>
+          <LuRedo className="size-4" />
+        </ActionButton>
 
-        <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
+        {divider}
 
-        {/* Headings */}
-        <button
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 1 }).run()
+        {/* Headings — one heading level at a time (a block is 0 or 1 level) */}
+        <ToggleGroup
+          size="icon-sm"
+          spacing={1}
+          disabled={noEditor}
+          aria-label={t('Headings')}
+          value={activeHeadings}
+          onValueChange={(next: string[]) =>
+            runChanged(headingOptions, activeHeadings, next)
           }
-          disabled={noEditor}
-          className={btnClass(
-            editor?.isActive('heading', { level: 1 }) ?? false,
-          )}
-          title={t('Heading 1')}
         >
-          <LuHeading1 className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 2 }).run()
+          {headingOptions.map(({ value, label, Icon }) => (
+            <ToggleGroupItem
+              key={value}
+              value={value}
+              aria-label={label}
+              title={label}
+            >
+              <Icon className="size-4" />
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+
+        {divider}
+
+        {/* Text formatting */}
+        <ToggleGroup
+          size="icon-sm"
+          spacing={1}
+          disabled={noEditor}
+          aria-label={t('Text formatting')}
+          value={activeMarks}
+          onValueChange={(next: string[]) =>
+            runChanged(markOptions, activeMarks, next)
           }
-          disabled={noEditor}
-          className={btnClass(
-            editor?.isActive('heading', { level: 2 }) ?? false,
-          )}
-          title={t('Heading 2')}
         >
-          <LuHeading2 className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 3 }).run()
-          }
-          disabled={noEditor}
-          className={btnClass(
-            editor?.isActive('heading', { level: 3 }) ?? false,
-          )}
-          title={t('Heading 3')}
-        >
-          <LuHeading3 className="h-4 w-4" />
-        </button>
+          {markOptions.map(({ value, label, Icon }) => (
+            <ToggleGroupItem
+              key={value}
+              value={value}
+              aria-label={label}
+              title={label}
+            >
+              <Icon className="size-4" />
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
-        <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
-
-        {/* Text Formatting */}
-        <button
-          onClick={() => editor?.chain().focus().toggleBold().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('bold') ?? false)}
-          title={t('Bold')}
-        >
-          <LuBold className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().toggleItalic().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('italic') ?? false)}
-          title={t('Italic')}
-        >
-          <LuItalic className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().toggleUnderline().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('underline') ?? false)}
-          title={t('Underline')}
-        >
-          <LuUnderline className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().toggleStrike().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('strike') ?? false)}
-          title={t('Strikethrough')}
-        >
-          <LuStrikethrough className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().toggleCode().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('code') ?? false)}
-          title={t('Code')}
-        >
-          <LuCode className="h-4 w-4" />
-        </button>
-
-        <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
+        {divider}
 
         {/* Lists */}
-        <button
-          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+        <ToggleGroup
+          size="icon-sm"
+          spacing={1}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('bulletList') ?? false)}
-          title={t('Bullet List')}
+          aria-label={t('Lists')}
+          value={activeLists}
+          onValueChange={(next: string[]) =>
+            runChanged(listOptions, activeLists, next)
+          }
         >
-          <LuList className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('orderedList') ?? false)}
-          title={t('Numbered List')}
-        >
-          <LuListOrdered className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('blockquote') ?? false)}
-          title={t('Blockquote')}
-        >
-          <LuQuote className="h-4 w-4" />
-        </button>
+          {listOptions.map(({ value, label, Icon }) => (
+            <ToggleGroupItem
+              key={value}
+              value={value}
+              aria-label={label}
+              title={label}
+            >
+              <Icon className="size-4" />
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
-        <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
+        {divider}
 
-        {/* Text Alignment */}
-        <button
-          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+        {/* Text alignment — one alignment at a time */}
+        <ToggleGroup
+          size="icon-sm"
+          spacing={1}
           disabled={noEditor}
-          className={btnClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
-          title={t('Align Left')}
+          aria-label={t('Text alignment')}
+          value={activeAligns}
+          onValueChange={(next: string[]) =>
+            runChanged(alignOptions, activeAligns, next)
+          }
         >
-          <LuAlignLeft className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-          disabled={noEditor}
-          className={btnClass(
-            editor?.isActive({ textAlign: 'center' }) ?? false,
-          )}
-          title={t('Align Center')}
-        >
-          <LuAlignCenter className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-          disabled={noEditor}
-          className={btnClass(
-            editor?.isActive({ textAlign: 'right' }) ?? false,
-          )}
-          title={t('Align Right')}
-        >
-          <LuAlignRight className="h-4 w-4" />
-        </button>
+          {alignOptions.map(({ value, label, Icon }) => (
+            <ToggleGroupItem
+              key={value}
+              value={value}
+              aria-label={label}
+              title={label}
+            >
+              <Icon className="size-4" />
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
-        <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
+        {divider}
 
-        {/* Insert Elements */}
-        <button
-          onClick={addLink}
-          disabled={noEditor}
-          className={btnClass(editor?.isActive('link') ?? false)}
-          title={t('Add Link')}
+        {/* Insert elements */}
+        <ToggleButton
+          active={editor?.isActive('link') ?? false}
+          onToggle={addLink}
+          noEditor={noEditor}
+          label={t('Add Link')}
         >
-          <LuLink className="h-4 w-4" />
-        </button>
-        <button
+          <LuLink className="size-4" />
+        </ToggleButton>
+        <ActionButton
           onClick={addEmbedLink}
-          disabled={noEditor}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Embed Link Preview')}
+          noEditor={noEditor}
+          label={t('Embed Link Preview')}
         >
-          <LuLink2 className="h-4 w-4" />
-        </button>
-        <button
+          <LuLink2 className="size-4" />
+        </ActionButton>
+        <ActionButton
           onClick={handleImageUpload}
-          disabled={noEditor}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Add Image')}
+          noEditor={noEditor}
+          label={t('Add Image')}
         >
-          <LuImage className="h-4 w-4" />
-        </button>
-        <button
+          <LuImage className="size-4" />
+        </ActionButton>
+        <ActionButton
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
-          disabled={noEditor}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Add Horizontal Rule')}
+          noEditor={noEditor}
+          label={t('Add Horizontal Rule')}
         >
-          <LuMinus className="h-4 w-4" />
-        </button>
+          <LuMinus className="size-4" />
+        </ActionButton>
       </div>
 
       {/* Hidden file input for image upload */}
@@ -330,5 +414,69 @@ export function RichTextEditorToolbar({
         className="hidden"
       />
     </div>
+  );
+}
+
+// Toolbar toggle: pressed reflects the editor's active state; onToggle runs the
+// command (the editor is the source of truth, so this is controlled). Defined at
+// module level so its identity is stable across the toolbar's frequent
+// re-renders — otherwise a new component type each render would remount the
+// button and drop focus mid-interaction.
+function ToggleButton({
+  active,
+  onToggle,
+  label,
+  disabled,
+  noEditor,
+  children,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  label: string;
+  disabled?: boolean;
+  noEditor: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Toggle
+      size="icon-sm"
+      pressed={active}
+      onPressedChange={onToggle}
+      disabled={disabled ?? noEditor}
+      aria-label={label}
+      title={label}
+      className="shrink-0"
+    >
+      {children}
+    </Toggle>
+  );
+}
+
+// Toolbar action (no pressed state): undo/redo, embeds, image, rule.
+function ActionButton({
+  onClick,
+  label,
+  disabled,
+  noEditor,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  disabled?: boolean;
+  noEditor: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onClick={onClick}
+      disabled={disabled ?? noEditor}
+      aria-label={label}
+      title={label}
+      className="shrink-0"
+    >
+      {children}
+    </Button>
   );
 }

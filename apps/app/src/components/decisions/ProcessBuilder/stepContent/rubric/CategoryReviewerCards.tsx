@@ -1,9 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -53,22 +54,25 @@ function CategoryReviewerCardsContent({
   // Proposal Categories section to define them first.
   if (categories.length === 0) {
     return (
-      <AlertBanner variant="banner" intent="warning">
-        {t.rich(
-          'No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.',
-          {
-            link: (chunks: React.ReactNode) => (
-              <button
-                type="button"
-                className="text-primary-teal underline"
-                onClick={() => void setSection('proposalCategories')}
-              >
-                {chunks}
-              </button>
-            ),
-          },
-        )}
-      </AlertBanner>
+      <Alert variant="warning">
+        <LuCircleAlert />
+        <AlertTitle>
+          {t.rich(
+            'No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.',
+            {
+              link: (chunks: React.ReactNode) => (
+                <button
+                  type="button"
+                  className="text-primary-teal underline"
+                  onClick={() => void setSection('proposalCategories')}
+                >
+                  {chunks}
+                </button>
+              ),
+            },
+          )}
+        </AlertTitle>
+      </Alert>
     );
   }
 
@@ -77,22 +81,25 @@ function CategoryReviewerCardsContent({
       {eligibleReviewers.length === 0 ? (
         // Replaces the intro entirely — the intro invites adding reviewers,
         // which contradicts an alert saying no one can review yet.
-        <AlertBanner variant="banner" intent="warning">
-          {t.rich(
-            'No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.',
-            {
-              link: (chunks: React.ReactNode) => (
-                <button
-                  type="button"
-                  className="text-primary-teal underline"
-                  onClick={() => void setSection('participants')}
-                >
-                  {chunks}
-                </button>
-              ),
-            },
-          )}
-        </AlertBanner>
+        <Alert variant="warning">
+          <LuCircleAlert />
+          <AlertTitle>
+            {t.rich(
+              'No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.',
+              {
+                link: (chunks: React.ReactNode) => (
+                  <button
+                    type="button"
+                    className="text-primary-teal underline"
+                    onClick={() => void setSection('participants')}
+                  >
+                    {chunks}
+                  </button>
+                ),
+              },
+            )}
+          </AlertTitle>
+        </Alert>
       ) : (
         <p className="text-base text-neutral-black">
           {t.rich(

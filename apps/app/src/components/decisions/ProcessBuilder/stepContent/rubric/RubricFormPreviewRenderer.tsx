@@ -5,9 +5,10 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { Select, SelectTrigger, SelectValue } from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -61,16 +62,19 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     return (
       <div className="flex flex-col gap-3">
         <FieldHeader title={schema.title} />
-        <RadioGroup
-          className="gap-0"
-          aria-label={schema.title}
-          orientation="horizontal"
-        >
-          {recOptions.map((option) => (
-            <Radio key={String(option.value)} value={String(option.value)}>
-              {option.title || String(option.value)}
-            </Radio>
-          ))}
+        <RadioGroup className="grid-flow-col gap-0" aria-label={schema.title}>
+          {recOptions.map((option) => {
+            const optionValue = String(option.value);
+            const id = `${field.key}-${optionValue}`;
+            return (
+              <Field key={optionValue} orientation="horizontal">
+                <RadioGroupItem id={id} value={optionValue} />
+                <FieldLabel htmlFor={id}>
+                  {option.title || optionValue}
+                </FieldLabel>
+              </Field>
+            );
+          })}
         </RadioGroup>
       </div>
     );
@@ -92,7 +96,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
                   {schema.description}
                 </p>
               )}
-              <ToggleButton size="small" className="ms-auto shrink-0" />
+              <Switch className="ms-auto shrink-0" />
             </div>
           </div>
         );
@@ -112,14 +116,10 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             badge={badge}
             className="gap-1"
           />
-          <Select
-            variant="pill"
-            size="medium"
-            placeholder={t('Select option')}
-            selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-            className="w-fit max-w-full"
-          >
-            {[]}
+          <Select>
+            <SelectTrigger className="w-fit max-w-full rounded-full text-primary-teal data-placeholder:text-primary-teal">
+              <SelectValue placeholder={t('Select option')} />
+            </SelectTrigger>
           </Select>
         </div>
       );

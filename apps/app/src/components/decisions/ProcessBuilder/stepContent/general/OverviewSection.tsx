@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeTiptapDoc } from '@op/common/client';
-import { RichTextEditor } from '@op/ui/RichTextEditor';
-import { Skeleton } from '@op/ui/Skeleton';
+import { RichTextEditor } from '@op/sense/RichTextEditor';
+import { Skeleton } from '@op/sense/Skeleton';
 import type { JSONContent } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import { Suspense, useMemo, useRef, useState } from 'react';
@@ -14,7 +14,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
 import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
-import { OverviewHeroImageField } from '@/components/decisions/OverviewHeroImageField';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
@@ -101,21 +100,13 @@ function OverviewSectionContent({
 
   return (
     <div className="size-full [scrollbar-gutter:stable]">
-      <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 md:px-0 md:py-6">
+      <div className="mx-auto flex w-full flex-col gap-4 p-4 md:max-w-160 md:p-8">
         <div className="flex justify-end">
           <SaveStatusIndicator
             status={autosaveStatus.status}
             savedAt={autosaveStatus.savedAt}
           />
         </div>
-
-        <OverviewHeroImageField
-          instanceId={instanceId}
-          initialPath={
-            storeOverview?.heroImage ??
-            instance.instanceData?.overview?.heroImage
-          }
-        />
 
         <div className="flex flex-col gap-2">
           <OverviewTextField
@@ -175,7 +166,7 @@ function OverviewSectionContent({
 
 function OverviewSectionSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-4 md:px-0 md:py-6">
+    <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
       <div className="flex flex-col gap-2">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-5 w-full" />

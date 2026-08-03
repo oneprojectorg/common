@@ -1,6 +1,6 @@
 'use client';
 
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Spinner } from '@op/sense/Spinner';
 import { LuCheck, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,7 +29,7 @@ export function SaveStatusIndicator({
     <div className="flex items-center gap-2 text-sm">
       {status === 'saving' && (
         <>
-          <LoadingSpinner className="size-4" />
+          <Spinner className="size-4" />
           <span className="text-neutral-gray4">{t('Saving...')}</span>
         </>
       )}
