@@ -64,4 +64,7 @@ const detailsSummaryPlaceholderStyles = [
 /**
  * Styles applied to the editor element
  */
-export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
+// Standard sense focus ring on the editable itself (for bare editors), but
+// suppressed inside a `[data-slot=rich-text-editor-field]` container — there the
+// field rings via focus-within so the whole box (toolbar + editable) lights up.
+export const baseEditorStyles = `${viewerProseStyles} rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 placeholder:text-neutral-gray2 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
