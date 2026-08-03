@@ -71,7 +71,10 @@ export async function ReviewLayout({
         : error instanceof Error
           ? error.cause
           : null;
-    if (cause instanceof CommonError && cause.statusCode === 403) {
+    if (
+      cause instanceof CommonError &&
+      (cause.statusCode === 401 || cause.statusCode === 403)
+    ) {
       forbidden();
     }
     if (cause instanceof CommonError && cause.statusCode === 404) {
