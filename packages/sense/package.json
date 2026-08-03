@@ -26,6 +26,7 @@
     "./Card": "./src/components/ui/card.tsx",
     "./Carousel": "./src/components/ui/carousel.tsx",
     "./Chart": "./src/components/ui/chart.tsx",
+    "./ChartPrimitives": "./src/components/ui/chart-primitives.ts",
     "./Checkbox": "./src/components/ui/checkbox.tsx",
     "./Collapsible": "./src/components/ui/collapsible.tsx",
     "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard/index.tsx",
