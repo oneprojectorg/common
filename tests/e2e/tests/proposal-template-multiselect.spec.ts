@@ -79,12 +79,11 @@ test.describe('Proposal template — multi-select category', () => {
     await expect(page.getByText('Health', { exact: true })).toBeVisible();
     await saved;
 
-    // 4. Enable "Allow multiple categories" (the toggle is unlabeled, so scope
-    //    by the row that contains the label text).
-    const multiRow = page.locator('div.flex.items-center.justify-between', {
-      has: page.getByText('Allow multiple categories', { exact: true }),
+    // 4. Enable "Allow multiple categories" (ToggleRow labels the switch, so
+    //    target it by role + accessible name).
+    const multiToggle = page.getByRole('switch', {
+      name: 'Allow multiple categories',
     });
-    const multiToggle = multiRow.getByRole('switch');
     const multiSaved = waitForAutoSave(page, 'allowMultipleCategories');
     await multiToggle.click();
     await multiSaved;
