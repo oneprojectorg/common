@@ -170,7 +170,7 @@ export function RubricCriterionCard({
           errors.length > 0 && 'border-destructive',
         )}
       >
-        <div className="space-y-2.5 px-8">
+        <div className="space-y-2.5">
           {/* Label */}
           <Field className="min-w-0 flex-1">
             <FieldLabel htmlFor={`${criterion.id}-label`}>
@@ -442,7 +442,7 @@ function ScoredCriterionConfig({
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-muted text-center font-serif text-title-base text-muted-foreground">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-secondary text-center font-serif text-label font-strong text-muted-foreground">
                   {scoreValue}
                 </span>
                 <Textarea

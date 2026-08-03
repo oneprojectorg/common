@@ -17,8 +17,9 @@ import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
 import { DragHandle, Sortable } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
+import { useLocale } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LuCheck, LuCircleAlert, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
@@ -61,8 +62,29 @@ export function PhasesSectionContent({
   })();
   const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
+  const locale = useLocale();
   const [, setSectionParam] = useQueryState('section', { history: 'push' });
   const setSection = (sectionId: string) => setSectionParam(sectionId);
+
+  // "Jan 15 – Feb 15" for a configured phase — formatRange handles locale,
+  // same-month collapsing, and RTL; falls back to the end date alone.
+  const dateFormat = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }),
+    [locale],
+  );
+  const phaseDateRange = (phase: PhaseDefinition): string | null => {
+    if (!phase.endDate) {
+      return null;
+    }
+    const end = new Date(phase.endDate);
+    if (phase.startDate) {
+      const start = new Date(phase.startDate);
+      if (start.getTime() <= end.getTime()) {
+        return dateFormat.formatRange(start, end);
+      }
+    }
+    return dateFormat.format(end);
+  };
 
   const toPayload = (data: PhaseDefinition[]) =>
     data.map((phase) => ({
@@ -172,6 +194,7 @@ export function PhasesSectionContent({
                 <PhaseDragPreview
                   phase={phase}
                   configured={isPhaseConfigured(phase)}
+                  dateRange={phaseDateRange(phase)}
                   t={t}
                 />
               );
@@ -194,7 +217,7 @@ export function PhasesSectionContent({
                       {configured ? (
                         <span className="flex items-center gap-1 text-sm text-primary-teal">
                           <LuCheck className="size-3" />
-                          {t('Configured')}
+                          {phaseDateRange(phase)}
                         </span>
                       ) : (
                         <span className="text-sm text-neutral-gray4">
@@ -270,10 +293,12 @@ export function PhasesSectionContent({
 const PhaseDragPreview = ({
   phase,
   configured,
+  dateRange,
   t,
 }: {
   phase: PhaseDefinition;
   configured: boolean;
+  dateRange: string | null;
   t: TranslateFn;
 }) => {
   return (
@@ -288,7 +313,7 @@ const PhaseDragPreview = ({
           {configured ? (
             <span className="flex items-center gap-1 text-sm text-primary-teal">
               <LuCheck className="size-3" />
-              {t('Configured')}
+              {dateRange}
             </span>
           ) : (
             <span className="text-sm text-neutral-gray4">

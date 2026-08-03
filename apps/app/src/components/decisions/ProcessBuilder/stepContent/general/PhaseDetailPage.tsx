@@ -123,16 +123,19 @@ function PhaseDetailForm({
   allPhasesRef.current = allPhases;
 
   const updatePhase = (updates: Partial<PhaseDefinition>) => {
-    setPhase((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      const updated = { ...prev, ...updates };
-      const phasesPayload = toPayload(
+    if (!phase) {
+      return;
+    }
+    const updated = { ...phase, ...updates };
+    // Side effects (saveChanges → store update) must run in the event handler,
+    // never inside the setState updater — the updater executes during render,
+    // and writing the store there updates subscribers (e.g. MobileSidebar)
+    // mid-render.
+    setPhase(updated);
+    saveChanges({
+      phases: toPayload(
         allPhasesRef.current.map((p) => (p.id === phaseId ? updated : p)),
-      );
-      saveChanges({ phases: phasesPayload });
-      return updated;
+      ),
     });
   };
 
@@ -303,7 +306,22 @@ function PhaseDetailForm({
               }}
             />
           </div>
-          <div className="flex-1" onBlur={() => markTouched('endDate')}>
+          <div
+            className="flex-1"
+            onBlur={(e) => {
+              const next = e.relatedTarget as HTMLElement | null;
+              // Opening the calendar moves focus into the portaled popover
+              // (and moving between the input and its icon stays in-field) —
+              // neither is a real blur, so don't flag the field as touched yet.
+              if (
+                e.currentTarget.contains(next) ||
+                next?.closest('[data-slot=popover-content]')
+              ) {
+                return;
+              }
+              markTouched('endDate');
+            }}
+          >
             <DatePicker
               label={t('End date')}
               required
