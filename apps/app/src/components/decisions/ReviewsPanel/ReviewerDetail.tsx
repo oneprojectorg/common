@@ -15,7 +15,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
 import { SubmittedReviewView } from '../Review/SubmittedReviewView';
-import type { RubricSummary } from './ReviewSummaryPanel';
+import type { RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
 
 interface ReviewerDetailProps {
