@@ -6,6 +6,7 @@ import {
   normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
+  parseSchemaOptions,
 } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
@@ -33,6 +34,25 @@ describe('proposalDataSchema category normalization', () => {
     });
 
     expect(result.category).toEqual(['Housing', 'Public Transit']);
+  });
+});
+
+describe('parseSchemaOptions', () => {
+  it('passes per-option descriptions through from canonical oneOf entries', () => {
+    const options = parseSchemaOptions({
+      type: 'string',
+      'x-format': 'dropdown',
+      oneOf: [
+        { const: 'a1', title: 'Yes', description: 'Feasible as scoped' },
+        { const: 'b2', title: 'Maybe' },
+      ],
+    });
+
+    expect(options).toEqual([
+      { value: 'a1', title: 'Yes', description: 'Feasible as scoped' },
+      { value: 'b2', title: 'Maybe' },
+    ]);
+    expect('description' in (options[1] ?? {})).toBe(false);
   });
 });
 
