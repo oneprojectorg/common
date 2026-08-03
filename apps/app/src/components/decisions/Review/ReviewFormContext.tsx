@@ -102,7 +102,6 @@ function ReviewFormProviderInner({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const utils = trpc.useUtils();
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
@@ -178,10 +177,11 @@ function ReviewFormProviderInner({
   });
 
   const updateReview = trpc.decision.updateReview.useMutation({
-    onSuccess: async () => {
+    onSuccess: () => {
+      // Stay on the page; the mutation's registered review channels invalidate
+      // getReviewAssignment locally, refreshing the read-only view and
+      // canEditReview (same pattern as requestRevision/cancelRevision).
       setIsEditing(false);
-      // Stay on the page and refresh the read-only view + canEditReview signal.
-      await utils.decision.getReviewAssignment.invalidate({ assignmentId });
       toast.success({ message: t('Review updated successfully') });
     },
     onError: (error) => {

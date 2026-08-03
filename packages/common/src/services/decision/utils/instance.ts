@@ -22,3 +22,14 @@ export function assertInstancePhase<Phase extends { phaseId: string }>({
   }
   return phase;
 }
+
+/**
+ * True when `phaseId` is the instance's current phase. Structural so it accepts
+ * both domain and API-encoder instance shapes.
+ */
+export function isInstanceCurrentPhase(
+  instance: { currentStateId: string | null },
+  phaseId: string,
+): boolean {
+  return instance.currentStateId != null && instance.currentStateId === phaseId;
+}

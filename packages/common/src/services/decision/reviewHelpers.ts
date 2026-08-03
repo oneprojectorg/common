@@ -13,6 +13,7 @@ import { getInstance } from './getInstance';
 import type { DecisionRolePermissions } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
@@ -106,8 +107,7 @@ export function canEditSubmittedReview({
 }): boolean {
   return (
     review?.state === ProposalReviewState.SUBMITTED &&
-    instance.currentStateId != null &&
-    instance.currentStateId === assignment.phaseId
+    isInstanceCurrentPhase(instance, assignment.phaseId)
   );
 }
 

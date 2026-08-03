@@ -128,12 +128,6 @@ export const reviewAssignmentExtendedSchema = z.object({
   rubricTemplate: rubricTemplateSchema.nullable(),
   review: proposalReviewSchema.nullable(),
   revisionRequest: proposalReviewRequestSchema.nullable(),
-  /**
-   * True when the reviewer may edit their already-submitted review — i.e. the
-   * review is SUBMITTED and the assignment's phase is still the instance's
-   * current phase. Drives the "Edit review" affordance; the `updateReview`
-   * service enforces the same predicate server-side.
-   */
   canEditReview: z.boolean(),
 });
 
