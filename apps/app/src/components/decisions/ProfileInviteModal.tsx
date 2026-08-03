@@ -20,6 +20,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
@@ -646,7 +647,7 @@ function ProfileInviteModalContent({
         </div>
       </div>
 
-      <div className="flex flex-row items-center justify-between gap-2 border-t px-6 py-4">
+      <DialogFooter className="flex-row items-center justify-between sm:justify-between">
         <div className="text-base text-foreground">
           {totalPeople > 0
             ? t('{count, plural, =1 {1 person} other {# people}}', {
@@ -661,7 +662,7 @@ function ProfileInviteModalContent({
         >
           {isSubmitting ? t('Adding...') : t('Add')}
         </Button>
-      </div>
+      </DialogFooter>
     </>
   );
 }
