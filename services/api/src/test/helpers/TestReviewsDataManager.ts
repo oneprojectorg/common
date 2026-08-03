@@ -1,5 +1,8 @@
 import { type RubricTemplateSchema, createDecisionRole } from '@op/common';
-import { assertInstancePhase } from '@op/common/src/services/decision';
+import {
+  assertInstancePhase,
+  invalidateDecisionInstance,
+} from '@op/common/src/services/decision';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -206,6 +209,11 @@ export class TestReviewsDataManager {
       .update(processInstances)
       .set({ currentStateId: phaseId })
       .where(eq(processInstances.id, instanceId));
+    // Production advances phases through advancePhase, which busts the
+    // getInstance cache. A direct write here must do the same, or a
+    // getInstance call warmed earlier in the test (e.g. by submitReview) would
+    // keep serving the stale currentStateId.
+    await invalidateDecisionInstance(instanceId);
   }
 
   /** Sets `endDate` on a phase entry in `instanceData.phases`. */

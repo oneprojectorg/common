@@ -15,6 +15,7 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   assertReviewAssignmentContext,
+  canEditSubmittedReview,
   resolveAssignmentProposal,
 } from './reviewHelpers';
 import {
@@ -95,6 +96,7 @@ export async function getReviewAssignment({
     rubricTemplate,
     review,
     revisionRequest,
+    canEditReview: canEditSubmittedReview({ assignment, instance, review }),
   });
 }
 

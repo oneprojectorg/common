@@ -12,6 +12,7 @@ import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
+  canEditSubmittedReview,
   getActiveRevisionRequest,
   resolveAssignmentProposal,
   reviewAssignmentWithConfig,
@@ -187,6 +188,8 @@ export async function listReviewAssignments({
       htmlContent = { default: documentContent.content };
     }
 
+    const review = assignment.reviews[0] ?? null;
+
     return {
       assignment: {
         ...assignment,
@@ -198,8 +201,9 @@ export async function listReviewAssignments({
         },
       },
       rubricTemplate,
-      review: assignment.reviews[0] ?? null,
+      review,
       revisionRequest: getActiveRevisionRequest(assignment.requests),
+      canEditReview: canEditSubmittedReview({ assignment, instance, review }),
     };
   });
 

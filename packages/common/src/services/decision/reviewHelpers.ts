@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
+  ProposalReviewState,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
@@ -83,6 +84,31 @@ export function proposalWithRevisionRequestsConfig(
       },
     },
   } as const;
+}
+
+/**
+ * A submitted review stays editable only while its assignment's phase is still
+ * the instance's current phase. Once the instance advances past that phase,
+ * downstream surfaces (score aggregates, results) are considered settled, so
+ * edits are refused. This is the single predicate behind both the read-side
+ * `canEditReview` signal and the `updateReview` service guard.
+ */
+export function canEditSubmittedReview({
+  assignment,
+  instance,
+  review,
+}: {
+  assignment: { phaseId: string };
+  instance: { currentStateId: string | null };
+  // `state` is the raw enum column, which infers as `string`; compared against
+  // the enum value (also a string) below.
+  review: { state: string } | null;
+}): boolean {
+  return (
+    review?.state === ProposalReviewState.SUBMITTED &&
+    instance.currentStateId != null &&
+    instance.currentStateId === assignment.phaseId
+  );
 }
 
 /** Returns the active (REQUESTED) revision request, falling back to the most recent one. */

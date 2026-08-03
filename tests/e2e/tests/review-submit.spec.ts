@@ -184,7 +184,7 @@ const RUBRIC_TEMPLATE = {
 const PROPOSAL_TITLE = 'Community Solar Initiative';
 
 test.describe('Review Submit', () => {
-  test('full review journey: request revision → cancel → submit review', async ({
+  test('full review journey: request revision → cancel → submit review → edit review', async ({
     authenticatedPage: page,
     org,
   }) => {
@@ -440,6 +440,57 @@ test.describe('Review Submit', () => {
     expect(storedReview?.reviewData).toMatchObject({
       rationales: { innovation: innovationRationale },
     });
+    const submittedAt = storedReview?.submittedAt;
+
+    // ========================================================================
+    // Step 8: Re-open the completed review, edit it, and update in place
+    // ========================================================================
+
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(
+      page.getByText('Review Proposal', { exact: true }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+
+    // The submitted review renders read-only; the phase is still "review" so
+    // the header offers "Edit review".
+    const editButton = page.getByRole('button', { name: 'Edit review' });
+    await expect(editButton).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Submit review' }),
+    ).toHaveCount(0);
+
+    await editButton.click();
+
+    // Editing switches the pane back into the interactive form; the header
+    // action becomes "Update review".
+    const updateButton = page.getByRole('button', { name: 'Update review' });
+    await expect(updateButton).toBeVisible();
+
+    // Change the Overall Recommendation from Yes to No.
+    const editRecGroup = page.getByRole('radiogroup', {
+      name: 'Overall Recommendation',
+    });
+    await expect(editRecGroup).toBeVisible();
+    await editRecGroup.getByText('No', { exact: true }).click();
+
+    await updateButton.click();
+
+    await expect(
+      page
+        .locator('[data-sonner-toast]')
+        .filter({ hasText: 'Review updated successfully' }),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // The edit overwrote the answer in place while preserving submittedAt.
+    const editedReview = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: assignment.id },
+    });
+    expect(
+      (editedReview?.reviewData as { answers: Record<string, unknown> })
+        .answers[OVERALL_RECOMMENDATION_KEY],
+    ).toBe('no');
+    expect(editedReview?.submittedAt).toBe(submittedAt);
   });
 
   test('shows comments section on the review page in read-only mode', async ({
