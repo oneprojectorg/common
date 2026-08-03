@@ -34,7 +34,7 @@ export function BannerUploadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('Edit banner')}</DialogTitle>
         </DialogHeader>

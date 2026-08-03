@@ -76,7 +76,7 @@ export const ResourcesTabContent = ({
         </div>
       ) : null}
       {canManage && adding ? (
-        <div className="absolute inset-x-0 top-4 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-lg border-t border-neutral-gray1 bg-white shadow-lg">
+        <div className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-t-lg border-t border-neutral-gray1 bg-white shadow-lg">
           <AddResourcePanel
             profileId={profileId}
             onClose={() => setAdding(false)}

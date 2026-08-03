@@ -5,19 +5,17 @@ import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
-import { Card } from '@op/sense/Card';
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
 } from '@op/sense/Empty';
-import { Header2 } from '@op/sense/Header';
+import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { MegaphoneIcon } from '@op/sense/icons';
-import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
-import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
+import { Fragment, Suspense, useCallback, useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -53,52 +51,35 @@ export const DecisionSidePanel = ({
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
 
-  // Non-modal side drawer: on desktop the decision page behind stays
-  // interactive (this is a side panel, not a Dialog/Sheet), so wire Escape
-  // ourselves rather than relying on an overlay primitive.
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        close();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, close]);
-
   const canPostUpdate = access?.admin === true;
   const canReadUpdates = canPostUpdate || access?.read === true;
   const activeTab: PanelTab = panel ?? 'updates';
 
-  if (!canReadUpdates || !isOpen) {
+  if (!canReadUpdates) {
     return null;
   }
 
   return (
-    <>
-      {/* Mobile-only backdrop. On desktop this is a non-modal side panel — the
-          page behind stays interactive — so there is no scrim there. */}
-      <div
-        className="fixed inset-0 z-40 bg-black/20 sm:hidden"
-        aria-hidden
-        onClick={close}
-      />
-      <aside
-        role="dialog"
-        aria-label={t('Decision updates panel')}
-        className={cn(
-          'fixed z-40 flex flex-col bg-white text-neutral-charcoal shadow-xl',
-          // Mobile: full-screen.
-          'inset-0 w-full max-w-full',
-          // Desktop: drawer floating below the header, always anchored to the
-          // visual right (physical props so it does not flip in RTL), border
-          // facing the content.
-          'sm:inset-y-auto sm:top-12 sm:right-0 sm:bottom-0 sm:left-auto sm:w-[22.5rem] sm:border-l sm:border-neutral-gray1 md:top-14',
-        )}
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open, details) => {
+        // Modal side panel (matches the Figma scrim). Dismisses on outside
+        // press and the close button, but deliberately NOT on Escape — the
+        // open state lives in the URL, so we just ignore the escape-key reason.
+        if (open || details.reason === 'escape-key') {
+          return;
+        }
+        close();
+      }}
+    >
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        className="gap-0 p-0 sm:max-w-[22.5rem]"
       >
+        <SheetTitle className="sr-only">
+          {t('Decision updates panel')}
+        </SheetTitle>
         <PanelContents
           isOpen={isOpen}
           decisionProfileId={decisionProfileId}
@@ -108,8 +89,8 @@ export const DecisionSidePanel = ({
           onSelectTab={setPanel}
           onClose={close}
         />
-      </aside>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 };
 
@@ -142,25 +123,24 @@ const PanelContents = ({
       }}
       className="min-h-0 flex-1 gap-0"
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pe-4 sm:pe-0 sm:pt-4">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pe-4 sm:pt-4">
         <TabsList
           variant="line"
           aria-label={t('Decision side panel tabs')}
-          className="grow border-b-0 px-4 sm:px-6"
+          className="grow justify-start border-b-0 px-4 sm:px-6"
         >
-          <TabsTrigger value="updates" className="h-auto px-0">
+          <TabsTrigger value="updates" className="h-auto flex-none">
             {t('Updates')}
           </TabsTrigger>
-          <TabsTrigger value="resources" className="h-auto px-0">
+          <TabsTrigger value="resources" className="h-auto flex-none">
             {t('Resources')}
           </TabsTrigger>
         </TabsList>
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon"
           onClick={onClose}
           aria-label={t('Close')}
-          className="sm:hidden"
         >
           <LuX className="size-5" />
         </Button>
@@ -214,17 +194,14 @@ const UpdatesTabContent = ({
 
   return (
     <div className="flex flex-col px-4 pt-4 pb-8 sm:px-6">
-      <Header2 className="font-serif text-title-base">{t('Updates')}</Header2>
       <div className="mt-4 flex flex-col gap-6">
         {canPostUpdate ? (
-          <Card className="rounded-lg p-4 pt-5 shadow-none">
-            <PostUpdate
-              profileId={decisionProfileId}
-              placeholder={t('Share an update with participants…')}
-              label={t('Post')}
-              onSuccess={handlePostSuccess}
-            />
-          </Card>
+          <PostUpdate
+            profileId={decisionProfileId}
+            placeholder={t('Share an update with participants…')}
+            label={t('Post')}
+            onSuccess={handlePostSuccess}
+          />
         ) : null}
         {canReadUpdates ? (
           <ErrorBoundary>

@@ -153,10 +153,9 @@ export const AddResourceLinkForm = ({
           />
         </Field>
       </div>
-      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 bg-white px-4 py-4 sm:px-6">
+      <div className="sticky bottom-0 flex shrink-0 gap-2 bg-white px-4 py-4 sm:px-6">
         <Button
           variant="outline"
-          size="sm"
           onClick={onCancel}
           disabled={submitting}
           className="flex-1 justify-center"
@@ -165,7 +164,6 @@ export const AddResourceLinkForm = ({
         </Button>
         <Button
           type="submit"
-          size="sm"
           disabled={!urlValid || !title.trim() || submitting}
           className="flex-1 justify-center"
         >

@@ -13,6 +13,8 @@ import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
 import { LocaleChooser } from '../LocaleChooser';
 import { SupportLink } from '../SupportLink';
 import { JoinOrUserMenu } from './JoinAccountModal';
@@ -65,7 +67,7 @@ export const DecisionInstanceHeader = ({
   // Fixed height (48/56px) keeps the header steady as the center toggle grows,
   // and matches DecisionSidePanel's sm:top-12 md:top-14 so the panel meets it.
   return (
-    <header className="sticky top-0 z-30 border-b bg-white">
+    <header className="sticky top-0 z-80 border-b bg-white">
       <div className="grid h-12 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:h-14 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           {canInteract && (
@@ -103,7 +105,7 @@ export const DecisionInstanceHeader = ({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 md:gap-4">
+        <div className="flex items-center justify-end gap-2 md:gap-3">
           {/*
            * The toggle reads the `panel` search param via nuqs (useSearchParams).
            * When this header renders inside the decision-view layout — which Next
@@ -112,23 +114,24 @@ export const DecisionInstanceHeader = ({
            * boundary defers it out of the shell. Fallback is null because the
            * toggle is non-critical chrome and may itself render null.
            */}
+          {isAdmin && decisionSlug && (
+            <ButtonLink
+              href={`/decisions/${decisionSlug}/edit`}
+              variant="outline"
+              aria-label={t('Settings')}
+              className="sm:w-auto sm:gap-2 sm:px-4"
+              size="icon"
+            >
+              <LuSettings className="size-4" />
+              <span className="hidden sm:inline-block">{t('Settings')}</span>
+            </ButtonLink>
+          )}
           <Suspense fallback={null}>
             <DecisionUpdatesToggle
               ariaLabel={t('Toggle updates panel')}
               canReadUpdates={canReadUpdates}
             />
           </Suspense>
-          {isAdmin && decisionSlug && (
-            <Button
-              render={<Link href={`/decisions/${decisionSlug}/edit`} />}
-              variant="outline"
-              size="sm"
-              className="p-2"
-              aria-label={t('Settings')}
-            >
-              <LuSettings className="size-4" />
-            </Button>
-          )}
           <SupportLink />
           <LocaleChooser />
           <JoinOrUserMenu canJoin={canJoin} />
@@ -153,12 +156,7 @@ const DecisionTitle = ({
   title: string;
   className?: string;
 }) => (
-  <Header2
-    className={cn(
-      'truncate font-serif text-title-sm text-neutral-charcoal',
-      className,
-    )}
-  >
+  <Header2 className={cn('truncate font-serif text-label', className)}>
     <bdi>{title}</bdi>
   </Header2>
 );
@@ -181,7 +179,7 @@ const DecisionUpdatesToggle = ({
   return (
     <Button
       variant="outline"
-      size="icon-sm"
+      size="icon"
       onClick={() => setPanel(isOpen ? null : 'updates')}
       aria-label={ariaLabel}
       aria-pressed={isOpen}
@@ -189,7 +187,7 @@ const DecisionUpdatesToggle = ({
         isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-neutral-black'
       }
     >
-      <MegaphoneIcon className="size-4" />
+      <MegaphoneIcon className="size-4 stroke-[1.5]" />
     </Button>
   );
 };
