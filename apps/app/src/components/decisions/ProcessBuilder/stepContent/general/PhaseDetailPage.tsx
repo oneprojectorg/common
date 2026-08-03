@@ -3,15 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { isReviewPhase, isVotingPhase } from '@op/common/client';
-import { Button } from '@op/sense/Button';
 import { DatePicker } from '@op/sense/DatePicker';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
 import {
   Field,
   FieldDescription,
@@ -33,7 +25,6 @@ import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
-import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -175,21 +166,6 @@ function PhaseDetailForm({
     });
   };
 
-  // Delete phase
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const confirmDelete = async () => {
-    const remainingPhases = allPhases.filter((p) => p.id !== phaseId);
-    saveChanges({ phases: toPayload(remainingPhases) });
-    const flushed = await flushPendingChanges();
-    if (flushed) {
-      onDelete();
-    } else {
-      // Revert the optimistic removal so store matches server
-      saveChanges({ phases: toPayload(allPhases) });
-      setShowDeleteModal(false);
-    }
-  };
-
   // Validation
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const markTouched = (field: string) => {
@@ -242,7 +218,7 @@ function PhaseDetailForm({
   }
 
   return (
-    <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
+    <div className="mx-auto w-full space-y-10 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-neutral-gray4">
@@ -261,7 +237,7 @@ function PhaseDetailForm({
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-8">
         <PhaseField
           id="phase-name"
           label={t('Short name')}
@@ -302,12 +278,14 @@ function PhaseDetailForm({
           maxLength={250}
         />
         <div className="space-y-2">
-          <label className="block text-sm">{t('Additional information')}</label>
+          <label className="block font-strong">
+            {t('Additional information')}
+          </label>
           <RichTextEditorWithToolbar
             content={phase.additionalInfo ?? ''}
             onChange={(content) => updatePhase({ additionalInfo: content })}
             toolbarPosition="bottom"
-            className="rounded-lg border border-border"
+            className="rounded-lg border border-input"
             editorClassName="min-h-24 p-3"
           />
           <p className="text-sm text-neutral-gray4">
@@ -345,10 +323,7 @@ function PhaseDetailForm({
             />
           </div>
         </div>
-      </div>
 
-      {/* Phase controls */}
-      <div className="space-y-2">
         <ToggleRow
           label={t('Proposal submission')}
           description={t(
@@ -458,56 +433,6 @@ function PhaseDetailForm({
           </ToggleRow>
         )}
       </div>
-
-      {/* Delete */}
-      <div className="border-t pt-4">
-        <Button
-          variant="outline"
-          className="text-functional-red"
-          onClick={() => setShowDeleteModal(true)}
-        >
-          <LuTrash2 className="size-4" />
-          {t('Delete phase')}
-        </Button>
-      </div>
-
-      <Dialog
-        open={showDeleteModal}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowDeleteModal(false);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('Delete phase')}</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-4">
-            <p>
-              {t(
-                'Are you sure you want to delete this phase? This action cannot be undone.',
-              )}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className="w-full sm:w-fit"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              className="w-full sm:w-fit"
-              onClick={confirmDelete}
-            >
-              {t('Delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -548,10 +473,10 @@ function VoteLimitSelect({
         onChange(key === 'none' ? undefined : Number(key));
       }}
     >
-      <SelectTrigger size="sm" aria-label={t('Voting limit')}>
+      <SelectTrigger aria-label={t('Voting limit')}>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent size="sm">
+      <SelectContent>
         {options.map((key) => (
           <SelectItem key={key} value={key}>
             {labelFor(key)}

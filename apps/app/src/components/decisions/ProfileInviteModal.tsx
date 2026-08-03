@@ -5,31 +5,49 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
-import { toast } from '@op/sense/Toast';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { SearchField } from '@op/ui/SearchField';
-import Image from 'next/image';
+import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
 import {
-  Key,
+  Combobox,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyDescription,
+} from '@op/sense/Empty';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from '@op/sense/Item';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Spinner } from '@op/sense/Spinner';
+import { toast } from '@op/sense/Toast';
+import {
   type ReactNode,
   Suspense,
-  useEffect,
   useMemo,
   useOptimistic,
-  useRef,
   useState,
   useTransition,
 } from 'react';
-import { ListBox, ListBoxItem } from 'react-aria-components';
-import { createPortal } from 'react-dom';
-import { LuLeaf, LuX } from 'react-icons/lu';
+import { LuLeaf, LuSearch, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -62,40 +80,35 @@ export const ProfileInviteModal = ({
 }) => {
   const t = useTranslations();
 
-  const handleClose = () => {
-    onOpenChange(false);
-  };
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={handleClose}
-      isDismissable
-      className="sm:max-w-xl"
-    >
-      <ModalHeader className="truncate">
-        {t('Invite participants to your decision-making process')}
-      </ModalHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
+      <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>
+            {t('Invite participants to your decision-making process')}
+          </DialogTitle>
+        </DialogHeader>
 
-      <ErrorBoundary>
-        <Suspense
-          fallback={
-            <ModalBody className="space-y-6">
-              <RoleSelectorSkeleton />
-              <div className="flex items-center justify-center p-8">
-                <LoadingSpinner className="size-6" />
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="space-y-6 px-6 py-4">
+                <RoleSelectorSkeleton />
+                <div className="flex items-center justify-center p-8">
+                  <Spinner className="size-6" />
+                </div>
               </div>
-            </ModalBody>
-          }
-        >
-          <ProfileInviteModalContent
-            profileId={profileId}
-            isDraft={isDraft}
-            onOpenChange={onOpenChange}
-          />
-        </Suspense>
-      </ErrorBoundary>
-    </Modal>
+            }
+          >
+            <ProfileInviteModalContent
+              profileId={profileId}
+              isDraft={isDraft}
+              onOpenChange={onOpenChange}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -118,12 +131,6 @@ function ProfileInviteModalContent({
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startSendTransition] = useTransition();
   const [, startOptimisticTransition] = useTransition();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
 
   // Fetch roles with decisions zone permissions to identify admin roles
   const { data: rolesWithPerms } = trpc.profile.listRoles.useQuery(
@@ -181,18 +188,6 @@ function ProfileInviteModalContent({
       ),
     [optimisticUsers, selectedRoleId],
   );
-
-  // Update dropdown position when search query changes
-  useEffect(() => {
-    if (debouncedQuery.length >= 2 && searchContainerRef.current) {
-      const rect = searchContainerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  }, [debouncedQuery]);
 
   // Search for individuals
   const { data: searchResults, isFetching: isSearching } =
@@ -252,6 +247,43 @@ function ProfileInviteModalContent({
     ]);
     return !takenEmails.has(lowerQuery);
   }, [debouncedQuery, allSelectedItems, optimisticUsers, optimisticInvites]);
+
+  // Combobox options: server-filtered people plus a synthetic "invite this
+  // email" row. Server already filters, so base-ui's local filter is disabled.
+  const pickerOptions = useMemo(
+    () => [
+      ...(canAddEmail
+        ? [
+            {
+              value: 'add-email',
+              label: debouncedQuery,
+              addEmail: true as const,
+              result: undefined,
+            },
+          ]
+        : []),
+      ...filteredResults.map((result) => ({
+        value: result.id,
+        label: result.name,
+        addEmail: false as const,
+        result,
+      })),
+    ],
+    [canAddEmail, debouncedQuery, filteredResults],
+  );
+  type PickerOption = (typeof pickerOptions)[number];
+
+  const handlePickOption = (selected: PickerOption[]) => {
+    const added = selected[selected.length - 1];
+    if (!added) {
+      return;
+    }
+    if (added.addEmail) {
+      handleAddEmail(debouncedQuery);
+    } else {
+      handleSelectItem(added.result);
+    }
+  };
 
   // Mutations
   const inviteMutation = trpc.profile.invite.useMutation();
@@ -417,8 +449,8 @@ function ProfileInviteModalContent({
     setSearchQuery('');
   };
 
-  const handleTabChange = (key: Key) => {
-    setSelectedRoleId(String(key));
+  const handleTabChange = (key: string) => {
+    setSelectedRoleId(key);
   };
 
   const hasNoItems =
@@ -428,7 +460,7 @@ function ProfileInviteModalContent({
 
   return (
     <>
-      <ModalBody className="space-y-6">
+      <div className="min-h-0 space-y-6 overflow-y-auto px-6 py-4">
         {/* Role Tabs */}
         <RoleSelector
           profileId={profileId}
@@ -443,115 +475,79 @@ function ProfileInviteModalContent({
         />
 
         {showDraftBanner && (
-          <AlertBanner variant="banner" intent="warning">
-            {t(
-              'This process is still in draft. Participant invites will be sent when the process launches.',
-            )}
-          </AlertBanner>
+          <Alert variant="warning">
+            <AlertDescription>
+              {t(
+                'This process is still in draft. Participant invites will be sent when the process launches.',
+              )}
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Search Input */}
-        <div ref={searchContainerRef} onPaste={handlePaste}>
-          <SearchField
-            placeholder={t('Search by name or email...')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            className="w-full"
-          />
-        </div>
-
-        {/* Search Results Dropdown - rendered via portal to escape modal overflow */}
-        {debouncedQuery.length >= 2 &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <div
-              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg"
-              style={{
-                top: dropdownPosition.top,
-                left: dropdownPosition.left,
-                width: dropdownPosition.width,
-              }}
-              // Mark as top-layer overlay so React Aria doesn't treat clicks as "outside"
-              data-react-aria-top-layer="true"
-              // Prevent clicks from bubbling to modal overlay and dismissing it
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {isSearching ? (
-                <div className="flex items-center justify-center p-4">
-                  <LoadingSpinner className="size-4" />
-                </div>
-              ) : filteredResults.length > 0 || canAddEmail ? (
-                <ListBox
-                  aria-label={t('Search results')}
-                  onAction={(key) => {
-                    if (key === 'add-email') {
-                      handleAddEmail(debouncedQuery);
-                    } else {
-                      const result = filteredResults.find((r) => r.id === key);
-                      if (result) {
-                        handleSelectItem(result);
-                      }
-                    }
-                  }}
-                  className="outline-none"
-                >
-                  {canAddEmail && (
-                    <ListBoxItem
-                      id="add-email"
-                      textValue={debouncedQuery}
-                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
-                    >
-                      <div className="text-sm">
+        {/* People search — server-filtered picker; each pick adds to the
+            role's list below and clears the input (value stays empty). */}
+        <Combobox
+          items={pickerOptions}
+          value={[]}
+          onValueChange={handlePickOption}
+          filter={null}
+          onInputValueChange={(value) => setSearchQuery(value)}
+          itemToStringLabel={(option: PickerOption) => option.label}
+          isItemEqualToValue={(a: PickerOption, b: PickerOption) =>
+            a.value === b.value
+          }
+          multiple
+        >
+          <ComboboxChips className="w-full" onPaste={handlePaste}>
+            <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
+            <ComboboxChipsInput placeholder={t('Search by name or email...')} />
+          </ComboboxChips>
+          {debouncedQuery.length >= 2 && (
+            <ComboboxContent>
+              <ComboboxEmpty>
+                {isSearching ? <Spinner className="size-4" /> : t('No results')}
+              </ComboboxEmpty>
+              <ComboboxList>
+                {(option: PickerOption) => (
+                  <ComboboxItem key={option.value} value={option}>
+                    {option.addEmail ? (
+                      <span className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
-                      </div>
-                    </ListBoxItem>
-                  )}
-                  {filteredResults.map((result) => (
-                    <ListBoxItem
-                      key={result.id}
-                      id={result.id}
-                      textValue={result.name}
-                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
-                    >
+                      </span>
+                    ) : (
                       <ProfileItem
-                        size="small"
                         avatar={
-                          <Avatar
-                            placeholder={result.name}
-                            className="size-8 shrink-0"
-                          >
-                            {result.avatarImage?.name ? (
-                              <Image
+                          <Avatar className="size-8 shrink-0">
+                            {option.result.avatarImage?.name ? (
+                              <AvatarImage
                                 src={
-                                  getPublicUrl(result.avatarImage.name) ?? ''
+                                  getPublicUrl(
+                                    option.result.avatarImage.name,
+                                  ) ?? ''
                                 }
-                                alt={result.name}
-                                fill
-                                className="object-cover"
+                                alt={option.result.name}
                               />
                             ) : null}
+                            <AvatarFallback>
+                              {option.result.name.slice(0, 1).toUpperCase()}
+                            </AvatarFallback>
                           </Avatar>
                         }
-                        title={result.name}
+                        title={option.result.name}
+                        description={option.result?.user?.email || undefined}
                       />
-                    </ListBoxItem>
-                  ))}
-                </ListBox>
-              ) : (
-                <div className="p-4 text-center text-sm text-neutral-gray4">
-                  {t('No results')}
-                </div>
-              )}
-            </div>,
-            document.body,
+                    )}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
           )}
+        </Combobox>
 
         {/* People list for current role */}
         <div className="flex flex-col gap-2">
           {!hasNoItems && (
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm text-foreground">
               {t('People with access')}
             </span>
           )}
@@ -565,7 +561,7 @@ function ProfileInviteModalContent({
                 avatarUrl={item.avatarUrl}
                 subtitle={
                   item.name !== item.email ? (
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="truncate text-sm text-muted-foreground">
                       {item.email}
                     </div>
                   ) : undefined
@@ -588,13 +584,13 @@ function ProfileInviteModalContent({
                   name={displayName}
                   avatarUrl={avatarUrl}
                   subtitle={
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="truncate text-sm text-muted-foreground">
                       {invite.inviteeProfile?.name && (
                         <>
                           {invite.email} <Bullet />{' '}
                         </>
                       )}
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {t('Invited')}
                       </span>
                     </div>
@@ -617,7 +613,7 @@ function ProfileInviteModalContent({
                 }
                 subtitle={
                   user.name ? (
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="truncate text-sm text-muted-foreground">
                       {user.email}
                     </div>
                   ) : undefined
@@ -633,18 +629,25 @@ function ProfileInviteModalContent({
 
             {/* Empty state */}
             {hasNoItems && selectedRoleName ? (
-              <EmptyState icon={<LuLeaf />}>
-                {t('No {roleName}s have been added', {
-                  roleName: selectedRoleName,
-                })}
-              </EmptyState>
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <LuLeaf />
+                  </EmptyMedia>
+                  <EmptyDescription>
+                    {t('No {roleName}s have been added', {
+                      roleName: selectedRoleName,
+                    })}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : null}
           </div>
         </div>
-      </ModalBody>
+      </div>
 
-      <ModalFooter className="flex-row items-center justify-between">
-        <div className="text-base text-neutral-black">
+      <div className="flex flex-row items-center justify-between gap-2 border-t px-6 py-4">
+        <div className="text-base text-foreground">
           {totalPeople > 0
             ? t('{count, plural, =1 {1 person} other {# people}}', {
                 count: totalPeople,
@@ -652,14 +655,13 @@ function ProfileInviteModalContent({
             : null}
         </div>
         <Button
-          color="primary"
-          onPress={handleSend}
-          isDisabled={allSelectedItems.length === 0}
-          isPending={isSubmitting}
+          onClick={handleSend}
+          disabled={allSelectedItems.length === 0}
+          loading={isSubmitting}
         >
           {isSubmitting ? t('Adding...') : t('Add')}
         </Button>
-      </ModalFooter>
+      </div>
     </>
   );
 }
@@ -678,25 +680,29 @@ function PersonRow({
   removeLabel: string;
 }) {
   return (
-    <div className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
-      <ProfileItem
-        size="small"
-        avatar={
-          <Avatar placeholder={name} className="size-6 shrink-0">
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt={name} fill className="object-cover" />
-            ) : null}
-          </Avatar>
-        }
-        title={name}
-      >
+    <Item variant="outline" className="flex-nowrap px-3 py-2 sm:p-3">
+      <ItemMedia>
+        <Avatar className="size-6 shrink-0 sm:size-10">
+          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+          <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </ItemMedia>
+      <ItemContent className="min-w-0 gap-0">
+        <ItemTitle>{name}</ItemTitle>
         {subtitle}
-      </ProfileItem>
+      </ItemContent>
       {onRemove && (
-        <IconButton size="small" onPress={onRemove} aria-label={removeLabel}>
-          <LuX className="size-4" />
-        </IconButton>
+        <ItemActions className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemove}
+            aria-label={removeLabel}
+          >
+            <LuX className="size-4" />
+          </Button>
+        </ItemActions>
       )}
-    </div>
+    </Item>
   );
 }

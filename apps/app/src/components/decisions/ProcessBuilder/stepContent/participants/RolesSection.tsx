@@ -4,6 +4,16 @@ import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import {
@@ -91,7 +101,7 @@ export default function RolesSection({
   decisionName,
 }: SectionProps) {
   return (
-    <div className="px-4 md:px-24 md:py-16">
+    <div className="px-4 py-6 md:px-24 md:py-16">
       <div className="mx-auto max-w-5xl">
         <RolesSectionContent
           decisionProfileId={decisionProfileId}
@@ -207,23 +217,20 @@ function RoleNameForm({
   const t = useTranslations();
 
   return (
-    <div className="flex h-full w-full items-center py-1.5">
-      <Input
-        placeholder={t('Role name…')}
-        value={roleName}
-        onChange={(e) => onRoleNameChange(e.target.value)}
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            onSave();
-          }
-          if (e.key === 'Escape') {
-            onCancel();
-          }
-        }}
-        className="h-7 w-full"
-      />
-    </div>
+    <Input
+      placeholder={t('Role name…')}
+      value={roleName}
+      onChange={(e) => onRoleNameChange(e.target.value)}
+      autoFocus
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          onSave();
+        }
+        if (e.key === 'Escape') {
+          onCancel();
+        }
+      }}
+    />
   );
 }
 
@@ -263,7 +270,7 @@ function RoleRow({
       {/* TODO(sense-migration): @op/ui EditableCell has no @op/sense equivalent;
           its popover-overlay editor is replaced with an inline conditional (the
           edit input renders in-cell). Verify the edit UX. */}
-      <TableCell className="w-36 text-base">
+      <TableCell className="w-48 p-2 text-base">
         {isEditing ? (
           <RoleNameForm
             roleName={roleName}
@@ -276,57 +283,59 @@ function RoleRow({
         )}
       </TableCell>
       <DecisionRoleCheckboxes roleId={role.id} profileId={profileId} />
-      <TableCell className="w-22">
-        {isEditing ? (
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={handleSave}
-              disabled={!roleName.trim() || isPending}
-              aria-label={t('Save role')}
-              className="ms-auto"
-            >
-              <LuCheck className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={() => onDelete(role)}
-              aria-label={t('Delete')}
-            >
-              <LuTrash2 className="size-4" />
-            </Button>
-          </div>
-        ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={t('Role options')}
-                  className="ms-auto rounded bg-white shadow-light"
-                >
-                  <LuEllipsis className="size-4" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                <LuPencil className="size-4" />
-                {t('Edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
+      <TableCell className="w-22 p-2">
+        <div className="flex gap-1">
+          {isEditing ? (
+            <>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={handleSave}
+                disabled={!roleName.trim() || isPending}
+                aria-label={t('Save role')}
+                className="ms-auto"
+              >
+                <LuCheck className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
                 onClick={() => onDelete(role)}
+                aria-label={t('Delete')}
               >
                 <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+              </Button>
+            </>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={t('Role options')}
+                    className="ms-auto"
+                  >
+                    <LuEllipsis className="size-4" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <LuPencil className="size-4" />
+                  {t('Edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDelete(role)}
+                >
+                  <LuTrash2 className="size-4" />
+                  {t('Delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -533,7 +542,7 @@ function DecisionRoleCheckboxes({
   );
 
   return PERMISSION_COLUMNS.map(({ key, label }) => (
-    <TableCell key={key} className="text-center">
+    <TableCell key={key} className="p-0 text-center">
       <div className="flex justify-center">
         <Checkbox
           checked={optimisticPermissions?.[key] ?? false}
@@ -593,7 +602,7 @@ function MobileRoleCard({
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
       <div className="flex items-center justify-between">
-        <Header3 className="font-serif text-sm font-light">{role.name}</Header3>
+        <Header3 className="font-serif text-base">{role.name}</Header3>
         {(onDelete || onEdit) && (
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -602,7 +611,6 @@ function MobileRoleCard({
                   variant="outline"
                   size="icon-sm"
                   aria-label={t('Role options')}
-                  className="rounded-lg"
                 >
                   <LuEllipsis className="size-4" />
                 </Button>
@@ -690,7 +698,7 @@ function MobileRoleFormCard({
         </Button>
         {onDelete && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon-sm"
             onClick={() => onDelete(role)}
             aria-label={t('Delete')}
@@ -731,7 +739,7 @@ function AddRoleRow({
 
   return (
     <TableRow>
-      <TableCell className="w-36 text-base">
+      <TableCell className="w-36 p-2 text-base">
         <RoleNameForm
           roleName={roleName}
           onRoleNameChange={setRoleName}
@@ -750,17 +758,19 @@ function AddRoleRow({
           </div>
         </TableCell>
       ))}
-      <TableCell className="w-22">
-        <Button
-          variant="outline"
-          size="icon-sm"
-          onClick={handleSave}
-          disabled={!roleName.trim() || isPending}
-          aria-label={t('Save role')}
-          className="ms-auto"
-        >
-          <LuCheck className="size-4" />
-        </Button>
+      <TableCell className="w-22 p-2">
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={handleSave}
+            disabled={!roleName.trim() || isPending}
+            aria-label={t('Save role')}
+            className="ms-auto"
+          >
+            <LuCheck className="size-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -883,18 +893,16 @@ function RolesTable({
         </div>
       )}
 
-      <Dialog
+      <AlertDialog
         open={roleToDelete !== null}
         onOpenChange={(open) => !open && setRoleToDelete(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
               {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-4">
-            <p>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
               {t(
                 'Are you sure you want to remove {roleName} from "{processName}"?',
                 {
@@ -902,22 +910,20 @@ function RolesTable({
                   processName: decisionName,
                 },
               )}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRoleToDelete(null)}>
-              {t('Cancel')}
-            </Button>
-            <Button
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
               onClick={handleDeleteConfirm}
               disabled={deleteRoleMutation.isPending}
             >
               {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

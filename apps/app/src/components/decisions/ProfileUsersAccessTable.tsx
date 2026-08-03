@@ -4,28 +4,60 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';
 import type { ProfileUser } from '@op/common/client';
-import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
-import { LuUsers } from 'react-icons/lu';
+import {
+  LuArrowDown,
+  LuArrowUp,
+  LuChevronDown,
+  LuCircleAlert,
+  LuUsers,
+} from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+
+// Sort columns supported by the profile.listUsers endpoint
+type SortColumn = 'name' | 'email' | 'role';
 
 // Exported component with loading and error states
 export const ProfileUsersAccessTable = ({
@@ -59,20 +91,29 @@ export const ProfileUsersAccessTable = ({
 
   if (isError) {
     return (
-      <EmptyState>
-        <span>{t('Members could not be loaded')}</span>
-        <Button onPress={onRetry} color="secondary" size="small">
-          {t('Try again')}
-        </Button>
-      </EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>{t('Members could not be loaded')}</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button onClick={onRetry} variant="outline" size="sm">
+            {t('Try again')}
+          </Button>
+        </EmptyContent>
+      </Empty>
     );
   }
 
   if (profileUsers.length === 0 && invites.length === 0 && !isLoading) {
     return (
-      <EmptyState icon={<LuUsers className="size-6" />}>
-        <span>{t('No members found')}</span>
-      </EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuUsers className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('No members found')}</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -111,7 +152,7 @@ const InviteStatusLabel = ({
   const t = useTranslations();
   const isPendingLaunch = isDraft && !notifiedAt;
   return (
-    <span className="text-sm text-neutral-gray4">
+    <span className="text-sm text-muted-foreground">
       {isPendingLaunch ? t('Pending launch') : t('Invited')}
     </span>
   );
@@ -121,6 +162,142 @@ const getProfileUserStatus = (): string => {
   // TODO: We need this logic in the backend
   // Default to "Active" for existing profile users
   return 'Active';
+};
+
+// Shared confirmation for removing a member or a pending invite from the process.
+const RemoveFromProcessDialog = ({
+  open,
+  onOpenChange,
+  name,
+  processName,
+  onConfirm,
+  isPending,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  name: string;
+  processName?: string;
+  onConfirm: () => void;
+  isPending: boolean;
+}) => {
+  const t = useTranslations();
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-red-50">
+            <LuCircleAlert className="text-destructive" />
+          </AlertDialogMedia>
+          <AlertDialogTitle>{t('Remove {name}?', { name })}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {processName
+              ? t(
+                  'Are you sure you want to remove {name} from "{processName}"?',
+                  {
+                    name,
+                    processName,
+                  },
+                )
+              : t('Are you sure you want to remove {name} from this process?', {
+                  name,
+                })}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isPending}
+          >
+            {isPending ? t('Removing...') : t('Remove')}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+// Presentational role picker with a "Remove from process" option that opens a
+// confirmation. Data adapters below (member / invite) wire the mutations.
+const RoleSelectWithRemove = ({
+  value,
+  onRoleChange,
+  roles,
+  disabled,
+  canRemove,
+  removeOpen,
+  onRemoveOpenChange,
+  removeName,
+  processName,
+  onRemove,
+  isRemoving,
+}: {
+  value: string;
+  onRoleChange: (roleId: string) => void;
+  roles: { id: string; name: string }[];
+  disabled?: boolean;
+  canRemove: boolean;
+  removeOpen: boolean;
+  onRemoveOpenChange: (open: boolean) => void;
+  removeName: string;
+  processName?: string;
+  onRemove: () => void;
+  isRemoving: boolean;
+  className?: string;
+}) => {
+  const t = useTranslations();
+  const currentRoleName = roles.find((role) => role.id === value)?.name;
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={disabled}
+          render={
+            <Button
+              variant="ghost"
+              className="border border-input sm:border-none"
+              aria-label={t('Role')}
+            >
+              <span>{currentRoleName ?? t('Role')}</span>
+              <LuChevronDown className="size-4 text-muted-foreground" />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <DropdownMenuRadioGroup value={value} onValueChange={onRoleChange}>
+            {roles.map((role) => (
+              <DropdownMenuRadioItem key={role.id} value={role.id} closeOnClick>
+                {role.name}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+          {canRemove && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => onRemoveOpenChange(true)}
+              >
+                {t('Remove from process')}
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {canRemove && (
+        <RemoveFromProcessDialog
+          open={removeOpen}
+          onOpenChange={onRemoveOpenChange}
+          name={removeName}
+          processName={processName}
+          onConfirm={onRemove}
+          isPending={isRemoving}
+        />
+      )}
+    </>
+  );
 };
 
 const ProfileUserRoleSelect = ({
@@ -179,74 +356,20 @@ const ProfileUserRoleSelect = ({
   const isPending = updateRoles.isPending || removeUser.isPending;
 
   return (
-    <>
-      <Select
-        aria-label={t('Role')}
-        selectedKey={currentRoleId || ''}
-        onSelectionChange={(key) => {
-          const keyStr = key as string;
-          if (keyStr === 'remove') {
-            setIsRemoveModalOpen(true);
-          } else {
-            handleRoleChange(keyStr);
-          }
-        }}
-        isDisabled={isPending || isOwner}
-        size="small"
-        className={className}
-      >
-        {roles.map((role) => (
-          <SelectItem key={role.id} id={role.id}>
-            {role.name}
-          </SelectItem>
-        ))}
-        {!isOwner && (
-          <SelectItem id="remove" className="text-functional-red">
-            {t('Remove from process')}
-          </SelectItem>
-        )}
-      </Select>
-      {!isOwner && (
-        <DialogTrigger
-          isOpen={isRemoveModalOpen}
-          onOpenChange={setIsRemoveModalOpen}
-        >
-          <Modal isDismissable>
-            <ModalHeader>{t('Remove {name}', { name: userName })}</ModalHeader>
-            <ModalBody>
-              <p>
-                {processName
-                  ? t(
-                      'Are you sure you want to remove {name} from "{processName}"?',
-                      { name: userName, processName },
-                    )
-                  : t(
-                      'Are you sure you want to remove {name} from this process?',
-                      { name: userName },
-                    )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsRemoveModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                className="w-full sm:w-fit"
-                onPress={() => removeUser.mutate({ profileUserId })}
-                isDisabled={removeUser.isPending}
-              >
-                {removeUser.isPending ? t('Removing...') : t('Remove')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
-      )}
-    </>
+    <RoleSelectWithRemove
+      value={currentRoleId || ''}
+      onRoleChange={handleRoleChange}
+      roles={roles}
+      disabled={isPending || isOwner}
+      canRemove={!isOwner}
+      removeOpen={isRemoveModalOpen}
+      onRemoveOpenChange={setIsRemoveModalOpen}
+      removeName={userName}
+      processName={processName}
+      onRemove={() => removeUser.mutate({ profileUserId })}
+      isRemoving={removeUser.isPending}
+      className={className}
+    />
   );
 };
 
@@ -304,70 +427,20 @@ const InviteRoleSelect = ({
   const isPending = updateInvite.isPending || deleteInvite.isPending;
 
   return (
-    <>
-      <Select
-        aria-label={t('Role')}
-        selectedKey={currentRoleId}
-        onSelectionChange={(key) => {
-          const keyStr = key as string;
-          if (keyStr === 'remove') {
-            setIsRemoveModalOpen(true);
-          } else {
-            handleRoleChange(keyStr);
-          }
-        }}
-        isDisabled={isPending}
-        size="small"
-        className={className}
-      >
-        {roles.map((role) => (
-          <SelectItem key={role.id} id={role.id}>
-            {role.name}
-          </SelectItem>
-        ))}
-        <SelectItem id="remove" className="text-functional-red">
-          {t('Remove from process')}
-        </SelectItem>
-      </Select>
-      <DialogTrigger
-        isOpen={isRemoveModalOpen}
-        onOpenChange={setIsRemoveModalOpen}
-      >
-        <Modal isDismissable>
-          <ModalHeader>{t('Remove {name}', { name: inviteeName })}</ModalHeader>
-          <ModalBody>
-            <p>
-              {processName
-                ? t(
-                    'Are you sure you want to remove {name} from "{processName}"?',
-                    { name: inviteeName, processName },
-                  )
-                : t(
-                    'Are you sure you want to remove {name} from this process?',
-                    { name: inviteeName },
-                  )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              color="secondary"
-              className="w-full sm:w-fit"
-              onPress={() => setIsRemoveModalOpen(false)}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              className="w-full sm:w-fit"
-              onPress={() => deleteInvite.mutate({ inviteId })}
-              isDisabled={deleteInvite.isPending}
-            >
-              {deleteInvite.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
-    </>
+    <RoleSelectWithRemove
+      value={currentRoleId}
+      onRoleChange={handleRoleChange}
+      roles={roles}
+      disabled={isPending}
+      canRemove
+      removeOpen={isRemoveModalOpen}
+      onRemoveOpenChange={setIsRemoveModalOpen}
+      removeName={inviteeName}
+      processName={processName}
+      onRemove={() => deleteInvite.mutate({ inviteId })}
+      isRemoving={deleteInvite.isPending}
+      className={className}
+    />
   );
 };
 
@@ -393,7 +466,7 @@ const MobileProfileUserCard = ({
   const profileSlug = profileUser.profile?.slug;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex gap-4">
         <ProfileAvatar profile={profileUser.profile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
@@ -401,18 +474,16 @@ const MobileProfileUserCard = ({
             {profileSlug && canLinkToProfile ? (
               <Link
                 href={`/profile/${profileSlug}`}
-                className="text-base text-neutral-black hover:underline"
+                className="text-base text-foreground hover:underline"
               >
                 {displayName}
               </Link>
             ) : (
-              <span className="text-base text-neutral-black">
-                {displayName}
-              </span>
+              <span className="text-base text-foreground">{displayName}</span>
             )}
-            <span className="text-sm text-neutral-gray4">{status}</span>
+            <span className="text-sm text-muted-foreground">{status}</span>
           </div>
-          <span className="truncate text-base text-neutral-black">
+          <span className="truncate text-base text-foreground">
             {profileUser.email}
           </span>
         </div>
@@ -447,7 +518,7 @@ const MobileInviteCard = ({
   const displayName = invite.inviteeProfile?.name ?? invite.email;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex gap-4">
         <ProfileAvatar
           profile={invite.inviteeProfile ?? { email: invite.email }}
@@ -455,13 +526,13 @@ const MobileInviteCard = ({
         />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
-            <span className="text-base text-neutral-black">{displayName}</span>
+            <span className="text-base text-foreground">{displayName}</span>
             <InviteStatusLabel
               notifiedAt={invite.notifiedAt}
               isDraft={isDraft}
             />
           </div>
-          <span className="truncate text-base text-neutral-black">
+          <span className="truncate text-base text-foreground">
             {invite.email}
           </span>
         </div>
@@ -526,6 +597,49 @@ const MobileProfileUsersContent = ({
   );
 };
 
+// Clickable, sortable column header. sense Table has no built-in sort, so the
+// sort state (a react-aria SortDescriptor) is driven manually here.
+const SortableHead = ({
+  column,
+  label,
+  sortDescriptor,
+  onSortChange,
+  className,
+}: {
+  column: SortColumn;
+  label: string;
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
+  className?: string;
+}) => {
+  const active = sortDescriptor.column === column;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        className="flex items-center gap-1"
+        onClick={() =>
+          onSortChange({
+            column,
+            direction:
+              active && sortDescriptor.direction === 'ascending'
+                ? 'descending'
+                : 'ascending',
+          })
+        }
+      >
+        {label}
+        {active &&
+          (sortDescriptor.direction === 'ascending' ? (
+            <LuArrowUp className="size-3" />
+          ) : (
+            <LuArrowDown className="size-3" />
+          ))}
+      </button>
+    </TableHead>
+  );
+};
+
 // Desktop table content component
 const ProfileUsersAccessTableContent = ({
   profileUsers,
@@ -554,40 +668,50 @@ const ProfileUsersAccessTableContent = ({
   return (
     <div className="relative">
       {isLoading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
           <Skeleton className="h-8 w-full" />
         </div>
       )}
-      <Table
-        aria-label={t('Participants list')}
-        className="w-full table-fixed"
-        sortDescriptor={sortDescriptor}
-        onSortChange={onSortChange}
-      >
+      <Table aria-label={t('Participants list')} className="w-full table-fixed">
         <TableHeader>
-          <TableColumn isRowHeader id="name" allowsSorting className="sm:w-52">
-            {t('Name')}
-          </TableColumn>
-          <TableColumn id="email" allowsSorting className="w-auto">
-            {t('Email')}
-          </TableColumn>
-          <TableColumn id="role" allowsSorting className="sm:w-36">
-            {t('Role')}
-          </TableColumn>
+          <TableRow>
+            <SortableHead
+              column="name"
+              label={t('Name')}
+              sortDescriptor={sortDescriptor}
+              onSortChange={onSortChange}
+              className="sm:w-52"
+            />
+            <SortableHead
+              column="email"
+              label={t('Email')}
+              sortDescriptor={sortDescriptor}
+              onSortChange={onSortChange}
+              className="w-auto"
+            />
+            <SortableHead
+              column="role"
+              label={t('Role')}
+              sortDescriptor={sortDescriptor}
+              onSortChange={onSortChange}
+              className="flex justify-end"
+            />
+          </TableRow>
         </TableHeader>
         <TableBody>
           {invites.map((invite) => {
             const displayName = invite.inviteeProfile?.name ?? invite.email;
 
             return (
-              <TableRow key={`invite-${invite.id}`} id={`invite-${invite.id}`}>
+              <TableRow key={`invite-${invite.id}`}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <ProfileAvatar
+                      className="size-8"
                       profile={invite.inviteeProfile ?? { email: invite.email }}
                     />
                     <div className="flex flex-col">
-                      <span className="text-base text-neutral-black">
+                      <span className="text-base text-foreground">
                         {displayName}
                       </span>
                       <InviteStatusLabel
@@ -598,7 +722,7 @@ const ProfileUsersAccessTableContent = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base text-foreground">
                     {invite.email}
                   </span>
                 </TableCell>
@@ -625,31 +749,34 @@ const ProfileUsersAccessTableContent = ({
             const profileSlug = profileUser.profile?.slug;
 
             return (
-              <TableRow key={profileUser.id} id={profileUser.id}>
+              <TableRow key={profileUser.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <ProfileAvatar profile={profileUser.profile} />
+                    <ProfileAvatar
+                      profile={profileUser.profile}
+                      className="size-8"
+                    />
                     <div className="flex flex-col">
                       {profileSlug && canLinkToProfile ? (
                         <Link
                           href={`/profile/${profileSlug}`}
-                          className="text-base text-neutral-black hover:underline"
+                          className="text-base text-foreground hover:underline"
                         >
                           {displayName}
                         </Link>
                       ) : (
-                        <span className="text-base text-neutral-black">
+                        <span className="text-base text-foreground">
                           {displayName}
                         </span>
                       )}
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {status}
                       </span>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base text-foreground">
                     {profileUser.email}
                   </span>
                 </TableCell>

@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
@@ -56,7 +56,7 @@ function CategoryReviewerCardsContent({
     return (
       <Alert variant="warning">
         <LuCircleAlert />
-        <AlertDescription>
+        <AlertTitle>
           {t.rich(
             'No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.',
             {
@@ -71,7 +71,7 @@ function CategoryReviewerCardsContent({
               ),
             },
           )}
-        </AlertDescription>
+        </AlertTitle>
       </Alert>
     );
   }
@@ -83,7 +83,7 @@ function CategoryReviewerCardsContent({
         // which contradicts an alert saying no one can review yet.
         <Alert variant="warning">
           <LuCircleAlert />
-          <AlertDescription>
+          <AlertTitle>
             {t.rich(
               'No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.',
               {
@@ -98,7 +98,7 @@ function CategoryReviewerCardsContent({
                 ),
               },
             )}
-          </AlertDescription>
+          </AlertTitle>
         </Alert>
       ) : (
         <p className="text-base text-neutral-black">

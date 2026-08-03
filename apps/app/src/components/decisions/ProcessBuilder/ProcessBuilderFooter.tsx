@@ -6,9 +6,11 @@ import { Button } from '@op/sense/Button';
 import { SidebarTrigger } from '@op/sense/Sidebar';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import { LuLogOut } from 'react-icons/lu';
+import { LuAlignJustify } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
@@ -119,7 +121,7 @@ export const ProcessBuilderFooter = ({
 
   return (
     <>
-      <footer className="sticky bottom-0 z-20 shrink-0 border-t bg-white/80 px-8 py-2 backdrop-blur">
+      <footer className="sticky bottom-0 z-20 shrink-0 border-t bg-white/80 px-4 py-2 backdrop-blur sm:px-8">
         {/* Mobile: full-width progress bar overlaying top edge */}
         {isDraft && (
           <ProgressIndicator
@@ -130,13 +132,9 @@ export const ProcessBuilderFooter = ({
         <div className="flex h-full items-center justify-between md:px-0">
           {/* Left: Exit + Back — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
-            <Link
-              href={`/decisions/${slug}`}
-              className="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-base text-charcoal transition-colors hover:bg-neutral-gray1"
-            >
-              <LuLogOut className="size-4 rotate-180" />
+            <ButtonLink variant="ghost" href={`/decisions/${slug}`}>
               {t('Exit')}
-            </Link>
+            </ButtonLink>
             {hasPrev && (
               <Button
                 variant="outline"
@@ -184,7 +182,13 @@ export const ProcessBuilderFooter = ({
 
           {/* Mobile: Menu + Back + Next + Launch */}
           <div className="flex items-center justify-end gap-2 md:hidden">
-            <SidebarTrigger aria-label={t('Open process steps')} />
+            <SidebarTrigger
+              aria-label={t('Open process steps')}
+              variant="outline"
+              size="icon"
+            >
+              <LuAlignJustify />
+            </SidebarTrigger>
             {hasPrev && (
               <Button variant="outline" onClick={goBack}>
                 {t('Back')}
@@ -198,7 +202,6 @@ export const ProcessBuilderFooter = ({
             {(!isDraft ||
               (validation.isReadyToLaunch && !isTerminalStatus)) && (
               <Button
-                className="h-8 rounded-lg"
                 onClick={handleLaunchOrSave}
                 disabled={updateInstance.isPending}
               >

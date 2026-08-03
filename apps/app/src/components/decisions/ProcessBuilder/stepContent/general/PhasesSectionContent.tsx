@@ -131,8 +131,10 @@ export function PhasesSectionContent({
           savedAt={autosaveStatus.savedAt}
         />
       </div>
-      <p className="text-neutral-charcoal">
-        {t('Define the phases of your decision-making process')}
+      <p className="mb-10 text-muted-foreground">
+        {t(
+          'Arrange the stages of your decision process. Drag to reorder, click to configure.',
+        )}
       </p>
 
       {phases.length === 0 ? (
@@ -156,7 +158,7 @@ export function PhasesSectionContent({
             onChange={updatePhases}
             dragTrigger="handle"
             getItemLabel={(phase) => phase.name}
-            className="gap-2"
+            className="gap-4"
             renderDragPreview={(items) => {
               const phase = items[0];
               if (!phase) {
@@ -202,12 +204,11 @@ export function PhasesSectionContent({
                         size="sm"
                         onClick={() => setSection(phaseToSectionId(phase.id))}
                       >
-                        {t('Configure')}
+                        {configured ? t('Edit') : t('Configure')}
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="destructive"
                         size="icon-sm"
-                        className="text-primary-teal hover:text-functional-red"
                         onClick={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
@@ -219,11 +220,7 @@ export function PhasesSectionContent({
               );
             }}
           </Sortable>
-          <Button
-            variant="outline"
-            className="w-full text-primary-teal hover:text-primary-tealBlack"
-            onClick={addPhase}
-          >
+          <Button variant="outline" className="w-full" onClick={addPhase}>
             <LuPlus className="size-4" />
             {t('Add phase')}
           </Button>
@@ -299,14 +296,18 @@ const PhaseDragPreview = ({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Button variant="outline" size="sm">
-            {t('Configure')}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSection(phaseToSectionId(phase.id))}
+          >
+            {configured ? t('Edit') : t('Configure')}
           </Button>
           <Button
-            aria-label={t('Delete phase')}
-            variant="outline"
+            variant="destructive"
             size="icon-sm"
-            className="text-primary-teal"
+            onClick={() => setPhaseToDelete(phase.id)}
+            aria-label={t('Delete phase?')}
           >
             <LuTrash2 className="size-4" />
           </Button>

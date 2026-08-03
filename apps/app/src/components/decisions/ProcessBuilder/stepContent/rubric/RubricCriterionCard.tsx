@@ -7,12 +7,20 @@ import {
 } from '@op/sense/CollapsibleConfigCard';
 import {
   Field,
+  FieldContent,
+  FieldDescription,
   FieldError,
   FieldLabel,
   FieldLegend,
   FieldSet,
 } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupTextarea,
+} from '@op/sense/InputGroup';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import type { SortableItemControls } from '@op/sense/Sortable';
@@ -62,6 +70,9 @@ const parseNumericValue = (value: string): number | null => {
   const parsed = parseFloat(filtered);
   return isNaN(parsed) ? null : parsed;
 };
+
+const MAX_LABEL_LENGTH = 50;
+const MAX_DESCRIPTION_LENGTH = 250;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -122,7 +133,7 @@ export function RubricCriterionCard({
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const displayLabel = criterion.label || t('Untitled field');
+  const displayLabel = criterion.label || t('Untitled');
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
@@ -150,32 +161,39 @@ export function RubricCriterionCard({
       <CollapsibleConfigCard
         label={displayLabel}
         badgeLabel={badgeLabel}
-        badgeClassName="group-data-panel-open/config-card:hidden"
         isCollapsible
         isExpanded={isExpanded}
         onExpandedChange={onExpandedChange}
         controls={controls}
         dragHandleAriaLabel={t('Drag to reorder criterion')}
         className={cn(
-          'data-open:bg-neutral-offWhite',
+          'data-open:bg-muted',
           isNew && 'animate-border-highlight',
-          errors.length > 0 && 'border-functional-red',
+          errors.length > 0 && 'border-destructive',
         )}
       >
         <div className="space-y-2.5 px-8">
-          {/* Field name */}
+          {/* Label */}
           <Field className="min-w-0 flex-1">
             <FieldLabel htmlFor={`${criterion.id}-label`}>
-              {t('Field name')} <RequiredAsterisk />
+              {t('Label')} <RequiredAsterisk />
             </FieldLabel>
-            <Input
-              id={`${criterion.id}-label`}
-              required
-              maxLength={50}
-              value={criterion.label}
-              onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
-              className="bg-white [unicode-bidi:plaintext]"
-            />
+            <InputGroup className="bg-white">
+              <InputGroupInput
+                id={`${criterion.id}-label`}
+                required
+                maxLength={MAX_LABEL_LENGTH}
+                value={criterion.label}
+                onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
+                className="[unicode-bidi:plaintext]"
+              />
+              <InputGroupAddon align="inline-end">
+                {t('{count}/{max}', {
+                  count: criterion.label.length,
+                  max: MAX_LABEL_LENGTH,
+                })}
+              </InputGroupAddon>
+            </InputGroup>
           </Field>
 
           {/* Description */}
@@ -183,15 +201,26 @@ export function RubricCriterionCard({
             <FieldLabel htmlFor={`${criterion.id}-description`}>
               {t('Description')}
             </FieldLabel>
-            <Textarea
-              id={`${criterion.id}-description`}
-              value={criterion.description ?? ''}
-              onChange={(e) =>
-                onUpdateDescription?.(criterion.id, e.target.value)
-              }
-              placeholder={t('Provide additional guidance for participants...')}
-              className="min-h-24 resize-none bg-white [unicode-bidi:plaintext]"
-            />
+            <InputGroup className="bg-white">
+              <InputGroupTextarea
+                id={`${criterion.id}-description`}
+                value={criterion.description ?? ''}
+                onChange={(e) =>
+                  onUpdateDescription?.(criterion.id, e.target.value)
+                }
+                maxLength={MAX_DESCRIPTION_LENGTH}
+                placeholder={t(
+                  'Provide additional guidance for participants...',
+                )}
+                className="min-h-24 [unicode-bidi:plaintext]"
+              />
+              <InputGroupAddon align="block-end" className="justify-end">
+                {t('{count}/{max}', {
+                  count: criterion.description?.length ?? 0,
+                  max: MAX_DESCRIPTION_LENGTH,
+                })}
+              </InputGroupAddon>
+            </InputGroup>
           </Field>
 
           <hr />
@@ -222,7 +251,7 @@ export function RubricCriterionCard({
           {errors.length > 0 && (
             <div className="space-y-1">
               {errors.map((error) => (
-                <p key={error} className="text-sm text-functional-red">
+                <p key={error} className="text-sm text-destructive">
                   {t(error)}
                 </p>
               ))}
@@ -232,7 +261,7 @@ export function RubricCriterionCard({
           {/* Footer: Required toggle + Delete button */}
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
+              <span className="text-foreground">{t('Required?')}</span>
               <Switch
                 size="sm"
                 checked={criterion.required}
@@ -248,7 +277,7 @@ export function RubricCriterionCard({
                 size="sm"
                 onClick={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
-                className="text-neutral-charcoal hover:text-functional-red"
+                className="text-destructive hover:text-destructive"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -297,7 +326,7 @@ function CriterionTypeSelector({
               <FieldLabel htmlFor={id}>
                 <div className="relative -top-0.5">
                   <span>{t(entry.labelKey)}</span>
-                  <p className="text-sm text-neutral-gray4">
+                  <p className="text-sm text-muted-foreground">
                     {t(entry.descriptionKey)}
                   </p>
                 </div>
@@ -402,9 +431,7 @@ function ScoredCriterionConfig({
       </Field>
 
       <div className="space-y-2">
-        <h4 className="text-neutral-charcoal">
-          {t('Define what each score means')}
-        </h4>
+        <h4 className="text-foreground">{t('Define what each score means')}</h4>
         <p className="text-sm">
           {t(
             'Help reviewers score consistently by describing what each point value represents',
@@ -417,7 +444,7 @@ function ScoredCriterionConfig({
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-end font-serif text-title-base text-neutral-gray4">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-muted text-center font-serif text-title-base text-muted-foreground">
                   {scoreValue}
                 </span>
                 <Textarea
@@ -451,7 +478,7 @@ export function RubricCriterionDragPreview({
   const t = useTranslations();
   return (
     <CollapsibleConfigCardDragPreview
-      label={criterion.label || t('Untitled field')}
+      label={criterion.label || t('Untitled')}
       badgeLabel={
         criterion.criterionType === 'scored' && criterion.maxPoints
           ? `${criterion.maxPoints} ${t('pts')}`
@@ -462,5 +489,5 @@ export function RubricCriterionDragPreview({
 }
 
 export function RubricCriterionDropIndicator() {
-  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
+  return <div className="h-16 rounded-lg border bg-muted" />;
 }

@@ -8,6 +8,11 @@ import {
 } from '@op/sense/CollapsibleConfigCard';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupTextarea,
+} from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
@@ -18,10 +23,9 @@ import {
 } from '@op/sense/Select';
 import type { SortableItemControls } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
-import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
 import type { Key } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -56,6 +60,8 @@ interface FieldCardProps {
   onNewComplete?: (fieldId: string) => void;
 }
 
+const DESCRIPTION_MAX_LENGTH = 250;
+
 // Location is excluded: it's single-instance with a fixed key, so existing
 // fields can't switch to it (and it can't switch away).
 const FIELD_TYPE_OPTIONS = FIELD_CATEGORIES.flatMap((category) =>
@@ -89,6 +95,7 @@ export function FieldCard({
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
   const fieldNameRef = useRef<HTMLInputElement>(null);
+  const requiredToggleId = useId();
 
   // Scroll newly added fields into view and auto-focus the name input
   useEffect(() => {
@@ -99,7 +106,6 @@ export function FieldCard({
     }
   }, [isNew]);
 
-  const Icon = getFieldIcon(field.fieldType);
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
   const isLocation = field.fieldType === 'location';
 
@@ -140,7 +146,6 @@ export function FieldCard({
       className="scroll-m-6"
     >
       <CollapsibleConfigCard
-        icon={Icon}
         label={displayLabel}
         badgeLabel={badgeLabel}
         isCollapsible
@@ -155,109 +160,121 @@ export function FieldCard({
           errors.length > 0 && 'border-functional-red',
         )}
       >
-        <div className="space-y-4 px-8">
-          {/* Field name + Type selector row */}
-          <div className="flex items-start gap-3">
-            <Field className="min-w-0 flex-1">
-              <FieldLabel htmlFor={fieldNameId}>
-                {t('Field name')}
-                <RequiredAsterisk />
-              </FieldLabel>
-              <Input
-                ref={fieldNameRef}
-                id={fieldNameId}
-                value={field.label}
-                onChange={(e) => onUpdateLabel?.(field.id, e.target.value)}
-                maxLength={50}
-                required
-                aria-required
-                className="bg-white [unicode-bidi:plaintext]"
-              />
+        {/* Field name + Type selector row */}
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
+          <Field className="min-w-0 flex-1">
+            <FieldLabel htmlFor={fieldNameId}>
+              {t('Field name')}
+              <RequiredAsterisk />
+            </FieldLabel>
+            <Input
+              ref={fieldNameRef}
+              id={fieldNameId}
+              value={field.label}
+              onChange={(e) => onUpdateLabel?.(field.id, e.target.value)}
+              maxLength={50}
+              required
+              aria-required
+              className="bg-white [unicode-bidi:plaintext]"
+            />
+          </Field>
+          {!isLocation && (
+            <Field className="w-40">
+              <FieldLabel htmlFor={fieldTypeId}>{t('Type')}</FieldLabel>
+              <Select
+                value={field.fieldType}
+                onValueChange={(value) => handleTypeChange(value)}
+                items={typeItems}
+              >
+                <SelectTrigger id={fieldTypeId} className="w-full bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FIELD_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.type} value={opt.type}>
+                      {t(opt.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
-            {!isLocation && (
-              <Field className="w-40">
-                <FieldLabel htmlFor={fieldTypeId}>{t('Type')}</FieldLabel>
-                <Select
-                  value={field.fieldType}
-                  onValueChange={(value) => handleTypeChange(value)}
-                  items={typeItems}
-                >
-                  <SelectTrigger id={fieldTypeId} className="w-full bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FIELD_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.type} value={opt.type}>
-                        {t(opt.labelKey)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Description */}
-          <Field>
-            <FieldLabel htmlFor={fieldDescId}>{t('Description')}</FieldLabel>
-            <Textarea
+        {/* Description */}
+        <Field>
+          <FieldLabel htmlFor={fieldDescId}>{t('Description')}</FieldLabel>
+          <InputGroup className="bg-white">
+            <InputGroupTextarea
               id={fieldDescId}
               value={field.description ?? ''}
               onChange={(e) => onUpdateDescription?.(field.id, e.target.value)}
+              maxLength={DESCRIPTION_MAX_LENGTH}
               placeholder={t('Provide additional guidance for participants...')}
-              className="min-h-24 resize-none bg-white [unicode-bidi:plaintext]"
+              className="min-h-16 [unicode-bidi:plaintext]"
+            />
+            <InputGroupAddon align="block-end" className="justify-end">
+              {t('{count}/{max}', {
+                count: field.description?.length ?? 0,
+                max: DESCRIPTION_MAX_LENGTH,
+              })}
+            </InputGroupAddon>
+          </InputGroup>
+        </Field>
+
+        {/* Type-specific config */}
+        {ConfigComponent && (
+          <ConfigComponent
+            field={field}
+            fieldSchema={fieldSchema}
+            onUpdateJsonSchema={(updates) =>
+              onUpdateJsonSchema?.(field.id, updates)
+            }
+          />
+        )}
+
+        {/* Validation errors */}
+        {errors.length > 0 && (
+          <div className="space-y-1">
+            {errors.map((error) => (
+              <p key={error} className="text-functional-red">
+                {t(error as TranslationKey)}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* Footer: Required toggle + Delete button */}
+        <div className="flex items-center justify-between gap-4 border-t pt-4">
+          <Field orientation="horizontal" className="w-auto">
+            <FieldLabel
+              className="text-neutral-charcoal"
+              htmlFor={requiredToggleId}
+            >
+              {t('Required?')}
+            </FieldLabel>
+            <Switch
+              id={requiredToggleId}
+              size="sm"
+              checked={isLocation || field.required}
+              disabled={isLocation}
+              onCheckedChange={(isSelected) =>
+                onUpdateRequired?.(field.id, isSelected)
+              }
+              aria-label={t('Required')}
             />
           </Field>
-
-          {/* Type-specific config */}
-          {ConfigComponent && (
-            <ConfigComponent
-              field={field}
-              fieldSchema={fieldSchema}
-              onUpdateJsonSchema={(updates) =>
-                onUpdateJsonSchema?.(field.id, updates)
-              }
-            />
+          {onRemove && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onRemove(field.id)}
+              aria-label={t('Delete')}
+            >
+              <LuTrash2 className="size-4" />
+              {t('Delete')}
+            </Button>
           )}
-
-          {/* Validation errors */}
-          {errors.length > 0 && (
-            <div className="space-y-1">
-              {errors.map((error) => (
-                <p key={error} className="text-functional-red">
-                  {t(error as TranslationKey)}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* Footer: Required toggle + Delete button */}
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <Switch
-                size="sm"
-                checked={isLocation || field.required}
-                disabled={isLocation}
-                onCheckedChange={(isSelected) =>
-                  onUpdateRequired?.(field.id, isSelected)
-                }
-                aria-label={t('Required')}
-              />
-            </div>
-            {onRemove && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemove(field.id)}
-                aria-label={t('Delete')}
-                className="text-neutral-gray4 hover:text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </Button>
-            )}
-          </div>
         </div>
       </CollapsibleConfigCard>
     </div>

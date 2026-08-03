@@ -6,16 +6,19 @@ import type {
   ProposalTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
-import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 import { Header2 } from '@op/sense/Header';
-import { SidebarProvider } from '@op/sense/Sidebar';
 import { Sortable } from '@op/sense/Sortable';
-import { screens } from '@op/styles/constants';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
+import { LuAlignLeft, LuChevronDown, LuEye, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -43,7 +46,6 @@ import {
   updateFieldLabel,
 } from '@/components/decisions/proposalTemplate';
 
-import { AddFieldMenu } from './AddFieldMenu';
 import { BudgetFieldConfig } from './BudgetFieldConfig';
 import {
   FieldCard,
@@ -51,10 +53,6 @@ import {
   FieldCardDropIndicator,
 } from './FieldCard';
 import { ParticipantPreview } from './ParticipantPreview';
-import {
-  FieldListTrigger,
-  TemplateEditorSidebar,
-} from './TemplateEditorSidebar';
 import { getFieldLabelKey } from './fieldRegistry';
 
 export function TemplateEditorContent({
@@ -123,6 +121,9 @@ export function TemplateEditorContent({
   // Delete confirmation modal
   const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
+  // Participant preview modal
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
   // Applied to the current template state so user edits are preserved.
@@ -143,15 +144,12 @@ export function TemplateEditorContent({
     );
   }, [categories, allowMultipleCategories, requireCategorySelection]);
 
-  const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
   // a field card loses focus, but resolved errors disappear immediately
   // while editing (see renderFieldCard intersection logic).
   const [fieldErrors, setFieldErrors] = useState<Map<string, string[]>>(
     new Map(),
   );
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
@@ -161,45 +159,6 @@ export function TemplateEditorContent({
     () => getFields(template).filter((f) => !SYSTEM_FIELD_KEYS.has(f.id)),
     [template],
   );
-
-  // Single-instance field types that can't currently be added
-  const disabledTypes = useMemo<FieldType[]>(
-    () => (template.properties?.[LOCATION_FIELD_KEY] ? ['location'] : []),
-    [template],
-  );
-
-  // Sidebar field list — includes visual-only locked fields at the top
-  const sidebarFields = useMemo(() => {
-    const locked = [
-      {
-        id: 'title',
-        label: t('Proposal title'),
-        fieldType: 'short_text' as const,
-      },
-      ...(hasCategories
-        ? [
-            {
-              id: 'category',
-              label: t('Category'),
-              fieldType: 'dropdown' as const,
-            },
-          ]
-        : []),
-      {
-        id: 'budget',
-        label: t('Budget'),
-        icon: LuHash,
-      },
-    ];
-    return [
-      ...locked,
-      ...fields.map((f) => ({
-        id: f.id,
-        label: f.label,
-        fieldType: f.fieldType,
-      })),
-    ];
-  }, [fields, hasCategories]);
 
   // Save template changes via the shared autosave context.
   // Runs ensureLockedFields before persisting so that x-field-order and
@@ -405,87 +364,71 @@ export function TemplateEditorContent({
   };
 
   return (
-    // TODO(sense-migration): sense's SidebarProvider injects a `flex min-h-svh`
-    // wrapper div (the @op/ui one rendered no DOM), which shifts this
-    // content-area layout — needs a visual QA pass.
-    <SidebarProvider open={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
-      <div className="flex h-full flex-col overflow-hidden md:flex-row">
-        <div className="flex items-center justify-between gap-2 p-4 md:hidden">
-          <Header2 className="font-serif text-title-sm">
-            {t('Proposal template')}
-          </Header2>
-          <FieldListTrigger />
-        </div>
-
-        <TemplateEditorSidebar
-          fields={sidebarFields}
-          onAddField={handleAddField}
-          disabledTypes={disabledTypes}
-          side={isMobile ? 'right' : 'left'}
-        />
-
-        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
-          <div className="mx-auto max-w-160 space-y-4">
-            <div className="hidden items-center justify-between md:flex">
-              <Header2 className="font-serif text-title-sm">
-                {t('Proposal template')}
-              </Header2>
-              <SaveStatusIndicator
-                status={autosaveStatus.status}
-                savedAt={autosaveStatus.savedAt}
-              />
-            </div>
-            <p className="text-neutral-charcoal">
-              <span className="hidden md:inline">
-                {t('Build your proposal using the tools on the left')}
-              </span>
-              <span className="md:hidden">
-                {t('Build your proposal using the tools below')}
-              </span>
-            </p>
-            <hr />
-
-            {/* Locked system fields (stored in schema) */}
-            <div className="mb-3 space-y-3">
-              <CollapsibleConfigCard
-                icon={LuAlignLeft}
-                label={t('Proposal title')}
-                badgeLabel={t('Required')}
-                locked
-              />
-              {hasCategories && (
-                <CollapsibleConfigCard
-                  icon={LuChevronDown}
-                  label={t('Category')}
-                  badgeLabel={
-                    requireCategorySelection ? t('Required') : t('Optional')
-                  }
-                  locked
+    <>
+      <div className="p-4 pb-24 md:p-8 md:pb-8">
+        <div className="mx-auto max-w-136 space-y-8">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Header2>{t('Proposal template')}</Header2>
+              <div className="flex items-center gap-3">
+                <SaveStatusIndicator
+                  status={autosaveStatus.status}
+                  savedAt={autosaveStatus.savedAt}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPreviewOpen(true)}
                 >
-                  <div className="px-8 pt-2">
-                    <p className="text-neutral-charcoal">
-                      {t('These are the categories you defined in')}{' '}
-                      <Button
-                        variant="link"
-                        className="h-auto p-0"
-                        onClick={() => {
-                          void setStep('general');
-                          void setSection('proposalCategories');
-                        }}
-                      >
-                        {t('Proposal Categories')}
-                      </Button>
-                      .
-                    </p>
-                  </div>
-                </CollapsibleConfigCard>
-              )}
-
-              <BudgetFieldConfig
-                template={template}
-                onTemplateChange={setTemplate}
-              />
+                  <LuEye className="size-4" />
+                  {t('Preview')}
+                </Button>
+              </div>
             </div>
+            <p className="text-muted-foreground">
+              {t('Build your proposal using the tools below')}
+            </p>
+          </div>
+          {/* Locked system fields (stored in schema) */}
+          <div className="space-y-4">
+            <CollapsibleConfigCard
+              icon={LuAlignLeft}
+              label={t('Proposal title')}
+              badgeLabel={t('Required')}
+              locked
+            />
+            {hasCategories && (
+              <CollapsibleConfigCard
+                icon={LuChevronDown}
+                label={t('Category')}
+                badgeLabel={
+                  requireCategorySelection ? t('Required') : t('Optional')
+                }
+                locked
+              >
+                <div className="px-8 pt-2">
+                  <p className="text-neutral-charcoal">
+                    {t('These are the categories you defined in')}{' '}
+                    <Button
+                      variant="link"
+                      className="h-auto p-0"
+                      onClick={() => {
+                        void setStep('general');
+                        void setSection('proposalCategories');
+                      }}
+                    >
+                      {t('Proposal Categories')}
+                    </Button>
+                    .
+                  </p>
+                </div>
+              </CollapsibleConfigCard>
+            )}
+
+            <BudgetFieldConfig
+              template={template}
+              onTemplateChange={setTemplate}
+            />
 
             {/* Sortable fields */}
             <Sortable
@@ -507,15 +450,14 @@ export function TemplateEditorContent({
               {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
           </div>
-        </main>
-
-        <ParticipantPreview template={template} />
-
-        <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 md:hidden">
-          <AddFieldMenu
-            onAddField={handleAddField}
-            disabledTypes={disabledTypes}
-          />
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => handleAddField('short_text')}
+          >
+            <LuPlus className="size-4" />
+            {t('Add field')}
+          </Button>
         </div>
       </div>
 
@@ -528,6 +470,17 @@ export function TemplateEditorContent({
         onConfirm={confirmRemoveField}
         onCancel={() => setFieldToDelete(null)}
       />
-    </SidebarProvider>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('Participant Preview')}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto">
+            <ParticipantPreview template={template} />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
