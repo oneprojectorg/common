@@ -189,7 +189,10 @@ test.describe('Edit Published Process', () => {
       .getByRole('button', { name: 'Review Rubric' });
     await expect(rubricButton).toBeVisible({ timeout: 6_000 });
     await rubricButton.click();
-    await expect(authenticatedPage.getByText('Review Rubric')).toBeVisible({
+    // Scope to the heading — the sidebar nav item is also "Review Rubric".
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Review Rubric' }),
+    ).toBeVisible({
       timeout: 12_000,
     });
 
