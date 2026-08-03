@@ -218,6 +218,8 @@ export function parseProposalData(proposalData: unknown): ProposalData {
 export interface SchemaOption {
   value: string | number;
   title: string;
+  /** Optional per-option explanation (canonical `oneOf` entries only). */
+  description?: string;
 }
 
 /**
@@ -298,7 +300,13 @@ export function parseSchemaOptions(
   if (Array.isArray(schema.oneOf)) {
     return schema.oneOf
       .filter(
-        (entry): entry is { const: string | number; title: string } =>
+        (
+          entry,
+        ): entry is {
+          const: string | number;
+          title: string;
+          description?: string;
+        } =>
           typeof entry === 'object' &&
           entry !== null &&
           'const' in entry &&
@@ -307,7 +315,13 @@ export function parseSchemaOptions(
           'title' in entry &&
           typeof (entry as Record<string, unknown>).title === 'string',
       )
-      .map((entry) => ({ value: entry.const, title: entry.title }));
+      .map((entry) => ({
+        value: entry.const,
+        title: entry.title,
+        ...(typeof entry.description === 'string'
+          ? { description: entry.description }
+          : {}),
+      }));
   }
 
   const itemSchema =

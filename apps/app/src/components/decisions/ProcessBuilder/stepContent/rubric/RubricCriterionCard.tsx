@@ -391,11 +391,7 @@ function ScoredCriterionConfig({
 // Single-select criterion config (option list)
 // ---------------------------------------------------------------------------
 
-/**
- * Sortable row: `id` is the stored option id, `value` its display label.
- * `description` isn't editable here but is carried through so edits never
- * strip per-option descriptions authored outside the builder.
- */
+/** Sortable row: `id` is the stored option id, `value` its display label. */
 interface OptionRow {
   id: string;
   value: string;
@@ -405,9 +401,10 @@ interface OptionRow {
 /**
  * Options editor for single-select criteria. Mirrors the proposal template's
  * FieldConfigDropdown UI: drag to reorder, min-2 removal guard, Enter adds
- * the next option. Manages its own row state (initialized on mount) and
- * reports the full option list on every change; row ids are the stored
- * option ids so relabels/reorders never break saved answers.
+ * the next option. Each option carries an optional description, revealed via
+ * an "Add a description" link. Manages its own row state (initialized on
+ * mount) and reports the full option list on every change; row ids are the
+ * stored option ids so relabels/reorders never break saved answers.
  */
 function SingleSelectCriterionConfig({
   criterion,
@@ -419,6 +416,7 @@ function SingleSelectCriterionConfig({
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldFocusNewRef = useRef(false);
+  const focusDescriptionIdRef = useRef<string | null>(null);
 
   const [options, setOptions] = useState<OptionRow[]>(() =>
     criterion.options.map((o) => ({
@@ -428,13 +426,22 @@ function SingleSelectCriterionConfig({
     })),
   );
 
+  const [openDescriptionIds, setOpenDescriptionIds] = useState<Set<string>>(
+    () =>
+      new Set(
+        criterion.options
+          .filter((o) => o.description !== undefined)
+          .map((o) => o.value),
+      ),
+  );
+
   const updateOptions = (next: OptionRow[]) => {
     setOptions(next);
     onUpdateOptions(
       next.map((row) => ({
         value: row.id,
         title: row.value,
-        ...(row.description !== undefined
+        ...(row.description !== undefined && row.description.trim() !== ''
           ? { description: row.description }
           : {}),
       })),
@@ -482,6 +489,17 @@ function SingleSelectCriterionConfig({
     );
   };
 
+  const handleUpdateOptionDescription = (id: string, description: string) => {
+    updateOptions(
+      options.map((opt) => (opt.id === id ? { ...opt, description } : opt)),
+    );
+  };
+
+  const handleOpenDescription = (id: string) => {
+    focusDescriptionIdRef.current = id;
+    setOpenDescriptionIds((prev) => new Set(prev).add(id));
+  };
+
   const handleRemoveOption = (id: string) => {
     updateOptions(options.filter((opt) => opt.id !== id));
   };
@@ -512,49 +530,78 @@ function SingleSelectCriterionConfig({
         {(option, controls) => {
           const index = options.findIndex((o) => o.id === option.id);
           return (
-            <div className="flex items-center gap-2">
-              <DragHandle
-                {...controls.dragHandleProps}
-                aria-label={t('Drag to reorder option')}
-                className="text-neutral-gray3 hover:text-neutral-gray4"
-              />
-              <TextField
-                value={option.value}
-                onChange={(value) => handleUpdateOption(option.id, value)}
-                onKeyDown={(e) => handleKeyDown(e, option)}
-                inputProps={{
-                  placeholder: t('Option {number}', { number: index + 1 }),
-                  className: 'bg-white',
-                }}
-                className="w-full"
-              />
-              <TooltipTrigger isDisabled={options.length > 2}>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <DragHandle
+                  {...controls.dragHandleProps}
+                  aria-label={t('Drag to reorder option')}
+                  className="text-neutral-gray3 hover:text-neutral-gray4"
+                />
+                <TextField
+                  value={option.value}
+                  onChange={(value) => handleUpdateOption(option.id, value)}
+                  onKeyDown={(e) => handleKeyDown(e, option)}
+                  inputProps={{
+                    placeholder: t('Option {number}', { number: index + 1 }),
+                    className: 'bg-white',
+                  }}
+                  className="w-full"
+                />
+                <TooltipTrigger isDisabled={options.length > 2}>
+                  <Button
+                    color="ghost"
+                    size="small"
+                    aria-label={t('Remove option')}
+                    aria-disabled={options.length <= 2 || undefined}
+                    aria-description={
+                      options.length <= 2
+                        ? t('At least two options are required')
+                        : undefined
+                    }
+                    excludeFromTabOrder={options.length <= 2}
+                    onPress={() => {
+                      if (options.length > 2) {
+                        handleRemoveOption(option.id);
+                      }
+                    }}
+                    className={`p-2 ${
+                      options.length <= 2
+                        ? 'cursor-default text-neutral-gray3 opacity-30'
+                        : 'text-neutral-gray3 hover:text-neutral-charcoal'
+                    }`}
+                  >
+                    <LuX className="size-4" />
+                  </Button>
+                  <Tooltip>{t('At least two options are required')}</Tooltip>
+                </TooltipTrigger>
+              </div>
+
+              {openDescriptionIds.has(option.id) ? (
+                <TextField
+                  aria-label={t('Description')}
+                  useTextArea
+                  autoFocus={focusDescriptionIdRef.current === option.id}
+                  value={option.description ?? ''}
+                  onChange={(value) =>
+                    handleUpdateOptionDescription(option.id, value)
+                  }
+                  textareaProps={{
+                    placeholder: t('Add a description'),
+                    className: 'min-h-16 resize-none bg-white',
+                  }}
+                  className="ps-8 pe-10"
+                />
+              ) : (
                 <Button
                   color="ghost"
                   size="small"
-                  aria-label={t('Remove option')}
-                  aria-disabled={options.length <= 2 || undefined}
-                  aria-description={
-                    options.length <= 2
-                      ? t('At least two options are required')
-                      : undefined
-                  }
-                  excludeFromTabOrder={options.length <= 2}
-                  onPress={() => {
-                    if (options.length > 2) {
-                      handleRemoveOption(option.id);
-                    }
-                  }}
-                  className={`p-2 ${
-                    options.length <= 2
-                      ? 'cursor-default text-neutral-gray3 opacity-30'
-                      : 'text-neutral-gray3 hover:text-neutral-charcoal'
-                  }`}
+                  onPress={() => handleOpenDescription(option.id)}
+                  className="ms-8 gap-1 self-start p-0 text-primary-teal hover:text-primary-tealBlack"
                 >
-                  <LuX className="size-4" />
+                  <LuPlus className="size-4" />
+                  <span>{t('Add a description')}</span>
                 </Button>
-                <Tooltip>{t('At least two options are required')}</Tooltip>
-              </TooltipTrigger>
+              )}
             </div>
           );
         }}

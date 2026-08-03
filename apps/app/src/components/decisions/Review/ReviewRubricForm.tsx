@@ -370,7 +370,16 @@ function RubricFieldInput({
                   id={String(option.value)}
                   textValue={label}
                 >
-                  {label}
+                  {option.description ? (
+                    <div className="flex flex-col">
+                      <span>{label}</span>
+                      <span className="text-sm text-neutral-gray4">
+                        {option.description}
+                      </span>
+                    </div>
+                  ) : (
+                    label
+                  )}
                 </SelectItem>
               );
             })}

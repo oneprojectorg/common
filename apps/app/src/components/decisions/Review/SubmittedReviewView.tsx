@@ -141,7 +141,8 @@ function RubricFieldResult({
       return (
         <ResultCard
           value={selected ? selected.title || String(selected.value) : '—'}
-          description={rationale}
+          description={selected?.description || rationale}
+          rationale={selected?.description ? rationale : undefined}
         />
       );
     }
