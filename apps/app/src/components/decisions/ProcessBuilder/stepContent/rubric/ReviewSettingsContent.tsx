@@ -184,7 +184,6 @@ export function ReviewSettingsContent({
             )}
           >
             <Switch
-              size="sm"
               checked={settings.reviewsAllowRevisions}
               onCheckedChange={(val) =>
                 updateSettings({ reviewsAllowRevisions: val })

@@ -315,7 +315,6 @@ export function RubricEditorContent({
             className="p-0"
           >
             <Switch
-              size="sm"
               checked={overallRecommendationEnabled}
               onCheckedChange={handleOverallRecommendationToggle}
             />

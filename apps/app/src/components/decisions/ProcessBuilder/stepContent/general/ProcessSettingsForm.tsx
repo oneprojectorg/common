@@ -247,7 +247,6 @@ export function ProcessSettingsForm({
                           config: { organizeByCategories: value },
                         });
                       }}
-                      size="sm"
                     />
                   </ToggleRow>
                 )}
@@ -262,7 +261,7 @@ export function ProcessSettingsForm({
                       'Require proposals to be co-authored by at least 2 participants.',
                     )}
                   >
-                    <field.Switch size="small" />
+                    <field.Switch />
                   </ToggleRow>
                 )}
               />
@@ -285,7 +284,6 @@ export function ProcessSettingsForm({
                   <Switch
                     checked={!field.state.value}
                     onCheckedChange={(value) => field.handleChange(!value)}
-                    size="sm"
                   />
                 </ToggleRow>
               )}

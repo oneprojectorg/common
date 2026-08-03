@@ -21,7 +21,7 @@ import { cn } from '@op/sense/lib/utils';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
@@ -29,6 +29,7 @@ import type { SectionProps } from '@/components/decisions/ProcessBuilder/content
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { ensureLockedFields } from '@/components/decisions/proposalTemplate';
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 const CATEGORY_TITLE_MAX_LENGTH = 50;
 
@@ -210,39 +211,57 @@ export function ProposalCategoriesSectionContent({
 
       {showList && (
         <div>
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="group flex items-start gap-2 border-b py-3"
-            >
-              <div className="min-w-0 flex-1">
-                <span className="text-neutral-charcoal">{category.label}</span>
-                <p className="text-sm text-neutral-gray4">
-                  {category.description}
-                </p>
+          {categories.map((category) =>
+            editingId === category.id ? (
+              // Editing a category swaps its row for the form in place.
+              <div key={category.id} className="border-b py-3">
+                <CategoryForm
+                  isEditing
+                  label={formLabel}
+                  description={formDescription}
+                  onLabelChange={setFormLabel}
+                  onDescriptionChange={setFormDescription}
+                  onSubmit={handleAddOrUpdate}
+                  onCancel={resetForm}
+                  t={t}
+                />
               </div>
-              <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="size-5 p-0 text-neutral-charcoal"
-                  onClick={() => handleEdit(category)}
-                  aria-label={`Edit ${category.label}`}
-                >
-                  <LuPencil className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="size-5 p-0 text-neutral-charcoal hover:text-red"
-                  onClick={() => handleDelete(category.id)}
-                  aria-label={`Delete ${category.label}`}
-                >
-                  <LuTrash2 className="size-4" />
-                </Button>
+            ) : (
+              <div
+                key={category.id}
+                className="group flex items-start gap-2 border-b py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="text-neutral-charcoal">
+                    {category.label}
+                  </span>
+                  <p className="text-sm text-neutral-gray4">
+                    {category.description}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-5 p-0 text-neutral-charcoal"
+                    onClick={() => handleEdit(category)}
+                    aria-label={`Edit ${category.label}`}
+                  >
+                    <LuPencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-5 p-0 text-neutral-charcoal hover:text-red"
+                    onClick={() => handleDelete(category.id)}
+                    aria-label={`Delete ${category.label}`}
+                  >
+                    <LuTrash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
           {!isFormVisible && (
             <Button
               variant="ghost"
@@ -256,81 +275,104 @@ export function ProposalCategoriesSectionContent({
         </div>
       )}
 
-      {isFormVisible && (
-        <div className="rounded border p-4">
-          <Header3 className="mb-4 font-serif text-title-xs">
-            {editingId ? t('Edit category') : t('Add category')}
-          </Header3>
-          <div className="space-y-4">
-            <CategoryField
-              id="category-shorthand"
-              label={t('Shorthand')}
-              isRequired
-              value={formLabel}
-              onChange={setFormLabel}
-              placeholder={t('e.g., Education')}
-              description={t('1-3 words. Appears in dropdowns and cards.')}
-              maxLength={CATEGORY_TITLE_MAX_LENGTH}
-            />
-            <CategoryField
-              id="category-description"
-              multiline
-              label={t('Full description')}
-              value={formDescription}
-              onChange={setFormDescription}
-              placeholder={t(
-                'e.g., Expand access to quality education and workforce development in underserved communities',
-              )}
-              description={t(
-                'Help proposers understand what this category means',
-              )}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="outline" onClick={resetForm}>
-                {t('Cancel')}
-              </Button>
-              <Button onClick={handleAddOrUpdate} disabled={!formLabel.trim()}>
-                {editingId ? t('Save changes') : t('Add category')}
-              </Button>
-            </div>
-          </div>
-        </div>
+      {/* Add form lives at the bottom; the edit form renders inline in the
+          list (see above), so only show this when adding a new category. */}
+      {isFormVisible && !editingId && (
+        <CategoryForm
+          isEditing={false}
+          label={formLabel}
+          description={formDescription}
+          onLabelChange={setFormLabel}
+          onDescriptionChange={setFormDescription}
+          onSubmit={handleAddOrUpdate}
+          onCancel={resetForm}
+          t={t}
+        />
       )}
 
       {categories.length > 0 && (
         <div className="space-y-4 border-t pt-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="text-base">
-                {t('Require category selection')}
-              </span>
-              <p className="text-sm text-neutral-gray4">
-                {t('Proposers must select at least one category')}
-              </p>
-            </div>
+          <ToggleRow
+            label={t('Require category selection')}
+            description={t('Proposers must select at least one category')}
+          >
             <Switch
               checked={requireCategorySelection}
               onCheckedChange={handleRequireCategoryChange}
-              size="sm"
             />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="text-base">
-                {t('Allow multiple categories')}
-              </span>
-              <p className="text-sm text-neutral-gray4">
-                {t('Proposers can select more than one category')}
-              </p>
-            </div>
+          </ToggleRow>
+          <ToggleRow
+            label={t('Allow multiple categories')}
+            description={t('Proposers can select more than one category')}
+          >
             <Switch
               checked={allowMultipleCategories}
               onCheckedChange={handleAllowMultipleChange}
-              size="sm"
             />
-          </div>
+          </ToggleRow>
         </div>
       )}
+    </div>
+  );
+}
+
+// Add/edit category form. Rendered at the bottom when adding, or inline in
+// place of a category row when editing that category.
+function CategoryForm({
+  isEditing,
+  label,
+  description,
+  onLabelChange,
+  onDescriptionChange,
+  onSubmit,
+  onCancel,
+  t,
+}: {
+  isEditing: boolean;
+  label: string;
+  description: string;
+  onLabelChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  t: TranslateFn;
+}) {
+  return (
+    <div className="rounded border p-4">
+      <Header3 className="mb-4">
+        {isEditing ? t('Edit category') : t('Add category')}
+      </Header3>
+      <div className="space-y-4">
+        <CategoryField
+          id="category-shorthand"
+          label={t('Shorthand')}
+          isRequired
+          value={label}
+          onChange={onLabelChange}
+          placeholder={t('e.g., Education')}
+          description={t('1-3 words. Appears in dropdowns and cards.')}
+          maxLength={CATEGORY_TITLE_MAX_LENGTH}
+        />
+        <CategoryField
+          id="category-description"
+          multiline
+          label={t('Full description')}
+          value={description}
+          onChange={onDescriptionChange}
+          placeholder={t(
+            'e.g., Expand access to quality education and workforce development in underserved communities',
+          )}
+          description={t('Help proposers understand what this category means')}
+        />
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            {t('Cancel')}
+          </Button>
+          <Button onClick={onSubmit} disabled={!label.trim()}>
+            {isEditing ? t('Save changes') : t('Add category')}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -349,7 +349,6 @@ function PhaseDetailForm({
                 proposals: { ...phase.rules?.proposals, submit: val },
               })
             }
-            size="sm"
           />
         </ToggleRow>
         {phase.rules?.proposals?.submit && (
@@ -372,7 +371,6 @@ function PhaseDetailForm({
                   },
                 })
               }
-              size="sm"
             />
           </ToggleRow>
         )}
@@ -387,7 +385,6 @@ function PhaseDetailForm({
                 proposals: { ...phase.rules?.proposals, edit: val },
               })
             }
-            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -403,7 +400,6 @@ function PhaseDetailForm({
                 reviews: { ...phase.rules?.reviews, submit: val },
               })
             }
-            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -426,7 +422,6 @@ function PhaseDetailForm({
               }
               updateRules({ voting: nextVoting });
             }}
-            size="sm"
           />
         </ToggleRow>
         {isVotingPhase(phase) && (
