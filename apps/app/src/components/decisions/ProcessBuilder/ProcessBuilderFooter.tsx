@@ -141,7 +141,7 @@ export const ProcessBuilderFooter = ({
                 onClick={goBack}
                 className="hidden md:inline-flex"
               >
-                <LuArrowLeft />
+                <LuArrowLeft className="rtl:-scale-x-100" />
                 {t('Back')}
               </Button>
             )}
@@ -166,7 +166,7 @@ export const ProcessBuilderFooter = ({
               {hasNext && (
                 <Button variant="outline" onClick={goNext}>
                   {t('Next')}
-                  <LuArrowRight />
+                  <LuArrowRight className="rtl:-scale-x-100" />
                 </Button>
               )}
 
