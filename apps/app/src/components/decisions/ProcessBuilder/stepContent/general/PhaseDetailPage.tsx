@@ -210,8 +210,6 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
-  const formatDateValue = (date: Date) => date.toISOString();
-
   if (!phase) {
     return null;
   }
@@ -301,7 +299,7 @@ function PhaseDetailForm({
               maxDate={safeParseLocal(phase.endDate)}
               onChange={(date) => {
                 if (date) {
-                  updatePhase({ startDate: formatDateValue(date) });
+                  updatePhase({ startDate: date.toISOString() });
                 }
               }}
             />
@@ -329,7 +327,7 @@ function PhaseDetailForm({
               minDate={safeParseLocal(phase.startDate)}
               onChange={(date) => {
                 if (date) {
-                  updatePhase({ endDate: formatDateValue(date) });
+                  updatePhase({ endDate: date.toISOString() });
                 }
                 markTouched('endDate');
               }}
