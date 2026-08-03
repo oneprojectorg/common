@@ -48,6 +48,8 @@ export function DecisionPhaseTimeline({
   const phaseName = (phase: ProcessPhase) =>
     translatedPhaseNames?.get(phase.id) ?? phase.name;
 
+  // phaseOrder: intentionally ad-hoc — legacy ProcessPhase is keyed by `id`,
+  // not `phaseId`, so the shared utils' input type doesn't fit.
   const currentIndex = phases.findIndex((p) => p.id === currentPhaseId);
   const currentPhase = currentIndex >= 0 ? phases[currentIndex] : undefined;
   const nextPhase = currentIndex >= 0 ? phases[currentIndex + 1] : undefined;

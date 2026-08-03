@@ -1,3 +1,5 @@
+import { getPhaseIndex } from '@op/common/client';
+
 export interface NextStep {
   id: string;
   name: string;
@@ -19,9 +21,7 @@ export function getNextSteps(
   currentStateId: string | null,
 ): NextStep[] {
   // Find current phase index
-  const currentPhaseIndex = phases.findIndex(
-    (phase) => phase.phaseId === currentStateId,
-  );
+  const currentPhaseIndex = getPhaseIndex({ phases }, currentStateId);
 
   if (currentPhaseIndex === -1) {
     return [];

@@ -28,6 +28,8 @@ export function buildExpectedTransitions(
   const transitions: ScheduledTransition[] = [];
 
   phases.forEach((currentPhase, index) => {
+    // phaseOrder: intentionally ad-hoc — pairs every consecutive phase while
+    // iterating, not an id lookup, so getNextPhase would just re-scan per phase.
     const nextPhase = phases[index + 1];
     // Skip last phase (no next phase to transition to)
     if (!nextPhase) {
