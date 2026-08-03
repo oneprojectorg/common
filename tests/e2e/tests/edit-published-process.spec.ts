@@ -56,12 +56,12 @@ test.describe('Edit Published Process', () => {
       timeout: 12_000,
     });
 
-    // Toggle "Proposal review" on
+    // Toggle "Proposal review" on (sense Switch has role="switch")
     const reviewToggle = authenticatedPage
       .getByText('Proposal review')
       .locator('..')
       .locator('..')
-      .getByRole('button');
+      .getByRole('switch');
     await reviewToggle.click();
 
     // 6. Verify Review Rubric now appears in the sidebar
@@ -241,10 +241,8 @@ test.describe('Edit Published Process', () => {
       name: 'Add field',
     });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
+    // "Add field" adds a short-text field directly (no type menu).
     await addFieldButton.click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Short text' })
-      .click();
 
     // 6. Verify the field was added (card appears in the sortable list)
     await expect(authenticatedPage.getByText('Short text').first()).toBeVisible(

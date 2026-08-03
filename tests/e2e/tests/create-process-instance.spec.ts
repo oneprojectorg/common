@@ -91,7 +91,7 @@ test.describe('Create Process Instance', () => {
 
     await expect(
       authenticatedPage.getByText(
-        'Define the phases of your decision-making process',
+        'Arrange the stages of your decision process. Drag to reorder, click to configure.',
       ),
     ).toBeVisible({ timeout: 12_000 });
 
@@ -193,19 +193,15 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 10b. Add a custom field so the template passes validation (requires at
-    //       least 1 non-system field). Click "Add field" in the sidebar, then
-    //       pick "Short text" from the menu.
+    //       least 1 non-system field). "Add field" adds a short-text field
+    //       directly (no type menu — change type via the card's Type select).
     const addFieldButton = authenticatedPage.getByRole('button', {
       name: 'Add field',
     });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
-    await addFieldButton.click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Short text' })
-      .click();
-
-    // Wait for the autosave to persist the new field
+    // Arm the autosave wait before the click that triggers it.
     const templateFieldSaved = waitForAutoSave(authenticatedPage);
+    await addFieldButton.click();
     await templateFieldSaved;
 
     // 11. Expand the Budget card — budget is enabled by default in the template
