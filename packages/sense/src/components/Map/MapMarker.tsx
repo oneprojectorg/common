@@ -1,7 +1,14 @@
 'use client';
 
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { PreviewCard as PreviewCardPrimitive } from '@base-ui/react/preview-card';
+import {
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Marker,
   type MarkerDragEvent,
@@ -29,9 +36,12 @@ export interface MapMarkerProps {
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   /**
-   * Hovercard rendered above the pin while it (or the card) is hovered.
-   * Portaled to `document.body` so it can escape the map's `overflow:hidden`;
-   * stays glued to the pin during pan and hides on zoom.
+   * Hovercard rendered next to the pin while it (or the card) is hovered.
+   * Uses the sense hovercard primitive (base-ui `PreviewCard`) so placement is
+   * collision-aware — it flips above/below and shifts horizontally to stay on
+   * screen near an edge. Portaled to `document.body` so it escapes the map's
+   * `overflow:hidden`, and kept glued to the pin during pan via a virtual
+   * anchor fed from the projected marker position.
    */
   hoverContent?: ReactNode;
   /**
@@ -41,45 +51,12 @@ export interface MapMarkerProps {
   isOpen?: boolean;
 }
 
+/** Gap between the pin and the card — base-ui `sideOffset`. */
 const HOVERCARD_GAP_PX = 8;
-/** Conservative estimate so placement can decide without a two-pass measure. */
-const HOVERCARD_ESTIMATED_HEIGHT_PX = 140;
+/** Keep-on-screen inset for base-ui collision (flip + shift). */
 const HOVERCARD_EDGE_BUFFER_PX = 8;
 /** Long enough for the cursor to transit from pin to card without dismissing. */
 const HOVERCARD_DISMISS_DELAY_MS = 120;
-
-/**
- * Decide whether the pin's hovercard renders above (default) or flipped below.
- * Flips below only when the card wouldn't fit above the pin head; falls back
- * to above when neither side fits (overflow beats obscuring the pin).
- */
-export function getMapPinHovercardPlacement({
-  pinHeadTopPx,
-  pinTipPx,
-  cardHeightPx,
-  mapHeightPx,
-  gapPx = HOVERCARD_GAP_PX,
-  bufferPx = HOVERCARD_EDGE_BUFFER_PX,
-}: {
-  /** Top edge of the visible pin head, in map-container CSS pixels. */
-  pinHeadTopPx: number;
-  /** Y coord of the pin tip (the lng/lat), in map-container CSS pixels. */
-  pinTipPx: number;
-  cardHeightPx: number;
-  mapHeightPx: number;
-  gapPx?: number;
-  bufferPx?: number;
-}): 'top' | 'bottom' {
-  const fitsAbove = pinHeadTopPx - gapPx - cardHeightPx >= bufferPx;
-  if (fitsAbove) {
-    return 'top';
-  }
-  const fitsBelow = pinTipPx + gapPx + cardHeightPx <= mapHeightPx - bufferPx;
-  if (fitsBelow) {
-    return 'bottom';
-  }
-  return 'top';
-}
 
 /**
  * A map-pin marker for {@link Map}, anchored at its tip. Presentational only —
@@ -87,9 +64,10 @@ export function getMapPinHovercardPlacement({
  * position and active state. The active pin swaps to a coral gradient and
  * grows; otherwise it uses the brand BlueGreen gradient.
  *
- * When `hoverContent` is provided, hovering the pin opens a hovercard above
- * it (flipped below near the top edge). The card is portaled to `document.body`
- * so it can escape the map's `overflow:hidden`.
+ * When `hoverContent` is provided, hovering the pin opens a hovercard beside
+ * it. Placement is collision-aware (base-ui `PreviewCard`): it prefers above
+ * the pin, flips below near the top edge, and shifts horizontally so it never
+ * clips off the left/right edge.
  */
 export function MapMarker({
   longitude,
@@ -113,7 +91,6 @@ export function MapMarker({
     enabled: Boolean(hoverContent),
     longitude,
     latitude,
-    pinHeightPx,
     onActivate: onMouseEnter,
     onDeactivate: onMouseLeave,
     controlledOpen: isOpen,
@@ -158,16 +135,16 @@ export function MapMarker({
           />
         </span>
       </Marker>
-      <MapPinHovercardPortal
+      <MapPinHovercard
         open={Boolean(hoverContent) && hovercard.isOpen}
         position={hovercard.cardPosition}
-        placement={hovercard.placement}
         pinHeightPx={pinHeightPx}
+        onDismiss={hovercard.onCardLeave}
         onMouseEnter={hovercard.onCardEnter}
         onMouseLeave={hovercard.onCardLeave}
       >
         {hoverContent}
-      </MapPinHovercardPortal>
+      </MapPinHovercard>
     </>
   );
 }
@@ -221,60 +198,95 @@ function MapPinSvg({
   );
 }
 
-interface MapPinHovercardPortalProps {
+interface MapPinHovercardProps {
   open: boolean;
+  /** Pin-tip position in viewport (fixed) coords, from the projected marker. */
   position: { x: number; y: number } | null;
-  placement: 'top' | 'bottom';
   pinHeightPx: number;
+  /** Called when base-ui wants to close (e.g. Escape) so the parent can dismiss. */
+  onDismiss: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   children: ReactNode;
 }
 
 /**
- * Hovercard portal mounted on `document.body` so it can escape the map's
- * `overflow:hidden`. `position: fixed` to viewport coords from the parent
- * hook (recomputed on pan / scroll / resize). Rendered as a SIBLING of the
- * maplibre `Marker` — a child would confuse the Marker's single-child slot.
+ * The pin's hovercard, built on the sense hovercard primitive (base-ui
+ * `PreviewCard`). Open state is fully controlled by the marker's hover/tap
+ * machine; there is no `Trigger` — the card anchors to a VIRTUAL element at
+ * the pin's projected screen box, so base-ui's collision middleware flips it
+ * above/below and shifts it horizontally to stay on screen. The virtual anchor
+ * is rebuilt whenever `position` changes (the marker projection updates on map
+ * `move`), which keeps the card glued to the pin during pan. Portaled to
+ * `document.body`; the `sense` class re-scopes tokens outside the `.sense` root.
  */
-function MapPinHovercardPortal({
+function MapPinHovercard({
   open,
   position,
-  placement,
   pinHeightPx,
+  onDismiss,
   onMouseEnter,
   onMouseLeave,
   children,
-}: MapPinHovercardPortalProps) {
-  if (typeof document === 'undefined') {
+}: MapPinHovercardProps) {
+  // A zero-work virtual anchor describing the pin's box (tip at `position`,
+  // head `pinHeightPx` above it), so base-ui positions relative to the pin.
+  const anchor = useMemo(() => {
+    if (!position) {
+      return null;
+    }
+    const halfWidth = pinHeightPx / 2;
+    const rect: DOMRect = {
+      x: position.x - halfWidth,
+      y: position.y - pinHeightPx,
+      left: position.x - halfWidth,
+      top: position.y - pinHeightPx,
+      right: position.x + halfWidth,
+      bottom: position.y,
+      width: pinHeightPx,
+      height: pinHeightPx,
+      toJSON() {
+        return this;
+      },
+    };
+    return { getBoundingClientRect: () => rect };
+  }, [position, pinHeightPx]);
+
+  if (typeof document === 'undefined' || !open || !anchor) {
     return null;
   }
-  if (!open || !position) {
-    return null;
-  }
-  const isTop = placement === 'top';
-  // Portals to document.body, outside any `.sense` wrapper — re-scope so
-  // hovercard content resolves sense tokens.
-  return createPortal(
-    <div
-      className={cn(
-        'sense fixed z-[9999]',
-        isTop ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2',
-      )}
-      style={{
-        left: position.x,
-        top: isTop
-          ? position.y - pinHeightPx - HOVERCARD_GAP_PX
-          : position.y + HOVERCARD_GAP_PX,
+
+  return (
+    <PreviewCardPrimitive.Root
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onDismiss();
+        }
       }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      // Stop a click on the card from falling through to the marker's onClick.
-      onClick={(event) => event.stopPropagation()}
     >
-      {children}
-    </div>,
-    document.body,
+      <PreviewCardPrimitive.Portal>
+        <PreviewCardPrimitive.Positioner
+          anchor={anchor}
+          side="top"
+          align="center"
+          sideOffset={HOVERCARD_GAP_PX}
+          collisionPadding={HOVERCARD_EDGE_BUFFER_PX}
+          // Portals outside any `.sense` wrapper — re-scope so the card content
+          // resolves sense tokens. High z so it clears map chrome.
+          className="sense isolate z-[9999]"
+        >
+          <PreviewCardPrimitive.Popup
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            // Stop a click on the card from falling through to the marker.
+            onClick={(event) => event.stopPropagation()}
+          >
+            {children}
+          </PreviewCardPrimitive.Popup>
+        </PreviewCardPrimitive.Positioner>
+      </PreviewCardPrimitive.Portal>
+    </PreviewCardPrimitive.Root>
   );
 }
 
@@ -283,7 +295,6 @@ interface UseMapPinHovercardArgs {
   enabled: boolean;
   longitude: number;
   latitude: number;
-  pinHeightPx: number;
   onActivate?: () => void;
   onDeactivate?: () => void;
   /** When defined, overrides the internal hover state. Touch-flow uses this. */
@@ -292,7 +303,6 @@ interface UseMapPinHovercardArgs {
 
 interface MapPinHovercardState {
   isOpen: boolean;
-  placement: 'top' | 'bottom';
   cardPosition: { x: number; y: number } | null;
   onPinEnter: () => void;
   onPinLeave: () => void;
@@ -302,8 +312,8 @@ interface MapPinHovercardState {
 
 /**
  * State machine for a map pin's hovercard: open/close + dismiss-delay timer
- * (so the cursor can transit pin→card), above/below placement, viewport
- * position for the portal, and the zoom-dismiss subscription.
+ * (so the cursor can transit pin→card), the pin's viewport position for the
+ * card's virtual anchor, and the zoom-dismiss subscription.
  *
  * `onActivate` / `onDeactivate` fire on the same edges as `isOpen` toggles,
  * with the deactivate delayed in lockstep so the pin stays active during
@@ -315,7 +325,6 @@ function useMapPinHovercard({
   enabled,
   longitude,
   latitude,
-  pinHeightPx,
   onActivate,
   onDeactivate,
   controlledOpen,
@@ -325,7 +334,6 @@ function useMapPinHovercard({
   const isControlled = controlledOpen !== undefined;
   // Controlled prop wins; otherwise fall back to the internal hover state.
   const isOpen = controlledOpen ?? internalIsOpen;
-  const [placement, setPlacement] = useState<'top' | 'bottom'>('top');
   const [cardPosition, setCardPosition] = useState<{
     x: number;
     y: number;
@@ -353,9 +361,10 @@ function useMapPinHovercard({
     };
   }, [enabled, map, isControlled]);
 
-  // Keep the portal's viewport position glued to the pin via maplibre `move`
-  // (continuous pan) and window scroll/resize (the sticky aside shifts the
-  // map's bounding rect until sticky engages).
+  // Keep the card's virtual anchor glued to the pin: reproject on maplibre
+  // `move` (continuous pan) and on window scroll/resize (the sticky aside
+  // shifts the map's bounding rect until sticky engages). Each update sets a
+  // fresh `cardPosition`, which rebuilds the anchor so base-ui repositions.
   useEffect(() => {
     if (!enabled || !isOpen || !map) {
       return;
@@ -367,14 +376,6 @@ function useMapPinHovercard({
         x: rect.left + projected.x,
         y: rect.top + projected.y,
       });
-      setPlacement(
-        getMapPinHovercardPlacement({
-          pinHeadTopPx: projected.y - pinHeightPx,
-          pinTipPx: projected.y,
-          cardHeightPx: HOVERCARD_ESTIMATED_HEIGHT_PX,
-          mapHeightPx: map.getContainer().clientHeight,
-        }),
-      );
     };
     updatePosition();
     map.on('move', updatePosition);
@@ -385,7 +386,7 @@ function useMapPinHovercard({
       window.removeEventListener('scroll', updatePosition);
       window.removeEventListener('resize', updatePosition);
     };
-  }, [enabled, isOpen, map, longitude, latitude, pinHeightPx]);
+  }, [enabled, isOpen, map, longitude, latitude]);
 
   const clearDismissTimer = () => {
     if (dismissTimerRef.current) {
@@ -420,7 +421,6 @@ function useMapPinHovercard({
 
   return {
     isOpen,
-    placement,
     cardPosition,
     onPinEnter: () => {
       onActivate?.();
