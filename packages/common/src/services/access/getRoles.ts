@@ -11,11 +11,14 @@ import {
   isNull,
   lt,
   or,
+  sql,
 } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   accessZones,
+  profileUserToAccessRoles,
+  profileUsers,
 } from '@op/db/schema';
 import { type Permission, fromBitField } from 'access-zones';
 
@@ -24,6 +27,7 @@ import {
   type SortDir,
   decodeCursor,
   encodeCursor,
+  excludeGlobalUsers,
 } from '../../utils/db';
 
 interface Role {
@@ -31,6 +35,7 @@ interface Role {
   name: string;
   description: string | null;
   permissions?: Permission;
+  memberCount?: number;
 }
 
 /**
@@ -66,10 +71,13 @@ type RoleCursor = { value: string; id: string };
  * - If no profileId: returns only exposable global roles (profileId IS NULL
  *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
+ * - If includeMemberCounts is set (and profileId is present): each role gains
+ *   a memberCount — the number of profile members holding that role
  */
 export const getRoles = async (params?: {
   profileId?: string;
   zoneName?: string;
+  includeMemberCounts?: boolean;
   cursor?: string | null;
   limit?: number;
   dir?: SortDir;
@@ -77,6 +85,7 @@ export const getRoles = async (params?: {
   const {
     profileId = null,
     zoneName,
+    includeMemberCounts,
     cursor,
     limit = 25,
     dir = 'asc',
@@ -112,6 +121,49 @@ export const getRoles = async (params?: {
     return cursorCondition
       ? and(profileCondition, cursorCondition)!
       : profileCondition;
+  };
+
+  /**
+   * Attaches memberCount to each role via one grouped query over the
+   * profileUser -> access role junction, scoped to the profile's members and
+   * excluding the global sentinel users (mirroring listProfileUsers).
+   * Only runs when opted in via includeMemberCounts and profileId is present.
+   */
+  const attachMemberCounts = async (items: Role[]): Promise<Role[]> => {
+    if (!includeMemberCounts || !profileId || items.length === 0) {
+      return items;
+    }
+
+    const countRows = await db
+      .select({
+        accessRoleId: profileUserToAccessRoles.accessRoleId,
+        memberCount: sql<number>`count(*)::int`,
+      })
+      .from(profileUserToAccessRoles)
+      .innerJoin(
+        profileUsers,
+        eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+      )
+      .where(
+        and(
+          inArray(
+            profileUserToAccessRoles.accessRoleId,
+            items.map((item) => item.id),
+          ),
+          eq(profileUsers.profileId, profileId),
+          excludeGlobalUsers(profileUsers.authUserId),
+        ),
+      )
+      .groupBy(profileUserToAccessRoles.accessRoleId);
+
+    const countsByRoleId = new Map(
+      countRows.map((row) => [row.accessRoleId, row.memberCount]),
+    );
+
+    return items.map((item) => ({
+      ...item,
+      memberCount: countsByRoleId.get(item.id) ?? 0,
+    }));
   };
 
   // Use join-based query when zoneName is provided for DB-level filtering
@@ -164,7 +216,7 @@ export const getRoles = async (params?: {
         ? encodeCursor<RoleCursor>({ value: lastItem.name, id: lastItem.id })
         : null;
 
-    return { items, next: nextCursor };
+    return { items: await attachMemberCounts(items), next: nextCursor };
   }
 
   // Simple query without permissions when no zoneName
@@ -198,7 +250,7 @@ export const getRoles = async (params?: {
       : null;
 
   return {
-    items,
+    items: await attachMemberCounts(items),
     next: nextCursor,
   };
 };

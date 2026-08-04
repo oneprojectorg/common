@@ -18,12 +18,17 @@ export const RoleSelector = ({
   profileId: string;
   selectedRoleId: string;
   onSelectionChange: (key: Key) => void;
+  /** Client-side badge counts per role (staged items + pending invites);
+   * existing members are counted server-side via listRoles' memberCount. */
   countsByRole: Record<string, number>;
   onRolesLoaded: (roleId: string, roleName: string) => void;
   onRoleNameChange: (roleName: string) => void;
 }) => {
   const t = useTranslations();
-  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({ profileId });
+  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({
+    profileId,
+    includeMemberCounts: true,
+  });
 
   const roles = useMemo(() => {
     return rolesData.items ?? [];
@@ -54,7 +59,7 @@ export const RoleSelector = ({
     >
       <TabList aria-label={t('Select a role')}>
         {roles.map((role) => {
-          const count = countsByRole[role.id] ?? 0;
+          const count = (countsByRole[role.id] ?? 0) + (role.memberCount ?? 0);
           return (
             <Tab key={role.id} id={role.id}>
               <span className="flex items-center gap-1">
