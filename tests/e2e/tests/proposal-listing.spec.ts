@@ -1,6 +1,7 @@
 import {
   EntityType,
   ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
@@ -13,6 +14,7 @@ import { createProposal } from '@op/test';
 import { randomUUID } from 'node:crypto';
 
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
+import { transformFormDataToProcessSchema as horizonSchema } from '../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
 import { expect, test } from '../fixtures/index.js';
 
 /**
@@ -31,6 +33,7 @@ async function createProcessAndInstance({
   processSchema,
   instanceData,
   processName,
+  currentStateId,
 }: {
   org: {
     organizationProfile: { id: string };
@@ -39,6 +42,11 @@ async function createProcessAndInstance({
   processSchema: Record<string, unknown>;
   instanceData: Record<string, unknown>;
   processName: string;
+  /**
+   * Row-level current state. Defaults to the first phase; legacy instances must
+   * pass it explicitly because their phases are keyed by `stateId`.
+   */
+  currentStateId?: string;
 }) {
   const [process] = await db
     .insert(decisionProcesses)
@@ -74,8 +82,10 @@ async function createProcessAndInstance({
       profileId: profile.id,
       instanceData,
       currentStateId:
+        currentStateId ??
         (instanceData as { phases?: { phaseId: string }[] }).phases?.[0]
-          ?.phaseId ?? 'proposalSubmission',
+          ?.phaseId ??
+        'proposalSubmission',
       status: ProcessStatus.PUBLISHED,
       ownerProfileId: org.organizationProfile.id,
     })
@@ -447,5 +457,120 @@ test.describe('Proposal Listing', () => {
         'Training program for regional co-op organizers.',
       ),
     ).toBeVisible();
+  });
+
+  /**
+   * Legacy Horizon Fund–shaped process on the legacy results route: the process
+   * schema is state-based (`states`/`transitions`/`initialState`) and
+   * `instanceData.phases[]` are keyed by `stateId`, so `decision.getInstance`
+   * rejects the instance in output validation — its v2 encoder requires
+   * `processSchema.{id,version,phases}` and `phases[].phaseId`. Nothing on this
+   * screen may call that endpoint, or the whole page 500s.
+   *
+   * Regression guard for the Horizon Fund "All proposals" 500.
+   */
+  test('lists all proposals on the legacy results route for a state-based instance', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    // Real legacy schema: 4 states (submission → review → voting → results),
+    // no `id`/`version`/`phases` envelope.
+    const horizonLegacySchema = horizonSchema({
+      processName: 'Horizon Legacy Results Test',
+      description: 'Legacy state-based process',
+      totalBudget: 100000,
+      budgetCapAmount: 50000,
+      requireBudget: true,
+      categories: ['Energy democracy', 'Housing justice'],
+    });
+
+    // Legacy instanceData: `stateId`/`plannedStartDate` field names and
+    // `currentStateId` inside the JSON blob — what production rows hold.
+    const legacyInstanceData = {
+      budget: 100000,
+      hideBudget: false,
+      currentStateId: 'results',
+      phases: [
+        {
+          stateId: 'submission',
+          plannedStartDate: '2025-09-01',
+          plannedEndDate: '2025-09-30',
+        },
+        {
+          stateId: 'review',
+          plannedStartDate: '2025-10-01',
+          plannedEndDate: '2025-10-15',
+        },
+        {
+          stateId: 'voting',
+          plannedStartDate: '2025-10-16',
+          plannedEndDate: '2025-10-31',
+        },
+        { stateId: 'results', plannedStartDate: '2025-11-01' },
+      ],
+    };
+
+    const { instance } = await createProcessAndInstance({
+      org,
+      processSchema: horizonLegacySchema,
+      instanceData: legacyInstanceData,
+      processName: 'Horizon Legacy Results',
+      currentStateId: 'results',
+    });
+
+    // Submitted, not draft — the results list excludes drafts.
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: 'Community Solar Array',
+        description: '<p>Rooftop solar for the co-op block.</p>',
+        budget: 15000,
+      },
+    });
+
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: 'Tenant Union Support Fund',
+        description: '<p>Organizing support for tenant unions.</p>',
+        budget: 25000,
+      },
+    });
+
+    // The legacy route — /profile/[slug]/decisions/[id] — always renders the
+    // results screen, whose default tab is "Selected Proposals".
+    await authenticatedPage.goto(
+      `/en/profile/${org.organizationProfile.slug}/decisions/${instance.id}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    await authenticatedPage
+      .getByRole('tab', { name: 'All proposals' })
+      .click({ timeout: 30_000 });
+
+    await expect(
+      authenticatedPage.getByRole('link', { name: 'Community Solar Array' }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    await expect(
+      authenticatedPage.getByRole('link', {
+        name: 'Tenant Union Support Fund',
+      }),
+    ).toBeVisible();
+
+    // The 500 screen this route used to render instead of the list.
+    await expect(
+      authenticatedPage.getByText(
+        "Something went wrong on our end. We're working to fix it.",
+      ),
+    ).not.toBeVisible();
   });
 });
