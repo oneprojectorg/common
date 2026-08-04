@@ -419,6 +419,15 @@ test.describe('Decision Manual Selection — full flow', () => {
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 
+    // The post-results NPS survey modal (ProcessSurveyModal) opens on the
+    // Results screen once its response query resolves; while open it inerts the
+    // background, so the results content isn't reachable by role. Dismiss it if
+    // it appears before asserting the funded list.
+    await authenticatedPage
+      .getByRole('button', { name: 'Maybe later' })
+      .click({ timeout: 15_000 })
+      .catch(() => {});
+
     const fundedHeading = authenticatedPage.getByRole('heading', {
       name: 'Selected Proposals',
     });

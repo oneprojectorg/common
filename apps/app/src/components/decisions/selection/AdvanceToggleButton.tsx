@@ -27,7 +27,11 @@ export function AdvanceToggleButton({
       variant="outline"
       pressed={isSelected}
       onPressedChange={onPress}
-      aria-label={t('Advance {title}', { title })}
+      aria-label={
+        isSelected
+          ? t("Don't advance {title}", { title })
+          : t('Advance {title}', { title })
+      }
       // rounded-lg overrides the sm default (rounded-md) so the radius matches
       // the Confirm button in the FooterBar.
       className={cn('relative rounded-lg', className)}
