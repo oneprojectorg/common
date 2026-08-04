@@ -1,6 +1,12 @@
 import { createDecisionRole } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, ProposalStatus, processInstances } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  processInstances,
+  profiles,
+  proposals,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -167,6 +173,47 @@ describe.concurrent('platform.admin.assignReviews', () => {
 
     // Dialog candidates come back too.
     expect(listing.proposals.map((p) => p.id)).toContain(proposal.id);
+  });
+
+  it('resolves titles from the proposal profile, not stale proposalData', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, proposal, phaseId, caller, reviewer } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    // Edits write the title only to the proposal's profile (updateProposal
+    // strips it from proposalData), so proposalData.title goes stale.
+    const editedTitle = `Edited title ${task.id}`;
+    await db
+      .update(profiles)
+      .set({ name: editedTitle })
+      .where(eq(profiles.id, proposal.profileId));
+    const { title: _stale, ...dataWithoutTitle } =
+      proposal.proposalData as Record<string, unknown>;
+    await db
+      .update(proposals)
+      .set({ proposalData: dataWithoutTitle })
+      .where(eq(proposals.id, proposal.id));
+
+    await caller.assignReviews({
+      instanceId,
+      phaseId,
+      reviewerProfileId: reviewer.profileId,
+      proposalIds: [proposal.id],
+    });
+
+    const listing = await caller.listDecisionReviewAssignments({
+      instanceId,
+      phaseId,
+    });
+
+    expect(listing.reviewers[0]?.assignments[0]?.proposalTitle).toBe(
+      editedTitle,
+    );
+    expect(listing.proposals.find((p) => p.id === proposal.id)?.title).toBe(
+      editedTitle,
+    );
   });
 
   it('never assigns a reviewer their own proposal', async ({
