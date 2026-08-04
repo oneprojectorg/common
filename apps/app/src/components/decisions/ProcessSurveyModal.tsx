@@ -545,7 +545,7 @@ export const ProcessSurveyModal = ({
           <DialogFooter>
             <Button
               type="button"
-              variant="link"
+              variant="ghost"
               onClick={onSkip}
               disabled={submitSurvey.isPending}
               className="w-full sm:w-auto"

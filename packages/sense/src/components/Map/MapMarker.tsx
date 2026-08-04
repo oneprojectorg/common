@@ -369,7 +369,11 @@ function useMapPinHovercard({
     if (!enabled || !isOpen || !map) {
       return;
     }
-    const updatePosition = () => {
+
+    let frame: number | null = null;
+
+    const reposition = () => {
+      frame = null;
       const projected = map.project([longitude, latitude]);
       const rect = map.getContainer().getBoundingClientRect();
       setCardPosition({
@@ -377,14 +381,26 @@ function useMapPinHovercard({
         y: rect.top + projected.y,
       });
     };
-    updatePosition();
-    map.on('move', updatePosition);
-    window.addEventListener('scroll', updatePosition, { passive: true });
-    window.addEventListener('resize', updatePosition);
+
+    // Coalesce bursts of move/scroll/resize into at most one reposition per
+    // frame — the handlers only book a frame; `reposition` does the work.
+    const schedule = () => {
+      if (frame === null) {
+        frame = requestAnimationFrame(reposition);
+      }
+    };
+
+    reposition(); // position immediately on open (no first-frame flash)
+    map.on('move', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
     return () => {
-      map.off('move', updatePosition);
-      window.removeEventListener('scroll', updatePosition);
-      window.removeEventListener('resize', updatePosition);
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+      }
+      map.off('move', schedule);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
     };
   }, [enabled, isOpen, map, longitude, latitude]);
 

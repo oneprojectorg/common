@@ -8,9 +8,12 @@ import {
 } from '@op/common/client';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { useRef } from 'react';
-import { useFocusable } from 'react-aria';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@op/sense/Tooltip';
 import type { IconType } from 'react-icons';
 import {
   LuCircleAlert,
@@ -86,28 +89,22 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
   const names = completedReviewers.map((r) => r.profile.name).join(', ');
 
   return (
-    <TooltipTrigger>
-      <FocusableSpan className="text-neutral-gray4 underline decoration-dotted underline-offset-2">
-        {t('{count} Reviewed', { count: completedReviewers.length })}
-      </FocusableSpan>
-      <Tooltip>{names}</Tooltip>
-    </TooltipTrigger>
-  );
-}
-
-function FocusableSpan({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const { focusableProps } = useFocusable({}, ref);
-  return (
-    <span {...focusableProps} ref={ref} tabIndex={0} className={className}>
-      {children}
-    </span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              tabIndex={0}
+              aria-label={names}
+              className="cursor-help underline decoration-dotted underline-offset-2 outline-none"
+            />
+          }
+        >
+          {t('{count} Reviewed', { count: completedReviewers.length })}
+        </TooltipTrigger>
+        <TooltipContent className="text-sm">{names}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

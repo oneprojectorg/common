@@ -73,7 +73,7 @@ export function StandardDecisionPage({
     isLastPhase(currentPhaseId, phases);
 
   const heroTitle =
-    translation?.headline ?? currentPhase?.headline ?? t('SHARE YOUR IDEAS.');
+    translation?.headline ?? currentPhase?.headline ?? t('Share your ideas.');
   const heroDescription =
     translation?.phaseDescription ?? currentPhase?.description;
   const actionBarDescription =

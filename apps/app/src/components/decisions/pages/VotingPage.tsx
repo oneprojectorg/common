@@ -59,7 +59,7 @@ export function VotingPage({
     instance.description ?? instance.instanceData?.templateDescription;
 
   const heroTitle = hasVoted
-    ? t('YOUR BALLOT IS IN.')
+    ? t('Your ballot is in.')
     : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
 
   const resultsDate = nextPhase?.startDate

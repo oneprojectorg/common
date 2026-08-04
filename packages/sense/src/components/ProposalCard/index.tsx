@@ -207,7 +207,10 @@ export function ProposalCard({
           <Separator />
           <div className="flex items-center justify-between gap-3">
             {status}
-            <span className="text-sm text-muted-foreground">
+            {/* `relative z-10` lifts the label above the title's stretched
+                link overlay so an interactive `reviewedLabel` (e.g. a
+                reviewers tooltip trigger) stays hoverable/clickable. */}
+            <span className="relative z-10 text-sm text-muted-foreground">
               {reviewedLabel}
             </span>
           </div>

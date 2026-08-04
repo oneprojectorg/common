@@ -98,7 +98,7 @@ export function ReviewPage({
                 <TranslatedText text="Review Progress" />
               ) : (
                 (currentPhase.headline ?? (
-                  <TranslatedText text="REVIEW PROPOSALS." />
+                  <TranslatedText text="Review proposals." />
                 ))
               )
             }
@@ -133,14 +133,16 @@ export function ReviewPage({
         <div className="w-full p-4 sm:p-8">
           {canReview ? (
             <Tabs className="gap-6" defaultValue="to-review">
-              <TabsList className="flex gap-6">
-                <TabsTrigger value="to-review">
-                  {t('Proposals to review')}
-                </TabsTrigger>
-                <TabsTrigger value="other-proposals">
-                  {t('Other proposals')}
-                </TabsTrigger>
-              </TabsList>
+              <div className="w-full border-b">
+                <TabsList variant="line" className="flex gap-6">
+                  <TabsTrigger value="to-review">
+                    {t('Proposals to review')}
+                  </TabsTrigger>
+                  <TabsTrigger value="other-proposals">
+                    {t('Other proposals')}
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="to-review" className="grow sm:p-0">
                 <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
