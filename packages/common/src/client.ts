@@ -25,6 +25,10 @@ export {
   isPhaseAtOrBefore,
 } from './services/decision/utils/phaseOrder';
 export {
+  getPhaseRubricTemplate,
+  resolvePhaseTemplate,
+} from './services/decision/utils/phaseTemplates';
+export {
   attachmentSchema,
   documentContentSchema,
   proposalAccessSchema,

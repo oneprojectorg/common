@@ -55,6 +55,9 @@ export interface PhaseDefinition {
 
   /** Optional per-phase settings form (use `default` in schema properties) */
   settings?: JSONSchema7 & { ui?: UiSchema };
+
+  /** Phase-specific rubric; overrides the schema-level `rubricTemplate`. */
+  rubricTemplate?: RubricTemplateSchema;
 }
 
 /**

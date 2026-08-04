@@ -313,6 +313,36 @@ export class TestReviewsDataManager {
       .where(eq(processInstances.id, context.instance.instance.id));
   }
 
+  /** Sets a phase-level rubric template (overrides the instance-level one for that phase). */
+  async setPhaseRubricTemplate(
+    instanceId: string,
+    phaseId: string,
+    rubricTemplate: RubricTemplateSchema,
+  ) {
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const instanceData =
+      (instanceRecord?.instanceData as {
+        phases?: Array<{ phaseId: string }>;
+      } | null) ?? {};
+    // Mirror the service posture: an unknown phase is a hard error, not a
+    // silent no-op. Throws NotFoundError, exactly like production reads.
+    assertInstancePhase({ instance: { instanceData }, phaseId });
+    const phases = (instanceData.phases ?? []).map((p) =>
+      p.phaseId === phaseId ? { ...p, rubricTemplate } : p,
+    );
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases,
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+  }
+
   /** Creates a single review assignment and the minimum related data it needs. */
   async createReviewAssignment(opts: CreateReviewAssignmentOptions = {}) {
     const context = opts.context ?? (await this.createContext());
