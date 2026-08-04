@@ -437,12 +437,13 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(authenticatedPage.getByText('Proposal Beta')).toBeVisible();
     await expect(authenticatedPage.getByText('Proposal Gamma')).toHaveCount(0);
 
-    // Results page cards: allocated amount is the primary value, with the
-    // original request rendered as "$X requested" alongside it.
-    await expect(authenticatedPage.getByText('$3,000').first()).toBeVisible();
-    await expect(authenticatedPage.getByText('$5,000 requested')).toBeVisible();
-    await expect(authenticatedPage.getByText('$9,000').first()).toBeVisible();
-    await expect(authenticatedPage.getByText('$8,000 requested')).toBeVisible();
+    // Results cards: the requested budget renders as the tag, and the
+    // allocation as a success "Awarded" badge (allocated may differ from the
+    // request — Alpha under, Beta over).
+    await expect(authenticatedPage.getByText('$3,000 Awarded')).toBeVisible();
+    await expect(authenticatedPage.getByText('$9,000 Awarded')).toBeVisible();
+    await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
+    await expect(authenticatedPage.getByText('$8,000').first()).toBeVisible();
 
     // Selected proposal — last phase, in selection: view page shows both
     // the allocated amount and the "$X requested" secondary label.

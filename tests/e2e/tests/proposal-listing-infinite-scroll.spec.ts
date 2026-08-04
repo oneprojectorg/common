@@ -83,17 +83,26 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
       })
       .toBe(PAGE_LIMIT);
 
-    // Pull the last loaded card into view — survives nested scroll containers
-    // that `window.scrollTo` would miss, and is what triggers the
-    // IntersectionObserver that powers `useInfiniteScroll`.
-    await proposalLink.last().scrollIntoViewIfNeeded();
-
+    // Pull the last loaded card into view on each poll tick — this triggers
+    // the IntersectionObserver that powers `useInfiniteScroll` and cascades
+    // through the remaining pages. Re-resolving `.last()` every tick (and
+    // swallowing a detach) survives the masonry re-distributing its nodes as
+    // columns settle, which would otherwise throw "not attached to the DOM".
     await expect
-      .poll(() => proposalLink.count(), {
-        timeout: 30_000,
-        message:
-          'after scrolling to the bottom, all proposals across pages should render',
-      })
+      .poll(
+        async () => {
+          await proposalLink
+            .last()
+            .scrollIntoViewIfNeeded()
+            .catch(() => {});
+          return proposalLink.count();
+        },
+        {
+          timeout: 30_000,
+          message:
+            'after scrolling to the bottom, all proposals across pages should render',
+        },
+      )
       .toBe(TOTAL_PROPOSALS);
   });
 

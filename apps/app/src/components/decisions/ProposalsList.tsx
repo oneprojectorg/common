@@ -625,11 +625,14 @@ const ProposalsListContent = ({
             proposalsHidden={proposalsHidden}
             excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+            isFetchingNextPage={isFetchingNextPage}
           />
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && renderScrollSentinel(<ProposalListSkeletonGrid />)}
+      {/* Grid mode: the load-more skeletons render inside the masonry (see
+          ProposalMasonry `loadingMore`), so the sentinel is just the trigger. */}
+      {!isMapMode && renderScrollSentinel(null)}
 
       {translation.showBanner && (
         <TranslateBanner

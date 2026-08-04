@@ -1,12 +1,14 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
-import { LuLeaf } from 'react-icons/lu';
+import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { formatBudget } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 
@@ -67,14 +69,25 @@ export const ResultsList = ({
             ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
             : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
 
+          const awardedText =
+            proposal.allocated != null
+              ? formatBudget(proposal.allocated)
+              : undefined;
+
           return (
             <ProposalCardView
               key={proposal.id}
               proposal={proposal}
               href={viewHref}
-              allocated={proposal.allocated}
               showMetrics
               totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
+              awardedLabel={
+                awardedText ? (
+                  <StatusBadge variant="success" icon={LuBadgeCheck}>
+                    {t('{amount} Awarded', { amount: awardedText })}
+                  </StatusBadge>
+                ) : undefined
+              }
             />
           );
         })}

@@ -60,6 +60,8 @@ export interface ProposalsProps {
   proposalsHidden?: boolean;
   /** Reviewer's "Other proposals" tab — tailors the empty state. */
   excludeAssignedForReview?: boolean;
+  /** Next page fetching — appends loading skeletons into the masonry. */
+  isFetchingNextPage?: boolean;
 }
 
 export const ProposalsGrid = ({
@@ -165,6 +167,7 @@ const VotingProposalsList = ({
   hasFilter,
   proposalsHidden,
   excludeAssignedForReview,
+  isFetchingNextPage,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
@@ -294,7 +297,7 @@ const VotingProposalsList = ({
 
   return (
     <>
-      <ProposalMasonry>
+      <ProposalMasonry loadingMore={isFetchingNextPage}>
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
           const isEligibleForVote = isVotingEligible(proposal.status);
@@ -494,6 +497,7 @@ const ViewProposalsList = ({
   hasFilter,
   proposalsHidden,
   excludeAssignedForReview,
+  isFetchingNextPage,
   revisionRequestIdByProposalId,
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
@@ -513,7 +517,7 @@ const ViewProposalsList = ({
   }
 
   return (
-    <ProposalMasonry>
+    <ProposalMasonry loadingMore={isFetchingNextPage}>
       {proposals.map((proposal) => {
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);

@@ -136,8 +136,8 @@ export interface ProposalCardViewProps extends Omit<
   selected?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
   totalVotes?: number;
-  /** Allocated budget — replaces the requested budget tag when present. */
-  allocated?: string | number | null;
+  /** Awarded badge for funded proposals — shown on the right of the votes row. */
+  awardedLabel?: ReactNode;
 }
 
 /**
@@ -157,7 +157,7 @@ export const ProposalCardView = ({
   showStatusBadge = true,
   selected,
   totalVotes,
-  allocated,
+  awardedLabel,
   className,
   ...rest
 }: ProposalCardViewProps) => {
@@ -169,9 +169,6 @@ export const ProposalCardView = ({
     revisionRequested || displayCategories.length === 0
       ? undefined
       : displayCategories;
-
-  const budget =
-    allocated != null ? (formatBudget(allocated) ?? undefined) : budgetText;
 
   const metrics = showMetrics
     ? {
@@ -196,13 +193,14 @@ export const ProposalCardView = ({
       selected={selected}
       headerBadge={headerBadge}
       aside={aside}
-      budget={budget}
+      budget={budgetText}
       tags={tags}
       authors={authors}
       description={description}
       metrics={metrics}
       totalVotes={totalVotes}
       totalVotesLabel={t('Total Votes')}
+      awardedLabel={awardedLabel}
       actions={actions}
       {...rest}
     />

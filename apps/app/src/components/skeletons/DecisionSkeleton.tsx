@@ -1,7 +1,5 @@
 import { Skeleton } from '@op/ui/Skeleton';
 
-import { ProposalListSkeleton } from '../decisions/ProposalListSkeleton';
-
 /**
  * Skeleton for decision page headers.
  * Matches the DecisionHeader + stepper layout.
@@ -45,26 +43,21 @@ export const DecisionHeaderSkeleton = () => {
  * by DecisionStateRouter once instance data resolves.
  */
 export const DecisionContentSkeleton = () => {
+  // Hero + action bar only — no proposal grid. The grid's column count depends
+  // on measured width (ProposalMasonry), which SSR can't know, so rendering it
+  // here would flash the wrong count on hard refresh. The page's own Suspense
+  // fallback (ProposalListSkeleton) draws the one, correctly-measured grid.
   return (
-    <div className="flex min-h-full flex-col gap-8 bg-neutral-offWhite pt-8">
-      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
-        {/* Hero skeleton */}
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Skeleton className="h-12 w-3/4 sm:h-14" />
+    <div className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+      <div className="mx-auto flex w-full flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
+        <div className="flex w-full flex-col items-center gap-3">
+          <Skeleton className="h-8 w-3/4 md:h-14" />
+          <Skeleton className="h-5 w-40" />
           <Skeleton className="h-5 w-1/2" />
         </div>
-
-        {/* Action bar skeleton */}
-        <div className="flex w-full justify-center">
-          <div className="flex w-full max-w-[12rem] flex-col items-center justify-center gap-4 sm:max-w-md sm:flex-row">
-            <Skeleton className="h-10 w-full sm:w-40" />
-            <Skeleton className="h-10 w-full sm:w-40" />
-          </div>
-        </div>
-      </div>
-      <div className="border-t bg-white">
-        <div className="mx-auto bg-white p-4 sm:max-w-6xl sm:p-8">
-          <ProposalListSkeleton />
+        <div className="flex w-full flex-col items-center gap-4 md:flex-row md:justify-center">
+          <Skeleton className="h-10 w-full md:w-40" />
+          <Skeleton className="h-10 w-full md:w-40" />
         </div>
       </div>
     </div>
