@@ -98,6 +98,7 @@ export async function submitManualSelection({
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
   let previousPhaseId: string | null = null;
+  let processResultId: string | null = null;
   let reviewAssignmentInput:
     | Parameters<typeof runGenerateReviewAssignments>[0]
     | null = null;
@@ -282,7 +283,7 @@ export async function submitManualSelection({
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
     if (isLastPhase(currentStateId, lockedPhases ?? [])) {
-      await processResults({
+      processResultId = await processResults({
         processInstanceId,
         tx,
         instance: {
@@ -315,6 +316,25 @@ export async function submitManualSelection({
       })
       .catch((err) => {
         logger.error('Failed to send manual selections confirmed event', {
+          processInstanceId,
+          error: err,
+        });
+      });
+  }
+
+  // Sent after commit so consumers reading on the pooled connection can see
+  // the new result row.
+  if (processResultId) {
+    event
+      .send({
+        name: Events.resultsProcessed.name,
+        data: {
+          processInstanceId,
+          processResultId,
+        },
+      })
+      .catch((err) => {
+        logger.error('Failed to send results processed event', {
           processInstanceId,
           error: err,
         });
