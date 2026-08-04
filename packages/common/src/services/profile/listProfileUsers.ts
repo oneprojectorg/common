@@ -40,6 +40,7 @@ export const listProfileUsers = async ({
   orderBy = 'name',
   dir = 'asc',
   query,
+  roleId,
   cursor,
   limit = 25,
 }: {
@@ -48,6 +49,7 @@ export const listProfileUsers = async ({
   orderBy?: ProfileUserOrderBy;
   dir?: SortDir;
   query?: string;
+  roleId?: string;
   cursor?: string | null;
   limit?: number;
 }): Promise<PaginatedResult<ProfileUserWithRelations>> => {
@@ -125,14 +127,28 @@ export const listProfileUsers = async ({
 
   const cursorCondition = buildCursorCondition();
 
+  // Optional role filter: only members holding the given role via the
+  // profileUser -> access role junction. Purely additive so it composes with
+  // the search and cursor conditions without touching the keyset logic.
+  const roleFilter = roleId
+    ? sql`${profileUsers.id} IN (
+        SELECT pur.profile_user_id
+        FROM "profileUser_to_access_roles" pur
+        WHERE pur.access_role_id = ${roleId}
+      )`
+    : undefined;
+
   // Combine all conditions
   const baseCondition = and(
     eq(profileUsers.profileId, profileId),
     excludeGlobalUsers(profileUsers.authUserId),
   );
-  const conditions = [baseCondition, searchFilter, cursorCondition].filter(
-    Boolean,
-  );
+  const conditions = [
+    baseCondition,
+    searchFilter,
+    roleFilter,
+    cursorCondition,
+  ].filter(Boolean);
   const whereClause =
     conditions.length > 1 ? and(...conditions) : baseCondition;
 

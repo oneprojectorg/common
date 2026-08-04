@@ -4,7 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
-import { useDebounce } from '@op/hooks';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
@@ -38,6 +38,7 @@ import {
   ItemTitle,
 } from '@op/sense/Item';
 import { ProfileItem } from '@op/sense/ProfileItem';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
 import {
@@ -149,11 +150,32 @@ function ProfileInviteModalContent({
 
   const showDraftBanner = isDraft && !adminRoleIds.has(selectedRoleId);
 
-  // Fetch existing pending invites and members
+  // Fetch existing pending invites
   const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
     profileId,
   });
-  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({ profileId });
+
+  // Members for the selected role, paginated server-side. React Query caches
+  // per input key, so each role tab paginates independently and switching
+  // tabs preserves already-loaded pages.
+  const {
+    data: usersData,
+    isPending: isMembersPending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = trpc.profile.listUsers.useInfiniteQuery(
+    { profileId, roleId: selectedRoleId, limit: 25 },
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+      enabled: !!selectedRoleId,
+    },
+  );
+
+  const loadedMembers = useMemo(
+    () => usersData?.pages.flatMap((page) => page.items) ?? [],
+    [usersData],
+  );
 
   const [optimisticInvites, dispatchRemoveInvite] = useOptimistic(
     serverInvites,
@@ -161,7 +183,7 @@ function ProfileInviteModalContent({
   );
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
-    usersData.items,
+    loadedMembers,
     (state, profileUserId: string) =>
       state.filter((u) => u.id !== profileUserId),
   );
@@ -181,13 +203,12 @@ function ProfileInviteModalContent({
     [optimisticInvites, selectedRoleId],
   );
 
-  // Filter members by current role
-  const currentRoleMembers = useMemo(
-    () =>
-      optimisticUsers.filter((u) =>
-        u.roles.some((r) => r.id === selectedRoleId),
-      ),
-    [optimisticUsers, selectedRoleId],
+  // Members are already filtered to the selected role by the server query
+  const currentRoleMembers = optimisticUsers;
+
+  const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
+    fetchNextPage,
+    { hasNextPage, isFetchingNextPage },
   );
 
   // Search for individuals
@@ -213,7 +234,9 @@ function ProfileInviteModalContent({
       .sort((a, b) => b.rank - a.rank);
   }, [searchResults]);
 
-  // Filter out already selected, already invited, and existing members
+  // Filter out already selected, already invited, and existing members.
+  // Note: member exclusion only sees the pages loaded so far for the selected
+  // role; the server (inviteUsersToProfile) dedupes authoritatively.
   const filteredResults = useMemo(() => {
     const selectedIds = new Set(allSelectedItems.map((item) => item.profileId));
     const selectedEmails = new Set(
@@ -235,7 +258,8 @@ function ProfileInviteModalContent({
     );
   }, [flattenedResults, allSelectedItems, optimisticUsers, optimisticInvites]);
 
-  // Check if query is a valid email that hasn't been selected yet (across all roles)
+  // Check if query is a valid email that hasn't been selected yet (across all
+  // roles; checks loaded members only — the server dedupes authoritatively)
   const canAddEmail = useMemo(() => {
     if (!isValidEmail(debouncedQuery)) {
       return false;
@@ -294,7 +318,9 @@ function ProfileInviteModalContent({
   // Calculate total people count across all roles (staged only)
   const totalPeople = allSelectedItems.length;
 
-  // Calculate counts by role for the tab badges (staged + server invites + members)
+  // Calculate counts by role for the tab badges (staged + server invites).
+  // The existing-member portion of each badge comes from the server via
+  // listRoles' memberCount and is added inside RoleSelector.
   const countsByRole = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const [roleId, items] of Object.entries(selectedItemsByRole)) {
@@ -303,13 +329,8 @@ function ProfileInviteModalContent({
     for (const invite of optimisticInvites) {
       counts[invite.accessRoleId] = (counts[invite.accessRoleId] ?? 0) + 1;
     }
-    for (const user of optimisticUsers) {
-      for (const role of user.roles) {
-        counts[role.id] = (counts[role.id] ?? 0) + 1;
-      }
-    }
     return counts;
-  }, [selectedItemsByRole, optimisticInvites, optimisticUsers]);
+  }, [selectedItemsByRole, optimisticInvites]);
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     if (!result.user?.email || !selectedRoleId) {
@@ -378,7 +399,12 @@ function ProfileInviteModalContent({
       } catch {
         toast.error(t('Failed to remove user'));
       }
-      await utils.profile.listUsers.invalidate({ profileId });
+      // Partial input matching also invalidates the per-role infinite queries;
+      // listRoles refreshes the member counts behind the tab badges.
+      await Promise.all([
+        utils.profile.listUsers.invalidate({ profileId }),
+        utils.profile.listRoles.invalidate({ profileId }),
+      ]);
     });
   };
 
@@ -406,9 +432,10 @@ function ProfileInviteModalContent({
         setSearchQuery('');
         onOpenChange(false);
 
-        // Invalidate both lists
+        // Invalidate the lists and the per-role member counts (tab badges)
         utils.profile.listUsers.invalidate({ profileId });
         utils.profile.listProfileInvites.invalidate({ profileId });
+        utils.profile.listRoles.invalidate({ profileId });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');
@@ -423,6 +450,7 @@ function ProfileInviteModalContent({
       return;
     }
 
+    // Loaded members only — the server dedupes authoritatively
     const existingEmails = new Set([
       ...allSelectedItems.map((item) => item.email.toLowerCase()),
       ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
@@ -455,6 +483,7 @@ function ProfileInviteModalContent({
   };
 
   const hasNoItems =
+    !isMembersPending &&
     currentRoleItems.length === 0 &&
     currentRoleInvites.length === 0 &&
     currentRoleMembers.length === 0;
@@ -551,7 +580,7 @@ function ProfileInviteModalContent({
             <span className="text-sm">{t('People with access')}</span>
           )}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
             {/* Staged items (not yet sent) */}
             {currentRoleItems.map((item) => (
               <PersonRow
@@ -600,7 +629,9 @@ function ProfileInviteModalContent({
               );
             })}
 
-            {/* Existing members */}
+            {/* Existing members (loading skeletons while the first page of
+                the selected role is pending) */}
+            {isMembersPending && <MemberRowsSkeleton />}
             {currentRoleMembers.map((user) => (
               <PersonRow
                 key={user.id}
@@ -625,6 +656,17 @@ function ProfileInviteModalContent({
                 })}
               />
             ))}
+
+            {/* Infinite-scroll trigger: loads more members as the user
+                scrolls inside the bounded list container */}
+            {shouldShowTrigger && (
+              <div
+                ref={scrollTriggerRef}
+                className="flex shrink-0 justify-center py-2"
+              >
+                {isFetchingNextPage && <Spinner className="size-4" />}
+              </div>
+            )}
 
             {/* Empty state */}
             {hasNoItems && selectedRoleName ? (
@@ -661,6 +703,16 @@ function ProfileInviteModalContent({
           {isSubmitting ? t('Adding...') : t('Add')}
         </Button>
       </DialogFooter>
+    </>
+  );
+}
+
+function MemberRowsSkeleton() {
+  return (
+    <>
+      {[0, 1, 2].map((row) => (
+        <Skeleton key={row} className="h-14 w-full shrink-0 rounded-lg" />
+      ))}
     </>
   );
 }
