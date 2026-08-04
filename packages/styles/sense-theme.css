@@ -234,7 +234,7 @@
    * styles (authored in em, so one value covers both breakpoints):
    * label -0.01em, title/headline -0.015em, display -0.025em. */
   --text-label: 1rem;
-  --text-label--line-height: 1rem;
+  --text-label--line-height: 1.125rem;
   --text-label--letter-spacing: -0.01em;
   --text-title: 1.125rem;
   --text-title--line-height: 1.75rem;
@@ -250,11 +250,11 @@
 @media (min-width: 768px) {
   :root {
     --text-title: 1.25rem;
-    --text-title--line-height: 1.375rem;
+    --text-title--line-height: 1.75rem;
     --text-headline: 1.875rem;
-    --text-headline--line-height: 2.0625rem;
+    --text-headline--line-height: 2.25rem;
     --text-display: 3rem;
-    --text-display--line-height: 3.25rem;
+    --text-display--line-height: 3.625rem;
   }
 }
 

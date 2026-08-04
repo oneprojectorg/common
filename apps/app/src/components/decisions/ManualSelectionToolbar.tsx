@@ -6,6 +6,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCount } from './ProposalCount';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import { StickyFilterBar } from './StickyFilterBar';
 import { useProposalFilterItems } from './useProposalFilters';
 
 interface Category {
@@ -28,6 +29,8 @@ interface ManualSelectionToolbarProps {
   categories: Category[];
   filters: SelectionFilters;
   onChange: (patch: Partial<SelectionFilters>) => void;
+  /** Px offset where the bar pins (clears the floating phase toggle). */
+  pinOffset?: number;
 }
 
 export const ManualSelectionToolbar = ({
@@ -37,6 +40,7 @@ export const ManualSelectionToolbar = ({
   categories,
   filters,
   onChange,
+  pinOffset,
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
   const { proposalFilter, selectedCategory, sortOrder } = filters;
@@ -47,9 +51,9 @@ export const ManualSelectionToolbar = ({
   });
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
+    <StickyFilterBar pinOffset={pinOffset}>
       <ProposalCount count={count} total={total} />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
         <ResponsiveSelect
           selectedKey={proposalFilter}
           onSelectionChange={(key) => {
@@ -59,12 +63,14 @@ export const ManualSelectionToolbar = ({
             onChange({ proposalFilter: key });
           }}
           aria-label={t('Filter proposals')}
+          className="min-w-40"
           items={filterItems}
         />
         <ResponsiveSelect
           selectedKey={selectedCategory}
           onSelectionChange={(key) => onChange({ selectedCategory: key })}
           aria-label={t('Filter proposals by category')}
+          className="min-w-40"
           items={[
             { id: 'all-categories', label: t('All categories') },
             ...categories.map((category) => ({
@@ -77,6 +83,7 @@ export const ManualSelectionToolbar = ({
           selectedKey={sortOrder}
           onSelectionChange={(key) => onChange({ sortOrder: key })}
           aria-label={t('Sort proposals')}
+          className="min-w-40"
           items={[
             { id: 'votes', label: t('Most votes') },
             { id: 'newest', label: t('Newest First') },
@@ -84,6 +91,6 @@ export const ManualSelectionToolbar = ({
           ]}
         />
       </div>
-    </div>
+    </StickyFilterBar>
   );
 };

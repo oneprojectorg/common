@@ -1,4 +1,5 @@
 {
+  "Remove member?": "إزالة العضو؟",
   "The organizers haven't posted any updates yet": "لم ينشر المنظمون أي تحديثات بعد",
   "The organizers haven't shared any documents or links yet": "لم يشارك المنظمون أي مستندات أو روابط بعد",
   "Roles & Permissions": "الأدوار والأذونات",
@@ -1278,7 +1279,7 @@
   "Resources": "الموارد",
   "Decision side panel tabs": "علامات تبويب لوحة جانب القرار",
   "Decision updates panel": "لوحة تحديثات القرار",
-  "CONFIRM THE WINNING PROPOSALS": "تأكيد المقترحات الفائزة",
+  "Confirm the winning proposals": "تأكيد المقترحات الفائزة",
   "We've selected the suggested winning proposals based on voting rules and total budget.": "اخترنا المقترحات الفائزة المقترحة بناءً على قواعد التصويت والميزانية الإجمالية.",
   "Selected Proposals": "المقترحات المُختارة",
   "No updates yet": "لا توجد تحديثات بعد",

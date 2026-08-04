@@ -156,6 +156,7 @@ export function StandardDecisionPage({
                 <ManualSelectionList
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
+                  pinOffset={pinOffset}
                 />
               </Suspense>
             </APIErrorBoundary>

@@ -19,13 +19,9 @@ export function DecisionHeroBanner({
 }) {
   const heroImageUrl = getPublicUrl(heroImagePath);
 
-  if (!heroImageUrl) {
-    return <>{children}</>;
-  }
-
   return (
-    <section className="relative w-full overflow-hidden">
-      <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />
+    <section className="relative w-full overflow-hidden bg-muted">
+      {heroImageUrl && <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />}
       <div className="relative z-10">{children}</div>
     </section>
   );

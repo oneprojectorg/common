@@ -1,4 +1,5 @@
 {
+  "Remove member?": "Retirer le membre ?",
   "The organizers haven't posted any updates yet": "Les organisateurs n'ont encore publié aucune actualité",
   "The organizers haven't shared any documents or links yet": "Les organisateurs n'ont encore partagé aucun document ni lien",
   "Roles & Permissions": "Rôles et permissions",
@@ -256,7 +257,7 @@
   "No comments yet.": "Aucun commentaire pour le moment.",
   "No comments yet. Be the first to comment!": "Aucun commentaire pour le moment. Soyez le premier à commenter !",
   "SHARE YOUR IDEAS.": "PARTAGEZ VOS IDÉES.",
-  "CONFIRM THE WINNING PROPOSALS": "CONFIRMEZ LES PROPOSITIONS GAGNANTES",
+  "Confirm the winning proposals": "Confirmez les propositions gagnantes",
   "We've selected the suggested winning proposals based on voting rules and total budget.": "Nous avons sélectionné les propositions gagnantes suggérées en fonction des règles de vote et du budget total.",
   "REVIEW PROPOSALS.": "ÉVALUER LES PROPOSITIONS.",
   "YOUR BALLOT IS IN.": "VOTRE VOTE EST ENREGISTRÉ.",

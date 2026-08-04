@@ -62,7 +62,7 @@ export const DecisionActionBar = ({
               <DialogHeader>
                 <DialogTitle>{label ?? t('About the process')}</DialogTitle>
               </DialogHeader>
-              <div className="px-6 py-4">
+              <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
                 {markup && description ? (
                   <div
                     dir="auto"

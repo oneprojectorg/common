@@ -7,14 +7,7 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ProposalCard,
-  ProposalCardContent,
-  ProposalCardFooter,
-  ProposalCardHeader,
-  ProposalCardMeta,
-  ProposalCardPreview,
-} from './ProposalCard';
+import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 
 const NoProposalsFound = () => {
@@ -58,6 +51,8 @@ export const ResultsList = ({
     return <NoProposalsFound />;
   }
 
+  const showVotes = slug !== 'cowop' && Boolean(resultStats?.membersVoted);
+
   return (
     <div className="flex flex-col gap-4 pb-12">
       <div className="flex items-center gap-4">
@@ -73,38 +68,14 @@ export const ResultsList = ({
             : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
 
           return (
-            <ProposalCard key={proposal.id}>
-              <div className="flex flex-col justify-between gap-3 space-y-3">
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    viewHref={viewHref}
-                    allocated={proposal.allocated}
-                  />
-
-                  <ProposalCardMeta proposal={proposal} />
-
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-              </div>
-              <ProposalCardContent>
-                {slug !== 'cowop' && resultStats?.membersVoted ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="h-0 w-full border-b border-neutral-gray-2" />
-
-                    {/* Footer - Total Votes */}
-                    <ProposalCardFooter>
-                      <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                        <span className="font-bold">
-                          {proposal.voteCount ?? 0}
-                        </span>
-                        <span>{t('Total Votes')}</span>
-                      </div>
-                    </ProposalCardFooter>
-                  </div>
-                ) : null}
-              </ProposalCardContent>
-            </ProposalCard>
+            <ProposalCardView
+              key={proposal.id}
+              proposal={proposal}
+              href={viewHref}
+              allocated={proposal.allocated}
+              showMetrics
+              totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
+            />
           );
         })}
       </ProposalMasonry>

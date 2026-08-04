@@ -5,9 +5,14 @@ import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Skeleton } from '@op/sense/Skeleton';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -193,14 +198,19 @@ function ResultsPageContent({
               <APIErrorBoundary
                 fallbacks={{
                   404: () => (
-                    <EmptyState icon={<LuLeaf className="size-6" />}>
-                      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-                        {t('Results are still being processed.')}
-                      </Header3>
-                      <p className="text-base text-neutral-charcoal">
-                        {t('Check back again shortly for the results.')}
-                      </p>
-                    </EmptyState>
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <LuLeaf className="size-6" />
+                        </EmptyMedia>
+                        <EmptyTitle>
+                          {t('Results are still being processed.')}
+                        </EmptyTitle>
+                        <EmptyDescription>
+                          {t('Check back again shortly for the results.')}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
                   ),
                 }}
               >

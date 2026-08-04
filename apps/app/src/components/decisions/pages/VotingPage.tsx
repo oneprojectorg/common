@@ -109,7 +109,7 @@ export function VotingPage({
         </div>
       </DecisionHeroBanner>
 
-      <div className="flex w-full justify-center border-t bg-white">
+      <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:p-8">
           <Suspense fallback={<ProposalListSkeleton />}>
             <ProposalsList

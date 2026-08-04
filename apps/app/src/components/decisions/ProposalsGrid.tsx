@@ -1,66 +1,45 @@
 'use client';
 
-import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
-import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
-import {
-  type DecisionAccess,
-  ProposalStatus,
-  Visibility,
-} from '@op/api/encoders';
-import {
-  type Proposal,
-  type ProposalTemplateSchema,
-  isVotingEligible,
-  normalizeProposalCategories,
-} from '@op/common/client';
-import { match } from '@op/core';
+import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
+import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@op/sense/Dialog';
-import { Empty, EmptyHeader, EmptyMedia } from '@op/sense/Empty';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@op/sense/Empty';
 import {
   FooterBar,
   FooterBarCenter,
   FooterBarEnd,
   FooterBarStart,
 } from '@op/sense/FooterBar';
-import { Header3 } from '@op/sense/Header';
-import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
-import { StatusBadge } from '@op/sense/StatusBadge';
 import { toast } from '@op/sense/Toast';
 import { type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
-import { formatBudget } from './BudgetDisplay';
 import {
   ProposalCardActions,
-  ProposalCardContent,
-  ProposalCardFooter,
-  ProposalCardHeader,
   ProposalCardMenu,
-  ProposalCardMeta,
   ProposalCardOwnerActions,
-  ProposalCardPreview,
   ProposalCardReviseAction,
+  ProposalCardView,
 } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
-import { useCardTranslation } from './ProposalTranslationContext';
-import { RevisionRequestChip } from './RevisionRequestChip';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
-import { VotingProposalCard } from './VotingProposalCard';
-import {
-  getProposalContentPreview,
-  resolveProposalSystemFields,
-} from './proposalContentUtils';
 import {
   CustomFormModal,
   type CustomFormValues,
@@ -113,146 +92,6 @@ export const ProposalsGrid = ({
   );
 };
 
-/**
- * Non-voting proposal card, rebuilt on the `@op/sense/ProposalCard` composite.
- * Maps the app's `Proposal` (title / budget / categories / author / preview /
- * status) into the composite's presentational props and passes the "…" menu
- * and footer actions through its `aside` / `actions` slots.
- */
-const ProposalCardView = ({
-  proposal,
-  href,
-  aside,
-  actions,
-  showMetrics = false,
-  revisionRequested = false,
-  className,
-}: {
-  proposal: Proposal;
-  href?: string;
-  aside?: ReactNode;
-  actions?: ReactNode;
-  showMetrics?: boolean;
-  revisionRequested?: boolean;
-  className?: string;
-}) => {
-  const t = useTranslations();
-  const canLinkToProfile = useCanLinkToProfile();
-  const cardTranslation = useCardTranslation(proposal.profileId);
-  const { title, budget, category } = resolveProposalSystemFields(proposal);
-
-  const titleText =
-    cardTranslation?.title ??
-    (title || proposal.profile.name || t('Untitled Proposal'));
-
-  const budgetText = formatBudget(budget) ?? undefined;
-
-  const displayCategories = cardTranslation?.category
-    ? cardTranslation.category
-    : normalizeProposalCategories(category);
-  const tags =
-    revisionRequested || displayCategories.length === 0
-      ? undefined
-      : displayCategories;
-
-  // Match the old card: link the author to their profile only when linking is
-  // allowed and the author isn't anonymous.
-  const authorHref =
-    proposal.submittedBy &&
-    canLinkToProfile &&
-    !proposal.submittedBy.isAnonymous
-      ? `/profile/${proposal.submittedBy.slug}`
-      : undefined;
-  const authors = proposal.submittedBy
-    ? [
-        {
-          name: proposal.submittedBy.name || proposal.submittedBy.slug || '',
-          avatarSrc: proposal.submittedBy.avatarImage?.name
-            ? (getPublicUrl(proposal.submittedBy.avatarImage.name) ?? undefined)
-            : undefined,
-          href: authorHref,
-        },
-      ]
-    : undefined;
-
-  const translatedPreview = cardTranslation?.preview;
-  const previewText =
-    translatedPreview === undefined
-      ? (proposal.previewText ??
-        getProposalContentPreview(
-          proposal.documentContent,
-          (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
-        ))
-      : undefined;
-  const description = (translatedPreview ?? previewText) || undefined;
-
-  const metrics = showMetrics
-    ? {
-        likes: proposal.likesCount || 0,
-        bookmarks: proposal.followersCount || 0,
-        comments: proposal.commentsCount || 0,
-      }
-    : undefined;
-
-  return (
-    <SenseProposalCard
-      title={titleText}
-      href={href}
-      linkComponent={Link}
-      className={className}
-      headerBadge={
-        revisionRequested ? undefined : (
-          <ProposalStatusBadge proposal={proposal} />
-        )
-      }
-      alert={revisionRequested ? <RevisionRequestChip /> : undefined}
-      aside={aside}
-      budget={budgetText}
-      tags={tags}
-      authors={authors}
-      description={description}
-      metrics={metrics}
-      actions={actions}
-    />
-  );
-};
-
-/** Proposal status/visibility surfaced as the composite's `headerBadge`. */
-const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
-  const t = useTranslations();
-  const { status, visibility, isSelected, isFlagged } = proposal;
-
-  // DRAFT wins over HIDDEN: a draft created in a hidden-by-default phase
-  // should still read as "Draft" to its author, not "Hidden".
-  if (status === ProposalStatus.DRAFT) {
-    return <StatusBadge variant="inactive">{t('Draft')}</StatusBadge>;
-  }
-
-  // A flagged proposal is hidden from members pending a moderation verdict.
-  if (isFlagged) {
-    return <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>;
-  }
-
-  if (visibility === Visibility.HIDDEN) {
-    return <StatusBadge variant="warning">{t('Hidden')}</StatusBadge>;
-  }
-
-  // "Selected" is driven by results selection, not the editable `status`.
-  if (isSelected) {
-    return <StatusBadge variant="success">{t('Selected')}</StatusBadge>;
-  }
-
-  return match(status, {
-    [ProposalStatus.APPROVED]: (
-      <StatusBadge variant="success">{t('Shortlisted')}</StatusBadge>
-    ),
-    [ProposalStatus.REJECTED]: (
-      <StatusBadge variant="inactive">{t('Not shortlisted')}</StatusBadge>
-    ),
-    _: null,
-  });
-};
-
 const NoProposalsFound = ({
   hasFilter,
   excludeAssignedForReview,
@@ -269,12 +108,10 @@ const NoProposalsFound = ({
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-            {t('No other proposals')}
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
+          <EmptyTitle>{t('No other proposals')}</EmptyTitle>
+          <EmptyDescription>
             {t('There are no proposals outside your review queue.')}
-          </p>
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -286,16 +123,16 @@ const NoProposalsFound = ({
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+        <EmptyTitle>
           {hasFilter
             ? t('No proposals found matching the current filters.')
             : t('No proposals yet')}
-        </Header3>
-        <p className="text-base text-neutral-charcoal">
+        </EmptyTitle>
+        <EmptyDescription>
           {hasFilter
             ? t('Try adjusting your filter selection above.')
             : t('You could be the first one to submit a proposal')}
-        </p>
+        </EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
@@ -310,9 +147,9 @@ const HiddenProposalsEmptyState = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <p className="text-base text-neutral-charcoal">
+        <EmptyDescription>
           {t("You'll see your proposal here once you submit.")}
-        </p>
+        </EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
@@ -471,90 +308,78 @@ const VotingProposalsList = ({
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
             return (
-              <VotingProposalCard
+              <ProposalCardView
                 key={proposal.id}
-                proposalId={proposal.id}
-                isSelected={isVotedFor}
-                isVotedFor={isVotedFor}
-              >
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    viewHref={proposalHref}
-                    menu={
-                      isVotedFor ? (
-                        // TODO(sense-migration): sense Checkbox has no
-                        // shape="circle"/borderColor; approximated with
-                        // rounded-full — revisit against Figma vote design.
-                        <Checkbox
-                          checked
-                          disabled
-                          aria-label={t('Selected proposal')}
-                          className="rounded-full"
-                        />
-                      ) : undefined
-                    }
-                  />
-                  <ProposalCardMeta proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-              </VotingProposalCard>
+                proposal={proposal}
+                href={proposalHref}
+                selected={isVotedFor}
+                showStatusBadge={false}
+                aside={
+                  isVotedFor ? (
+                    // TODO(sense-migration): sense Checkbox has no
+                    // shape="circle"/borderColor; approximated with
+                    // rounded-full — revisit against Figma vote design.
+                    <Checkbox
+                      checked
+                      disabled
+                      aria-label={t('Selected proposal')}
+                      className="rounded-full"
+                    />
+                  ) : undefined
+                }
+              />
             );
           }
 
-          // Active voting view: interactive cards with selection
+          // Active voting view: the whole card is a selection toggle.
           if (isEligibleForVote) {
             return (
-              <VotingProposalCard
+              <ProposalCardView
                 key={proposal.id}
-                proposalId={proposal.id}
-                isVotingEnabled={true}
-                isReadOnly={isReadOnly}
-                isSelected={isSelected}
-                isVotedFor={isVotedFor}
-                onToggle={toggleProposal}
-              >
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    menu={
-                      (canManageProposals ||
-                        proposal.isEditable ||
-                        showCheckbox) && (
-                        <div className="flex items-center gap-2">
-                          {(canManageProposals || proposal.isEditable) && (
-                            <ProposalCardMenu
-                              proposal={proposal}
-                              canManage={canManageProposals}
-                            />
-                          )}
-                          {showCheckbox && (
-                            <div onClick={(e) => e.stopPropagation()}>
-                              {/* TODO(sense-migration): sense Checkbox has no
-                                  shape="circle"/borderColor; approximated with
-                                  rounded-full — revisit against Figma. */}
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => {
-                                  toggleProposal(proposal.id);
-                                }}
-                                aria-label={
-                                  isSelected
-                                    ? t('Deselect proposal')
-                                    : t('Select proposal')
-                                }
-                                className="rounded-full"
-                              />
-                            </div>
-                          )}
+                proposal={proposal}
+                selected={isSelected}
+                showStatusBadge={false}
+                role="button"
+                aria-pressed={isSelected}
+                aria-label={
+                  isSelected ? t('Deselect proposal') : t('Select proposal')
+                }
+                onClick={() => toggleProposal(proposal.id)}
+                className="cursor-pointer"
+                aside={
+                  canManageProposals || proposal.isEditable || showCheckbox ? (
+                    <div className="flex items-center gap-2">
+                      {(canManageProposals || proposal.isEditable) && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <ProposalCardMenu
+                            proposal={proposal}
+                            canManage={canManageProposals}
+                          />
                         </div>
-                      )
-                    }
-                  />
-                  <ProposalCardMeta withLink={false} proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-                <ProposalCardFooter>
+                      )}
+                      {showCheckbox && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {/* TODO(sense-migration): sense Checkbox has no
+                              shape="circle"/borderColor; approximated with
+                              rounded-full — revisit against Figma. */}
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => {
+                              toggleProposal(proposal.id);
+                            }}
+                            aria-label={
+                              isSelected
+                                ? t('Deselect proposal')
+                                : t('Select proposal')
+                            }
+                            className="rounded-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : undefined
+                }
+                actions={
                   <ButtonLink
                     href={proposalHref}
                     variant="outline"
@@ -562,8 +387,8 @@ const VotingProposalsList = ({
                   >
                     {t('Read full proposal')}
                   </ButtonLink>
-                </ProposalCardFooter>
-              </VotingProposalCard>
+                }
+              />
             );
           } else {
             return (
@@ -603,7 +428,7 @@ const VotingProposalsList = ({
                     {
                       numSelected,
                       max: maxVotesPerMember,
-                      highlight: (chunks: React.ReactNode) => (
+                      highlight: (chunks: ReactNode) => (
                         <span className="text-primary-teal">{chunks}</span>
                       ),
                     },
@@ -612,7 +437,7 @@ const VotingProposalsList = ({
                     '<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected',
                     {
                       numSelected,
-                      highlight: (chunks: React.ReactNode) => (
+                      highlight: (chunks: ReactNode) => (
                         <span className="text-primary-teal">{chunks}</span>
                       ),
                     },

@@ -20,6 +20,7 @@ const statusBadgeVariants = cva(
         inactive: 'bg-muted text-foreground [&>svg]:text-muted-foreground',
         'in-progress': 'bg-teal-50 text-foreground [&>svg]:text-teal-600',
         warning: 'bg-warning-muted text-foreground [&>svg]:text-warning',
+        revision: 'bg-warning-muted text-foreground [&>svg]:text-warning',
         alert: 'bg-destructive-muted text-foreground [&>svg]:text-destructive',
         success: 'bg-success-muted text-foreground [&>svg]:text-success',
         ghost:
@@ -39,6 +40,7 @@ const VARIANT_ICON: Record<
   inactive: LuCircleDashed,
   'in-progress': LuHourglass,
   warning: LuCircleAlert,
+  revision: LuCircleAlert,
   alert: LuFlag,
   success: LuCircleCheck,
   ghost: LuCircleDashed,

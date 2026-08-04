@@ -156,7 +156,9 @@ const DecisionTitle = ({
   title: string;
   className?: string;
 }) => (
-  <Header2 className={cn('truncate font-serif text-label', className)}>
+  <Header2
+    className={cn('truncate text-label leading-5 font-normal', className)}
+  >
     <bdi>{title}</bdi>
   </Header2>
 );

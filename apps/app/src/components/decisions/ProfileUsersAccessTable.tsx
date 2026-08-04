@@ -183,12 +183,18 @@ const RemoveFromProcessDialog = ({
   const t = useTranslations();
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent size="sm">
+      <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogMedia className="bg-red-50">
             <LuCircleAlert className="text-destructive" />
           </AlertDialogMedia>
-          <AlertDialogTitle>{t('Remove {name}?', { name })}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {/* Email-only members (no display name) would blow out the title;
+                fall back to a generic title — the description still names them. */}
+            {/^\S+@\S+$/.test(name)
+              ? t('Remove member?')
+              : t('Remove {name}?', { name })}
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {processName
               ? t(

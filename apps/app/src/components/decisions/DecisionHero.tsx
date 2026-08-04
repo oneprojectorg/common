@@ -26,21 +26,16 @@ export function DecisionHero({
   return (
     <div className="flex flex-col gap-2 text-center">
       {variant === 'results' ? (
-        <Header1 className="font-serif font-light uppercase md:text-title-xxl">
+        <Header1>
           <bdi>{title}</bdi>
         </Header1>
       ) : hasImage ? (
-        // White comes from the wrapper, not Header1's className: twMerge
-        // misreads the custom text-title-lg size as a color and drops it
-        // when text-white is merged in, leaving the h1 unsized on mobile.
-        <div className="text-white">
-          <Header1 className="uppercase md:text-title-xxl">
-            <bdi>{title}</bdi>
-          </Header1>
-        </div>
+        <Header1 className="text-white">
+          <bdi>{title}</bdi>
+        </Header1>
       ) : (
-        <GradientHeader className="uppercase" gradient={gradient}>
-          <Header1 className="md:text-title-xxl">
+        <GradientHeader gradient={gradient}>
+          <Header1>
             <bdi>{title}</bdi>
           </Header1>
         </GradientHeader>
