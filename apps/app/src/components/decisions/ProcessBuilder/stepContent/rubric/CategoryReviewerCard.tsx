@@ -4,17 +4,26 @@ import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
-import { Avatar } from '@op/ui/Avatar';
-import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import type { Option } from '@op/ui/MultiSelectComboBox';
-import { toast } from '@op/ui/Toast';
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
+import {
+  Combobox,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import { toast } from '@op/sense/Toast';
 import { usePostHog } from 'posthog-js/react';
 import { useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+/** Picker option: `{ value, label }` so base-ui resolves the label automatically. */
+type ReviewerOption = { value: string; label: string };
 
 type CategoryWithReviewers =
   RouterOutput['decision']['listCategoryReviewers']['categories'][number];
@@ -50,7 +59,7 @@ export function CategoryReviewerCard({
   const addReviewer = trpc.decision.addCategoryReviewer.useMutation({
     onError: (error) => {
       logger.error('Failed to add category reviewer', { error });
-      toast.error({ message: t('Could not add reviewer. Please try again.') });
+      toast.error(t('Could not add reviewer. Please try again.'));
     },
     onSettled: () => {
       void invalidate();
@@ -60,9 +69,7 @@ export function CategoryReviewerCard({
   const removeReviewer = trpc.decision.removeCategoryReviewer.useMutation({
     onError: (error) => {
       logger.error('Failed to remove category reviewer', { error });
-      toast.error({
-        message: t('Could not remove reviewer. Please try again.'),
-      });
+      toast.error(t('Could not remove reviewer. Please try again.'));
     },
     onSettled: () => {
       void invalidate();
@@ -72,7 +79,7 @@ export function CategoryReviewerCard({
   // Candidates for this card: eligible role-holders not already assigned here,
   // so the same set can never be double-added. The in-flight add is excluded
   // too, so it can't be re-picked before the refetch reflects it.
-  const options = useMemo<Option[]>(() => {
+  const options = useMemo<ReviewerOption[]>(() => {
     const assignedIds = new Set(reviewers.map((r) => r.reviewerProfileId));
     const pendingId = addReviewer.isPending
       ? addReviewer.variables?.reviewerProfileId
@@ -82,7 +89,7 @@ export function CategoryReviewerCard({
         (reviewer) =>
           !assignedIds.has(reviewer.id) && reviewer.id !== pendingId,
       )
-      .map((reviewer) => ({ id: reviewer.id, label: reviewer.name }));
+      .map((reviewer) => ({ value: reviewer.id, label: reviewer.name }));
   }, [
     eligibleReviewers,
     reviewers,
@@ -90,7 +97,7 @@ export function CategoryReviewerCard({
     addReviewer.variables,
   ]);
 
-  const handleAdd = (selected: Option[]) => {
+  const handleAdd = (selected: ReviewerOption[]) => {
     // One add at a time — a second concurrent mutate would race the unique
     // constraint and surface a spurious error toast.
     if (addReviewer.isPending) {
@@ -106,14 +113,14 @@ export function CategoryReviewerCard({
         decisionInstanceId: processInstanceId,
         additionalProps: {
           category_id: category.id,
-          reviewer_profile_id: added.id,
+          reviewer_profile_id: added.value,
         },
       }),
     );
     addReviewer.mutate({
       processInstanceId,
       taxonomyTermId: category.id,
-      reviewerProfileId: added.id,
+      reviewerProfileId: added.value,
     });
   };
 
@@ -142,13 +149,23 @@ export function CategoryReviewerCard({
         </span>
       </div>
 
-      <MultiSelectComboBox
-        items={options}
-        value={[]}
-        onChange={handleAdd}
-        placeholder={t('Add reviewer…')}
-        isLoading={addReviewer.isPending}
-      />
+      {/* Assign picker: multi-select whose value stays empty — assigned
+          reviewers render as removable rows below, not as combobox chips. */}
+      <Combobox multiple items={options} value={[]} onValueChange={handleAdd}>
+        <ComboboxChips>
+          <ComboboxChipsInput placeholder={t('Add reviewer…')} />
+        </ComboboxChips>
+        <ComboboxContent>
+          <ComboboxEmpty>{t('No results')}</ComboboxEmpty>
+          <ComboboxList>
+            {(item: ReviewerOption) => (
+              <ComboboxItem key={item.value} value={item}>
+                {item.label}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
 
       {isEmpty ? (
         <p className="text-sm text-primary-orange2">
@@ -170,18 +187,18 @@ export function CategoryReviewerCard({
                 className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  <Avatar
-                    placeholder={reviewer.profile.name}
-                    className="size-6 shrink-0"
-                  />
+                  <Avatar className="size-6 shrink-0">
+                    <AvatarFallback name={reviewer.profile.name} />
+                  </Avatar>
                   <span className="text-base text-neutral-black">
                     {reviewer.profile.name}
                   </span>
                 </div>
-                <IconButton
-                  size="small"
-                  isDisabled={isRemoving}
-                  onPress={() => {
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  loading={isRemoving}
+                  onClick={() => {
                     posthog.capture(
                       'category_reviewer_removed',
                       getDecisionCommonProperties({
@@ -202,12 +219,8 @@ export function CategoryReviewerCard({
                     name: reviewer.profile.name,
                   })}
                 >
-                  {isRemoving ? (
-                    <LoadingSpinner className="size-4" color="gray" />
-                  ) : (
-                    <LuX className="size-4" />
-                  )}
-                </IconButton>
+                  <LuX className="size-4" />
+                </Button>
               </div>
             );
           })}
