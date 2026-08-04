@@ -23,12 +23,7 @@ import {
 } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@op/sense/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { useEffect, useId, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuTrash2, LuX } from 'react-icons/lu';
@@ -551,6 +546,17 @@ function SingleSelectCriterionConfig({
     setOpenDescriptionIds((prev) => new Set(prev).add(id));
   };
 
+  const handleRemoveDescription = (id: string) => {
+    // Clear the stored description too, so a collapsed field can't leave a
+    // hidden-but-saved description on the option.
+    handleUpdateOptionDescription(id, '');
+    setOpenDescriptionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
   const handleRemoveOption = (id: string) => {
     updateOptions(options.filter((opt) => opt.id !== id));
   };
@@ -567,15 +573,14 @@ function SingleSelectCriterionConfig({
 
   return (
     <div ref={containerRef} className="space-y-2">
-      <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
-
+      <h4 className="text-strong">{t('Options')}</h4>
       <Sortable
         items={options}
         onChange={updateOptions}
         dragTrigger="handle"
         getItemLabel={(item) => item.value || t('Option')}
         renderDragPreview={renderDragPreview}
-        className="gap-2"
+        className="gap-4"
         aria-label={t('Options')}
       >
         {(option, { dragHandleProps }) => {
@@ -598,57 +603,67 @@ function SingleSelectCriterionConfig({
                   placeholder={t('Option {number}', { number: index + 1 })}
                   className="w-full bg-white"
                 />
-                {canRemove ? (
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    aria-label={t('Remove option')}
-                    onClick={() => handleRemoveOption(option.id)}
-                    className="text-neutral-gray3 hover:text-neutral-charcoal"
-                  >
-                    <LuX className="size-4" />
-                  </Button>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label={t('Remove option')}
-                            aria-disabled
-                            className="cursor-default text-neutral-gray3 opacity-30"
-                          />
-                        }
+
+                <Tooltip disabled={canRemove}>
+                  <TooltipTrigger
+                    render={
+                      // aria-disabled (not the `disabled` attr) so the button
+                      // still receives hover/focus — a disabled <button> eats
+                      // pointer events, so the tooltip explaining WHY would never
+                      // fire. The onClick guard keeps it inert when blocked.
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label={t('Remove option')}
+                        aria-disabled={!canRemove || undefined}
+                        className={cn(
+                          !canRemove &&
+                            'cursor-not-allowed opacity-50 hover:bg-transparent',
+                        )}
+                        onClick={() => {
+                          if (canRemove) {
+                            handleRemoveOption(option.id);
+                          }
+                        }}
                       >
                         <LuX className="size-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t('At least two options are required')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>
+                    {t('At least two options are required')}
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               {openDescriptionIds.has(option.id) ? (
-                <Textarea
-                  aria-label={t('Description')}
-                  autoFocus={focusDescriptionIdRef.current === option.id}
-                  value={option.description ?? ''}
-                  onChange={(e) =>
-                    handleUpdateOptionDescription(option.id, e.target.value)
-                  }
-                  placeholder={t('Add a description')}
-                  className="ms-8 me-10 min-h-16 resize-none bg-white"
-                />
+                <div className="flex w-full flex-col gap-2">
+                  <Textarea
+                    aria-label={t('Description')}
+                    autoFocus={focusDescriptionIdRef.current === option.id}
+                    value={option.description ?? ''}
+                    onChange={(e) =>
+                      handleUpdateOptionDescription(option.id, e.target.value)
+                    }
+                    placeholder={t('Add a description')}
+                    className="ms-8 min-h-16 w-[calc(100%-calc(--spacing*16))] resize-none bg-white"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleRemoveDescription(option.id)}
+                    className="ms-8 mb-4 self-start"
+                  >
+                    <LuX className="size-4" />
+                    <span>{t('Remove description')}</span>
+                  </Button>
+                </div>
               ) : (
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={() => handleOpenDescription(option.id)}
-                  className="ms-8 gap-1 self-start p-0 text-primary-teal hover:text-primary-tealBlack"
+                  className="ms-8 self-start"
                 >
                   <LuPlus className="size-4" />
                   <span>{t('Add a description')}</span>
@@ -661,9 +676,8 @@ function SingleSelectCriterionConfig({
 
       <Button
         variant="ghost"
-        size="sm"
         onClick={handleAddOption}
-        className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
+        className="mt-2 hover:bg-secondary"
       >
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>

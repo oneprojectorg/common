@@ -1361,6 +1361,7 @@
   "Resource type": "نوع المورد",
   "Add a title": "أضف عنوانًا",
   "Add a description": "أضف وصفًا",
+  "Remove description": "إزالة الوصف",
   "Added on {date}": "أُضيف في {date}",
   "Added {date}": "أُضيف {date}",
   "Pinned Resources": "الموارد المثبتة",

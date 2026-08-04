@@ -520,6 +520,7 @@ function PhaseDetailForm({
                 updateRules({
                   reviews: { ...phase.rules?.reviews, openReviews: true },
                 });
+                setShowOpenReviewsModal(false);
               }}
             >
               {t('Enable')}
