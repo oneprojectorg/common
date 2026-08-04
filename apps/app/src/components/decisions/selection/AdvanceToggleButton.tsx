@@ -36,11 +36,12 @@ export function AdvanceToggleButton({
       // the Confirm button in the FooterBar.
       className={cn('relative rounded-lg', className)}
     >
-      {/* Invisible placeholder reserves the wider "Advancing" width so the
-       * toggle doesn't reflow when its label changes. */}
+      {/* Label stays "Advance" in both states (per design); only the check
+       * icon toggles. Invisible placeholder always includes the icon so the
+       * toggle reserves the checked-state width and doesn't reflow on press. */}
       <span className="invisible flex items-center gap-1">
         <LuCheck className="size-4" />
-        {t('Advancing')}
+        {t('Advance')}
       </span>
       <span className="absolute inset-0 flex items-center justify-center gap-1">
         {isSelected && <LuCheck className="size-4" />}

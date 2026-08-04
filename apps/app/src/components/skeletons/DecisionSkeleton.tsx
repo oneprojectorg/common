@@ -94,57 +94,6 @@ export const DecisionHeaderBarSkeleton = () => {
 };
 
 /**
- * Skeleton for the decision overview tab. Mirrors DecisionOverview's real
- * layout — full-bleed hero band, then the 12-col grid with the phase timeline
- * sidebar and the About body — so the resolved page lands without a layout
- * shift.
- */
-export const OverviewSkeleton = () => {
-  return (
-    <div className="flex w-full flex-col">
-      {/* Hero band: same 12-col grid as OverviewHero so the content column
-          width (and therefore text wrap + band height) matches on resolve. */}
-      <div className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
-        <div className="mx-auto flex w-full flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
-          <div className="flex w-full flex-col items-center gap-3">
-            <Skeleton className="h-8 w-3/4 md:h-14" />
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-5 w-1/2" />
-          </div>
-          <div className="flex w-full flex-col items-center gap-4 md:flex-row md:justify-center">
-            <Skeleton className="h-10 w-full md:w-40" />
-            <Skeleton className="h-10 w-full md:w-40" />
-          </div>
-        </div>
-      </div>
-      {/* Sidebar (phase timeline) + About body grid */}
-      <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
-        <div className="flex flex-col gap-4 md:col-span-4">
-          <Skeleton className="h-4 w-32" />
-          {/* Mirrors DecisionPhaseTimeline: a gap-6 list of left-bordered
-              PhaseCards (date row + serif name), not dot rows. */}
-          <div className="flex flex-col gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex flex-col gap-2 border-s px-4 py-2">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-6 w-2/3" />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex min-w-0 flex-col gap-3 md:col-span-7 md:col-start-6">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-11/12" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/**
  * Full page skeleton for decision pages.
  * Includes header, hero, action bar, and content area.
  */

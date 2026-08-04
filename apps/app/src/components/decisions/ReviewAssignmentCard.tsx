@@ -93,9 +93,11 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
       <Tooltip>
         <TooltipTrigger
           render={
+            // No aria-label: the visible "{count} Reviewed" text is the
+            // accessible name; the tooltip popup (names) is exposed as the
+            // description via base-ui's aria-describedby when open.
             <span
               tabIndex={0}
-              aria-label={names}
               className="cursor-help underline decoration-dotted underline-offset-2 outline-none"
             />
           }
