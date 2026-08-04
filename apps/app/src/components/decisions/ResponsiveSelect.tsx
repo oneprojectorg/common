@@ -5,6 +5,7 @@ import { Button } from '@op/sense/Button';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -124,11 +125,17 @@ export function ResponsiveSelect<T extends string>({
         <SelectValue>{() => displayLabel}</SelectValue>
       </SelectTrigger>
       <SelectContent size={size}>
-        {items.map((item) => (
-          <SelectItem key={item.id} value={item.id} disabled={item.isDisabled}>
-            {item.label}
-          </SelectItem>
-        ))}
+        <SelectGroup>
+          {items.map((item) => (
+            <SelectItem
+              key={item.id}
+              value={item.id}
+              disabled={item.isDisabled}
+            >
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   );

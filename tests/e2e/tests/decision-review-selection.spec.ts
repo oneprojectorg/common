@@ -191,7 +191,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
 
     // ── 3. Confirm the advance in the modal.
     const advanceDialog = authenticatedPage
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .and(authenticatedPage.locator(':not([data-slot="toast"])'));
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Voting?')).toBeVisible();
@@ -325,7 +325,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     });
     await page.getByRole('button', { name: 'Advance' }).first().click();
     const advanceDialog = page
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
     await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });

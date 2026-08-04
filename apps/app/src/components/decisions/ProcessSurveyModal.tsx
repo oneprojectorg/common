@@ -25,6 +25,7 @@ import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -315,11 +316,13 @@ export const ProcessSurveyModal = ({
                     <SelectValue placeholder={t('Select a rating')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {NPS_SCORES.map((score) => (
-                      <SelectItem key={score} value={score}>
-                        {score}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {NPS_SCORES.map((score) => (
+                        <SelectItem key={score} value={score}>
+                          {score}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
                 <FieldDescription>

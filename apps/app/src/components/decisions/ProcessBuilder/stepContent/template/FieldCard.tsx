@@ -17,6 +17,7 @@ import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -190,11 +191,13 @@ export function FieldCard({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FIELD_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.type} value={opt.type}>
-                      {t(opt.labelKey)}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {FIELD_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.type} value={opt.type}>
+                        {t(opt.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </Field>

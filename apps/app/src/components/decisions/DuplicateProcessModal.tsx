@@ -17,6 +17,7 @@ import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -269,11 +270,13 @@ const StewardSelect = ({
           <SelectValue placeholder={t('Select')} />
         </SelectTrigger>
         <SelectContent>
-          {profileItems.map((profile) => (
-            <SelectItem key={profile.id} value={profile.id}>
-              {profile.name}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {profileItems.map((profile) => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </Field>
