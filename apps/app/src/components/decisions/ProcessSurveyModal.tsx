@@ -248,7 +248,7 @@ export const ProcessSurveyModal = ({
     <Dialog open={isOpen}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0"
+        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-120"
       >
         <DialogHeader>
           <DialogTitle>{t('Your voice shapes Common.')}</DialogTitle>
@@ -265,7 +265,7 @@ export const ProcessSurveyModal = ({
             </p>
 
             <FieldSet>
-              <FieldLegend>
+              <FieldLegend variant="label">
                 {t('Were you an admin during this process?')}{' '}
                 <RequiredAsterisk />
               </FieldLegend>
@@ -334,7 +334,7 @@ export const ProcessSurveyModal = ({
               </Field>
             ) : (
               <FieldSet>
-                <FieldLegend>
+                <FieldLegend variant="label">
                   {t(
                     'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
                   )}{' '}
@@ -347,12 +347,21 @@ export const ProcessSurveyModal = ({
                     setErrors((prev) => ({ ...prev, npsScore: undefined }));
                   }}
                   aria-invalid={!!errors.npsScore}
-                  className="flex w-full flex-row justify-between gap-0"
+                  className="flex w-full flex-row justify-between gap-1"
                 >
                   {NPS_SCORES.map((score) => (
-                    <Field key={score} className="flex-1 items-center gap-1">
-                      <RadioGroupItem id={`nps-${score}`} value={score} />
-                      <FieldLabel htmlFor={`nps-${score}`}>{score}</FieldLabel>
+                    <Field key={score} className="items-center gap-1">
+                      <RadioGroupItem
+                        className="size-4!"
+                        id={`nps-${score}`}
+                        value={score}
+                      />
+                      <FieldLabel
+                        htmlFor={`nps-${score}`}
+                        className="justify-center"
+                      >
+                        {score}
+                      </FieldLabel>
                     </Field>
                   ))}
                 </RadioGroup>
@@ -367,15 +376,19 @@ export const ProcessSurveyModal = ({
 
             {isPromoterCohort && (
               <FieldSet>
-                <FieldLegend>
-                  {t('What makes Common worth recommending?')}{' '}
+                <FieldLegend variant="label">
+                  {t('What makes Common worth recommending?')}
                   <RequiredAsterisk />
                 </FieldLegend>
                 <FieldDescription>
                   {t('Select all that apply')}
                 </FieldDescription>
                 {promoterOrder.map((id) => (
-                  <Field key={id} orientation="horizontal">
+                  <Field
+                    key={id}
+                    className="items-start"
+                    orientation="horizontal"
+                  >
                     <Checkbox
                       id={`promoter-${id}`}
                       checked={promoterReasons.includes(id)}
@@ -390,6 +403,7 @@ export const ProcessSurveyModal = ({
                           promoterReasons: undefined,
                         }));
                       }}
+                      className="mt-1"
                     />
                     <FieldLabel htmlFor={`promoter-${id}`}>
                       {promoterLabels[id]}
@@ -450,7 +464,11 @@ export const ProcessSurveyModal = ({
                   {t('Select all that apply')}
                 </FieldDescription>
                 {detractorOrder.map((id) => (
-                  <Field key={id} orientation="horizontal">
+                  <Field
+                    key={id}
+                    className="items-start"
+                    orientation="horizontal"
+                  >
                     <Checkbox
                       id={`detractor-${id}`}
                       checked={detractorReasons.includes(id)}
@@ -465,6 +483,7 @@ export const ProcessSurveyModal = ({
                           detractorReasons: undefined,
                         }));
                       }}
+                      className="mt-1"
                     />
                     <FieldLabel htmlFor={`detractor-${id}`}>
                       {detractorLabels[id]}
