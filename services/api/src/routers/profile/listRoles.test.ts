@@ -1,8 +1,14 @@
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
-import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
+import {
+  accessRolePermissionsOnAccessZones,
+  accessRoles,
+  profileUserToAccessRoles,
+  profileUsers,
+} from '@op/db/schema';
 import { ROLES, ZONES } from '@op/db/seedData/accessControl';
 import { toBitField } from 'access-zones';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
@@ -436,6 +442,155 @@ describe.concurrent('profile.listRoles', () => {
     expect(result.items.length).toBe(2);
     // Should return null cursor since there are no more results
     expect(result.next).toBeNull();
+  });
+
+  describe('includeMemberCounts', () => {
+    it('should include per-role member counts when includeMemberCounts is set', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      // Two custom roles: one held by both members, one held by nobody
+      const [heldRole, emptyRole] = await db
+        .insert(accessRoles)
+        .values([
+          { name: `Held Role ${task.id}`, profileId: profile.id },
+          { name: `Vacant Role ${task.id}`, profileId: profile.id },
+        ])
+        .returning();
+
+      if (!heldRole || !emptyRole) {
+        throw new Error('Failed to create test roles');
+      }
+
+      onTestFinished(async () => {
+        await db
+          .delete(accessRoles)
+          .where(inArray(accessRoles.id, [heldRole.id, emptyRole.id]));
+      });
+
+      await db.insert(profileUserToAccessRoles).values(
+        memberUsers.map((member) => ({
+          profileUserId: member.profileUserId,
+          accessRoleId: heldRole.id,
+        })),
+      );
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Simple branch (no zoneName)
+      const result = await caller.listRoles({
+        profileId: profile.id,
+        includeMemberCounts: true,
+        limit: 100,
+      });
+
+      expect(result.items.find((r) => r.id === heldRole.id)?.memberCount).toBe(
+        2,
+      );
+      expect(result.items.find((r) => r.id === emptyRole.id)?.memberCount).toBe(
+        0,
+      );
+
+      // Join branch (with zoneName) also attaches counts
+      const zoneResult = await caller.listRoles({
+        profileId: profile.id,
+        zoneName: ZONES.PROFILE.name,
+        includeMemberCounts: true,
+        limit: 100,
+      });
+
+      expect(
+        zoneResult.items.find((r) => r.id === heldRole.id)?.memberCount,
+      ).toBe(2);
+      expect(
+        zoneResult.items.find((r) => r.id === emptyRole.id)?.memberCount,
+      ).toBe(0);
+
+      // Counts are opt-in: absent without the flag
+      const withoutFlag = await caller.listRoles({
+        profileId: profile.id,
+        limit: 100,
+      });
+      expect(
+        withoutFlag.items.find((r) => r.id === heldRole.id)?.memberCount,
+      ).toBeUndefined();
+    });
+
+    it('should exclude global sentinel users from member counts', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const member = memberUsers[0];
+      if (!member) {
+        throw new Error('Expected member user to be defined');
+      }
+
+      const [customRole] = await db
+        .insert(accessRoles)
+        .values({ name: `Counted Role ${task.id}`, profileId: profile.id })
+        .returning();
+
+      if (!customRole) {
+        throw new Error('Failed to create custom role');
+      }
+
+      // The real member holds the role...
+      await db.insert(profileUserToAccessRoles).values({
+        profileUserId: member.profileUserId,
+        accessRoleId: customRole.id,
+      });
+
+      // ...and so does a profile_users row anchored on the GLOBAL_USER_PUBLIC
+      // sentinel (the public-access grant). It must not inflate the count.
+      const [sentinelRow] = await db
+        .insert(profileUsers)
+        .values({
+          authUserId: GLOBAL_USER_PUBLIC,
+          profileId: profile.id,
+        })
+        .returning();
+
+      if (!sentinelRow) {
+        throw new Error('Failed to create sentinel profile user');
+      }
+
+      await db.insert(profileUserToAccessRoles).values({
+        profileUserId: sentinelRow.id,
+        accessRoleId: customRole.id,
+      });
+
+      onTestFinished(async () => {
+        await db
+          .delete(profileUsers)
+          .where(eq(profileUsers.id, sentinelRow.id));
+        await db.delete(accessRoles).where(eq(accessRoles.id, customRole.id));
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listRoles({
+        profileId: profile.id,
+        includeMemberCounts: true,
+        limit: 100,
+      });
+
+      // Only the real member is counted; the sentinel is excluded.
+      expect(
+        result.items.find((r) => r.id === customRole.id)?.memberCount,
+      ).toBe(1);
+    });
   });
 });
 
