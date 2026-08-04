@@ -7,20 +7,19 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Link } from '@op/ui/Link';
-import { Skeleton } from '@op/ui/Skeleton';
-import { StatusDot, type StatusDotIntent } from '@op/ui/StatusDot';
+import { Skeleton } from '@op/sense/Skeleton';
+import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
+import { screens } from '@op/styles/constants';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
 import { SelectionCard } from '../selection/SelectionCard';
@@ -71,24 +70,24 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')} bleed>
+    <Table aria-label={t('All proposals')}>
       <TableHeader>
-        <TableColumn id="proposal" isRowHeader className="w-56">
-          {t('Proposal')}
-        </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
-        <TableColumn id="category">{t('Category')}</TableColumn>
-        <TableColumn id="recommendation">
-          {t('Overall recommendation')}
-        </TableColumn>
-        <TableColumn id="score">
-          <span className="underline decoration-dotted">
-            {t('Score ({pts}pts)', { pts: totalPoints })}
-          </span>
-        </TableColumn>
-        <TableColumn id="action" className="w-28">
-          <span className="sr-only">{t('Advance')}</span>
-        </TableColumn>
+        <TableRow>
+          <TableHead scope="col" className="w-56">
+            {t('Proposal')}
+          </TableHead>
+          <TableHead scope="col">{t('Budget')}</TableHead>
+          <TableHead scope="col">{t('Category')}</TableHead>
+          <TableHead scope="col">{t('Overall recommendation')}</TableHead>
+          <TableHead scope="col">
+            <span className="underline decoration-dotted">
+              {t('Score ({pts}pts)', { pts: totalPoints })}
+            </span>
+          </TableHead>
+          <TableHead scope="col" className="w-28">
+            <span className="sr-only">{t('Advance')}</span>
+          </TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {items.map((item) => {
@@ -98,13 +97,15 @@ export function ReviewSelectionTable({
           const budget = item.proposal.proposalData.budget;
 
           return (
-            <TableRow key={item.proposal.id} id={item.proposal.id}>
+            <TableRow
+              key={item.proposal.id}
+              data-state={advancing ? 'selected' : undefined}
+            >
               <TableCell>
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    variant="neutral"
-                    className="line-clamp-1 text-base text-neutral-black hover:underline"
+                    className="line-clamp-1 text-base text-neutral-black"
                   >
                     <bdi>{title}</bdi>
                   </Link>
@@ -207,8 +208,7 @@ function ProposalCard({
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-          variant="neutral"
-          className="text-base text-neutral-black hover:underline"
+          className="text-base text-neutral-black"
         >
           {title}
         </Link>

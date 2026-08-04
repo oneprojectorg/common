@@ -1,7 +1,7 @@
 import type { RubricReviewData, RubricTemplateSchema } from '@op/common/client';
 import { getRubricScoringInfo } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
-import { Surface } from '@op/ui/Surface';
+import { Card } from '@op/sense/Card';
+import { Header3 } from '@op/sense/Header';
 import type { ReactNode } from 'react';
 
 import { TranslatedText } from '@/components/TranslatedText';
@@ -11,11 +11,9 @@ import { getCriteria } from '../rubricTemplate';
 export function FormShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif font-light">
-          <TranslatedText text="Review Proposal" />
-        </Header3>
-      </div>
+      <Header3 className="font-serif font-light">
+        <TranslatedText text="Review Proposal" />
+      </Header3>
       {children}
     </div>
   );
@@ -45,14 +43,11 @@ export function TotalScoreCard({
   const display = totalPoints > 0 ? `${scoreText}/${totalPoints}` : '–';
 
   return (
-    <Surface
-      variant="filled"
-      className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
-    >
+    <Card className="flex-row items-start justify-between bg-muted p-4">
       <span className="text-base text-neutral-charcoal">
-        <TranslatedText text="Total Score" />
+        <TranslatedText text="Total score:" />
       </span>
       <span className="text-base text-neutral-black">{display}</span>
-    </Surface>
+    </Card>
   );
 }

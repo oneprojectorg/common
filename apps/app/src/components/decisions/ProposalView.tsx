@@ -12,7 +12,7 @@ import {
   type ProposalTranslation,
   type SupportedLocale,
 } from '@op/common/client';
-import { SplitPane } from '@op/ui/SplitPane';
+import { SplitPane } from '@op/sense/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import {
@@ -273,6 +273,9 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
+      // The admin overflow menu (shortlist / reject / hide) gates itself on
+      // `access.admin` and on the proposal having left draft.
+      moderationProposal={currentProposal}
       revisionToggle={
         firstRevisionRequestId
           ? {
@@ -299,8 +302,10 @@ export function ProposalView({
           </SplitPane.Pane>
         </SplitPane>
       ) : (
-        <div className="flex-1 px-6 py-8">
-          <div className="mx-auto flex max-w-xl flex-col gap-8">
+        // Figma: 544px (max-w-136) centred column, 56px vertical padding and a
+        // 40px region gap on desktop; 16/32 padding and a 24px gap on mobile.
+        <div className="flex-1 px-4 py-8 sm:px-6 sm:py-14">
+          <div className="mx-auto flex max-w-136 flex-col gap-6 sm:gap-10">
             {proposalBody}
           </div>
         </div>

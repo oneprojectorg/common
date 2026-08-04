@@ -5,32 +5,54 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
-import { toast } from '@op/sense/Toast';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { ListBox, ListBoxItem } from '@op/ui/RAC';
-import { SearchField } from '@op/ui/SearchField';
-import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
 import {
+  Combobox,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+} from '@op/sense/Empty';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from '@op/sense/Item';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Spinner } from '@op/sense/Spinner';
+import { toast } from '@op/sense/Toast';
+import {
+  type ReactNode,
   Suspense,
-  useEffect,
   useMemo,
   useOptimistic,
-  useRef,
   useState,
   useTransition,
 } from 'react';
-import { createPortal } from 'react-dom';
-import { LuLink, LuUsers, LuX } from 'react-icons/lu';
+import { LuLink, LuSearch, LuUsers, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import ErrorBoundary from '../ErrorBoundary';
 import { isValidEmail, parseEmailPaste } from './emailUtils';
 
 interface PendingInvite {
@@ -43,47 +65,38 @@ interface PendingInvite {
 
 export function ShareProposalModal({
   proposalProfileId,
-  proposalTitle,
   isOpen,
   onOpenChange,
 }: {
   proposalProfileId: string;
-  proposalTitle: string;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
   const t = useTranslations();
 
-  const handleClose = () => {
-    onOpenChange(false);
-  };
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={handleClose}
-      isDismissable
-      className="sm:max-w-xl"
-    >
-      <ModalHeader className="truncate">
-        {t('Share "{title}"', { title: proposalTitle || 'Untitled Proposal' })}
-      </ModalHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
+      <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{t('Share Proposal')}</DialogTitle>
+        </DialogHeader>
 
-      <Suspense
-        fallback={
-          <ModalBody>
-            <div className="flex items-center justify-center p-8">
-              <LoadingSpinner className="size-6" />
-            </div>
-          </ModalBody>
-        }
-      >
-        <ShareProposalModalContent
-          proposalProfileId={proposalProfileId}
-          onOpenChange={onOpenChange}
-        />
-      </Suspense>
-    </Modal>
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center p-8">
+                <Spinner className="size-6" />
+              </div>
+            }
+          >
+            <ShareProposalModalContent
+              proposalProfileId={proposalProfileId}
+              onOpenChange={onOpenChange}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -100,12 +113,6 @@ function ShareProposalModalContent({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
 
   const [, startTransition] = useTransition();
 
@@ -132,18 +139,6 @@ function ShareProposalModalContent({
     const roles = rolesData.items ?? [];
     return roles.find((r) => r.name === 'Member');
   }, [rolesData]);
-
-  // Update dropdown position when search query changes
-  useEffect(() => {
-    if (debouncedQuery.length >= 2 && searchContainerRef.current) {
-      const rect = searchContainerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  }, [debouncedQuery]);
 
   // Search for users to invite
   const { data: searchResults, isFetching: isSearching } =
@@ -196,6 +191,31 @@ function ShareProposalModalContent({
     return !takenEmails.has(lowerQuery);
   }, [debouncedQuery, pendingInvites, optimisticUsers, optimisticInvites]);
 
+  // Combobox options: the server-filtered people plus a synthetic "invite this
+  // email" row. The server already filters, so base-ui's local filter is off.
+  const pickerOptions = useMemo(
+    () => [
+      ...(canAddEmail
+        ? [
+            {
+              value: 'add-email',
+              label: debouncedQuery,
+              addEmail: true as const,
+              result: undefined,
+            },
+          ]
+        : []),
+      ...filteredResults.map((result) => ({
+        value: result.id,
+        label: result.name,
+        addEmail: false as const,
+        result,
+      })),
+    ],
+    [canAddEmail, debouncedQuery, filteredResults],
+  );
+  type PickerOption = (typeof pickerOptions)[number];
+
   const inviteMutation = trpc.profile.invite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
   const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
@@ -230,6 +250,20 @@ function ShareProposalModalContent({
       },
     ]);
     setSearchQuery('');
+  };
+
+  // The combobox value is never persisted — each pick runs an action and the
+  // control resets to empty, so `value={[]}` stays authoritative.
+  const handlePickOption = (selected: PickerOption[]) => {
+    const added = selected[selected.length - 1];
+    if (!added) {
+      return;
+    }
+    if (added.addEmail) {
+      handleAddEmail(debouncedQuery);
+    } else {
+      handleSelectItem(added.result);
+    }
   };
 
   const handleRemovePending = (id: string) => {
@@ -355,144 +389,97 @@ function ShareProposalModalContent({
     onOpenChange(false);
   };
 
+  const hasNoPeople =
+    optimisticUsers.length === 0 &&
+    pendingInvites.length === 0 &&
+    optimisticInvites.length === 0;
+
   return (
     <>
-      <ModalBody className="space-y-6">
-        <div ref={searchContainerRef} onPaste={handlePaste}>
-          <SearchField
-            placeholder={t('Invite collaborators by name or email')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            className="w-full"
-          />
-        </div>
-
-        {debouncedQuery.length >= 2 &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <div
-              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg"
-              style={{
-                top: dropdownPosition.top,
-                left: dropdownPosition.left,
-                width: dropdownPosition.width,
-              }}
-              data-react-aria-top-layer="true"
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {isSearching ? (
-                <div className="flex items-center justify-center p-4">
-                  <LoadingSpinner className="size-4" />
-                </div>
-              ) : filteredResults.length > 0 || canAddEmail ? (
-                <ListBox
-                  aria-label={t('Search results')}
-                  onAction={(key) => {
-                    if (key === 'add-email') {
-                      handleAddEmail(debouncedQuery);
-                    } else {
-                      const result = filteredResults.find((r) => r.id === key);
-                      if (result) {
-                        handleSelectItem(result);
-                      }
-                    }
-                  }}
-                  className="border-0 p-0 outline-none"
-                >
-                  {canAddEmail && (
-                    <ListBoxItem
-                      id="add-email"
-                      textValue={debouncedQuery}
-                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
-                    >
-                      <div className="text-sm">
+      <div className="min-h-0 space-y-6 overflow-y-auto px-6 py-4">
+        {/* People search — base-ui owns positioning, focus and the
+            listbox/option roles, so there's no portal or measured dropdown. */}
+        <Combobox
+          items={pickerOptions}
+          value={[]}
+          onValueChange={handlePickOption}
+          filter={null}
+          onInputValueChange={setSearchQuery}
+          itemToStringLabel={(option: PickerOption) => option.label}
+          isItemEqualToValue={(a: PickerOption, b: PickerOption) =>
+            a.value === b.value
+          }
+          multiple
+        >
+          <ComboboxChips className="w-full" onPaste={handlePaste}>
+            <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
+            <ComboboxChipsInput
+              placeholder={t('Invite collaborators by name or email')}
+            />
+          </ComboboxChips>
+          {debouncedQuery.length >= 2 && (
+            <ComboboxContent>
+              <ComboboxEmpty>
+                {isSearching ? <Spinner className="size-4" /> : t('No results')}
+              </ComboboxEmpty>
+              <ComboboxList>
+                {(option: PickerOption) => (
+                  <ComboboxItem key={option.value} value={option}>
+                    {option.addEmail ? (
+                      <span className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
-                      </div>
-                    </ListBoxItem>
-                  )}
-                  {filteredResults.map((result) => (
-                    <ListBoxItem
-                      key={result.id}
-                      id={result.id}
-                      textValue={result.name}
-                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
-                    >
+                      </span>
+                    ) : (
                       <ProfileItem
-                        size="small"
                         avatar={
-                          <Avatar
-                            placeholder={result.name}
-                            className="size-8 shrink-0"
-                          >
-                            {result.avatarImage?.name ? (
-                              <Image
+                          <Avatar className="size-8 shrink-0">
+                            {option.result.avatarImage?.name ? (
+                              <AvatarImage
                                 src={
-                                  getPublicUrl(result.avatarImage.name) ?? ''
+                                  getPublicUrl(
+                                    option.result.avatarImage.name,
+                                  ) ?? ''
                                 }
-                                alt={result.name}
-                                fill
-                                className="object-cover"
+                                alt={option.result.name}
                               />
                             ) : null}
+                            <AvatarFallback>
+                              {option.result.name.slice(0, 1).toUpperCase()}
+                            </AvatarFallback>
                           </Avatar>
                         }
-                        title={result.name}
+                        title={option.result.name}
+                        description={option.result.user?.email || undefined}
                       />
-                    </ListBoxItem>
-                  ))}
-                </ListBox>
-              ) : (
-                <div className="p-4 text-center text-sm text-neutral-gray4">
-                  {t('No results')}
-                </div>
-              )}
-            </div>,
-            document.body,
+                    )}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
           )}
+        </Combobox>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-black">
+          <span className="text-sm text-foreground">
             {t('People with access')}
           </span>
 
           <div className="flex flex-col gap-2">
             {pendingInvites.map((item) => (
-              <div
+              <PersonRow
                 key={item.id}
-                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-              >
-                <ProfileItem
-                  size="small"
-                  avatar={
-                    <Avatar placeholder={item.name} className="size-6 shrink-0">
-                      {item.avatarUrl ? (
-                        <Image
-                          src={item.avatarUrl}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </Avatar>
-                  }
-                  title={item.name}
-                >
-                  {item.name !== item.email && (
-                    <div className="text-sm text-neutral-gray4">
+                name={item.name}
+                avatarUrl={item.avatarUrl}
+                subtitle={
+                  item.name !== item.email ? (
+                    <div className="truncate text-sm text-muted-foreground">
                       {item.email}
                     </div>
-                  )}
-                </ProfileItem>
-                <IconButton
-                  size="small"
-                  onPress={() => handleRemovePending(item.id)}
-                  aria-label={t('Remove {name}', { name: item.name })}
-                >
-                  <LuX className="size-4" />
-                </IconButton>
-              </div>
+                  ) : undefined
+                }
+                onRemove={() => handleRemovePending(item.id)}
+                removeLabel={t('Remove {name}', { name: item.name })}
+              />
             ))}
 
             {optimisticInvites.map((invite) => {
@@ -502,123 +489,124 @@ function ShareProposalModalContent({
                 : undefined;
 
               return (
-                <div
+                <PersonRow
                   key={invite.id}
-                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-                >
-                  <ProfileItem
-                    size="small"
-                    avatar={
-                      <Avatar
-                        placeholder={displayName}
-                        className="size-6 shrink-0"
-                      >
-                        {avatarUrl ? (
-                          <Image
-                            src={avatarUrl}
-                            alt={displayName}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </Avatar>
-                    }
-                    title={displayName}
-                  >
-                    {invite.inviteeProfile?.name && (
-                      <div className="text-sm text-neutral-gray4">
-                        {invite.email} <Bullet />{' '}
-                        <span className="text-sm text-neutral-gray4">
-                          {t('Invited')}
-                        </span>
-                      </div>
-                    )}
-                  </ProfileItem>
-                  <IconButton
-                    size="small"
-                    onPress={() => handleDeleteInvite(invite.id)}
-                    aria-label={t('Remove {name}', { name: displayName })}
-                  >
-                    <LuX className="size-4" />
-                  </IconButton>
-                </div>
+                  name={displayName}
+                  avatarUrl={avatarUrl}
+                  subtitle={
+                    <div className="truncate text-sm text-muted-foreground">
+                      {invite.inviteeProfile?.name && (
+                        <>
+                          {invite.email} <Bullet />{' '}
+                        </>
+                      )}
+                      <span className="text-sm text-muted-foreground">
+                        {t('Invited')}
+                      </span>
+                    </div>
+                  }
+                  onRemove={() => handleDeleteInvite(invite.id)}
+                  removeLabel={t('Remove {name}', { name: displayName })}
+                />
               );
             })}
 
-            {optimisticUsers.length === 0 &&
-            pendingInvites.length === 0 &&
-            optimisticInvites.length === 0 ? (
-              <EmptyState icon={<LuUsers />}>
-                {t('No one has been invited yet')}
-              </EmptyState>
+            {hasNoPeople ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <LuUsers />
+                  </EmptyMedia>
+                  <EmptyDescription>
+                    {t('No one has been invited yet')}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : (
-              optimisticUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-                >
-                  <ProfileItem
-                    size="small"
-                    avatar={
-                      <Avatar
-                        placeholder={user.name ?? user.email ?? ''}
-                        className="size-6 shrink-0"
-                      >
-                        {user.profile?.avatarImage?.name ? (
-                          <Image
-                            src={
-                              getPublicUrl(user.profile.avatarImage.name) ?? ''
-                            }
-                            alt={user.name ?? user.email ?? ''}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </Avatar>
+              optimisticUsers.map((user) => {
+                const displayName = user.name ?? user.email ?? '';
+
+                return (
+                  <PersonRow
+                    key={user.id}
+                    name={displayName}
+                    avatarUrl={
+                      user.profile?.avatarImage?.name
+                        ? getPublicUrl(user.profile.avatarImage.name)
+                        : undefined
                     }
-                    title={user.name ?? user.email ?? ''}
-                  >
-                    {user.name && (
-                      <div className="text-sm text-neutral-gray4">
-                        {user.email}
-                      </div>
-                    )}
-                  </ProfileItem>
-                  {!user.isOwner && (
-                    <IconButton
-                      size="small"
-                      onPress={() => handleRemoveExistingUser(user.id)}
-                      aria-label={t('Remove {name}', {
-                        name: user.name ?? user.email ?? '',
-                      })}
-                    >
-                      <LuX className="size-4" />
-                    </IconButton>
-                  )}
-                </div>
-              ))
+                    subtitle={
+                      user.name ? (
+                        <div className="truncate text-sm text-muted-foreground">
+                          {user.email}
+                        </div>
+                      ) : undefined
+                    }
+                    // The owner can't be removed from their own proposal.
+                    onRemove={
+                      user.isOwner
+                        ? undefined
+                        : () => handleRemoveExistingUser(user.id)
+                    }
+                    removeLabel={t('Remove {name}', { name: displayName })}
+                  />
+                );
+              })
             )}
           </div>
         </div>
-      </ModalBody>
+      </div>
 
-      <ModalFooter className="flex-row items-center justify-between">
-        <Button color="secondary" onPress={handleCopyLink}>
+      <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+        <Button variant="outline" onClick={handleCopyLink}>
           <LuLink className="size-4" />
           {t('Copy link')}
         </Button>
-        <Button
-          color="primary"
-          onPress={handleDone}
-          isDisabled={inviteMutation.isPending}
-        >
-          {inviteMutation.isPending ? (
-            <LoadingSpinner className="size-4" />
-          ) : (
-            t('Done')
-          )}
+        <Button onClick={handleDone} loading={inviteMutation.isPending}>
+          {t('Done')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </>
+  );
+}
+
+function PersonRow({
+  name,
+  avatarUrl,
+  subtitle,
+  onRemove,
+  removeLabel,
+}: {
+  name: string;
+  avatarUrl?: string;
+  subtitle?: ReactNode;
+  onRemove?: () => void;
+  removeLabel: string;
+}) {
+  return (
+    <Item variant="outline" className="flex-nowrap px-3 py-2 sm:p-3">
+      <ItemMedia>
+        <Avatar className="size-6 shrink-0 sm:size-10">
+          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+          <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </ItemMedia>
+      <ItemContent className="min-w-0 gap-0">
+        <ItemTitle>{name}</ItemTitle>
+        {subtitle}
+      </ItemContent>
+      {onRemove && (
+        <ItemActions className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemove}
+            aria-label={removeLabel}
+          >
+            <LuX className="size-4" />
+          </Button>
+        </ItemActions>
+      )}
+    </Item>
   );
 }

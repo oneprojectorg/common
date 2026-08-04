@@ -1,12 +1,18 @@
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
+
+import { TranslatedText } from '@/components/TranslatedText';
 
 /**
  * Skeleton for decision page headers.
  * Matches the DecisionHeader + stepper layout.
+ *
+ * Purely decorative: it only ever renders alongside `DecisionContentSkeleton`
+ * (see `DecisionPageSkeleton`), which owns the single loading announcement, so
+ * this tree is hidden from assistive tech rather than announced twice.
  */
 export const DecisionHeaderSkeleton = () => {
   return (
-    <div className="bg-neutral-offWhite pb-40">
+    <div aria-hidden="true" className="bg-neutral-offWhite pb-40">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-3">
         <Skeleton className="h-6 w-36" />
@@ -48,7 +54,14 @@ export const DecisionContentSkeleton = () => {
   // here would flash the wrong count on hard refresh. The page's own Suspense
   // fallback (ProposalListSkeleton) draws the one, correctly-measured grid.
   return (
-    <div className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+    <div
+      role="status"
+      aria-busy="true"
+      className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12"
+    >
+      <span className="sr-only">
+        <TranslatedText text="Loading..." />
+      </span>
       <div className="mx-auto flex w-full flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex w-full flex-col items-center gap-3">
           <Skeleton className="h-8 w-3/4 md:h-14" />
@@ -69,10 +82,13 @@ export const DecisionContentSkeleton = () => {
  * DecisionInstanceHeader's fixed-height sticky bar so the real header swaps in
  * without shifting the layout: same sticky/border/height classes, with chips
  * where the back link, view toggle, and user controls land.
+ *
+ * Hidden from assistive tech — the body skeleton rendered below it owns the
+ * loading announcement.
  */
 export const DecisionHeaderBarSkeleton = () => {
   return (
-    <header className="sticky top-0 z-30 border-b bg-white">
+    <header aria-hidden="true" className="sticky top-0 z-30 border-b bg-white">
       <div className="grid h-12 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:h-14 md:px-6">
         <div className="flex items-center gap-3">
           <Skeleton className="size-6 rounded md:size-4" />

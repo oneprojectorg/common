@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Document from '@tiptap/extension-document';
@@ -9,6 +9,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Text from '@tiptap/extension-text';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
@@ -21,10 +23,12 @@ interface CollaborativeTitleFieldProps {
  * A collaborative plain text field for the proposal title.
  */
 export function CollaborativeTitleField({
-  placeholder = 'Untitled Proposal',
+  placeholder,
   onChange,
 }: CollaborativeTitleFieldProps) {
+  const t = useTranslations();
   const { ydoc, provider, user } = useCollaborativeDoc();
+  const resolvedPlaceholder = placeholder ?? t('Untitled proposal');
 
   // Build collaborative extensions for the title field
   const extensions = useMemo(
@@ -33,9 +37,9 @@ export function CollaborativeTitleField({
       Paragraph,
       Text,
       Placeholder.configure({
-        placeholder,
+        placeholder: resolvedPlaceholder,
         emptyEditorClass:
-          'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-start before:h-0 before:pointer-events-none',
+          'before:pointer-events-none before:float-start before:h-0 before:text-muted-foreground before:content-[attr(data-placeholder)]',
       }),
       Collaboration.configure({
         document: ydoc,
@@ -46,7 +50,7 @@ export function CollaborativeTitleField({
         user,
       }),
     ],
-    [ydoc, provider, user, placeholder],
+    [ydoc, provider, user, resolvedPlaceholder],
   );
 
   const editor = useEditor({
@@ -54,7 +58,7 @@ export function CollaborativeTitleField({
     editorProps: {
       attributes: {
         class:
-          'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
+          'h-auto border-0 p-0 font-serif text-title-lg text-foreground outline-none',
       },
       handleKeyDown: (_view, event) => {
         if (event.key === 'Enter') {

@@ -12,8 +12,8 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
-import { SplitPane } from '@op/ui/SplitPane';
 import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import {
@@ -95,7 +95,6 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  showHeaderActions = true,
   revisionRequest = null,
 }: {
   instance: ProcessInstance;
@@ -103,7 +102,6 @@ export function ProposalEditor({
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  showHeaderActions?: boolean;
   revisionRequest?: ProposalReviewRequest | null;
 }) {
   const { user } = useRequiredUser();
@@ -144,7 +142,6 @@ export function ProposalEditor({
       proposal={proposal}
       isEditMode={isEditMode}
       asideHeaderIcons={asideHeaderIcons}
-      showHeaderActions={showHeaderActions}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       revisionRequest={revisionRequest}
@@ -176,7 +173,6 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
-  showHeaderActions,
   collaborationDocId,
   proposalTemplate,
   revisionRequest,
@@ -186,7 +182,6 @@ function ProposalEditorInner({
   proposal: Proposal;
   isEditMode: boolean;
   asideHeaderIcons?: ReactNode;
-  showHeaderActions: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   revisionRequest: ProposalReviewRequest | null;
@@ -488,7 +483,7 @@ function ProposalEditorInner({
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />
 
-      <div className="border-t border-neutral-gray1 pt-8">
+      <div className="border-t pt-8">
         <ProposalAttachments
           proposalId={proposal.id}
           attachments={
@@ -515,9 +510,9 @@ function ProposalEditorInner({
       title={isPreviewMode ? previewTitle || draft.title : draft.title}
       statusSlot={
         viewingLabel ? (
-          <div className="rounded-sm bg-neutral-gray1 px-4 py-2 text-sm text-neutral-charcoal">
+          <span className="truncate text-sm text-muted-foreground">
             {viewingLabel}
-          </div>
+          </span>
         ) : undefined
       }
       onSubmitProposal={handleSubmitProposal}
@@ -527,14 +522,13 @@ function ProposalEditorInner({
       readOnlyMode={isPreviewMode}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
-      showHeaderActions={showHeaderActions}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
       revisionRequest={revisionRequest}
     >
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[auto_1fr]">
         <div
-          className="border-b border-neutral-gray1 bg-white"
+          className="border-b bg-background"
           onMouseDown={(e) => e.preventDefault()}
         >
           <RichTextEditorToolbar editor={focusedEditor} />
@@ -552,15 +546,17 @@ function ProposalEditorInner({
               <SplitPane.Pane
                 id="feedback"
                 label={t('Revision feedback')}
-                className="bg-white"
+                className="bg-background"
                 unpadded
               >
                 <RevisionFeedbackPanel revisionRequest={revisionRequest} />
               </SplitPane.Pane>
             </SplitPane>
           ) : (
-            <div className="flex flex-1 flex-col gap-12 py-12">
-              <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6">
+            /* Figma column: 544px wide, 56 top/bottom pad, 40 region gap
+               (mobile: 32/16 pad, 24 gap). */
+            <div className="flex flex-1 flex-col py-8 sm:py-14">
+              <div className="mx-auto flex w-full max-w-136 flex-col gap-6 px-4 sm:gap-10 sm:px-6">
                 {editorBody}
               </div>
             </div>

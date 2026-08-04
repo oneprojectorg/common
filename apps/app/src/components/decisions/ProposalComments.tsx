@@ -4,9 +4,15 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { Surface } from '@op/ui/Surface';
+import { Card } from '@op/sense/Card';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+} from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { useCallback, useRef } from 'react';
 import { LuUserRoundPlus } from 'react-icons/lu';
 
@@ -15,6 +21,13 @@ import { useTranslations } from '@/lib/i18n';
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { JoinDecisionButton } from './JoinAccountModal';
+
+/**
+ * Fragment id on the comments section. The proposal-view action row links to it
+ * (`#proposal-comments`) so the mobile "Comments" icon button jumps here without
+ * any scroll scripting.
+ */
+export const PROPOSAL_COMMENTS_ANCHOR_ID = 'proposal-comments';
 
 export function ProposalComments({
   proposal,
@@ -61,15 +74,17 @@ export function ProposalComments({
   }, []);
 
   return (
-    <div ref={containerRef}>
+    <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
       <div className="border-t pt-8">
-        <Header3 className="mb-6 font-sans">
+        {/* `!text-title-base` keeps the pre-migration 20px heading — sense's
+            `text-title` is a step smaller on mobile (same call as ResultsList). */}
+        <Header3 className="mb-6 font-sans !text-title-base">
           {t('Comments')} ({comments.length})
         </Header3>
 
         {!readOnly && (
           <div className="mb-8">
-            <Surface className="border-0 p-0 sm:border sm:p-4">
+            <Card className="border-0 p-0 shadow-none sm:border sm:p-4">
               <PostUpdate
                 profileId={proposal.profileId || undefined}
                 placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
@@ -78,28 +93,29 @@ export function ProposalComments({
                 proposalId={proposal.id}
                 processInstanceId={proposal.processInstanceId}
               />
-            </Surface>
+            </Card>
           </div>
         )}
 
         {showJoinPrompt && (
-          <EmptyState
-            icon={<LuUserRoundPlus className="size-6" />}
-            className="mb-8"
-          >
-            <p
-              id="join-to-comment-prompt"
-              className="text-base text-neutral-charcoal"
-            >
-              {t('Join Common to comment on this proposal.')}
-            </p>
-            <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
-          </EmptyState>
+          <Empty className="mb-8">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuUserRoundPlus />
+              </EmptyMedia>
+              <EmptyDescription id="join-to-comment-prompt">
+                {t('Join Common to comment on this proposal.')}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
+            </EmptyContent>
+          </Empty>
         )}
 
         {commentsLoading ? (
           <div
-            className="py-8 text-center text-gray-500"
+            className="py-8 text-center text-base text-muted-foreground"
             role="status"
             aria-label={t('Loading comments')}
           >
@@ -125,7 +141,7 @@ export function ProposalComments({
           </div>
         ) : (
           <div
-            className="py-8 text-center text-gray-500"
+            className="py-8 text-center text-base text-muted-foreground"
             role="status"
             aria-label={t('No comments')}
           >

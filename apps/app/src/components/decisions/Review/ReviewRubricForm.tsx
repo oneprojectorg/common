@@ -3,17 +3,25 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   ProposalReviewState,
+  type SchemaOption,
   type XFormatPropertySchema,
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import type { Key } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
+import { Button } from '@op/sense/Button';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
@@ -105,14 +113,10 @@ function MyReviewForm() {
     <>
       {isPausedForRevision && (
         <>
-          <AlertBanner
-            intent="warning"
-            variant="banner"
-            icon={<LuCircleAlert className="size-4" />}
-          >
-            <span>
-              <strong>{t('Proposal Revision Requested')}</strong>
-              <br />
+          <Alert variant="warning">
+            <LuCircleAlert />
+            <AlertTitle>{t('Proposal Revision Requested')}</AlertTitle>
+            <AlertDescription>
               {t('Reviewing is paused until author submits a revision.')}{' '}
               <button
                 type="button"
@@ -121,8 +125,8 @@ function MyReviewForm() {
               >
                 {t('View feedback')}
               </button>
-            </span>
-          </AlertBanner>
+            </AlertDescription>
+          </Alert>
 
           <ViewRevisionRequestModal
             isOpen={isViewModalOpen}
@@ -131,7 +135,10 @@ function MyReviewForm() {
         </>
       )}
 
+      {/* `inert` (not just pointer-events-none) so a paused form can't be
+          reached or edited by keyboard either. */}
       <div
+        inert={isPausedForRevision}
         className={
           isPausedForRevision ? 'pointer-events-none opacity-50' : undefined
         }
@@ -161,28 +168,29 @@ function MyReviewForm() {
               <FieldHeader
                 title={t('Feedback to Author')}
                 description={t(
-                  'Shared anonymously with the author after the review phase ends',
+                  'Shared anonymously with the author after the review phase',
                 )}
                 className="gap-1"
               />
 
-              <TextField
+              <Textarea
                 aria-label={t('Feedback to Author')}
+                className="[unicode-bidi:plaintext]"
                 value={overallComment}
-                onChange={handleOverallCommentChange}
-                useTextArea
-                textareaProps={{ rows: 3 }}
+                onChange={(event) =>
+                  handleOverallCommentChange(event.target.value)
+                }
+                rows={3}
               />
             </section>
           ) : (
             <Button
-              color="secondary"
-              size="medium"
+              variant="outline"
               className="w-full"
-              onPress={() => setIsFeedbackOpen(true)}
+              onClick={() => setIsFeedbackOpen(true)}
             >
               <LuPlus className="size-4" />
-              {t('Feedback to Author')}
+              {t('Feedback to author')}
             </Button>
           )}
 
@@ -257,7 +265,7 @@ function RubricCriterionSection({
 
 /**
  * Optional long-text note under each criterion: collapsed behind an
- * "Add Note" button until the reviewer opens it (or a value already exists).
+ * "Add note" button until the reviewer opens it (or a value already exists).
  */
 function RubricRationaleField({
   value,
@@ -275,27 +283,28 @@ function RubricRationaleField({
     return (
       <Button
         variant="link"
-        size="inline"
-        className="flex items-center px-2 py-1.5 leading-normal text-primary-tealBlack"
-        onPress={() => setIsOpen(true)}
+        size="sm"
+        className="h-auto self-start px-2 py-1.5 leading-normal text-primary-tealBlack"
+        onClick={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
-        {t('Add Note')}
+        {t('Add note')}
       </Button>
     );
   }
 
-  const label = t('Notes');
+  const label = t('Note');
 
   return (
     <div className="flex flex-col gap-1">
       <span className="text-sm text-neutral-black">{label}</span>
-      <TextField
+      <Textarea
         aria-label={label}
+        className="min-h-20 [unicode-bidi:plaintext]"
         value={value}
-        onChange={onChange}
-        useTextArea
-        textareaProps={{ placeholder, rows: 3, className: 'min-h-20' }}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        rows={3}
       />
     </div>
   );
@@ -321,11 +330,12 @@ function RubricFieldInput({
 
       if (criterionType === 'yes_no') {
         return (
-          <ToggleButton
-            size="small"
-            isSelected={value === 'yes'}
-            onChange={(isSelected) => {
-              onChange(isSelected ? 'yes' : 'no');
+          <Switch
+            size="sm"
+            aria-label={field.schema.title}
+            checked={value === 'yes'}
+            onCheckedChange={(checked) => {
+              onChange(checked ? 'yes' : 'no');
             }}
           />
         );
@@ -337,15 +347,25 @@ function RubricFieldInput({
           <RadioGroup
             aria-label={field.schema.title}
             value={typeof value === 'string' ? value : undefined}
-            onChange={onChange}
-            orientation="horizontal"
-            className="gap-0"
+            onValueChange={onChange}
+            className="flex flex-wrap items-center gap-x-6 gap-y-2"
           >
-            {recOptions.map((option) => (
-              <Radio key={String(option.value)} value={String(option.value)}>
-                {option.title || String(option.value)}
-              </Radio>
-            ))}
+            {recOptions.map((option) => {
+              const optionValue = String(option.value);
+              const optionId = `${field.key}-${optionValue}`;
+              return (
+                <Field
+                  key={optionValue}
+                  orientation="horizontal"
+                  className="w-auto"
+                >
+                  <RadioGroupItem id={optionId} value={optionValue} />
+                  <FieldLabel htmlFor={optionId} className="font-normal">
+                    {option.title || optionValue}
+                  </FieldLabel>
+                </Field>
+              );
+            })}
           </RadioGroup>
         );
       }
@@ -354,35 +374,39 @@ function RubricFieldInput({
         const options = parseSchemaOptions(field.schema);
         return (
           <Select
-            aria-label={field.schema.title}
-            placeholder={t('Select an option')}
-            selectedKey={typeof value === 'string' ? value : null}
-            onSelectionChange={(key) => {
-              onChange(key === null ? null : String(key));
+            // base-ui renders the raw value in the trigger unless it can look
+            // the label up — these are id-style values, so pass the map.
+            items={getOptionLabels(options)}
+            value={typeof value === 'string' ? value : null}
+            onValueChange={(next: unknown) => {
+              onChange(next === null ? null : String(next));
             }}
-            className="w-full"
           >
-            {options.map((option) => {
-              const label = option.title || String(option.value);
-              return (
-                <SelectItem
-                  key={String(option.value)}
-                  id={String(option.value)}
-                  textValue={label}
-                >
-                  {option.description ? (
-                    <div className="flex flex-col">
-                      <span>{label}</span>
-                      <span className="text-sm text-neutral-gray4">
-                        {option.description}
-                      </span>
-                    </div>
-                  ) : (
-                    label
-                  )}
-                </SelectItem>
-              );
-            })}
+            <SelectTrigger aria-label={field.schema.title} className="w-full">
+              <SelectValue placeholder={t('Select an option')} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => {
+                const label = option.title || String(option.value);
+                return (
+                  <SelectItem
+                    key={String(option.value)}
+                    value={String(option.value)}
+                  >
+                    {option.description ? (
+                      <div className="flex flex-col">
+                        <span>{label}</span>
+                        <span className="text-sm text-neutral-gray4">
+                          {option.description}
+                        </span>
+                      </div>
+                    ) : (
+                      label
+                    )}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
           </Select>
         );
       }
@@ -394,30 +418,27 @@ function RubricFieldInput({
         const options = [...parseSchemaOptions(field.schema)].sort(
           (a, b) => Number(b.value) - Number(a.value),
         );
-        const selectedKey =
+        const selectedValue =
           typeof value === 'string' || typeof value === 'number'
             ? String(value)
             : null;
 
         return (
           <Select
-            aria-label={field.schema.title}
-            placeholder={t('Select an option')}
-            selectedKey={selectedKey}
-            onSelectionChange={(key) => {
-              onChange(parseSelectedValue(key, field.schema));
+            items={getScoredOptionLabels(options)}
+            value={selectedValue}
+            onValueChange={(next: unknown) => {
+              onChange(parseSelectedValue(next, field.schema));
             }}
-            className="w-full"
           >
-            {options.map((option) => {
-              const triggerLabel = option.title
-                ? `${option.value} - ${option.title}`
-                : String(option.value);
-              return (
+            <SelectTrigger aria-label={field.schema.title} className="w-full">
+              <SelectValue placeholder={t('Select an option')} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
                 <SelectItem
                   key={String(option.value)}
-                  id={String(option.value)}
-                  textValue={triggerLabel}
+                  value={String(option.value)}
                 >
                   {option.title ? (
                     <div className="flex flex-col">
@@ -430,8 +451,8 @@ function RubricFieldInput({
                     String(option.value)
                   )}
                 </SelectItem>
-              );
-            })}
+              ))}
+            </SelectContent>
           </Select>
         );
       }
@@ -441,22 +462,24 @@ function RubricFieldInput({
 
     case 'long-text':
       return (
-        <TextField
+        <Textarea
           aria-label={field.schema.title}
+          className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
-          onChange={onChange}
-          useTextArea
-          textareaProps={{ placeholder: t('Start typing...'), rows: 3 }}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={t('Start typing...')}
+          rows={3}
         />
       );
 
     case 'short-text':
       return (
-        <TextField
+        <Input
           aria-label={field.schema.title}
+          className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
-          onChange={onChange}
-          inputProps={{ placeholder: t('Start typing...') }}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={t('Start typing...')}
         />
       );
 
@@ -465,14 +488,36 @@ function RubricFieldInput({
   }
 }
 
+/** value → label map so the Select trigger shows the option's title. */
+function getOptionLabels(options: SchemaOption[]): Record<string, string> {
+  return Object.fromEntries(
+    options.map((option) => [
+      String(option.value),
+      option.title || String(option.value),
+    ]),
+  );
+}
+
+/** Scored options read "{score} - {title}" in the trigger. */
+function getScoredOptionLabels(
+  options: SchemaOption[],
+): Record<string, string> {
+  return Object.fromEntries(
+    options.map((option) => [
+      String(option.value),
+      option.title ? `${option.value} - ${option.title}` : String(option.value),
+    ]),
+  );
+}
+
 /**
- * Convert a select key back into the schema's expected primitive type.
+ * Convert a select value back into the schema's expected primitive type.
  */
 function parseSelectedValue(
-  key: Key | null,
+  key: unknown,
   schema: XFormatPropertySchema,
 ): string | number | null {
-  if (key === null) {
+  if (key === null || key === undefined) {
     return null;
   }
 

@@ -4,11 +4,12 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense, cache } from 'react';
 
+import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
@@ -22,7 +23,14 @@ const fetchLegacyInstance = cache(async (instanceId: string) => {
 
 function DecisionHeaderSkeleton() {
   return (
-    <div className="border-b bg-neutral-offWhite">
+    <div
+      role="status"
+      aria-busy="true"
+      className="border-b bg-neutral-offWhite"
+    >
+      <span className="sr-only">
+        <TranslatedText text="Loading..." />
+      </span>
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
@@ -86,7 +94,15 @@ const DecisionInstancePageContent = async ({
           <div className="bg-neutral-offWhite text-gray-700">
             <DecisionTranslationProvider>
               <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
-              <Suspense fallback={<Skeleton className="h-96" />}>
+              <Suspense
+                fallback={
+                  <Skeleton className="h-96" role="status" aria-busy="true">
+                    <span className="sr-only">
+                      <TranslatedText text="Loading..." />
+                    </span>
+                  </Skeleton>
+                }
+              >
                 <DecisionStateRouter
                   instanceId={instanceId}
                   slug={slug}

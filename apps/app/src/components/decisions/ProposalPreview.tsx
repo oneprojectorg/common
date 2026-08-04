@@ -10,10 +10,10 @@ import {
   normalizeProposalCategories,
   parseTranslatedMeta,
 } from '@op/common/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Header1, Header3 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Header1, Header3 } from '@op/sense/Header';
+import { Spinner } from '@op/sense/Spinner';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
 import type { ReactNode } from 'react';
 import {
   LuBookmark,
@@ -26,6 +26,7 @@ import {
 import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
 
+import { Bullet } from '../Bullet';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
@@ -109,16 +110,18 @@ export function ProposalPreview({
     <div className="flex flex-col gap-4">
       {/* Draft mode banner */}
       {isDraft && (
-        <AlertBanner intent="default" variant="banner">
-          {t(
-            'This proposal is currently in draft mode, only you and collaborators can access it.',
-          )}
-        </AlertBanner>
+        <Alert variant="info">
+          <AlertDescription>
+            {t(
+              'This proposal is currently in draft mode, only you and collaborators can access it.',
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="space-y-4">
         {selection && (
-          <div className="flex items-center gap-1 text-sm text-functional-green">
+          <div className="flex items-center gap-1 text-sm text-success">
             <LuCircleCheck className="size-4" />
             <span>{t('Selected')}</span>
           </div>
@@ -127,13 +130,15 @@ export function ProposalPreview({
         {/* Only the author (+ collaborators) and admins ever receive a flagged
             proposal — everyone else has it filtered out server-side. */}
         {proposal.isFlagged && (
-          <div className="flex items-center gap-1 text-sm text-functional-red">
+          <div className="flex items-center gap-1 text-sm text-destructive">
             <LuFlag className="size-4" />
             <span>{t('Hidden from members after a moderation review')}</span>
           </div>
         )}
 
-        <Header1 className="font-serif text-title-lg">
+        {/* `!text-title-lg` keeps the pre-migration 28px serif title — sense's
+            `text-display` (Header1's default) is a different step. */}
+        <Header1 className="font-serif !text-title-lg">
           {title || t('Untitled Proposal')}
         </Header1>
 
@@ -152,10 +157,10 @@ export function ProposalPreview({
               <div className="flex flex-wrap items-end gap-2">
                 <BudgetDisplay
                   value={selection.allocated}
-                  className="font-serif text-title-base text-neutral-black"
+                  className="font-serif text-title-base text-foreground"
                 />
                 {budget && (
-                  <span className="text-sm text-neutral-gray4">
+                  <span className="text-sm text-muted-foreground">
                     {t('{amount} requested', {
                       amount: formatBudget(budget) ?? '',
                     })}
@@ -165,7 +170,7 @@ export function ProposalPreview({
             ) : (
               <BudgetDisplay
                 value={budget}
-                className="font-serif text-title-base text-neutral-black"
+                className="font-serif text-title-base text-foreground"
               />
             )}
             {categories.length > 0 && (
@@ -175,7 +180,7 @@ export function ProposalPreview({
                     key={category}
                     className="max-w-full sm:max-w-96 sm:rounded-md"
                   >
-                    <span className="truncate">{category}</span>
+                    {category}
                   </Tag>
                 ))}
               </TagGroup>
@@ -193,25 +198,25 @@ export function ProposalPreview({
                 />
                 <div className="flex flex-col">
                   {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
-                    <span className="text-base text-neutral-black">
+                    <span className="text-base text-foreground">
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </span>
                   ) : (
                     <NavLink
                       href={`/profile/${proposal.submittedBy.slug}`}
-                      className="text-base text-neutral-black hover:no-underline"
+                      className="text-base text-foreground hover:no-underline"
                     >
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </NavLink>
                   )}
                   {!isDraft && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
                       <span>
                         {t('Submitted on')} {formatDate(proposal.createdAt)}
                       </span>
                       {submissionMetaSuffix && (
                         <>
-                          <span className="text-neutral-gray4">•</span>
+                          <Bullet />
                           {submissionMetaSuffix}
                         </>
                       )}
@@ -223,7 +228,7 @@ export function ProposalPreview({
           </div>
 
           {/* Engagement Stats */}
-          <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
+          <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <LuHeart className="h-4 w-4" />
               <span>
@@ -257,7 +262,7 @@ export function ProposalPreview({
       {/* Proposal Content */}
       {documentState === 'pending' ? (
         <div className="flex justify-center py-8">
-          <LoadingSpinner />
+          <Spinner />
         </div>
       ) : documentState === 'error' ? (
         <DocumentNotAvailable className="py-4" />
@@ -275,7 +280,10 @@ export function ProposalPreview({
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-8">
-          <Header3 className="mb-4 font-sans">{t('Attachments')}</Header3>
+          {/* `!text-title-base` keeps the pre-migration 20px heading. */}
+          <Header3 className="mb-4 font-sans !text-title-base">
+            {t('Attachments')}
+          </Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}

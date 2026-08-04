@@ -1,8 +1,9 @@
 'use client';
 
-// viewerStyles subpath, not editorConfig or the barrel: keeps the TipTap
-// editor machinery out of this client component's bundle graph.
-import { viewerProseStyles } from '@op/ui/RichTextEditor/viewerStyles';
+// viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
+// re-exports a hook (useEffect) and importing it from a server-rendered tree
+// breaks the RSC build. Keep this subpath import — it has regressed before.
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import { useMemo } from 'react';
 
 import { LinkPreview } from '../LinkPreview';

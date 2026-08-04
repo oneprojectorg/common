@@ -1,8 +1,13 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -39,16 +44,19 @@ export function ViewRevisionRequestModal({
     : null;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>{t('Revision request')}</ModalHeader>
-      <ModalBody>
-        <div className="flex flex-col gap-2">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Request Revision')}</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-2 px-6 py-4">
           <span className="text-base text-neutral-black">
-            {t('Feedback for proposal author')}
+            {t('Feedback to Author')}
           </span>
 
-          <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-3">
-            <p className="text-base text-neutral-charcoal">
+          <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-3">
+            <p dir="auto" className="text-base text-neutral-charcoal">
               {revisionRequest.requestComment}
             </p>
             {sentDate && (
@@ -64,24 +72,20 @@ export function ViewRevisionRequestModal({
             )}
           </div>
         </div>
-      </ModalBody>
-      <ModalFooter>
-        {isOwnRevisionRequest && (
-          <Button
-            color="secondary"
-            onPress={handleCancelRequest}
-            isDisabled={isCancellingRevision}
-          >
-            {isCancellingRevision ? (
-              <LoadingSpinner className="size-4" />
-            ) : null}
-            {t('Cancel request')}
-          </Button>
-        )}
-        <Button color="primary" onPress={() => onOpenChange(false)}>
-          {t('Close')}
-        </Button>
-      </ModalFooter>
-    </Modal>
+
+        <DialogFooter>
+          {isOwnRevisionRequest && (
+            <Button
+              variant="outline"
+              onClick={handleCancelRequest}
+              loading={isCancellingRevision}
+            >
+              {t('Cancel request')}
+            </Button>
+          )}
+          <Button onClick={() => onOpenChange(false)}>{t('Close')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

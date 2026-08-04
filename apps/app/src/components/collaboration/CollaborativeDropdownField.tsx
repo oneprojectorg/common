@@ -1,8 +1,14 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import { Select, SelectItem } from '@op/ui/Select';
-import { useEffect, useRef, type Key } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -64,45 +70,55 @@ export function CollaborativeDropdownField({
     onChangeRef.current?.(selectedValue);
   }, [selectedValue]);
 
+  // Value→label map so base-ui's SelectValue renders the label, not the raw id.
+  const itemLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    if (allowEmpty) {
+      labels[EMPTY_KEY] = t('None');
+    }
+    for (const option of options) {
+      labels[option.value] = option.label;
+    }
+    return labels;
+  }, [options, allowEmpty, t]);
+
   if (options.length === 0) {
     return null;
   }
 
-  const handleSelectionChange = (key: Key | null) => {
-    if (key === null) {
+  const resolvedPlaceholder = placeholder ?? t('Select option');
+
+  const handleValueChange = (value: string | null) => {
+    if (value === null || value === EMPTY_KEY) {
       setSelectedValue(null);
       return;
     }
-    const value = String(key);
-    if (value === EMPTY_KEY) {
-      setSelectedValue(null);
-    } else {
-      setSelectedValue(value);
-    }
+    setSelectedValue(value);
   };
 
   return (
     <Select
-      variant="pill"
-      size="medium"
-      isRequired={required}
-      placeholder={placeholder ?? t('Select option')}
-      selectedKey={selectedValue}
-      onSelectionChange={handleSelectionChange}
-      selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-      className="w-fit max-w-full"
-      popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
+      items={itemLabels}
+      value={selectedValue}
+      onValueChange={handleValueChange}
+      required={required}
     >
-      {allowEmpty && (
-        <SelectItem className="min-w-fit" key={EMPTY_KEY} id={EMPTY_KEY}>
-          {t('None')}
-        </SelectItem>
-      )}
-      {options.map((opt) => (
-        <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-          {opt.label}
-        </SelectItem>
-      ))}
+      <SelectTrigger
+        aria-label={resolvedPlaceholder}
+        aria-required={required || undefined}
+        // Keeps the @op/ui "pill" look: tinted fill, teal label, no border.
+        className="w-fit max-w-full border-0 bg-accent text-primary shadow-none data-placeholder:text-primary"
+      >
+        <SelectValue placeholder={resolvedPlaceholder} />
+      </SelectTrigger>
+      <SelectContent className="sm:max-w-2xl sm:min-w-fit">
+        {allowEmpty && <SelectItem value={EMPTY_KEY}>{t('None')}</SelectItem>}
+        {options.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
     </Select>
   );
 }

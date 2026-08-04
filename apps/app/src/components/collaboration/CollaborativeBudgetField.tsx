@@ -2,8 +2,8 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { NumberField } from '@op/ui/NumberField';
+import { Button } from '@op/sense/Button';
+import { NumberField } from '@op/sense/NumberField';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -97,7 +97,9 @@ export function CollaborativeBudgetField({
       return;
     }
     const frame = requestAnimationFrame(() => {
-      const group = budgetInputRef.current?.closest('[role="group"]');
+      const group = budgetInputRef.current?.closest(
+        '[data-slot="input-group"]',
+      );
       const inputW = group instanceof HTMLElement ? group.offsetWidth : 0;
       const buttonW = buttonRef.current?.scrollWidth ?? 0;
       const width = Math.max(inputW, buttonW);
@@ -152,6 +154,9 @@ export function CollaborativeBudgetField({
           isEditing ? 'max-w-md' : 'pointer-events-none absolute opacity-0'
         }
         style={sharedWidth > 0 ? { minWidth: sharedWidth } : undefined}
+        // While the pill is showing, the measured-but-invisible input must not
+        // be an extra tab stop or a second announcement of the same field.
+        aria-hidden={!isEditing || undefined}
       >
         <NumberField
           ref={budgetInputRef}
@@ -160,21 +165,19 @@ export function CollaborativeBudgetField({
           minValue={minAmount ?? 0}
           maxValue={maxAmount}
           prefixText={currencySymbol}
-          inputProps={{
-            placeholder: placeholderText,
-            onBlur: handleBlur,
-            className: 'shadow-none',
-          }}
-          fieldClassName="rounded-lg"
+          placeholder={placeholderText}
+          onBlur={handleBlur}
+          aria-label={t('Budget')}
+          tabIndex={isEditing ? undefined : -1}
         />
       </div>
       {!isEditing && (
         <Button
           ref={buttonRef}
-          variant="pill"
-          color="pill"
-          onPress={handleStartEditing}
-          className="justify-start text-start"
+          variant="ghost"
+          onClick={handleStartEditing}
+          // Keeps the @op/ui "pill" look: tinted fill, teal label, no shadow.
+          className="h-auto justify-start bg-accent p-2 text-start text-primary shadow-none hover:bg-accent/70 hover:text-primary"
         >
           {budgetAmount !== null
             ? budgetAmount.toLocaleString(undefined, {

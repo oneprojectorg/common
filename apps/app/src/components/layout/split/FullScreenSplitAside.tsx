@@ -1,6 +1,6 @@
 'use client';
 
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -39,7 +39,10 @@ export const FullScreenSplitAside = ({
           </h1>
           <SideImage className="w-full" />
           <div className="flex w-full max-w-80 flex-col items-center justify-center gap-4 text-offWhite">
-            <Header2 className="text-center font-serif text-title-md">
+            {/* `!text-title-md` (24px) pins the size sense's `text-headline`
+                (30px) would otherwise win — legacy scale token, no sense
+                equivalent at this step; swap-only, so keep the current look. */}
+            <Header2 className="text-center font-serif !text-title-md">
               {t('Connect with your network.')}
             </Header2>
             <span className="text-center text-base leading-[150%]">

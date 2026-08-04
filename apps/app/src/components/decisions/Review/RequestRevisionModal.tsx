@@ -1,10 +1,16 @@
 'use client';
 
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { TextField } from '@op/ui/TextField';
+import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Textarea } from '@op/sense/Textarea';
 import { useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
@@ -16,6 +22,9 @@ interface RequestRevisionModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const FEEDBACK_FIELD_ID = 'request-revision-feedback';
+const FEEDBACK_DESCRIPTION_ID = 'request-revision-feedback-description';
 
 export function RequestRevisionModal({
   isOpen,
@@ -40,61 +49,68 @@ export function RequestRevisionModal({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
+    <Dialog
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
           setComment('');
         }
         onOpenChange(open);
       }}
-      isDismissable
     >
-      <ModalHeader>{t('Request revision')}</ModalHeader>
-      <ModalBody>
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-col gap-1">
-            <span className="text-base text-neutral-black">
-              {t('Feedback for proposal author')}
-            </span>
-            <span className="text-sm text-neutral-black">
-              {t('Shared anonymously with the proposal author and admins.')}
-            </span>
-          </div>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Request Revision')}</DialogTitle>
+        </DialogHeader>
 
-          <TextField
-            aria-label={t('Feedback for proposal author')}
-            value={comment}
-            onChange={setComment}
-            useTextArea
-            textareaProps={{
-              placeholder: t('What changes should the author make?'),
-              rows: 5,
-            }}
-          />
+        <div className="flex flex-col gap-4 px-6 py-4">
+          {/* The consequences of a revision request lead the dialog (Figma):
+              alert first, then the feedback field. */}
+          <Alert variant="warning">
+            <LuCircleAlert />
+            <AlertTitle>{t('Before you request a revision')}</AlertTitle>
+            <AlertDescription>
+              {t(
+                'Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.',
+              )}
+            </AlertDescription>
+          </Alert>
+
+          <Field>
+            <FieldLabel htmlFor={FEEDBACK_FIELD_ID}>
+              {t('Feedback for proposal author')}
+            </FieldLabel>
+            <FieldDescription id={FEEDBACK_DESCRIPTION_ID}>
+              {t('Shared anonymously with the author and other reviewers.')}
+            </FieldDescription>
+            <Textarea
+              id={FEEDBACK_FIELD_ID}
+              aria-describedby={FEEDBACK_DESCRIPTION_ID}
+              className="[unicode-bidi:plaintext]"
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder={t('What changes should the author make?')}
+              rows={5}
+            />
+          </Field>
         </div>
 
-        <AlertBanner
-          intent="warning"
-          variant="banner"
-          icon={<LuCircleAlert className="size-4" />}
-        >
-          {t('Reviewing will be paused until a revision is submitted.')}
-        </AlertBanner>
-      </ModalBody>
-      <ModalFooter>
-        <Button color="secondary" onPress={handleCancel}>
-          {t('Cancel')}
-        </Button>
-        <Button
-          color="primary"
-          onPress={handleSubmit}
-          isDisabled={!comment.trim() || isRequestingRevision}
-        >
-          {isRequestingRevision ? <LoadingSpinner className="size-4" /> : null}
-          {t('Request revision')}
-        </Button>
-      </ModalFooter>
-    </Modal>
+        <DialogFooter>
+          {/* Figma shows a single primary button, but an explicit Cancel stays:
+              it's the only keyboard-reachable dismiss control in the footer of
+              a destructive-ish flow. */}
+          <Button variant="outline" onClick={handleCancel}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!comment.trim()}
+            loading={isRequestingRevision}
+          >
+            {t('Request revision')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

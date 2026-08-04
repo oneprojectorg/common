@@ -1,12 +1,16 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Header1, Header3 } from '@op/ui/Header';
-import { Modal } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Header3 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
+import { CheckIcon } from '@op/sense/icons';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -38,8 +42,9 @@ const VoteSuccessModalSuspense = ({
   const processTitle = processInstance.name;
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal isDismissable confetti>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {/* 32rem keeps the width the @op/ui Modal had before the swap. */}
+      <DialogContent confetti className="sm:max-w-lg">
         <div className="z-10 p-12 text-center">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-4">
@@ -48,11 +53,11 @@ const VoteSuccessModalSuspense = ({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Header1 className="font-serif text-2xl font-light">
+                <DialogTitle className="font-serif text-2xl font-light">
                   {t('Your ballot is in!')}
-                </Header1>
+                </DialogTitle>
 
-                <p className="text-base text-neutral-charcoal">
+                <DialogDescription className="text-base text-neutral-charcoal">
                   {processTitle
                     ? t(
                         'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
@@ -63,7 +68,7 @@ const VoteSuccessModalSuspense = ({
                     : t(
                         'Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.',
                       )}
-                </p>
+                </DialogDescription>
               </div>
 
               {nextSteps.length > 0 && (
@@ -74,7 +79,7 @@ const VoteSuccessModalSuspense = ({
                   <ul className="flex flex-col gap-4 ps-4">
                     {nextSteps.map((step) => (
                       <li key={step.id} className="flex items-start gap-2">
-                        <span>•</span>
+                        <span aria-hidden>•</span>
                         <span>{formatStepForDisplay(step)}</span>
                       </li>
                     ))}
@@ -83,13 +88,13 @@ const VoteSuccessModalSuspense = ({
               )}
             </div>
 
-            <Button onPress={onClose} color="primary" className="w-full">
+            <Button onClick={onClose} className="w-full">
               {t('View all proposals')}
             </Button>
           </div>
         </div>
-      </Modal>
-    </DialogTrigger>
+      </DialogContent>
+    </Dialog>
   );
 };
 

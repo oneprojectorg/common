@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { Badge } from '@op/sense/Badge';
+import { RichTextViewer } from '@op/sense/RichTextEditor';
 import type { JSONContent } from '@tiptap/react';
 import { useMemo } from 'react';
 
@@ -15,7 +15,7 @@ export function ReadonlyTitleField({ value }: { value: string | null }) {
   const t = useTranslations();
 
   return (
-    <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal">
+    <div className="h-auto border-0 p-0 font-serif text-title-lg text-foreground">
       {value || t('Untitled Proposal')}
     </div>
   );
@@ -60,7 +60,7 @@ export function ReadonlyTextField({
         />
       ) : (
         <div
-          className={`text-neutral-gray3 ${multiline ? 'min-h-32' : 'min-h-8'}`}
+          className={`text-muted-foreground ${multiline ? 'min-h-32' : 'min-h-8'}`}
         >
           {placeholder}
         </div>
@@ -84,9 +84,9 @@ export function ReadonlyDropdownField({
   placeholder: string;
 }) {
   const content = (
-    <Button variant="pill" color="pill" className="justify-start text-start">
+    <Badge variant="secondary" className="justify-start text-start">
       {value ?? placeholder}
-    </Button>
+    </Badge>
   );
 
   if (!title && !description) {
@@ -117,11 +117,7 @@ export function ReadonlyBudgetField({
   description?: string;
   placeholder: string;
 }) {
-  const content = (
-    <Button variant="pill" color="pill">
-      {value ?? placeholder}
-    </Button>
-  );
+  const content = <Badge variant="secondary">{value ?? placeholder}</Badge>;
 
   if (!title && !description) {
     return content;

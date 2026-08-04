@@ -1,30 +1,22 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
 import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { formatBudget } from './BudgetDisplay';
+import { formatBudgetCompact } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
-
-const NoProposalsFound = () => {
-  const t = useTranslations();
-  return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {t('No results yet for this decision.')}
-      </Header3>
-      <p className="text-base text-neutral-charcoal">
-        {t('Results are still being worked on.')}
-      </p>
-    </EmptyState>
-  );
-};
 
 export const ResultsList = ({
   slug,
@@ -58,6 +50,8 @@ export const ResultsList = ({
   return (
     <div className="flex flex-col gap-4 pb-12">
       <div className="flex items-center gap-4">
+        {/* `!text-title-base` matches the sibling "My ballot" panel heading
+            (MyBallot.tsx) — sense's `text-title` is a step smaller on mobile. */}
         <Header3 className="font-serif !text-title-base">
           {t('Selected Proposals')}
         </Header3>
@@ -71,7 +65,7 @@ export const ResultsList = ({
 
           const awardedText =
             proposal.allocated != null
-              ? formatBudget(proposal.allocated)
+              ? formatBudgetCompact(proposal.allocated)
               : undefined;
 
           return (
@@ -93,5 +87,22 @@ export const ResultsList = ({
         })}
       </ProposalMasonry>
     </div>
+  );
+};
+
+const NoProposalsFound = () => {
+  const t = useTranslations();
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('No results yet for this decision.')}</EmptyTitle>
+        <EmptyDescription>
+          {t('Results are still being worked on.')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 };

@@ -6,9 +6,9 @@ import {
   type SubmittedReviewItem,
   findSchemaOption,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Button } from '@op/sense/Button';
+import { Header3 } from '@op/sense/Header';
+import { StatusDot } from '@op/sense/StatusDot';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -49,9 +49,9 @@ export function ReviewerDetail({
     <div className="flex flex-col gap-6">
       <Button
         variant="link"
-        size="inline"
-        onPress={onBack}
-        className="inline-flex items-center gap-1 self-start text-base"
+        size="sm"
+        onClick={onBack}
+        className="h-auto gap-1 self-start p-0 text-base"
       >
         <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {t('Back to all reviewers')}
@@ -81,7 +81,7 @@ export function ReviewerDetail({
             )}
             {hasScoring && (
               <span className="text-sm text-neutral-gray4">
-                ({item.score}/{totalPoints}pts)
+                ({item.score}/{totalPoints})
               </span>
             )}
           </div>

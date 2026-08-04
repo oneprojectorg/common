@@ -7,9 +7,8 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Header3 } from '@op/sense/Header';
+import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
@@ -194,9 +193,11 @@ function ReviewerRow({
 }) {
   const t = useTranslations();
   return (
-    <Button
-      unstyled
-      onPress={() => onSelect(item.review.assignmentId)}
+    // sense `Button` has no `unstyled` escape hatch, so this row stays a
+    // native button to keep its exact card look.
+    <button
+      type="button"
+      onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full cursor-pointer items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start outline-0 outline-transparent transition-colors duration-200 hover:bg-neutral-offWhite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
       aria-label={t('View review by {name}', {
         name: item.reviewer.name ?? item.reviewer.slug,
@@ -221,6 +222,6 @@ function ReviewerRow({
         </div>
       </div>
       <LuChevronRight className="size-4 text-neutral-gray4 rtl:-scale-x-100" />
-    </Button>
+    </button>
   );
 }

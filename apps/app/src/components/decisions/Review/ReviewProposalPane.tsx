@@ -4,7 +4,7 @@ import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
-import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
+import { AuthorRevisionNote } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
 
 export function ReviewProposalPane() {
@@ -20,12 +20,12 @@ export function ReviewProposalPane() {
     <div className="flex flex-col gap-8">
       <ProposalPreview
         proposal={assignment.proposal}
-        submissionMetaSuffix={
-          respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
-        }
         headerBanner={
           responseComment ? (
-            <AuthorRevisionNote comment={responseComment} />
+            <AuthorRevisionNote
+              comment={responseComment}
+              respondedAt={respondedAt}
+            />
           ) : undefined
         }
       />

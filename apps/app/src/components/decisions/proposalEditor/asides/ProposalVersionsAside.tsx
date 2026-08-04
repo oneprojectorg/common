@@ -2,8 +2,14 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from '@op/sense/Item';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import {
@@ -83,20 +89,16 @@ export function ProposalVersionsAside({
 
   return (
     <>
-      <ProposalEditorAside
-        title={t('Version history')}
-        onClose={onClose}
-        bodyClassName="px-4 pt-4"
-      >
-        <VersionItem
-          label={t('Current version')}
-          sublabel={t('Latest')}
-          isSelected={versionId === null}
-          isPending={isPending}
-          onSelect={() => onSelectVersion(null)}
-        />
+      <ProposalEditorAside title={t('Version history')} onClose={onClose}>
+        <ItemGroup className="gap-2">
+          <VersionItem
+            label={t('Current version')}
+            sublabel={t('Latest')}
+            isSelected={versionId === null}
+            isPending={isPending}
+            onSelect={() => onSelectVersion(null)}
+          />
 
-        <>
           {versions.map((version) => (
             <SavedVersionItem
               key={version.version}
@@ -108,7 +110,7 @@ export function ProposalVersionsAside({
               onSelect={() => onSelectVersion(version.version)}
             />
           ))}
-        </>
+        </ItemGroup>
       </ProposalEditorAside>
 
       {selectedVersion && (
@@ -142,23 +144,28 @@ function VersionItem({
   const t = useTranslations();
 
   return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-tealWhite',
-        isSelected && 'bg-primary-tealWhite',
-      )}
-    >
-      <Button
-        unstyled
-        onPress={onSelect}
-        isDisabled={isPending}
-        className="flex w-full flex-col items-start text-start shadow-none outline-hidden focus-visible:outline-none"
+    <div role="listitem" className="flex w-full flex-col gap-2">
+      <Item
+        // base-ui/cmdk stamp `data-*="false"` too, so the tint variant is
+        // guarded with `data-[selected=true]:` (see MIGRATION.wrk.md).
+        data-selected={isSelected ? true : undefined}
+        className="text-start hover:bg-muted data-[selected=true]:bg-accent data-[selected=true]:hover:bg-accent"
+        render={
+          <button
+            type="button"
+            onClick={onSelect}
+            disabled={isPending}
+            aria-current={isSelected ? 'true' : undefined}
+          />
+        }
       >
-        <p className="text-base text-neutral-black">{label}</p>
-        <p className="text-sm text-neutral-charcoal">{sublabel}</p>
-      </Button>
+        <ItemContent>
+          <ItemTitle>{label}</ItemTitle>
+          <ItemDescription>{sublabel}</ItemDescription>
+        </ItemContent>
+      </Item>
       {isSelected && onRestore && (
-        <Button size="small" onPress={onRestore} isDisabled={isPending}>
+        <Button size="sm" onClick={onRestore} disabled={isPending}>
           {t('Restore this version')}
         </Button>
       )}
@@ -193,7 +200,7 @@ function SavedVersionItem({
   return (
     <VersionItem
       label={label}
-      sublabel={t('Auto-saved')}
+      sublabel={t('Auto saved')}
       isSelected={isSelected}
       isPending={isPending}
       onRestore={onRestore}

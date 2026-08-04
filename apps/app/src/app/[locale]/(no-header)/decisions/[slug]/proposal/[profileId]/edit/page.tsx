@@ -13,10 +13,13 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/sense/Button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@op/sense/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
@@ -73,7 +76,6 @@ function EditProposalPageContent() {
     reviewRevision: proposalEditorReviewRevisionParser,
   });
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   // -- Data fetching ---------------------------------------------------------
 
@@ -181,24 +183,31 @@ function EditProposalPageContent() {
     ? []
     : firstRevisionRequestId
       ? [
-          <TooltipTrigger key="revision-request">
-            <Button
-              color="secondary"
-              variant="icon"
-              size="small"
-              onPress={toggleRevisionRequest}
-              aria-label={revisionRequestLabel}
-              aria-pressed={Boolean(reviewRevision)}
-              className="relative size-8 min-w-8 rounded-sm p-0"
-            >
-              <LuStickyNote className="size-4" />
-              <span
-                aria-hidden
-                className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
+          // `delay` lives on the provider, not the Tooltip root — the sense
+          // app-wide default is 100ms, these icon buttons want the old 500ms.
+          <TooltipProvider key="revision-request" delay={500}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={toggleRevisionRequest}
+                    aria-label={revisionRequestLabel}
+                    aria-pressed={Boolean(reviewRevision)}
+                    className="relative"
+                  >
+                    <LuStickyNote className="size-4" />
+                    <span
+                      aria-hidden
+                      className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
+                    />
+                  </Button>
+                }
               />
-            </Button>
-            <Tooltip>{revisionRequestLabel}</Tooltip>
-          </TooltipTrigger>,
+              <TooltipContent>{revisionRequestLabel}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>,
           ...asideHeaderIcons,
         ]
       : asideHeaderIcons;
@@ -239,7 +248,6 @@ function EditProposalPageContent() {
           asideState={asideState}
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
-          isMobile={isMobile}
           revisionRequest={revisionRequest}
         />
       </VersionPreviewProvider>
@@ -262,7 +270,6 @@ function ProposalEditorContent({
   asideState,
   setAsideState,
   asideHeaderIcons,
-  isMobile,
   revisionRequest,
 }: {
   proposal: Proposal;
@@ -272,7 +279,6 @@ function ProposalEditorContent({
   asideState: ProposalEditorAsideState;
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
-  isMobile: boolean;
   revisionRequest: ProposalReviewRequest | null;
 }) {
   const versionPreview = useOptionalVersionPreview();
@@ -305,7 +311,7 @@ function ProposalEditorContent({
     ) : undefined;
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-background">
       <ProposalEditor
         instance={instance}
         backHref={`/decisions/${slug}/current`}
@@ -314,9 +320,10 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        showHeaderActions={isMobile || !asideSlot}
         revisionRequest={revisionRequest}
       />
+      {/* Portals to the body as a sheet (desktop) / drawer (mobile), so the
+          header actions behind it stay visible. */}
       {asideSlot}
     </div>
   );
@@ -349,20 +356,24 @@ function useProposalEditorAsideHeaderIcons({
     const Icon = definition.icon;
 
     return (
-      <TooltipTrigger key={asideKey}>
-        <Button
-          color="secondary"
-          variant="icon"
-          size="small"
-          onPress={() => onToggleAside(asideKey)}
-          aria-label={definition.label}
-          aria-pressed={aside === asideKey}
-          className="size-8 min-w-8 rounded-sm p-0"
-        >
-          <Icon className="size-4" />
-        </Button>
-        <Tooltip>{definition.label}</Tooltip>
-      </TooltipTrigger>
+      <TooltipProvider key={asideKey} delay={500}>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => onToggleAside(asideKey)}
+                aria-label={definition.label}
+                aria-pressed={aside === asideKey}
+              >
+                <Icon className="size-4" />
+              </Button>
+            }
+          />
+          <TooltipContent>{definition.label}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   });
 }

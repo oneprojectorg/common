@@ -172,6 +172,7 @@ const VotingProposalsList = ({
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
   const t = useTranslations();
@@ -235,6 +236,9 @@ const VotingProposalsList = ({
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
+    // The review dialog is controlled here (sense Dialog has no descendant
+    // close API), so dismiss it before the success confirmation opens.
+    setIsVoteReviewOpen(false);
     setSelectedProposalIds([]);
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
@@ -449,7 +453,7 @@ const VotingProposalsList = ({
           </FooterBarStart>
           <FooterBarCenter />
           <FooterBarEnd>
-            <Dialog>
+            <Dialog open={isVoteReviewOpen} onOpenChange={setIsVoteReviewOpen}>
               <DialogTrigger
                 render={
                   <Button disabled={numSelected === 0} variant="default">
@@ -457,7 +461,7 @@ const VotingProposalsList = ({
                   </Button>
                 }
               />
-              <DialogContent className="h-full">
+              <DialogContent className="sm:max-w-2xl">
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
                   instanceId={instanceId}

@@ -1,8 +1,13 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { Modal } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { CheckIcon } from '@op/sense/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -35,29 +40,32 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
   };
 
   return (
-    <Modal
-      isDismissable
-      isOpen={isOpen}
+    <Dialog
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
           handleClose();
         }
       }}
-      confetti
-      className="flex flex-col items-center gap-6 p-12 text-center"
     >
-      <CheckIcon />
-      <div className="flex flex-col gap-3">
-        <h2 className="font-serif text-title-lg text-neutral-black">
-          {t('Results are live!')}
-        </h2>
-        <p className="max-w-sm text-base text-neutral-charcoal">
-          {t('All participants can now view the winning proposals.')}
-        </p>
-      </div>
-      <Button color="primary" className="w-full" onPress={handleClose}>
-        {t('View public results page')}
-      </Button>
-    </Modal>
+      {/* 32rem keeps the width the @op/ui Modal had before the swap. */}
+      <DialogContent
+        confetti
+        className="flex flex-col items-center gap-6 p-12 text-center sm:max-w-lg"
+      >
+        <CheckIcon />
+        <div className="flex flex-col gap-3">
+          <DialogTitle className="text-title-lg text-neutral-black">
+            {t('Results are live!')}
+          </DialogTitle>
+          <DialogDescription className="max-w-sm text-base text-neutral-charcoal">
+            {t('All participants can now view the winning proposals.')}
+          </DialogDescription>
+        </div>
+        <Button className="w-full" onClick={handleClose}>
+          {t('View public results page')}
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 };

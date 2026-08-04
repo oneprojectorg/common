@@ -2,23 +2,30 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { ListBox } from '@op/ui/ListBox';
-import { Popover } from '@op/ui/Popover';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
 import { useEffect, useMemo, useRef } from 'react';
-import type { Key } from 'react';
-import { Dialog, ListBoxItem } from 'react-aria-components';
-import type { Selection } from 'react-aria-components';
-import { LuCheck } from 'react-icons/lu';
+import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
+interface MultiSelectOption {
+  value: string;
+  label: string;
+}
+
 interface CollaborativeMultiSelectFieldProps {
-  options: Array<{ value: string; label: string }>;
+  options: Array<MultiSelectOption>;
   initialValue?: string[];
   onChange?: (value: string[]) => void;
   /** Yjs fragment name used to sync this field. Must be unique per instance. */
@@ -53,7 +60,6 @@ export function CollaborativeMultiSelectField({
     () => parseCategoryFragmentValue(syncedValue),
     [syncedValue],
   );
-  const selectedKeys = useMemo(() => new Set(selectedValues), [selectedValues]);
   const selectedOptions = useMemo(
     () => options.filter((option) => selectedValues.includes(option.value)),
     [options, selectedValues],
@@ -76,95 +82,60 @@ export function CollaborativeMultiSelectField({
     onChangeRef.current?.(selectedValues);
   }, [selectedValues]);
 
-  const handleSelectionChange = (keys: Selection) => {
-    if (keys === 'all') {
-      setSyncedValue(JSON.stringify(options.map((o) => o.value)));
-      return;
-    }
-    const nextValues = options
-      .map((option) => option.value)
-      .filter((value) => keys.has(value));
-    setSyncedValue(JSON.stringify(nextValues));
-  };
-
-  const handleTagRemove = (keys: Set<Key>) => {
-    setSyncedValue(
-      JSON.stringify(selectedValues.filter((value) => !keys.has(value))),
-    );
-  };
-
-  const buttonLabel =
-    selectedOptions.length === 0
-      ? (placeholder ?? t('Select option'))
-      : selectedOptions.length === 1
-        ? t('1 category selected')
-        : t('{count} categories selected', { count: selectedOptions.length });
-
   if (options.length === 0) {
     return null;
   }
 
+  const resolvedPlaceholder = placeholder ?? t('Select option');
+
+  const handleValueChange = (nextOptions: Array<MultiSelectOption>) => {
+    // Normalize to the option order so the synced array stays stable no matter
+    // which order the chips were added in.
+    setSyncedValue(
+      JSON.stringify(
+        options
+          .filter((option) =>
+            nextOptions.some((selected) => selected.value === option.value),
+          )
+          .map((option) => option.value),
+      ),
+    );
+  };
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <DialogTrigger>
-        <Button
-          variant="pill"
-          color="pill"
-          className="w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none"
-        >
-          {buttonLabel}
-        </Button>
-        <Popover
-          placement="bottom start"
-          className="min-w-(--trigger-width) overflow-hidden rounded border bg-white shadow"
-        >
-          <Dialog className="outline-hidden">
-            <ListBox
-              aria-label={placeholder ?? t('Select option')}
-              items={options.map((option) => ({
-                id: option.value,
-                label: option.label,
-              }))}
-              selectionMode="multiple"
-              selectedKeys={selectedKeys}
-              onSelectionChange={handleSelectionChange}
-              className="max-h-60 overflow-auto rounded border-0 p-2 outline-hidden"
-            >
-              {(item) => (
-                <ListBoxItem
-                  id={item.id}
-                  textValue={item.label}
-                  className="group flex cursor-pointer items-center gap-4 rounded px-3 py-2 text-neutral-black outline-hidden select-none data-[focus-visible]:bg-neutral-gray1 data-[hovered]:bg-neutral-gray1"
-                >
-                  <span className="flex h-full flex-1 items-center gap-2 font-normal">
-                    {item.label}
-                  </span>
-                  <span className="flex w-5 items-center">
-                    <LuCheck
-                      aria-hidden
-                      className="size-4 opacity-0 group-selected:opacity-100"
-                    />
-                  </span>
-                </ListBoxItem>
-              )}
-            </ListBox>
-          </Dialog>
-        </Popover>
-      </DialogTrigger>
-      {selectedOptions.length > 0 && (
-        <TagGroup onRemove={handleTagRemove}>
-          {selectedOptions.map((option) => (
-            <Tag
-              key={option.value}
-              id={option.value}
-              textValue={option.label}
-              className="text-base leading-none"
-            >
-              {option.label}
-            </Tag>
-          ))}
-        </TagGroup>
-      )}
-    </div>
+    <Combobox
+      multiple
+      items={options}
+      value={selectedOptions}
+      onValueChange={handleValueChange}
+      itemToStringLabel={(option: MultiSelectOption) => option.label}
+      isItemEqualToValue={(a: MultiSelectOption, b: MultiSelectOption) =>
+        a.value === b.value
+      }
+    >
+      <ComboboxChips className="max-w-full">
+        <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
+        {/* ComboboxChip takes no `value` — the chip↔value link is render order. */}
+        {selectedOptions.map((option) => (
+          <ComboboxChip key={option.value}>{option.label}</ComboboxChip>
+        ))}
+        <ComboboxChipsInput
+          aria-label={resolvedPlaceholder}
+          placeholder={
+            selectedOptions.length === 0 ? resolvedPlaceholder : undefined
+          }
+        />
+      </ComboboxChips>
+      <ComboboxContent>
+        <ComboboxEmpty>{t('No results')}</ComboboxEmpty>
+        <ComboboxList>
+          {(item: MultiSelectOption) => (
+            <ComboboxItem key={item.value} value={item}>
+              {item.label}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }

@@ -6,8 +6,8 @@ import {
   MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
   isAllowedUploadMimeType,
 } from '@op/common/client';
+import { FileDropZone } from '@op/sense/FileDropZone';
 import { toast } from '@op/sense/Toast';
-import { FileDropZone } from '@op/ui/FileDropZone';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -175,10 +175,13 @@ export function ProposalAttachments({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
-          {t('Attachments (optional)')}
+        <span className="font-serif text-title-xs text-foreground">
+          {t('Attachments ({count}/{max})', {
+            count: optimisticAttachments.length,
+            max: MAX_FILES,
+          })}
         </span>
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-sm text-foreground">
           {t(
             'Support your proposal with relevant documents like budgets or supporting research.',
           )}
@@ -192,25 +195,19 @@ export function ProposalAttachments({
         onSelectFiles={handleSelectFiles}
         label={t.rich('Drag a file here or <browse>browse</browse>', {
           browse: (chunks: ReactNode) => (
-            <span className="text-primary-teal hover:text-primary-tealBlack hover:underline">
-              {chunks}
-            </span>
+            <span className="text-primary hover:underline">{chunks}</span>
           ),
         })}
+        // Figma reads "Accepts PDF, DOCX, XLSX up to 10MB" (no MP4, no "and
+        // more"); the code list is kept as the source of truth for what upload
+        // actually accepts — copy delta flagged, not applied.
         description={t('Accepts {types} and more up to {size}MB', {
           types: 'MP4, PDF, DOCX, XLSX',
           size: MAX_SIZE_MB,
         })}
         allowsMultiple
-        isDisabled={!canAddMore}
+        disabled={!canAddMore}
       />
-
-      <p className="text-sm text-neutral-gray4">
-        {t('{count}/{max} attachments added', {
-          count: optimisticAttachments.length,
-          max: MAX_FILES,
-        })}
-      </p>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 'use client';
 
-import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
-import { cn } from '@op/ui/utils';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { cn } from '@op/sense/lib/utils';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { getProposalExtensions } from '../RichTextEditor';
 import { CollaborativeEditor } from './CollaborativeEditor';
@@ -47,13 +49,14 @@ export function CollaborativeTextField({
   title,
   required,
   description,
-  placeholder = 'Start typing...',
+  placeholder,
   multiline = false,
   maxLength,
   onChange,
   onEditorFocus,
   onEditorBlur,
 }: CollaborativeTextFieldProps) {
+  const t = useTranslations();
   const [charCount, setCharCount] = useState(0);
 
   // No Placeholder extension here — useRichTextEditor registers one from the
@@ -93,20 +96,20 @@ export function CollaborativeTextField({
       {(title || description) && (
         <div className="flex flex-col gap-2">
           {title && (
-            <span className="font-serif text-title-sm14 text-neutral-charcoal">
+            <span className="font-serif text-title-sm14 text-foreground">
               {title}
               {required && <RequiredAsterisk />}
             </span>
           )}
           {description && (
-            <p className="text-sm text-neutral-charcoal">{description}</p>
+            <p className="text-sm text-foreground">{description}</p>
           )}
         </div>
       )}
       <CollaborativeEditor
         field={fragmentName}
         extensions={extensions}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('Start typing...')}
         onEditorReady={handleEditorReady}
         editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
         required={required}
@@ -115,8 +118,8 @@ export function CollaborativeTextField({
         <div className="flex justify-end">
           <span
             className={cn(
-              'text-sm text-neutral-gray4',
-              charCount >= maxLength && 'text-functional-red',
+              'text-sm text-muted-foreground',
+              charCount >= maxLength && 'text-destructive',
             )}
           >
             {charCount}/{maxLength}

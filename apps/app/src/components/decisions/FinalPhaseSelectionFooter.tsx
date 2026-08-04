@@ -1,8 +1,14 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Chip } from '@op/ui/Chip';
-import { FooterBar } from '@op/ui/FooterBar';
+import { Badge } from '@op/sense/Badge';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
+import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,13 +37,16 @@ export const FinalPhaseSelectionFooter = ({
 
   return (
     <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-      <FooterBar.Start>
-        <span className="text-base text-neutral-black">
+      <FooterBarStart>
+        <span className="flex items-center gap-2 text-base text-neutral-black">
+          <LuCircleCheck className="size-5 shrink-0" aria-hidden />
+          {/* Keeps "winning": this footer drives the irreversible final-phase
+              publish, and Figma has no frame for this variant. */}
           {t('{count} winning proposals selected', { count: numSelected })}
         </span>
-      </FooterBar.Start>
-      <FooterBar.Center />
-      <FooterBar.End>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
         <SelectionConfirmShell
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
@@ -70,7 +79,7 @@ export const FinalPhaseSelectionFooter = ({
             </div>
           </div>
         </SelectionConfirmShell>
-      </FooterBar.End>
+      </FooterBarEnd>
     </FooterBar>
   );
 };
@@ -101,7 +110,9 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
         {submitterName ? <span>{submitterName}</span> : null}
         {submitterName && hasCategories ? <Bullet /> : null}
         {categories.map((category) => (
-          <Chip key={category}>{category}</Chip>
+          <Badge key={category} variant="secondary">
+            {category}
+          </Badge>
         ))}
         {(submitterName || hasCategories) && <Bullet />}
         <span>{t('{count} votes', { count: voteCount })}</span>
