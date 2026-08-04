@@ -5,12 +5,7 @@ import { FooterBar } from '@op/ui/FooterBar';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ProposalCard,
-  ProposalCardCategory,
-  ProposalCardContent,
-  ProposalCardHeader,
-} from './ProposalCard';
+import { ProposalMiniCard } from './ProposalCard';
 import { SelectionConfirmShell } from './SelectionConfirmShell';
 
 interface StandardSelectionFooterProps {
@@ -67,23 +62,7 @@ export const StandardSelectionFooter = ({
               </div>
 
               {selectedProposals.map((proposal) => (
-                <ProposalCard
-                  className="bg-neutral-offWhite p-3"
-                  key={proposal.id}
-                >
-                  <ProposalCardContent>
-                    <ProposalCardHeader
-                      className="flex-row flex-wrap justify-between"
-                      proposal={proposal}
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-neutral-charcoal">
-                        {proposal.submittedBy?.name}
-                      </span>
-                      <ProposalCardCategory proposal={proposal} />
-                    </div>
-                  </ProposalCardContent>
-                </ProposalCard>
+                <ProposalMiniCard key={proposal.id} proposal={proposal} />
               ))}
             </div>
           </div>

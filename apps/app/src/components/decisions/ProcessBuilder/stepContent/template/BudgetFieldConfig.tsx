@@ -7,6 +7,7 @@ import { NumberField } from '@op/sense/NumberField';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -215,11 +216,13 @@ export function BudgetFieldConfig({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {currencyLabel(c.code, c.symbol)}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {currencyLabel(c.code, c.symbol)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </Field>

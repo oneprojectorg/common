@@ -177,12 +177,10 @@ function ReviewFormProviderInner({
       // The mutation's review channels invalidate getReviewAssignment locally,
       // refreshing the read-only view in place (as requestRevision does).
       setIsEditing(false);
-      toast.success({ message: t('Review updated successfully') });
+      toast.success(t('Review updated successfully'));
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update review'),
-      });
+      toast.error(error.message || t('Failed to update review'));
     },
   });
 

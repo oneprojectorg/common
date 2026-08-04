@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,7 +31,7 @@ export const TranslationNotice = ({
       <Bullet />
       <Button
         variant="link"
-        onPress={onViewOriginal}
+        onClick={onViewOriginal}
         className="inline h-auto p-0 text-sm sm:text-sm"
       >
         {t('View original')}

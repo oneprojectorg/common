@@ -1,6 +1,6 @@
 'use client';
 
-import { Chip } from '@op/ui/Chip';
+import { Badge } from '@op/sense/Badge';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,18 +18,18 @@ export function SelectionCategoryChips({
   const extra = labels.length - visible.length;
 
   if (labels.length === 0) {
-    return <span className="text-sm text-neutral-gray4">—</span>;
+    return <span className="text-sm text-muted-foreground">—</span>;
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {visible.map((label) => (
-        <Chip key={label} className="line-clamp-1">
+        <Badge key={label} variant="secondary" className="line-clamp-1">
           {label}
-        </Chip>
+        </Badge>
       ))}
       {extra > 0 && (
-        <span className="text-xs text-neutral-gray4">
+        <span className="text-xs text-muted-foreground">
           {t('+{count} More', { count: extra })}
         </span>
       )}

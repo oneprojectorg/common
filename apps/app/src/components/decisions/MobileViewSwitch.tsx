@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,8 +21,8 @@ export const MobileViewSwitch = ({
   return (
     <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center sm:hidden">
       <Button
-        color="secondary"
-        onPress={() => onChange(view === 'map' ? 'grid' : 'map')}
+        variant="outline"
+        onClick={() => onChange(view === 'map' ? 'grid' : 'map')}
         className="shadow-lg"
       >
         {view === 'map' ? (

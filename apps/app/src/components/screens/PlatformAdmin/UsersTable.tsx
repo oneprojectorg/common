@@ -123,7 +123,7 @@ export const UsersTable = () => {
             onSelectionChange={setAnonFilter}
             items={anonFilterItems}
             aria-label={t('Filter anonymous users')}
-            size="medium"
+            size="default"
             className="min-w-36 flex-1 sm:w-36 sm:flex-none"
           />
           <OptionMenu

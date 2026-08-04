@@ -6,19 +6,24 @@ import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { Avatar } from '@op/ui/Avatar';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { GradientHeader, Header1, Header3 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { GradientHeader, Header1, Header3 } from '@op/sense/Header';
+import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import he from 'he';
-import Image from 'next/image';
 import { Suspense, type ReactNode, useMemo } from 'react';
 import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { Link } from '@/lib/i18n/routing';
 
 import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
@@ -90,14 +95,19 @@ export function DecisionOverview({
     <APIErrorBoundary
       fallbacks={{
         default: () => (
-          <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-            <Header3 className="font-serif font-light">
-              {t("Couldn't load the overview")}
-            </Header3>
-            <p className="text-base text-neutral-charcoal">
-              {t('Refresh the page to try again.')}
-            </p>
-          </EmptyState>
+          <Empty className="border-0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuTriangleAlert className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle className="font-light">
+                {t("Couldn't load the overview")}
+              </EmptyTitle>
+              <EmptyDescription className="text-base text-neutral-charcoal">
+                {t('Refresh the page to try again.')}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ),
       }}
     >
@@ -350,15 +360,15 @@ const OverviewHero = ({
             >
               {stewardName ? (
                 <span className="flex items-center gap-1.5">
-                  <Avatar placeholder={stewardName} className="size-5">
+                  <Avatar className="size-5">
                     {steward?.avatarImage?.name ? (
-                      <Image
+                      <AvatarImage
                         src={getPublicUrl(steward.avatarImage.name) ?? ''}
                         alt={stewardName}
-                        fill
                         className="object-cover"
                       />
                     ) : null}
+                    <AvatarFallback name={stewardName} />
                   </Avatar>
                   <span>
                     {t('Stewarded by')}{' '}
@@ -408,21 +418,20 @@ const OverviewHero = ({
         </div>
         {showCtas ? (
           <div className="align-stretch flex w-full flex-col gap-4 md:flex-row md:justify-center">
-            <ButtonLink
-              color="secondary"
-              href={currentPhaseHref}
+            <Button
+              render={<Link href={currentPhaseHref} />}
+              variant="outline"
               className="w-auto"
             >
               {t('Browse proposals')}
-            </ButtonLink>
+            </Button>
             {canSubmitProposal ? (
               <Button
-                color="primary"
                 className="w-auto"
-                isDisabled={!isReady || isCreating}
-                onPress={createProposal}
+                disabled={!isReady || isCreating}
+                onClick={createProposal}
               >
-                {isCreating ? <LoadingSpinner /> : null}
+                {isCreating ? <Spinner /> : null}
                 {t('Start a proposal')}
               </Button>
             ) : null}

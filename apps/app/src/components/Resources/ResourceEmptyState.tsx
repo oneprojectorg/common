@@ -1,7 +1,14 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { LuLeaf, LuLock, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -19,34 +26,42 @@ export const ResourceEmptyState = ({
 
   if (variant === 'no-access') {
     return (
-      <EmptyState icon={<LuLock />}>
-        {t("You don't have access to this resource collection")}
-      </EmptyState>
+      <Empty className="border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuLock />
+          </EmptyMedia>
+          <EmptyDescription>
+            {t("You don't have access to this resource collection")}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
   return (
-    <div className="rounded-lg border border-neutral-gray1">
-      <EmptyState className="p-6" icon={<LuLeaf className="size-6" />}>
-        <p className="text-base text-neutral-black">
-          {t('No resources added')}
-        </p>
-        {variant === 'admin-empty' ? (
-          <>
-            <p className="max-w-72 text-center text-base text-neutral-charcoal">
-              {t(
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-4" />
+        </EmptyMedia>
+        <EmptyTitle>{t('No resources added')}</EmptyTitle>
+        <EmptyDescription className="max-w-72">
+          {variant === 'admin-empty'
+            ? t(
                 'Share documents, guidelines, and links to help participants through the process.',
-              )}
-            </p>
-            {onAddResource ? (
-              <Button color="primary" onPress={onAddResource}>
-                <LuPlus className="size-4" />
-                {t('Add a resource')}
-              </Button>
-            ) : null}
-          </>
-        ) : null}
-      </EmptyState>
-    </div>
+              )
+            : t("The organizers haven't shared any documents or links yet")}
+        </EmptyDescription>
+      </EmptyHeader>
+      {variant === 'admin-empty' && onAddResource ? (
+        <EmptyContent>
+          <Button onClick={onAddResource}>
+            <LuPlus className="size-4" />
+            {t('Add resource')}
+          </Button>
+        </EmptyContent>
+      ) : null}
+    </Empty>
   );
 };

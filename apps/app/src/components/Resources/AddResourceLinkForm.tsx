@@ -7,9 +7,17 @@ import {
   httpUrlSchema,
 } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import { Field, FieldError, FieldLabel } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@op/sense/InputGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { TextField } from '@op/ui/TextField';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
@@ -85,58 +93,78 @@ export const AddResourceLinkForm = ({
   return (
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:px-6">
-        <TextField
-          label={t('URL')}
-          value={url}
-          onChange={(value) => {
-            setUrl(value);
-            if (urlError) {
-              setUrlError(undefined);
-            }
-          }}
-          isRequired
-          inputProps={{
-            type: 'text',
-            inputMode: 'url',
-            autoCapitalize: 'off',
-            autoCorrect: 'off',
-            spellCheck: false,
-            placeholder: 'https://',
-            icon: <LuLink className="size-4 text-neutral-gray4" />,
-          }}
-          errorMessage={urlError}
-        />
-        <TextField
-          label={t('Title')}
-          value={title}
-          onChange={setTitleInput}
-          isRequired
-          maxLength={RESOURCE_TITLE_MAX_LEN}
-          inputProps={{ placeholder: t('Add a title') }}
-        />
-        <TextField
-          label={t('Description')}
-          value={description}
-          onChange={setDescription}
-          maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
-          useTextArea
-          textareaProps={{ placeholder: t('Add a description') }}
-        />
+        <Field data-invalid={urlError ? true : undefined}>
+          <FieldLabel htmlFor="resource-url">
+            {t('URL')}
+            <RequiredAsterisk />
+          </FieldLabel>
+          <InputGroup>
+            <InputGroupAddon align="inline-start">
+              <LuLink className="size-4 text-neutral-gray4" />
+            </InputGroupAddon>
+            <InputGroupInput
+              id="resource-url"
+              type="text"
+              inputMode="url"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder="https://"
+              required
+              value={url}
+              onChange={(event) => {
+                setUrl(event.target.value);
+                if (urlError) {
+                  setUrlError(undefined);
+                }
+              }}
+              aria-invalid={urlError ? true : undefined}
+              className="[unicode-bidi:plaintext]"
+            />
+          </InputGroup>
+          {urlError ? <FieldError>{urlError}</FieldError> : null}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="resource-title">
+            {t('Title')}
+            <RequiredAsterisk />
+          </FieldLabel>
+          <Input
+            id="resource-title"
+            value={title}
+            onChange={(event) => setTitleInput(event.target.value)}
+            required
+            maxLength={RESOURCE_TITLE_MAX_LEN}
+            placeholder={t('Add a title')}
+            className="[unicode-bidi:plaintext]"
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="resource-description">
+            {t('Description')}
+          </FieldLabel>
+          <Textarea
+            id="resource-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
+            placeholder={t('Add a description')}
+            className="[unicode-bidi:plaintext]"
+          />
+        </Field>
       </div>
-      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 bg-white px-4 py-4 sm:px-6">
+      <div className="sticky bottom-0 flex shrink-0 gap-2 bg-white px-4 py-4 sm:px-6">
         <Button
-          color="secondary"
-          size="small"
-          onPress={onCancel}
-          isDisabled={submitting}
+          variant="outline"
+          onClick={onCancel}
+          disabled={submitting}
           className="flex-1 justify-center"
         >
           {t('Cancel')}
         </Button>
         <Button
           type="submit"
-          size="small"
-          isDisabled={!urlValid || !title.trim() || submitting}
+          disabled={!urlValid || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
           {submitting ? t('Adding...') : t('Add resource')}

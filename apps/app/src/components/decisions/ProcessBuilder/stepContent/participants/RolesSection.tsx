@@ -900,7 +900,12 @@ function RolesTable({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
+              {/* Email-only entries (no display name) would blow out the title,
+                  so fall back to a generic title — the description still names
+                  the member. */}
+              {roleToDelete && /^\S+@\S+$/.test(roleToDelete.name)
+                ? t('Remove member?')
+                : t('Remove {name}', { name: roleToDelete?.name ?? '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {t(

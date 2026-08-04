@@ -20,7 +20,7 @@ import {
   templateCollectsLocation,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
@@ -597,11 +597,14 @@ const ProposalsListContent = ({
             proposalsHidden={proposalsHidden}
             excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+            isFetchingNextPage={isFetchingNextPage}
           />
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && renderScrollSentinel(<ProposalListSkeletonGrid />)}
+      {/* Grid mode: the load-more skeletons render inside the masonry (see
+          ProposalMasonry `loadingMore`), so the sentinel is just the trigger. */}
+      {!isMapMode && renderScrollSentinel(null)}
 
       {translation.showBanner && (
         <TranslateBanner

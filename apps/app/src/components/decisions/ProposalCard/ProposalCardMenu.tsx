@@ -5,19 +5,24 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
-import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem, MenuList, MenuTrigger } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 export function ProposalCardMenu({
   proposal,
@@ -92,15 +97,6 @@ export function ProposalCardMenu({
     },
   });
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('Failed to delete proposal'));
-    },
-    onSuccess: () => {
-      toast.success(t('Proposal deleted successfully'));
-    },
-  });
-
   const proposalTitle = proposal.profile.name || t('Untitled Proposal');
 
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
@@ -145,31 +141,8 @@ export function ProposalCardMenu({
 
   const isHidden = proposal.visibility === Visibility.HIDDEN;
 
-  const handleDeleteConfirm = async () => {
-    if (!proposal.id) {
-      logger.error('No proposal ID provided for delete action', {
-        context: 'ProposalCardMenu.delete',
-      });
-      return;
-    }
-
-    try {
-      await deleteProposalMutation.mutateAsync({
-        proposalId: proposal.id,
-      });
-      setIsDeleteModalOpen(false); // Close modal after successful deletion
-    } catch (error) {
-      logger.error('Error in ProposalCardMenu handleDeleteConfirm', {
-        error,
-        context: 'ProposalCardMenu.handleDeleteConfirm',
-      });
-    }
-  };
-
   const isLoading =
-    updateStatusMutation.isPending ||
-    deleteProposalMutation.isPending ||
-    updateVisibilityMutation.isPending;
+    updateStatusMutation.isPending || updateVisibilityMutation.isPending;
 
   const getMenuItems = () => {
     const items: Array<{
@@ -246,115 +219,87 @@ export function ProposalCardMenu({
     return null;
   }
 
-  const renderMenuItems = (forMobile: boolean) => {
-    const items = menuItems;
-
-    if (forMobile) {
-      return items.map((item, index) => (
-        <MenuItem
-          key={item.key}
-          onAction={item.onAction}
-          className={`rounded-none px-6 py-4 ${item.isDestructive ? 'text-functional-red' : ''} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-          isDisabled={item.isDisabled}
-        >
-          {item.icon}
-          {item.label}
-        </MenuItem>
-      ));
-    }
-
-    return items.map((item) => (
-      <MenuItem
-        key={item.key}
-        onAction={item.onAction}
-        className={`min-w-48 py-2 ${item.isDestructive ? 'text-functional-red' : ''}`}
-        isDisabled={item.isDisabled}
-      >
-        {item.icon}
-        {item.label}
-      </MenuItem>
-    ));
-  };
-
-  const menuTriggerButton = (
-    <IconButton
-      aria-label={t('Proposal options')}
-      variant="ghost"
-      size="small"
-      className="aspect-square aria-expanded:bg-neutral-gray1"
-      onPress={isMobile ? () => setIsMenuSheetOpen(true) : undefined}
-    >
-      <LuEllipsis className="size-4" />
-    </IconButton>
-  );
+  const triggerLabel = t('Proposal options');
 
   return (
     <>
       {isMobile ? (
         <>
-          {menuTriggerButton}
-          <Modal
-            isOpen={isMenuSheetOpen}
-            onOpenChange={setIsMenuSheetOpen}
-            isDismissable={true}
-            isKeyboardDismissDisabled={false}
-            overlayClassName="animate-in items-end justify-center p-0 duration-300 fade-in-0"
-            className="m-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+          <Button
+            aria-label={triggerLabel}
+            variant="ghost"
+            size="icon-xs"
+            className="aspect-square aria-expanded:bg-muted"
+            onClick={() => setIsMenuSheetOpen(true)}
           >
-            <ModalBody className="pb-safe p-0">
-              <MenuList className="flex min-w-full flex-col border-0 p-0 shadow-none">
-                {renderMenuItems(true)}
-              </MenuList>
-            </ModalBody>
-          </Modal>
+            <LuEllipsis className="size-4" />
+          </Button>
+          <Sheet open={isMenuSheetOpen} onOpenChange={setIsMenuSheetOpen}>
+            <SheetContent
+              side="bottom"
+              showCloseButton={false}
+              className="rounded-t-2xl p-0"
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>{triggerLabel}</SheetTitle>
+              </SheetHeader>
+              <div className="pb-safe flex min-w-full flex-col">
+                {menuItems.map((item, index) => (
+                  <Button
+                    key={item.key}
+                    variant="ghost"
+                    onClick={item.onAction}
+                    disabled={item.isDisabled}
+                    className={cn(
+                      'h-auto w-full justify-start gap-2 rounded-none px-6 py-4',
+                      item.isDestructive && 'text-destructive',
+                      index < menuItems.length - 1 && 'border-b border-border',
+                    )}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </>
       ) : (
-        <MenuTrigger>
-          {menuTriggerButton}
-          <Menu className="p-2" placement="bottom end">
-            {renderMenuItems(false)}
-          </Menu>
-        </MenuTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                aria-label={triggerLabel}
+                variant="ghost"
+                size="icon-xs"
+                className="aspect-square aria-expanded:bg-muted"
+              >
+                <LuEllipsis className="size-4" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent side="bottom" align="end" className="p-2">
+            {menuItems.map((item) => (
+              <DropdownMenuItem
+                key={item.key}
+                onClick={item.onAction}
+                disabled={item.isDisabled}
+                variant={item.isDestructive ? 'destructive' : 'default'}
+                className="min-w-48"
+              >
+                {item.icon}
+                {item.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
       {(proposal.isEditable || canManage) && (
-        <DialogTrigger
-          isOpen={isDeleteModalOpen}
+        <DeleteProposalDialog
+          proposalId={proposal.id}
+          open={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
-        >
-          <Modal
-            isDismissable
-            isOpen={isDeleteModalOpen}
-            onOpenChange={setIsDeleteModalOpen}
-          >
-            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
-            <ModalBody>
-              <p>
-                {t(
-                  'Are you sure you want to delete this proposal? This action cannot be undone.',
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsDeleteModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                onPress={handleDeleteConfirm}
-                className="w-full sm:w-fit"
-                isDisabled={deleteProposalMutation.isPending}
-              >
-                {deleteProposalMutation.isPending
-                  ? t('Deleting...')
-                  : t('Delete')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
+        />
       )}
     </>
   );

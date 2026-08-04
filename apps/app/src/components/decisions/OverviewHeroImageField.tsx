@@ -11,7 +11,7 @@ import { useOverviewHeroImage } from './useOverviewHeroImage';
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
 /**
- * App-side wrapper around the @op/ui BannerImageField for a decision overview's
+ * App-side wrapper around the @op/sense BannerImageField for a decision overview's
  * hero image. Owns the upload hook, the translated copy, and the optimized
  * `next/image` preview so call sites stay a two/three-prop affair. Shared by
  * the Process Builder Overview tab and the live overview's "Edit banner" modal.

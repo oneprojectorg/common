@@ -1,8 +1,13 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { Suspense } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
@@ -28,10 +33,10 @@ export function FinalPhaseManualSelectionPage({
   const t = useTranslations();
 
   return (
-    <div className="min-h-full pt-16">
+    <div className="min-h-full bg-muted pt-16">
       <div className="mx-auto flex max-w-5xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={t('CONFIRM THE WINNING PROPOSALS')}
+          title={t('Confirm the winning proposals')}
           description={t(
             "We've selected the suggested winning proposals based on voting rules and total budget.",
           )}
@@ -40,20 +45,25 @@ export function FinalPhaseManualSelectionPage({
         />
       </div>
 
-      <div className="mt-8 flex w-full justify-center border-t bg-white">
+      <div className="mt-8 flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">
           <div className="flex flex-col gap-6">
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                    <Header3 className="font-serif font-light">
-                      {t("Couldn't load manual selection")}
-                    </Header3>
-                    <p className="text-base text-neutral-charcoal">
-                      {t('Refresh the page to try again.')}
-                    </p>
-                  </EmptyState>
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <LuTriangleAlert className="size-6" />
+                      </EmptyMedia>
+                      <EmptyTitle>
+                        {t("Couldn't load manual selection")}
+                      </EmptyTitle>
+                      <EmptyDescription>
+                        {t('Refresh the page to try again.')}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ),
               }}
             >

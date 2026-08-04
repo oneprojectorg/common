@@ -5,14 +5,15 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { toast } from '@op/sense/Toast';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
 import { useState } from 'react';
 import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
+
+import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 /**
  * Like/Follow actions for viewing other users' proposals
@@ -57,23 +58,26 @@ export function ProposalCardActions({
   }
 
   return (
-    <div className="flex w-full items-center gap-4 sm:w-auto">
+    <div className="flex w-full items-center gap-4">
+      {/* TODO(sense-migration): @op/ui `color="verified"` (teal-tinted active
+          state) has no sense Button variant; `default` (solid teal) preserves
+          the liked/unliked distinction — revisit against Figma. */}
       <Button
-        onPress={handleLikeClick}
-        size="small"
-        color={isLikedByUser ? 'verified' : 'secondary'}
-        className="w-full text-nowrap"
-        isDisabled={isLoading}
+        onClick={handleLikeClick}
+        size="sm"
+        variant={isLikedByUser ? 'default' : 'outline'}
+        className="flex-1 text-nowrap"
+        disabled={isLoading}
       >
         <LuHeart className="size-4" />
         {isLikedByUser ? t('Liked') : t('Like')}
       </Button>
       <Button
-        onPress={handleFollowClick}
-        size="small"
-        color={isFollowedByUser ? 'verified' : 'secondary'}
-        className="w-full text-nowrap"
-        isDisabled={isLoading}
+        onClick={handleFollowClick}
+        size="sm"
+        variant={isFollowedByUser ? 'default' : 'outline'}
+        className="flex-1 text-nowrap"
+        disabled={isLoading}
       >
         <LuBookmark className="size-4" />
         {isFollowedByUser ? t('Following') : t('Follow')}
@@ -95,11 +99,11 @@ export function ProposalCardReviseAction({
   return (
     <ButtonLink
       href={editHref}
-      color="primary"
-      size="small"
+      variant="default"
+      size="sm"
       className={`w-full${className ? ` ${className}` : ''}`}
-      onPress={() => setNavigating(true)}
-      isLoading={navigating}
+      onClick={() => setNavigating(true)}
+      loading={navigating}
     >
       {t('Revise proposal')}
     </ButtonLink>
@@ -119,77 +123,28 @@ export function ProposalCardOwnerActions({
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('Failed to delete proposal'));
-    },
-    onSuccess: () => {
-      toast.success(t('Proposal deleted successfully'));
-    },
-  });
-
-  const handleDelete = async () => {
-    await deleteProposalMutation.mutateAsync({ proposalId: proposal.id });
-    setIsDeleteModalOpen(false);
-  };
-
   return (
-    <>
-      <div className="flex w-full items-center gap-4">
-        <ButtonLink
-          href={editHref}
-          color="secondary"
-          size="small"
-          className="w-full"
-        >
-          <LuPencil className="size-4" />
-          {t('Edit')}
-        </ButtonLink>
-        <DialogTrigger
-          isOpen={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-        >
-          <Button
-            onPress={() => setIsDeleteModalOpen(true)}
-            color="secondary"
-            size="small"
-            className="w-full"
-            isDisabled={deleteProposalMutation.isPending}
-          >
+    <div className="flex w-full items-center gap-4">
+      <ButtonLink
+        href={editHref}
+        variant="outline"
+        size="sm"
+        className="flex-1"
+      >
+        <LuPencil className="size-4" />
+        {t('Edit')}
+      </ButtonLink>
+      <DeleteProposalDialog
+        proposalId={proposal.id}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        trigger={
+          <Button variant="destructive" size="sm" className="flex-1">
             <LuTrash2 className="size-4" />
             {t('Delete')}
           </Button>
-          <Modal isDismissable>
-            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
-            <ModalBody>
-              <p>
-                {t(
-                  'Are you sure you want to delete this proposal? This action cannot be undone.',
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsDeleteModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                onPress={handleDelete}
-                className="w-full sm:w-fit"
-                isDisabled={deleteProposalMutation.isPending}
-              >
-                {deleteProposalMutation.isPending
-                  ? t('Deleting...')
-                  : t('Delete')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
-      </div>
-    </>
+        }
+      />
+    </div>
   );
 }

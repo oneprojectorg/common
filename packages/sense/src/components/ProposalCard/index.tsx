@@ -1,6 +1,16 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ElementType, ReactNode } from 'react';
+
+/** Props the title/author link element must accept (a plain `<a>`, an i18n
+ *  `Link`, a router `Link`, …). Typing `linkComponent` as `ElementType<this>`
+ *  keeps the rendered element's props concrete — a bare `ElementType` infers
+ *  them as `never`. */
+type ProposalCardLinkProps = {
+  href: string;
+  className?: string;
+  children?: ReactNode;
+};
 import type { IconType } from 'react-icons';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
@@ -15,6 +25,8 @@ import { Toggle } from '../ui/toggle';
 export interface ProposalCardAuthor {
   name: string;
   avatarSrc?: string;
+  /** Profile link for the author label. Rendered with `linkComponent`. */
+  href?: string;
 }
 
 /** A single engagement metric — a bare count, or a pressable toggle/button. */
@@ -40,6 +52,12 @@ export interface ProposalCardProps extends Omit<
    * single real control and no nested interactive elements.
    */
   href?: string;
+  /**
+   * Element used to render the title (and author) links — pass an i18n / router
+   * `Link` to preserve client-side navigation and locale prefixing. Defaults to
+   * a plain `<a>`. Must accept `href`, `className`, and children.
+   */
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
   headerBadge?: ReactNode;
   /** Alert below the title — typically a `StatusBadge` (e.g. "Revision requested"). */
@@ -81,6 +99,7 @@ export interface ProposalCardProps extends Omit<
 export function ProposalCard({
   title,
   href,
+  linkComponent,
   headerBadge,
   alert,
   aside,
@@ -113,9 +132,13 @@ export function ProposalCard({
         {...rest}
       >
         <h3 className="line-clamp-2 font-serif text-title-sm text-foreground">
-          <TitleLink href={href}>{title}</TitleLink>
+          <TitleLink href={href} linkComponent={linkComponent}>
+            {title}
+          </TitleLink>
         </h3>
-        {authors?.length ? <AuthorRow authors={authors} compact /> : null}
+        {authors?.length ? (
+          <AuthorRow authors={authors} linkComponent={linkComponent} compact />
+        ) : null}
         {hasTags ? (
           <TagRow budget={budget} tags={tags} maxTags={maxTags} />
         ) : null}
@@ -145,7 +168,9 @@ export function ProposalCard({
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
-          <TitleLink href={href}>{title}</TitleLink>
+          <TitleLink href={href} linkComponent={linkComponent}>
+            {title}
+          </TitleLink>
         </h3>
         {alert}
       </div>
@@ -154,7 +179,9 @@ export function ProposalCard({
           {hasTags ? (
             <TagRow budget={budget} tags={tags} maxTags={maxTags} />
           ) : null}
-          {authors?.length ? <AuthorRow authors={authors} /> : null}
+          {authors?.length ? (
+            <AuthorRow authors={authors} linkComponent={linkComponent} />
+          ) : null}
         </div>
       ) : null}
       {description ? (
@@ -180,7 +207,10 @@ export function ProposalCard({
           <Separator />
           <div className="flex items-center justify-between gap-3">
             {status}
-            <span className="text-sm text-muted-foreground">
+            {/* `relative z-10` lifts the label above the title's stretched
+                link overlay so an interactive `reviewedLabel` (e.g. a
+                reviewers tooltip trigger) stays hoverable/clickable. */}
+            <span className="relative z-10 text-sm text-muted-foreground">
               {reviewedLabel}
             </span>
           </div>
@@ -197,32 +227,45 @@ export function ProposalCard({
         </div>
       ) : null}
       {actions ? (
-        <div className="relative z-10 flex items-center gap-3">{actions}</div>
+        // Equal-width actions in a row — each top-level action fills its share.
+        <div className="relative z-10 flex items-center gap-3 [&>*]:flex-1">
+          {actions}
+        </div>
       ) : null}
     </div>
   );
 }
 
 /** Title content — a stretched primary link when `href` is set, else plain. */
-function TitleLink({ href, children }: { href?: string; children: ReactNode }) {
+function TitleLink({
+  href,
+  linkComponent: Link = 'a',
+  children,
+}: {
+  href?: string;
+  linkComponent?: ElementType<ProposalCardLinkProps>;
+  children: ReactNode;
+}) {
   if (!href) {
     return <>{children}</>;
   }
   return (
-    <a
+    <Link
       href={href}
       className="outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring/50"
     >
       {children}
-    </a>
+    </Link>
   );
 }
 
 function AuthorRow({
   authors,
+  linkComponent: Link = 'a',
   compact,
 }: {
   authors: ProposalCardAuthor[];
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   compact?: boolean;
 }) {
   const first = authors[0];
@@ -246,7 +289,18 @@ function AuthorRow({
           </Avatar>
         ))}
       />
-      <span className="text-sm text-muted-foreground">{label}</span>
+      {first?.href ? (
+        // `relative z-10` lifts the author link above the title's stretched
+        // overlay so it stays independently clickable (clickable-card pattern).
+        <Link
+          href={first.href}
+          className="relative z-10 text-sm text-muted-foreground hover:underline"
+        >
+          {label}
+        </Link>
+      ) : (
+        <span className="text-sm text-muted-foreground">{label}</span>
+      )}
     </div>
   );
 }

@@ -6,7 +6,8 @@ export const IconProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <IconContext.Provider
       value={{
-        className: 'stroke-[1.5] [&_*]:[vector-effect:non-scaling-stroke]',
+        className: '[&_*]:[vector-effect:non-scaling-stroke]',
+        style: { strokeWidth: 1.5 },
       }}
     >
       {children}

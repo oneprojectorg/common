@@ -16,7 +16,7 @@ import { VotingPage } from './pages/VotingPage';
 // overhangs the header bottom on mobile. The bar pins just under the toggle;
 // content above the bar (the phase header) scrolls up behind the toggle.
 // The legacy /profile route has no toggle and falls back to the bar's 0 default.
-const DECISION_VIEW_PIN_OFFSET = 50;
+const DECISION_VIEW_PIN_OFFSET = 56;
 
 function DecisionStateRouterLegacy({
   instanceId,

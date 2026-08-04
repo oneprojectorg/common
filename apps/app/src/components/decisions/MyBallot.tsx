@@ -2,31 +2,27 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Checkbox } from '@op/ui/Checkbox';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import { Checkbox } from '@op/sense/Checkbox';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ProposalCardContent,
-  ProposalCardFooter,
-  ProposalCardHeader,
-  ProposalCardMeta,
-  ProposalCardPreview,
-} from './ProposalCard';
+import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
-import { VotingProposalCard } from './VotingProposalCard';
 
 export const NoVoteFound = () => {
   const t = useTranslations();
   return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {t('You did not vote in this process.')}
-      </Header3>
-    </EmptyState>
+    <Empty className="border-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('You did not vote in this process.')}</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
   );
 };
 
@@ -94,40 +90,25 @@ const MyBallotProposals = ({
             ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
             : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
           return (
-            <VotingProposalCard
-              isSelected={true}
-              proposalId={proposal.id}
+            <ProposalCardView
               key={proposal.id}
-            >
-              <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  viewHref={viewHref}
-                  menu={
-                    <Checkbox
-                      isSelected={true}
-                      shape="circle"
-                      borderColor="light"
-                      aria-label={t('Selected proposal')}
-                      isDisabled={true}
-                    />
-                  }
+              proposal={proposal}
+              href={viewHref}
+              selected
+              showStatusBadge={false}
+              totalVotes={proposal.voteCount ?? 0}
+              aside={
+                // TODO(sense-migration): sense Checkbox has no shape="circle"/
+                // borderColor; approximated with rounded-full — revisit against
+                // Figma vote design.
+                <Checkbox
+                  checked
+                  disabled
+                  aria-label={t('Selected proposal')}
+                  className="rounded-full"
                 />
-
-                <ProposalCardMeta proposal={proposal} />
-
-                <ProposalCardPreview proposal={proposal} />
-
-                <div className="h-0 w-full border-b border-neutral-gray-2" />
-
-                <ProposalCardFooter>
-                  <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                    <span className="font-bold">{proposal.voteCount ?? 0}</span>
-                    <span>{t('Total Votes')}</span>
-                  </div>
-                </ProposalCardFooter>
-              </ProposalCardContent>
-            </VotingProposalCard>
+              }
+            />
           );
         })}
       </ProposalMasonry>

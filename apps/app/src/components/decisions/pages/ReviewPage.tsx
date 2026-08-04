@@ -3,9 +3,14 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -67,14 +72,19 @@ export function ReviewPage({
 
   const proposalsLoadErrorFallback = {
     default: () => (
-      <EmptyState icon={<LuLeaf className="size-6" />}>
-        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-          <TranslatedText text="We couldn't load proposals" />
-        </Header3>
-        <p className="text-base text-neutral-charcoal">
-          <TranslatedText text="Please refresh the page to try again." />
-        </p>
-      </EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuLeaf className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>
+            <TranslatedText text="We couldn't load proposals" />
+          </EmptyTitle>
+          <EmptyDescription>
+            <TranslatedText text="Please refresh the page to try again." />
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     ),
   };
 
@@ -88,7 +98,7 @@ export function ReviewPage({
                 <TranslatedText text="Review Progress" />
               ) : (
                 (currentPhase.headline ?? (
-                  <TranslatedText text="REVIEW PROPOSALS." />
+                  <TranslatedText text="Review proposals." />
                 ))
               )
             }
@@ -120,27 +130,34 @@ export function ReviewPage({
       </DecisionHeroBanner>
 
       <div className="flex w-full justify-center bg-white">
-        <div className="w-full p-4 sm:max-w-6xl sm:p-8">
+        <div className="w-full p-4 sm:p-8">
           {canReview ? (
-            <Tabs className="gap-6" defaultSelectedKey="to-review">
-              <TabList className="flex gap-6">
-                <Tab id="to-review">{t('Proposals to review')}</Tab>
-                <Tab id="other-proposals">{t('Other proposals')}</Tab>
-              </TabList>
+            <Tabs className="gap-6" defaultValue="to-review">
+              <div className="w-full border-b">
+                <TabsList variant="line" className="flex gap-6">
+                  <TabsTrigger value="to-review">
+                    {t('Proposals to review')}
+                  </TabsTrigger>
+                  <TabsTrigger value="other-proposals">
+                    {t('Other proposals')}
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-              <TabPanel id="to-review" className="grow sm:p-0">
+              <TabsContent value="to-review" className="grow sm:p-0">
                 <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
                   <Suspense fallback={<ProposalListSkeleton />}>
                     <ReviewAssignmentsList
                       processInstanceId={instance.id}
                       decisionSlug={decisionSlug}
                       canViewReviewers={isAdmin}
+                      pinOffset={pinOffset}
                     />
                   </Suspense>
                 </APIErrorBoundary>
-              </TabPanel>
+              </TabsContent>
 
-              <TabPanel id="other-proposals" className="grow sm:p-0">
+              <TabsContent value="other-proposals" className="grow sm:p-0">
                 <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
                   <Suspense fallback={<ProposalListSkeleton />}>
                     <ProposalsList
@@ -155,7 +172,7 @@ export function ReviewPage({
                     />
                   </Suspense>
                 </APIErrorBoundary>
-              </TabPanel>
+              </TabsContent>
             </Tabs>
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>

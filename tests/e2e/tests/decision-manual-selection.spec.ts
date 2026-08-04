@@ -318,7 +318,7 @@ test.describe('Decision Manual Selection — full flow', () => {
       .first()
       .click();
     const advanceDialog = authenticatedPage
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .and(authenticatedPage.locator(':not([data-slot="toast"])'));
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Final?')).toBeVisible();
@@ -419,6 +419,15 @@ test.describe('Decision Manual Selection — full flow', () => {
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 
+    // The post-results NPS survey modal (ProcessSurveyModal) opens on the
+    // Results screen once its response query resolves; while open it inerts the
+    // background, so the results content isn't reachable by role. Dismiss it if
+    // it appears before asserting the funded list.
+    await authenticatedPage
+      .getByRole('button', { name: 'Maybe later' })
+      .click({ timeout: 15_000 })
+      .catch(() => {});
+
     const fundedHeading = authenticatedPage.getByRole('heading', {
       name: 'Selected Proposals',
     });
@@ -428,12 +437,13 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(authenticatedPage.getByText('Proposal Beta')).toBeVisible();
     await expect(authenticatedPage.getByText('Proposal Gamma')).toHaveCount(0);
 
-    // Results page cards: allocated amount is the primary value, with the
-    // original request rendered as "$X requested" alongside it.
-    await expect(authenticatedPage.getByText('$3,000').first()).toBeVisible();
-    await expect(authenticatedPage.getByText('$5,000 requested')).toBeVisible();
-    await expect(authenticatedPage.getByText('$9,000').first()).toBeVisible();
-    await expect(authenticatedPage.getByText('$8,000 requested')).toBeVisible();
+    // Results cards: the requested budget renders as the tag, and the
+    // allocation as a success "Awarded" badge (allocated may differ from the
+    // request — Alpha under, Beta over).
+    await expect(authenticatedPage.getByText('$3,000 Awarded')).toBeVisible();
+    await expect(authenticatedPage.getByText('$9,000 Awarded')).toBeVisible();
+    await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
+    await expect(authenticatedPage.getByText('$8,000').first()).toBeVisible();
 
     // Selected proposal — last phase, in selection: view page shows both
     // the allocated amount and the "$X requested" secondary label.

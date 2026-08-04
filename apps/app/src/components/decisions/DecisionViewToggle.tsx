@@ -25,8 +25,7 @@ export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
 
   return (
     <Tabs value={activeView}>
-      {/* TODO: remove these overrides when we migrate to @op/sense */}
-      <TabsList className="!h-9">
+      <TabsList>
         <TabsTrigger
           value="overview"
           className="font-normal hover:no-underline"

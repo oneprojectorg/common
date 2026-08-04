@@ -1,9 +1,8 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { ButtonGroup } from '@op/ui/ButtonGroup';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
+import { Button } from '@op/sense/Button';
+import { Header3 } from '@op/sense/Header';
+import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
 import { useState } from 'react';
 import { LuFile, LuLink, LuX } from 'react-icons/lu';
 
@@ -27,42 +26,47 @@ export const AddResourcePanel = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center justify-between px-4 py-3 sm:px-6">
-        <Header2 className="font-serif text-title-sm">
-          {t('Add Resource')}
-        </Header2>
-        <IconButton
+      <div className="flex shrink-0 items-center justify-between p-4 sm:p-6">
+        <Header3>{t('Add Resource')}</Header3>
+        <Button
           variant="ghost"
-          size="small"
-          onPress={onClose}
+          size="icon-xs"
+          onClick={onClose}
           aria-label={t('Close')}
         >
           <LuX className="size-4" />
-        </IconButton>
+        </Button>
       </div>
-      <div className="shrink-0 px-4 pt-4 sm:px-6">
-        <ButtonGroup className="w-full" aria-label={t('Resource type')}>
-          <Button
-            color="secondary"
-            size="small"
-            aria-pressed={selectedResourceType === 'link'}
-            onPress={() => setSelectedResourceType('link')}
+      <div className="shrink-0 px-4 py-2 sm:px-6">
+        {/* TODO(sense-migration): @op/ui ButtonGroup styled the aria-pressed
+            selected state; @op/sense ButtonGroup is visual grouping only, so the
+            selected look is driven manually via `variant`. Consider migrating to
+            @op/sense/ToggleGroup for true segmented-toggle semantics. */}
+        <ToggleGroup
+          className="w-full"
+          aria-label={t('Resource type')}
+          spacing={0}
+          defaultValue={['link']}
+        >
+          <ToggleGroupItem
+            variant={'outline'}
+            value="link"
+            onClick={() => setSelectedResourceType('link')}
             className="flex-1"
           >
             <LuLink className="size-4" />
             {t('Link')}
-          </Button>
-          <Button
-            color="secondary"
-            size="small"
-            aria-pressed={selectedResourceType === 'document'}
-            onPress={() => setSelectedResourceType('document')}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            variant={'outline'}
+            value="document"
+            onClick={() => setSelectedResourceType('document')}
             className="flex-1"
           >
             <LuFile className="size-4" />
             {t('Document')}
-          </Button>
-        </ButtonGroup>
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
         {selectedResourceType === 'link' ? (

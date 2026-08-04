@@ -7,9 +7,15 @@ import {
 } from '@/hooks/useClaimAccount';
 import { useUser } from '@/utils/UserProvider';
 import type { CommonUser } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
@@ -51,15 +57,11 @@ export const JoinAccountModal = () => {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={(open) => (open ? null : close())}
-      isDismissable
-      surface="flat"
-      className="sm:max-w-128"
-    >
-      <JoinAccountModalContent />
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={(open) => (open ? null : close())}>
+      <DialogContent className="sm:max-w-128">
+        <JoinAccountModalContent />
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -76,10 +78,8 @@ export const JoinDecisionButton = ({
 
   return (
     <Button
-      color="primary"
-      size="small"
       aria-describedby={ariaDescribedBy}
-      onPress={() => {
+      onClick={() => {
         void setJoin('1');
       }}
     >
@@ -95,11 +95,7 @@ export const JoinDecisionButton = ({
 export const JoinDecisionButtonFallback = () => {
   const t = useTranslations();
 
-  return (
-    <ButtonLink href="?join=1" color="primary" size="small">
-      {t('Join')}
-    </ButtonLink>
-  );
+  return <Button render={<a href="?join=1" />}>{t('Join')}</Button>;
 };
 
 /**
@@ -212,14 +208,12 @@ const JoinAccountModalContent = () => {
 
   return (
     <>
-      {/* ModalHeader renders the dismiss X (Modal's isDismissable) and a
-          slot="title" heading that names the dialog. pt compensates for the
-          flat surface's built-in pt-6 to hit p-8 / sm:pt-12 overall. */}
-      <ModalHeader className="pt-2 text-title-lg text-neutral-black sm:pt-6 sm:text-title-lg">
-        {otpSent ? t('Email sent!') : t('Claim your account')}
-      </ModalHeader>
-      <ModalBody className="gap-6 px-8 pt-2 pb-8 text-center sm:px-12 sm:pb-12">
-        <p className="text-base text-neutral-charcoal">
+      {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
+      <DialogHeader>
+        <DialogTitle>
+          {otpSent ? t('Email sent!') : t('Claim your account')}
+        </DialogTitle>
+        <DialogDescription>
           {otpSent
             ? t(
                 'A code was sent to {email}. Type the code below to create your profile.',
@@ -228,73 +222,81 @@ const JoinAccountModalContent = () => {
             : t(
                 'Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.',
               )}
-        </p>
+        </DialogDescription>
+      </DialogHeader>
 
+      <div className="flex flex-col gap-4 px-6 py-4">
         {/* role="alert" so async claim errors are announced while focus stays on
           the submit button. */}
         {error ? (
-          <p role="alert" className="text-sm text-functional-red">
+          <p role="alert" className="text-destructive">
             {error}
           </p>
         ) : null}
 
         {otpSent ? (
-          <div className="flex flex-col gap-3 text-start">
-            <AuthCodeField
-              value={token}
-              isDisabled={isSubmitting}
-              onChange={setToken}
-              onSubmit={submitToken}
-            />
-            <Button
-              className="w-full"
-              isDisabled={isSubmitting || !isValidOtpLength(token)}
-              onPress={() => {
-                void submitToken();
-              }}
-            >
-              {isSubmitting ? <LoadingSpinner /> : t('Create profile')}
-            </Button>
-            <Button color="secondary" className="w-full" onPress={goBack}>
-              {t('Go back')}
-            </Button>
-          </div>
+          <AuthCodeField
+            value={token}
+            isDisabled={isSubmitting}
+            onChange={setToken}
+            onSubmit={submitToken}
+          />
         ) : (
-          <div className="flex flex-col gap-4">
-            <div className="text-start">
-              <AuthEmailField
-                label={t('Email')}
-                // Example-email placeholders are deliberately untranslated.
-                placeholder="your@email.com"
-                value={email}
-                isDisabled={isSubmitting}
-                onChange={setEmail}
-                onSubmit={() => {
-                  void submitEmail();
-                }}
-              />
-            </div>
-            <Button
-              className="w-full"
-              isDisabled={isSubmitting || !emailIsValid}
-              onPress={() => {
+          <>
+            <AuthEmailField
+              label={t('Email')}
+              // Example-email placeholders are deliberately untranslated.
+              placeholder="your@email.com"
+              value={email}
+              isDisabled={isSubmitting}
+              onChange={setEmail}
+              onSubmit={() => {
                 void submitEmail();
               }}
-            >
-              {isSubmitting ? <LoadingSpinner /> : t('Join')}
-            </Button>
-            <p className="text-neutral-charcoal">
+            />
+            <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
-                  <a href={loginHref} className="text-primary-teal underline">
+                  <a href={loginHref} className="underline">
                     {chunks}
                   </a>
                 ),
               })}
             </p>
-          </div>
+          </>
         )}
-      </ModalBody>
+      </div>
+
+      <DialogFooter className="flex-col sm:flex-col">
+        {otpSent ? (
+          <>
+            <Button
+              className="w-full"
+              loading={isSubmitting}
+              disabled={isSubmitting || !isValidOtpLength(token)}
+              onClick={() => {
+                void submitToken();
+              }}
+            >
+              {t('Create profile')}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={goBack}>
+              {t('Go back')}
+            </Button>
+          </>
+        ) : (
+          <Button
+            className="w-full"
+            loading={isSubmitting}
+            disabled={isSubmitting || !emailIsValid}
+            onClick={() => {
+              void submitEmail();
+            }}
+          >
+            {t('Join')}
+          </Button>
+        )}
+      </DialogFooter>
     </>
   );
 };

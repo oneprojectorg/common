@@ -1,13 +1,20 @@
+'use client';
+
 import {
   ProposalReviewAssignmentStatus,
   type ProposalReviewAggregates,
   type ProposalReviewAssignment,
   type ReviewAssignmentExtended,
 } from '@op/common/client';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { cn } from '@op/ui/utils';
-import { useRef } from 'react';
-import { useFocusable } from 'react-aria';
+import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
+import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@op/sense/Tooltip';
+import type { IconType } from 'react-icons';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -17,19 +24,11 @@ import {
 } from 'react-icons/lu';
 
 import type { TranslationKey } from '@/lib/i18n';
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
-import { Bullet } from '../Bullet';
-import {
-  ProposalCard,
-  ProposalCardAuthor,
-  ProposalCardCategory,
-  ProposalCardContent,
-  ProposalCardHeader,
-  ProposalCardPreview,
-} from './ProposalCard';
+import { useProposalCardData } from './ProposalCard';
 
 type AssignmentStatus = ProposalReviewAssignment['status'];
 
@@ -49,35 +48,37 @@ export function ReviewAssignmentCard({
   reviewers,
   showCategory = true,
 }: ReviewAssignmentCardProps) {
+  const t = useTranslations();
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
+  const { titleText, budgetText, displayCategories, authors, description } =
+    useProposalCardData(proposal);
 
   return (
-    <ProposalCard proposal={proposal} className="rounded-lg">
-      <ProposalCardContent>
-        <ProposalCardHeader proposal={proposal} viewHref={viewHref} />
-        <div className="flex flex-wrap items-center gap-2">
-          <ProposalCardAuthor proposal={proposal} />
-          {showCategory && <ProposalCardCategory proposal={proposal} />}
-          {isRevised && (
-            <>
-              <Bullet />
-              <div className="flex items-center gap-1">
-                <LuRefreshCw className="size-4 text-primary-orange2" />
-                <span className="text-sm text-neutral-charcoal">
-                  <TranslatedText text="Revised" />
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-        <ProposalCardPreview proposal={proposal} className="line-clamp-2" />
-      </ProposalCardContent>
-      <div className="flex items-center justify-between gap-2">
-        <ReviewStatusBadge status={status} />
-        {reviewers ? <ReviewersTooltip reviewers={reviewers} /> : null}
-      </div>
-    </ProposalCard>
+    <SenseProposalCard
+      title={titleText}
+      href={viewHref}
+      linkComponent={Link}
+      budget={budgetText}
+      authors={authors}
+      tags={
+        showCategory && displayCategories.length > 0
+          ? displayCategories
+          : undefined
+      }
+      description={description}
+      alert={
+        isRevised ? (
+          <StatusBadge variant="revision" icon={LuRefreshCw}>
+            {t('Revised')}
+          </StatusBadge>
+        ) : undefined
+      }
+      status={<ReviewStatusBadge status={status} />}
+      reviewedLabel={
+        reviewers ? <ReviewersTooltip reviewers={reviewers} /> : undefined
+      }
+    />
   );
 }
 
@@ -95,70 +96,36 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
   const names = completedReviewers.map((r) => r.profile.name).join(', ');
 
   return (
-    <TooltipTrigger>
-      <FocusableSpan className="text-neutral-gray4 underline decoration-dotted underline-offset-2">
-        {t('{count} Reviewed', { count: completedReviewers.length })}
-      </FocusableSpan>
-      <Tooltip>{names}</Tooltip>
-    </TooltipTrigger>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            // No aria-label: the visible "{count} Reviewed" text is the
+            // accessible name; the tooltip popup (names) is exposed as the
+            // description via base-ui's aria-describedby when open.
+            <span
+              tabIndex={0}
+              className="cursor-help underline decoration-dotted underline-offset-2 outline-none"
+            />
+          }
+        >
+          {t('{count} Reviewed', { count: completedReviewers.length })}
+        </TooltipTrigger>
+        <TooltipContent className="text-sm">{names}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
-function FocusableSpan({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const { focusableProps } = useFocusable({}, ref);
-  return (
-    <span {...focusableProps} ref={ref} tabIndex={0} className={className}>
-      {children}
-    </span>
-  );
-}
-
-const statusConfig: Record<
+const statusBadge: Record<
   AssignmentStatus,
-  {
-    icon: typeof LuCircleDashed;
-    bgClass: string;
-    textClass: string;
-    iconClass: string;
-  }
+  { variant: StatusBadgeProps['variant']; icon: IconType }
 > = {
-  pending: {
-    icon: LuCircleDashed,
-    bgClass: 'bg-neutral-offWhite p-2',
-    textClass: 'text-neutral-gray4',
-    iconClass: 'text-neutral-gray4',
-  },
-  in_progress: {
-    icon: LuTimer,
-    bgClass: 'bg-primary-tealWhite p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-teal',
-  },
-  completed: {
-    icon: LuCircleCheck,
-    bgClass: 'bg-status-greenBg p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-status-green',
-  },
-  awaiting_author_revision: {
-    icon: LuRefreshCw,
-    bgClass: 'bg-white py-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-orange2',
-  },
-  ready_for_re_review: {
-    icon: LuCircleAlert,
-    bgClass: 'bg-functional-yellowWhite p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-orange2',
-  },
+  pending: { variant: 'inactive', icon: LuCircleDashed },
+  in_progress: { variant: 'in-progress', icon: LuTimer },
+  completed: { variant: 'success', icon: LuCircleCheck },
+  awaiting_author_revision: { variant: 'revision', icon: LuRefreshCw },
+  ready_for_re_review: { variant: 'warning', icon: LuCircleAlert },
 };
 
 const statusLabels: Record<AssignmentStatus, TranslationKey> = {
@@ -170,14 +137,11 @@ const statusLabels: Record<AssignmentStatus, TranslationKey> = {
 };
 
 function ReviewStatusBadge({ status }: { status: AssignmentStatus }) {
-  const { icon: Icon, bgClass, textClass, iconClass } = statusConfig[status];
+  const { variant, icon } = statusBadge[status];
 
   return (
-    <div className={cn('flex w-fit items-center gap-1 rounded-lg', bgClass)}>
-      <Icon className={cn('size-4', iconClass)} />
-      <span className={cn('text-base', textClass)}>
-        <TranslatedText text={statusLabels[status]} />
-      </span>
-    </div>
+    <StatusBadge variant={variant} icon={icon}>
+      <TranslatedText text={statusLabels[status]} />
+    </StatusBadge>
   );
 }

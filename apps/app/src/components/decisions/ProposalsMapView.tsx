@@ -186,7 +186,7 @@ export function ProposalsMapView({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(320px,720px)_minmax(60%,1fr)]">
       <ul className="flex min-w-0 flex-col gap-6">
         {proposals.map((proposal) => (
           <ProposalMapListItem

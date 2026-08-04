@@ -1,19 +1,9 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 
-import { Link } from '@/lib/i18n/routing';
-
-import {
-  ProposalCard,
-  ProposalCardContent,
-  ProposalCardHeader,
-  ProposalCardMenu,
-  ProposalCardMeta,
-  ProposalCardMetrics,
-  ProposalCardPreview,
-} from './ProposalCard';
+import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 
 interface ProposalMapListItemProps {
   proposal: Proposal;
@@ -33,10 +23,10 @@ interface ProposalMapListItemProps {
 }
 
 /**
- * A compact, single-column proposal card for the map browse view's list column.
- * The whole row is one link to the proposal — every inner piece is rendered
- * non-link (`withLink={false}`, no `viewHref`) so there are no nested anchors.
- * Hovering syncs the active state with the matching map marker.
+ * A compact proposal card for the map browse view's list column. The card's
+ * stretched title link navigates to the proposal (the whole card is clickable),
+ * while the admin menu stays independently clickable above it. Hovering syncs
+ * the active state with the matching map marker.
  */
 export function ProposalMapListItem({
   proposal,
@@ -48,46 +38,29 @@ export function ProposalMapListItem({
 }: ProposalMapListItemProps) {
   return (
     <li onMouseEnter={onActivate} onMouseLeave={onDeactivate}>
-      <Link
+      <ProposalCardView
+        proposal={proposal}
         href={href}
-        // The whole card is one link; keep it from imposing anchor link styling
-        // (underline / link color) on the card content.
-        className="block rounded text-neutral-black no-underline outline-0 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
-      >
-        <ProposalCard
-          proposal={proposal}
-          className={cn(
-            'min-w-0 transition-colors',
-            isActive
-              ? 'border-neutral-gray2 bg-neutral-offWhite'
-              : 'hover:bg-neutral-offWhite',
-          )}
-        >
-          <ProposalCardContent>
-            <ProposalCardHeader
-              proposal={proposal}
-              menu={
-                canManage && (
-                  // The whole row is a link; swallow the menu's click events so
-                  // pressing the trigger doesn't also navigate to the proposal.
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <ProposalCardMenu
-                      proposal={proposal}
-                      canManage={canManage}
-                    />
-                  </div>
-                )
-              }
-            />
-            <ProposalCardMeta proposal={proposal} withLink={false} />
-            <ProposalCardPreview proposal={proposal} />
-          </ProposalCardContent>
-          <ProposalCardMetrics proposal={proposal} />
-        </ProposalCard>
-      </Link>
+        showMetrics
+        className={cn(
+          'min-w-0 transition-colors',
+          isActive
+            ? 'border-neutral-gray2 bg-neutral-offWhite'
+            : 'hover:bg-neutral-offWhite',
+        )}
+        aside={
+          canManage ? (
+            // The title's stretched link covers the card; swallow the menu's
+            // pointer events so opening it doesn't also navigate.
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <ProposalCardMenu proposal={proposal} canManage={canManage} />
+            </div>
+          ) : undefined
+        }
+      />
     </li>
   );
 }

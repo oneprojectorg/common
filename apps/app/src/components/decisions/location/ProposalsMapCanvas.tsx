@@ -1,7 +1,6 @@
 'use client';
 
-import { type LngLat, Map, type MapBounds } from '@op/ui/Map';
-import { MapMarker } from '@op/ui/MapMarker';
+import { type LngLat, Map, MapMarker, type MapBounds } from '@op/sense/Map';
 import { type ReactNode, useMemo } from 'react';
 
 export interface ProposalMapPoint {
@@ -44,7 +43,7 @@ export interface ProposalsMapCanvasProps {
 /**
  * Multi-marker browse map for a process's proposals. Like {@link MapCanvas} it
  * is the only module (besides MapCanvas) that pulls in `maplibre-gl` via
- * `@op/ui/Map`, so it must be loaded through `next/dynamic({ ssr: false })`
+ * `@op/sense/Map`, so it must be loaded through `next/dynamic({ ssr: false })`
  * (see `dynamicProposalsMap`) to keep the heavy, browser-only map library out
  * of the server bundle.
  *
