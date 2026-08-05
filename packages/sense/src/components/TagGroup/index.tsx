@@ -13,7 +13,7 @@ type TagSize = 'default' | 'lg';
 // live here in the composite.
 const tagSizeClasses: Record<TagSize, string> = {
   default: '',
-  lg: 'h-7 rounded-md px-2.5 text-sm',
+  lg: 'h-7 px-2.5 text-sm',
 };
 
 interface TagGroupProps extends React.ComponentProps<'div'> {
@@ -69,7 +69,7 @@ function Tag({
   children,
   onRemove,
   removeLabel = 'Remove',
-  variant = 'accent',
+  variant = 'secondary',
   size = 'default',
   className,
   ...props

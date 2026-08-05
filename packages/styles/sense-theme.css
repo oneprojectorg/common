@@ -127,7 +127,7 @@
   --color-purple-900: #473145;
   --color-purple-950: #2c1a2a;
   --color-gray-50: #fafbfb;
-  --color-gray-100: #edeeee;
+  --color-gray-100: #f1f2f2;
   --color-gray-200: #dee0e1;
   --color-gray-300: #d0d3d4;
   --color-gray-400: #aab0b1;
@@ -306,7 +306,11 @@
    * shared-styles stays authoritative for `bg-primary` etc.) */
   --primary-foreground: var(--color-gray-50);
 
-  /* Secondary (neutral) — note: --color-secondary already exists upstream */
+  /* Secondary (neutral). `--secondary` is defined here rather than inherited:
+   * `--color-secondary` upstream resolves through intent-ui-theme.css (the
+   * legacy @op/ui theme), so `bg-secondary` would lose its background when that
+   * package is removed. Same value as the Figma spec's gray-100. */
+  --secondary: var(--color-gray-100);
   --secondary-foreground: var(--color-gray-900);
 
   /* Muted */
