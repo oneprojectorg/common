@@ -22,6 +22,7 @@ export function useRichTextEditor({
   required = false,
   ariaLabelledBy,
   ariaDescribedBy,
+  ariaMultiline = true,
 }: {
   extensions?: Extensions;
   content?: Content;
@@ -54,6 +55,12 @@ export function useRichTextEditor({
    * counter). Space-separated, same as the native attribute.
    */
   ariaDescribedBy?: string;
+  /**
+   * Whether the editable region accepts line breaks. Sets `aria-multiline` on the
+   * `role="textbox"`. Defaults to true — pass false for a single-line editable
+   * (e.g. a title field that swallows Enter).
+   */
+  ariaMultiline?: boolean;
 }) {
   // Append a single Placeholder extension when a top-level placeholder is asked
   // for OR the Details extension is present (it needs a per-node 'Summary' hint).
@@ -98,9 +105,22 @@ export function useRichTextEditor({
           baseEditorStyles,
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
-        ...(required ? { 'aria-required': 'true' } : {}),
-        ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
-        ...(ariaDescribedBy ? { 'aria-describedby': ariaDescribedBy } : {}),
+        // A bare contenteditable div has no ARIA role, and a generic element may
+        // not carry an accessible name (`aria-prohibited-attr`) or
+        // `aria-required` (`aria-allowed-attr`). `role="textbox"` is what makes
+        // those legal — and it's what the element actually is. Only applied while
+        // editable: a readonly viewer is prose, not a text input.
+        ...(editable
+          ? {
+              role: 'textbox',
+              'aria-multiline': ariaMultiline ? 'true' : 'false',
+              ...(required ? { 'aria-required': 'true' } : {}),
+              ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
+              ...(ariaDescribedBy
+                ? { 'aria-describedby': ariaDescribedBy }
+                : {}),
+            }
+          : {}),
       },
     },
     onUpdate: ({ editor }) => {

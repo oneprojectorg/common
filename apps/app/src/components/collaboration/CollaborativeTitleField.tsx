@@ -88,6 +88,12 @@ export function CollaborativeTitleField({
       attributes: {
         class:
           'w-full border-0 bg-transparent p-0 text-base text-foreground outline-none [unicode-bidi:plaintext]',
+        // `role="textbox"` is required before any of these are legal on a
+        // contenteditable div: a generic element may not carry an accessible name
+        // or `aria-required`. Single-line, so `aria-multiline` is false — Enter is
+        // swallowed in handleKeyDown below.
+        role: 'textbox',
+        'aria-multiline': 'false',
         'aria-labelledby': labelId,
         ...(maxLength != null ? { 'aria-describedby': counterId } : {}),
         ...(required ? { 'aria-required': 'true' } : {}),
