@@ -14,7 +14,6 @@ import {
 import { logger } from '@op/logging/client';
 import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
-import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import {
   type ReactNode,
@@ -27,7 +26,6 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { RichTextEditorToolbar } from '../../RichTextEditor';
 import {
   CollaborativeDocProvider,
   CollaborativePresence,
@@ -51,43 +49,6 @@ import { useProposalValidation } from './useProposalValidation';
 
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
-
-/**
- * Tracks which TipTap editor currently has focus.
- *
- * Handles the blur/focus race condition: when clicking from editor A to
- * editor B, `blur` fires before `focus`. We defer the blur-to-null via
- * `requestAnimationFrame` and cancel it when a focus fires first.
- */
-function useFocusedEditor() {
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const pendingBlur = useRef<number | null>(null);
-
-  const onEditorFocus = useCallback((e: Editor) => {
-    if (pendingBlur.current !== null) {
-      cancelAnimationFrame(pendingBlur.current);
-      pendingBlur.current = null;
-    }
-    setEditor(e);
-  }, []);
-
-  const onEditorBlur = useCallback((e: Editor) => {
-    pendingBlur.current = requestAnimationFrame(() => {
-      pendingBlur.current = null;
-      setEditor((cur) => (cur === e ? null : cur));
-    });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (pendingBlur.current !== null) {
-        cancelAnimationFrame(pendingBlur.current);
-      }
-    };
-  }, []);
-
-  return { editor, onEditorFocus, onEditorBlur };
-}
 
 export function ProposalEditor({
   instance,
@@ -477,12 +438,6 @@ function ProposalEditorInner({
 
   // -- Render ----------------------------------------------------------------
 
-  const {
-    editor: focusedEditor,
-    onEditorFocus,
-    onEditorBlur,
-  } = useFocusedEditor();
-
   const editorBody = (
     <>
       <ProposalFormRenderer
@@ -490,8 +445,6 @@ function ProposalEditorInner({
         draft={draft}
         decisionProfileId={instance.profileId ?? null}
         onFieldChange={handleFieldChange}
-        onEditorFocus={onEditorFocus}
-        onEditorBlur={onEditorBlur}
         // Version history open with nothing selected = "Current version": the
         // same readonly components as a past version, so no Yjs-bound editor is
         // mounted while the panel is up.
@@ -550,13 +503,9 @@ function ProposalEditorInner({
       access={proposal.access}
       revisionRequest={revisionRequest}
     >
-      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[auto_1fr]">
-        <div
-          className="border-b bg-background"
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          <RichTextEditorToolbar editor={focusedEditor} />
-        </div>
+      {/* Formatting is per-field now: each prose editor renders its own bubble
+          menu on the selection, so there is no toolbar row above the form. */}
+      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
           {revisionRequest ? (
             <SplitPane className="mx-auto w-full max-w-6xl">

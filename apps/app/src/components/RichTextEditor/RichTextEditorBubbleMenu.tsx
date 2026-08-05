@@ -13,6 +13,9 @@ import { BubbleMenu, type BubbleMenuProps } from '@tiptap/react/menus';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { IconType } from 'react-icons';
 import {
+  LuAlignCenter,
+  LuAlignLeft,
+  LuAlignRight,
   LuBold,
   LuCode,
   LuHeading1,
@@ -103,6 +106,9 @@ export function RichTextEditorBubbleMenu({
             blockquote: e.isActive('blockquote'),
             details: e.isActive('details'),
             link: e.isActive('link'),
+            alignLeft: e.isActive({ textAlign: 'left' }),
+            alignCenter: e.isActive({ textAlign: 'center' }),
+            alignRight: e.isActive({ textAlign: 'right' }),
           }
         : null,
   });
@@ -219,6 +225,27 @@ export function RichTextEditorBubbleMenu({
         icon: LuCode,
         isActive: activeStates.code,
         toggle: () => editor.chain().focus().toggleCode().run(),
+      },
+      {
+        key: 'alignLeft',
+        label: t('Align Left'),
+        icon: LuAlignLeft,
+        isActive: activeStates.alignLeft,
+        toggle: () => editor.chain().focus().setTextAlign('left').run(),
+      },
+      {
+        key: 'alignCenter',
+        label: t('Align Center'),
+        icon: LuAlignCenter,
+        isActive: activeStates.alignCenter,
+        toggle: () => editor.chain().focus().setTextAlign('center').run(),
+      },
+      {
+        key: 'alignRight',
+        label: t('Align Right'),
+        icon: LuAlignRight,
+        isActive: activeStates.alignRight,
+        toggle: () => editor.chain().focus().setTextAlign('right').run(),
       },
       {
         key: 'details',

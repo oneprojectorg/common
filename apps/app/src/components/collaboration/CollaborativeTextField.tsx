@@ -8,7 +8,10 @@ import { useCallback, useId, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getProposalExtensions } from '../RichTextEditor';
+import {
+  RichTextEditorBubbleMenu,
+  getProposalExtensions,
+} from '../RichTextEditor';
 import { CharacterCounter } from './CharacterCounter';
 import { CollaborativeEditor } from './CollaborativeEditor';
 
@@ -63,6 +66,8 @@ export function CollaborativeTextField({
 }: CollaborativeTextFieldProps) {
   const t = useTranslations();
   const [charCount, setCharCount] = useState(0);
+  // Held in state (not a ref) so the bubble menu renders once the editor exists.
+  const [editor, setEditor] = useState<Editor | null>(null);
   const labelId = useId();
   const descriptionId = useId();
   const counterId = useId();
@@ -85,6 +90,7 @@ export function CollaborativeTextField({
   onEditorBlurRef.current = onEditorBlur;
 
   const handleEditorReady = useCallback((editor: Editor) => {
+    setEditor(editor);
     setCharCount(editor.getText().length);
 
     editor.on('update', () => {
@@ -129,6 +135,13 @@ export function CollaborativeTextField({
           required={required}
           ariaLabelledBy={title ? labelId : undefined}
           ariaDescribedBy={describedBy}
+        />
+        {/* Formatting lives on the selection rather than in a toolbar above the
+            form. Every prose field owns its own menu, so the pluginKey has to be
+            unique per field or TipTap's plugins collide. */}
+        <RichTextEditorBubbleMenu
+          editor={editor}
+          pluginKey={`proposalField-${fragmentName}`}
         />
         {maxLength != null && (
           <InputGroupAddon align="block-end" className="justify-end">
