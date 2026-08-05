@@ -1,5 +1,5 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
-import { db, eq } from '@op/db/client';
+import { db, eq, inArray } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
@@ -688,6 +688,153 @@ describe.concurrent('profile.users.listUsers', () => {
 
       // Admin should be first (A < M alphabetically)
       expect(allEmails[0]).toBe(adminUser.email);
+    });
+
+    // Regression tests: a NULL name/email at a page boundary used to encode a
+    // '' cursor that re-matched the whole previous page (duplicate rows, which
+    // crash the react-aria Table with duplicate keys) while the NULL rows
+    // themselves never satisfied the cursor comparison (dropped rows).
+    describe('NULL name/email columns', () => {
+      const paginateAllIds = async (
+        caller: ReturnType<typeof createCaller>,
+        profileId: string,
+        orderBy: 'name' | 'email' | 'role',
+      ) => {
+        const allIds: string[] = [];
+        let cursor: string | null | undefined;
+        let pageCount = 0;
+
+        do {
+          const page = await caller.listUsers({
+            profileId,
+            limit: 2,
+            cursor: cursor ?? undefined,
+            orderBy,
+            dir: 'asc',
+          });
+
+          allIds.push(...page.items.map((u) => u.id));
+          cursor = page.next;
+          pageCount++;
+
+          if (pageCount > 10) {
+            throw new Error('Too many pages - possible infinite loop');
+          }
+        } while (cursor);
+
+        return allIds;
+      };
+
+      it('should paginate by name without duplicating or dropping NULL-name rows', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, allUsers } = await testData.createProfile({
+          users: { admin: 1, member: 4 },
+        });
+
+        // Two members with NULL name land at a page boundary with limit 2
+        const nullNameIds = allUsers
+          .filter((u) => u.role === 'Member')
+          .slice(0, 2)
+          .map((u) => u.profileUserId);
+        await db
+          .update(profileUsers)
+          .set({ name: null })
+          .where(inArray(profileUsers.id, nullNameIds));
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'name');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        nullNameIds.forEach((id) => {
+          expect(allIds).toContain(id);
+        });
+      });
+
+      it('should paginate by email without duplicating or dropping NULL-email rows', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, allUsers } = await testData.createProfile({
+          users: { admin: 1, member: 4 },
+        });
+
+        // Two members with NULL email: identical '' cursor values, so only
+        // the id tiebreaker can distinguish them
+        const nullEmailIds = allUsers
+          .filter((u) => u.role === 'Member')
+          .slice(0, 2)
+          .map((u) => u.profileUserId);
+        await db
+          .update(profileUsers)
+          .set({ email: null })
+          .where(inArray(profileUsers.id, nullEmailIds));
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'email');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        nullEmailIds.forEach((id) => {
+          expect(allIds).toContain(id);
+        });
+      });
+
+      it('should paginate by role when same-role members have NULL emails', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, allUsers } = await testData.createProfile({
+          users: { admin: 1, member: 4 },
+        });
+
+        // All four members share the Member role, and two of them also share
+        // a NULL email — both the role value and email tiebreaker are equal,
+        // leaving only the id tiebreaker
+        const nullEmailIds = allUsers
+          .filter((u) => u.role === 'Member')
+          .slice(0, 2)
+          .map((u) => u.profileUserId);
+        await db
+          .update(profileUsers)
+          .set({ email: null })
+          .where(inArray(profileUsers.id, nullEmailIds));
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'role');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        nullEmailIds.forEach((id) => {
+          expect(allIds).toContain(id);
+        });
+      });
     });
   });
 });
