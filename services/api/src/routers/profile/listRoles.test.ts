@@ -48,6 +48,9 @@ describe.concurrent('profile.listRoles', () => {
     const memberRole = result.items.find((r) => r.id === ROLES.MEMBER.id);
     expect(adminRole).toBeDefined();
     expect(memberRole).toBeDefined();
+    expect(result.items.every((role) => role.memberCount === undefined)).toBe(
+      true,
+    );
   });
 
   it('should not expose non-exposable global roles (e.g. system roles like Public)', async ({

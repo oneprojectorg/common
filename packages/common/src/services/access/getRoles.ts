@@ -72,7 +72,7 @@ type RoleCursor = { value: string; id: string };
  *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
  * - If profileId is present: each role gains a memberCount — the number of
- *   profile members holding that role
+ *   profile members holding that role, computed in the paginated role query
  */
 export const getRoles = async (params?: {
   profileId?: string;
@@ -121,48 +121,16 @@ export const getRoles = async (params?: {
       : profileCondition;
   };
 
-  /**
-   * Attaches memberCount to each role via one grouped query over the
-   * profileUser -> access role junction, scoped to the profile's members and
-   * excluding the global sentinel users (mirroring listProfileUsers).
-   * Only runs when profileId is present.
-   */
-  const attachMemberCounts = async (items: Role[]): Promise<Role[]> => {
-    if (!profileId || items.length === 0) {
-      return items;
-    }
-
-    const countRows = await db
-      .select({
-        accessRoleId: profileUserToAccessRoles.accessRoleId,
-        memberCount: sql<number>`count(*)::int`,
-      })
-      .from(profileUserToAccessRoles)
-      .innerJoin(
-        profileUsers,
-        eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
-      )
-      .where(
-        and(
-          inArray(
-            profileUserToAccessRoles.accessRoleId,
-            items.map((item) => item.id),
-          ),
-          eq(profileUsers.profileId, profileId),
-          excludeGlobalUsers(profileUsers.authUserId),
-        ),
-      )
-      .groupBy(profileUserToAccessRoles.accessRoleId);
-
-    const countsByRoleId = new Map(
-      countRows.map((row) => [row.accessRoleId, row.memberCount]),
-    );
-
-    return items.map((item) => ({
-      ...item,
-      memberCount: countsByRoleId.get(item.id) ?? 0,
-    }));
-  };
+  // The role junction's accessRoleId index bounds the correlated lookup.
+  const memberCountExpr = (accessRoleCols: typeof accessRoles) => sql<number>`(
+    SELECT COUNT(*)::int
+    FROM ${profileUserToAccessRoles}
+    INNER JOIN ${profileUsers}
+      ON ${profileUsers.id} = ${profileUserToAccessRoles.profileUserId}
+    WHERE ${profileUserToAccessRoles.accessRoleId} = ${accessRoleCols.id}
+      AND ${profileUsers.profileId} = ${profileId}
+      AND ${excludeGlobalUsers(profileUsers.authUserId)}
+  )`;
 
   // Use join-based query when zoneName is provided for DB-level filtering
   if (zoneName) {
@@ -172,6 +140,7 @@ export const getRoles = async (params?: {
         name: accessRoles.name,
         description: accessRoles.description,
         permission: accessRolePermissionsOnAccessZones.permission,
+        ...(profileId && { memberCount: memberCountExpr(accessRoles) }),
       })
       .from(accessRoles)
       .leftJoin(
@@ -206,6 +175,7 @@ export const getRoles = async (params?: {
       name: row.name,
       description: row.description,
       permissions: fromBitField(row.permission ?? 0),
+      ...(profileId && { memberCount: row.memberCount ?? 0 }),
     }));
 
     const lastItem = resultItems[resultItems.length - 1];
@@ -214,7 +184,7 @@ export const getRoles = async (params?: {
         ? encodeCursor<RoleCursor>({ value: lastItem.name, id: lastItem.id })
         : null;
 
-    return { items: await attachMemberCounts(items), next: nextCursor };
+    return { items, next: nextCursor };
   }
 
   // Simple query without permissions when no zoneName
@@ -226,6 +196,10 @@ export const getRoles = async (params?: {
       dir === 'desc'
         ? { name: 'desc', id: 'desc' }
         : { name: 'asc', id: 'asc' },
+    extras: {
+      memberCount: (table, { sql: sqlOp }) =>
+        sqlOp<number>`${memberCountExpr(table)}`.as('member_count'),
+    },
     limit: limit + 1,
   });
 
@@ -238,6 +212,7 @@ export const getRoles = async (params?: {
     id: role.id,
     name: role.name,
     description: role.description,
+    ...(profileId && { memberCount: role.memberCount ?? 0 }),
   }));
 
   // Build next cursor from last item
@@ -248,7 +223,7 @@ export const getRoles = async (params?: {
       : null;
 
   return {
-    items: await attachMemberCounts(items),
+    items,
     next: nextCursor,
   };
 };
