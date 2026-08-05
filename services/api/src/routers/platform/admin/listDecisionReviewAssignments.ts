@@ -4,7 +4,7 @@ import {
   getProposalIdsForPhase,
 } from '@op/common';
 import { adminDecisionReviewAssignmentsSchema } from '@op/common/client';
-import { db, eq, inArray } from '@op/db/client';
+import { aliasedTable, db, eq, inArray } from '@op/db/client';
 import { profiles, proposals, users } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -71,7 +71,10 @@ export const listDecisionReviewAssignmentsRouter = router({
               reviews: {
                 columns: { state: true, submittedAt: true },
               },
-              proposal: { columns: { id: true, proposalData: true } },
+              proposal: {
+                columns: { id: true, proposalData: true },
+                with: { profile: { columns: { name: true } } },
+              },
             },
             orderBy: { assignedAt: 'asc' },
           }),
@@ -86,12 +89,17 @@ export const listDecisionReviewAssignmentsRouter = router({
           getProposalIdsForPhase({ instance, phaseId: input.phaseId }),
         ]);
 
+      // The proposal's own profile holds the canonical title (profiles.name);
+      // proposalData.title is only kept as a legacy fallback since edits write
+      // the title to the profile, not into proposalData.
+      const proposalProfiles = aliasedTable(profiles, 'proposal_profiles');
       const assignableProposals =
         phaseProposalIds.length > 0
           ? await db
               .select({
                 id: proposals.id,
                 proposalData: proposals.proposalData,
+                profileName: proposalProfiles.name,
                 submittedByProfileId: proposals.submittedByProfileId,
                 authorId: profiles.id,
                 authorName: profiles.name,
@@ -101,6 +109,10 @@ export const listDecisionReviewAssignmentsRouter = router({
               .leftJoin(
                 profiles,
                 eq(proposals.submittedByProfileId, profiles.id),
+              )
+              .leftJoin(
+                proposalProfiles,
+                eq(proposals.profileId, proposalProfiles.id),
               )
               .where(inArray(proposals.id, phaseProposalIds))
           : [];
@@ -159,9 +171,9 @@ export const listDecisionReviewAssignmentsRouter = router({
         reviewer.assignments.push({
           id: assignment.id,
           proposalId: assignment.proposal.id,
-          proposalTitle: titleParsed.success
-            ? (titleParsed.data.title ?? null)
-            : null,
+          proposalTitle:
+            assignment.proposal.profile.name ??
+            (titleParsed.success ? (titleParsed.data.title ?? null) : null),
           status: assignment.status,
           reviewState: review?.state ?? null,
           submittedAt: review?.submittedAt ?? null,
@@ -188,9 +200,9 @@ export const listDecisionReviewAssignmentsRouter = router({
           );
           return {
             id: proposal.id,
-            title: titleParsed.success
-              ? (titleParsed.data.title ?? null)
-              : null,
+            title:
+              proposal.profileName ??
+              (titleParsed.success ? (titleParsed.data.title ?? null) : null),
             submittedByProfileId: proposal.submittedByProfileId,
             author: proposal.authorId
               ? {
