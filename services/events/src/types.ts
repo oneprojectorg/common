@@ -99,6 +99,15 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
+  // Emitted after processResults writes a successful result row. Carries the
+  // row id so consumers can detect when a newer run has superseded it.
+  resultsProcessed: {
+    name: 'decision/results-processed' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      processResultId: z.string().uuid(),
+    }),
+  },
   voteSubmitted: {
     name: 'vote/submitted' as const,
     schema: z.object({
