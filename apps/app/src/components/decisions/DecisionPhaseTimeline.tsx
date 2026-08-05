@@ -22,13 +22,26 @@ import { useAdvancePhase } from './useAdvancePhase';
 export function DecisionPhaseTimeline({
   phases,
   currentPhaseId,
+  hasStarted = true,
   instanceId,
   isAdmin,
   decisionSlug,
   className,
 }: {
   phases: ProcessPhase[];
+  /**
+   * The instance's actual current phase. Always pass it, even before the process
+   * begins — the advance flow derives the next phase from it. Use `hasStarted` to
+   * control whether a phase is *presented* as current.
+   */
   currentPhaseId: string;
+  /**
+   * Whether the first phase has started. When false no phase is presented as
+   * current or completed (the process hasn't visibly begun), but an admin can
+   * still advance: the next phase keeps its advanceable treatment, which is an
+   * upcoming variant anyway.
+   */
+  hasStarted?: boolean;
   instanceId?: string;
   isAdmin?: boolean;
   decisionSlug: string;
@@ -68,8 +81,9 @@ export function DecisionPhaseTimeline({
     <>
       <ol className={cn('flex flex-col gap-6', className)}>
         {phases.map((phase, index) => {
-          const state: PhaseCardState =
-            index < currentIndex
+          const state: PhaseCardState = !hasStarted
+            ? 'upcoming'
+            : index < currentIndex
               ? 'completed'
               : index === currentIndex
                 ? 'current'
