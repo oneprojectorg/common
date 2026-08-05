@@ -362,7 +362,7 @@ function useProposalEditorAsideHeaderIcons({
             render={
               <Button
                 variant="outline"
-                size="icon-sm"
+                size="icon"
                 onClick={() => onToggleAside(asideKey)}
                 aria-label={definition.label}
                 aria-pressed={aside === asideKey}

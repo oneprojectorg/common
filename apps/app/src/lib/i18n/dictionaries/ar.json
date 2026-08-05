@@ -1504,5 +1504,9 @@
   "View comments": "عرض التعليقات",
   "Download {name}": "تنزيل {name}",
   "OK": "حسنًا",
-  "Attachments ({count}/{max})": "المرفقات ({count}/{max})"
+  "Attachments ({count}/{max})": "المرفقات ({count}/{max})",
+  "Proposal name": "اسم المقترح",
+  "Select a category": "اختر فئة",
+  "{count} of {max} characters used": "{count} من {max} حرفًا مستخدمة",
+  "Character limit reached": "تم الوصول إلى الحد الأقصى للأحرف"
 }

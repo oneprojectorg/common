@@ -2,9 +2,8 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
-import { Button } from '@op/sense/Button';
 import { NumberField } from '@op/sense/NumberField';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,6 +24,10 @@ const getCurrencySymbol = (currency: string) =>
     .trim();
 
 interface CollaborativeBudgetFieldProps {
+  /** Visible field label. Falls back to "Funding amount". */
+  title?: string;
+  description?: string;
+  required?: boolean;
   minAmount?: number;
   maxAmount?: number;
   initialValue?: BudgetData | null;
@@ -36,11 +39,13 @@ interface CollaborativeBudgetFieldProps {
  * Stores `MoneyAmount` (`{ amount, currency }`) as a JSON string in the shared doc
  * for future multi-currency support.
  *
- * Displays as a pill when a value exists or empty, switching to an inline
- * NumberField on click for editing. The pill width matches the input width
- * to prevent layout shifts.
+ * Rendered as a permanently-visible labelled number input with a currency-symbol
+ * addon, at half the form column's width (Figma: 272 of 544).
  */
 export function CollaborativeBudgetField({
+  title,
+  description,
+  required = false,
   minAmount,
   maxAmount,
   initialValue = null,
@@ -48,7 +53,6 @@ export function CollaborativeBudgetField({
 }: CollaborativeBudgetFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
-  const budgetInputRef = useRef<HTMLInputElement>(null);
 
   const initialBudgetValue =
     initialValue !== null
@@ -72,7 +76,6 @@ export function CollaborativeBudgetField({
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  const [isEditing, setIsEditing] = useState(false);
   const budgetAmount = budget?.amount ?? null;
   const currency = budget?.currency ?? DEFAULT_CURRENCY;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
@@ -80,41 +83,6 @@ export function CollaborativeBudgetField({
   const placeholderText = maxAmount
     ? t('Max {amount}', { amount: maxAmount.toLocaleString() })
     : t('Enter amount');
-
-  // Size the input to its placeholder text instead of the default size=20
-  useLayoutEffect(() => {
-    if (budgetInputRef.current) {
-      budgetInputRef.current.size = placeholderText.length;
-    }
-  }, [placeholderText]);
-
-  // Use the larger of the input and button natural widths so both match
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [sharedWidth, setSharedWidth] = useState(0);
-
-  useEffect(() => {
-    if (isEditing) {
-      return;
-    }
-    const frame = requestAnimationFrame(() => {
-      const group = budgetInputRef.current?.closest(
-        '[data-slot="input-group"]',
-      );
-      const inputW = group instanceof HTMLElement ? group.offsetWidth : 0;
-      const buttonW = buttonRef.current?.scrollWidth ?? 0;
-      const width = Math.max(inputW, buttonW);
-      if (width > 0) {
-        setSharedWidth(width);
-      }
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [isEditing]);
-
-  useEffect(() => {
-    if (isEditing && budgetInputRef.current) {
-      budgetInputRef.current.focus();
-    }
-  }, [isEditing]);
 
   const handleChange = (value: number | null) => {
     if (value === null) {
@@ -139,56 +107,20 @@ export function CollaborativeBudgetField({
     onChangeRef.current?.(emitted);
   }, [budgetText]);
 
-  const handleStartEditing = () => {
-    setIsEditing(true);
-  };
-
-  const handleBlur = () => {
-    setIsEditing(false);
-  };
-
   return (
-    <>
-      <div
-        className={
-          isEditing ? 'max-w-md' : 'pointer-events-none absolute opacity-0'
-        }
-        style={sharedWidth > 0 ? { minWidth: sharedWidth } : undefined}
-        // While the pill is showing, the measured-but-invisible input must not
-        // be an extra tab stop or a second announcement of the same field.
-        aria-hidden={!isEditing || undefined}
-      >
-        <NumberField
-          ref={budgetInputRef}
-          value={budgetAmount}
-          onChange={handleChange}
-          minValue={minAmount ?? 0}
-          maxValue={maxAmount}
-          prefixText={currencySymbol}
-          placeholder={placeholderText}
-          onBlur={handleBlur}
-          aria-label={t('Budget')}
-          tabIndex={isEditing ? undefined : -1}
-        />
-      </div>
-      {!isEditing && (
-        <Button
-          ref={buttonRef}
-          variant="ghost"
-          onClick={handleStartEditing}
-          // Keeps the @op/ui "pill" look: tinted fill, teal label, no shadow.
-          className="h-auto justify-start bg-accent p-2 text-start text-primary shadow-none hover:bg-accent/70 hover:text-primary"
-        >
-          {budgetAmount !== null
-            ? budgetAmount.toLocaleString(undefined, {
-                style: 'currency',
-                currency,
-                currencyDisplay: 'narrowSymbol',
-                maximumFractionDigits: 0,
-              })
-            : t('Add budget')}
-        </Button>
-      )}
-    </>
+    <NumberField
+      label={title ?? t('Funding amount')}
+      description={description}
+      required={required}
+      aria-required={required || undefined}
+      value={budgetAmount}
+      onChange={handleChange}
+      minValue={minAmount ?? 0}
+      maxValue={maxAmount}
+      prefixText={currencySymbol}
+      placeholder={placeholderText}
+      // Figma: half the 544 column (272px = 17rem).
+      className="w-full gap-2 sm:max-w-68"
+    />
   );
 }

@@ -13,6 +13,7 @@ import { type ReactNode, startTransition, useOptimistic } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalAttachmentList } from './ProposalAttachmentList';
+import { LabeledFieldSet } from './forms/LabeledFieldSet';
 
 const MAX_FILES = 5;
 const MAX_SIZE_MB = Math.floor(MAX_PROPOSAL_ATTACHMENT_FILE_SIZE / 1024 / 1024);
@@ -173,21 +174,15 @@ export function ProposalAttachments({
   }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <span className="font-serif text-title-xs text-foreground">
-          {t('Attachments ({count}/{max})', {
-            count: optimisticAttachments.length,
-            max: MAX_FILES,
-          })}
-        </span>
-        <p className="text-sm text-foreground">
-          {t(
-            'Support your proposal with relevant documents like budgets or supporting research.',
-          )}
-        </p>
-      </div>
-
+    <LabeledFieldSet
+      legend={t('Attachments ({count}/{max})', {
+        count: optimisticAttachments.length,
+        max: MAX_FILES,
+      })}
+      description={t(
+        'Support your proposal with relevant documents like budgets or supporting research.',
+      )}
+    >
       <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
       <FileDropZone
@@ -208,6 +203,6 @@ export function ProposalAttachments({
         allowsMultiple
         disabled={!canAddMore}
       />
-    </div>
+    </LabeledFieldSet>
   );
 }

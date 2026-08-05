@@ -32,6 +32,13 @@ export interface CollaborativeEditorProps {
   editorClassName?: string;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
+  /**
+   * Id of the visible field label. A contenteditable can't be reached by
+   * `<label for>`, so the label is wired by id instead.
+   */
+  ariaLabelledBy?: string;
+  /** Id(s) of describing elements (helper text, character counter). */
+  ariaDescribedBy?: string;
 }
 
 /** Rich text editor with real-time collaboration via TipTap Cloud */
@@ -48,6 +55,8 @@ export const CollaborativeEditor = forwardRef<
       className = '',
       editorClassName = '',
       required = false,
+      ariaLabelledBy,
+      ariaDescribedBy,
     },
     ref,
   ) => {
@@ -79,6 +88,8 @@ export const CollaborativeEditor = forwardRef<
       editorClassName,
       onEditorReady,
       required,
+      ariaLabelledBy,
+      ariaDescribedBy,
     });
 
     useImperativeHandle(

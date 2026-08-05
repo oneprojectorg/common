@@ -1507,5 +1507,9 @@
   "View comments": "মন্তব্য দেখুন",
   "Download {name}": "{name} ডাউনলোড করুন",
   "OK": "ঠিক আছে",
-  "Attachments ({count}/{max})": "সংযুক্তি ({count}/{max})"
+  "Attachments ({count}/{max})": "সংযুক্তি ({count}/{max})",
+  "Proposal name": "প্রস্তাবের নাম",
+  "Select a category": "একটি বিভাগ নির্বাচন করুন",
+  "{count} of {max} characters used": "{max}টির মধ্যে {count}টি অক্ষর ব্যবহৃত",
+  "Character limit reached": "অক্ষরের সীমা পূর্ণ হয়েছে"
 }

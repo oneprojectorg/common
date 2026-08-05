@@ -1504,5 +1504,9 @@
   "View comments": "Ver comentarios",
   "Download {name}": "Descargar {name}",
   "OK": "Aceptar",
-  "Attachments ({count}/{max})": "Archivos adjuntos ({count}/{max})"
+  "Attachments ({count}/{max})": "Archivos adjuntos ({count}/{max})",
+  "Proposal name": "Nombre de la propuesta",
+  "Select a category": "Selecciona una categoría",
+  "{count} of {max} characters used": "{count} de {max} caracteres usados",
+  "Character limit reached": "Se alcanzó el límite de caracteres"
 }

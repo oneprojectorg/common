@@ -2,20 +2,11 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
-import {
-  Combobox,
-  ComboboxChip,
-  ComboboxChips,
-  ComboboxChipsInput,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxItem,
-  ComboboxList,
-} from '@op/sense/Combobox';
-import { useEffect, useMemo, useRef } from 'react';
-import { LuSearch } from 'react-icons/lu';
+import { Checkbox } from '@op/sense/Checkbox';
+import { useEffect, useId, useMemo, useRef } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { LabeledFieldSet } from '@/components/decisions/forms/LabeledFieldSet';
+import { OptionBox } from '@/components/decisions/forms/OptionBox';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
@@ -30,12 +21,15 @@ interface CollaborativeMultiSelectFieldProps {
   onChange?: (value: string[]) => void;
   /** Yjs fragment name used to sync this field. Must be unique per instance. */
   fragmentName: string;
-  /** Placeholder text shown when no value is selected. */
-  placeholder?: string;
+  /** Visible group legend. */
+  title: string;
+  description?: string;
+  required?: boolean;
 }
 
 /**
- * Collaborative multi-select field synced through a Yjs fragment.
+ * Collaborative multi-select field synced through a Yjs fragment, rendered as a
+ * row of bordered checkbox chips (Figma "Select a category").
  *
  * Values are serialized as a JSON string array so all connected users see the
  * same category selections in real time while the rest of the app consumes a
@@ -46,10 +40,12 @@ export function CollaborativeMultiSelectField({
   initialValue = [],
   onChange,
   fragmentName,
-  placeholder,
+  title,
+  description,
+  required,
 }: CollaborativeMultiSelectFieldProps) {
-  const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
+  const idPrefix = useId();
   const [syncedValue, setSyncedValue] = useCollaborativeFragment(
     ydoc,
     fragmentName,
@@ -59,10 +55,6 @@ export function CollaborativeMultiSelectField({
   const selectedValues = useMemo(
     () => parseCategoryFragmentValue(syncedValue),
     [syncedValue],
-  );
-  const selectedOptions = useMemo(
-    () => options.filter((option) => selectedValues.includes(option.value)),
-    [options, selectedValues],
   );
 
   const onChangeRef = useRef(onChange);
@@ -86,56 +78,54 @@ export function CollaborativeMultiSelectField({
     return null;
   }
 
-  const resolvedPlaceholder = placeholder ?? t('Select option');
+  const handleToggle = (value: string, checked: boolean) => {
+    const next = new Set(selectedValues);
+    if (checked) {
+      next.add(value);
+    } else {
+      next.delete(value);
+    }
 
-  const handleValueChange = (nextOptions: Array<MultiSelectOption>) => {
     // Normalize to the option order so the synced array stays stable no matter
-    // which order the chips were added in.
+    // which order the chips were ticked in.
     setSyncedValue(
       JSON.stringify(
         options
-          .filter((option) =>
-            nextOptions.some((selected) => selected.value === option.value),
-          )
+          .filter((option) => next.has(option.value))
           .map((option) => option.value),
       ),
     );
   };
 
   return (
-    <Combobox
-      multiple
-      items={options}
-      value={selectedOptions}
-      onValueChange={handleValueChange}
-      itemToStringLabel={(option: MultiSelectOption) => option.label}
-      isItemEqualToValue={(a: MultiSelectOption, b: MultiSelectOption) =>
-        a.value === b.value
-      }
+    <LabeledFieldSet
+      legend={title}
+      description={description}
+      required={required}
+      data-testid={`field-${fragmentName}`}
     >
-      <ComboboxChips className="max-w-full">
-        <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
-        {/* ComboboxChip takes no `value` — the chip↔value link is render order. */}
-        {selectedOptions.map((option) => (
-          <ComboboxChip key={option.value}>{option.label}</ComboboxChip>
-        ))}
-        <ComboboxChipsInput
-          aria-label={resolvedPlaceholder}
-          placeholder={
-            selectedOptions.length === 0 ? resolvedPlaceholder : undefined
-          }
-        />
-      </ComboboxChips>
-      <ComboboxContent>
-        <ComboboxEmpty>{t('No results')}</ComboboxEmpty>
-        <ComboboxList>
-          {(item: MultiSelectOption) => (
-            <ComboboxItem key={item.value} value={item}>
-              {item.label}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const optionId = `${idPrefix}-${option.value}`;
+          return (
+            <OptionBox
+              key={option.value}
+              htmlFor={optionId}
+              width="hug"
+              label={option.label}
+              control={
+                <Checkbox
+                  id={optionId}
+                  checked={selectedValues.includes(option.value)}
+                  onCheckedChange={(checked) =>
+                    handleToggle(option.value, checked === true)
+                  }
+                />
+              }
+            />
+          );
+        })}
+      </div>
+    </LabeledFieldSet>
   );
 }

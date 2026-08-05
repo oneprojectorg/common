@@ -66,7 +66,7 @@ export function ProposalEditorHeader({
         <Button
           variant="ghost"
           onClick={() => router.push(backHref)}
-          className="shrink-0 px-2 text-foreground sm:px-3 sm:text-primary"
+          className="shrink-0 text-foreground sm:text-primary"
         >
           <LuArrowLeft className="size-6 sm:size-4 rtl:-scale-x-100" />
           <span className="hidden sm:block">{t('Back')}</span>
@@ -99,19 +99,11 @@ export function ProposalEditorHeader({
             loading={isSubmitting}
           >
             <LuCheck className="size-4" />
-            {isRevisionMode ? (
-              t('Resubmit')
-            ) : isEditMode && !isDraft ? (
-              <>
-                <span className="inline lg:hidden">{t('Update')}</span>
-                <span className="hidden lg:inline">{t('Update Proposal')}</span>
-              </>
-            ) : (
-              <>
-                <span className="hidden sm:block">{t('Submit Proposal')}</span>
-                <span className="sm:hidden">{t('Submit')}</span>
-              </>
-            )}
+            {isRevisionMode
+              ? t('Resubmit')
+              : isEditMode && !isDraft
+                ? t('Update')
+                : t('Submit')}
           </Button>
         )}
         <LocaleChooser />

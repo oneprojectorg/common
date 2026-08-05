@@ -1570,5 +1570,9 @@
   "View comments": "View comments",
   "Download {name}": "Download {name}",
   "OK": "OK",
-  "Attachments ({count}/{max})": "Attachments ({count}/{max})"
+  "Attachments ({count}/{max})": "Attachments ({count}/{max})",
+  "Proposal name": "Proposal name",
+  "Select a category": "Select a category",
+  "{count} of {max} characters used": "{count} of {max} characters used",
+  "Character limit reached": "Character limit reached"
 }

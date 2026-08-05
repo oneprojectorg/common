@@ -1506,5 +1506,9 @@
   "View comments": "Eeg faallooyinka",
   "Download {name}": "Soo deji {name}",
   "OK": "Waa hagaag",
-  "Attachments ({count}/{max})": "Lifaaqyo ({count}/{max})"
+  "Attachments ({count}/{max})": "Lifaaqyo ({count}/{max})",
+  "Proposal name": "Magaca soo jeedinta",
+  "Select a category": "Dooro qayb",
+  "{count} of {max} characters used": "{count} xaraf oo laga isticmaalay {max}",
+  "Character limit reached": "Xadka xarfaha waa la gaaray"
 }
