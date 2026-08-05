@@ -124,8 +124,14 @@ export function useRichTextEditor({
 
   // Readonly viewers reuse one editor instance, so sync incoming content when
   // the selected preview version changes.
+  //
+  // `content === undefined` means the caller never supplies content — the
+  // document is owned elsewhere (a Yjs Collaboration binding). Bail out rather
+  // than clearing: on a collab-bound editor `clearContent` would wipe the shared
+  // document for every connected client. Pass `null` to genuinely blank a
+  // content-driven viewer.
   useEffect(() => {
-    if (!editor || editable) {
+    if (!editor || editable || content === undefined) {
       return;
     }
 
