@@ -148,9 +148,12 @@ function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="field-label"
       className={cn(
-        // `leading-none` inside a box: the design's box rows size off the text
-        // box itself, so the default line-height would pad the row unevenly.
-        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:leading-none',
+        // Inside a box, trim the half-leading above the text so the row's 12px
+        // inset measures to the cap height, not to the top of the line box.
+        // `-mt-1` is that half-leading at this step ((24 - 16) / 2), and it beats
+        // `leading-none`, which also collapsed the spacing between wrapped lines.
+        // `text-box-trim: trim-start` is the real answer but isn't Baseline yet.
+        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-mt-1',
         className,
       )}
       {...props}
