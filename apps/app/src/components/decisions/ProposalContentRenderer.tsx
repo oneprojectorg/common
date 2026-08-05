@@ -2,6 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
+import { Header3 } from '@op/sense/Header';
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
 // re-exports a hook (useEffect) and importing it from a server-rendered tree
 // breaks the RSC build. Keep this subpath import — it has regressed before.
@@ -114,14 +115,7 @@ function FieldChrome({
     <div className="flex flex-col gap-2">
       {(title || description) && (
         <div className="flex flex-col gap-2">
-          {title && (
-            <span
-              dir="auto"
-              className="font-serif text-title-xs text-foreground"
-            >
-              {title}
-            </span>
-          )}
+          {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
             <p dir="auto" className="text-sm text-foreground">
               {description}

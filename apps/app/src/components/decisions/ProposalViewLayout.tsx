@@ -88,7 +88,6 @@ export function ProposalViewLayout({
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="link"
-            size="sm"
             onClick={() => router.push(backHref)}
             aria-label={backLabel}
             className="px-0"
@@ -114,7 +113,6 @@ export function ProposalViewLayout({
           {canEdit && editHref && (
             <Button
               variant="outline"
-              size="sm"
               onClick={() => router.push(editHref)}
               aria-label={t('Edit')}
               className={COMPACT_ACTION_CLASSES}
@@ -134,7 +132,6 @@ export function ProposalViewLayout({
           <ButtonLink
             href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
             variant="outline"
-            size="sm"
             aria-label={t('View comments')}
             className="size-8 px-0 sm:hidden"
           >
@@ -151,7 +148,7 @@ export function ProposalViewLayout({
                   render={
                     <Button
                       variant="outline"
-                      size="icon-sm"
+                      size="icon"
                       onClick={revisionToggle.onToggle}
                       aria-label={revisionRequestLabel}
                       aria-pressed={revisionToggle.isActive}

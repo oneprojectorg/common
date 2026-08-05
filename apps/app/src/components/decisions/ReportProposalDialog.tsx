@@ -47,7 +47,6 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
     <>
       <Button
         variant="outline"
-        size="sm"
         onClick={() => setIsOpen(true)}
         disabled={reported}
         aria-label={triggerLabel}

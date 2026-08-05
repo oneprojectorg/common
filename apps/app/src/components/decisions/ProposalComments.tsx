@@ -4,7 +4,6 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { Card } from '@op/sense/Card';
 import {
   Empty,
   EmptyContent,
@@ -75,25 +74,21 @@ export function ProposalComments({
 
   return (
     <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
-      <div className="border-t pt-8">
-        {/* `!text-title-base` keeps the pre-migration 20px heading — sense's
-            `text-title` is a step smaller on mobile (same call as ResultsList). */}
-        <Header3 className="mb-6 font-sans !text-title-base">
+      <div className="space-y-4 border-t pt-8">
+        <Header3 className="text-label">
           {t('Comments')} ({comments.length})
         </Header3>
 
         {!readOnly && (
           <div className="mb-8">
-            <Card className="border-0 p-0 shadow-none sm:border sm:p-4">
-              <PostUpdate
-                profileId={proposal.profileId || undefined}
-                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
-                label={t('Comment')}
-                onSuccess={scrollToComments}
-                proposalId={proposal.id}
-                processInstanceId={proposal.processInstanceId}
-              />
-            </Card>
+            <PostUpdate
+              profileId={proposal.profileId || undefined}
+              placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+              label={t('Comment')}
+              onSuccess={scrollToComments}
+              proposalId={proposal.id}
+              processInstanceId={proposal.processInstanceId}
+            />
           </div>
         )}
 
