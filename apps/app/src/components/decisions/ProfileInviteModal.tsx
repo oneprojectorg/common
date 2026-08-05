@@ -422,10 +422,33 @@ function ProfileInviteModalContent({
           return;
         }
 
-        await inviteMutation.mutateAsync({
+        const result = await inviteMutation.mutateAsync({
           invitations,
           profileId,
         });
+
+        if (result.details.failed.length > 0) {
+          const successfulEmails = new Set(result.details.successful);
+          setSelectedItemsByRole((selectedItems) =>
+            Object.fromEntries(
+              Object.entries(selectedItems).map(([roleId, items]) => [
+                roleId,
+                items.filter(
+                  (item) => !successfulEmails.has(item.email.toLowerCase()),
+                ),
+              ]),
+            ),
+          );
+          setSearchQuery('');
+          toast.error(t('Failed to send invite'));
+
+          if (result.details.successful.length > 0) {
+            utils.profile.listUsers.invalidate({ profileId });
+            utils.profile.listProfileInvites.invalidate({ profileId });
+            utils.profile.listRoles.invalidate({ profileId });
+          }
+          return;
+        }
 
         toast.success(t('Invite sent successfully'));
         setSelectedItemsByRole({});
