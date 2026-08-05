@@ -14,7 +14,7 @@ import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { formatBudgetCompact } from './BudgetDisplay';
+import { formatBudget } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 
@@ -65,7 +65,7 @@ export const ResultsList = ({
 
           const awardedText =
             proposal.allocated != null
-              ? formatBudgetCompact(proposal.allocated)
+              ? formatBudget(proposal.allocated)
               : undefined;
 
           return (
