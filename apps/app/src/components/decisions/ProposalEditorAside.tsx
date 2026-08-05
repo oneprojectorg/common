@@ -28,9 +28,13 @@ interface ProposalEditorAsideSkeletonProps {
  * Responsive editor aside shell: a right-side sheet on desktop and a bottom
  * drawer on mobile (Figma "Sheet" instance, 384 wide, header/body padding 24).
  *
- * Both branches are base-ui dialogs, so focus trapping, Escape and
- * outside-press dismissal come for free — every close path funnels through
- * `onClose`, which owns the URL state.
+ * The desktop sheet is **non-modal** — it sits beside the document rather than
+ * over it, so a version can be previewed and scrolled while the aside stays
+ * open. The mobile drawer stays modal: it covers the viewport anyway, so there
+ * is nothing to compare against behind it.
+ *
+ * Both branches are base-ui dialogs, so Escape and the close button funnel
+ * through `onClose`, which owns the URL state.
  */
 export function ProposalEditorAside({
   title,
@@ -71,8 +75,20 @@ export function ProposalEditorAside({
   }
 
   return (
-    <Sheet open onOpenChange={handleOpenChange}>
-      <SheetContent side="right" showCloseButton={false}>
+    // Non-modal on desktop: the whole point of the version aside is comparing
+    // against the document beside it, so no backdrop, no scroll lock, and no
+    // focus trap. `disablePointerDismissal` is what keeps scrolling or clicking
+    // the preview from dismissing the sheet — a non-modal base-ui dialog
+    // otherwise closes as soon as focus or a pointer press lands outside it.
+    // The preview itself is already read-only: previewing a version renders the
+    // form through `mode="preview-version"`, which swaps in the Readonly fields.
+    <Sheet
+      open
+      modal={false}
+      disablePointerDismissal
+      onOpenChange={handleOpenChange}
+    >
+      <SheetContent side="right" showCloseButton={false} showOverlay={false}>
         <AsideHeader
           onClose={onClose}
           title={

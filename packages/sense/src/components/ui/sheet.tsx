@@ -41,16 +41,24 @@ function SheetContent({
   children,
   side = 'right',
   showCloseButton = true,
+  showOverlay = true,
   container,
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: 'top' | 'right' | 'bottom' | 'left';
   showCloseButton?: boolean;
+  /**
+   * Renders the dimming backdrop. Set `false` for a side panel that sits
+   * alongside live content the user still needs to see and scroll — pair it with
+   * `modal={false}` (and usually `disablePointerDismissal`) on `Sheet`, or the
+   * page behind stays inert and scroll-locked regardless.
+   */
+  showOverlay?: boolean;
   container?: SheetPrimitive.Portal.Props['container'];
 }) {
   return (
     <SheetPortal container={container}>
-      <SheetOverlay />
+      {showOverlay && <SheetOverlay />}
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         data-side={side}
