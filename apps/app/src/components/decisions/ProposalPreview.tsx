@@ -18,6 +18,7 @@ import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { Toggle } from '@op/sense/Toggle';
 import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
+import type { IconType } from 'react-icons';
 import {
   LuBadgeCheck,
   LuBookmark,
@@ -328,72 +329,84 @@ function EngagementRow({
   }`;
 
   return (
-    <div
-      className={cn(
-        'flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground',
-        // Ghost toggles inset their content by 8px at `sm`; pull the row by the
-        // same amount so the first icon lines up with the title above it.
-        engagement && '-ms-2',
-      )}
-    >
-      {engagement ? (
-        <>
-          {/* The visible count doubles as each toggle's accessible name; the
-              on/off state comes from aria-pressed, which base-ui sets. */}
-          <Toggle
-            size="sm"
-            variant="ghost"
-            pressed={engagement.isLiked}
-            onPressedChange={engagement.onLike}
-            disabled={engagement.isPending}
-          >
-            <LuHeart
-              className={cn(engagement.isLiked && 'fill-current')}
-              aria-hidden
-            />
-            {likesLabel}
-          </Toggle>
-          <Toggle
-            size="sm"
-            variant="ghost"
-            pressed={engagement.isFollowing}
-            onPressedChange={engagement.onFollow}
-            disabled={engagement.isPending}
-          >
-            <LuBookmark
-              className={cn(engagement.isFollowing && 'fill-current')}
-              aria-hidden
-            />
-            {followersLabel}
-          </Toggle>
-          {/* A link, not a toggle — `px-2` keeps its inset matching the ghost
-              toggles beside it. */}
-          <ButtonLink
-            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-            variant="ghost"
-            size="sm"
-            className="px-2 text-muted-foreground hover:text-foreground"
-          >
-            <LuMessageCircle aria-hidden />
-            {commentsLabel}
-          </ButtonLink>
-        </>
-      ) : (
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            <LuHeart className="size-4" aria-hidden />
-            {likesLabel}
-          </span>
-          <span className="flex items-center gap-1">
-            <LuBookmark className="size-4" aria-hidden />
-            {followersLabel}
-          </span>
-          <span className="flex items-center gap-1">
-            <LuMessageCircle className="size-4" aria-hidden />
-            {commentsLabel}
-          </span>
-        </div>
-      )}
+    <div className="-ms-2 flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">
+      <EngagementToggle
+        icon={LuHeart}
+        label={likesLabel}
+        pressed={engagement?.isLiked}
+        onPressedChange={engagement?.onLike}
+        isPending={engagement?.isPending}
+      />
+      <EngagementToggle
+        icon={LuBookmark}
+        label={followersLabel}
+        pressed={engagement?.isFollowing}
+        onPressedChange={engagement?.onFollow}
+        isPending={engagement?.isPending}
+      />
+      {/* A link, not a toggle: jumping to the comments works for any viewer,
+          signed in or not. `px-2` matches the ghost toggles' inset. */}
+      <ButtonLink
+        href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+        variant="ghost"
+        size="sm"
+        className="px-2 text-muted-foreground hover:text-foreground"
+      >
+        <LuMessageCircle aria-hidden />
+        {commentsLabel}
+      </ButtonLink>
     </div>
+  );
+}
+
+/**
+ * One engagement stat. Interactive when a handler is supplied, otherwise plain
+ * text styled to match.
+ *
+ * Without a handler this must NOT stay a button: it would sit in the tab order
+ * announcing "toggle button, not pressed" while doing nothing, and an
+ * uncontrolled `pressed` would let a click flip the visual state without changing
+ * anything. `aria-readonly` can't paper over that either — ARIA doesn't allow it
+ * on `button`.
+ */
+function EngagementToggle({
+  icon: Icon,
+  label,
+  pressed,
+  onPressedChange,
+  isPending,
+}: {
+  icon: IconType;
+  label: string;
+  pressed?: boolean;
+  onPressedChange?: () => void;
+  isPending?: boolean;
+}) {
+  const isInteractive = Boolean(onPressedChange);
+  const iconClassName = cn(pressed && 'fill-current');
+
+  if (!isInteractive) {
+    // `px-2` mirrors the ghost toggle's inset so both rows align identically.
+    return (
+      <span className="flex items-center gap-1 px-2">
+        <Icon className={cn('size-4', iconClassName)} aria-hidden />
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    // The visible count is the accessible name; on/off comes from aria-pressed,
+    // which base-ui sets from `pressed`.
+    <Toggle
+      size="sm"
+      variant="ghost"
+      pressed={pressed ?? false}
+      onPressedChange={onPressedChange}
+      disabled={isPending}
+    >
+      <Icon className={iconClassName} aria-hidden />
+      {label}
+    </Toggle>
   );
 }
