@@ -223,6 +223,7 @@ function ResultsPageContent({
                   initialFilter={ProposalFilter.ALL}
                   phase="results"
                   pinOffset={pinOffset}
+                  isLegacy={isLegacy}
                 />
               </Suspense>
             </DecisionResultsTabPanel>

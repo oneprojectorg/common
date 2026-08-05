@@ -7,6 +7,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
   type DecisionAccess,
+  type InstanceData,
   type InstancePhaseData,
   ProposalFilter,
   ProposalStatus,
@@ -58,6 +59,14 @@ export interface ProposalsListProps {
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
   phase?: 'results';
+  /**
+   * Legacy (state-based) instance — skips reads only the phase-based v2 schema
+   * can satisfy. `decision.getInstance` validates its output against the v2
+   * encoder, which requires `processSchema.{id,version,phases}` and
+   * `instanceData.phases[].phaseId`; a legacy instance has `states`/`stateId`
+   * instead, so the call fails output validation and 500s the whole screen.
+   */
+  isLegacy?: boolean;
   /** Current phase; capability flags are derived from `rules`. */
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
@@ -307,19 +316,28 @@ export const ProposalsList = (props: ProposalsListProps) => {
     excludeAssignedForReview,
   ]);
 
-  const renderContent = (data: ProposalsLoaderRenderProps) => (
-    <ProposalsListContent
-      {...props}
-      {...data}
-      queryParams={queryParams}
-      proposalFilter={proposalFilter}
-      setProposalFilter={setProposalFilter}
-      selectedCategory={selectedCategory}
-      setSelectedCategory={setSelectedCategory}
-      sortOrder={sortOrder}
-      setSortOrder={setSortOrder}
-    />
-  );
+  const renderContent = (data: ProposalsLoaderRenderProps) => {
+    const contentProps: ProposalsListContentProps = {
+      ...props,
+      ...data,
+      queryParams,
+      proposalFilter,
+      setProposalFilter,
+      selectedCategory,
+      setSelectedCategory,
+      sortOrder,
+      setSortOrder,
+    };
+
+    // Legacy instances can't be read through the v2 instance endpoint at all,
+    // so they render without a proposal template (and therefore without the
+    // map view — a legacy process never collected a location).
+    return props.isLegacy ? (
+      <ProposalsListContent {...contentProps} />
+    ) : (
+      <ProposalsListContentWithTemplate {...contentProps} />
+    );
+  };
 
   if (phase === 'results') {
     return (
@@ -346,7 +364,27 @@ type ProposalsListContentProps = ProposalsListProps &
     setSelectedCategory: (value: string) => void;
     sortOrder: string;
     setSortOrder: (value: string) => void;
+    /** Absent for legacy instances — see `isLegacy` on {@link ProposalsListProps}. */
+    proposalTemplate?: InstanceData['proposalTemplate'];
   };
+
+/**
+ * Reads the v2 instance solely for its proposal template, which decides whether
+ * the map view is on offer. Kept in its own component so the suspense query is
+ * never mounted for legacy instances.
+ */
+const ProposalsListContentWithTemplate = (props: ProposalsListContentProps) => {
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: props.instanceId,
+  });
+
+  return (
+    <ProposalsListContent
+      {...props}
+      proposalTemplate={instance.instanceData?.proposalTemplate}
+    />
+  );
+};
 
 // fallow-ignore-next-line complexity
 const ProposalsListContent = ({
@@ -373,6 +411,7 @@ const ProposalsListContent = ({
   setSelectedCategory,
   sortOrder,
   setSortOrder,
+  proposalTemplate,
 }: ProposalsListContentProps) => {
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
@@ -380,17 +419,14 @@ const ProposalsListContent = ({
   const { user } = useUser();
 
   const currentProfileId = user?.currentProfile?.id;
-  const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.getCategories({
-        processInstanceId: instanceId,
-      }),
-      t.decision.getVotingStatus({
-        processInstanceId: instanceId,
-      }),
-      t.decision.getInstance({ instanceId }),
-    ],
-  );
+  const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getCategories({
+      processInstanceId: instanceId,
+    }),
+    t.decision.getVotingStatus({
+      processInstanceId: instanceId,
+    }),
+  ]);
 
   const categories = categoriesData.categories;
 
@@ -405,7 +441,6 @@ const ProposalsListContent = ({
   // the GIS flag is on. The map fits the proposal markers; this default view
   // (`x-map-default`) is the fallback camera for when none have a location.
   const gisMapsEnabled = useFeatureFlag('gis_maps');
-  const proposalTemplate = instance.instanceData?.proposalTemplate;
   const hasLocationField =
     !!gisMapsEnabled && templateCollectsLocation(proposalTemplate);
   const mapView =
