@@ -127,7 +127,10 @@
   --color-purple-900: #473145;
   --color-purple-950: #2c1a2a;
   --color-gray-50: #fafbfb;
-  --color-gray-100: #f1f2f2;
+  /* Figma's Gray ramp says #f1f2f2, but adopting it washed out every border
+   * (`--border` and `--sidebar-border` both alias this step). Reverted pending a
+   * design answer — the ramp and our borders can't both be right. */
+  --color-gray-100: #edeeee;
   --color-gray-200: #dee0e1;
   --color-gray-300: #d0d3d4;
   --color-gray-400: #aab0b1;
