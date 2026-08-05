@@ -148,7 +148,9 @@ function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="field-label"
       className={cn(
-        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50',
+        // `leading-none` inside a box: the design's box rows size off the text
+        // box itself, so the default line-height would pad the row unevenly.
+        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:leading-none',
         className,
       )}
       {...props}
