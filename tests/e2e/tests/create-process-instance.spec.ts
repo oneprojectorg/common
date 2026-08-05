@@ -231,9 +231,11 @@ test.describe('Create Process Instance', () => {
       name: 'Participant Preview',
     });
     await expect(previewDialog).toBeVisible({ timeout: 6_000 });
-    await expect(
-      previewDialog.getByRole('button', { name: 'Add budget' }),
-    ).toBeVisible({ timeout: 6_000 });
+    // The readonly preview renders the budget placeholder as a value box, not a
+    // button — a preview has nothing to click.
+    await expect(previewDialog.getByText('Add budget')).toBeVisible({
+      timeout: 6_000,
+    });
 
     // Close the modal so it doesn't overlay the launch-ready check.
     await authenticatedPage.keyboard.press('Escape');

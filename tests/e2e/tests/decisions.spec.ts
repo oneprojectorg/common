@@ -56,7 +56,7 @@ test.describe('Decisions', () => {
 
     // 7. Verify we're on the proposal editor page
     // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit Proposal" button
-    await expect(authenticatedPage.getByText('Untitled Proposal')).toBeVisible({
+    await expect(authenticatedPage.getByText('Untitled proposal')).toBeVisible({
       timeout: 10000,
     });
 

@@ -231,7 +231,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     });
 
     const confirmButton = authenticatedPage.getByRole('button', {
-      name: 'Confirm decisions',
+      name: 'Confirm selections',
     });
     await expect(confirmButton).toBeVisible({ timeout: 15_000 });
     await expect(confirmButton).toBeDisabled();

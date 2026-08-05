@@ -263,6 +263,7 @@ export function RichTextEditorBubbleMenu({
           setIsEditingEmbed(false);
         },
       }}
+      data-testid="rich-text-bubble-menu"
       className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md"
     >
       {/* The toolbar stays mounted while the link editor is open so the

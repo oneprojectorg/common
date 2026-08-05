@@ -235,7 +235,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
 
     // ── 5. Continue with the selection flow.
     const confirmButton = authenticatedPage.getByRole('button', {
-      name: 'Confirm decisions',
+      name: 'Confirm selections',
     });
     await expect(confirmButton).toBeVisible();
     await expect(confirmButton).toBeDisabled();
@@ -338,7 +338,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Sanity: footer starts at zero before any cross-page selection.
-    await expect(page.getByText('0 proposals advancing')).toBeVisible();
+    await expect(page.getByText('0 proposals selected')).toBeVisible();
 
     // The proposal title is rendered as a link to the review summary.
     // `exact: true` keeps this from matching the row's "Advance Proposal

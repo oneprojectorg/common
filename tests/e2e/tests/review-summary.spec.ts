@@ -319,7 +319,7 @@ test.describe('Review Summary page', () => {
       page.getByRole('button', { name: 'Back to all reviewers' }),
     ).toBeVisible();
     // Detail header shows the score in parentheses; the list rows do not.
-    await expect(page.getByText('(8/8pts)')).toBeVisible();
+    await expect(page.getByText('(8/8)')).toBeVisible();
     // The submitted rubric content renders below the header.
     await expect(
       page.getByRole('heading', { name: 'Innovation' }),

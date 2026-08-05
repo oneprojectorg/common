@@ -376,15 +376,16 @@ test.describe('Review Submit', () => {
     // Still disabled — Compliance is still missing
     await expect(submitButton).toBeDisabled();
 
-    // Fill third required criterion: Compliance (yes/no toggle). Anchor by
-    // the heading and pick the aria-pressed ToggleButton within that section,
-    // since every criterion also renders an "Add Note" button.
+    // Fill third required criterion: Compliance (yes/no). Anchor by the heading
+    // and pick the switch within that section, since every criterion also renders
+    // an "Add Note" button. The control is a sense Switch (role="switch" +
+    // aria-checked), not @op/ui's misnamed ToggleButton.
     await page
       .locator('section')
       .filter({
         has: page.getByRole('heading', { name: 'Compliance', level: 4 }),
       })
-      .locator('button[aria-pressed]')
+      .getByRole('switch')
       .click();
 
     // Still disabled — Overall Recommendation is still missing
@@ -482,7 +483,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Review updated successfully' }),
     ).toBeVisible({ timeout: 10_000 });
 
