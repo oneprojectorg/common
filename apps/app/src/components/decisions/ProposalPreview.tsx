@@ -197,7 +197,7 @@ export function ProposalPreview({
             categories.length > 0) && (
             <TagGroup className="max-w-full">
               {(budget != null || selection?.allocated != null) && (
-                <Tag size="lg">
+                <Tag size="lg" variant="outline">
                   <BudgetDisplay
                     value={
                       selection?.allocated != null

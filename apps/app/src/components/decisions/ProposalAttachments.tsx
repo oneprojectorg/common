@@ -49,7 +49,6 @@ export function ProposalAttachments({
   proposalId,
   attachments,
   onMutate,
-  readOnly = false,
 }: {
   proposalId: string;
   attachments: {
@@ -59,11 +58,6 @@ export function ProposalAttachments({
     url?: string;
   }[];
   onMutate: () => void;
-  /**
-   * Drops the upload dropzone and the per-row remove buttons. The list itself
-   * stays visible and its download links keep working.
-   */
-  readOnly?: boolean;
 }) {
   const t = useTranslations();
 
@@ -189,31 +183,26 @@ export function ProposalAttachments({
         'Support your proposal with relevant documents like budgets or supporting research.',
       )}
     >
-      <ProposalAttachmentList
-        files={displayFiles}
-        onRemove={readOnly ? undefined : handleRemove}
-      />
+      <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
-      {!readOnly && (
-        <FileDropZone
-          acceptedFileTypes={[...ALLOWED_UPLOAD_MIME_TYPES]}
-          onSelectFiles={handleSelectFiles}
-          label={t.rich('Drag a file here or <browse>browse</browse>', {
-            browse: (chunks: ReactNode) => (
-              <span className="text-primary hover:underline">{chunks}</span>
-            ),
-          })}
-          // Figma reads "Accepts PDF, DOCX, XLSX up to 10MB" (no MP4, no "and
-          // more"); the code list is kept as the source of truth for what upload
-          // actually accepts — copy delta flagged, not applied.
-          description={t('Accepts {types} and more up to {size}MB', {
-            types: 'MP4, PDF, DOCX, XLSX',
-            size: MAX_SIZE_MB,
-          })}
-          allowsMultiple
-          disabled={!canAddMore}
-        />
-      )}
+      <FileDropZone
+        acceptedFileTypes={[...ALLOWED_UPLOAD_MIME_TYPES]}
+        onSelectFiles={handleSelectFiles}
+        label={t.rich('Drag a file here or <browse>browse</browse>', {
+          browse: (chunks: ReactNode) => (
+            <span className="text-primary hover:underline">{chunks}</span>
+          ),
+        })}
+        // Figma reads "Accepts PDF, DOCX, XLSX up to 10MB" (no MP4, no "and
+        // more"); the code list is kept as the source of truth for what upload
+        // actually accepts — copy delta flagged, not applied.
+        description={t('Accepts {types} and more up to {size}MB', {
+          types: 'MP4, PDF, DOCX, XLSX',
+          size: MAX_SIZE_MB,
+        })}
+        allowsMultiple
+        disabled={!canAddMore}
+      />
     </LabeledFieldSet>
   );
 }

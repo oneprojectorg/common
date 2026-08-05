@@ -330,7 +330,6 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        versionHistoryOpen={asideState.aside === 'versions'}
         revisionRequest={revisionRequest}
       />
       {/* Portals to the body as a sheet (desktop) / drawer (mobile), so the

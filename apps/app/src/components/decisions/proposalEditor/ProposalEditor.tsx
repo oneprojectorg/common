@@ -56,7 +56,6 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  versionHistoryOpen = false,
   revisionRequest = null,
 }: {
   instance: ProcessInstance;
@@ -64,12 +63,6 @@ export function ProposalEditor({
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  /**
-   * True while the version-history aside is open. The main pane then switches to
-   * the same readonly preview components a past version uses ("Current version"),
-   * so no Yjs-bound editor stays mounted behind the panel.
-   */
-  versionHistoryOpen?: boolean;
   revisionRequest?: ProposalReviewRequest | null;
 }) {
   const { user } = useRequiredUser();
@@ -110,7 +103,6 @@ export function ProposalEditor({
       proposal={proposal}
       isEditMode={isEditMode}
       asideHeaderIcons={asideHeaderIcons}
-      versionHistoryOpen={versionHistoryOpen}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       revisionRequest={revisionRequest}
@@ -142,7 +134,6 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
-  versionHistoryOpen = false,
   collaborationDocId,
   proposalTemplate,
   revisionRequest,
@@ -152,7 +143,6 @@ function ProposalEditorInner({
   proposal: Proposal;
   isEditMode: boolean;
   asideHeaderIcons?: ReactNode;
-  versionHistoryOpen?: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   revisionRequest: ProposalReviewRequest | null;
@@ -173,9 +163,6 @@ function ProposalEditorInner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomFormModal, setShowCustomFormModal] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
-  // Opening the version-history panel freezes the main pane too. Drives the
-  // attachment section's readonly state; the fields switch via `mode` below.
-  const isReadOnlyPreview = isPreviewMode || versionHistoryOpen;
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
@@ -257,21 +244,6 @@ function ProposalEditorInner({
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
-
-  // `preview-current` renders `proposal.htmlContent`, which the server generates
-  // from TipTap Cloud when `getProposal` runs — so it goes stale the moment the
-  // document changes, and after a restore it would show the pre-restore content
-  // under the "Current version" label. Refetch as the panel opens: it's a
-  // deliberate, infrequent action, and by then the revert has reached Cloud.
-  useEffect(() => {
-    if (!versionHistoryOpen) {
-      return;
-    }
-
-    void utils.decision.getProposal.invalidate({
-      profileId: proposal.profileId,
-    });
-  }, [versionHistoryOpen, utils, proposal.profileId]);
 
   useEffect(() => {
     if (!provider || !isSynced || isPreviewMode) {
@@ -460,17 +432,7 @@ function ProposalEditorInner({
         draft={draft}
         decisionProfileId={instance.profileId ?? null}
         onFieldChange={handleFieldChange}
-        // Version history open with nothing selected = "Current version": the
-        // same readonly components as a past version, so no Yjs-bound editor is
-        // mounted while the panel is up.
-        mode={
-          isPreviewMode
-            ? 'preview-version'
-            : versionHistoryOpen
-              ? 'preview-current'
-              : 'edit-collaborative'
-        }
-        currentFieldContents={proposal.htmlContent ?? undefined}
+        mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />
 
@@ -490,7 +452,6 @@ function ProposalEditorInner({
               profileId: proposal.profileId,
             })
           }
-          readOnly={isReadOnlyPreview}
         />
       </div>
     </>
