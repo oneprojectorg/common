@@ -65,6 +65,12 @@ interface ProposalFormRendererProps {
   mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
+  /**
+   * Renders the collaborative fields non-interactively while still showing the
+   * live document (used while the version-history panel is open). Independent of
+   * `mode`, which swaps in the readonly snapshot/draft components instead.
+   */
+  readOnly?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,6 +188,7 @@ function renderField(
   t: TranslateFn,
   mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
   previewVersionFragmentContents: Record<string, JSONContent | null>,
+  readOnly = false,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
@@ -213,6 +220,7 @@ function renderField(
         maxLength={schema.maxLength}
         placeholder={t('Untitled Proposal')}
         onChange={(value) => onFieldChange('title', value)}
+        editable={!readOnly}
       />
     );
   }
@@ -265,6 +273,7 @@ function renderField(
           title={categoryLabel}
           description={schema.description ?? t('Select all that apply')}
           required={field.required}
+          readOnly={readOnly}
         />
       );
     }
@@ -279,6 +288,7 @@ function renderField(
         description={schema.description}
         allowEmpty={!field.required}
         required={field.required}
+        readOnly={readOnly}
       />
     );
   }
@@ -311,6 +321,7 @@ function renderField(
         maxAmount={schema.maximum}
         initialValue={draft.budget}
         onChange={(value) => onFieldChange('budget', value)}
+        disabled={readOnly}
       />
     );
   }
@@ -349,6 +360,7 @@ function renderField(
           onChange={(html) => onFieldChange(key, html)}
           onEditorFocus={onEditorFocus}
           onEditorBlur={onEditorBlur}
+          editable={!readOnly}
         />
       );
     }
@@ -379,6 +391,7 @@ function renderField(
           maxAmount={schema.maximum}
           initialValue={null}
           onChange={(value) => onFieldChange(key, value)}
+          disabled={readOnly}
         />
       );
     }
@@ -462,6 +475,7 @@ function renderField(
           description={schema.description}
           allowEmpty={!field.required}
           required={field.required}
+          readOnly={readOnly}
         />
       );
     }
@@ -496,6 +510,7 @@ export function ProposalFormRenderer({
   onEditorBlur,
   mode = 'edit-collaborative',
   previewVersionFragmentContents = {},
+  readOnly = false,
 }: ProposalFormRendererProps) {
   const t = useTranslations();
   const gisMapsEnabled = useFeatureFlag('gis_maps');
@@ -518,6 +533,7 @@ export function ProposalFormRenderer({
       t,
       mode,
       previewVersionFragmentContents,
+      readOnly,
       onEditorFocus,
       onEditorBlur,
     );

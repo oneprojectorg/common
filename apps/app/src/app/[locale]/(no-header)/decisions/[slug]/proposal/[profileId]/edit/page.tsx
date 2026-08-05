@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
@@ -311,7 +312,12 @@ function ProposalEditorContent({
     ) : undefined;
 
   return (
-    <div className="flex h-screen bg-background">
+    <div
+      className={cn(
+        'flex h-screen bg-background transition-[padding]',
+        !!asideState.aside && 'sm:pr-92',
+      )}
+    >
       <ProposalEditor
         instance={instance}
         backHref={`/decisions/${slug}/current`}
@@ -320,6 +326,7 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
+        versionHistoryOpen={asideState.aside === 'versions'}
         revisionRequest={revisionRequest}
       />
       {/* Portals to the body as a sheet (desktop) / drawer (mobile), so the

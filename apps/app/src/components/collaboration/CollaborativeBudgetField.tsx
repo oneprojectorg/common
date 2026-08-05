@@ -32,6 +32,8 @@ interface CollaborativeBudgetFieldProps {
   maxAmount?: number;
   initialValue?: BudgetData | null;
   onChange?: (budget: BudgetData | null) => void;
+  /** Renders the input non-interactive while keeping its label and value visible. */
+  disabled?: boolean;
 }
 
 /**
@@ -50,6 +52,7 @@ export function CollaborativeBudgetField({
   maxAmount,
   initialValue = null,
   onChange,
+  disabled = false,
 }: CollaborativeBudgetFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -113,6 +116,7 @@ export function CollaborativeBudgetField({
       description={description}
       required={required}
       aria-required={required || undefined}
+      disabled={disabled}
       value={budgetAmount}
       onChange={handleChange}
       minValue={minAmount ?? 0}

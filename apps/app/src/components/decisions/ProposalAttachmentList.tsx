@@ -18,13 +18,16 @@ export interface AttachmentListItem {
 /**
  * Displays a list of file attachments for a proposal with remove buttons.
  * Handles loading states during upload and shows file metadata.
+ *
+ * Omit `onRemove` for a read-only list: the rows (and their download links) stay,
+ * the remove affordance is dropped rather than rendered disabled.
  */
 export function ProposalAttachmentList({
   files,
   onRemove,
 }: {
   files: AttachmentListItem[];
-  onRemove: (id: string) => void;
+  onRemove?: (id: string) => void;
 }) {
   const t = useTranslations();
 
@@ -42,15 +45,17 @@ export function ProposalAttachmentList({
           url={file.url}
           isUploading={file.uploading}
           trailing={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => onRemove(file.id)}
-              disabled={file.uploading}
-              aria-label={t('Remove {name}', { name: file.fileName })}
-            >
-              <LuX className="size-4" />
-            </Button>
+            onRemove ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onRemove(file.id)}
+                disabled={file.uploading}
+                aria-label={t('Remove {name}', { name: file.fileName })}
+              >
+                <LuX className="size-4" />
+              </Button>
+            ) : undefined
           }
         />
       ))}

@@ -4,6 +4,7 @@ import { Field, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Document from '@tiptap/extension-document';
@@ -31,6 +32,11 @@ interface CollaborativeTitleFieldProps {
    */
   maxLength?: number;
   onChange?: (text: string) => void;
+  /**
+   * When false the live title still renders (and stays selectable) but can't be
+   * edited. No `content` is passed either way — the Yjs binding owns the value.
+   */
+  editable?: boolean;
 }
 
 /**
@@ -48,6 +54,7 @@ export function CollaborativeTitleField({
   placeholder,
   maxLength,
   onChange,
+  editable = true,
 }: CollaborativeTitleFieldProps) {
   const t = useTranslations();
   const { ydoc, provider, user } = useCollaborativeDoc();
@@ -84,6 +91,7 @@ export function CollaborativeTitleField({
 
   const editor = useEditor({
     extensions,
+    editable,
     editorProps: {
       attributes: {
         class:
@@ -101,6 +109,15 @@ export function CollaborativeTitleField({
     },
     immediatelyRender: false,
   });
+
+  // `useEditor` only honours `editable` at creation time — later renders re-apply
+  // options with the editor's current value — so flip it explicitly. `emitUpdate:
+  // false` keeps the flip from firing `onChange` and dirtying the draft.
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) {
+      editor.setEditable(editable, false);
+    }
+  }, [editor, editable]);
 
   useEffect(() => {
     if (!editor) {
@@ -131,8 +148,14 @@ export function CollaborativeTitleField({
       </FieldTitle>
       {editor ? (
         // focus-within rather than InputGroup's own has-[input:focus-visible]
-        // rules: the control here is a contenteditable, not an <input>.
-        <InputGroup className="focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+        // rules: the control here is a contenteditable, not an <input>. A
+        // non-editable box stays selectable, so it must not show a focus ring.
+        <InputGroup
+          className={cn(
+            editable &&
+              'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
+          )}
+        >
           <EditorContent
             className="min-w-0 flex-1 px-3"
             dir={editor.isEmpty ? undefined : 'auto'}

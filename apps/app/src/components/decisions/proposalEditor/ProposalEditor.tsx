@@ -95,6 +95,7 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
+  versionHistoryOpen = false,
   revisionRequest = null,
 }: {
   instance: ProcessInstance;
@@ -102,6 +103,12 @@ export function ProposalEditor({
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
+  /**
+   * True while the version-history aside is open. The main pane then renders the
+   * live document as a non-editable preview so it can't be edited behind the
+   * panel — the same components, made non-interactive.
+   */
+  versionHistoryOpen?: boolean;
   revisionRequest?: ProposalReviewRequest | null;
 }) {
   const { user } = useRequiredUser();
@@ -142,6 +149,7 @@ export function ProposalEditor({
       proposal={proposal}
       isEditMode={isEditMode}
       asideHeaderIcons={asideHeaderIcons}
+      versionHistoryOpen={versionHistoryOpen}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       revisionRequest={revisionRequest}
@@ -173,6 +181,7 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
+  versionHistoryOpen = false,
   collaborationDocId,
   proposalTemplate,
   revisionRequest,
@@ -182,6 +191,7 @@ function ProposalEditorInner({
   proposal: Proposal;
   isEditMode: boolean;
   asideHeaderIcons?: ReactNode;
+  versionHistoryOpen?: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   revisionRequest: ProposalReviewRequest | null;
@@ -202,6 +212,9 @@ function ProposalEditorInner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomFormModal, setShowCustomFormModal] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
+  // Opening the version-history panel freezes the main pane too: it keeps showing
+  // the live collaborative document (not a snapshot), just not editable.
+  const isReadOnlyPreview = isPreviewMode || versionHistoryOpen;
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
@@ -481,6 +494,7 @@ function ProposalEditorInner({
         onEditorBlur={onEditorBlur}
         mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
         previewVersionFragmentContents={versionPreview?.fragmentContents}
+        readOnly={isReadOnlyPreview}
       />
 
       <div className="border-t pt-8">
@@ -499,6 +513,7 @@ function ProposalEditorInner({
               profileId: proposal.profileId,
             })
           }
+          readOnly={isReadOnlyPreview}
         />
       </div>
     </>

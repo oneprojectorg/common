@@ -25,6 +25,11 @@ interface CollaborativeMultiSelectFieldProps {
   title: string;
   description?: string;
   required?: boolean;
+  /**
+   * Renders every chip non-interactive while keeping the legend, options, and
+   * current selections visible.
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -43,6 +48,7 @@ export function CollaborativeMultiSelectField({
   title,
   description,
   required,
+  readOnly = false,
 }: CollaborativeMultiSelectFieldProps) {
   const { ydoc } = useCollaborativeDoc();
   const idPrefix = useId();
@@ -116,6 +122,7 @@ export function CollaborativeMultiSelectField({
               control={
                 <Checkbox
                   id={optionId}
+                  readOnly={readOnly}
                   checked={selectedValues.includes(option.value)}
                   onCheckedChange={(checked) =>
                     handleToggle(option.value, checked === true)
