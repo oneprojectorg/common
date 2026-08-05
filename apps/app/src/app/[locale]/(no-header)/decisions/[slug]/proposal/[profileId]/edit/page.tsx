@@ -306,7 +306,10 @@ function ProposalEditorContent({
       }
       onRestoreVersion={async (versionId) => {
         await restoreVersion(versionId, versionPreview?.fragmentContents ?? {});
-        setAsideState({ aside: 'versions', versionId: null });
+        // Close rather than deselect: the restore is done, and the point of
+        // closing is to hand the editor back so the restored content is
+        // immediately editable instead of sitting behind a readonly preview.
+        setAsideState({ aside: null });
       }}
       onClose={() => setAsideState({ aside: null })}
     />
