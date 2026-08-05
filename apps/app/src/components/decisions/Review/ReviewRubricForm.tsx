@@ -34,6 +34,7 @@ import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { OptionBox } from '../forms/OptionBox';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
@@ -443,49 +444,34 @@ function RubricFieldInput({
 
       if (criterionType === 'single_select') {
         const options = parseSchemaOptions(field.schema);
+
+        // A "multiple choice" criterion holds exactly one value, so these are
+        // radios — the same boxed treatment the proposal editor gives its
+        // single-select fields, not the checkboxes it uses for multi-select
+        // categories.
         return (
-          <Select
-            // base-ui renders the raw value in the trigger unless it can look
-            // the label up — these are id-style values, so pass the map.
-            items={getOptionLabels(options)}
-            value={typeof value === 'string' ? value : null}
-            onValueChange={(next: unknown) => {
-              onChange(next === null ? null : String(next));
-            }}
+          <RadioGroup
+            aria-labelledby={labelledBy}
+            aria-describedby={describedBy}
+            value={typeof value === 'string' ? value : undefined}
+            onValueChange={onChange}
+            className="gap-2"
           >
-            <SelectTrigger
-              id={controlId}
-              aria-labelledby={labelledBy}
-              aria-describedby={describedBy}
-              className="w-full"
-            >
-              <SelectValue placeholder={t('Select an option')} />
-            </SelectTrigger>
-            <SelectContent className={'max-w-(--anchor-width)'}>
-              <SelectGroup>
-                {options.map((option) => {
-                  const label = option.title || String(option.value);
-                  return (
-                    <SelectItem
-                      key={String(option.value)}
-                      value={String(option.value)}
-                    >
-                      {option.description ? (
-                        <div className="flex flex-col">
-                          <span>{label}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {option.description}
-                          </span>
-                        </div>
-                      ) : (
-                        label
-                      )}
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            {options.map((option) => {
+              const optionValue = String(option.value);
+              const optionId = `${controlId}-${optionValue}`;
+
+              return (
+                <OptionBox
+                  key={optionValue}
+                  htmlFor={optionId}
+                  control={<RadioGroupItem id={optionId} value={optionValue} />}
+                  label={option.title || optionValue}
+                  description={option.description}
+                />
+              );
+            })}
+          </RadioGroup>
         );
       }
 
@@ -573,16 +559,6 @@ function RubricFieldInput({
     default:
       return null;
   }
-}
-
-/** value → label map so the Select trigger shows the option's title. */
-function getOptionLabels(options: SchemaOption[]): Record<string, string> {
-  return Object.fromEntries(
-    options.map((option) => [
-      String(option.value),
-      option.title || String(option.value),
-    ]),
-  );
 }
 
 /** Scored options read "{score} - {title}" in the trigger. */

@@ -1,4 +1,10 @@
-import { Field, FieldLabel, FieldTitle } from '@op/sense/Field';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from '@op/sense/Field';
 import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
@@ -8,6 +14,8 @@ interface OptionBoxProps {
   /** A sense `Checkbox` or `RadioGroupItem`, already wired to state. */
   control: ReactNode;
   label: ReactNode;
+  /** Optional helper text under the label, inside the box. */
+  description?: ReactNode;
   /**
    * `hug` shrinks to the label (the horizontal category chips); `fill` stretches
    * to the container (the stacked radio option rows).
@@ -30,6 +38,7 @@ export function OptionBox({
   htmlFor,
   control,
   label,
+  description,
   width = 'fill',
   className,
 }: OptionBoxProps) {
@@ -41,7 +50,16 @@ export function OptionBox({
     >
       <Field orientation="horizontal">
         {control}
-        <FieldTitle>{label}</FieldTitle>
+        {description ? (
+          // FieldContent stacks title over description and keeps the control
+          // top-aligned against a multi-line box.
+          <FieldContent>
+            <FieldTitle>{label}</FieldTitle>
+            <FieldDescription>{description}</FieldDescription>
+          </FieldContent>
+        ) : (
+          <FieldTitle>{label}</FieldTitle>
+        )}
       </Field>
     </FieldLabel>
   );
