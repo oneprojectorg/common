@@ -1,5 +1,10 @@
-import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
-import { profileUsers, profiles, users } from '@op/db/schema';
+import { and, db, eq, gt, inArray, lt, or, sql } from '@op/db/client';
+import {
+  profileUserToAccessRoles,
+  profileUsers,
+  profiles,
+  users,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import {
@@ -131,11 +136,13 @@ export const listProfileUsers = async ({
   // profileUser -> access role junction. Purely additive so it composes with
   // the search and cursor conditions without touching the keyset logic.
   const roleFilter = roleId
-    ? sql`${profileUsers.id} IN (
-        SELECT pur.profile_user_id
-        FROM "profileUser_to_access_roles" pur
-        WHERE pur.access_role_id = ${roleId}
-      )`
+    ? inArray(
+        profileUsers.id,
+        db
+          .select({ profileUserId: profileUserToAccessRoles.profileUserId })
+          .from(profileUserToAccessRoles)
+          .where(eq(profileUserToAccessRoles.accessRoleId, roleId)),
+      )
     : undefined;
 
   // Combine all conditions
