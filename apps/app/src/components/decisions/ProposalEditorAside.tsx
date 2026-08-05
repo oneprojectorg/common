@@ -3,7 +3,7 @@
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { Drawer, DrawerContent, DrawerTitle } from '@op/sense/Drawer';
-import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
@@ -13,6 +13,13 @@ import { LuX } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 interface ProposalEditorAsideProps {
+  /**
+   * Controlled open state. Keep this component **mounted** and toggle `open`
+   * instead of conditionally rendering it: base-ui plays the enter/exit
+   * transitions off the open-state change, so unmounting the dialog root skips
+   * the exit animation entirely.
+   */
+  open: boolean;
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
@@ -37,6 +44,7 @@ interface ProposalEditorAsideSkeletonProps {
  * through `onClose`, which owns the URL state.
  */
 export function ProposalEditorAside({
+  open,
   title,
   onClose,
   children,
@@ -58,7 +66,7 @@ export function ProposalEditorAside({
 
   if (isMobile) {
     return (
-      <Drawer open onOpenChange={handleOpenChange} showSwipeHandle>
+      <Drawer open={open} onOpenChange={handleOpenChange} showSwipeHandle>
         <DrawerContent>
           <AsideHeader
             onClose={onClose}
@@ -83,20 +91,20 @@ export function ProposalEditorAside({
     // The preview itself is already read-only: previewing a version renders the
     // form through `mode="preview-version"`, which swaps in the Readonly fields.
     <Sheet
-      open
+      open={open}
       modal={false}
       disablePointerDismissal
       onOpenChange={handleOpenChange}
     >
-      <SheetContent side="right" showCloseButton={false} showOverlay={false}>
-        <AsideHeader
-          onClose={onClose}
-          title={
-            <SheetTitle className="text-title-xs">
-              <bdi>{title}</bdi>
-            </SheetTitle>
-          }
-        />
+      <SheetContent side="right" showOverlay={false}>
+        {/* Keeps SheetHeader's `pe-12`, which reserves room for the built-in
+            absolutely-positioned close button. `border-b` matches the mobile
+            header's rhythm. */}
+        <SheetHeader className="flex-row items-center justify-between border-b">
+          <SheetTitle>
+            <bdi>{title}</bdi>
+          </SheetTitle>
+        </SheetHeader>
         {body}
       </SheetContent>
     </Sheet>

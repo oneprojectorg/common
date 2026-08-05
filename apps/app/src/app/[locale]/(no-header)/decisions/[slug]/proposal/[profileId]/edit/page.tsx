@@ -290,26 +290,27 @@ function ProposalEditorContent({
     fragmentNames,
   });
 
-  const asideSlot =
-    asideState.aside === 'versions' ? (
-      <ProposalVersionsAside
-        versionId={asideState.versionId}
-        onSelectVersion={(nextVersionId) =>
-          setAsideState({
-            aside: 'versions',
-            versionId: nextVersionId,
-          })
-        }
-        onRestoreVersion={async (versionId) => {
-          await restoreVersion(
-            versionId,
-            versionPreview?.fragmentContents ?? {},
-          );
-          setAsideState({ aside: 'versions', versionId: null });
-        }}
-        onClose={() => setAsideState({ aside: null })}
-      />
-    ) : undefined;
+  // Always mounted, toggled via `open` — conditionally rendering the aside
+  // unmounts the base-ui dialog root on close, which skips its exit animation.
+  const isVersionsAsideOpen = asideState.aside === 'versions';
+
+  const asideSlot = (
+    <ProposalVersionsAside
+      open={isVersionsAsideOpen}
+      versionId={isVersionsAsideOpen ? asideState.versionId : null}
+      onSelectVersion={(nextVersionId) =>
+        setAsideState({
+          aside: 'versions',
+          versionId: nextVersionId,
+        })
+      }
+      onRestoreVersion={async (versionId) => {
+        await restoreVersion(versionId, versionPreview?.fragmentContents ?? {});
+        setAsideState({ aside: 'versions', versionId: null });
+      }}
+      onClose={() => setAsideState({ aside: null })}
+    />
+  );
 
   return (
     <div

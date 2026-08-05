@@ -30,6 +30,13 @@ import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
+  /**
+   * Controlled open state, forwarded to the aside shell. This component stays
+   * mounted while closed so the sheet can animate out — it reads versions from
+   * the already-connected collab provider, so that costs a subscription rather
+   * than a request.
+   */
+  open: boolean;
   versionId: number | null;
   onSelectVersion: (versionId: number | null) => void;
   onRestoreVersion: (versionId: number) => void;
@@ -43,6 +50,7 @@ interface ProposalVersionsAsideProps {
  * restore actions to the parent via `onRestoreVersion`.
  */
 export function ProposalVersionsAside({
+  open,
   versionId,
   onSelectVersion,
   onRestoreVersion,
@@ -89,7 +97,11 @@ export function ProposalVersionsAside({
 
   return (
     <>
-      <ProposalEditorAside title={t('Version history')} onClose={onClose}>
+      <ProposalEditorAside
+        open={open}
+        title={t('Version history')}
+        onClose={onClose}
+      >
         <ItemGroup className="gap-2">
           <VersionItem
             label={t('Current version')}
