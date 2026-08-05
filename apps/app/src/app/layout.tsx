@@ -10,6 +10,8 @@ import { Roboto, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
+import { IconProvider } from '@/components/IconProvider';
+
 import { FileDropGuard } from '../components/FileDropGuard';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
@@ -90,7 +92,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           <I18nProvider locale={locale} messages={messages}>
             <OTelBrowserProvider>
               <PostHogProvider>
-                <NuqsAdapter>{children}</NuqsAdapter>
+                <NuqsAdapter>
+                  <IconProvider>{children}</IconProvider>
+                </NuqsAdapter>
               </PostHogProvider>
             </OTelBrowserProvider>
           </I18nProvider>
