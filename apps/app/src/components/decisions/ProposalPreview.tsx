@@ -11,9 +11,12 @@ import {
   parseTranslatedMeta,
 } from '@op/common/client';
 import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Button } from '@op/sense/Button';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Spinner } from '@op/sense/Spinner';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { Toggle } from '@op/sense/Toggle';
+import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 import {
   LuBookmark,
@@ -31,6 +34,7 @@ import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
+import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslationNotice } from './TranslationNotice';
@@ -42,8 +46,25 @@ export type ProposalTranslation = {
   onViewOriginal: () => void;
 };
 
+/**
+ * Like / follow state + handlers. Supplying this turns the engagement row's
+ * like and follow counts into toggles and links the comment count to the
+ * comments section; omitting it leaves the row a static summary (the review
+ * pane and review summary render the proposal without these affordances).
+ */
+export type ProposalEngagement = {
+  isLiked: boolean;
+  isFollowing: boolean;
+  onLike: () => void;
+  onFollow: () => void;
+  /** Disables both toggles while a like/follow write is in flight. */
+  isPending?: boolean;
+};
+
 export type ProposalPreviewProps = {
   proposal: Proposal;
+  /** See {@link ProposalEngagement}. Absent → static counts. */
+  engagement?: ProposalEngagement;
   /** Selection record from the latest confirmed result, if any. */
   selection?: ProposalSelection | null;
   /** When set, overrides proposal content with translated HTML and shows attribution */
@@ -64,6 +85,7 @@ export type ProposalPreviewProps = {
 
 export function ProposalPreview({
   proposal,
+  engagement,
   selection,
   translation,
   submissionMetaSuffix,
@@ -227,33 +249,7 @@ export function ProposalPreview({
             )}
           </div>
 
-          {/* Engagement Stats */}
-          <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <LuHeart className="h-4 w-4" />
-              <span>
-                {proposal.likesCount || 0} {t('Likes')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <LuMessageCircle className="h-4 w-4" />
-              <span>
-                {proposal.commentsCount || 0}{' '}
-                {(proposal.commentsCount || 0) !== 1
-                  ? t('Comments')
-                  : t('Comment')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <LuBookmark className="size-4" />
-              <span>
-                {proposal.followersCount || 0}{' '}
-                {(proposal.followersCount || 0) !== 1
-                  ? t('Followers')
-                  : t('Follower')}
-              </span>
-            </div>
-          </div>
+          <EngagementRow proposal={proposal} engagement={engagement} />
         </div>
       </div>
 
@@ -285,6 +281,99 @@ export function ProposalPreview({
             {t('Attachments')}
           </Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Likes / followers / comments, hairline-ruled above and below (Figma's
+ * "Engagement" row). With `engagement` the like and follow counts are toggles
+ * and the comment count jumps to the comments section; without it the same
+ * three counts render as plain text.
+ */
+function EngagementRow({
+  proposal,
+  engagement,
+}: {
+  proposal: Proposal;
+  engagement?: ProposalEngagement;
+}) {
+  const t = useTranslations();
+
+  const likesCount = proposal.likesCount || 0;
+  const followersCount = proposal.followersCount || 0;
+  const commentsCount = proposal.commentsCount || 0;
+
+  const likesLabel = `${likesCount} ${likesCount === 1 ? t('Like') : t('Likes')}`;
+  const followersLabel = `${followersCount} ${
+    followersCount === 1 ? t('Follower') : t('Followers')
+  }`;
+  const commentsLabel = `${commentsCount} ${
+    commentsCount === 1 ? t('Comment') : t('Comments')
+  }`;
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1 border-t border-b py-2 text-sm text-muted-foreground',
+        // Toggles carry their own inline padding; pull the row so the first
+        // icon still lines up with the title above it.
+        engagement && '-ms-3',
+      )}
+    >
+      {engagement ? (
+        <>
+          {/* The visible count doubles as each toggle's accessible name; the
+              on/off state comes from aria-pressed, which base-ui sets. */}
+          <Toggle
+            size="sm"
+            pressed={engagement.isLiked}
+            onPressedChange={engagement.onLike}
+            disabled={engagement.isPending}
+          >
+            <LuHeart
+              className={cn(engagement.isLiked && 'fill-current')}
+              aria-hidden
+            />
+            {likesLabel}
+          </Toggle>
+          <Toggle
+            size="sm"
+            pressed={engagement.isFollowing}
+            onPressedChange={engagement.onFollow}
+            disabled={engagement.isPending}
+          >
+            <LuBookmark
+              className={cn(engagement.isFollowing && 'fill-current')}
+              aria-hidden
+            />
+            {followersLabel}
+          </Toggle>
+          <Button
+            variant="ghost"
+            size="sm"
+            render={<a href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`} />}
+          >
+            <LuMessageCircle aria-hidden />
+            {commentsLabel}
+          </Button>
+        </>
+      ) : (
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1">
+            <LuHeart className="size-4" aria-hidden />
+            {likesLabel}
+          </span>
+          <span className="flex items-center gap-1">
+            <LuBookmark className="size-4" aria-hidden />
+            {followersLabel}
+          </span>
+          <span className="flex items-center gap-1">
+            <LuMessageCircle className="size-4" aria-hidden />
+            {commentsLabel}
+          </span>
         </div>
       )}
     </div>

@@ -3,6 +3,8 @@
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
+import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
@@ -112,6 +114,8 @@ export function ProposalView({
     }),
     [processInstanceId, proposalId],
   );
+
+  const { user } = useUser();
 
   // Use relationship mutations hook for like/follow functionality
   const {
@@ -237,6 +241,20 @@ export function ProposalView({
         proposal={currentProposal}
         selection={selection}
         documentState={documentState}
+        // Like/Follow are user-scoped writes gated at the API — only offer the
+        // toggles to a signed-in, non-anonymous member. Everyone else still
+        // sees the counts, just not the controls.
+        engagement={
+          userCanInteract(user)
+            ? {
+                isLiked: isLikedByUser,
+                isFollowing: isFollowedByUser,
+                onLike: handleLike,
+                onFollow: handleFollow,
+                isPending: isLoading,
+              }
+            : undefined
+        }
         translation={
           translatedHtmlContent
             ? {
@@ -260,12 +278,7 @@ export function ProposalView({
   return (
     <ProposalViewLayout
       backHref={backHref}
-      onLike={handleLike}
-      onFollow={handleFollow}
       reportProposalId={proposalId}
-      isLiked={isLikedByUser}
-      isFollowing={isFollowedByUser}
-      isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}
       // Same viewer-access bit the comments prompt reads (getProposal mirrors

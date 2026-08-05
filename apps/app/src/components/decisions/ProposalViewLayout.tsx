@@ -1,7 +1,5 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
-import { userCanInteract } from '@/utils/userCanInteract';
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { Separator } from '@op/sense/Separator';
@@ -14,8 +12,6 @@ import {
 import { ReactNode } from 'react';
 import {
   LuArrowLeft,
-  LuBookmark,
-  LuHeart,
   LuMessageCircle,
   LuPencil,
   LuStickyNote,
@@ -41,11 +37,6 @@ export function ProposalViewLayout({
   children,
   backHref,
   title,
-  onLike,
-  onFollow,
-  isLiked = false,
-  isFollowing = false,
-  isLoading = false,
   editHref,
   canEdit = false,
   canJoin = false,
@@ -56,11 +47,6 @@ export function ProposalViewLayout({
   children: ReactNode;
   backHref: string;
   title?: string;
-  onLike?: () => void;
-  onFollow?: () => void;
-  isLiked?: boolean;
-  isFollowing?: boolean;
-  isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
   /**
@@ -89,7 +75,6 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const { user } = useUser();
   const revisionRequestLabel = t('Revision request');
   const backLabel = t('Back to Proposals');
 
@@ -154,39 +139,8 @@ export function ProposalViewLayout({
           >
             <LuMessageCircle className="size-4" />
           </Button>
-          {/* Like/Follow are user-scoped writes gated at the API — only offer
-              them to a signed-in, non-anonymous member. */}
-          {userCanInteract(user) ? (
-            <>
-              <Button
-                variant={isLiked ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={onLike}
-                disabled={isLoading}
-                aria-pressed={isLiked}
-                aria-label={isLiked ? t('Liked') : t('Like')}
-                className={COMPACT_ACTION_CLASSES}
-              >
-                <LuHeart className="size-4" />
-                <span className="hidden sm:inline">
-                  {isLiked ? t('Liked') : t('Like')}
-                </span>
-              </Button>
-              <Button
-                variant={isFollowing ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={onFollow}
-                aria-pressed={isFollowing}
-                aria-label={isFollowing ? t('Following') : t('Follow')}
-                className={COMPACT_ACTION_CLASSES}
-              >
-                <LuBookmark className="size-4" />
-                <span className="hidden sm:inline">
-                  {isFollowing ? t('Following') : t('Follow')}
-                </span>
-              </Button>
-            </>
-          ) : null}
+          {/* Like/Follow live in the proposal's engagement row, not here — see
+              ProposalPreview's `engagement` prop. */}
           {/* `delay` lives on the provider, not the Tooltip root — wrap locally
               to keep the slower @op/ui hover feel on this one control. */}
           {revisionToggle && (

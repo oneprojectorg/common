@@ -38,7 +38,7 @@ export function LabeledFieldSet({
 }: LabeledFieldSetProps) {
   return (
     <FieldSet className={cn('gap-3', className)} data-testid={testId}>
-      <FieldLegend variant="label" id={legendId} className="mb-0">
+      <FieldLegend variant="label" id={legendId}>
         {legend}
         {required && <RequiredAsterisk />}
       </FieldLegend>
@@ -47,9 +47,7 @@ export function LabeledFieldSet({
         // legend, as one block. The `nth-last-2` copy overrides
         // FieldDescription's own same-variant rule, which would otherwise win
         // on specificity when the description is the second-to-last child.
-        <FieldDescription className="-mt-3 nth-last-2:-mt-3">
-          {description}
-        </FieldDescription>
+        <FieldDescription>{description}</FieldDescription>
       )}
       {children}
     </FieldSet>
