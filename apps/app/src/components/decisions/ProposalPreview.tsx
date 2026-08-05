@@ -239,13 +239,13 @@ export function ProposalPreview({
                   ) : (
                     <NavLink
                       href={`/profile/${proposal.submittedBy.slug}`}
-                      className="text-base text-foreground hover:no-underline"
+                      className="text-base font-strong text-foreground hover:no-underline"
                     >
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </NavLink>
                   )}
                   {!isDraft && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span>
                         {t('Submitted on')} {formatDate(proposal.createdAt)}
                       </span>

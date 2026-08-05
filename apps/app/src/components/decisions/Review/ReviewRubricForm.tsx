@@ -9,6 +9,7 @@ import {
   parseSchemaOptions,
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   Field,
@@ -109,10 +110,13 @@ function MyReviewForm() {
   // switched it back into the form via "Edit review".
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
-      <>
-        <SubmittedReviewView rubricTemplate={template} review={review} />
-        <TotalScoreCard rubricTemplate={template} values={values} />
-      </>
+      <SubmittedReviewView
+        rubricTemplate={template}
+        review={review}
+        // Above the feedback block, per the review panel design — hence the slot
+        // rather than rendering it after.
+        scoreSlot={<TotalScoreCard rubricTemplate={template} values={values} />}
+      />
     );
   }
 
@@ -236,11 +240,7 @@ function RubricCriterionSection({
   const label = (
     <>
       {field.schema.title}
-      {badgeLabel ? (
-        <span className="text-sm font-normal text-muted-foreground">
-          {badgeLabel}
-        </span>
-      ) : null}
+      {badgeLabel ? <Badge variant="secondary">{badgeLabel}</Badge> : null}
     </>
   );
 
@@ -261,7 +261,12 @@ function RubricCriterionSection({
       {criterionType === 'yes_no' ? (
         <Field orientation="horizontal">
           <FieldContent>
-            <FieldTitle id={labelId}>{label}</FieldTitle>
+            <FieldTitle
+              id={labelId}
+              className="flex w-full justify-between gap-2"
+            >
+              {label}
+            </FieldTitle>
             {field.schema.description ? (
               <FieldDescription id={descriptionId}>
                 {field.schema.description}
@@ -275,7 +280,12 @@ function RubricCriterionSection({
           {isTextInput ? (
             <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
           ) : (
-            <FieldTitle id={labelId}>{label}</FieldTitle>
+            <FieldTitle
+              id={labelId}
+              className="flex w-full justify-between gap-2"
+            >
+              {label}
+            </FieldTitle>
           )}
           {field.schema.description ? (
             <FieldDescription id={descriptionId}>

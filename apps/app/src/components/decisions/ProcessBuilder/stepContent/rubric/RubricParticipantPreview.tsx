@@ -27,9 +27,7 @@ export function RubricParticipantPreview({
 
   return (
     <div className="rounded-lg bg-white p-6">
-      <Header2 className="mb-6 font-serif text-neutral-charcoal">
-        {t('Review Proposal')}
-      </Header2>
+      <Header2 className="mb-6">{t('Review Proposal')}</Header2>
 
       <RubricFormPreviewRenderer fields={fields} />
     </div>

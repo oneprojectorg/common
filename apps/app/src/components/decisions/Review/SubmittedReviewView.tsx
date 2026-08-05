@@ -4,28 +4,48 @@ import {
   findSchemaOption,
   isOverallRecommendationField,
 } from '@op/common/client';
+import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
+import { Separator } from '@op/sense/Separator';
 import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { inferCriterionType } from '../rubricTemplate';
 
+/**
+ * A submitted review, read-only: each criterion's prompt above a bordered card
+ * holding the answer and the reviewer's note.
+ *
+ * Field chrome matches the editable form (`ReviewRubricForm`) so the panel doesn't
+ * change shape when a review is submitted — same sense `Field` with a title and
+ * muted description.
+ *
+ * Rendered in three places: the reviewer's own submitted review, a peer's review
+ * under "Other reviews", and the admin drill-in via `ReviewerDetail`. Only the
+ * first has a total score, hence `scoreSlot`.
+ */
 export function SubmittedReviewView({
   rubricTemplate,
   review,
+  scoreSlot,
 }: {
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview;
+  /**
+   * Rendered between the criteria and the feedback block — the position the
+   * review panel design gives the total score. Omitted where there is no score
+   * to show.
+   */
+  scoreSlot?: ReactNode;
 }) {
   const t = useTranslations();
   const fields = compileRubricSchema(rubricTemplate);
   const { answers, rationales } = review.reviewData;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       {fields.map((field) => (
         <ResultSection
           key={field.key}
@@ -40,8 +60,15 @@ export function SubmittedReviewView({
         </ResultSection>
       ))}
 
+      {scoreSlot}
+
       {review.overallComment && (
-        <ResultSection title={t('Feedback to Author')}>
+        <ResultSection
+          title={t('Feedback to Author')}
+          description={t(
+            'Shared anonymously with the author after the review phase',
+          )}
+        >
           <ResultCard description={review.overallComment} />
         </ResultSection>
       )}
@@ -59,13 +86,20 @@ function ResultSection({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      <FieldHeader title={title} description={description} />
+    <Field>
+      {title ? <FieldTitle>{title}</FieldTitle> : null}
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
       {children}
-    </section>
+    </Field>
   );
 }
 
+/**
+ * The answer itself: the selected value with its option text beside it, and the
+ * reviewer's note below a rule. `description` is body content (foreground);
+ * `rationale` is the note, which reads quieter. Bordered rather than filled — the
+ * total score is the only filled row in this panel.
+ */
 function ResultCard({
   value,
   description,
@@ -81,26 +115,24 @@ function ResultCard({
   const hasTopRow = hasValue || hasDescription;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-neutral-gray1 p-6">
+    <div className="mt-1 flex flex-col gap-3 rounded-lg border p-6">
       {hasTopRow && (
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           {hasValue && (
-            <span className="font-serif !text-title-base text-neutral-black">
+            <span className="font-serif text-headline text-foreground">
               {value}
             </span>
           )}
           {hasDescription && (
-            <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
+            <div className="min-w-0 flex-1 text-base text-foreground">
               {description}
             </div>
           )}
         </div>
       )}
-      {hasRationale && hasTopRow && (
-        <div className="h-px w-full bg-neutral-gray1" />
-      )}
+      {hasRationale && hasTopRow && <Separator />}
       {hasRationale && (
-        <div className="text-base text-neutral-charcoal">{rationale}</div>
+        <div className="text-base text-muted-foreground">{rationale}</div>
       )}
     </div>
   );
@@ -121,7 +153,7 @@ function RubricFieldResult({
     if (inferCriterionType(field.schema) === 'yes_no') {
       const label =
         value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
-      return <ResultCard value={label} description={rationale} />;
+      return <ResultCard value={label} rationale={rationale} />;
     }
 
     const selected = findSchemaOption(field.schema, value);
@@ -130,7 +162,7 @@ function RubricFieldResult({
       return (
         <ResultCard
           value={selected?.title ?? selected?.value}
-          description={rationale}
+          rationale={rationale}
         />
       );
     }
@@ -141,8 +173,8 @@ function RubricFieldResult({
       return (
         <ResultCard
           value={selected ? selected.title || String(selected.value) : '—'}
-          description={selected?.description || rationale}
-          rationale={selected?.description ? rationale : undefined}
+          description={selected?.description}
+          rationale={rationale}
         />
       );
     }
@@ -150,8 +182,8 @@ function RubricFieldResult({
     return (
       <ResultCard
         value={selected?.value}
-        description={selected?.title || rationale}
-        rationale={selected?.title ? rationale : undefined}
+        description={selected?.title}
+        rationale={rationale}
       />
     );
   }

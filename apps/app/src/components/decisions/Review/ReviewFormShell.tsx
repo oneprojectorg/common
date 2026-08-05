@@ -11,7 +11,7 @@ import { getCriteria } from '../rubricTemplate';
 export function FormShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
-      <Header3 className="font-serif font-light">
+      <Header3>
         <TranslatedText text="Review Proposal" />
       </Header3>
       {children}
@@ -43,11 +43,12 @@ export function TotalScoreCard({
   const display = totalPoints > 0 ? `${scoreText}/${totalPoints}` : '–';
 
   return (
-    <Card className="flex-row items-start justify-between bg-muted p-4">
-      <span className="text-base text-neutral-charcoal">
+    // The one filled row in the panel: a 16/450 label against a 20px figure.
+    <Card className="flex-row items-center justify-between bg-muted p-4">
+      <span className="text-base font-strong text-foreground">
         <TranslatedText text="Total score:" />
       </span>
-      <span className="text-base text-neutral-black">{display}</span>
+      <span className="text-headline text-foreground">{display}</span>
     </Card>
   );
 }

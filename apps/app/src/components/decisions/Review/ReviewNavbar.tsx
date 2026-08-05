@@ -71,14 +71,12 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
               {canRequestRevision && (
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => setIsRequestModalOpen(true)}
                 >
                   {t('Request revision')}
                 </Button>
               )}
               <Button
-                size="sm"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
                 loading={isSubmitting}
