@@ -20,6 +20,7 @@ import {
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
 
+import { ButtonLink } from '../ButtonLink';
 import { LocaleChooser } from '../LocaleChooser';
 import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
 import { ProposalAdminMenu } from './ProposalAdminMenu';
@@ -130,15 +131,15 @@ export function ProposalViewLayout({
           )}
           {/* Mobile-only jump to the comments section (Figma's speech-bubble
               icon). A plain fragment link — no scroll scripting needed. */}
-          <Button
+          <ButtonLink
+            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
             variant="outline"
             size="sm"
             aria-label={t('View comments')}
             className="size-8 px-0 sm:hidden"
-            render={<a href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`} />}
           >
             <LuMessageCircle className="size-4" />
-          </Button>
+          </ButtonLink>
           {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
           {/* `delay` lives on the provider, not the Tooltip root — wrap locally

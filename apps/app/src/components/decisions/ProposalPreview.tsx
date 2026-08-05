@@ -11,7 +11,6 @@ import {
   parseTranslatedMeta,
 } from '@op/common/client';
 import { Alert, AlertDescription } from '@op/sense/Alert';
-import { Button } from '@op/sense/Button';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Spinner } from '@op/sense/Spinner';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
@@ -30,6 +29,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
 
 import { Bullet } from '../Bullet';
+import { ButtonLink } from '../ButtonLink';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
@@ -318,9 +318,9 @@ function EngagementRow({
     <div
       className={cn(
         'flex items-center gap-1 border-t border-b py-2 text-sm text-muted-foreground',
-        // Toggles carry their own inline padding; pull the row so the first
-        // icon still lines up with the title above it.
-        engagement && '-ms-3',
+        // Ghost toggles inset their content by 8px at `sm`; pull the row by the
+        // same amount so the first icon lines up with the title above it.
+        engagement && '-ms-2',
       )}
     >
       {engagement ? (
@@ -329,6 +329,7 @@ function EngagementRow({
               on/off state comes from aria-pressed, which base-ui sets. */}
           <Toggle
             size="sm"
+            variant="ghost"
             pressed={engagement.isLiked}
             onPressedChange={engagement.onLike}
             disabled={engagement.isPending}
@@ -341,6 +342,7 @@ function EngagementRow({
           </Toggle>
           <Toggle
             size="sm"
+            variant="ghost"
             pressed={engagement.isFollowing}
             onPressedChange={engagement.onFollow}
             disabled={engagement.isPending}
@@ -351,14 +353,17 @@ function EngagementRow({
             />
             {followersLabel}
           </Toggle>
-          <Button
+          {/* A link, not a toggle — `px-2` keeps its inset matching the ghost
+              toggles beside it. */}
+          <ButtonLink
+            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
             variant="ghost"
             size="sm"
-            render={<a href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`} />}
+            className="px-2 text-muted-foreground hover:text-foreground"
           >
             <LuMessageCircle aria-hidden />
             {commentsLabel}
-          </Button>
+          </ButtonLink>
         </>
       ) : (
         <div className="flex items-center gap-4">
