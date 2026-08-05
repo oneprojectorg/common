@@ -12,7 +12,7 @@ export const roleEncoder = createSelectSchema(accessRoles)
   })
   .extend({
     permissions: permissionsSchema.optional(),
-    // Present only when the caller opts in via includeMemberCounts
+    // Present for profile-scoped role listings.
     memberCount: z.number().optional(),
   });
 

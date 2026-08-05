@@ -27,7 +27,6 @@ export const RoleSelector = ({
   const t = useTranslations();
   const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({
     profileId,
-    includeMemberCounts: true,
   });
 
   const roles = useMemo(() => {
