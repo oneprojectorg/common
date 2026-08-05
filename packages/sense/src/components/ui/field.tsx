@@ -98,18 +98,46 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+const fieldLabelVariants = cva(
+  'group/field-label peer/field-label flex gap-2 group-data-[disabled=true]/field:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: [
+          'w-fit has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10',
+          'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
+        ],
+        // Figma `RadioButton`/`Checkbox` → `Type=Box` (identical in both sets):
+        // 12px inset, 8px radius, 8px gap. Selected tints the whole box and
+        // recolors the label; `FieldDescription` sets its own muted color, so it
+        // correctly stays gray when selected. Invalid only tints once selected —
+        // an unselected invalid box keeps the neutral border and reddens the
+        // control + label instead.
+        box: [
+          'w-full cursor-pointer rounded-lg border border-input p-3 transition-colors *:data-[slot=field]:p-0',
+          'has-data-checked:border-primary has-data-checked:bg-accent has-data-checked:text-accent-foreground',
+          'has-aria-invalid:text-destructive has-aria-invalid:has-data-checked:border-destructive has-aria-invalid:has-data-checked:bg-destructive-muted',
+          'has-data-disabled:cursor-not-allowed',
+        ],
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
+  },
+);
+
 function FieldLabel({
   className,
+  variant = 'default',
   ...props
-}: React.ComponentProps<typeof Label>) {
+}: React.ComponentProps<typeof Label> &
+  VariantProps<typeof fieldLabelVariants>) {
   return (
     <Label
       data-slot="field-label"
-      className={cn(
-        'group/field-label peer/field-label flex w-fit gap-2 group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10',
-        'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
-        className,
-      )}
+      data-variant={variant}
+      className={cn(fieldLabelVariants({ variant }), className)}
       {...props}
     />
   );

@@ -20,6 +20,8 @@ export function useRichTextEditor({
   onEditorReady,
   editable = true,
   required = false,
+  ariaLabelledBy,
+  ariaDescribedBy,
 }: {
   extensions?: Extensions;
   content?: Content;
@@ -41,6 +43,17 @@ export function useRichTextEditor({
   editable?: boolean;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
+  /**
+   * Id of the element that labels the editable region. A contenteditable is not
+   * a labelable element, so `<label for>` can't reach it — the visible field
+   * label has to be wired by id instead.
+   */
+  ariaLabelledBy?: string;
+  /**
+   * Id(s) of elements describing the editable region (helper text, character
+   * counter). Space-separated, same as the native attribute.
+   */
+  ariaDescribedBy?: string;
 }) {
   // Append a single Placeholder extension when a top-level placeholder is asked
   // for OR the Details extension is present (it needs a per-node 'Summary' hint).
@@ -86,6 +99,8 @@ export function useRichTextEditor({
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
         ...(required ? { 'aria-required': 'true' } : {}),
+        ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
+        ...(ariaDescribedBy ? { 'aria-describedby': ariaDescribedBy } : {}),
       },
     },
     onUpdate: ({ editor }) => {
