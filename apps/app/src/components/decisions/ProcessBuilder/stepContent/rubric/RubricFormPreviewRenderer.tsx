@@ -5,15 +5,29 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Field, FieldLabel } from '@op/sense/Field';
+import { Button } from '@op/sense/Button';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
-import { Select, SelectTrigger, SelectValue } from '@op/sense/Select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FieldHeader } from '../../../forms/FieldHeader';
+import { OptionBox } from '../../../forms/OptionBox';
 import type { FieldDescriptor } from '../../../forms/types';
 
 /** Yes/no field: `type: "string"` with exactly `"yes"` and `"no"` oneOf entries. */
@@ -39,14 +53,29 @@ function isScoredField(schema: XFormatPropertySchema): boolean {
   return schema.type === 'integer' && typeof schema.maximum === 'number';
 }
 
-/** Collapsed "Add Note" affordance mirroring the review form default state. */
-function RationalePlaceholder() {
-  const t = useTranslations();
-
+/**
+ * Static read-only preview of rubric fields — what a reviewer will see.
+ *
+ * Mirrors `ReviewRubricForm`'s composition (sense `Field` + label + description,
+ * boxed radio options for multiple choice, a Select for scored scales) so the
+ * builder shows the real form rather than an approximation. The wrapper is
+ * `inert`, which blocks pointer and keyboard interaction without the dimming a
+ * `disabled` control would apply — a preview should look like the live form, not
+ * like a greyed-out one.
+ */
+export function RubricFormPreviewRenderer({
+  fields,
+}: {
+  fields: FieldDescriptor[];
+}) {
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 text-base text-primary-teal">
-      <LuPlus className="size-4" />
-      {t('Add Note')}
+    <div inert className="flex flex-col gap-6">
+      {fields.map((field) => (
+        <div key={field.key} className="flex flex-col gap-4">
+          <RubricField field={field} />
+          <RationalePlaceholder />
+        </div>
+      ))}
     </div>
   );
 }
@@ -56,27 +85,39 @@ function RubricField({ field }: { field: FieldDescriptor }) {
   const t = useTranslations();
   const { format, schema } = field;
 
-  // Horizontal radio group for the overall recommendation field.
+  // Inline radios for the overall recommendation, as the review form renders it.
   if (isOverallRecommendationField(field.key)) {
     const recOptions = parseSchemaOptions(schema);
+
     return (
-      <div className="flex flex-col gap-3">
-        <FieldHeader title={schema.title} />
-        <RadioGroup className="grid-flow-col gap-0" aria-label={schema.title}>
+      <Field>
+        <FieldTitle>{schema.title}</FieldTitle>
+        {schema.description && (
+          <FieldDescription>{schema.description}</FieldDescription>
+        )}
+        <RadioGroup
+          aria-label={schema.title}
+          className="flex flex-wrap items-center gap-x-6 gap-y-2"
+        >
           {recOptions.map((option) => {
             const optionValue = String(option.value);
             const id = `${field.key}-${optionValue}`;
+
             return (
-              <Field key={optionValue} orientation="horizontal">
+              <Field
+                key={optionValue}
+                orientation="horizontal"
+                className="w-auto"
+              >
                 <RadioGroupItem id={id} value={optionValue} />
-                <FieldLabel htmlFor={id}>
+                <FieldLabel htmlFor={id} className="font-normal">
                   {option.title || optionValue}
                 </FieldLabel>
               </Field>
             );
           })}
         </RadioGroup>
-      </div>
+      </Field>
     );
   }
 
@@ -84,62 +125,93 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     case 'dropdown': {
       if (isYesNoField(schema)) {
         return (
-          <div className="flex flex-col gap-3">
-            <FieldHeader
-              title={schema.title}
-              badge={t('No/Yes')}
-              className="gap-1"
-            />
-            <div className="flex items-center gap-3">
+          <Field orientation="horizontal">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <FieldTitle>
+                {schema.title}
+                <CriterionBadge>{t('No/Yes')}</CriterionBadge>
+              </FieldTitle>
               {schema.description && (
-                <p className="text-sm text-neutral-charcoal">
-                  {schema.description}
-                </p>
+                <FieldDescription>{schema.description}</FieldDescription>
               )}
-              <Switch className="ms-auto shrink-0" />
             </div>
-          </div>
+            <Switch size="sm" aria-label={schema.title} />
+          </Field>
         );
       }
 
-      // Non-scored dropdowns (single-select included) fall through to the
-      // generic pill select placeholder below, with no points badge.
-      const badge = isScoredField(schema)
-        ? `${schema.maximum} ${t('pts')}`
-        : undefined;
+      // A scored scale keeps its Select — a long scale is what a popup is for.
+      if (isScoredField(schema)) {
+        return (
+          <Field>
+            <FieldTitle>
+              {schema.title}
+              <CriterionBadge>{`${schema.maximum} ${t('pts')}`}</CriterionBadge>
+            </FieldTitle>
+            {schema.description && (
+              <FieldDescription>{schema.description}</FieldDescription>
+            )}
+            <Select>
+              <SelectTrigger aria-label={schema.title} className="w-full">
+                <SelectValue placeholder={t('Select an option')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup />
+              </SelectContent>
+            </Select>
+          </Field>
+        );
+      }
+
+      // Multiple choice: one value, shown as boxed radios like the review form.
+      const options = parseSchemaOptions(schema);
 
       return (
-        <div className="flex flex-col gap-3">
-          <FieldHeader
-            title={schema.title}
-            description={schema.description}
-            badge={badge}
-            className="gap-1"
-          />
-          <Select>
-            <SelectTrigger className="w-fit max-w-full rounded-full text-primary-teal data-placeholder:text-primary-teal">
-              <SelectValue placeholder={t('Select option')} />
-            </SelectTrigger>
-          </Select>
-        </div>
+        <Field>
+          <FieldTitle>{schema.title}</FieldTitle>
+          {schema.description && (
+            <FieldDescription>{schema.description}</FieldDescription>
+          )}
+          <RadioGroup aria-label={schema.title} className="gap-2">
+            {options.map((option) => {
+              const optionValue = String(option.value);
+              const id = `${field.key}-${optionValue}`;
+
+              return (
+                <OptionBox
+                  key={optionValue}
+                  htmlFor={id}
+                  control={<RadioGroupItem id={id} value={optionValue} />}
+                  label={option.title || optionValue}
+                  description={option.description}
+                />
+              );
+            })}
+          </RadioGroup>
+        </Field>
       );
     }
 
     case 'short-text':
     case 'long-text': {
+      const controlId = `${field.key}-preview`;
+
       return (
-        <div className="flex flex-col gap-3">
-          <FieldHeader
-            title={schema.title}
-            description={schema.description}
-            className="gap-1"
-          />
-          <div
-            className={`${format === 'long-text' ? 'min-h-32' : 'min-h-8'} text-neutral-gray3`}
-          >
-            {t('Start typing...')}
-          </div>
-        </div>
+        <Field>
+          <FieldLabel htmlFor={controlId}>{schema.title}</FieldLabel>
+          {schema.description && (
+            <FieldDescription>{schema.description}</FieldDescription>
+          )}
+          {format === 'long-text' ? (
+            <Textarea
+              id={controlId}
+              rows={3}
+              placeholder={t('Start typing...')}
+            />
+          ) : (
+            <Input id={controlId} placeholder={t('Start typing...')} />
+          )}
+        </Field>
       );
     }
 
@@ -148,24 +220,27 @@ function RubricField({ field }: { field: FieldDescriptor }) {
   }
 }
 
-/**
- * Static read-only preview of rubric fields.
- * Shows field labels and placeholder inputs — no interactivity.
- * Rationale placeholder is rendered under every criterion.
- */
-export function RubricFormPreviewRenderer({
-  fields,
-}: {
-  fields: FieldDescriptor[];
-}) {
+/** The points / yes-no marker that rides inline with a criterion's title. */
+function CriterionBadge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pointer-events-none flex flex-col gap-6">
-      {fields.map((field) => (
-        <div key={field.key} className="flex flex-col gap-4">
-          <RubricField field={field} />
-          <RationalePlaceholder />
-        </div>
-      ))}
-    </div>
+    <span className="text-sm font-normal text-muted-foreground">
+      {children}
+    </span>
+  );
+}
+
+/** Collapsed "Add note" affordance mirroring the review form's default state. */
+function RationalePlaceholder() {
+  const t = useTranslations();
+
+  return (
+    <Button
+      variant="link"
+      size="sm"
+      className="h-auto self-start px-2 py-1.5 leading-normal"
+    >
+      <LuPlus className="size-4" />
+      {t('Add note')}
+    </Button>
   );
 }
