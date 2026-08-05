@@ -47,7 +47,10 @@ export function ViewRevisionRequestModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('Request Revision')}</DialogTitle>
+          {/* This dialog *views* an existing request (Sent {date}, Cancel
+              request, Close) — the noun. "Request Revision" is the verb phrase
+              that titles RequestRevisionModal, which creates one. */}
+          <DialogTitle>{t('Revision request')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-2 px-6 py-4">
