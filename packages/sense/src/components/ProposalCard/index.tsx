@@ -294,7 +294,7 @@ function AuthorRow({
         // overlay so it stays independently clickable (clickable-card pattern).
         <Link
           href={first.href}
-          className="relative z-10 text-sm text-muted-foreground hover:underline"
+          className="relative z-10 w-fit rounded-sm text-sm text-muted-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {label}
         </Link>

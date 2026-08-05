@@ -1,11 +1,9 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
-import Image from 'next/image';
 
-import { Link } from '@/lib/i18n';
+import { ProfileAvatarLink } from '../ProfileAvatarLink';
 
 type ProfileAvatarProps = {
   profile?: {
@@ -18,6 +16,14 @@ type ProfileAvatarProps = {
   className?: string;
 };
 
+/**
+ * A profile's avatar, linked to its page when the viewer can reach it.
+ *
+ * Resolves profile → name / image URL / slug, then delegates to
+ * `ProfileAvatarLink` so every linked avatar in the app shares one focus ring and
+ * hover treatment. (Rolling its own link is what left these with the browser's
+ * default focus ring.)
+ */
 export const ProfileAvatar = ({
   profile,
   withLink = true,
@@ -26,6 +32,7 @@ export const ProfileAvatar = ({
   const canLinkToProfile = useCanLinkToProfile();
   const name = profile?.name ?? '';
   const email = profile?.email ?? '';
+  // The fallback initial + gradient seed: a profile may have no name yet.
   const placeholderSeed = name || email;
 
   if (!placeholderSeed) {
@@ -39,25 +46,14 @@ export const ProfileAvatar = ({
     ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
     : undefined;
 
-  const avatar = (
-    <Avatar className={cn('size-6', linked && 'hover:opacity-80', className)}>
-      {src ? (
-        <AvatarImage
-          src={src}
-          alt={name}
-          render={<Image src={src} alt={name} fill className="object-cover" />}
-        />
-      ) : null}
-      <AvatarFallback name={placeholderSeed} />
-    </Avatar>
-  );
-
-  return linked ? (
-    <Link href={`/profile/${slug}`} className="hover:no-underline">
-      {avatar}
-    </Link>
-  ) : (
-    avatar
+  return (
+    <ProfileAvatarLink
+      href={linked ? `/profile/${slug}` : undefined}
+      name={placeholderSeed}
+      src={src}
+      alt={name}
+      className={cn('size-6', className)}
+    />
   );
 };
 

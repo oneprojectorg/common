@@ -240,7 +240,10 @@ export function ProposalPreview({
                   ) : (
                     <NavLink
                       href={`/profile/${proposal.submittedBy.slug}`}
-                      className="text-base font-strong text-foreground hover:no-underline"
+                      // The sense focus treatment: without it this falls through
+                      // to the browser's default ring. `rounded-sm` keeps the ring
+                      // from hugging the glyphs.
+                      className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </NavLink>
@@ -329,7 +332,7 @@ function EngagementRow({
   }`;
 
   return (
-    <div className="-ms-2 flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">
+    <div className="flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">
       <EngagementToggle
         icon={LuHeart}
         label={likesLabel}
