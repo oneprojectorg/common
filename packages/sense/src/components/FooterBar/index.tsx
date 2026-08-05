@@ -20,14 +20,14 @@ const footerBarVariants = cva('shrink-0 border-t bg-background backdrop-blur', {
 const footerBarContentVariants = cva('flex items-center gap-4', {
   variants: {
     padding: {
-      compact: 'px-8 py-2',
+      compact: 'px-6 py-2',
       spacious: 'px-18 py-2',
     },
     // For fixed mode, center the inner content at the page max-width so
     // Start/End slots align with the content above.
     position: {
       sticky: '',
-      fixed: 'mx-auto w-full max-w-6xl',
+      fixed: 'mx-auto w-full',
       static: '',
     },
   },

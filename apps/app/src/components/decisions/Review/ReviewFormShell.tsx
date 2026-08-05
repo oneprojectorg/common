@@ -48,7 +48,7 @@ export function TotalScoreCard({
       <span className="text-base font-strong text-foreground">
         <TranslatedText text="Total score:" />
       </span>
-      <span className="text-headline text-foreground">{display}</span>
+      <span className="font-serif text-title">{display}</span>
     </Card>
   );
 }

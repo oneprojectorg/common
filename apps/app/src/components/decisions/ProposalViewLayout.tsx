@@ -27,13 +27,6 @@ import { ProposalAdminMenu } from './ProposalAdminMenu';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
 
-/**
- * Every action in the header row collapses to an icon-only square below `sm`
- * (Figma 19626:26574 — the mobile read view is a back arrow plus a row of icon
- * buttons) and shows its label from `sm` up.
- */
-const COMPACT_ACTION_CLASSES = 'max-sm:size-8 max-sm:px-0';
-
 export function ProposalViewLayout({
   children,
   backHref,
@@ -113,9 +106,9 @@ export function ProposalViewLayout({
           {canEdit && editHref && (
             <Button
               variant="outline"
+              size="icon"
               onClick={() => router.push(editHref)}
               aria-label={t('Edit')}
-              className={COMPACT_ACTION_CLASSES}
             >
               <LuPencil className="size-4" />
               <span className="hidden sm:inline">{t('Edit')}</span>
@@ -132,8 +125,9 @@ export function ProposalViewLayout({
           <ButtonLink
             href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
             variant="outline"
+            size="icon"
             aria-label={t('View comments')}
-            className="size-8 px-0 sm:hidden"
+            className="sm:hidden"
           >
             <LuMessageCircle className="size-4" />
           </ButtonLink>

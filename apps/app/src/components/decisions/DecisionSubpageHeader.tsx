@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { ButtonLink } from '../ButtonLink';
 
 interface DecisionSubpageHeaderProps {
   backHref: string;
@@ -16,13 +16,10 @@ export function DecisionSubpageHeader({
 }: DecisionSubpageHeaderProps) {
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white px-6 md:px-8">
-      <Link
-        href={backHref}
-        className="flex items-center gap-2 text-base text-primary-teal"
-      >
+      <ButtonLink href={backHref} variant="link">
         <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {backLabel}
-      </Link>
+      </ButtonLink>
       {children}
     </header>
   );

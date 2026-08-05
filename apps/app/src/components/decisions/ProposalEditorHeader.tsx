@@ -88,7 +88,11 @@ export function ProposalEditorHeader({
         {!readOnlyMode && presenceSlot}
         {asideHeaderIcons}
         {!readOnlyMode && canShare && (
-          <Button variant="outline" onClick={onShare}>
+          <Button
+            variant="outline"
+            onClick={onShare}
+            className="max-sm:size-11"
+          >
             <LuUserPlus className="size-4" />
             <span className="hidden sm:inline">{t('Share')}</span>
           </Button>

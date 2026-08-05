@@ -50,7 +50,7 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
         onClick={() => setIsOpen(true)}
         disabled={reported}
         aria-label={triggerLabel}
-        className="max-sm:size-8 max-sm:px-0"
+        size="icon"
       >
         <LuFlag className="size-4" />
         <span className="hidden sm:inline">{triggerLabel}</span>
