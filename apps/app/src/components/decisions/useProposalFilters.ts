@@ -1,6 +1,6 @@
 'use client';
 
-import { ProposalFilter, ProposalStatus } from '@op/api/encoders';
+import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -22,10 +22,6 @@ export const useProposalFilterItems = ({
       id: ProposalFilter.MY_PROPOSALS,
       label: t('My proposals'),
       isDisabled: !currentProfileId,
-    },
-    {
-      id: ProposalFilter.SHORTLISTED,
-      label: t('Shortlisted proposals'),
     },
     ...(hasVoted
       ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
@@ -101,12 +97,6 @@ export function useProposalFilters({
         // Show only proposals submitted by the current user
         return proposals.filter(
           (proposal) => proposal.submittedBy?.id === currentProfileId,
-        );
-
-      case ProposalFilter.SHORTLISTED:
-        // Show only approved proposals
-        return proposals.filter(
-          (proposal) => proposal.status === ProposalStatus.APPROVED,
         );
 
       case ProposalFilter.ALL:
