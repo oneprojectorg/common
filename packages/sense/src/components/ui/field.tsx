@@ -1,5 +1,7 @@
 'use client';
 
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { useMemo } from 'react';
 
@@ -143,23 +145,36 @@ function FieldLabel({
   );
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="field-label"
-      className={cn(
-        // Inside a box, trim the half-leading off BOTH edges so the line box hugs
-        // the text: the row's 12px inset then measures to the cap height, and a
-        // single-line box still centres against its control. Trimming only the top
-        // (`-mt-1`) shifted the label off-centre in the common `items-center` case.
-        // `-my-1` is that half-leading at this step ((24 - 16) / 2); the real
-        // expression is `text-box: trim-both cap alphabetic`, which isn't Baseline.
-        'flex w-fit items-center gap-1 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-my-1',
-        className,
-      )}
-      {...props}
-    />
-  );
+/**
+ * The bold line at the top of a field. A `div` by default; pass
+ * `render={<h4 />}` where the field is really a titled section a screen-reader
+ * user should be able to navigate to by heading (a rubric criterion, say).
+ */
+function FieldTitle({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'div'>) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: mergeProps<'div'>(
+      {
+        className: cn(
+          // Inside a box, trim the half-leading off BOTH edges so the line box hugs
+          // the text: the row's 12px inset then measures to the cap height, and a
+          // single-line box still centres against its control. Trimming only the top
+          // (`-mt-1`) shifted the label off-centre in the common `items-center` case.
+          // `-my-1` is that half-leading at this step ((24 - 16) / 2); the real
+          // expression is `text-box: trim-both cap alphabetic`, which isn't Baseline.
+          'flex w-fit items-center gap-1 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-my-1',
+          className,
+        ),
+      },
+      props,
+    ),
+    state: { slot: 'field-label' },
+  });
 }
 
 function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {

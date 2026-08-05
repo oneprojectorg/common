@@ -349,8 +349,9 @@ test.describe('Review Submit', () => {
     const submitButton = page.getByRole('button', { name: 'Submit review' });
     await expect(submitButton).toBeDisabled();
 
-    // Fill first required criterion: Innovation (scored, 4 pts)
-    await page.getByRole('button', { name: 'Innovation' }).click();
+    // Fill first required criterion: Innovation (scored, 4 pts). The scored
+    // scale is a sense Select, so its trigger is a combobox, not a button.
+    await page.getByRole('combobox', { name: 'Innovation' }).click();
     await page.getByRole('option', { name: '4 — Very Good' }).click();
 
     // Fill Innovation's optional rationale. The textarea is collapsed behind
@@ -363,14 +364,14 @@ test.describe('Review Submit', () => {
       .filter({ hasText: 'Innovation' });
     await innovationSection.getByRole('button', { name: 'Add Note' }).click();
     await innovationSection
-      .getByRole('textbox', { name: 'Notes' })
+      .getByRole('textbox', { name: 'Note' })
       .fill(innovationRationale);
 
     // Still disabled — two more required criteria (Feasibility, Compliance)
     await expect(submitButton).toBeDisabled();
 
     // Fill second required criterion: Feasibility (scored, 2 pts)
-    await page.getByRole('button', { name: 'Feasibility' }).click();
+    await page.getByRole('combobox', { name: 'Feasibility' }).click();
     await page.getByRole('option', { name: '2 — Possible' }).click();
 
     // Still disabled — Compliance is still missing

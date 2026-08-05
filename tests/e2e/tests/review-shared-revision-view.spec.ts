@@ -209,8 +209,12 @@ test.describe('Review — shared revision request view', () => {
     await expect(
       modal.getByRole('button', { name: 'Cancel request' }),
     ).toHaveCount(0);
+    // Two controls close this dialog: the sense DialogContent's built-in
+    // corner button and the explicit one in the footer. Assert the footer's.
     await expect(
-      modal.getByRole('button', { name: 'Close', exact: true }),
+      modal
+        .locator('[data-slot="dialog-footer"]')
+        .getByRole('button', { name: 'Close', exact: true }),
     ).toBeVisible();
 
     // Navbar's "Request revision" is hidden too — reviewer B shouldn't race

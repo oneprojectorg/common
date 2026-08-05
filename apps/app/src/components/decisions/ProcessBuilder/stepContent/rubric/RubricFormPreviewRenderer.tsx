@@ -91,7 +91,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 
     return (
       <Field>
-        <FieldTitle>{schema.title}</FieldTitle>
+        <FieldTitle render={<h4 />}>{schema.title}</FieldTitle>
         {schema.description && (
           <FieldDescription>{schema.description}</FieldDescription>
         )}
@@ -127,7 +127,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
         return (
           <Field orientation="horizontal">
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <FieldTitle>
+              <FieldTitle render={<h4 />}>
                 {schema.title}
                 <CriterionBadge>{t('No/Yes')}</CriterionBadge>
               </FieldTitle>
@@ -144,7 +144,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
       if (isScoredField(schema)) {
         return (
           <Field>
-            <FieldTitle>
+            <FieldTitle render={<h4 />}>
               {schema.title}
               <CriterionBadge>{`${schema.maximum} ${t('pts')}`}</CriterionBadge>
             </FieldTitle>
@@ -168,7 +168,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 
       return (
         <Field>
-          <FieldTitle>{schema.title}</FieldTitle>
+          <FieldTitle render={<h4 />}>{schema.title}</FieldTitle>
           {schema.description && (
             <FieldDescription>{schema.description}</FieldDescription>
           )}
@@ -198,7 +198,9 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 
       return (
         <Field>
-          <FieldLabel htmlFor={controlId}>{schema.title}</FieldLabel>
+          <h4>
+            <FieldLabel htmlFor={controlId}>{schema.title}</FieldLabel>
+          </h4>
           {schema.description && (
             <FieldDescription>{schema.description}</FieldDescription>
           )}

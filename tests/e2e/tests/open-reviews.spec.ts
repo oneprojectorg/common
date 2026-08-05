@@ -230,7 +230,7 @@ test.describe('Open Reviews', () => {
 
     // Turning it on opens a confirmation dialog.
     await openReviewsToggle().click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('alertdialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Turn on Open Reviews?')).toBeVisible();
 
@@ -241,7 +241,7 @@ test.describe('Open Reviews', () => {
 
     // Toggle again → Enable persists via the builder autosave mutation.
     await openReviewsToggle().click();
-    const dialog2 = page.getByRole('dialog');
+    const dialog2 = page.getByRole('alertdialog');
     await expect(dialog2).toBeVisible();
 
     const saveResponse = page.waitForResponse(

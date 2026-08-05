@@ -754,10 +754,12 @@ test.describe('Proposal View', () => {
       await expect(page.getByText(commentText)).toBeVisible();
       await expect(page.getByText(likeBadge)).toBeVisible();
 
+      // The like and follow toggles are named by the stat they show
+      // ("0 Likes"), so match the noun rather than a bare verb.
       const writeControls = [
         page.getByRole('button', { name: 'Add reaction' }),
-        page.getByRole('button', { name: 'Like', exact: true }),
-        page.getByRole('button', { name: 'Follow', exact: true }),
+        page.getByRole('button', { name: /^\d+ Likes?$/ }),
+        page.getByRole('button', { name: /^\d+ Followers?$/ }),
       ];
       for (const control of writeControls) {
         await expect(control).toHaveCount(canInteract ? 1 : 0);

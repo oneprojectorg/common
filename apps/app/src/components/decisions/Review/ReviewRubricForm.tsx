@@ -174,8 +174,10 @@ function MyReviewForm() {
             />
           ))}
 
+          <TotalScoreCard rubricTemplate={template} values={values} />
+
           {isFeedbackOpen ? (
-            <section className="border-b pb-6">
+            <section className="border-t pt-6">
               <FeedbackToAuthorField
                 value={overallComment}
                 onChange={handleOverallCommentChange}
@@ -191,8 +193,6 @@ function MyReviewForm() {
               {t('Feedback to author')}
             </Button>
           )}
-
-          <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
     </>
@@ -207,6 +207,10 @@ function MyReviewForm() {
  * are buttons or groups, which `htmlFor` cannot address, so those are named by
  * `aria-labelledby` against a `FieldTitle` (a div styled as a label rather than
  * an orphan `<label>`).
+ *
+ * Every criterion prompt is an `h4` either way. A rubric is long, and the
+ * prompts are what a screen-reader user navigates it by — that came free from
+ * the old `FieldHeader` and has to be asked for now.
  */
 function RubricCriterionSection({
   field,
@@ -262,6 +266,7 @@ function RubricCriterionSection({
         <Field orientation="horizontal">
           <FieldContent>
             <FieldTitle
+              render={<h4 />}
               id={labelId}
               className="flex w-full justify-between gap-2"
             >
@@ -278,9 +283,12 @@ function RubricCriterionSection({
       ) : (
         <Field>
           {isTextInput ? (
-            <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
+            <h4>
+              <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
+            </h4>
           ) : (
             <FieldTitle
+              render={<h4 />}
               id={labelId}
               className="flex w-full justify-between gap-2"
             >

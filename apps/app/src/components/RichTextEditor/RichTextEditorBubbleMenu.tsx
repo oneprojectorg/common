@@ -65,6 +65,33 @@ export function RichTextEditorBubbleMenu({
   const t = useTranslations();
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [isEditingEmbed, setIsEditingEmbed] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Every prose field mounts its own menu, so a field that keeps its menu after
+  // you leave it leaves two on screen — and clicks meant for the field you're
+  // in land in the one you left, because its menu comes first in the DOM.
+  // TipTap's own blur handling doesn't catch this: clicking a menu button sets
+  // its internal `preventHide`, and because the click deliberately keeps editor
+  // focus, nothing clears the flag until the next blur — which it then swallows.
+  // Unmounting on blur sidesteps that entirely.
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    setIsFocused(editor.isFocused);
+
+    const onFocus = () => setIsFocused(true);
+    const onBlur = () => setIsFocused(false);
+
+    editor.on('focus', onFocus);
+    editor.on('blur', onBlur);
+
+    return () => {
+      editor.off('focus', onFocus);
+      editor.off('blur', onBlur);
+    };
+  }, [editor]);
 
   // Focusing the URL input blurs the editor, which hides the native
   // selection highlight — so while the link editor is open, an inline
@@ -112,6 +139,12 @@ export function RichTextEditorBubbleMenu({
   });
 
   if (!editor || !activeStates) {
+    return null;
+  }
+
+  // The link and embed forms take focus out of the editor by design, so they
+  // hold the menu open on their own account.
+  if (!isFocused && !isEditingLink && !isEditingEmbed) {
     return null;
   }
 
@@ -256,8 +289,13 @@ export function RichTextEditorBubbleMenu({
       options={{
         placement: 'top',
         offset: 8,
-        flip: true,
-        shift: true,
+        // Floating UI measures against the viewport, which knows nothing about
+        // the editor's sticky topbar — without this the menu happily parks
+        // itself under the bar, where the bar swallows the clicks. Reserve the
+        // bar's height (`--spacing-editor-topbar`, 60px) plus the offset so the
+        // menu flips below the selection instead.
+        flip: { padding: { top: 68 } },
+        shift: { padding: { top: 68 } },
         onHide: () => {
           closeLinkEditor();
           setIsEditingEmbed(false);

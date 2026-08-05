@@ -87,7 +87,9 @@ function ResultSection({
 }) {
   return (
     <Field>
-      {title ? <FieldTitle>{title}</FieldTitle> : null}
+      {/* An `h4`, as in the editable form: the prompts are how a screen-reader
+          user navigates a long review. */}
+      {title ? <FieldTitle render={<h4 />}>{title}</FieldTitle> : null}
       {description ? <FieldDescription>{description}</FieldDescription> : null}
       {children}
     </Field>
@@ -119,12 +121,12 @@ function ResultCard({
       {hasTopRow && (
         <div className="flex items-start gap-4">
           {hasValue && (
-            <span className="font-serif text-headline text-foreground">
+            <span className="font-serif text-title text-foreground">
               {value}
             </span>
           )}
           {hasDescription && (
-            <div className="min-w-0 flex-1 text-base text-foreground">
+            <div className="mt-0.75 min-w-0 flex-1 text-base whitespace-pre-wrap text-foreground">
               {description}
             </div>
           )}

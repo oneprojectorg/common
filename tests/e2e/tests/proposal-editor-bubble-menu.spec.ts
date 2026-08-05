@@ -98,7 +98,7 @@ test.describe('Proposal Editor Bubble Menu', () => {
 
     // Wait for editor to fully load
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
+      authenticatedPage.getByRole('button', { name: 'Submit', exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
       authenticatedPage.getByText('Summary', { exact: true }),

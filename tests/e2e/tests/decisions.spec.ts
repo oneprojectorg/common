@@ -55,13 +55,13 @@ test.describe('Decisions', () => {
     );
 
     // 7. Verify we're on the proposal editor page
-    // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit Proposal" button
+    // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit" button
     await expect(authenticatedPage.getByText('Untitled proposal')).toBeVisible({
       timeout: 10000,
     });
 
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
+      authenticatedPage.getByRole('button', { name: 'Submit', exact: true }),
     ).toBeVisible({ timeout: 5000 });
   });
 
