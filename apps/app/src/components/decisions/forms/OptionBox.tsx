@@ -1,6 +1,5 @@
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldLabel,
   FieldTitle,
@@ -48,15 +47,23 @@ export function OptionBox({
       htmlFor={htmlFor}
       className={cn(width === 'hug' && 'w-fit', className)}
     >
-      <Field orientation="horizontal">
+      {/* Deliberately no `FieldContent` around the description. The horizontal
+          Field adds `mt-1` to a checkbox/radio when it sees one
+          (`has-[>[data-slot=field-content]]`), nudging the control down to meet a
+          label at its default line-height — but a box title is `leading-none`, so
+          that offset misaligns it. Own the alignment instead: `items-start` puts
+          the control on the first line, where a 16px control meets a 16px text
+          box exactly. */}
+      <Field
+        orientation="horizontal"
+        className={cn(description && 'items-start')}
+      >
         {control}
         {description ? (
-          // FieldContent stacks title over description and keeps the control
-          // top-aligned against a multi-line box.
-          <FieldContent>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <FieldTitle>{label}</FieldTitle>
             <FieldDescription>{description}</FieldDescription>
-          </FieldContent>
+          </div>
         ) : (
           <FieldTitle>{label}</FieldTitle>
         )}
