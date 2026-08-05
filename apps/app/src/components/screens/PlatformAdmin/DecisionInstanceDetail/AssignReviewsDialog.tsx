@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -84,11 +84,11 @@ export const AssignReviewsDialog = ({
 
   const assignReviews = trpc.platform.admin.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
-      toast.success({
-        message: t('{count} review assignments created', {
+      toast.success(
+        t('{count} review assignments created', {
           count: createdCount,
         }),
-      });
+      );
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,
         phaseId,
@@ -96,7 +96,7 @@ export const AssignReviewsDialog = ({
       setIsOpen(false);
     },
     onError: (error) => {
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 

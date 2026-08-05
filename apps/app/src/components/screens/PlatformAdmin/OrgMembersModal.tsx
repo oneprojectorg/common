@@ -1,11 +1,16 @@
 'use client';
 
 import type { AdminOrg } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { Surface } from '@op/ui/Surface';
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Badge } from '@op/sense/Badge';
+import { Card } from '@op/sense/Card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { ProfileItem } from '@op/sense/ProfileItem';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,44 +31,50 @@ export const OrgMembersModal = ({
   const orgName = org.profile?.name ?? t('Unknown organization');
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>{t('Members of {orgName}', { orgName })}</ModalHeader>
-      <ModalBody className="space-y-4 pb-6">
-        {/* Organization Info */}
-        <div className="rounded-lg bg-neutral-gray-1 p-4">
-          <ProfileItem
-            avatar={
-              <Avatar placeholder={orgName} className="size-10 shrink-0" />
-            }
-            title={orgName}
-            description={org.domain ?? undefined}
-          />
-        </div>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t('Members of {orgName}', { orgName })}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-6 py-4">
+          {/* Organization Info */}
+          <div className="rounded-lg bg-muted p-4">
+            <ProfileItem
+              avatar={
+                <Avatar size="lg">
+                  <AvatarFallback name={orgName} />
+                </Avatar>
+              }
+              title={orgName}
+              description={org.domain ?? undefined}
+            />
+          </div>
 
-        {/* Members List */}
-        {members.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
-              <LuUsers className="h-6 w-6 text-neutral-gray4" />
+          {/* Members List */}
+          {members.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
+                <LuUsers className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('No members found')}
+              </p>
             </div>
-            <p className="text-sm text-neutral-charcoal">
-              {t('No members found')}
-            </p>
-          </div>
-        ) : (
-          <div>
-            <div className="mb-2 text-sm font-medium text-neutral-black">
-              {t('Members')} ({members.length})
+          ) : (
+            <div>
+              <div className="mb-2 text-sm font-medium text-foreground">
+                {t('Members')} ({members.length})
+              </div>
+              <div className="space-y-2">
+                {members.map((member) => (
+                  <MemberRow key={member.id} member={member} />
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              {members.map((member) => (
-                <MemberRow key={member.id} member={member} />
-              ))}
-            </div>
-          </div>
-        )}
-      </ModalBody>
-    </Modal>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -76,11 +87,13 @@ const MemberRow = ({ member }: { member: Member }) => {
       : [t('No roles')];
 
   return (
-    <Surface className="flex items-center gap-3 p-3">
+    <Card className="flex-row items-center gap-3 p-3">
       <div className="min-w-0 flex-1">
         <ProfileItem
           avatar={
-            <Avatar placeholder={displayName} className="size-10 shrink-0" />
+            <Avatar size="lg">
+              <AvatarFallback name={displayName} />
+            </Avatar>
           }
           title={displayName}
           description={member.name ? member.email : undefined}
@@ -88,9 +101,11 @@ const MemberRow = ({ member }: { member: Member }) => {
       </div>
       <div className="flex shrink-0 gap-1">
         {roles.map((role) => (
-          <Chip key={role}>{role}</Chip>
+          <Badge key={role} variant="secondary">
+            {role}
+          </Badge>
         ))}
       </div>
-    </Surface>
+    </Card>
   );
 };

@@ -1505,5 +1505,10 @@
   "Select a category": "Selecciona una categoría",
   "{count} of {max} characters used": "{count} de {max} caracteres usados",
   "Character limit reached": "Se alcanzó el límite de caracteres",
-  "Hidden from public view": "Oculta al público"
+  "Hidden from public view": "Oculta al público",
+  "Clear search": "Limpiar búsqueda",
+  "Pagination Navigation": "Navegación de paginación",
+  "{start} - {end} of {total} {label}": "{start} - {end} de {total} {label}",
+  "No organizations found": "No se encontraron organizaciones",
+  "No roles found": "No se encontraron roles"
 }
