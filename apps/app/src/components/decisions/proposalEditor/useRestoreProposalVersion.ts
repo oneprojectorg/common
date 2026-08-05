@@ -87,6 +87,13 @@ export function useRestoreProposalVersion({
 
     provider.revertToVersion(versionId, {
       fields: fragmentNames,
+      // TipTap snapshots twice by default: the content before the revert, and
+      // the reverted content. The second one duplicates the list's synthetic
+      // "Current version" row — it *is* the current document — so suppress it.
+      // The pre-revert snapshot stays: it's the only copy of what the restore
+      // replaced, and the auto-versioner will capture the restored state on the
+      // next edit anyway.
+      newVersionName: false,
     });
 
     await updateProposalMutation.mutateAsync({
