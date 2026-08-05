@@ -50,8 +50,9 @@ export function OptionBox({
       {/* Deliberately no `FieldContent` around the description. The horizontal
           Field adds `mt-1` to a checkbox/radio when it sees one
           (`has-[>[data-slot=field-content]]`), nudging the control down to meet a
-          label at its default line-height — but a box title is `leading-none`, so
-          that offset misaligns it. Own the alignment instead: `items-start` puts
+          label at its default line-height — but a box title has its half-leading
+          trimmed away, so that offset misaligns it. Own the alignment instead:
+          `items-start` puts
           the control on the first line, where a 16px control meets a 16px text
           box exactly. */}
       <Field
