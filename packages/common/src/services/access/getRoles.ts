@@ -71,13 +71,12 @@ type RoleCursor = { value: string; id: string };
  * - If no profileId: returns only exposable global roles (profileId IS NULL
  *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
- * - If includeMemberCounts is set (and profileId is present): each role gains
- *   a memberCount — the number of profile members holding that role
+ * - If profileId is present: each role gains a memberCount — the number of
+ *   profile members holding that role
  */
 export const getRoles = async (params?: {
   profileId?: string;
   zoneName?: string;
-  includeMemberCounts?: boolean;
   cursor?: string | null;
   limit?: number;
   dir?: SortDir;
@@ -85,7 +84,6 @@ export const getRoles = async (params?: {
   const {
     profileId = null,
     zoneName,
-    includeMemberCounts,
     cursor,
     limit = 25,
     dir = 'asc',
@@ -127,10 +125,10 @@ export const getRoles = async (params?: {
    * Attaches memberCount to each role via one grouped query over the
    * profileUser -> access role junction, scoped to the profile's members and
    * excluding the global sentinel users (mirroring listProfileUsers).
-   * Only runs when opted in via includeMemberCounts and profileId is present.
+   * Only runs when profileId is present.
    */
   const attachMemberCounts = async (items: Role[]): Promise<Role[]> => {
-    if (!includeMemberCounts || !profileId || items.length === 0) {
+    if (!profileId || items.length === 0) {
       return items;
     }
 

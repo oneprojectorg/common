@@ -444,8 +444,8 @@ describe.concurrent('profile.listRoles', () => {
     expect(result.next).toBeNull();
   });
 
-  describe('includeMemberCounts', () => {
-    it('should include per-role member counts when includeMemberCounts is set', async ({
+  describe('member counts', () => {
+    it('should include per-role member counts by default', async ({
       task,
       onTestFinished,
     }) => {
@@ -486,7 +486,6 @@ describe.concurrent('profile.listRoles', () => {
       // Simple branch (no zoneName)
       const result = await caller.listRoles({
         profileId: profile.id,
-        includeMemberCounts: true,
         limit: 100,
       });
 
@@ -501,7 +500,6 @@ describe.concurrent('profile.listRoles', () => {
       const zoneResult = await caller.listRoles({
         profileId: profile.id,
         zoneName: ZONES.PROFILE.name,
-        includeMemberCounts: true,
         limit: 100,
       });
 
@@ -511,15 +509,6 @@ describe.concurrent('profile.listRoles', () => {
       expect(
         zoneResult.items.find((r) => r.id === emptyRole.id)?.memberCount,
       ).toBe(0);
-
-      // Counts are opt-in: absent without the flag
-      const withoutFlag = await caller.listRoles({
-        profileId: profile.id,
-        limit: 100,
-      });
-      expect(
-        withoutFlag.items.find((r) => r.id === heldRole.id)?.memberCount,
-      ).toBeUndefined();
     });
 
     it('should exclude global sentinel users from member counts', async ({
@@ -582,7 +571,6 @@ describe.concurrent('profile.listRoles', () => {
 
       const result = await caller.listRoles({
         profileId: profile.id,
-        includeMemberCounts: true,
         limit: 100,
       });
 
