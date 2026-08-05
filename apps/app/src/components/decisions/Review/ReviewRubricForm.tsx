@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -460,27 +461,29 @@ function RubricFieldInput({
             >
               <SelectValue placeholder={t('Select an option')} />
             </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => {
-                const label = option.title || String(option.value);
-                return (
-                  <SelectItem
-                    key={String(option.value)}
-                    value={String(option.value)}
-                  >
-                    {option.description ? (
-                      <div className="flex flex-col">
-                        <span>{label}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {option.description}
-                        </span>
-                      </div>
-                    ) : (
-                      label
-                    )}
-                  </SelectItem>
-                );
-              })}
+            <SelectContent className={'max-w-(--anchor-width)'}>
+              <SelectGroup>
+                {options.map((option) => {
+                  const label = option.title || String(option.value);
+                  return (
+                    <SelectItem
+                      key={String(option.value)}
+                      value={String(option.value)}
+                    >
+                      {option.description ? (
+                        <div className="flex flex-col">
+                          <span>{label}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {option.description}
+                          </span>
+                        </div>
+                      ) : (
+                        label
+                      )}
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
             </SelectContent>
           </Select>
         );
@@ -514,24 +517,26 @@ function RubricFieldInput({
             >
               <SelectValue placeholder={t('Select an option')} />
             </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem
-                  key={String(option.value)}
-                  value={String(option.value)}
-                >
-                  {option.title ? (
-                    <div className="flex flex-col">
-                      <span>{option.value}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {option.title}
-                      </span>
-                    </div>
-                  ) : (
-                    String(option.value)
-                  )}
-                </SelectItem>
-              ))}
+            <SelectContent className={'max-w-(--anchor-width)'}>
+              <SelectGroup>
+                {options.map((option) => (
+                  <SelectItem
+                    key={String(option.value)}
+                    value={String(option.value)}
+                  >
+                    {option.title ? (
+                      <div className="flex flex-col">
+                        <span>{option.value}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {option.title}
+                        </span>
+                      </div>
+                    ) : (
+                      String(option.value)
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         );

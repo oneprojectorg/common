@@ -21,6 +21,7 @@ import { Label } from '@op/sense/Label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -166,11 +167,13 @@ export const AssignReviewsDialog = ({
                 <SelectValue placeholder={t('Select a reviewer')} />
               </SelectTrigger>
               <SelectContent>
-                {reviewerItems.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {reviewerItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
