@@ -149,7 +149,10 @@ test.describe('Proposal Editor Bubble Menu', () => {
 
     // -- Step 2: the details field gets its own menu and its own state --------
 
-    await detailsEditor.click();
+    // `focus()`, not `click()`: the menu open over the summary selection floats
+    // across the field below it, so a click aimed at another field can land on
+    // the menu instead. Moving focus directly keeps the step about the editors.
+    await detailsEditor.focus();
     await authenticatedPage.keyboard.type('Details italic text');
     await authenticatedPage.keyboard.press(`${modifier}+a`);
     await expect(bubbleMenu).toBeVisible({ timeout: 5_000 });
@@ -171,7 +174,7 @@ test.describe('Proposal Editor Bubble Menu', () => {
 
     // -- Step 4: reselecting summary reflects its own marks ------------------
 
-    await summaryEditor.click();
+    await summaryEditor.focus();
     await authenticatedPage.keyboard.press(`${modifier}+a`);
     await expect(bubbleMenu).toBeVisible({ timeout: 5_000 });
     await expect(boldButton).toHaveAttribute('aria-pressed', 'true');
