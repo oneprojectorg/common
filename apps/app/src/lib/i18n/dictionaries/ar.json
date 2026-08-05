@@ -1508,5 +1508,6 @@
   "Proposal name": "اسم المقترح",
   "Select a category": "اختر فئة",
   "{count} of {max} characters used": "{count} من {max} حرفًا مستخدمة",
-  "Character limit reached": "تم الوصول إلى الحد الأقصى للأحرف"
+  "Character limit reached": "تم الوصول إلى الحد الأقصى للأحرف",
+  "Hidden from public view": "مخفي عن العرض العام"
 }

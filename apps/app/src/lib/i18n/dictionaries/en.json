@@ -1574,5 +1574,6 @@
   "Proposal name": "Proposal name",
   "Select a category": "Select a category",
   "{count} of {max} characters used": "{count} of {max} characters used",
-  "Character limit reached": "Character limit reached"
+  "Character limit reached": "Character limit reached",
+  "Hidden from public view": "Hidden from public view"
 }

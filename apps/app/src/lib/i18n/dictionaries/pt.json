@@ -1508,5 +1508,6 @@
   "Proposal name": "Nome da proposta",
   "Select a category": "Selecione uma categoria",
   "{count} of {max} characters used": "{count} de {max} caracteres usados",
-  "Character limit reached": "Limite de caracteres atingido"
+  "Character limit reached": "Limite de caracteres atingido",
+  "Hidden from public view": "Oculta ao público"
 }

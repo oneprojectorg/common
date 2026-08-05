@@ -1510,5 +1510,6 @@
   "Proposal name": "Magaca soo jeedinta",
   "Select a category": "Dooro qayb",
   "{count} of {max} characters used": "{count} xaraf oo laga isticmaalay {max}",
-  "Character limit reached": "Xadka xarfaha waa la gaaray"
+  "Character limit reached": "Xadka xarfaha waa la gaaray",
+  "Hidden from public view": "Laga qariyay dadweynaha"
 }

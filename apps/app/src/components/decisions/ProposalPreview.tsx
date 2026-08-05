@@ -2,7 +2,7 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { formatDate } from '@/utils/formatting';
-import { ProposalStatus } from '@op/api/encoders';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalSelection,
@@ -13,13 +13,15 @@ import {
 import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Spinner } from '@op/sense/Spinner';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { Toggle } from '@op/sense/Toggle';
 import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 import {
+  LuBadgeCheck,
   LuBookmark,
-  LuCircleCheck,
+  LuEyeOff,
   LuFlag,
   LuHeart,
   LuMessageCircle,
@@ -99,6 +101,8 @@ export function ProposalPreview({
     (proposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
+  // Draft has its own banner above, so don't also badge it as hidden.
+  const isHidden = !isDraft && proposal.visibility === Visibility.HIDDEN;
 
   const {
     title: originalTitle,
@@ -141,73 +145,82 @@ export function ProposalPreview({
         </Alert>
       )}
 
-      <div className="space-y-4">
-        {selection && (
-          <div className="flex items-center gap-1 text-sm text-success">
-            <LuCircleCheck className="size-4" />
-            <span>{t('Selected')}</span>
-          </div>
-        )}
-
-        {/* Only the author (+ collaborators) and admins ever receive a flagged
-            proposal — everyone else has it filtered out server-side. */}
-        {proposal.isFlagged && (
-          <div className="flex items-center gap-1 text-sm text-destructive">
-            <LuFlag className="size-4" />
-            <span>{t('Hidden from members after a moderation review')}</span>
-          </div>
-        )}
-
-        {/* `!text-title-lg` keeps the pre-migration 28px serif title — sense's
-            `text-display` (Header1's default) is a different step. */}
-        <Header1 className="font-serif !text-title-lg">
-          {title || t('Untitled Proposal')}
-        </Header1>
-
-        {/* Translation attribution */}
-        {translation && (
-          <TranslationNotice
-            sourceLanguageName={translation.sourceLanguageName}
-            onViewOriginal={translation.onViewOriginal}
-          />
-        )}
-
-        <div className="space-y-6">
-          {/* Budget + Categories — stacked, matching the proposal editor layout */}
-          <div className="flex flex-col items-start gap-4">
-            {selection?.allocated != null ? (
-              <div className="flex flex-wrap items-end gap-2">
-                <BudgetDisplay
-                  value={selection.allocated}
-                  className="font-serif text-title-base text-foreground"
-                />
-                {budget && (
-                  <span className="text-sm text-muted-foreground">
-                    {t('{amount} requested', {
-                      amount: formatBudget(budget) ?? '',
-                    })}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <BudgetDisplay
-                value={budget}
-                className="font-serif text-title-base text-foreground"
-              />
+      {/* Figma "Proposal Header" (17924:77055): status row / header / engagement
+          stacked at 24, with the header's own contents at 16. */}
+      <div className="flex flex-col gap-6">
+        {/* Status badges. Unlike ProposalCardView's single-badge
+            `ProposalStatusBadge`, the header shows every applicable state at
+            once, with the longer copy the design spells out. */}
+        {(isHidden || proposal.isFlagged || selection) && (
+          <div className="flex flex-wrap gap-2">
+            {isHidden && (
+              <StatusBadge variant="warning" icon={LuEyeOff}>
+                {t('Hidden from public view')}
+              </StatusBadge>
             )}
-            {categories.length > 0 && (
-              <TagGroup className="max-w-full">
-                {categories.map((category) => (
-                  <Tag
-                    key={category}
-                    className="max-w-full sm:max-w-96 sm:rounded-md"
-                  >
-                    {category}
-                  </Tag>
-                ))}
-              </TagGroup>
+            {/* Only the author (+ collaborators) and admins ever receive a
+                flagged proposal — everyone else has it filtered out
+                server-side. */}
+            {proposal.isFlagged && (
+              <StatusBadge variant="alert" icon={LuFlag}>
+                {t('Hidden from members after a moderation review')}
+              </StatusBadge>
+            )}
+            {selection && (
+              <StatusBadge variant="success" icon={LuBadgeCheck}>
+                {t('Selected')}
+              </StatusBadge>
             )}
           </div>
+        )}
+
+        <div className="flex flex-col gap-4">
+          {/* 30px serif at weight 300 — `text-headline` is 30px at the desktop
+              step, which is where this 544px column lives. */}
+          <Header1 className="font-serif text-headline font-light">
+            {title || t('Untitled Proposal')}
+          </Header1>
+
+          {/* Translation attribution */}
+          {translation && (
+            <TranslationNotice
+              sourceLanguageName={translation.sourceLanguageName}
+              onViewOriginal={translation.onViewOriginal}
+            />
+          )}
+
+          {/* Budget + categories share one tag row. Budget is not nested under
+              the category check — a proposal with a budget and no category still
+              shows it. */}
+          {(budget != null ||
+            selection?.allocated != null ||
+            categories.length > 0) && (
+            <TagGroup className="max-w-full">
+              {(budget != null || selection?.allocated != null) && (
+                <Tag size="lg">
+                  <BudgetDisplay
+                    value={
+                      selection?.allocated != null
+                        ? selection.allocated
+                        : budget
+                    }
+                  />
+                </Tag>
+              )}
+              {selection?.allocated != null && budget && (
+                <Tag size="lg">
+                  {t('{amount} requested', {
+                    amount: formatBudget(budget) ?? '',
+                  })}
+                </Tag>
+              )}
+              {categories.map((category) => (
+                <Tag key={category} size="lg">
+                  {category}
+                </Tag>
+              ))}
+            </TagGroup>
+          )}
 
           {/* Author and submission info */}
           <div className="flex items-center gap-2">
@@ -248,9 +261,9 @@ export function ProposalPreview({
               </>
             )}
           </div>
-
-          <EngagementRow proposal={proposal} engagement={engagement} />
         </div>
+
+        <EngagementRow proposal={proposal} engagement={engagement} />
       </div>
 
       {headerBanner}
@@ -317,7 +330,7 @@ function EngagementRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-1 border-t border-b py-2 text-sm text-muted-foreground',
+        'flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground',
         // Ghost toggles inset their content by 8px at `sm`; pull the row by the
         // same amount so the first icon lines up with the title above it.
         engagement && '-ms-2',

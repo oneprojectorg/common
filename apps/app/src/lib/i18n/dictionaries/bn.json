@@ -1511,5 +1511,6 @@
   "Proposal name": "প্রস্তাবের নাম",
   "Select a category": "একটি বিভাগ নির্বাচন করুন",
   "{count} of {max} characters used": "{max}টির মধ্যে {count}টি অক্ষর ব্যবহৃত",
-  "Character limit reached": "অক্ষরের সীমা পূর্ণ হয়েছে"
+  "Character limit reached": "অক্ষরের সীমা পূর্ণ হয়েছে",
+  "Hidden from public view": "সর্বসাধারণের কাছে লুকানো"
 }
