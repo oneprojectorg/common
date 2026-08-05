@@ -223,7 +223,12 @@ function DecisionOverviewContent({
             </Header3>
             <DecisionPhaseTimeline
               phases={phases}
-              currentPhaseId={isActive ? currentPhaseId : ''}
+              // The timeline needs the real current phase even before its dates
+              // begin: it derives completed/current/upcoming from that index and,
+              // for admins, which phase is advanceable. Blanking it here made
+              // `currentIndex` -1, so nothing was advanceable and an admin had no
+              // way to move an instance forward before its start date.
+              currentPhaseId={currentPhaseId}
               instanceId={instanceId}
               isAdmin={instance.access?.admin}
               decisionSlug={decisionSlug}
