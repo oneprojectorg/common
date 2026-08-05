@@ -148,12 +148,13 @@ function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="field-label"
       className={cn(
-        // Inside a box, trim the half-leading above the text so the row's 12px
-        // inset measures to the cap height, not to the top of the line box.
-        // `-mt-1` is that half-leading at this step ((24 - 16) / 2), and it beats
-        // `leading-none`, which also collapsed the spacing between wrapped lines.
-        // `text-box-trim: trim-start` is the real answer but isn't Baseline yet.
-        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-mt-1',
+        // Inside a box, trim the half-leading off BOTH edges so the line box hugs
+        // the text: the row's 12px inset then measures to the cap height, and a
+        // single-line box still centres against its control. Trimming only the top
+        // (`-mt-1`) shifted the label off-centre in the common `items-center` case.
+        // `-my-1` is that half-leading at this step ((24 - 16) / 2); the real
+        // expression is `text-box: trim-both cap alphabetic`, which isn't Baseline.
+        'flex w-fit items-center gap-1 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-my-1',
         className,
       )}
       {...props}
