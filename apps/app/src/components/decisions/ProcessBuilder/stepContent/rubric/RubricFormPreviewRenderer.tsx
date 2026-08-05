@@ -6,13 +6,13 @@ import {
   parseSchemaOptions,
 } from '@op/common/client';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { FieldHeader } from '../../../forms/FieldHeader';
+import { RubricCriterionSelect } from '../../../forms/RubricCriterionSelect';
 import type { FieldDescriptor } from '../../../forms/types';
 
 /** Yes/no field: `type: "string"` with exactly `"yes"` and `"no"` oneOf entries. */
@@ -43,7 +43,7 @@ function RationalePlaceholder() {
   const t = useTranslations();
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 text-base text-primary-teal">
+    <div className="pointer-events-none flex items-center gap-1 px-2 py-1.5 text-base text-primary-teal select-none">
       <LuPlus className="size-4" />
       {t('Add Note')}
     </div>
@@ -99,10 +99,12 @@ function RubricField({ field }: { field: FieldDescriptor }) {
       }
 
       // Non-scored dropdowns (single-select included) fall through to the
-      // generic pill select placeholder below, with no points badge.
-      const badge = isScoredField(schema)
-        ? `${schema.maximum} ${t('pts')}`
-        : undefined;
+      // generic pill select below, with no points badge.
+      const scored = isScoredField(schema);
+      const badge = scored ? `${schema.maximum} ${t('pts')}` : undefined;
+      const optionsKey = parseSchemaOptions(schema)
+        .map((option) => String(option.value))
+        .join('|');
 
       return (
         <div className="flex flex-col gap-3">
@@ -112,15 +114,15 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             badge={badge}
             className="gap-1"
           />
-          <Select
+          <RubricCriterionSelect
+            key={optionsKey}
+            schema={schema}
+            kind={scored ? 'scored' : 'single_select'}
             variant="pill"
             size="medium"
-            placeholder={t('Select option')}
             selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
             className="w-fit max-w-full"
-          >
-            {[]}
-          </Select>
+          />
         </div>
       );
     }
@@ -149,9 +151,10 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 }
 
 /**
- * Static read-only preview of rubric fields.
- * Shows field labels and placeholder inputs — no interactivity.
- * Rationale placeholder is rendered under every criterion.
+ * Preview of rubric fields for the builder sidebar.
+ * Dropdown, yes/no, and overall-recommendation controls are fully
+ * interactive (uncontrolled, never persisted) so builders can see and try
+ * the options they've configured. The rationale placeholder stays inert.
  */
 export function RubricFormPreviewRenderer({
   fields,
@@ -159,7 +162,7 @@ export function RubricFormPreviewRenderer({
   fields: FieldDescriptor[];
 }) {
   return (
-    <div className="pointer-events-none flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       {fields.map((field) => (
         <div key={field.key} className="flex flex-col gap-4">
           <RubricField field={field} />

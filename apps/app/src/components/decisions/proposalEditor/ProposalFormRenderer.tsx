@@ -26,6 +26,10 @@ import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
 import {
+  PreviewDropdownField,
+  PreviewMultiSelectField,
+} from './PreviewProposalFields';
+import {
   ReadonlyBudgetField,
   ReadonlyDropdownField,
   ReadonlyTextField,
@@ -218,6 +222,27 @@ function renderField(
     const isMultipleSelection = schemaAllowsMultipleSelection(schema);
 
     if (isReadonlyMode) {
+      if (mode === 'preview-template') {
+        // District categories are auto-assigned from the proposal's
+        // location, so they're hidden here too (see the same filter below).
+        const selectableOptions = options.filter(
+          (opt) => !isDistrictCategoryLabel(opt.label),
+        );
+
+        return isMultipleSelection ? (
+          <PreviewMultiSelectField
+            options={selectableOptions}
+            placeholder={t('Select category')}
+          />
+        ) : (
+          <PreviewDropdownField
+            options={selectableOptions}
+            required={field.required}
+            placeholder={t('Select category')}
+          />
+        );
+      }
+
       const selectedValues = getPreviewCategories({
         mode,
         draftValue: draft.category,
@@ -404,6 +429,18 @@ function renderField(
       const options = extractOptions(schema);
 
       if (isReadonlyMode) {
+        if (mode === 'preview-template') {
+          return (
+            <PreviewDropdownField
+              options={options}
+              title={schema.title}
+              description={schema.description}
+              required={field.required}
+              placeholder={t('Select option')}
+            />
+          );
+        }
+
         const selectedValue = getPreviewText({
           mode,
           draftValue: (draft[key] as string | null) ?? null,

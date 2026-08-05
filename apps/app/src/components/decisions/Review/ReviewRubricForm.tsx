@@ -10,7 +10,6 @@ import {
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
@@ -20,6 +19,7 @@ import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { FieldHeader } from '../forms/FieldHeader';
+import { RubricCriterionSelect } from '../forms/RubricCriterionSelect';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
@@ -351,88 +351,33 @@ function RubricFieldInput({
       }
 
       if (criterionType === 'single_select') {
-        const options = parseSchemaOptions(field.schema);
         return (
-          <Select
-            aria-label={field.schema.title}
-            placeholder={t('Select an option')}
+          <RubricCriterionSelect
+            schema={field.schema}
+            kind="single_select"
             selectedKey={typeof value === 'string' ? value : null}
             onSelectionChange={(key) => {
               onChange(key === null ? null : String(key));
             }}
-            className="w-full"
-          >
-            {options.map((option) => {
-              const label = option.title || String(option.value);
-              return (
-                <SelectItem
-                  key={String(option.value)}
-                  id={String(option.value)}
-                  textValue={label}
-                >
-                  {option.description ? (
-                    <div className="flex flex-col">
-                      <span>{label}</span>
-                      <span className="text-sm text-neutral-gray4">
-                        {option.description}
-                      </span>
-                    </div>
-                  ) : (
-                    label
-                  )}
-                </SelectItem>
-              );
-            })}
-          </Select>
+          />
         );
       }
 
       if (criterionType === 'scored') {
-        // Highest score first (to match the process builder); each option
-        // renders the score with its description below so reviewers can
-        // tell options apart on long scales.
-        const options = [...parseSchemaOptions(field.schema)].sort(
-          (a, b) => Number(b.value) - Number(a.value),
-        );
         const selectedKey =
           typeof value === 'string' || typeof value === 'number'
             ? String(value)
             : null;
 
         return (
-          <Select
-            aria-label={field.schema.title}
-            placeholder={t('Select an option')}
+          <RubricCriterionSelect
+            schema={field.schema}
+            kind="scored"
             selectedKey={selectedKey}
             onSelectionChange={(key) => {
               onChange(parseSelectedValue(key, field.schema));
             }}
-            className="w-full"
-          >
-            {options.map((option) => {
-              const triggerLabel = option.title
-                ? `${option.value} - ${option.title}`
-                : String(option.value);
-              return (
-                <SelectItem
-                  key={String(option.value)}
-                  id={String(option.value)}
-                  textValue={triggerLabel}
-                >
-                  {option.title ? (
-                    <div className="flex flex-col">
-                      <span>{option.value}</span>
-                      <span className="text-sm text-neutral-gray4">
-                        {option.title}
-                      </span>
-                    </div>
-                  ) : (
-                    String(option.value)
-                  )}
-                </SelectItem>
-              );
-            })}
-          </Select>
+          />
         );
       }
 

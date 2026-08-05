@@ -1,14 +1,11 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import { Select, SelectItem } from '@op/ui/Select';
-import { useEffect, useRef, type Key } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { DropdownFieldSelect } from '@/components/form/DropdownFieldSelect';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-
-const EMPTY_KEY = '__none__';
 
 interface CollaborativeDropdownFieldProps {
   options: Array<{ value: string; label: string }>;
@@ -37,7 +34,6 @@ export function CollaborativeDropdownField({
   allowEmpty = false,
   required = false,
 }: CollaborativeDropdownFieldProps) {
-  const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
 
   const [syncedText, setSyncedText] = useCollaborativeFragment(
@@ -64,45 +60,14 @@ export function CollaborativeDropdownField({
     onChangeRef.current?.(selectedValue);
   }, [selectedValue]);
 
-  if (options.length === 0) {
-    return null;
-  }
-
-  const handleSelectionChange = (key: Key | null) => {
-    if (key === null) {
-      setSelectedValue(null);
-      return;
-    }
-    const value = String(key);
-    if (value === EMPTY_KEY) {
-      setSelectedValue(null);
-    } else {
-      setSelectedValue(value);
-    }
-  };
-
   return (
-    <Select
-      variant="pill"
-      size="medium"
-      isRequired={required}
-      placeholder={placeholder ?? t('Select option')}
+    <DropdownFieldSelect
+      options={options}
       selectedKey={selectedValue}
-      onSelectionChange={handleSelectionChange}
-      selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-      className="w-fit max-w-full"
-      popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
-    >
-      {allowEmpty && (
-        <SelectItem className="min-w-fit" key={EMPTY_KEY} id={EMPTY_KEY}>
-          {t('None')}
-        </SelectItem>
-      )}
-      {options.map((opt) => (
-        <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-          {opt.label}
-        </SelectItem>
-      ))}
-    </Select>
+      onSelectionChange={setSelectedValue}
+      placeholder={placeholder}
+      allowEmpty={allowEmpty}
+      required={required}
+    />
   );
 }
