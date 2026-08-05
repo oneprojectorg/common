@@ -258,6 +258,21 @@ function ProposalEditorInner({
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
 
+  // `preview-current` renders `proposal.htmlContent`, which the server generates
+  // from TipTap Cloud when `getProposal` runs — so it goes stale the moment the
+  // document changes, and after a restore it would show the pre-restore content
+  // under the "Current version" label. Refetch as the panel opens: it's a
+  // deliberate, infrequent action, and by then the revert has reached Cloud.
+  useEffect(() => {
+    if (!versionHistoryOpen) {
+      return;
+    }
+
+    void utils.decision.getProposal.invalidate({
+      profileId: proposal.profileId,
+    });
+  }, [versionHistoryOpen, utils, proposal.profileId]);
+
   useEffect(() => {
     if (!provider || !isSynced || isPreviewMode) {
       return;
