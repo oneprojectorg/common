@@ -146,6 +146,7 @@ export * from './emails/PhaseTransitionEmail';
 export * from './emails/VoteSubmittedEmail';
 export * from './emails/RevisionResubmittedEmail';
 export * from './emails/RevisionRequestedEmail';
+export * from './emails/RevisionRequestedConfirmationEmail';
 export * from './emails/DecisionUpdateNotificationEmail';
 export * from './emails/ContentFlaggedEmail';
 
