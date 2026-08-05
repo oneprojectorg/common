@@ -61,16 +61,27 @@ interface ProposalFormRendererProps {
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
-  /** Rendering mode for collaborative editing or readonly previews. */
-  mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  /**
+   * Rendering mode for collaborative editing or readonly previews.
+   *
+   * `preview-current` is the version-history panel's default selection ("Current
+   * version"): the same readonly components as `preview-version`, fed from the
+   * draft and the proposal's stored content instead of a snapshot payload. It
+   * exists so the panel never leaves a Yjs-bound editor mounted — flipping those
+   * to non-editable still leaves every write path live.
+   */
+  mode?:
+    | 'edit-collaborative'
+    | 'preview-version'
+    | 'preview-current'
+    | 'preview-template';
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
   /**
-   * Renders the collaborative fields non-interactively while still showing the
-   * live document (used while the version-history panel is open). Independent of
-   * `mode`, which swaps in the readonly snapshot/draft components instead.
+   * The proposal's stored per-field content, used by `preview-current` for the
+   * rich-text fields (the scalars come from `draft`).
    */
-  readOnly?: boolean;
+  currentFieldContents?: Record<string, string | string[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +130,10 @@ function getPreviewText({
   draftValue,
   previewContent,
 }: {
-  mode: 'preview-version' | 'preview-template';
+  mode: Exclude<
+    ProposalFormRendererProps['mode'],
+    'edit-collaborative' | undefined
+  >;
   draftValue: string | null | undefined;
   previewContent: JSONContent | null | undefined;
 }): string | null {
@@ -136,7 +150,10 @@ function getPreviewCategories({
   draftValue,
   previewContent,
 }: {
-  mode: 'preview-version' | 'preview-template';
+  mode: Exclude<
+    ProposalFormRendererProps['mode'],
+    'edit-collaborative' | undefined
+  >;
   draftValue: string[];
   previewContent: JSONContent | null | undefined;
 }): string[] {
@@ -152,7 +169,10 @@ function getPreviewBudgetValue({
   draftValue,
   previewContent,
 }: {
-  mode: 'preview-version' | 'preview-template';
+  mode: Exclude<
+    ProposalFormRendererProps['mode'],
+    'edit-collaborative' | undefined
+  >;
   draftValue: ProposalDraftFields['budget'] | null | undefined;
   previewContent: JSONContent | null | undefined;
 }): string | null {
@@ -172,6 +192,31 @@ function getPreviewBudgetValue({
   });
 }
 
+/**
+ * Content for a readonly rich-text field: the snapshot payload when previewing a
+ * past version, the proposal's stored HTML when previewing the current one.
+ * `RichTextViewer` accepts either shape.
+ */
+function resolveReadonlyContent({
+  mode,
+  previewContent,
+  currentContent,
+}: {
+  mode: NonNullable<ProposalFormRendererProps['mode']>;
+  previewContent: JSONContent | null | undefined;
+  currentContent: string | string[] | undefined;
+}): JSONContent | string | null {
+  if (mode === 'preview-version') {
+    return previewContent ?? null;
+  }
+
+  if (mode === 'preview-current' && typeof currentContent === 'string') {
+    return currentContent;
+  }
+
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Field renderer
 // ---------------------------------------------------------------------------
@@ -186,9 +231,9 @@ function renderField(
   decisionProfileId: string | null,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
-  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
+  mode: NonNullable<ProposalFormRendererProps['mode']>,
   previewVersionFragmentContents: Record<string, JSONContent | null>,
-  readOnly = false,
+  currentFieldContents: Record<string, string | string[]>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
@@ -220,7 +265,6 @@ function renderField(
         maxLength={schema.maxLength}
         placeholder={t('Untitled Proposal')}
         onChange={(value) => onFieldChange('title', value)}
-        editable={!readOnly}
       />
     );
   }
@@ -273,7 +317,6 @@ function renderField(
           title={categoryLabel}
           description={schema.description ?? t('Select all that apply')}
           required={field.required}
-          readOnly={readOnly}
         />
       );
     }
@@ -288,7 +331,6 @@ function renderField(
         description={schema.description}
         allowEmpty={!field.required}
         required={field.required}
-        readOnly={readOnly}
       />
     );
   }
@@ -321,7 +363,6 @@ function renderField(
         maxAmount={schema.maximum}
         initialValue={draft.budget}
         onChange={(value) => onFieldChange('budget', value)}
-        disabled={readOnly}
       />
     );
   }
@@ -339,9 +380,11 @@ function renderField(
             title={schema.title}
             description={schema.description}
             required={field.required}
-            content={
-              mode === 'preview-version' ? (previewContent ?? null) : null
-            }
+            content={resolveReadonlyContent({
+              mode,
+              previewContent,
+              currentContent: currentFieldContents[key],
+            })}
             placeholder={placeholder}
             multiline={format === 'long-text'}
           />
@@ -360,7 +403,6 @@ function renderField(
           onChange={(html) => onFieldChange(key, html)}
           onEditorFocus={onEditorFocus}
           onEditorBlur={onEditorBlur}
-          editable={!readOnly}
         />
       );
     }
@@ -391,7 +433,6 @@ function renderField(
           maxAmount={schema.maximum}
           initialValue={null}
           onChange={(value) => onFieldChange(key, value)}
-          disabled={readOnly}
         />
       );
     }
@@ -475,7 +516,6 @@ function renderField(
           description={schema.description}
           allowEmpty={!field.required}
           required={field.required}
-          readOnly={readOnly}
         />
       );
     }
@@ -510,7 +550,7 @@ export function ProposalFormRenderer({
   onEditorBlur,
   mode = 'edit-collaborative',
   previewVersionFragmentContents = {},
-  readOnly = false,
+  currentFieldContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
   const gisMapsEnabled = useFeatureFlag('gis_maps');
@@ -533,7 +573,7 @@ export function ProposalFormRenderer({
       t,
       mode,
       previewVersionFragmentContents,
-      readOnly,
+      currentFieldContents,
       onEditorFocus,
       onEditorBlur,
     );

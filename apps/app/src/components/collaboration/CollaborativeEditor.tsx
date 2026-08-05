@@ -10,7 +10,7 @@ import Snapshot from '@tiptap-pro/extension-snapshot';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import type { Editor, Extensions } from '@tiptap/react';
-import { forwardRef, useEffect, useImperativeHandle, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,12 +30,6 @@ export interface CollaborativeEditorProps {
   onEditorReady?: (editor: Editor) => void;
   className?: string;
   editorClassName?: string;
-  /**
-   * When false the editor renders the live collaborative document but refuses
-   * edits. Content stays scrollable and selectable — no `content` is passed, so
-   * the Yjs binding remains the only writer of the document.
-   */
-  editable?: boolean;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
   /**
@@ -60,7 +54,6 @@ export const CollaborativeEditor = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
-      editable = true,
       required = false,
       ariaLabelledBy,
       ariaDescribedBy,
@@ -94,25 +87,10 @@ export const CollaborativeEditor = forwardRef<
       placeholder: resolvedPlaceholder,
       editorClassName,
       onEditorReady,
-      editable,
       required,
       ariaLabelledBy,
       ariaDescribedBy,
     });
-
-    // `useEditor` only honours `editable` when it creates the instance: on every
-    // later render it re-applies options with `editable: editor.isEditable`, so a
-    // changed prop is dropped. Flip it explicitly instead. This touches nothing
-    // but the edit flag — the Yjs binding and document are untouched.
-    //
-    // `emitUpdate: false` matters: the document did not change, and a synthetic
-    // `update` would run every field's onChange and dirty the draft just from
-    // opening the panel.
-    useEffect(() => {
-      if (editor && editor.isEditable !== editable) {
-        editor.setEditable(editable, false);
-      }
-    }, [editor, editable]);
 
     useImperativeHandle(
       ref,

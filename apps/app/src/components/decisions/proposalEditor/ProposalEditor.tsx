@@ -104,9 +104,9 @@ export function ProposalEditor({
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
   /**
-   * True while the version-history aside is open. The main pane then renders the
-   * live document as a non-editable preview so it can't be edited behind the
-   * panel — the same components, made non-interactive.
+   * True while the version-history aside is open. The main pane then switches to
+   * the same readonly preview components a past version uses ("Current version"),
+   * so no Yjs-bound editor stays mounted behind the panel.
    */
   versionHistoryOpen?: boolean;
   revisionRequest?: ProposalReviewRequest | null;
@@ -212,8 +212,8 @@ function ProposalEditorInner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomFormModal, setShowCustomFormModal] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
-  // Opening the version-history panel freezes the main pane too: it keeps showing
-  // the live collaborative document (not a snapshot), just not editable.
+  // Opening the version-history panel freezes the main pane too. Drives the
+  // attachment section's readonly state; the fields switch via `mode` below.
   const isReadOnlyPreview = isPreviewMode || versionHistoryOpen;
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
@@ -492,9 +492,18 @@ function ProposalEditorInner({
         onFieldChange={handleFieldChange}
         onEditorFocus={onEditorFocus}
         onEditorBlur={onEditorBlur}
-        mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
+        // Version history open with nothing selected = "Current version": the
+        // same readonly components as a past version, so no Yjs-bound editor is
+        // mounted while the panel is up.
+        mode={
+          isPreviewMode
+            ? 'preview-version'
+            : versionHistoryOpen
+              ? 'preview-current'
+              : 'edit-collaborative'
+        }
+        currentFieldContents={proposal.htmlContent ?? undefined}
         previewVersionFragmentContents={versionPreview?.fragmentContents}
-        readOnly={isReadOnlyPreview}
       />
 
       <div className="border-t pt-8">

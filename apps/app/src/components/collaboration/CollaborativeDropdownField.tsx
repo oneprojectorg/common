@@ -26,13 +26,6 @@ interface CollaborativeDropdownFieldProps {
   allowEmpty?: boolean;
   /** When true, renders the asterisk and sets `required` on the radio group. */
   required?: boolean;
-  /**
-   * Renders the group non-interactive while keeping the legend, options, and the
-   * current selection visible. `readOnly` rather than `disabled`: the options
-   * stay undimmed and focusable, so a previewed selection is still legible.
-   * base-ui propagates it to every radio item.
-   */
-  readOnly?: boolean;
 }
 
 /**
@@ -54,7 +47,6 @@ export function CollaborativeDropdownField({
   description,
   allowEmpty = false,
   required = false,
-  readOnly = false,
 }: CollaborativeDropdownFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -112,7 +104,6 @@ export function CollaborativeDropdownField({
         aria-labelledby={legendId}
         aria-required={required || undefined}
         required={required}
-        readOnly={readOnly}
         value={selectedValue ?? EMPTY_KEY}
         onValueChange={handleValueChange}
         className="w-fit max-w-full"

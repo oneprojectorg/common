@@ -100,7 +100,7 @@ export function ProposalEditorAside({
         {/* Keeps SheetHeader's `pe-12`, which reserves room for the built-in
             absolutely-positioned close button. `border-b` matches the mobile
             header's rhythm. */}
-        <SheetHeader className="flex-row items-center justify-between border-b">
+        <SheetHeader>
           <SheetTitle>
             <bdi>{title}</bdi>
           </SheetTitle>

@@ -45,14 +45,20 @@ export function ReadonlyTextField({
   title?: string;
   description?: string;
   required?: boolean;
-  content: JSONContent | null;
+  /** Snapshot JSON when previewing a past version, stored HTML for the current one. */
+  content: JSONContent | string | null;
   placeholder: string;
   multiline: boolean;
 }) {
   // Force React to remount the TipTap viewer when content changes, since
   // useEditor only uses `content` on initialization.
   const contentKey = useMemo(
-    () => (content ? JSON.stringify(content) : 'empty'),
+    () =>
+      content
+        ? typeof content === 'string'
+          ? content
+          : JSON.stringify(content)
+        : 'empty',
     [content],
   );
 

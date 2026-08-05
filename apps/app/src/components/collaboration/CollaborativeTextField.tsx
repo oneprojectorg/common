@@ -3,7 +3,6 @@
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
-import { cn } from '@op/sense/lib/utils';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 
@@ -27,8 +26,6 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * @param onChange - Called with the editor's HTML content on every update.
  * @param onEditorFocus - Called with the editor instance when it gains focus.
  * @param onEditorBlur - Called with the editor instance when it loses focus.
- * @param editable - When false the live document still renders (and stays
- *   selectable) but can't be edited.
  */
 interface CollaborativeTextFieldProps {
   fragmentName: string;
@@ -41,7 +38,6 @@ interface CollaborativeTextFieldProps {
   onChange?: (html: string) => void;
   onEditorFocus?: (editor: Editor) => void;
   onEditorBlur?: (editor: Editor) => void;
-  editable?: boolean;
 }
 
 /**
@@ -64,7 +60,6 @@ export function CollaborativeTextField({
   onChange,
   onEditorFocus,
   onEditorBlur,
-  editable = true,
 }: CollaborativeTextFieldProps) {
   const t = useTranslations();
   const [charCount, setCharCount] = useState(0);
@@ -122,15 +117,8 @@ export function CollaborativeTextField({
       )}
       {/* focus-within, not InputGroup's has-[input:focus-visible] rules: the
           control is a contenteditable, not an <input>. The editable's own ring
-          is switched off so only the box lights up. A non-editable box keeps the
-          content selectable, so it must not advertise a focus ring. */}
-      <InputGroup
-        className={cn(
-          'h-auto flex-col items-stretch',
-          editable &&
-            'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
-        )}
-      >
+          is switched off so only the box lights up. */}
+      <InputGroup className="h-auto flex-col items-stretch focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
         <CollaborativeEditor
           field={fragmentName}
           extensions={extensions}
@@ -138,7 +126,6 @@ export function CollaborativeTextField({
           onEditorReady={handleEditorReady}
           className="w-full"
           editorClassName={`px-3 py-2.5 focus-visible:ring-0 ${multiline ? 'min-h-32' : 'min-h-8'}`}
-          editable={editable}
           required={required}
           ariaLabelledBy={title ? labelId : undefined}
           ariaDescribedBy={describedBy}
