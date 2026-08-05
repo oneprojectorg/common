@@ -10,7 +10,13 @@ import {
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
-import { Field, FieldLabel } from '@op/sense/Field';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import {
@@ -22,12 +28,11 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
@@ -164,23 +169,10 @@ function MyReviewForm() {
           ))}
 
           {isFeedbackOpen ? (
-            <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
-              <FieldHeader
-                title={t('Feedback to Author')}
-                description={t(
-                  'Shared anonymously with the author after the review phase',
-                )}
-                className="gap-1"
-              />
-
-              <Textarea
-                aria-label={t('Feedback to Author')}
-                className="[unicode-bidi:plaintext]"
+            <section className="border-b pb-6">
+              <FeedbackToAuthorField
                 value={overallComment}
-                onChange={(event) =>
-                  handleOverallCommentChange(event.target.value)
-                }
-                rows={3}
+                onChange={handleOverallCommentChange}
               />
             </section>
           ) : (
@@ -202,7 +194,13 @@ function MyReviewForm() {
 }
 
 /**
- * Render one rubric criterion with an always-on rationale textarea below.
+ * Render one rubric criterion as a sense `Field`: label, optional description,
+ * then the control — with the reviewer's note as its own labelled field below.
+ *
+ * Only text inputs get a `<label for>`; a Select trigger, Switch and RadioGroup
+ * are buttons or groups, which `htmlFor` cannot address, so those are named by
+ * `aria-labelledby` against a `FieldTitle` (a div styled as a label rather than
+ * an orphan `<label>`).
  */
 function RubricCriterionSection({
   field,
@@ -222,36 +220,68 @@ function RubricCriterionSection({
   rationalePlaceholder: string;
 }) {
   const t = useTranslations();
+  const controlId = useId();
+  const labelId = useId();
+  const descriptionId = useId();
+
   const criterionType = inferCriterionType(field.schema);
   const scoreLabel = maxPoints > 0 ? `${maxPoints} ${t('pts')}` : null;
   const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
+  const isTextInput =
+    field.format === 'short-text' || field.format === 'long-text';
+  const describedBy = field.schema.description ? descriptionId : undefined;
+
+  const label = (
+    <>
+      {field.schema.title}
+      {badgeLabel ? (
+        <span className="text-sm font-normal text-muted-foreground">
+          {badgeLabel}
+        </span>
+      ) : null}
+    </>
+  );
+
+  const control = (
+    <RubricFieldInput
+      field={field}
+      value={value}
+      onChange={onChange}
+      controlId={controlId}
+      labelledBy={isTextInput ? undefined : labelId}
+      describedBy={describedBy}
+    />
+  );
 
   return (
-    <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
+    <section className="border-b pb-6">
+      {/* Yes/no reads as a setting: prompt on the left, switch on the right. */}
       {criterionType === 'yes_no' ? (
-        <>
-          <FieldHeader title={field.schema.title} badge={badgeLabel} />
-
-          <div className="flex items-start gap-3">
-            {field.schema.description && (
-              <p className="flex-1 text-sm text-neutral-charcoal">
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldTitle id={labelId}>{label}</FieldTitle>
+            {field.schema.description ? (
+              <FieldDescription id={descriptionId}>
                 {field.schema.description}
-              </p>
-            )}
-
-            <RubricFieldInput field={field} value={value} onChange={onChange} />
-          </div>
-        </>
+              </FieldDescription>
+            ) : null}
+          </FieldContent>
+          {control}
+        </Field>
       ) : (
-        <>
-          <FieldHeader
-            title={field.schema.title}
-            description={field.schema.description}
-            badge={badgeLabel}
-          />
-
-          <RubricFieldInput field={field} value={value} onChange={onChange} />
-        </>
+        <Field>
+          {isTextInput ? (
+            <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
+          ) : (
+            <FieldTitle id={labelId}>{label}</FieldTitle>
+          )}
+          {field.schema.description ? (
+            <FieldDescription id={descriptionId}>
+              {field.schema.description}
+            </FieldDescription>
+          ) : null}
+          {control}
+        </Field>
       )}
 
       <RubricRationaleField
@@ -264,8 +294,8 @@ function RubricCriterionSection({
 }
 
 /**
- * Optional long-text note under each criterion: collapsed behind an
- * "Add note" button until the reviewer opens it (or a value already exists).
+ * Optional note under each criterion: collapsed behind an "Add note" button
+ * until the reviewer opens it (or a value already exists).
  */
 function RubricRationaleField({
   value,
@@ -277,6 +307,7 @@ function RubricRationaleField({
   placeholder: string;
 }) {
   const t = useTranslations();
+  const noteId = useId();
   const [isOpen, setIsOpen] = useState(value.length > 0);
 
   if (!isOpen) {
@@ -284,7 +315,7 @@ function RubricRationaleField({
       <Button
         variant="link"
         size="sm"
-        className="h-auto self-start px-2 py-1.5 leading-normal text-primary-tealBlack"
+        className="mt-4 h-auto self-start px-2 py-1.5 leading-normal"
         onClick={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
@@ -293,20 +324,49 @@ function RubricRationaleField({
     );
   }
 
-  const label = t('Note');
-
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-sm text-neutral-black">{label}</span>
+    <Field className="mt-4">
+      <FieldLabel htmlFor={noteId}>{t('Note')}</FieldLabel>
       <Textarea
-        aria-label={label}
+        id={noteId}
         className="min-h-20 [unicode-bidi:plaintext]"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         rows={3}
       />
-    </div>
+    </Field>
+  );
+}
+
+/**
+ * Feedback shared with the author after the review phase — one field for the
+ * whole review rather than per criterion.
+ */
+function FeedbackToAuthorField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const t = useTranslations();
+  const fieldId = useId();
+
+  return (
+    <Field>
+      <FieldLabel htmlFor={fieldId}>{t('Feedback to Author')}</FieldLabel>
+      <FieldDescription>
+        {t('Shared anonymously with the author after the review phase')}
+      </FieldDescription>
+      <Textarea
+        id={fieldId}
+        className="[unicode-bidi:plaintext]"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={3}
+      />
+    </Field>
   );
 }
 
@@ -317,10 +377,17 @@ function RubricFieldInput({
   field,
   value,
   onChange,
+  controlId,
+  labelledBy,
+  describedBy,
 }: {
   field: FieldDescriptor;
   value: unknown;
   onChange: (value: unknown) => void;
+  controlId: string;
+  /** Set for controls a `<label for>` can't address (buttons, groups). */
+  labelledBy?: string;
+  describedBy?: string;
 }) {
   const t = useTranslations();
 
@@ -332,7 +399,9 @@ function RubricFieldInput({
         return (
           <Switch
             size="sm"
-            aria-label={field.schema.title}
+            id={controlId}
+            aria-labelledby={labelledBy}
+            aria-describedby={describedBy}
             checked={value === 'yes'}
             onCheckedChange={(checked) => {
               onChange(checked ? 'yes' : 'no');
@@ -345,7 +414,8 @@ function RubricFieldInput({
         const recOptions = parseSchemaOptions(field.schema);
         return (
           <RadioGroup
-            aria-label={field.schema.title}
+            aria-labelledby={labelledBy}
+            aria-describedby={describedBy}
             value={typeof value === 'string' ? value : undefined}
             onValueChange={onChange}
             className="flex flex-wrap items-center gap-x-6 gap-y-2"
@@ -382,7 +452,12 @@ function RubricFieldInput({
               onChange(next === null ? null : String(next));
             }}
           >
-            <SelectTrigger aria-label={field.schema.title} className="w-full">
+            <SelectTrigger
+              id={controlId}
+              aria-labelledby={labelledBy}
+              aria-describedby={describedBy}
+              className="w-full"
+            >
               <SelectValue placeholder={t('Select an option')} />
             </SelectTrigger>
             <SelectContent>
@@ -396,7 +471,7 @@ function RubricFieldInput({
                     {option.description ? (
                       <div className="flex flex-col">
                         <span>{label}</span>
-                        <span className="text-sm text-neutral-gray4">
+                        <span className="text-sm text-muted-foreground">
                           {option.description}
                         </span>
                       </div>
@@ -431,7 +506,12 @@ function RubricFieldInput({
               onChange(parseSelectedValue(next, field.schema));
             }}
           >
-            <SelectTrigger aria-label={field.schema.title} className="w-full">
+            <SelectTrigger
+              id={controlId}
+              aria-labelledby={labelledBy}
+              aria-describedby={describedBy}
+              className="w-full"
+            >
               <SelectValue placeholder={t('Select an option')} />
             </SelectTrigger>
             <SelectContent>
@@ -443,7 +523,7 @@ function RubricFieldInput({
                   {option.title ? (
                     <div className="flex flex-col">
                       <span>{option.value}</span>
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {option.title}
                       </span>
                     </div>
@@ -463,7 +543,8 @@ function RubricFieldInput({
     case 'long-text':
       return (
         <Textarea
-          aria-label={field.schema.title}
+          id={controlId}
+          aria-describedby={describedBy}
           className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
@@ -475,7 +556,8 @@ function RubricFieldInput({
     case 'short-text':
       return (
         <Input
-          aria-label={field.schema.title}
+          id={controlId}
+          aria-describedby={describedBy}
           className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
