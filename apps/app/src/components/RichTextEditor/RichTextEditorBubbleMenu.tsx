@@ -26,7 +26,6 @@ import {
   LuLink,
   LuLink2,
   LuList,
-  LuChevronRight,
   LuListOrdered,
   LuQuote,
   LuSave,
@@ -104,7 +103,6 @@ export function RichTextEditorBubbleMenu({
             bulletList: e.isActive('bulletList'),
             orderedList: e.isActive('orderedList'),
             blockquote: e.isActive('blockquote'),
-            details: e.isActive('details'),
             link: e.isActive('link'),
             alignLeft: e.isActive({ textAlign: 'left' }),
             alignCenter: e.isActive({ textAlign: 'center' }),
@@ -246,40 +244,6 @@ export function RichTextEditorBubbleMenu({
         icon: LuAlignRight,
         isActive: activeStates.alignRight,
         toggle: () => editor.chain().focus().setTextAlign('right').run(),
-      },
-      {
-        key: 'details',
-        label: t('Collapsible'),
-        icon: LuChevronRight,
-        isActive: activeStates.details,
-        // The Details extension has no toggleDetails — branch on active state
-        toggle: () => {
-          if (activeStates.details) {
-            editor.chain().focus().unsetDetails().run();
-            return;
-          }
-
-          editor.chain().focus().setDetails().run();
-
-          // Details is `isolating` with no gap cursor, so a details at the end
-          // of the doc traps the caret. Insert a trailing paragraph right after
-          // it (when nothing follows) so the user can type below it.
-          const { state } = editor;
-          const { $from } = state.selection;
-          for (let depth = $from.depth; depth > 0; depth--) {
-            if ($from.node(depth).type.name === 'details') {
-              const after = $from.after(depth);
-              if (!state.doc.nodeAt(after)) {
-                editor
-                  .chain()
-                  .insertContentAt(after, { type: 'paragraph' })
-                  .run();
-              }
-
-              break;
-            }
-          }
-        },
       },
     ],
   ];
