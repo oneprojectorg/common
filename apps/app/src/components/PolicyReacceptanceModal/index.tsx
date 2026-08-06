@@ -2,12 +2,11 @@
 
 import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
+import { Header1 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { Header1 } from '@op/ui/Header';
-import { Modal, ModalBody } from '@op/ui/Modal';
-import { Surface } from '@op/ui/Surface';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
@@ -66,22 +65,30 @@ const PolicyReacceptanceModalContent = () => {
   };
 
   return (
-    <Modal isOpen isDismissable={false} isKeyboardDismissDisabled>
-      {activeDocument ? (
-        <PolicyDocumentView
-          document={activeDocument}
-          onBack={() => setActiveDocument(null)}
-        />
-      ) : (
-        <PolicyReacceptanceMain
-          agreed={agreed}
-          onAgreedChange={setAgreed}
-          onOpenDocument={setActiveDocument}
-          onAgree={handleAgree}
-          isSubmitting={isSubmitting}
-        />
-      )}
-    </Modal>
+    // Controlled `open` with no `onOpenChange`, so nothing can close it: Escape
+    // and the backdrop have nowhere to write. `disablePointerDismissal` also
+    // keeps a non-modal outside press from trying.
+    <Dialog open disablePointerDismissal>
+      {/* p-0 because each view owns its padding, and the document view's header
+          has to sit flush to be sticky. Width matches the legal dialogs in
+          Onboarding/ToSAcceptanceScreen. */}
+      <DialogContent showCloseButton={false} className="p-0 sm:max-w-[36rem]">
+        {activeDocument ? (
+          <PolicyDocumentView
+            document={activeDocument}
+            onBack={() => setActiveDocument(null)}
+          />
+        ) : (
+          <PolicyReacceptanceMain
+            agreed={agreed}
+            onAgreedChange={setAgreed}
+            onOpenDocument={setActiveDocument}
+            onAgree={handleAgree}
+            isSubmitting={isSubmitting}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -101,36 +108,36 @@ const PolicyReacceptanceMain = ({
   const t = useTranslations();
 
   return (
-    <ModalBody className="gap-6 p-8 sm:px-10 sm:py-10">
+    <div className="flex flex-col gap-6 p-8 sm:px-10 sm:py-10">
       <div className="flex flex-col gap-2 text-center">
-        <Header1>{t("We've updated our policies.")}</Header1>
-        <p className="text-base text-neutral-charcoal">
+        <DialogTitle render={<Header1 />}>
+          {t("We've updated our policies.")}
+        </DialogTitle>
+        <p className="text-base text-muted-foreground">
           {t('Review the changes and accept to keep using Common.')}
         </p>
       </div>
 
-      <Surface variant="filled" className="flex flex-col gap-2 rounded-xl p-4">
-        <span className="font-serif text-title-sm text-neutral-charcoal">
+      {/* @op/ui's `Surface variant="filled"` has no sense counterpart; it was a
+          bordered box on the off-white tint, which is `bg-muted`. */}
+      <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted p-4">
+        <span className="font-serif text-title text-foreground">
           {t("What's changed")}
         </span>
-        <p className="text-base text-neutral-charcoal">
+        <p className="text-base text-muted-foreground">
           {t(
             'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
           )}
         </p>
-      </Surface>
+      </div>
 
       <div className="flex items-start gap-2">
         <Checkbox
-          size="small"
           aria-labelledby="policy-consent-label"
-          isSelected={agreed}
-          onChange={onAgreedChange}
+          checked={agreed}
+          onCheckedChange={onAgreedChange}
         />
-        <span
-          id="policy-consent-label"
-          className="text-base text-neutral-charcoal"
-        >
+        <span id="policy-consent-label" className="text-base text-foreground">
           {t.rich(
             'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
             {
@@ -156,13 +163,13 @@ const PolicyReacceptanceMain = ({
 
       <Button
         className="w-full"
-        isDisabled={!agreed}
-        isLoading={isSubmitting}
-        onPress={onAgree}
+        disabled={!agreed}
+        loading={isSubmitting}
+        onClick={onAgree}
       >
         {t('Agree and continue')}
       </Button>
-    </ModalBody>
+    </div>
   );
 };
 
@@ -189,23 +196,22 @@ const PolicyDocumentView = ({
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex min-h-16 items-center border-b bg-white px-4">
+      <div className="sticky top-0 z-30 flex min-h-16 items-center border-b border-border bg-background px-4">
         <Button
-          color="ghost"
-          size="inline"
+          variant="ghost"
+          size="icon"
           aria-label={t('Back')}
-          className="text-neutral-black hover:text-neutral-black pressed:text-neutral-black"
-          onPress={onBack}
+          onClick={onBack}
         >
           <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
         </Button>
-        <span className="pointer-events-none absolute inset-x-0 text-center font-serif text-title-sm">
+        <DialogTitle className="pointer-events-none absolute inset-x-0 text-center font-serif text-title">
           {documentTitle[document]}
-        </span>
+        </DialogTitle>
       </div>
-      <ModalBody>
+      <div className="px-6 py-4">
         <Content />
-      </ModalBody>
+      </div>
     </>
   );
 };
@@ -219,7 +225,9 @@ const PolicyLink = ({
   onOpen: () => void;
   children: ReactNode;
 }) => (
-  <Button variant="link" size="inline" onPress={onOpen}>
+  // `h-auto p-0` as in Onboarding/ToSAcceptanceScreen: the default height would
+  // break the sentence this sits inside.
+  <Button variant="link" className="h-auto p-0" onClick={onOpen}>
     {children}
   </Button>
 );
