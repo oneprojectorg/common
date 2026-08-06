@@ -6,9 +6,8 @@ import type { ReactNode } from 'react';
 interface LabeledFieldSetProps {
   legend: ReactNode;
   /**
-   * Id put on the `<legend>`. Pass it when the group's control needs
-   * `aria-labelledby` (a `<fieldset>` legend does not name a nested
-   * `role="radiogroup"` / `role="group"` element).
+   * Id for the `<legend>` — a legend doesn't name a nested `role="radiogroup"`,
+   * so those controls need `aria-labelledby`.
    */
   legendId?: string;
   description?: ReactNode;
@@ -23,9 +22,7 @@ interface LabeledFieldSetProps {
  * treatment: 16px legend, 14px helper line directly beneath it, 12px to the
  * controls (Figma "Field / Legend").
  *
- * Used for every proposal field whose control is a group rather than a single
- * labelable input — the checkbox-chip category row, the radio option boxes, the
- * location card, attachments.
+ * For every proposal field whose control is a group rather than one input.
  */
 export function LabeledFieldSet({
   legend,
@@ -43,10 +40,8 @@ export function LabeledFieldSet({
         {required && <RequiredAsterisk />}
       </FieldLegend>
       {description && (
-        // Cancel the FieldSet gap so the helper line sits flush under the
-        // legend, as one block. The `nth-last-2` copy overrides
-        // FieldDescription's own same-variant rule, which would otherwise win
-        // on specificity when the description is the second-to-last child.
+        // Cancel the FieldSet gap so the helper sits flush under the legend.
+        // The `nth-last-2` copy beats FieldDescription's own rule on specificity.
         <FieldDescription>{description}</FieldDescription>
       )}
       {children}

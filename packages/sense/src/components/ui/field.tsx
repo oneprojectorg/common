@@ -109,12 +109,8 @@ const fieldLabelVariants = cva(
           'w-fit has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10',
           'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
         ],
-        // Figma `RadioButton`/`Checkbox` → `Type=Box` (identical in both sets):
-        // 12px inset, 8px radius, 8px gap. Selected tints the whole box and
-        // recolors the label; `FieldDescription` sets its own muted color, so it
-        // correctly stays gray when selected. Invalid only tints once selected —
-        // an unselected invalid box keeps the neutral border and reddens the
-        // control + label instead.
+        // Figma `RadioButton`/`Checkbox` → `Type=Box` (identical in both sets).
+        // Invalid only tints once selected; unselected keeps the neutral border.
         box: [
           'w-full cursor-pointer rounded-lg border border-input p-3 transition-colors *:data-[slot=field]:p-0',
           'has-data-checked:border-primary has-data-checked:bg-accent has-data-checked:text-accent-foreground',
@@ -161,12 +157,10 @@ function FieldTitle({
     props: mergeProps<'div'>(
       {
         className: cn(
-          // Inside a box, trim the half-leading off BOTH edges so the line box hugs
-          // the text: the row's 12px inset then measures to the cap height, and a
-          // single-line box still centres against its control. Trimming only the top
-          // (`-mt-1`) shifted the label off-centre in the common `items-center` case.
-          // `-my-1` is that half-leading at this step ((24 - 16) / 2); the real
-          // expression is `text-box: trim-both cap alphabetic`, which isn't Baseline.
+          // In a box, trim the half-leading ((24 - 16) / 2) off both edges so the
+          // 12px inset measures to the cap height. Both edges, or a single-line
+          // box stops centring against its control. (`text-box: trim-both`
+          // once it's Baseline.)
           'flex w-fit items-center gap-1 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-my-1',
           className,
         ),
@@ -182,9 +176,8 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
     <p
       data-slot="field-description"
       className={cn(
-        // `text-start`, not `text-left` — the alignment is here to defeat an
-        // inherited `text-center`, and a physical value left descriptions
-        // flush-left on RTL pages while their labels sat flush-right.
+        // `text-start`, not `text-left`: it's here to defeat an inherited
+        // `text-center`, and the physical value broke RTL.
         'text-start text-sm font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5',
         'last:mt-0 nth-last-2:-mt-1',
         '[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary',

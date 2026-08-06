@@ -50,10 +50,8 @@ export type ProposalTranslation = {
 };
 
 /**
- * Like / follow state + handlers. Supplying this turns the engagement row's
- * like and follow counts into toggles and links the comment count to the
- * comments section; omitting it leaves the row a static summary (the review
- * pane and review summary render the proposal without these affordances).
+ * Like / follow state + handlers. With it the engagement counts become
+ * toggles; without it the row is a static summary (as in the review panes).
  */
 export type ProposalEngagement = {
   isLiked: boolean;
@@ -159,9 +157,7 @@ export function ProposalPreview({
                 {t('Hidden from public view')}
               </StatusBadge>
             )}
-            {/* Only the author (+ collaborators) and admins ever receive a
-                flagged proposal — everyone else has it filtered out
-                server-side. */}
+            {/* Only the author and admins ever receive a flagged proposal. */}
             {proposal.isFlagged && (
               <StatusBadge variant="alert" icon={LuFlag}>
                 {t('Hidden from members after a moderation review')}
@@ -176,8 +172,7 @@ export function ProposalPreview({
         )}
 
         <div className="flex flex-col gap-4">
-          {/* 30px serif at weight 300 — `text-headline` is 30px at the desktop
-              step, which is where this 544px column lives. */}
+          {/* 30px serif at 300 — `text-headline` at this column's step. */}
           <Header1 className="font-serif text-headline font-light">
             {title || t('Untitled Proposal')}
           </Header1>
@@ -190,9 +185,7 @@ export function ProposalPreview({
             />
           )}
 
-          {/* Budget + categories share one tag row. Budget is not nested under
-              the category check — a proposal with a budget and no category still
-              shows it. */}
+          {/* Budget + categories share a row; either can appear alone. */}
           {(budget != null ||
             selection?.allocated != null ||
             categories.length > 0) && (
@@ -240,9 +233,7 @@ export function ProposalPreview({
                   ) : (
                     <NavLink
                       href={`/profile/${proposal.submittedBy.slug}`}
-                      // The sense focus treatment: without it this falls through
-                      // to the browser's default ring. `rounded-sm` keeps the ring
-                      // from hugging the glyphs.
+                      // Without this it falls through to the browser's ring.
                       className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
@@ -306,9 +297,7 @@ export function ProposalPreview({
 
 /**
  * Likes / followers / comments, hairline-ruled above and below (Figma's
- * "Engagement" row). With `engagement` the like and follow counts are toggles
- * and the comment count jumps to the comments section; without it the same
- * three counts render as plain text.
+ * "Engagement" row).
  */
 function EngagementRow({
   proposal,

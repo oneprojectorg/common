@@ -27,11 +27,9 @@ interface OptionBoxProps {
  * A bordered, tinted-when-selected option box wrapping a single checkbox or
  * radio (Figma's checkbox chips and radio rows).
  *
- * All of the box styling lives in `@op/sense` as `FieldLabel variant="box"`
- * (Figma `RadioButton`/`Checkbox` → `Type=Box`) — this component only wires the
- * control to its label. Because the control sits inside a real `<label>`, the
- * whole box is clickable while the checkbox/radio keeps its native semantics,
- * keyboard behaviour and focus ring.
+ * The styling lives in `@op/sense` as `FieldLabel variant="box"`; this only
+ * wires the control to its label. The control sits inside a real `<label>`, so
+ * the whole box is clickable and the input keeps its native behaviour.
  */
 export function OptionBox({
   htmlFor,

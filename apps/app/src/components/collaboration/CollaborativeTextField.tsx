@@ -48,9 +48,7 @@ interface CollaborativeTextFieldProps {
  * sense `Field` whose control sits in a bordered `InputGroup` with the
  * character counter pinned inside the box (bottom-end).
  *
- * The editable is a contenteditable, so the label is associated with
- * `aria-labelledby` rather than `htmlFor` — a contenteditable is not a labelable
- * element and a `<label for>` pointing at one is an orphan label.
+ * `aria-labelledby`, not `htmlFor` — a contenteditable isn't labelable.
  */
 export function CollaborativeTextField({
   fragmentName,

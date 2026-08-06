@@ -61,9 +61,8 @@ export function ProposalViewLayout({
     isActive: boolean;
   };
   /**
-   * When set, renders the admin overflow menu (shortlist / reject / hide) for
-   * this proposal. The menu gates itself on `proposal.access.admin`, so passing
-   * it for a non-admin viewer renders nothing.
+   * Admin overflow menu (shortlist / reject / hide). Gates itself on
+   * `proposal.access.admin`, so it's safe to pass for any viewer.
    */
   moderationProposal?: Proposal;
 }) {
@@ -102,9 +101,7 @@ export function ProposalViewLayout({
           ) : null}
         </div>
 
-        {/* One tooltip group for the action row, at the slower delay these
-            icon-only buttons want (`delay` exists on Provider alone). The root
-            layout's provider covers everything else. */}
+        {/* One tooltip group for the row — `delay` exists on Provider alone. */}
         <TooltipProvider delay={500}>
           <div className="flex items-center gap-2 sm:gap-4">
             {canEdit && editHref && (

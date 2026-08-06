@@ -113,8 +113,7 @@ function MyReviewForm() {
       <SubmittedReviewView
         rubricTemplate={template}
         review={review}
-        // Above the feedback block, per the review panel design — hence the slot
-        // rather than rendering it after.
+        // Above the feedback block, per the design — hence the slot.
         scoreSlot={<TotalScoreCard rubricTemplate={template} values={values} />}
       />
     );
@@ -203,14 +202,9 @@ function MyReviewForm() {
  * Render one rubric criterion as a sense `Field`: label, optional description,
  * then the control — with the reviewer's note as its own labelled field below.
  *
- * Only text inputs get a `<label for>`; a Select trigger, Switch and RadioGroup
- * are buttons or groups, which `htmlFor` cannot address, so those are named by
- * `aria-labelledby` against a `FieldTitle` (a div styled as a label rather than
- * an orphan `<label>`).
- *
- * Every criterion prompt is an `h4` either way. A rubric is long, and the
- * prompts are what a screen-reader user navigates it by — that came free from
- * the old `FieldHeader` and has to be asked for now.
+ * Only text inputs get a `<label for>`; `htmlFor` can't address a Select
+ * trigger, Switch or RadioGroup, so those are named by `aria-labelledby`.
+ * Prompts are `h4` either way — a long rubric is navigated by heading.
  */
 function RubricCriterionSection({
   field,
@@ -463,10 +457,7 @@ function RubricFieldInput({
       if (criterionType === 'single_select') {
         const options = parseSchemaOptions(field.schema);
 
-        // A "multiple choice" criterion holds exactly one value, so these are
-        // radios — the same boxed treatment the proposal editor gives its
-        // single-select fields, not the checkboxes it uses for multi-select
-        // categories.
+        // "Multiple choice" holds exactly one value, so radios, not checkboxes.
         return (
           <RadioGroup
             aria-labelledby={labelledBy}

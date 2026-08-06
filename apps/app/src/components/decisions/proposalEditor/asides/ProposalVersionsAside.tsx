@@ -31,10 +31,8 @@ const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
   /**
-   * Controlled open state, forwarded to the aside shell. This component stays
-   * mounted while closed so the sheet can animate out — it reads versions from
-   * the already-connected collab provider, so that costs a subscription rather
-   * than a request.
+   * Controlled open state. Stays mounted while closed so the sheet can animate
+   * out; versions come from the connected collab provider, not a request.
    */
   open: boolean;
   versionId: number | null;
@@ -139,16 +137,12 @@ export function ProposalVersionsAside({
 }
 
 /**
- * One row of the history list (Figma 17955:8511): 16px inset, 8px radius, and
- * the restore action revealed *inside* the row when it is selected — 76px tall
- * collapsed, 120px expanded.
+ * One row of the history list (Figma 17955:8511), 76px collapsed / 120px with
+ * the restore action revealed.
  *
- * The row is a controlled `Collapsible`: selection drives `open`, so a click
- * always selects rather than toggling (clicking the open row again would
- * otherwise collapse it while it is still the version being previewed). The
- * restore button lives in the panel, which is why the trigger — not the row —
- * is the button: a `<button>` inside a `<button>` is invalid and swallows the
- * inner control's clicks.
+ * Selection drives `open`, so a click always selects — a self-toggling row
+ * would collapse while still being previewed. The trigger is the button, not
+ * the row: a `<button>` inside a `<button>` swallows the inner one's clicks.
  */
 function VersionItem({
   label,
@@ -177,8 +171,8 @@ function VersionItem({
       )}
     >
       <CollapsibleTrigger
-        // `bare` + `none`: the row owns its own look, but still wants the
-        // sense focus ring and disabled handling a raw `<button>` would drop.
+        // `bare` + `none`: own look, but keep the focus ring and disabled
+        // handling a raw `<button>` would drop.
         render={
           <Button
             variant="bare"
@@ -190,8 +184,7 @@ function VersionItem({
         }
         className={cn(
           'flex w-full flex-col items-start gap-0.5 rounded-lg px-4 pt-4 text-start',
-          // 16px below the text collapsed; 12px once the button is showing,
-          // which lands the row on Figma's 76 / 120.
+          // 16px collapsed, 12px expanded — Figma's 76 / 120.
           isSelected ? 'pb-3' : 'pb-4',
         )}
       >

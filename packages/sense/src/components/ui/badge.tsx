@@ -4,17 +4,12 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../../lib/utils';
 
-// Figma `Badge` component set (cjLIVfBJVLadAaigW1hjyG node 26:169). Geometry:
-// 20px tall, 4px radius, 2/8 padding, 4 gap, 12px/450 text, 12px icons, and a
-// 1px stroke that is transparent on the filled variants (Figma has it at
-// opacity 0 — it only reserves the box).
+// Figma `Badge` component set (cjLIVfBJVLadAaigW1hjyG node 26:169): 20px tall,
+// 4px radius, 2/8 padding, 12px/450 text, and a stroke that is transparent on
+// the filled variants (it only reserves the box).
 //
-// Hover in the spec is the base fill PLUS a 10% overlay whose color varies by
-// variant, so it darkens/saturates rather than fading toward white. That is an
-// `after` layer at `-z-10` (above the background, below the text — `isolate`
-// keeps the stacking context local), which is exactly how Figma stacks it.
-// Hover applies only when the badge is actually interactive, i.e. rendered as an
-// `a` or `button`; inert status badges shouldn't light up under the cursor.
+// Hover is the base fill plus a 10% overlay, so it darkens rather than fades —
+// an `after` layer under the text, and only when the badge is a link or button.
 const badgeVariants = cva(
   'group/badge relative isolate inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-sm border border-transparent px-2 py-0.5 text-xs font-strong whitespace-nowrap transition-all after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:rounded-[inherit] after:transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!',
   {

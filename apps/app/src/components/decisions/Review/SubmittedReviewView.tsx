@@ -18,13 +18,8 @@ import { inferCriterionType } from '../rubricTemplate';
  * A submitted review, read-only: each criterion's prompt above a bordered card
  * holding the answer and the reviewer's note.
  *
- * Field chrome matches the editable form (`ReviewRubricForm`) so the panel doesn't
- * change shape when a review is submitted — same sense `Field` with a title and
- * muted description.
- *
- * Rendered in three places: the reviewer's own submitted review, a peer's review
- * under "Other reviews", and the admin drill-in via `ReviewerDetail`. Only the
- * first has a total score, hence `scoreSlot`.
+ * Field chrome matches `ReviewRubricForm` so the panel doesn't change shape on
+ * submit. Only the reviewer's own review has a score, hence `scoreSlot`.
  */
 export function SubmittedReviewView({
   rubricTemplate,
@@ -34,9 +29,7 @@ export function SubmittedReviewView({
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview;
   /**
-   * Rendered between the criteria and the feedback block — the position the
-   * review panel design gives the total score. Omitted where there is no score
-   * to show.
+   * Between the criteria and the feedback block, per the design.
    */
   scoreSlot?: ReactNode;
 }) {
@@ -87,8 +80,7 @@ function ResultSection({
 }) {
   return (
     <Field>
-      {/* An `h4`, as in the editable form: the prompts are how a screen-reader
-          user navigates a long review. */}
+      {/* `h4`, as in the editable form — a long review is navigated by heading. */}
       {title ? <FieldTitle render={<h4 />}>{title}</FieldTitle> : null}
       {description ? <FieldDescription>{description}</FieldDescription> : null}
       {children}
@@ -97,10 +89,8 @@ function ResultSection({
 }
 
 /**
- * The answer itself: the selected value with its option text beside it, and the
- * reviewer's note below a rule. `description` is body content (foreground);
- * `rationale` is the note, which reads quieter. Bordered rather than filled — the
- * total score is the only filled row in this panel.
+ * The answer, with the reviewer's note below a rule. Bordered, not filled —
+ * the total score is the only filled row in this panel.
  */
 function ResultCard({
   value,

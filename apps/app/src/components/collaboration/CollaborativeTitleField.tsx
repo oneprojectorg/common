@@ -88,10 +88,8 @@ export function CollaborativeTitleField({
       attributes: {
         class:
           'w-full border-0 bg-transparent p-0 text-base text-foreground outline-none [unicode-bidi:plaintext]',
-        // `role="textbox"` is required before any of these are legal on a
-        // contenteditable div: a generic element may not carry an accessible name
-        // or `aria-required`. Single-line, so `aria-multiline` is false — Enter is
-        // swallowed in handleKeyDown below.
+        // `role="textbox"` first: the aria attributes below are illegal on a
+        // generic element. Enter is swallowed in handleKeyDown.
         role: 'textbox',
         'aria-multiline': 'false',
         'aria-labelledby': labelId,
@@ -104,9 +102,8 @@ export function CollaborativeTitleField({
         }
         return false;
       },
-      // Enforce the template's limit on local input only. A `filterTransaction`
-      // would be tidier but also sees transactions Yjs applies for remote peers,
-      // and rejecting one of those desyncs the shared document.
+      // Local input only — `filterTransaction` would also reject the
+      // transactions Yjs applies for remote peers, desyncing the document.
       handleTextInput: (view, from, to, text) => {
         if (maxLength == null) {
           return false;
@@ -135,8 +132,7 @@ export function CollaborativeTitleField({
           return false;
         }
 
-        // Truncate rather than reject: pasting a too-long title and getting
-        // nothing at all reads as a broken field.
+        // Truncate rather than reject the whole paste.
         if (room > 0) {
           view.dispatch(
             view.state.tr.insertText(pasted.slice(0, room), from, to),
@@ -154,8 +150,8 @@ export function CollaborativeTitleField({
       return;
     }
 
-    // Seed the counter from whatever the shared doc already holds, without
-    // emitting onChange — the draft must not look dirty just from mounting.
+    // Seed the counter without emitting onChange, or mounting marks the draft
+    // dirty.
     setCharCount(editor.getText().trim().length);
 
     const handleUpdate = () => {
@@ -177,26 +173,19 @@ export function CollaborativeTitleField({
         {required && <RequiredAsterisk />}
       </FieldTitle>
       {editor ? (
-        // focus-within rather than InputGroup's own has-[input:focus-visible]
-        // rules: the control here is a contenteditable, not an <input>.
-        // `h-auto`: InputGroup is a fixed 44px row and only relaxes for a real
-        // `<textarea>` (`has-[>textarea]:h-auto`), which a contenteditable does
-        // not match — so a wrapped title spilled out of its own border.
+        // focus-within and h-auto: the control is a contenteditable, so
+        // InputGroup's `<input>`/`<textarea>` rules never fire for it.
         <InputGroup className="h-auto min-h-11 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
           <EditorContent
-            // `w-full` because the block addon turns InputGroup into a column,
-            // where its `items-center` centres children horizontally — sense's
-            // Textarea carries the same class for the same reason.
+            // `w-full`: the block addon makes InputGroup a column, where its
+            // `items-center` centres children horizontally.
             className="w-full min-w-0 flex-1 px-3 py-2.5"
             dir={editor.isEmpty ? undefined : 'auto'}
             editor={editor}
           />
           {maxLength != null && (
-            // A counter beside a field that wraps would reserve its column on
-            // every line, narrowing the text for the whole height. Figma puts
-            // the counter for a wrapping field in a block addon under it
-            // (`InputGroup / Addon Block`, space-between) and keeps the inline
-            // placement for single-line inputs only.
+            // Under the field, not beside it: Figma uses a block addon for
+            // wrapping inputs, and an inline one would narrow every line.
             <InputGroupAddon align="block-end" className="justify-end">
               <CharacterCounter
                 id={counterId}

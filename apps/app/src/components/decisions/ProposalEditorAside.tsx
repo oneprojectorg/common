@@ -14,10 +14,8 @@ import { useTranslations } from '@/lib/i18n';
 
 interface ProposalEditorAsideProps {
   /**
-   * Controlled open state. Keep this component **mounted** and toggle `open`
-   * instead of conditionally rendering it: base-ui plays the enter/exit
-   * transitions off the open-state change, so unmounting the dialog root skips
-   * the exit animation entirely.
+   * Controlled open state. Keep this mounted and toggle `open` — unmounting
+   * the dialog root skips base-ui's exit animation.
    */
   open: boolean;
   title: ReactNode;
@@ -35,13 +33,10 @@ interface ProposalEditorAsideSkeletonProps {
  * Responsive editor aside shell: a right-side sheet on desktop and a bottom
  * drawer on mobile (Figma "Sheet" instance, 384 wide, header/body padding 24).
  *
- * The desktop sheet is **non-modal** — it sits beside the document rather than
- * over it, so a version can be previewed and scrolled while the aside stays
- * open. The mobile drawer stays modal: it covers the viewport anyway, so there
- * is nothing to compare against behind it.
- *
- * Both branches are base-ui dialogs, so Escape and the close button funnel
- * through `onClose`, which owns the URL state.
+ * The desktop sheet is non-modal so a version can be previewed beside the
+ * document; the mobile drawer covers the viewport anyway, so it stays modal.
+ * Both are base-ui dialogs, so Escape and the close button funnel through
+ * `onClose`, which owns the URL state.
  */
 export function ProposalEditorAside({
   open,
@@ -83,13 +78,8 @@ export function ProposalEditorAside({
   }
 
   return (
-    // Non-modal on desktop: the whole point of the version aside is comparing
-    // against the document beside it, so no backdrop, no scroll lock, and no
-    // focus trap. `disablePointerDismissal` is what keeps scrolling or clicking
-    // the preview from dismissing the sheet — a non-modal base-ui dialog
-    // otherwise closes as soon as focus or a pointer press lands outside it.
-    // The preview itself is already read-only: previewing a version renders the
-    // form through `mode="preview-version"`, which swaps in the Readonly fields.
+    // `disablePointerDismissal`: a non-modal base-ui dialog otherwise closes as
+    // soon as a pointer press lands outside it — i.e. on the preview.
     <Sheet
       open={open}
       modal={false}

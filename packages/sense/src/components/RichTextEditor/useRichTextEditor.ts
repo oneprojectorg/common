@@ -45,9 +45,7 @@ export function useRichTextEditor({
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
   /**
-   * Id of the element that labels the editable region. A contenteditable is not
-   * a labelable element, so `<label for>` can't reach it — the visible field
-   * label has to be wired by id instead.
+   * Id of the labelling element — `<label for>` can't reach a contenteditable.
    */
   ariaLabelledBy?: string;
   /**
@@ -56,9 +54,7 @@ export function useRichTextEditor({
    */
   ariaDescribedBy?: string;
   /**
-   * Whether the editable region accepts line breaks. Sets `aria-multiline` on the
-   * `role="textbox"`. Defaults to true — pass false for a single-line editable
-   * (e.g. a title field that swallows Enter).
+   * Sets `aria-multiline`. Pass false for a single-line editable.
    */
   ariaMultiline?: boolean;
 }) {
@@ -105,11 +101,8 @@ export function useRichTextEditor({
           baseEditorStyles,
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
-        // A bare contenteditable div has no ARIA role, and a generic element may
-        // not carry an accessible name (`aria-prohibited-attr`) or
-        // `aria-required` (`aria-allowed-attr`). `role="textbox"` is what makes
-        // those legal — and it's what the element actually is. Only applied while
-        // editable: a readonly viewer is prose, not a text input.
+        // `role="textbox"` is what makes the aria attributes below legal on a
+        // contenteditable div. Editable only — a viewer is prose, not an input.
         ...(editable
           ? {
               role: 'textbox',
@@ -145,11 +138,8 @@ export function useRichTextEditor({
   // Readonly viewers reuse one editor instance, so sync incoming content when
   // the selected preview version changes.
   //
-  // `content === undefined` means the caller never supplies content — the
-  // document is owned elsewhere (a Yjs Collaboration binding). Bail out rather
-  // than clearing: on a collab-bound editor `clearContent` would wipe the shared
-  // document for every connected client. Pass `null` to genuinely blank a
-  // content-driven viewer.
+  // `undefined` means the document is owned elsewhere (a Yjs binding), where
+  // clearing would wipe it for every client. Pass `null` to blank a viewer.
   useEffect(() => {
     if (!editor || editable || content === undefined) {
       return;

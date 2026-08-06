@@ -210,9 +210,8 @@ function renderField(
       <CollaborativeTitleField
         title={schema.title ?? t('Proposal name')}
         required={field.required}
-        // No template sets a title `maxLength`, so without a floor the field
-        // would grow until the `profiles.name` insert fails. A template may ask
-        // for less than the cap, never more.
+        // No template sets one, and past `profiles.name`'s varchar(256) the
+        // insert fails. A template may ask for less, never more.
         maxLength={Math.min(
           schema.maxLength ?? PROPOSAL_TITLE_MAX_LENGTH,
           PROPOSAL_TITLE_MAX_LENGTH,
@@ -454,10 +453,8 @@ function renderField(
         );
       }
 
-      // Rendered as radio option boxes, per the design. Every option is always
-      // on screen, so a template that defines a long option vocabulary (say 20
-      // categories) produces 20 stacked boxes and a very tall form — there is
-      // no collapse-to-combobox threshold. Flagged rather than papered over.
+      // Radio option boxes per the design — every option is on screen, so 20
+      // categories means 20 stacked boxes. No collapse-to-combobox threshold.
       return (
         <CollaborativeDropdownField
           options={options}

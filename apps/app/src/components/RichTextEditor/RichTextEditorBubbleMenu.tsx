@@ -67,13 +67,9 @@ export function RichTextEditorBubbleMenu({
   const [isEditingEmbed, setIsEditingEmbed] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Every prose field mounts its own menu, so a field that keeps its menu after
-  // you leave it leaves two on screen — and clicks meant for the field you're
-  // in land in the one you left, because its menu comes first in the DOM.
-  // TipTap's own blur handling doesn't catch this: clicking a menu button sets
-  // its internal `preventHide`, and because the click deliberately keeps editor
-  // focus, nothing clears the flag until the next blur — which it then swallows.
-  // Unmounting on blur sidesteps that entirely.
+  // Unmount on blur: TipTap's own blur handling leaves a stale menu open (its
+  // `preventHide` is never cleared), so two fields' menus end up on screen and
+  // the first in the DOM eats the clicks.
   useEffect(() => {
     if (!editor) {
       return;
@@ -142,8 +138,7 @@ export function RichTextEditorBubbleMenu({
     return null;
   }
 
-  // The link and embed forms take focus out of the editor by design, so they
-  // hold the menu open on their own account.
+  // The link and embed forms take focus out of the editor, so they hold it open.
   if (!isFocused && !isEditingLink && !isEditingEmbed) {
     return null;
   }
@@ -286,19 +281,13 @@ export function RichTextEditorBubbleMenu({
       editor={editor}
       pluginKey={pluginKey}
       shouldShow={shouldShow ?? defaultShouldShow}
-      // Stays inside the field rather than portaling to the body: portaled, it
-      // has to be positioned against the viewport and repositioned on the form's
-      // inner scroll, which is visibly janky. In place it scrolls with the
-      // content for free — the field lifts its own stacking order while the menu
-      // is mounted (`data-bubble-menu` below, read by the field's InputGroup).
+      // Not portaled: positioning against the viewport made scrolling janky.
+      // The field lifts its own z-index instead (see CollaborativeTextField).
       options={{
-        // Beside the selection, vertically centred on it. Sideways because the
-        // menu is far too tall to sit above or below: Floating UI would flip and
-        // shift it under the editor's sticky topbar or over the next field.
-        // Horizontally there is always the column's margin to put it in.
+        // Sideways: the menu is too tall to fit above or below without being
+        // shifted under the sticky topbar or over the next field.
         placement: 'right',
         offset: 8,
-        // Nudges it back inside the viewport when the selection is near an edge.
         shift: { padding: 8 },
         onHide: () => {
           closeLinkEditor();
@@ -306,12 +295,9 @@ export function RichTextEditorBubbleMenu({
         },
       }}
       data-testid="rich-text-bubble-menu"
-      // Style hook for the containing field, which lifts itself above later
-      // fields while this is mounted. See CollaborativeTextField.
+      // Style hook: the field lifts its z-index while this is mounted.
       data-bubble-menu=""
-      // `will-change-transform` gives the menu its own compositor layer: it is
-      // absolutely positioned inside the form's scroll container, so otherwise it
-      // repaints with the content on every scroll frame.
+      // Own compositor layer, or it repaints on every scroll frame.
       className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md will-change-transform"
     >
       {/* The toolbar stays mounted while the link editor is open so the

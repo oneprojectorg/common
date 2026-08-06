@@ -34,9 +34,8 @@ interface CollaborativeDropdownFieldProps {
  * this project?"). When one user picks a value, all connected users see it
  * update in real time.
  *
- * Every option is always visible — there is no popup and no option virtualisation,
- * so a template with a long option vocabulary produces a correspondingly long
- * list. See the note in `ProposalFormRenderer`.
+ * Every option is always visible — no popup, no virtualisation, so a long
+ * option vocabulary makes a long list. See `ProposalFormRenderer`.
  */
 export function CollaborativeDropdownField({
   options,
@@ -84,9 +83,8 @@ export function CollaborativeDropdownField({
     setSyncedText(value === EMPTY_KEY || value == null ? '' : String(value));
   };
 
-  // "None" has no Figma counterpart, but it is the only way to un-answer an
-  // optional question once a radio has been picked, so the affordance the
-  // dropdown had is preserved rather than dropped.
+  // No Figma counterpart, but it's the only way to un-answer an optional
+  // question once a radio is picked.
   const radioOptions = allowEmpty
     ? [...options, { value: EMPTY_KEY, label: t('None') }]
     : options;
