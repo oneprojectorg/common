@@ -681,6 +681,56 @@ describe.concurrent('updateProposal checkpointVersion', () => {
         .collaborationDocVersionId,
     ).toBeUndefined();
   });
+
+  it('should preserve the stamped collaborationDocVersionId when the payload omits it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Pinned Proposal' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Pinned Proposal',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const submitted = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+    const stampedVersionId = (submitted.proposalData as Record<string, unknown>)
+      .collaborationDocVersionId;
+
+    expect(stampedVersionId).toBeTypeOf('number');
+
+    // A payload without the collaboration doc pointers — a partial or stale
+    // client write — must not unpin the proposal.
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: { title: 'Edited after submission' },
+      },
+    });
+
+    const resultData = result.proposalData as Record<string, unknown>;
+
+    expect(resultData.collaborationDocVersionId).toBe(stampedVersionId);
+    expect(resultData.collaborationDocId).toBe(collaborationDocId);
+  });
 });
 
 describeDecisionAccessTierGating('updateProposal', {
