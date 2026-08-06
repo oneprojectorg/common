@@ -225,9 +225,7 @@ const PolicyLink = ({
   onOpen: () => void;
   children: ReactNode;
 }) => (
-  // `h-auto p-0` as in Onboarding/ToSAcceptanceScreen: the default height would
-  // break the sentence this sits inside.
-  <Button variant="link" className="h-auto p-0" onClick={onOpen}>
+  <Button variant="link" size="inline" onClick={onOpen}>
     {children}
   </Button>
 );
