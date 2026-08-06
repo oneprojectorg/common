@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
-import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
   Combobox,
@@ -36,6 +35,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@op/sense/Item';
+import { ProfileAvatar as SenseProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
@@ -53,6 +53,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import ErrorBoundary from '../ErrorBoundary';
+import { ProfileAvatar } from '../ProfileAvatar';
 import { isValidEmail, parseEmailPaste } from './emailUtils';
 
 interface PendingInvite {
@@ -432,21 +433,13 @@ function ShareProposalModalContent({
                     ) : (
                       <ProfileItem
                         avatar={
-                          <Avatar className="size-8 shrink-0">
-                            {option.result.avatarImage?.name ? (
-                              <AvatarImage
-                                src={
-                                  getPublicUrl(
-                                    option.result.avatarImage.name,
-                                  ) ?? ''
-                                }
-                                alt={option.result.name}
-                              />
-                            ) : null}
-                            <AvatarFallback>
-                              {option.result.name.slice(0, 1).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                          // `withLink={false}`: an anchor inside a combobox
+                          // option would be nested interactive content.
+                          <ProfileAvatar
+                            profile={option.result}
+                            withLink={false}
+                            className="size-8 shrink-0"
+                          />
                         }
                         title={option.result.name}
                         description={option.result.user?.email || undefined}
@@ -586,10 +579,15 @@ function PersonRow({
   return (
     <Item variant="outline" className="flex-nowrap px-3 py-2 sm:p-3">
       <ItemMedia>
-        <Avatar className="size-6 shrink-0 sm:size-10">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
-          <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        {/* The sense primitive, not the app wrapper: callers hand this row an
+            already-resolved `avatarUrl`, not a profile. Passing `name` through
+            is what earns the seeded initial + gradient fallback. */}
+        <SenseProfileAvatar
+          name={name}
+          src={avatarUrl}
+          alt={name}
+          className="size-6 shrink-0 sm:size-10"
+        />
       </ItemMedia>
       <ItemContent className="min-w-0 gap-0">
         <ItemTitle>{name}</ItemTitle>
