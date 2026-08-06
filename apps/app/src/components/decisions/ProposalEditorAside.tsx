@@ -87,11 +87,7 @@ export function ProposalEditorAside({
       onOpenChange={handleOpenChange}
     >
       <SheetContent side="right" showOverlay={false}>
-        {/* `border-b` matches the mobile header and the skeleton, which both
-            draw one — without it the rule vanished when content replaced the
-            skeleton. SheetHeader's own `pe-12` reserves room for the built-in
-            close button, so it isn't overridden here. */}
-        <SheetHeader className="border-b">
+        <SheetHeader>
           <SheetTitle>
             <bdi>{title}</bdi>
           </SheetTitle>
