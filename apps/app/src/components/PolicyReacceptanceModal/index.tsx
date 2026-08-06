@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@op/sense/Dialog';
+import { Header3 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { type ReactNode, useRef, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -77,7 +78,7 @@ const PolicyReacceptanceModalContent = () => {
           whole card. */}
       <DialogContent
         showCloseButton={false}
-        className="flex flex-col overflow-hidden p-0 sm:max-w-[36rem]"
+        className="flex flex-col overflow-hidden p-0 sm:max-w-lg"
       >
         <PolicyReacceptanceMain
           agreed={agreed}
@@ -119,7 +120,7 @@ const PolicyReacceptanceMain = ({
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-8 py-6 sm:px-10">
         <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted p-4">
-          <span className="font-serif text-title">{t("What's changed")}</span>
+          <Header3>{t("What's changed")}</Header3>
           <p>
             {t(
               'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
@@ -205,7 +206,11 @@ const PolicyDocumentDialog = ({
     <Dialog>
       <DialogTrigger
         render={
-          <Button variant="link" size="inline">
+          <Button
+            variant="link"
+            size="inline"
+            className="underline hover:no-underline"
+          >
             {trigger}
           </Button>
         }
