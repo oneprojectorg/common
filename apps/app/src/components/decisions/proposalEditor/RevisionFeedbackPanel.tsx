@@ -29,7 +29,7 @@ export function RevisionFeedbackPanel({
       </div>
 
       <div className="flex flex-col gap-4">
-        <span className="font-serif text-title-xs text-foreground">
+        <span className="font-serif text-label text-foreground">
           {t('Reviewer feedback')}
         </span>
 

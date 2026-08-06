@@ -284,10 +284,7 @@ export function ProposalPreview({
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-8">
-          {/* `!text-title-base` keeps the pre-migration 20px heading. */}
-          <Header3 className="mb-4 font-sans !text-title-base">
-            {t('Attachments')}
-          </Header3>
+          <Header3 className="mb-4 text-label">{t('Attachments')}</Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}

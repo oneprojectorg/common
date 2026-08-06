@@ -50,11 +50,7 @@ export const ResultsList = ({
   return (
     <div className="flex flex-col gap-4 pb-12">
       <div className="flex items-center gap-4">
-        {/* `!text-title-base` matches the sibling "My ballot" panel heading
-            (MyBallot.tsx) — sense's `text-title` is a step smaller on mobile. */}
-        <Header3 className="font-serif !text-title-base">
-          {t('Selected Proposals')}
-        </Header3>
+        <Header3>{t('Selected Proposals')}</Header3>
       </div>
 
       <ProposalMasonry>

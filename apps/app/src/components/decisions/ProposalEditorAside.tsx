@@ -60,7 +60,7 @@ export function ProposalEditorAside({
           <AsideHeader
             onClose={onClose}
             title={
-              <DrawerTitle className="text-title-xs">
+              <DrawerTitle className="text-label">
                 <bdi>{title}</bdi>
               </DrawerTitle>
             }
