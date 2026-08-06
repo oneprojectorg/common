@@ -8,12 +8,7 @@ import {
 } from '@op/common/client';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@op/sense/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import type { IconType } from 'react-icons';
 import {
   LuCircleAlert,
@@ -96,24 +91,23 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
   const names = completedReviewers.map((r) => r.profile.name).join(', ');
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            // No aria-label: the visible "{count} Reviewed" text is the
-            // accessible name; the tooltip popup (names) is exposed as the
-            // description via base-ui's aria-describedby when open.
-            <span
-              tabIndex={0}
-              className="cursor-help underline decoration-dotted underline-offset-2 outline-none"
-            />
-          }
-        >
-          {t('{count} Reviewed', { count: completedReviewers.length })}
-        </TooltipTrigger>
-        <TooltipContent className="text-sm">{names}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    // The root layout provides the tooltip group and delay.
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          // No aria-label: the visible "{count} Reviewed" text is the
+          // accessible name; the tooltip popup (names) is exposed as the
+          // description via base-ui's aria-describedby when open.
+          <span
+            tabIndex={0}
+            className="cursor-help underline decoration-dotted underline-offset-2 outline-none"
+          />
+        }
+      >
+        {t('{count} Reviewed', { count: completedReviewers.length })}
+      </TooltipTrigger>
+      <TooltipContent className="text-sm">{names}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -3,6 +3,7 @@ import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, OPURLConfig, printNFO } from '@op/core';
 import '@op/styles';
 import { Toaster } from '@op/sense/Toast';
+import { TooltipProvider } from '@op/sense/Tooltip';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -95,7 +96,15 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             <OTelBrowserProvider>
               <PostHogProvider>
                 <NuqsAdapter>
-                  <IconProvider>{children}</IconProvider>
+                  {/* base-ui's tooltip Provider is the grouping primitive, not
+                      just a delay carrier: it keeps one tooltip open at a time
+                      and skips the delay while moving between triggers in the
+                      same group. One at the root gives the whole app a single
+                      group; nest another only to give a set of triggers its own
+                      delay (`delay` exists on Provider alone). */}
+                  <TooltipProvider>
+                    <IconProvider>{children}</IconProvider>
+                  </TooltipProvider>
                 </NuqsAdapter>
               </PostHogProvider>
             </OTelBrowserProvider>

@@ -5,6 +5,7 @@ import { userCanInteract } from '@/utils/userCanInteract';
 import { Button } from '@op/sense/Button';
 import { Header4 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
+import { TooltipProvider } from '@op/sense/Tooltip';
 import type { ReactNode } from 'react';
 import { LuArrowLeft, LuCheck, LuUserPlus } from 'react-icons/lu';
 
@@ -84,38 +85,44 @@ export function ProposalEditorHeader({
         {statusSlot}
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        {!readOnlyMode && presenceSlot}
-        {asideHeaderIcons}
-        {!readOnlyMode && canShare && (
-          <Button
-            variant="outline"
-            onClick={onShare}
-            className="max-sm:size-11"
-          >
-            <LuUserPlus className="size-4" />
-            <span className="hidden sm:inline">{t('Share')}</span>
-          </Button>
-        )}
-        {!readOnlyMode && (
-          <Button
-            onClick={isRevisionMode ? onResubmit : onSubmitProposal}
-            loading={isSubmitting}
-          >
-            <LuCheck className="size-4" />
-            {isRevisionMode
-              ? t('Resubmit')
-              : isEditMode && !isDraft
-                ? t('Update')
-                : t('Submit')}
-          </Button>
-        )}
-        <LocaleChooser />
-        {/* No avatar or login for visitors/anonymous. */}
-        {userCanInteract(user) ? (
-          <UserAvatarMenu className="hidden sm:block" />
-        ) : null}
-      </div>
+      {/* One group for the whole action row, at the slower delay these
+          icon-only buttons want. Wrapping each icon in its own provider instead
+          would make every icon a group of one, so moving along the row would
+          re-pay the delay at each stop. */}
+      <TooltipProvider delay={500}>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {!readOnlyMode && presenceSlot}
+          {asideHeaderIcons}
+          {!readOnlyMode && canShare && (
+            <Button
+              variant="outline"
+              onClick={onShare}
+              className="max-sm:size-11"
+            >
+              <LuUserPlus className="size-4" />
+              <span className="hidden sm:inline">{t('Share')}</span>
+            </Button>
+          )}
+          {!readOnlyMode && (
+            <Button
+              onClick={isRevisionMode ? onResubmit : onSubmitProposal}
+              loading={isSubmitting}
+            >
+              <LuCheck className="size-4" />
+              {isRevisionMode
+                ? t('Resubmit')
+                : isEditMode && !isDraft
+                  ? t('Update')
+                  : t('Submit')}
+            </Button>
+          )}
+          <LocaleChooser />
+          {/* No avatar or login for visitors/anonymous. */}
+          {userCanInteract(user) ? (
+            <UserAvatarMenu className="hidden sm:block" />
+          ) : null}
+        </div>
+      </TooltipProvider>
     </div>
   );
 }

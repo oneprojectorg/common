@@ -102,41 +102,42 @@ export function ProposalViewLayout({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          {canEdit && editHref && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.push(editHref)}
-              aria-label={t('Edit')}
-            >
-              <LuPencil className="size-4" />
-              <span className="hidden sm:inline">{t('Edit')}</span>
-            </Button>
-          )}
-          {/* Report is a safety action the moderation API accepts from any
+        {/* One tooltip group for the action row, at the slower delay these
+            icon-only buttons want (`delay` exists on Provider alone). The root
+            layout's provider covers everything else. */}
+        <TooltipProvider delay={500}>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {canEdit && editHref && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => router.push(editHref)}
+                aria-label={t('Edit')}
+              >
+                <LuPencil className="size-4" />
+                <span className="hidden sm:inline">{t('Edit')}</span>
+              </Button>
+            )}
+            {/* Report is a safety action the moderation API accepts from any
               caller (signed-in, anonymous, or sessionless). Offer it to any
               viewer so inappropriate content is always flaggable. */}
-          {reportProposalId && (
-            <ReportProposalDialog proposalId={reportProposalId} />
-          )}
-          {/* Mobile-only jump to the comments section (Figma's speech-bubble
+            {reportProposalId && (
+              <ReportProposalDialog proposalId={reportProposalId} />
+            )}
+            {/* Mobile-only jump to the comments section (Figma's speech-bubble
               icon). A plain fragment link — no scroll scripting needed. */}
-          <ButtonLink
-            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-            variant="outline"
-            size="icon"
-            aria-label={t('View comments')}
-            className="sm:hidden"
-          >
-            <LuMessageCircle className="size-4" />
-          </ButtonLink>
-          {/* Like/Follow live in the proposal's engagement row, not here — see
+            <ButtonLink
+              href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+              variant="outline"
+              size="icon"
+              aria-label={t('View comments')}
+              className="sm:hidden"
+            >
+              <LuMessageCircle className="size-4" />
+            </ButtonLink>
+            {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
-          {/* `delay` lives on the provider, not the Tooltip root — wrap locally
-              to keep the slower @op/ui hover feel on this one control. */}
-          {revisionToggle && (
-            <TooltipProvider delay={500}>
+            {revisionToggle && (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -158,21 +159,21 @@ export function ProposalViewLayout({
                 />
                 <TooltipContent>{revisionRequestLabel}</TooltipContent>
               </Tooltip>
-            </TooltipProvider>
-          )}
-          {moderationProposal ? (
-            <ProposalAdminMenu proposal={moderationProposal} />
-          ) : null}
-          <div className="hidden sm:block">
-            <LocaleChooser />
-          </div>
-          {/* Outside the sm-only cluster: Join stays visible on mobile (the
+            )}
+            {moderationProposal ? (
+              <ProposalAdminMenu proposal={moderationProposal} />
+            ) : null}
+            <div className="hidden sm:block">
+              <LocaleChooser />
+            </div>
+            {/* Outside the sm-only cluster: Join stays visible on mobile (the
               avatar keeps its desktop-only treatment via userMenuClassName). */}
-          <JoinOrUserMenu
-            canJoin={canJoin}
-            userMenuClassName="hidden sm:block"
-          />
-        </div>
+            <JoinOrUserMenu
+              canJoin={canJoin}
+              userMenuClassName="hidden sm:block"
+            />
+          </div>
+        </TooltipProvider>
       </div>
 
       <div className="relative min-h-0 overflow-y-auto">{children}</div>

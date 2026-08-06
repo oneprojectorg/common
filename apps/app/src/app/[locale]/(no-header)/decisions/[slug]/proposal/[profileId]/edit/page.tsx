@@ -14,12 +14,7 @@ import {
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
 import { Button } from '@op/sense/Button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@op/sense/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
@@ -184,31 +179,29 @@ function EditProposalPageContent() {
     ? []
     : firstRevisionRequestId
       ? [
-          // `delay` lives on the provider, not the Tooltip root — the sense
-          // app-wide default is 100ms, these icon buttons want the old 500ms.
-          <TooltipProvider key="revision-request" delay={500}>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={toggleRevisionRequest}
-                    aria-label={revisionRequestLabel}
-                    aria-pressed={Boolean(reviewRevision)}
-                    className="relative"
-                  >
-                    <LuStickyNote className="size-4" />
-                    <span
-                      aria-hidden
-                      className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                    />
-                  </Button>
-                }
-              />
-              <TooltipContent>{revisionRequestLabel}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>,
+          // The header's action row supplies the tooltip group and its delay
+          // (`ProposalEditorHeader`), so these only need a Tooltip each.
+          <Tooltip key="revision-request">
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={toggleRevisionRequest}
+                  aria-label={revisionRequestLabel}
+                  aria-pressed={Boolean(reviewRevision)}
+                  className="relative"
+                >
+                  <LuStickyNote className="size-4" />
+                  <span
+                    aria-hidden
+                    className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
+                  />
+                </Button>
+              }
+            />
+            <TooltipContent>{revisionRequestLabel}</TooltipContent>
+          </Tooltip>,
           ...asideHeaderIcons,
         ]
       : asideHeaderIcons;
@@ -366,24 +359,22 @@ function useProposalEditorAsideHeaderIcons({
     const Icon = definition.icon;
 
     return (
-      <TooltipProvider key={asideKey} delay={500}>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => onToggleAside(asideKey)}
-                aria-label={definition.label}
-                aria-pressed={aside === asideKey}
-              >
-                <Icon className="size-4" />
-              </Button>
-            }
-          />
-          <TooltipContent>{definition.label}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip key={asideKey}>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onToggleAside(asideKey)}
+              aria-label={definition.label}
+              aria-pressed={aside === asideKey}
+            >
+              <Icon className="size-4" />
+            </Button>
+          }
+        />
+        <TooltipContent>{definition.label}</TooltipContent>
+      </Tooltip>
     );
   });
 }
