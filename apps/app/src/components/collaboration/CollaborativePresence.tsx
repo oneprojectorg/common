@@ -37,14 +37,14 @@ export function CollaborativePresence({
   // FacePile rings each face in the background color, so the faces need no
   // border of their own.
   const avatarItems = visibleUsers.map((user) => (
-    <Avatar key={user.clientId} size="sm">
+    <Avatar key={user.clientId}>
       <AvatarFallback name={user.name} />
     </Avatar>
   ));
 
   if (overflowCount > 0) {
     avatarItems.push(
-      <Avatar key="overflow" size="sm">
+      <Avatar key="overflow">
         <AvatarFallback className="bg-foreground text-background">
           {t('+{count}', { count: overflowCount })}
         </AvatarFallback>
