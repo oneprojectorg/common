@@ -4,12 +4,12 @@ import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemTitle,
-} from '@op/sense/Item';
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@op/sense/Collapsible';
+import { ItemGroup } from '@op/sense/Item';
+import { cn } from '@op/sense/lib/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import {
@@ -138,6 +138,18 @@ export function ProposalVersionsAside({
   );
 }
 
+/**
+ * One row of the history list (Figma 17955:8511): 16px inset, 8px radius, and
+ * the restore action revealed *inside* the row when it is selected — 76px tall
+ * collapsed, 120px expanded.
+ *
+ * The row is a controlled `Collapsible`: selection drives `open`, so a click
+ * always selects rather than toggling (clicking the open row again would
+ * otherwise collapse it while it is still the version being previewed). The
+ * restore button lives in the panel, which is why the trigger — not the row —
+ * is the button: a `<button>` inside a `<button>` is invalid and swallows the
+ * inner control's clicks.
+ */
 function VersionItem({
   label,
   sublabel,
@@ -156,12 +168,15 @@ function VersionItem({
   const t = useTranslations();
 
   return (
-    <div role="listitem" className="flex w-full flex-col gap-2">
-      <Item
-        // base-ui/cmdk stamp `data-*="false"` too, so the tint variant is
-        // guarded with `data-[selected=true]:` (see MIGRATION.wrk.md).
-        data-selected={isSelected ? true : undefined}
-        className="text-start hover:bg-muted data-[selected=true]:bg-accent data-[selected=true]:hover:bg-accent"
+    <Collapsible
+      open={isSelected}
+      render={<div role="listitem" />}
+      className={cn(
+        'w-full rounded-lg transition-colors',
+        isSelected ? 'bg-accent' : 'hover:bg-muted',
+      )}
+    >
+      <CollapsibleTrigger
         render={
           <button
             type="button"
@@ -170,18 +185,27 @@ function VersionItem({
             aria-current={isSelected ? 'true' : undefined}
           />
         }
+        className={cn(
+          'flex w-full flex-col gap-0.5 rounded-lg px-4 pt-4 text-start outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+          // 16px below the text collapsed; 12px once the button is showing,
+          // which lands the row on Figma's 76 / 120.
+          isSelected ? 'pb-3' : 'pb-4',
+        )}
       >
-        <ItemContent>
-          <ItemTitle>{label}</ItemTitle>
-          <ItemDescription>{sublabel}</ItemDescription>
-        </ItemContent>
-      </Item>
-      {isSelected && onRestore && (
-        <Button size="sm" onClick={onRestore} disabled={isPending}>
-          {t('Restore this version')}
-        </Button>
+        <span className="text-base font-strong text-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground">{sublabel}</span>
+      </CollapsibleTrigger>
+
+      {onRestore && (
+        <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+          <div className="px-4 pb-4">
+            <Button size="sm" onClick={onRestore} disabled={isPending}>
+              {t('Restore this version')}
+            </Button>
+          </div>
+        </CollapsibleContent>
       )}
-    </div>
+    </Collapsible>
   );
 }
 
