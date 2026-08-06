@@ -18,7 +18,6 @@ import { TranslatedText } from '../TranslatedText';
 export const DecisionCardHeader = ({
   name,
   currentState,
-  chipVariant = 'accent',
   stewardName,
   stewardAvatarPath,
   children,
@@ -26,8 +25,6 @@ export const DecisionCardHeader = ({
 }: {
   name: string;
   currentState?: string | null;
-  /** `secondary` for a draft, whose phase isn't a real phase. */
-  chipVariant?: 'accent' | 'secondary';
   stewardName?: string | null;
   stewardAvatarPath?: string | null;
   children?: React.ReactNode;
@@ -49,7 +46,7 @@ export const DecisionCardHeader = ({
     {currentState || children ? (
       <div className="flex flex-wrap items-center gap-3">
         {currentState ? (
-          <Badge variant={chipVariant}>
+          <Badge variant="accent">
             <TranslatedText text={currentState as TranslationKey} />
           </Badge>
         ) : null}

@@ -65,8 +65,12 @@ export interface StatusBadgeProps extends VariantProps<
   children: ReactNode;
   /** Show the trailing arrow (the badge navigates / drills in). */
   hasArrow?: boolean;
-  /** Override the leading icon; defaults to the variant's icon. */
-  icon?: IconType;
+  /**
+   * Override the leading icon; defaults to the variant's icon. `false` drops it,
+   * as the Figma set's icon slot can be turned off — `p-2` then reads as even
+   * padding around a bare label.
+   */
+  icon?: IconType | false;
   className?: string;
 }
 
@@ -83,12 +87,14 @@ export function StatusBadge({
   icon,
   className,
 }: StatusBadgeProps) {
-  const LeadingIcon = icon ?? VARIANT_ICON[variant ?? 'inactive'];
+  const LeadingIcon =
+    icon === false ? null : (icon ?? VARIANT_ICON[variant ?? 'inactive']);
+
   return (
     <span className={cn(statusBadgeVariants({ variant }), className)}>
       {/* Leading icon is 16px, the trailing arrow 12px — sized individually
           rather than by one `[&>svg]` rule. */}
-      <LeadingIcon aria-hidden className="size-4" />
+      {LeadingIcon ? <LeadingIcon aria-hidden className="size-4" /> : null}
       {children}
       {hasArrow ? (
         <LuArrowRight aria-hidden className="size-3 rtl:rotate-180" />

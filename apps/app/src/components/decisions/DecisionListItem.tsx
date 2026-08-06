@@ -17,6 +17,7 @@ import {
   DropdownMenuLinkItem,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
@@ -79,7 +80,10 @@ export const DecisionListItem = ({
   const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
-  const currentPhaseName = isDraft ? t('Draft') : currentPhase?.name;
+  // A draft carries none of the running-process metadata (Figma 17827:9692): no
+  // phase chip, no closing date, no counts — just the name, its owner, and a
+  // Draft badge where the metrics sit.
+  const currentPhaseName = isDraft ? undefined : currentPhase?.name;
   const closingDate = isDraft ? undefined : currentPhase?.endDate;
 
   // For drafts show owner; for published prefer steward, fall back to owner
@@ -103,25 +107,30 @@ export const DecisionListItem = ({
           )}
         >
           <DecisionCardHeader
-            name={processInstance.name || item.name}
+            name={processInstance.name || item.name || t('Untitled')}
             currentState={currentPhaseName}
-            chipVariant={isDraft ? 'secondary' : 'accent'}
             stewardName={displayProfile?.name}
             stewardAvatarPath={displayProfile?.avatarImage?.name}
           >
             {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           </DecisionCardHeader>
 
-          <div className="flex items-end gap-4 sm:items-center sm:gap-10">
-            <DecisionStat
-              number={processInstance.participantCount ?? 0}
-              label="Participants"
-            />
-            <DecisionStat
-              number={processInstance.proposalCount ?? 0}
-              label="Proposals"
-            />
-          </div>
+          {isDraft ? (
+            <StatusBadge variant="inactive" icon={false}>
+              {t('Draft')}
+            </StatusBadge>
+          ) : (
+            <div className="flex items-end gap-4 sm:items-center sm:gap-10">
+              <DecisionStat
+                number={processInstance.participantCount ?? 0}
+                label="Participants"
+              />
+              <DecisionStat
+                number={processInstance.proposalCount ?? 0}
+                label="Proposals"
+              />
+            </div>
+          )}
         </Link>
 
         {(canManage || canDelete) && (
