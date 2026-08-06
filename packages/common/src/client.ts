@@ -39,6 +39,7 @@ export {
   proposalProfileSchema,
   storageItemSchema,
   allProposalsFilterSchema,
+  allProposalLocationsFilterSchema,
   allProposalsListItemSchema,
   allProposalsListSchema,
   type Proposal,
@@ -46,6 +47,7 @@ export {
   type ProposalLocations,
   type ProposalProfile,
   type AllProposalsFilter,
+  type AllProposalLocationsFilter,
   type AllProposalsListItem,
   type AllProposalsList,
 } from './services/decision/schemas/proposal';

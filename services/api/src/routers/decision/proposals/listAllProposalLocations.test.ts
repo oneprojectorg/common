@@ -41,58 +41,69 @@ async function setLocation(
     .where(eq(proposals.id, proposalId));
 }
 
-describe.concurrent('listProposalLocations', () => {
-  it('returns every located proposal and drops those without coordinates', async ({
+describe.concurrent('listAllProposalLocations', () => {
+  it('pins every located proposal across phases, uncapped by list pagination', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
+    // Pass-none pipeline: the submission-phase proposal is NOT carried into
+    // review, so it drops out of the phase-scoped scope after the advance.
     const setup = await testData.createDecisionSetup({
+      processSchema: schemaMissingPipeline,
       instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
 
-    const [located1, located2, unlocated, caller] = await Promise.all([
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'Located One' },
-        status: ProposalStatus.SUBMITTED,
-      }),
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'Located Two' },
-        status: ProposalStatus.SUBMITTED,
-      }),
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'No Location' },
-        status: ProposalStatus.SUBMITTED,
-      }),
-      createAuthenticatedCaller(setup.userEmail),
-    ]);
-
-    await Promise.all([
-      setLocation(located1.id, { lat: 40.7, lng: -74 }),
-      setLocation(located2.id, { lat: 34, lng: -118.2 }),
-      setLocation(unlocated.id, null),
-    ]);
-
-    const result = await caller.decision.listProposalLocations({
+    const submissionProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
       processInstanceId: instanceId,
+      proposalData: { title: 'From submission' },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await setLocation(submissionProposal.id, { lat: 40.7, lng: -74 });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
-    const ids = result.proposals.map((p) => p.id).sort();
-    expect(ids).toEqual([located1.id, located2.id].sort());
-    // The pin needs coordinates + author, so both must survive the slim map.
-    const first = result.proposals.find((p) => p.id === located1.id);
-    expect(first?.proposalData.location).toEqual({ lat: 40.7, lng: -74 });
-    expect(first?.submittedBy).toBeDefined();
+    const reviewProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'From review' },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await setLocation(reviewProposal.id, { lat: 34, lng: -118.2 });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const [locations, firstPage] = await Promise.all([
+      caller.decision.listAllProposalLocations({
+        processInstanceId: instanceId,
+      }),
+      // The results list this map sits beside pages one proposal at a time.
+      caller.decision.listAllProposals({
+        processInstanceId: instanceId,
+        limit: 1,
+      }),
+    ]);
+
+    // Pins cover both phases and both pages; the list only has the first page.
+    expect(locations.proposals.map((p) => p.id).sort()).toEqual(
+      [submissionProposal.id, reviewProposal.id].sort(),
+    );
+    expect(firstPage.items).toHaveLength(1);
+    expect(firstPage.total).toBe(2);
   });
+
+  // Coordinate filtering and the pin projection are covered once, against the
+  // shared `selectProposalLocations` reader, in `listProposalLocations.test.ts`.
+  // What's unique here is the phase-agnostic scope, so these cover that.
 
   it('does not surface a hidden proposal to a non-admin member', async ({
     task,
@@ -139,75 +150,17 @@ describe.concurrent('listProposalLocations', () => {
     ]);
 
     const memberCaller = await createAuthenticatedCaller(member.email);
-    const result = await memberCaller.decision.listProposalLocations({
+    const result = await memberCaller.decision.listAllProposalLocations({
       processInstanceId: instanceId,
     });
 
     // The hidden proposal has coordinates but must not leak a pin to a member
-    // who can't see it in the list.
+    // who can't see it in the results list.
     expect(result.proposals.map((p) => p.id)).toEqual([visible.id]);
-  });
-
-  it('pins only the proposals in the phase being viewed', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    // Pass-none pipeline: the submission-phase proposal is NOT carried into
-    // review, so it must stop being pinned once the instance advances.
-    const setup = await testData.createDecisionSetup({
-      processSchema: schemaMissingPipeline,
-      instanceCount: 1,
-      status: ProcessStatus.PUBLISHED,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-
-    const submissionProposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instanceId,
-      proposalData: { title: 'From submission' },
-      status: ProposalStatus.SUBMITTED,
-    });
-    await setLocation(submissionProposal.id, { lat: 40.7, lng: -74 });
-
-    await testData.advancePhase({
-      instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const reviewProposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instanceId,
-      proposalData: { title: 'From review' },
-      status: ProposalStatus.SUBMITTED,
-    });
-    await setLocation(reviewProposal.id, { lat: 34, lng: -118.2 });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    // No phaseId resolves to the instance's current phase (review).
-    const currentPhase = await caller.decision.listProposalLocations({
-      processInstanceId: instanceId,
-    });
-    expect(currentPhase.proposals.map((p) => p.id)).toEqual([
-      reviewProposal.id,
-    ]);
-
-    // Looking at the earlier phase pins that phase's proposal instead.
-    const submissionPhase = await caller.decision.listProposalLocations({
-      processInstanceId: instanceId,
-      phaseId: 'submission',
-    });
-    expect(submissionPhase.proposals.map((p) => p.id)).toEqual([
-      submissionProposal.id,
-    ]);
   });
 });
 
-describeDecisionAccessTierGating('listProposalLocations', {
+describeDecisionAccessTierGating('listAllProposalLocations', {
   noJwtNonPublic: accessTierGatingCell(
     'admits no-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
@@ -220,7 +173,7 @@ describeDecisionAccessTierGating('listProposalLocations', {
       const caller = await callers.noJwt();
 
       await expectPassesAccessTierGate(
-        caller.decision.listProposalLocations({
+        caller.decision.listAllProposalLocations({
           processInstanceId: setup.instance.instance.id,
         }),
       );
@@ -239,7 +192,7 @@ describeDecisionAccessTierGating('listProposalLocations', {
       const caller = await callers.anonJwt();
 
       await expectPassesAccessTierGate(
-        caller.decision.listProposalLocations({
+        caller.decision.listAllProposalLocations({
           processInstanceId: setup.instance.instance.id,
         }),
       );
@@ -258,7 +211,7 @@ describeDecisionAccessTierGating('listProposalLocations', {
       const caller = await callers.userJwt();
 
       await expectPassesAccessTierGate(
-        caller.decision.listProposalLocations({
+        caller.decision.listAllProposalLocations({
           processInstanceId: setup.instance.instance.id,
         }),
       );
@@ -277,7 +230,7 @@ describeDecisionAccessTierGating('listProposalLocations', {
       const caller = await callers.networkJwt(setup.userEmail);
 
       await expectPassesAccessTierGate(
-        caller.decision.listProposalLocations({
+        caller.decision.listAllProposalLocations({
           processInstanceId: setup.instance.instance.id,
         }),
       );

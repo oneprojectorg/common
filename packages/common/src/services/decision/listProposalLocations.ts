@@ -1,20 +1,23 @@
-import { db } from '@op/db/client';
+import { type SQL, db } from '@op/db/client';
+import type { proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import type { ListProposalsInput } from './listProposals';
+import {
+  type ListProposalsInput,
+  proposalProfileColumns,
+} from './listProposals';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalListScope } from './resolveProposalListScope';
 
 /**
- * Filters a `listProposals`-style query down to the fields a map needs and
- * returns **every** matching proposal that carries a location — no pagination.
+ * Every located proposal visible in the phase being viewed — the pin source for
+ * the phase-scoped browse map, so the map isn't capped by the list's page size.
  *
- * The map plots one pin per located proposal, so it can't be capped by the
- * list's page size. This reuses `resolveProposalListScope` (the exact
- * access/phase/visibility/moderation filter `listProposals` applies) so pins
- * never leak a proposal the viewer isn't allowed to see, and skips the heavy
- * per-proposal enrichment (documents, relationship counts) the pins/hovercards
- * don't use.
+ * Scoping comes from `resolveProposalListScope` (the exact
+ * access/phase/visibility/moderation filter `listProposals` applies), so a
+ * proposal that dropped out at a phase transition stops being pinned the moment
+ * it stops being listed. The results tab spans every phase instead — see
+ * `listAllProposalLocations`.
  */
 export const listProposalLocations = async ({
   input,
@@ -34,6 +37,25 @@ export const listProposalLocations = async ({
     return { proposals: [] };
   }
 
+  return { proposals: await selectProposalLocations({ buildWhereClause }) };
+};
+
+/**
+ * Reads **every** proposal matching `buildWhereClause` that carries a location
+ * — no pagination — narrowed to the fields a map pin needs.
+ *
+ * The map plots one pin per located proposal, so it can't be capped by the
+ * list's page size. Callers pass the exact WHERE clause their paginated list
+ * uses, so pins never leak a proposal the viewer isn't allowed to see. Shared
+ * with `listAllProposalLocations`; the row set is unbounded, so this selects
+ * only the pin/hovercard columns and skips the heavy per-proposal enrichment
+ * (documents, relationship counts) neither of them uses.
+ */
+export const selectProposalLocations = async ({
+  buildWhereClause,
+}: {
+  buildWhereClause: (proposalsTable: typeof proposals) => SQL;
+}) => {
   const rows = await db.query.proposals.findMany({
     where: {
       RAW: (table) => buildWhereClause(table),
@@ -49,6 +71,7 @@ export const listProposalLocations = async ({
     },
     with: {
       submittedBy: {
+        columns: proposalProfileColumns,
         with: {
           avatarImage: true,
           profileUsers: {
@@ -57,11 +80,12 @@ export const listProposalLocations = async ({
           },
         },
       },
-      profile: true,
+      // The hovercard renders the owning profile's display name only.
+      profile: { columns: { name: true } },
     },
   });
 
-  const proposals = rows.flatMap((proposal) => {
+  return rows.flatMap((proposal) => {
     // Drafts and any proposal without coordinates never render a pin.
     const proposalData = parseProposalData(proposal.proposalData);
     if (!proposalData.location) {
@@ -102,6 +126,4 @@ export const listProposalLocations = async ({
       },
     ];
   });
-
-  return { proposals };
 };

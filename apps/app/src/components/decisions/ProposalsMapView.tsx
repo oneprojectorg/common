@@ -3,7 +3,10 @@
 import { trpc } from '@op/api/client';
 import type { DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
-import type { MapDefaultView } from '@op/common/client';
+import type {
+  AllProposalLocationsFilter,
+  MapDefaultView,
+} from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { useCallback, useMemo, useState } from 'react';
@@ -15,7 +18,7 @@ import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
 
-/** Filter for the all-locations pin query — shared with the list, minus the
+/** Filter for the phase-scoped pin query — shared with the list, minus the
  * list-only pagination fields (the map returns every located proposal). */
 interface ProposalLocationFilter {
   processInstanceId: string;
@@ -24,8 +27,15 @@ interface ProposalLocationFilter {
   votedByProfileId?: string;
   status?: ProposalStatus;
   excludeAssignedForReview?: boolean;
-  phase?: 'results';
 }
+
+/** Pins render as one batch, so both pin queries share the list's staleness
+ * window and its forced client-side fetch (which is what registers the
+ * invalidation channel via the client link). */
+const PIN_QUERY_OPTIONS = {
+  staleTime: 30 * 1000,
+  refetchOnMount: 'always',
+} as const;
 
 interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
@@ -58,7 +68,7 @@ interface ProposalsMapViewProps {
  * process's default view (`x-map-default`) when no proposal has a location.
  */
 // fallow-ignore-next-line complexity
-export function ProposalsMapView({
+function ProposalsMapView({
   proposals,
   pinProposals,
   instanceId,
@@ -209,11 +219,10 @@ export function ProposalsMapView({
 }
 
 /**
- * Loads every located proposal in scope from `listProposalLocations` and feeds
- * them to the map as pins, so the map isn't capped by the list's page size.
- * Used for the phase-scoped browse map; the results phase renders
- * `ProposalsMapView` directly with its `listAllProposals` data so the pins
- * match that list's (phase-agnostic) scope.
+ * Loads every located proposal in the viewed phase from `listProposalLocations`
+ * and feeds them to the map as pins, so the map isn't capped by the list's page
+ * size. Used for the phase-scoped browse map; the results tab spans every phase
+ * and uses `ProposalsMapWithAllLocations`.
  */
 export function ProposalsMapWithLocations({
   locationFilter,
@@ -222,12 +231,30 @@ export function ProposalsMapWithLocations({
   locationFilter: ProposalLocationFilter;
 }) {
   const [{ proposals: pinProposals }] =
-    trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
-      staleTime: 30 * 1000,
-      // Force a client-side fetch so the query registers its invalidation
-      // channel via the client link (same pattern as the list query).
-      refetchOnMount: 'always',
-    });
+    trpc.decision.listProposalLocations.useSuspenseQuery(
+      locationFilter,
+      PIN_QUERY_OPTIONS,
+    );
+
+  return <ProposalsMapView {...props} pinProposals={pinProposals} />;
+}
+
+/**
+ * Results-tab counterpart, sourcing pins from `listAllProposalLocations` — the
+ * phase-agnostic query that mirrors the `listAllProposals` list the results tab
+ * pages through. See that service for why the results map needs its own scope.
+ */
+export function ProposalsMapWithAllLocations({
+  locationFilter,
+  ...props
+}: Omit<ProposalsMapViewProps, 'pinProposals'> & {
+  locationFilter: AllProposalLocationsFilter;
+}) {
+  const [{ proposals: pinProposals }] =
+    trpc.decision.listAllProposalLocations.useSuspenseQuery(
+      locationFilter,
+      PIN_QUERY_OPTIONS,
+    );
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
