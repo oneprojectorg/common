@@ -25,9 +25,10 @@ interface CollaborativeTitleFieldProps {
   required?: boolean;
   placeholder?: string;
   /**
-   * When set, renders a live counter inside the input. Not enforced on input —
-   * the limit is enforced by schema validation on submit, same as every other
-   * proposal field.
+   * Caps the title and renders a live counter. Enforced on local input only —
+   * typing past it is rejected and a paste is truncated; remote Yjs edits are
+   * never rejected (that would desync the document), so the API schema carries
+   * the same cap.
    */
   maxLength?: number;
   onChange?: (text: string) => void;
@@ -113,26 +114,30 @@ export function CollaborativeTitleField({
           view.state.doc.textContent.length - (to - from) + text.length;
         return next > maxLength;
       },
+      // Always handled, never deferred to the default: this is a single-value
+      // field, so a pasted paragraph break has to become a space rather than a
+      // second block — `getText()` would otherwise join them with a newline and
+      // put it in the profile's name. Truncating beats rejecting the paste.
       handlePaste: (view, _event, slice) => {
-        if (maxLength == null) {
-          return false;
+        const { from, to } = view.state.selection;
+        // Collapse whitespace runs (a pasted newline becomes a space) but keep
+        // the edges — trimming would eat the leading space when appending.
+        const pasted = slice.content
+          .textBetween(0, slice.content.size, ' ', ' ')
+          .replace(/\s+/g, ' ');
+
+        if (!pasted) {
+          return true;
         }
 
-        const { from, to } = view.state.selection;
+        if (maxLength == null) {
+          view.dispatch(view.state.tr.insertText(pasted, from, to));
+          return true;
+        }
+
         const room =
           maxLength - (view.state.doc.textContent.length - (to - from));
-        const pasted = slice.content.textBetween(
-          0,
-          slice.content.size,
-          ' ',
-          ' ',
-        );
 
-        if (pasted.length <= room) {
-          return false;
-        }
-
-        // Truncate rather than reject the whole paste.
         if (room > 0) {
           view.dispatch(
             view.state.tr.insertText(pasted.slice(0, room), from, to),
@@ -150,14 +155,15 @@ export function CollaborativeTitleField({
       return;
     }
 
-    // Seed the counter without emitting onChange, or mounting marks the draft
-    // dirty.
-    setCharCount(editor.getText().trim().length);
+    // Untrimmed, matching what `handleTextInput` enforces — a counter that
+    // ignores trailing spaces reads "197/200" while typing is already blocked.
+    // The value emitted to the draft stays trimmed.
+    setCharCount(editor.getText().length);
 
     const handleUpdate = () => {
-      const plainText = editor.getText().trim();
-      setCharCount(plainText.length);
-      onChangeRef.current?.(plainText);
+      const text = editor.getText();
+      setCharCount(text.length);
+      onChangeRef.current?.(text.trim());
     };
 
     editor.on('update', handleUpdate);
