@@ -12,6 +12,7 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { Header2 } from '@op/sense/Header';
 import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
@@ -502,10 +503,11 @@ function ProposalEditorInner({
               </SplitPane.Pane>
             </SplitPane>
           ) : (
-            /* Figma column: 544px wide, 56 top/bottom pad, 40 region gap
-               (mobile: 32/16 pad, 24 gap). */
-            <div className="flex flex-1 flex-col py-8 sm:py-14">
-              <div className="mx-auto flex w-full max-w-136 flex-col gap-6 px-4 sm:gap-10 sm:px-6">
+            <div className="px-4 py-8 sm:px-6 sm:py-14">
+              <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+                <Header2>
+                  {isEditMode ? t('Edit proposal') : t('Create proposal')}
+                </Header2>
                 {editorBody}
               </div>
             </div>

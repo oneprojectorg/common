@@ -65,11 +65,11 @@ export function ProposalEditorHeader({
       {/* Figma's left cluster: Back · separator · proposal name · saved status. */}
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Button
-          variant="ghost"
+          variant="link"
           onClick={() => router.push(backHref)}
-          className="shrink-0 text-foreground sm:text-primary"
+          className="shrink-0 max-sm:size-11"
         >
-          <LuArrowLeft className="size-6 sm:size-4 rtl:-scale-x-100" />
+          <LuArrowLeft className="size-4 rtl:-scale-x-100" />
           <span className="hidden sm:block">{t('Back')}</span>
         </Button>
 

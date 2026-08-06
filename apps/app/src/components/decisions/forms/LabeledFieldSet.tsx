@@ -40,8 +40,8 @@ export function LabeledFieldSet({
         {required && <RequiredAsterisk />}
       </FieldLegend>
       {description && (
-        // Cancel the FieldSet gap so the helper sits flush under the legend.
-        // The `nth-last-2` copy beats FieldDescription's own rule on specificity.
+        // Sits flush under the legend via FieldDescription's own
+        // `[[data-variant=legend]+&]:-mt-1.5`, which cancels the FieldSet gap.
         <FieldDescription>{description}</FieldDescription>
       )}
       {children}

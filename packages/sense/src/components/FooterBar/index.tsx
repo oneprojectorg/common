@@ -17,18 +17,11 @@ const footerBarVariants = cva('shrink-0 border-t bg-background backdrop-blur', {
   },
 });
 
-const footerBarContentVariants = cva('flex items-center gap-4', {
+const footerBarContentVariants = cva('flex w-full items-center gap-4', {
   variants: {
     padding: {
       compact: 'px-6 py-2',
       spacious: 'px-18 py-2',
-    },
-    // For fixed mode, center the inner content at the page max-width so
-    // Start/End slots align with the content above.
-    position: {
-      sticky: '',
-      fixed: 'mx-auto w-full',
-      static: '',
     },
   },
   defaultVariants: {
@@ -55,9 +48,7 @@ function FooterBar({
       className={cn(footerBarVariants({ position }), className)}
       {...props}
     >
-      <div className={footerBarContentVariants({ position, padding })}>
-        {children}
-      </div>
+      <div className={footerBarContentVariants({ padding })}>{children}</div>
     </footer>
   );
 }

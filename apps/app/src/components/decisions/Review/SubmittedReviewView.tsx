@@ -19,7 +19,8 @@ import { inferCriterionType } from '../rubricTemplate';
  * holding the answer and the reviewer's note.
  *
  * Field chrome matches `ReviewRubricForm` so the panel doesn't change shape on
- * submit. Only the reviewer's own review has a score, hence `scoreSlot`.
+ * submit. Rendered for the reviewer's own review, a peer's, and the admin
+ * drill-in; only the first passes a total score, hence `scoreSlot`.
  */
 export function SubmittedReviewView({
   rubricTemplate,

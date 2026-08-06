@@ -236,8 +236,8 @@ const VotingProposalsList = ({
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
-    // The review dialog is controlled here (sense Dialog has no descendant
-    // close API), so dismiss it before the success confirmation opens.
+    // Closed from here rather than by a `DialogClose` inside it, because the
+    // close fires from a mutation callback, not a click.
     setIsVoteReviewOpen(false);
     setSelectedProposalIds([]);
     utils.decision.getVotingStatus.invalidate({

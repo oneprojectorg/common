@@ -332,8 +332,9 @@ function ProposalEditorContent({
         }
         revisionRequest={revisionRequest}
       />
-      {/* Portals to the body as a sheet (desktop) / drawer (mobile), so the
-          header actions behind it stay visible. */}
+      {/* Desktop: a non-modal sheet with no backdrop, so the document stays
+          visible and scrollable beside it. Mobile: a modal drawer, which covers
+          the viewport anyway. */}
       {asideSlot}
     </div>
   );

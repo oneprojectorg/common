@@ -75,7 +75,7 @@ export const DecisionContentSkeleton = () => {
  * without shifting the layout: same sticky/border/height classes, with chips
  * where the back link, view toggle, and user controls land.
  *
- * Hidden from assistive tech, like the other skeletons here.
+ * Hidden from assistive tech — a wall of pulsing bars carries nothing.
  */
 export const DecisionHeaderBarSkeleton = () => {
   return (

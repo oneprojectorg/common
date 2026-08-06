@@ -200,7 +200,7 @@ export function CollaborativeTitleField({
             // `self-end` opts out of the group's `items-center` so the counter
             // tracks the last line when 50 characters wrap at a narrow width;
             // `py-2.5` matches the editor's padding, aligning the two baselines.
-            <InputGroupAddon align="inline-end" className="self-end py-2.5">
+            <InputGroupAddon align="inline-end" className="self-end py-3">
               <CharacterCounter
                 id={counterId}
                 count={charCount}

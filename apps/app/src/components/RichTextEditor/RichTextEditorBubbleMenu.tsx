@@ -53,7 +53,7 @@ interface MenuItem {
 }
 
 /**
- * Contextual formatting toolbar that appears above the current text
+ * Contextual formatting toolbar that appears beside the current text
  * selection, built on TipTap's BubbleMenu (floating-ui positioning,
  * debounced so it doesn't flash while the user is still highlighting).
  */
@@ -67,9 +67,11 @@ export function RichTextEditorBubbleMenu({
   const [isEditingEmbed, setIsEditingEmbed] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Unmount on blur: TipTap's own blur handling leaves a stale menu open (its
-  // `preventHide` is never cleared), so two fields' menus end up on screen and
-  // the first in the DOM eats the clicks.
+  // Unmount on blur. TipTap's own blur handling can't do it: clicking a menu
+  // button sets its internal `preventHide`, and because the click deliberately
+  // keeps editor focus, nothing clears the flag until the next blur — which the
+  // handler then swallows. So the field you left keeps its menu, and with one
+  // menu per prose field the first in the DOM eats clicks meant for the other.
   useEffect(() => {
     if (!editor) {
       return;
@@ -281,7 +283,8 @@ export function RichTextEditorBubbleMenu({
       editor={editor}
       pluginKey={pluginKey}
       shouldShow={shouldShow ?? defaultShouldShow}
-      // Not portaled: positioning against the viewport made scrolling janky.
+      // Not portaled *to the body* (TipTap still portals it into the editor's
+      // own wrapper): positioning against the viewport made scrolling janky.
       // The field lifts its own z-index instead (see CollaborativeTextField).
       options={{
         // Sideways: the menu is too tall to fit above or below without being
@@ -369,7 +372,7 @@ export function RichTextEditorBubbleMenu({
               </PopoverContent>
             </Popover>
             {/* Embed (Iframely) — paste/enter a URL to insert a link preview.
-                Same icon as the proposal toolbar's embed button. */}
+             */}
             {hasEmbed && (
               <Popover
                 open={isEditingEmbed}
@@ -477,9 +480,9 @@ const defaultShouldShow: NonNullable<BubbleMenuProps['shouldShow']> = ({
 };
 
 /**
- * Inline link form rendered inside the bubble menu element. Kept inline
- * (rather than a portaled popover) so focusing the input doesn't count as
- * leaving the menu, which would hide it.
+ * Link form, rendered in a portaled `Popover` anchored to its trigger. The
+ * menu stays mounted while it has focus because `isEditingLink` holds it open —
+ * see the early return above.
  */
 function LinkEditor({
   editor,
@@ -578,7 +581,8 @@ function LinkEditor({
 }
 
 /**
- * Inline embed form: enter a URL and insert an Iframely link-preview node.
+ * Embed form: enter a URL and insert an Iframely link-preview node. Portaled
+ * like the link form, and held open the same way (`isEditingEmbed`).
  * Mirrors {@link LinkEditor}; no selection-highlight decoration since the embed
  * inserts a block node rather than wrapping the selected text.
  */

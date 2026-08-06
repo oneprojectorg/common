@@ -87,10 +87,11 @@ export function ProposalEditorAside({
       onOpenChange={handleOpenChange}
     >
       <SheetContent side="right" showOverlay={false}>
-        {/* Keeps SheetHeader's `pe-12`, which reserves room for the built-in
-            absolutely-positioned close button. `border-b` matches the mobile
-            header's rhythm. */}
-        <SheetHeader>
+        {/* `border-b` matches the mobile header and the skeleton, which both
+            draw one — without it the rule vanished when content replaced the
+            skeleton. SheetHeader's own `pe-12` reserves room for the built-in
+            close button, so it isn't overridden here. */}
+        <SheetHeader className="border-b">
           <SheetTitle>
             <bdi>{title}</bdi>
           </SheetTitle>
