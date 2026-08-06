@@ -98,7 +98,7 @@ export const DecisionListItem = ({
 
   return (
     <>
-      <div className="flex items-start gap-0 rounded-lg border hover:bg-accent sm:items-center sm:rounded-none sm:border-0 sm:border-b">
+      <div className="flex items-start rounded-lg border hover:bg-muted sm:items-center sm:rounded-none sm:border-0 sm:border-b">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
           className={cn(
@@ -151,7 +151,7 @@ export const DecisionListItem = ({
                 {canManage && (
                   <DropdownMenuLinkItem
                     closeOnClick
-                    href={`/decisions/${item.slug}/edit`}
+                    render={<Link href={`/decisions/${item.slug}/edit`} />}
                   >
                     {t('Settings')}
                   </DropdownMenuLinkItem>
@@ -265,12 +265,12 @@ export const ProfileDecisionListItem = ({
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
-              className="sm:flex-row sm:gap-1"
+              className="sm:flex-row"
             />
             <DecisionStat
               number={processInstance.proposalCount ?? 0}
               label="Proposals"
-              className="sm:flex-row sm:gap-1"
+              className="sm:flex-row"
             />
           </div>
         </div>
@@ -301,7 +301,7 @@ export const LegacyDecisionListItem = ({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-accent hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-muted hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
     >
       <DecisionCardHeader
         name={name}
@@ -329,12 +329,7 @@ const DecisionStat = ({
   label: TranslationKey;
   className?: string;
 }) => (
-  <div
-    className={cn(
-      'flex items-center gap-1 sm:flex-col sm:items-center sm:gap-1',
-      className,
-    )}
-  >
+  <div className={cn('flex items-center gap-1 sm:flex-col', className)}>
     <span className="font-serif text-title">{number}</span>
     <span className="text-sm text-muted-foreground">
       <TranslatedText text={label} />

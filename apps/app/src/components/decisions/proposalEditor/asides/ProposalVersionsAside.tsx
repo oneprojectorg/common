@@ -178,8 +178,8 @@ function VersionItem({
     // 16px collapsed, 12px expanded — Figma's 76 / 120.
     isSelected ? 'pb-3' : 'pb-4',
   );
-  // `bare` + `none`: own look, but keep the focus ring and disabled handling a
-  // raw `<button>` would drop.
+  // `bare`: own look, but keep the focus ring and disabled handling a raw
+  // `<button>` would drop.
   const rowButton = (
     <Button
       variant="bare"

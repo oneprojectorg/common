@@ -43,7 +43,8 @@ const buttonVariants = cva(
         'icon-lg': 'size-12',
         // No button geometry: sits on the text baseline inside a sentence or a
         // dense row, where a fixed height and side padding break the line. For
-        // `link` mostly; `bare` gets the same reset without asking.
+        // `link` mostly — `bare` sheds its geometry via the compound variant
+        // below, which also collapses the gap this size keeps.
         inline: 'h-auto gap-1 p-0',
       },
     },

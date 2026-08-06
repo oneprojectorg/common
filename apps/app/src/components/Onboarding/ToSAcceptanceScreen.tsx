@@ -117,7 +117,7 @@ function PolicyCheckbox({
       <Dialog>
         <DialogTrigger
           render={
-            <Button variant="link" className="h-auto p-0 text-sm">
+            <Button variant="link" size="inline" className="text-sm">
               {label}
             </Button>
           }

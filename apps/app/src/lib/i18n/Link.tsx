@@ -1,7 +1,6 @@
 'use client';
 
 import { useForesight } from '@/hooks/useForesight';
-import { cn } from '@op/sense/lib/utils';
 import type { AnchorHTMLAttributes } from 'react';
 
 import { NavLink, useRouter } from './routing';
@@ -28,14 +27,14 @@ export const Link = ({
   });
 
   return (
+    // No `hover:underline` here: base-ui concatenates className without merging,
+    // so a Link passed as a `render` target fights the primitive it renders as
+    // (a DropdownMenuLinkItem would underline on hover). Callers that want an
+    // underline declare it — many already do.
+    //
     // @ts-ignore — next-intl's NavLink expects a route literal; we forward
     // arbitrary string hrefs.
-    <NavLink
-      {...props}
-      ref={elementRef}
-      className={cn('hover:underline', className)}
-      prefetch={false}
-    >
+    <NavLink {...props} ref={elementRef} className={className} prefetch={false}>
       {children}
     </NavLink>
   );

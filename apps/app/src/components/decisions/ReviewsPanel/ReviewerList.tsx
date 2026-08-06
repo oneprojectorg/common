@@ -194,9 +194,9 @@ function ReviewerRow({
 }) {
   const t = useTranslations();
   return (
-    // `bare` + `none`: the row keeps its card look and picks up the sense focus
-    // ring, which the hand-rolled `outline-data-blue` one it used to carry was
-    // never going to match.
+    // `bare`: the row keeps its card look and picks up the sense focus ring,
+    // which the hand-rolled `outline-data-blue` one it used to carry never
+    // matched.
     <Button
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}

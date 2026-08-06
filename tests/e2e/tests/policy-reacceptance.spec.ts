@@ -51,38 +51,63 @@ test.describe('Policy re-acceptance modal', () => {
 
     await page.goto('/en/', { waitUntil: 'domcontentloaded' });
 
-    const dialog = page
+    // A policy document opens in its own dialog stacked over the gate, so both
+    // are `role="dialog"` at once — scope to each by content instead of relying
+    // on there being exactly one.
+    const dialogs = page
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
+    const gate = dialogs.filter({ hasText: "We've updated our policies." });
+    const doc = dialogs.filter({
+      hasText: 'TERMS OF SERVICE FOR COMMON PLATFORM',
+    });
+
     await expect(
-      dialog.getByRole('heading', { name: "We've updated our policies." }),
+      gate.getByRole('heading', { name: "We've updated our policies." }),
     ).toBeVisible({ timeout: 20000 });
 
     // Non-dismissable: Escape must not close it.
     await page.keyboard.press('Escape');
     await expect(
-      dialog.getByRole('heading', { name: "We've updated our policies." }),
+      gate.getByRole('heading', { name: "We've updated our policies." }),
     ).toBeVisible();
 
     // The action is gated on the consent checkbox.
-    const agree = dialog.getByRole('button', { name: 'Agree and continue' });
+    const agree = gate.getByRole('button', { name: 'Agree and continue' });
     await expect(agree).toBeDisabled();
 
-    // A policy link opens that document in-modal with a working back button.
-    await dialog.getByRole('button', { name: 'Terms of Use' }).click();
+    // A policy link opens that document over the gate, with a working back
+    // button. The gate stays mounted underneath.
+    const termsTrigger = gate.getByRole('button', { name: 'Terms of Use' });
+    await termsTrigger.click();
     await expect(
-      dialog.getByRole('heading', {
+      doc.getByRole('heading', {
         name: /TERMS OF SERVICE FOR COMMON PLATFORM/,
       }),
     ).toBeVisible({ timeout: 15000 });
-    await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(
-      dialog.getByRole('heading', { name: "We've updated our policies." }),
+      gate.getByRole('heading', { name: "We've updated our policies." }),
     ).toBeVisible();
 
-    // Accept and continue. Force past the visually-hidden React Aria checkbox
-    // input (Playwright's actionability check never passes on it otherwise).
-    await dialog.getByRole('checkbox').check({ force: true });
+    // Escape closes the document only — the consent wall must survive it.
+    await page.keyboard.press('Escape');
+    await expect(doc).toBeHidden();
+    await expect(
+      gate.getByRole('heading', { name: "We've updated our policies." }),
+    ).toBeVisible();
+
+    // Reopen and leave via Back, which returns focus to the link that opened it.
+    await termsTrigger.click();
+    await expect(doc).toBeVisible();
+    await doc.getByRole('button', { name: 'Back' }).click();
+    await expect(doc).toBeHidden();
+    await expect(termsTrigger).toBeFocused();
+
+    // Accept and continue. `force` because the base-ui checkbox keeps the real
+    // input visually hidden, so Playwright's actionability check never passes.
+    await gate
+      .getByRole('checkbox', { name: /I have read and agree/ })
+      .check({ force: true });
     await expect(agree).toBeEnabled();
     await agree.click();
 

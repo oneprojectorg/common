@@ -78,94 +78,69 @@ const PolicyReacceptanceModalContent = () => {
           whole card. */}
       <DialogContent
         showCloseButton={false}
-        className="flex flex-col overflow-hidden p-0 sm:max-w-lg"
+        className="flex flex-col overflow-hidden sm:max-w-lg"
       >
-        <PolicyReacceptanceMain
-          agreed={agreed}
-          onAgreedChange={setAgreed}
-          onAgree={handleAgree}
-          isSubmitting={isSubmitting}
-        />
+        {/* No divider, no room reserved for a close button, and centred: the
+          slot's chrome is for a titled dialog with an X, which this isn't. */}
+        <DialogHeader className="shrink-0 border-b-0 px-8 pt-8 pb-0 text-center sm:px-10 sm:pt-10">
+          <DialogTitle className="text-headline">
+            {t("We've updated our policies.")}
+          </DialogTitle>
+          {/* Not muted: this line is content, not a subtitle. */}
+          <DialogDescription className="text-foreground">
+            {t('Review the changes and accept to keep using Common.')}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-8 py-6 sm:px-10">
+          <div className="flex flex-col gap-2 rounded-xl border bg-muted p-4">
+            <Header3>{t("What's changed")}</Header3>
+            <p>
+              {t(
+                'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
+              )}
+            </p>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <Checkbox
+              aria-labelledby="policy-consent-label"
+              checked={agreed}
+              onCheckedChange={setAgreed}
+            />
+            <span id="policy-consent-label" className="-mt-1 text-base">
+              {t.rich(
+                'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
+                {
+                  terms: (chunks: ReactNode) => (
+                    <PolicyDocumentDialog document="terms" trigger={chunks} />
+                  ),
+                  privacy: (chunks: ReactNode) => (
+                    <PolicyDocumentDialog document="privacy" trigger={chunks} />
+                  ),
+                  conduct: (chunks: ReactNode) => (
+                    <PolicyDocumentDialog document="conduct" trigger={chunks} />
+                  ),
+                },
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Untinted and undivided, and the button keeps its own full width rather
+          than being pushed to the inline end. */}
+        <DialogFooter className="shrink-0 border-t-0 bg-transparent px-8 pt-0 pb-8 sm:flex-col sm:px-10 sm:pb-10">
+          <Button
+            className="w-full"
+            disabled={!agreed}
+            loading={isSubmitting}
+            onClick={handleAgree}
+          >
+            {t('Agree and continue')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-};
-
-const PolicyReacceptanceMain = ({
-  agreed,
-  onAgreedChange,
-  onAgree,
-  isSubmitting,
-}: {
-  agreed: boolean;
-  onAgreedChange: (value: boolean) => void;
-  onAgree: () => void;
-  isSubmitting: boolean;
-}) => {
-  const t = useTranslations();
-
-  return (
-    <>
-      {/* No divider, no room reserved for a close button, and centred: the
-          slot's chrome is for a titled dialog with an X, which this isn't. */}
-      <DialogHeader className="shrink-0 border-b-0 px-8 pe-8 pt-8 pb-0 text-center sm:px-10 sm:pt-10">
-        <DialogTitle className="text-headline">
-          {t("We've updated our policies.")}
-        </DialogTitle>
-        {/* Not muted: this line is content, not a subtitle. */}
-        <DialogDescription className="text-foreground">
-          {t('Review the changes and accept to keep using Common.')}
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-8 py-6 sm:px-10">
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted p-4">
-          <Header3>{t("What's changed")}</Header3>
-          <p>
-            {t(
-              'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
-            )}
-          </p>
-        </div>
-
-        <div className="flex items-start gap-2">
-          <Checkbox
-            aria-labelledby="policy-consent-label"
-            checked={agreed}
-            onCheckedChange={onAgreedChange}
-          />
-          <span id="policy-consent-label" className="-mt-1 text-base">
-            {t.rich(
-              'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
-              {
-                terms: (chunks: ReactNode) => (
-                  <PolicyDocumentDialog document="terms" trigger={chunks} />
-                ),
-                privacy: (chunks: ReactNode) => (
-                  <PolicyDocumentDialog document="privacy" trigger={chunks} />
-                ),
-                conduct: (chunks: ReactNode) => (
-                  <PolicyDocumentDialog document="conduct" trigger={chunks} />
-                ),
-              },
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* Untinted and undivided, and the button keeps its own full width rather
-          than being pushed to the inline end. */}
-      <DialogFooter className="shrink-0 border-t-0 bg-transparent px-8 pt-0 pb-8 sm:flex-col sm:px-10 sm:pb-10">
-        <Button
-          className="w-full"
-          disabled={!agreed}
-          loading={isSubmitting}
-          onClick={onAgree}
-        >
-          {t('Agree and continue')}
-        </Button>
-      </DialogFooter>
-    </>
   );
 };
 
@@ -183,8 +158,9 @@ const documentContent: Record<PolicyDocument, () => ReactNode> = {
  * that opened it. Swapping unmounted that link mid-press, dropping focus to the
  * body with nothing announced.
  *
- * The trigger sits next to (not inside) the consent Checkbox's label, so
- * pressing a link never toggles it.
+ * The trigger sits inside the consent Checkbox's label text, which is safe
+ * because the two are associated with `aria-labelledby` rather than a wrapping
+ * `<label>` — so a press inside the text never forwards to the control.
  */
 const PolicyDocumentDialog = ({
   document,
@@ -220,9 +196,9 @@ const PolicyDocumentDialog = ({
       <DialogContent
         showCloseButton={false}
         initialFocus={scrollRef}
-        className="flex flex-col overflow-hidden p-0 sm:max-w-xl"
+        className="flex flex-col overflow-hidden sm:max-w-xl"
       >
-        <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0 pe-4">
+        <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0">
           {/* Back rather than a close X: this reads as a drill-down from the
               gate, and it's the nested dialog's DialogClose either way. */}
           <DialogClose
@@ -234,7 +210,7 @@ const PolicyDocumentDialog = ({
           </DialogClose>
           {/* Centred on the header, not on the Back button beside it, so
               `relative` above is load-bearing. */}
-          <DialogTitle className="pointer-events-none absolute inset-x-0 text-center">
+          <DialogTitle className="pointer-events-none absolute inset-x-14 truncate text-center">
             {documentTitle[document]}
           </DialogTitle>
         </DialogHeader>
