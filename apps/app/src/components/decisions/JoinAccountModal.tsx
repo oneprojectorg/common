@@ -95,7 +95,13 @@ export const JoinDecisionButton = ({
 export const JoinDecisionButtonFallback = () => {
   const t = useTranslations();
 
-  return <Button render={<a href="?join=1" />}>{t('Join')}</Button>;
+  // Same as ButtonLink: it renders an anchor, so tell base-ui it isn't a native
+  // button and keep link semantics rather than its `role="button"`.
+  return (
+    <Button nativeButton={false} role={undefined} render={<a href="?join=1" />}>
+      {t('Join')}
+    </Button>
+  );
 };
 
 /**
