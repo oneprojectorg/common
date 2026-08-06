@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
 import { Header2 } from '@op/sense/Header';
+import { PaginationBar } from '@op/sense/PaginationBar';
 import {
   Select,
   SelectContent,
@@ -40,7 +41,6 @@ import { LuDownload, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { TablePagination } from './TablePagination';
 import { TableSearchField } from './TableSearchField';
 import { UsersRowCells } from './UsersRow';
 
@@ -251,11 +251,19 @@ const UsersTableContent = ({
         </TableBody>
       </Table>
       <div className="mt-4">
-        <TablePagination
-          totalItems={total}
-          itemsPerPage={limit}
-          page={currentPage}
-          label={t('users')}
+        <PaginationBar
+          range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
+          renderRange={({ start, end, total: count }) =>
+            t('{start} - {end} of {total} {label}', {
+              start,
+              end,
+              total: count,
+              label: t('users'),
+            })
+          }
+          previousLabel={t('Previous')}
+          nextLabel={t('Next')}
+          navLabel={t('Pagination Navigation')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />

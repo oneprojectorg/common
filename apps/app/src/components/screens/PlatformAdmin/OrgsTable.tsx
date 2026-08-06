@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/sense/Header';
+import { PaginationBar } from '@op/sense/PaginationBar';
 import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
@@ -17,7 +18,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { OrgsRowCells } from './OrgsRow';
-import { TablePagination } from './TablePagination';
 import { TableSearchField } from './TableSearchField';
 
 /** Main organizations table component with suspense boundary */
@@ -101,11 +101,19 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
         </TableBody>
       </Table>
       <div className="mt-4">
-        <TablePagination
-          totalItems={total}
-          itemsPerPage={limit}
-          page={currentPage}
-          label={t('organizations')}
+        <PaginationBar
+          range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
+          renderRange={({ start, end, total: count }) =>
+            t('{start} - {end} of {total} {label}', {
+              start,
+              end,
+              total: count,
+              label: t('organizations'),
+            })
+          }
+          previousLabel={t('Previous')}
+          nextLabel={t('Next')}
+          navLabel={t('Pagination Navigation')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />

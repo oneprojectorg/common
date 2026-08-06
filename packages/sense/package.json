@@ -62,6 +62,7 @@
     "./NotificationPanel": "./src/components/NotificationPanel/index.tsx",
     "./NumberField": "./src/components/NumberField/index.tsx",
     "./Pagination": "./src/components/ui/pagination.tsx",
+    "./PaginationBar": "./src/components/PaginationBar/index.tsx",
     "./PhaseCard": "./src/components/PhaseCard/index.tsx",
     "./PhaseConfigRow": "./src/components/PhaseConfigRow/index.tsx",
     "./PhaseStepper": "./src/components/PhaseStepper/index.tsx",
