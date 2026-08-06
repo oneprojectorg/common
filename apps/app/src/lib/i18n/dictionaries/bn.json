@@ -1,5 +1,6 @@
 {
   "Already have an account? <login>Log in</login>": "ইতিমধ্যে একটি অ্যাকাউন্ট আছে? <login>লগ ইন করুন</login>",
+  "Create proposal": "প্রস্তাব তৈরি করুন",
   "Post": "পোস্ট",
   "Posts": "পোস্টসমূহ",
   "Closes": "বন্ধ হবে",
@@ -11,6 +12,8 @@
   "Professional title": "পেশাগত পদবী",
   "Enter your professional title": "আপনার পেশাগত পদবী লিখুন",
   "Continue": "চালিয়ে যান",
+  "That version is still loading": "সেই সংস্করণটি এখনও লোড হচ্ছে",
+  "Wait for the preview to appear, then try again.": "প্রিভিউ দেখা যাওয়া পর্যন্ত অপেক্ষা করুন, তারপর আবার চেষ্টা করুন।",
   "We've pre-filled information about [ORGANIZATION].": "আমরা [ORGANIZATION] সম্পর্কে তথ্য আগেই পূরণ করে রেখেছি।",
   "Please review and make any necessary changes.": "অনুগ্রহ করে পর্যালোচনা করুন এবং প্রয়োজনীয় যেকোনো পরিবর্তন করুন।",
   "Name": "নাম",

@@ -1,5 +1,6 @@
 {
   "Already have an account? <login>Log in</login>": "لديك حساب بالفعل؟ <login>تسجيل الدخول</login>",
+  "Create proposal": "إنشاء مقترح",
   "Post": "منشور",
   "Posts": "منشورات",
   "Closes": "ينتهي",
@@ -11,6 +12,8 @@
   "Professional title": "المسمى الوظيفي",
   "Enter your professional title": "أدخل مسماك الوظيفي",
   "Continue": "متابعة",
+  "That version is still loading": "لا يزال تحميل هذا الإصدار جاريًا",
+  "Wait for the preview to appear, then try again.": "انتظر حتى تظهر المعاينة ثم أعد المحاولة.",
   "We've pre-filled information about [ORGANIZATION].": "لقد قمنا بتعبئة المعلومات مسبقًا عن [ORGANIZATION].",
   "Please review and make any necessary changes.": "يرجى المراجعة وإجراء أي تغييرات ضرورية.",
   "Name": "الاسم",

@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@op/logging/client';
 import { getPreviewContentFromVersionPayload } from '@tiptap-pro/extension-snapshot';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import type { JSONContent } from '@tiptap/react';
@@ -116,8 +117,13 @@ export function VersionPreviewProvider({
   );
 
   useEffect(() => {
+    // Clear on every change, not just on null: the incoming version's contents
+    // arrive asynchronously, and restoring while the previous version's are
+    // still held would revert the body to one version and write another's
+    // title, category and budget.
+    setFragmentContents({});
+
     if (versionId === null) {
-      setFragmentContents({});
       return;
     }
 
@@ -126,33 +132,39 @@ export function VersionPreviewProvider({
 
   useEffect(() => {
     const onStateless = (data: { payload: string }) => {
-      try {
-        const parsed = JSON.parse(data.payload) as {
-          event?: string;
-          version?: number;
-        };
+      let parsed: { event?: string; version?: number };
 
-        if (
-          parsed.event !== 'version.preview' ||
-          parsed.version !== versionId
-        ) {
+      try {
+        parsed = JSON.parse(data.payload) as typeof parsed;
+      } catch {
+        // Not JSON — an unrelated stateless provider event.
+        return;
+      }
+
+      if (parsed.event !== 'version.preview' || parsed.version !== versionId) {
+        return;
+      }
+
+      const contents: Record<string, JSONContent | null> = {};
+
+      for (const name of fragmentNames) {
+        try {
+          contents[name] = getNormalizedPreviewContent(data.payload, name);
+        } catch (error) {
+          // Publish nothing rather than a partial preview: a null fragment is
+          // indistinguishable from an empty one downstream, and `restoreVersion`
+          // would write it as a blank title.
+          logger.error('[VersionPreview] failed to parse fragment', {
+            error,
+            fragmentName: name,
+            versionId,
+          });
+          setFragmentContents({});
           return;
         }
-
-        const contents: Record<string, JSONContent | null> = {};
-
-        for (const name of fragmentNames) {
-          try {
-            contents[name] = getNormalizedPreviewContent(data.payload, name);
-          } catch {
-            console.warn(`[VersionPreview] failed to parse fragment "${name}"`);
-            contents[name] = null;
-          }
-        }
-        setFragmentContents(contents);
-      } catch {
-        // Ignore unrelated stateless provider events.
       }
+
+      setFragmentContents(contents);
     };
 
     provider.on('stateless', onStateless);

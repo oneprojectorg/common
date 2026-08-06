@@ -37,7 +37,8 @@ interface ProposalVersionsAsideProps {
   open: boolean;
   versionId: number | null;
   onSelectVersion: (versionId: number | null) => void;
-  onRestoreVersion: (versionId: number) => void;
+  /** Resolves once the restore has settled, so the row can show progress. */
+  onRestoreVersion: (versionId: number) => Promise<void>;
   onClose: () => void;
 }
 
@@ -87,10 +88,17 @@ export function ProposalVersionsAside({
       return;
     }
 
-    startTransition(() => {
-      onRestoreVersion(versionId);
+    // The callback must be async and awaited: a synchronous one ends the
+    // transition before the mutation resolves, so `isPending` stays false and
+    // every guard built on it — the modal's loading state, its
+    // `disablePointerDismissal`, the disabled rows — never engages.
+    startTransition(async () => {
+      try {
+        await onRestoreVersion(versionId);
+      } finally {
+        setIsRestoreModalOpen(false);
+      }
     });
-    setIsRestoreModalOpen(false);
   }
 
   return (

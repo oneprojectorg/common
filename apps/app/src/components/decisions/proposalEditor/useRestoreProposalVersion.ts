@@ -71,16 +71,23 @@ export function useRestoreProposalVersion({
   }
 
   /**
-   * Restores the proposal to the specified version using the provided
-   * fragment contents. Reverts the collaborative document and persists
-   * the extracted field values.
+   * Restores the proposal to the specified version using the provided fragment
+   * contents: reverts the collaborative document and persists the extracted
+   * field values.
+   *
+   * Returns false without touching anything when the version's contents aren't
+   * available — the preview arrives asynchronously, and reverting on an empty
+   * map would blank the title, category and budget.
    */
   async function restoreVersion(
     versionId: number,
     fragmentContents: Record<string, JSONContent | null>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (Object.keys(fragmentContents).length === 0) {
-      return;
+      toast.error(t('That version is still loading'), {
+        description: t('Wait for the preview to appear, then try again.'),
+      });
+      return false;
     }
 
     const restoredData = buildRestoredProposalData(fragmentContents);
@@ -100,6 +107,8 @@ export function useRestoreProposalVersion({
       proposalId,
       data: restoredData,
     });
+
+    return true;
   }
 
   return {

@@ -1,5 +1,6 @@
 {
   "Already have an account? <login>Log in</login>": "Já tem uma conta? <login>Entrar</login>",
+  "Create proposal": "Criar proposta",
   "Post": "Publicar",
   "Posts": "Publicações",
   "Closes": "Encerra",
@@ -11,6 +12,8 @@
   "Professional title": "Título profissional",
   "Enter your professional title": "Digite seu título profissional",
   "Continue": "Continuar",
+  "That version is still loading": "Essa versão ainda está carregando",
+  "Wait for the preview to appear, then try again.": "Aguarde a pré-visualização aparecer e tente novamente.",
   "We've pre-filled information about [ORGANIZATION].": "Preenchemos as informações sobre [ORGANIZATION].",
   "Please review and make any necessary changes.": "Por favor, revise e faça as alterações necessárias.",
   "Name": "Nome",

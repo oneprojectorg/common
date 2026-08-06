@@ -1,5 +1,6 @@
 {
   "Already have an account? <login>Log in</login>": "Horeyba akoon ma leedahay? <login>Soo gal</login>",
+  "Create proposal": "Samee soo jeedin",
   "Post": "Qoraal",
   "Posts": "Qoraallo",
   "Closes": "Xidhitaanka",
@@ -11,6 +12,8 @@
   "Professional title": "Cinwaanka xirfadeed",
   "Enter your professional title": "Geli cinwaankaaga xirfadeed",
   "Continue": "Sii wad",
+  "That version is still loading": "Nooca weli waa la soo dejinayaa",
+  "Wait for the preview to appear, then try again.": "Sug inta muuqaalka hordhaca soo baxayo, ka dibna isku day mar kale.",
   "We've pre-filled information about [ORGANIZATION].": "Waxaan horey u buuxinnay xogta ku saabsan [ORGANIZATION].",
   "Please review and make any necessary changes.": "Fadlan dib u eeg oo samee isbeddel kasta oo loo baahan yahay.",
   "Name": "Magac",
