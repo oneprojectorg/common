@@ -63,7 +63,7 @@ export function ViewerCollapsibleContent({
 }) {
   return (
     <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
-      <div className="ps-9 pe-2">{children}</div>
+      <div className="ps-9 pe-2 *:first:mt-1">{children}</div>
     </CollapsibleContent>
   );
 }
