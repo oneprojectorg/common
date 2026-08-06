@@ -184,7 +184,10 @@ export function CollaborativeTitleField({
         // not match — so a wrapped title spilled out of its own border.
         <InputGroup className="h-auto min-h-11 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
           <EditorContent
-            className="min-w-0 flex-1 px-3 py-2.5"
+            // `w-full` because the block addon turns InputGroup into a column,
+            // where its `items-center` centres children horizontally — sense's
+            // Textarea carries the same class for the same reason.
+            className="w-full min-w-0 flex-1 px-3 py-2.5"
             dir={editor.isEmpty ? undefined : 'auto'}
             editor={editor}
           />
