@@ -177,16 +177,19 @@ function VersionItem({
       )}
     >
       <CollapsibleTrigger
+        // `bare` + `none`: the row owns its own look, but still wants the
+        // sense focus ring and disabled handling a raw `<button>` would drop.
         render={
-          <button
-            type="button"
+          <Button
+            variant="bare"
+            size="none"
             onClick={onSelect}
             disabled={isPending}
             aria-current={isSelected ? 'true' : undefined}
           />
         }
         className={cn(
-          'flex w-full flex-col gap-0.5 rounded-lg px-4 pt-4 text-start outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+          'flex w-full flex-col items-start gap-0.5 rounded-lg px-4 pt-4 text-start',
           // 16px below the text collapsed; 12px once the button is showing,
           // which lands the row on Figma's 76 / 120.
           isSelected ? 'pb-3' : 'pb-4',

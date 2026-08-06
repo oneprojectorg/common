@@ -20,6 +20,13 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] active:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_15%)] focus-visible:ring-destructive/40 dark:focus-visible:ring-destructive/40',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Paint removed, behaviour kept: the focus ring, disabled handling,
+        // cursor and icon sizing in the base class still apply, so a surface
+        // that owns its own appearance (a list row, a card, a cell) doesn't
+        // have to drop to a raw `<button>` and lose them. Pair with
+        // `size="none"`. `[font:inherit]` also resets line-height, which the
+        // base's `text-base` would otherwise impose on inherited type.
+        bare: '[font:inherit] rounded-none text-current active:not-aria-[haspopup]:translate-y-0',
       },
       size: {
         default:
@@ -32,6 +39,9 @@ const buttonVariants = cva(
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
         'icon-sm': 'size-8 rounded-md in-data-[slot=button-group]:rounded-lg',
         'icon-lg': 'size-12',
+        // No box of its own — the caller supplies the geometry. Only useful
+        // with `variant="bare"`.
+        none: 'h-auto gap-0 rounded-none p-0',
       },
     },
     compoundVariants: [
