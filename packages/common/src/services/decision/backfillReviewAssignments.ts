@@ -74,10 +74,8 @@ export async function backfillReviewAssignments({
 
   const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
 
-  // `single_reviewer` owns one-assignment-per-proposal; backfilling a new
-  // reviewer would add a second reviewer to every proposal they cover. Decided
-  // 2026-08-06: no backfill — gaps wait for admin manual assign or the next
-  // transition (a gap-fill variant is deferred).
+  // No backfill under `single_reviewer`: adding a mid-phase reviewer would put
+  // a second reviewer on every proposal they cover.
   if (reviewSettings.policy === 'single_reviewer') {
     return skip('current phase policy is single_reviewer');
   }

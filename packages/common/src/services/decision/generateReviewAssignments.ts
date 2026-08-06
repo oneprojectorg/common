@@ -24,17 +24,6 @@ interface SelectedProposal {
   submittedByProfileId: string | null;
 }
 
-type ZeroCandidateReason =
-  | 'no_eligible_reviewers'
-  | 'category_has_no_eligible_reviewers'
-  | 'uncategorized';
-
-/** A proposal's candidate reviewers, author already excluded. */
-interface CandidateProposal extends AssignableProposal {
-  /** Read only when the set is empty; scopes without a specific reason omit it. */
-  zeroCandidateReason?: ZeroCandidateReason;
-}
-
 /**
  * Generate review assignment rows for proposals entering a review-capable phase.
  *
@@ -116,13 +105,15 @@ export async function generateReviewAssignments({
           eligibleReviewerProfileIds: reviewerProfileIds,
           historyByProposalId,
         })
-      : buildAllScopeProposals({
-          selectedProposals,
-          eligibleReviewerProfileIds: reviewerProfileIds,
-          historyByProposalId,
-        });
-
-  warnUncoverableProposals({ instanceId, phaseId, candidateProposals });
+      : selectedProposals.map((proposal) => ({
+          proposalId: proposal.id,
+          submittedByProfileId: proposal.submittedByProfileId,
+          assignedProposalHistoryId:
+            historyByProposalId.get(proposal.id) ?? null,
+          reviewerProfileIds: reviewerProfileIds.filter(
+            (id) => id !== proposal.submittedByProfileId,
+          ),
+        }));
 
   const assignableProposals =
     policy === 'single_reviewer'
@@ -165,79 +156,16 @@ async function applySingleReviewerPolicy({
     },
   );
 
-  const { assignableProposals, alreadyCoveredProposalIds } =
-    pickSingleReviewerAssignments({
-      assignableProposals: candidateProposals,
-      existingAssignments,
-    });
-
-  if (alreadyCoveredProposalIds.length > 0) {
-    logger.info(
-      'generateReviewAssignments: skipped proposals already covered in this phase',
-      {
-        instanceId,
-        phaseId,
-        skippedCount: alreadyCoveredProposalIds.length,
-        proposalIds: alreadyCoveredProposalIds,
-      },
-    );
-  }
-
-  return assignableProposals;
-}
-
-/**
- * One warning per uncoverable proposal, for every scope × policy combination.
- * Reads the candidate sets, not the policy output — a proposal the policy
- * empties on purpose (already covered) is not a gap.
- */
-function warnUncoverableProposals({
-  instanceId,
-  phaseId,
-  candidateProposals,
-}: {
-  instanceId: string;
-  phaseId: string;
-  candidateProposals: CandidateProposal[];
-}): void {
-  for (const proposal of candidateProposals) {
-    if (proposal.reviewerProfileIds.length > 0) {
-      continue;
-    }
-
-    logger.warn('generateReviewAssignments: proposal has zero reviewers', {
-      instanceId,
-      phaseId,
-      proposalId: proposal.proposalId,
-      reason: proposal.zeroCandidateReason ?? 'no_eligible_reviewers',
-    });
-  }
-}
-
-/** Every eligible reviewer, minus the proposal's own author. */
-function buildAllScopeProposals({
-  selectedProposals,
-  eligibleReviewerProfileIds,
-  historyByProposalId,
-}: {
-  selectedProposals: SelectedProposal[];
-  eligibleReviewerProfileIds: string[];
-  historyByProposalId: Map<string, string>;
-}): CandidateProposal[] {
-  return selectedProposals.map((proposal) => ({
-    proposalId: proposal.id,
-    submittedByProfileId: proposal.submittedByProfileId,
-    assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
-    reviewerProfileIds: eligibleReviewerProfileIds.filter(
-      (id) => id !== proposal.submittedByProfileId,
-    ),
-  }));
+  return pickSingleReviewerAssignments({
+    assignableProposals: candidateProposals,
+    existingAssignments,
+  });
 }
 
 /**
  * Scope rows covering the proposal's categories ∩ eligible reviewers, minus
- * the author. A proposal nobody covers is never blocked: it carries the reason
- * for the warning and proceeds with an empty set.
+ * the author. A proposal nobody covers proceeds with an empty set — never
+ * blocked.
  */
 async function buildByCategoryProposals({
   instanceId,
@@ -253,38 +181,25 @@ async function buildByCategoryProposals({
   selectedProposals: SelectedProposal[];
   eligibleReviewerProfileIds: string[];
   historyByProposalId: Map<string, string>;
-}): Promise<CandidateProposal[]> {
-  const [scopedByProposal, categorizedRows] = await Promise.all([
-    getCategoryReviewersByProposal({
-      instanceId,
-      phaseId,
-      proposalIds: selectedProposalIds,
-    }),
-    db.query.proposalCategories.findMany({
-      where: { proposalId: { in: selectedProposalIds } },
-      columns: { proposalId: true },
-    }),
-  ]);
+}): Promise<AssignableProposal[]> {
+  const scopedByProposal = await getCategoryReviewersByProposal({
+    instanceId,
+    phaseId,
+    proposalIds: selectedProposalIds,
+  });
 
-  const categorizedProposalIds = new Set(
-    categorizedRows.map((row) => row.proposalId),
-  );
   const eligibleSet = new Set(eligibleReviewerProfileIds);
 
   return selectedProposals.map((proposal) => {
     const scoped = scopedByProposal.get(proposal.id) ?? new Set<string>();
-    const reviewerProfileIds = [...scoped].filter(
-      (id) => eligibleSet.has(id) && id !== proposal.submittedByProfileId,
-    );
 
     return {
       proposalId: proposal.id,
       submittedByProfileId: proposal.submittedByProfileId,
       assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
-      reviewerProfileIds,
-      zeroCandidateReason: categorizedProposalIds.has(proposal.id)
-        ? 'category_has_no_eligible_reviewers'
-        : 'uncategorized',
+      reviewerProfileIds: [...scoped].filter(
+        (id) => eligibleSet.has(id) && id !== proposal.submittedByProfileId,
+      ),
     };
   });
 }

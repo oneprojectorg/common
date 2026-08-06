@@ -17,16 +17,10 @@ export interface PickSingleReviewerAssignmentsInput {
   existingAssignments: ExistingPhaseAssignment[];
 }
 
-export interface PickSingleReviewerAssignmentsResult {
-  /** Skipped and uncoverable proposals carry an empty set. */
-  assignableProposals: AssignableProposal[];
-  alreadyCoveredProposalIds: string[];
-}
-
 /**
  * Narrows candidate reviewer sets to the `single_reviewer` policy: one
- * balanced, deterministic pick per proposal. Pure — the caller reads, writes,
- * and logs.
+ * balanced, deterministic pick per proposal. Pure — the caller reads and
+ * writes. Skipped and uncoverable proposals come back with an empty set.
  *
  * A proposal that already has ANY assignment in the phase is skipped;
  * `onConflictDoNothing` can't do that, since a re-run picking a different
@@ -35,7 +29,7 @@ export interface PickSingleReviewerAssignmentsResult {
 export function pickSingleReviewerAssignments({
   assignableProposals,
   existingAssignments,
-}: PickSingleReviewerAssignmentsInput): PickSingleReviewerAssignmentsResult {
+}: PickSingleReviewerAssignmentsInput): AssignableProposal[] {
   const coveredProposalIds = new Set(
     existingAssignments.map((row) => row.proposalId),
   );
@@ -48,23 +42,17 @@ export function pickSingleReviewerAssignments({
     );
   }
 
-  const alreadyCoveredProposalIds: string[] = [];
-
   // Id order makes the greedy walk independent of the order rows came back in.
   const orderedProposals = [...assignableProposals].sort((a, b) =>
     a.proposalId < b.proposalId ? -1 : a.proposalId > b.proposalId ? 1 : 0,
   );
 
-  const result = orderedProposals.map((proposal) => {
-    const empty = { ...proposal, reviewerProfileIds: [] };
-
-    if (coveredProposalIds.has(proposal.proposalId)) {
-      alreadyCoveredProposalIds.push(proposal.proposalId);
-      return empty;
-    }
-
-    if (proposal.reviewerProfileIds.length === 0) {
-      return empty;
+  return orderedProposals.map((proposal) => {
+    if (
+      coveredProposalIds.has(proposal.proposalId) ||
+      proposal.reviewerProfileIds.length === 0
+    ) {
+      return { ...proposal, reviewerProfileIds: [] };
     }
 
     const picked = pickLeastLoaded({
@@ -76,11 +64,6 @@ export function pickSingleReviewerAssignments({
 
     return { ...proposal, reviewerProfileIds: [picked] };
   });
-
-  return {
-    assignableProposals: result,
-    alreadyCoveredProposalIds,
-  };
 }
 
 /** Lowest current load wins; ties go to the lowest stable hash. */

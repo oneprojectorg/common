@@ -36,10 +36,9 @@ describe('pickSingleReviewerAssignments', () => {
       existingAssignments: [],
     });
 
-    for (const p of result.assignableProposals) {
+    for (const p of result) {
       expect(p.reviewerProfileIds).toHaveLength(1);
     }
-    expect(result.alreadyCoveredProposalIds).toEqual([]);
   });
 
   it('balances load across a shared candidate set to within one', () => {
@@ -52,7 +51,7 @@ describe('pickSingleReviewerAssignments', () => {
     });
 
     const counts = new Map<string, number>();
-    for (const p of result.assignableProposals) {
+    for (const p of result) {
       for (const reviewer of p.reviewerProfileIds) {
         counts.set(reviewer, (counts.get(reviewer) ?? 0) + 1);
       }
@@ -77,9 +76,7 @@ describe('pickSingleReviewerAssignments', () => {
       ],
     });
 
-    const assigned = result.assignableProposals.flatMap(
-      (p) => p.reviewerProfileIds,
-    );
+    const assigned = result.flatMap((p) => p.reviewerProfileIds);
     expect(assigned.sort()).toEqual(['r2', 'r3']);
   });
 
@@ -89,8 +86,7 @@ describe('pickSingleReviewerAssignments', () => {
       existingAssignments: [],
     });
 
-    expect(picks(result.assignableProposals).get('p1')).toEqual([]);
-    expect(result.alreadyCoveredProposalIds).toEqual([]);
+    expect(picks(result).get('p1')).toEqual([]);
   });
 
   it('skips a proposal that already has any assignment in the phase', () => {
@@ -104,9 +100,8 @@ describe('pickSingleReviewerAssignments', () => {
       existingAssignments: [{ proposalId: 'p1', reviewerProfileId: 'r1' }],
     });
 
-    expect(picks(result.assignableProposals).get('p1')).toEqual([]);
-    expect(result.alreadyCoveredProposalIds).toEqual(['p1']);
-    expect(picks(result.assignableProposals).get('p2')).toHaveLength(1);
+    expect(picks(result).get('p1')).toEqual([]);
+    expect(picks(result).get('p2')).toHaveLength(1);
   });
 
   it('is deterministic and independent of input order', () => {
@@ -119,13 +114,13 @@ describe('pickSingleReviewerAssignments', () => {
       pickSingleReviewerAssignments({
         assignableProposals: proposals,
         existingAssignments: [],
-      }).assignableProposals,
+      }),
     );
     const reversed = picks(
       pickSingleReviewerAssignments({
         assignableProposals: [...proposals].reverse(),
         existingAssignments: [],
-      }).assignableProposals,
+      }),
     );
 
     // Same picks from a shuffled DB row order — the greedy walk sorts by id.

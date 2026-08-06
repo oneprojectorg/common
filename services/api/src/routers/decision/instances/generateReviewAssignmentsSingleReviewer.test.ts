@@ -645,7 +645,10 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     );
 
     await generate(instance.instance.id);
-    await generate(instance.instance.id, { from: 'review', to: 'secondReview' });
+    await generate(instance.instance.id, {
+      from: 'review',
+      to: 'secondReview',
+    });
 
     const allAssignments = await getAssignments(instance.instance.id);
     const inPhase = (phaseId: string) =>

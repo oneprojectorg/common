@@ -111,10 +111,8 @@ export async function reconcileReviewAssignments({
   }
   const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
 
-  // Reconcile is written against full coverage: its expected set is the whole
-  // scope⨝eligibility intersection, so running it under `single_reviewer` would
-  // fan out full-coverage inserts. Decided 2026-08-06: no reconcile — mid-phase
-  // category/scope/policy changes take effect at the next transition only.
+  // No reconcile under `single_reviewer`: reconcile's expected set is the whole
+  // scope⨝eligibility intersection, so it would fan out full-coverage inserts.
   if (reviewSettings.policy === 'single_reviewer') {
     return skip('current phase policy is single_reviewer');
   }
