@@ -195,7 +195,9 @@ const AddUserToOrgModalContent = ({
         <Suspense fallback={<FormFieldsSkeleton />}>
           <OrganizationAndRoleSelection
             user={user}
+            selectedOrgId={selectedOrgId}
             setSelectedOrgId={setSelectedOrgId}
+            selectedRoleId={selectedRoleId}
             setSelectedRoleId={setSelectedRoleId}
           />
         </Suspense>
@@ -238,11 +240,15 @@ const FormFieldsSkeleton = () => {
  */
 const OrganizationAndRoleSelection = ({
   user,
+  selectedOrgId,
   setSelectedOrgId,
+  selectedRoleId,
   setSelectedRoleId,
 }: {
   user: User;
+  selectedOrgId: string;
   setSelectedOrgId: (id: string) => void;
+  selectedRoleId: string;
   setSelectedRoleId: (id: string) => void;
 }) => {
   const t = useTranslations();
@@ -254,9 +260,6 @@ const OrganizationAndRoleSelection = ({
     }),
     t.organization.getRoles(),
   ]);
-
-  // Find Member role and set as default
-  const memberRole = rolesData.roles.find((role) => role.name === 'Member');
 
   // Filter out organizations user is already a member of
   const availableOrganizations = useMemo(() => {
@@ -277,9 +280,6 @@ const OrganizationAndRoleSelection = ({
     label: role.name,
   }));
   const roleById = new Map(rolesData.roles.map((role) => [role.id, role]));
-  const memberRoleItem = memberRole
-    ? (roleItems.find((item) => item.value === memberRole.id) ?? null)
-    : null;
 
   return (
     <>
@@ -288,8 +288,12 @@ const OrganizationAndRoleSelection = ({
         <Label>{t('Select organization')}</Label>
         <Combobox
           items={orgItems}
+          value={orgItems.find((item) => item.value === selectedOrgId) ?? null}
           onValueChange={(item: ComboboxOption | null) =>
             setSelectedOrgId(item?.value ?? '')
+          }
+          isItemEqualToValue={(a: ComboboxOption, b: ComboboxOption) =>
+            a.value === b.value
           }
         >
           <ComboboxInput placeholder={t('Select organization')} />
@@ -330,9 +334,14 @@ const OrganizationAndRoleSelection = ({
         <Label>{t('Select role')}</Label>
         <Combobox
           items={roleItems}
-          defaultValue={memberRoleItem}
+          value={
+            roleItems.find((item) => item.value === selectedRoleId) ?? null
+          }
           onValueChange={(item: ComboboxOption | null) =>
             setSelectedRoleId(item?.value ?? '')
+          }
+          isItemEqualToValue={(a: ComboboxOption, b: ComboboxOption) =>
+            a.value === b.value
           }
         >
           <ComboboxInput placeholder={t('Select role')} />
