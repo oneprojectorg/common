@@ -112,16 +112,8 @@ const nodeMapping = {
   // panel) that native markup can't do without JS. Mapped per sub-node so each
   // piece lands in the right slot: root → Collapsible, summary → trigger,
   // content → panel.
-  details: ({
-    node,
-    children,
-  }: {
-    node: { attrs?: { open?: boolean } };
-    children?: ReactNode | ReactNode[];
-  }) => (
-    <ViewerCollapsible defaultOpen={node.attrs?.open}>
-      {children}
-    </ViewerCollapsible>
+  details: ({ children }: { children?: ReactNode | ReactNode[] }) => (
+    <ViewerCollapsible>{children}</ViewerCollapsible>
   ),
   detailsSummary: ({ children }: { children?: ReactNode | ReactNode[] }) => (
     <ViewerCollapsibleSummary>{children}</ViewerCollapsibleSummary>

@@ -22,18 +22,11 @@ import { LuChevronRight } from 'react-icons/lu';
  * Deliberately no `.details` class — that CSS targets the editor's markup and
  * would fight these styles.
  */
-export function ViewerCollapsible({
-  defaultOpen,
-  children,
-}: {
-  defaultOpen?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Collapsible defaultOpen={defaultOpen} className="my-2">
-      {children}
-    </Collapsible>
-  );
+export function ViewerCollapsible({ children }: { children: ReactNode }) {
+  // Always closed on load, whatever the node's `open` attr says — a reader
+  // should meet a collapsible collapsed, and the attr only records how the
+  // author last left it in the editor.
+  return <Collapsible className="my-2">{children}</Collapsible>;
 }
 
 /** The `detailsSummary` node — the disclosure's trigger row. */
