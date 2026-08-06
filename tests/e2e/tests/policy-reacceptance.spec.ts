@@ -103,11 +103,15 @@ test.describe('Policy re-acceptance modal', () => {
     await expect(doc).toBeHidden();
     await expect(termsTrigger).toBeFocused();
 
-    // Accept and continue. `force` because the base-ui checkbox keeps the real
-    // input visually hidden, so Playwright's actionability check never passes.
-    await gate
-      .getByRole('checkbox', { name: /I have read and agree/ })
-      .check({ force: true });
+    // Accept and continue. `click({ force: true })`, not `check()`: base-ui's
+    // checkbox is a span over a visually-hidden input, and check()'s state
+    // verification does not settle on it (same pattern as onboarding-resume).
+    // The aria-checked assertion below is what proves the toggle worked.
+    const consent = gate.getByRole('checkbox', {
+      name: /I have read and agree/,
+    });
+    await consent.click({ force: true });
+    await expect(consent).toBeChecked();
     await expect(agree).toBeEnabled();
     await agree.click();
 
