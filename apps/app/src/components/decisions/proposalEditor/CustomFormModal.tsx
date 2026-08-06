@@ -132,7 +132,15 @@ export function CustomFormModal({
             {definition.title ?? t('Additional details')}
           </DialogTitle>
         </DialogHeader>
+        {/* `noValidate`, as @op/ui's `<Form validationBehavior="aria">` was:
+            validation is AJV's (`schemaValidator`), and its messages are
+            translated. Without it the browser validates first and `handleSubmit`
+            never runs — and for a checkbox or radio base-ui puts `required` on a
+            visually hidden input, so the native bubble is anchored to something
+            invisible and the dialog just refuses to submit. `required` stays for
+            the `aria-required` base-ui derives from it. */}
         <form
+          noValidate
           onSubmit={handleSubmit}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
