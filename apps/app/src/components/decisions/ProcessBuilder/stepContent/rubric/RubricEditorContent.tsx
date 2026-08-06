@@ -444,7 +444,7 @@ export function RubricEditorContent({
       </main>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-2xl">
+        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('Participant Preview')}</DialogTitle>
           </DialogHeader>

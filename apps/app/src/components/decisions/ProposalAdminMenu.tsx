@@ -110,8 +110,8 @@ export function ProposalAdminMenu({ proposal }: { proposal: Proposal }) {
       <>
         <Button
           aria-label={triggerLabel}
-          variant="ghost"
-          size="icon-sm"
+          variant="outline"
+          size="icon"
           onClick={() => setIsSheetOpen(true)}
         >
           <LuEllipsis className="size-4" />
@@ -154,8 +154,8 @@ export function ProposalAdminMenu({ proposal }: { proposal: Proposal }) {
         render={
           <Button
             aria-label={triggerLabel}
-            variant="ghost"
-            size="icon-sm"
+            variant="outline"
+            size="icon"
             className="aria-expanded:bg-muted"
           >
             <LuEllipsis className="size-4" />

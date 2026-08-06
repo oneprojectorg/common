@@ -1,7 +1,7 @@
 'use client';
 
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Header2 } from '@op/sense/Header';
+import { Header3 } from '@op/sense/Header';
 import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,7 +27,7 @@ export function RubricParticipantPreview({
 
   return (
     <div className="rounded-lg bg-white p-6">
-      <Header2 className="mb-6">{t('Review Proposal')}</Header2>
+      <Header3 className="mb-6">{t('Review Proposal')}</Header3>
 
       <RubricFormPreviewRenderer fields={fields} />
     </div>

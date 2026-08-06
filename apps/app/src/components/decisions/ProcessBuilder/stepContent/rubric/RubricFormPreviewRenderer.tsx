@@ -5,6 +5,7 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   Field,
@@ -127,7 +128,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
         return (
           <Field orientation="horizontal">
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <FieldTitle render={<h4 />}>
+              <FieldTitle className="w-full justify-between" render={<h4 />}>
                 {schema.title}
                 <CriterionBadge>{t('No/Yes')}</CriterionBadge>
               </FieldTitle>
@@ -144,7 +145,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
       if (isScoredField(schema)) {
         return (
           <Field>
-            <FieldTitle render={<h4 />}>
+            <FieldTitle className="justify-between" render={<h4 />}>
               {schema.title}
               <CriterionBadge>{`${schema.maximum} ${t('pts')}`}</CriterionBadge>
             </FieldTitle>
@@ -224,11 +225,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 
 /** The points / yes-no marker that rides inline with a criterion's title. */
 function CriterionBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-sm font-normal text-muted-foreground">
-      {children}
-    </span>
-  );
+  return <Badge variant="secondary">{children}</Badge>;
 }
 
 /** Collapsed "Add note" affordance mirroring the review form's default state. */

@@ -110,8 +110,8 @@ export function ProposalViewLayout({
             {canEdit && editHref && (
               <Button
                 variant="outline"
-                size="icon"
                 onClick={() => router.push(editHref)}
+                className="max-sm:size-11"
                 aria-label={t('Edit')}
               >
                 <LuPencil className="size-4" />

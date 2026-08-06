@@ -58,7 +58,7 @@ export function RequestRevisionModal({
         onOpenChange(open);
       }}
     >
-      <DialogContent className="sm:max-w-160">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('Request Revision')}</DialogTitle>
         </DialogHeader>
