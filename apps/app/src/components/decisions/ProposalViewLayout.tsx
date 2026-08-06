@@ -53,8 +53,8 @@ export function ProposalViewLayout({
    *  proposal with this id. */
   reportProposalId?: string;
   /**
-   * When provided, renders a sticky-note toggle button in the header with an
-   * orange indicator dot. `isActive` reflects the aria-pressed state.
+   * When provided, renders a sticky-note disclosure button in the header with
+   * an orange indicator dot. `isActive` reflects the aria-expanded state.
    */
   revisionToggle?: {
     onToggle: () => void;
@@ -146,7 +146,7 @@ export function ProposalViewLayout({
                       size="icon"
                       onClick={revisionToggle.onToggle}
                       aria-label={revisionRequestLabel}
-                      aria-pressed={revisionToggle.isActive}
+                      aria-expanded={revisionToggle.isActive}
                       className="relative"
                     >
                       <LuStickyNote className="size-4" />

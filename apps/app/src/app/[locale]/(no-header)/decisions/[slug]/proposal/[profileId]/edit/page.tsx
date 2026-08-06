@@ -189,7 +189,7 @@ function EditProposalPageContent() {
                   size="icon-sm"
                   onClick={toggleRevisionRequest}
                   aria-label={revisionRequestLabel}
-                  aria-pressed={Boolean(reviewRevision)}
+                  aria-expanded={Boolean(reviewRevision)}
                   className="relative"
                 >
                   <LuStickyNote className="size-4" />
@@ -312,7 +312,7 @@ function ProposalEditorContent({
     <div
       className={cn(
         'flex h-screen bg-background transition-[padding]',
-        isVersionsAsideOpen && 'sm:pr-92',
+        isVersionsAsideOpen && 'sm:pr-96',
       )}
     >
       <ProposalEditor
@@ -367,7 +367,7 @@ function useProposalEditorAsideHeaderIcons({
               size="icon"
               onClick={() => onToggleAside(asideKey)}
               aria-label={definition.label}
-              aria-pressed={aside === asideKey}
+              aria-expanded={aside === asideKey}
             >
               <Icon className="size-4" />
             </Button>
