@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import {
   motion,
   useMotionTemplate,
@@ -127,7 +127,7 @@ export function AnimatedGradientText({
   const backgroundImage = useMotionTemplate`radial-gradient(
     50% 120% at ${gradientX}% ${gradientY}%,
     var(--op-functional-green-500) 0%,
-    #446FCC 70%
+    var(--op-brand-blue) 70%
   )`;
 
   return (

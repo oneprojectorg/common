@@ -1,68 +1,36 @@
 'use client';
 
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { IconButton } from '@op/ui/IconButton';
-import { useState } from 'react';
+import { Button } from '@op/sense/Button';
 import {
   Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
   DialogTrigger,
-  Heading,
-  Modal,
-  ModalOverlay,
-} from 'react-aria-components';
-import { LuX } from 'react-icons/lu';
-import { tv } from 'tailwind-variants';
+} from '@op/sense/Dialog';
+import { toast } from '@op/sense/Toast';
+import { useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useAppForm } from '@/components/form/utils';
 
-const overlayStyles = tv({
-  base: 'absolute start-0 top-0 isolate z-20 h-(--page-height) w-full bg-black/10 text-center backdrop-blur-[3px]',
-  variants: {
-    isEntering: {
-      true: 'animate-in duration-200 ease-out fade-in',
-    },
-    isExiting: {
-      true: 'animate-out duration-200 ease-in fade-out',
-    },
-  },
-});
-
-const modalStyles = tv({
-  base: 'max-h-[calc(var(--visual-viewport-height)*.9)] w-full max-w-[min(90vw,450px)] rounded-2xl border border-black/10 bg-white bg-clip-padding text-start align-middle font-sans text-neutral-gray4 shadow dark:border-white/10 dark:bg-neutral-800/70 dark:text-neutral-300 dark:backdrop-blur-2xl dark:backdrop-saturate-200 forced-colors:bg-[Canvas]',
-  variants: {
-    isEntering: {
-      true: 'animate-in duration-200 ease-out zoom-in-105',
-    },
-    isExiting: {
-      true: 'animate-out duration-200 ease-in zoom-out-95',
-    },
-  },
-});
 export const WaitlistSignup = () => {
   const t = useTranslations();
   const [isSubmitted, setIsSubmitted] = useState(false);
   return (
-    <DialogTrigger>
-      <Button>{t('Join the waitlist')}</Button>
-      <ModalOverlay isDismissable className={overlayStyles}>
-        <div className="sticky start-0 top-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
-          <Modal isDismissable className={modalStyles}>
-            <Dialog className="relative max-h-[inherit] overflow-auto">
-              {isSubmitted ? (
-                <WaitlistSignupSuccess />
-              ) : (
-                <WaitlistSignupForm onSuccess={() => setIsSubmitted(true)} />
-              )}
-            </Dialog>
-          </Modal>
-        </div>
-      </ModalOverlay>
-    </DialogTrigger>
+    <Dialog>
+      <DialogTrigger render={<Button>{t('Join the waitlist')}</Button>} />
+      <DialogContent className="font-sans sm:max-w-md">
+        {isSubmitted ? (
+          <WaitlistSignupSuccess />
+        ) : (
+          <WaitlistSignupForm onSuccess={() => setIsSubmitted(true)} />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -120,20 +88,10 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <>
-      <div className="relative p-6 pt-10">
-        <Heading
-          className="w-full bg-blueGreen bg-clip-text text-center font-serif text-xl font-extralight tracking-tight text-transparent italic sm:text-2xl"
-          slot="title"
-        >
+      <div className="p-6 pt-10">
+        <DialogTitle className="w-full bg-blueGreen bg-clip-text text-center font-serif text-xl font-extralight tracking-tight text-transparent italic sm:text-2xl">
           {t('Common')}
-        </Heading>
-        <IconButton
-          aria-label={t('Close')}
-          className="absolute end-3 top-3 size-8 text-neutral-gray3"
-          slot="close"
-        >
-          <LuX className="size-6" />
-        </IconButton>
+        </DialogTitle>
       </div>
       <p className="px-8 text-center">
         {t(
@@ -211,20 +169,10 @@ const WaitlistSignupSuccess = () => {
   const t = useTranslations();
   return (
     <>
-      <div className="relative px-6 pt-16">
-        <Heading
-          className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl"
-          slot="title"
-        >
+      <div className="px-6 pt-16">
+        <DialogTitle className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl">
           {t("You're on the list!")}
-        </Heading>
-        <IconButton
-          aria-label={t('Close')}
-          className="absolute start-3 top-3 size-8 text-neutral-gray3"
-          slot="close"
-        >
-          <LuX className="size-6" />
-        </IconButton>
+        </DialogTitle>
       </div>
       <div className="flex flex-col items-center gap-6 p-8 text-center">
         <p>
@@ -233,9 +181,9 @@ const WaitlistSignupSuccess = () => {
           )}
         </p>
         <p>{t("We'll be in touch soon!")}</p>
-        <Button color="secondary" className="w-9/10" slot="close">
+        <DialogClose render={<Button variant="secondary" className="w-9/10" />}>
           {t('Done')}
-        </Button>
+        </DialogClose>
       </div>
     </>
   );
