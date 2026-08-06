@@ -1,10 +1,13 @@
 'use client';
 
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { zodUrlRefine } from '@op/common/validation';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { Input } from '@op/sense/Input';
 import { Popover, PopoverTrigger, PopoverContent } from '@op/sense/Popover';
 import { Separator } from '@op/sense/Separator';
+import { toast } from '@op/sense/Toast';
 import { Toggle } from '@op/sense/Toggle';
 import { NodeSelection, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
@@ -23,6 +26,7 @@ import {
   LuHeading2,
   LuHeading3,
   LuHeading4,
+  LuImage,
   LuItalic,
   LuLink,
   LuLink2,
@@ -50,6 +54,8 @@ export interface RichTextEditorBubbleMenuProps {
    * sense's base set, so every editor has it registered.
    */
   allowCollapsible?: boolean;
+  /** Offer image upload. Same reasoning as `allowCollapsible`. */
+  allowImages?: boolean;
 }
 
 interface MenuItem {
@@ -70,11 +76,17 @@ export function RichTextEditorBubbleMenu({
   pluginKey = 'richTextEditorBubbleMenu',
   shouldShow,
   allowCollapsible = false,
+  allowImages = false,
 }: RichTextEditorBubbleMenuProps) {
   const t = useTranslations();
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [isEditingEmbed, setIsEditingEmbed] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const { uploadFile } = useFileUpload({
+    acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+    maxFiles: 1,
+  });
 
   // Unmount on blur. TipTap's own blur handling can't do it: clicking a menu
   // button sets its internal `preventHide`, and because the click deliberately
@@ -160,6 +172,42 @@ export function RichTextEditorBubbleMenu({
   const hasEmbed = editor.extensionManager.extensions.some(
     (extension) => extension.name === 'iframely',
   );
+
+  // The input is detached rather than rendered: clicking it opens the OS file
+  // dialog, which blurs the editor and unmounts this menu — a React-owned input
+  // would go with it, before `change` ever fires.
+  const pickImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/webp,image/gif';
+
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      setIsUploadingImage(true);
+
+      try {
+        const { url } = await uploadFile(file);
+        // `focus()` restores the selection the dialog interrupted.
+        editor?.chain().focus().setImage({ src: url }).run();
+      } catch (error) {
+        // Type and size rejections toast from inside `uploadFile`; this is the
+        // upload itself failing, which used to be swallowed into a log line.
+        logger.error('Failed to upload an image into the editor', { error });
+        toast.error(t("Couldn't add that image"), {
+          description: t('Check your connection and try again.'),
+        });
+      } finally {
+        setIsUploadingImage(false);
+      }
+    });
+
+    input.click();
+  };
 
   const openLinkEditor = () => {
     const { from, to } = editor.state.selection;
@@ -455,6 +503,18 @@ export function RichTextEditorBubbleMenu({
                   />
                 </PopoverContent>
               </Popover>
+            )}
+            {allowImages && (
+              <Toggle
+                size="icon-sm"
+                pressed={isUploadingImage}
+                onPressedChange={pickImage}
+                aria-label={t('Add Image')}
+                title={t('Add Image')}
+                className="aria-pressed:bg-accent aria-pressed:text-primary"
+              >
+                <LuImage className="size-4" />
+              </Toggle>
             )}
           </div>
         </div>

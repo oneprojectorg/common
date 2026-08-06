@@ -150,6 +150,7 @@ export function CollaborativeTextField({
         <RichTextEditorBubbleMenu
           editor={editor}
           pluginKey={`proposalField-${fragmentName}`}
+          allowImages
         />
         {maxLength != null && (
           <InputGroupAddon align="block-end" className="justify-end">
