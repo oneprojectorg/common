@@ -50,7 +50,7 @@ export function ReviewSelectionPage({
       </div>
 
       <div className="flex w-full justify-center border-t bg-white">
-        <div className="w-full p-4 sm:max-w-6xl sm:p-8">
+        <div className="w-full p-4 sm:p-8">
           <APIErrorBoundary
             fallbacks={{
               default: () => (
