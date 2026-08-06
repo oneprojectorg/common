@@ -104,6 +104,47 @@ export function CollaborativeTitleField({
         }
         return false;
       },
+      // Enforce the template's limit on local input only. A `filterTransaction`
+      // would be tidier but also sees transactions Yjs applies for remote peers,
+      // and rejecting one of those desyncs the shared document.
+      handleTextInput: (view, from, to, text) => {
+        if (maxLength == null) {
+          return false;
+        }
+
+        const next =
+          view.state.doc.textContent.length - (to - from) + text.length;
+        return next > maxLength;
+      },
+      handlePaste: (view, _event, slice) => {
+        if (maxLength == null) {
+          return false;
+        }
+
+        const { from, to } = view.state.selection;
+        const room =
+          maxLength - (view.state.doc.textContent.length - (to - from));
+        const pasted = slice.content.textBetween(
+          0,
+          slice.content.size,
+          ' ',
+          ' ',
+        );
+
+        if (pasted.length <= room) {
+          return false;
+        }
+
+        // Truncate rather than reject: pasting a too-long title and getting
+        // nothing at all reads as a broken field.
+        if (room > 0) {
+          view.dispatch(
+            view.state.tr.insertText(pasted.slice(0, room), from, to),
+          );
+        }
+
+        return true;
+      },
     },
     immediatelyRender: false,
   });
@@ -138,7 +179,11 @@ export function CollaborativeTitleField({
       {editor ? (
         // focus-within rather than InputGroup's own has-[input:focus-visible]
         // rules: the control here is a contenteditable, not an <input>.
-        <InputGroup className="focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+        // `h-auto`: InputGroup is a fixed 44px row and only relaxes for a real
+        // `<textarea>` (`has-[>textarea]:h-auto`), which a contenteditable does
+        // not match — so a wrapped title spilled out of its own border. Grow with
+        // the text and pin the addon to the first line.
+        <InputGroup className="h-auto min-h-11 items-start py-2.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
           <EditorContent
             className="min-w-0 flex-1 px-3"
             dir={editor.isEmpty ? undefined : 'auto'}
