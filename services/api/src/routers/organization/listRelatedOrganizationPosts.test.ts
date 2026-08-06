@@ -115,7 +115,7 @@ describe.concurrent('organization.listAllPosts without a current profile', () =>
     const author = await createAuthenticatedCaller(adminUser.email);
     const post = await author.organization.createPost({
       id: organization.id,
-      content: `no-current-profile reader test post`,
+      content: 'no-current-profile reader test post',
     });
     onTestFinished(async () => {
       await db.delete(posts).where(eq(posts.id, post.id));
