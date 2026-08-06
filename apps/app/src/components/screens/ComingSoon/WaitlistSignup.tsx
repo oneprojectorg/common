@@ -169,7 +169,7 @@ const WaitlistSignupSuccess = () => {
   const t = useTranslations();
   return (
     <>
-      <div className="px-6 pt-16">
+      <div className="px-6 pt-12">
         <DialogTitle className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl">
           {t("You're on the list!")}
         </DialogTitle>
@@ -181,7 +181,9 @@ const WaitlistSignupSuccess = () => {
           )}
         </p>
         <p>{t("We'll be in touch soon!")}</p>
-        <DialogClose render={<Button variant="secondary" className="w-9/10" />}>
+        <DialogClose
+          render={<Button variant="outline" className="mt-2 w-9/10" />}
+        >
           {t('Done')}
         </DialogClose>
       </div>
