@@ -1,0 +1,174 @@
+@startuml data-model-decisions
+hide circle
+skinparam linetype ortho
+
+title Data Model — Decision Process Domain
+
+entity "Profile" as profile <<external>> {
+  *id : uuid <<generated>>
+  --
+  name : text
+}
+
+entity "TaxonomyTerm" as taxonomy_term <<external>> {
+  *id : uuid <<generated>>
+  --
+  name : text
+}
+
+entity "DecisionProcess" as decision_process {
+  *id : uuid <<generated>>
+  --
+  createdByProfileId : uuid <<FK>>
+  --
+  name : text
+  processSchema : jsonb
+}
+
+entity "ProcessInstance" as process_instance {
+  *id : uuid <<generated>>
+  --
+  processId : uuid <<FK>>
+  ownerProfileId : uuid <<FK>>
+  stewardProfileId : uuid <<FK, nullable>>
+  profileId : uuid <<FK, nullable>>
+  --
+  name : text
+  status : enum
+  instanceData : jsonb
+}
+
+entity "Proposal" as proposal {
+  *id : uuid <<generated>>
+  --
+  processInstanceId : uuid <<FK>>
+  submittedByProfileId : uuid <<FK>>
+  profileId : uuid <<FK>>
+  lastEditedByProfileId : uuid <<FK, nullable>>
+  --
+  status : enum
+  visibility : enum
+  proposalData : jsonb
+}
+
+entity "ProposalHistory" as proposal_history {
+  *historyId : uuid <<generated>>
+  --
+  id : uuid <<logical link to Proposal.id, unenforced>>
+  processInstanceId : uuid <<FK>>
+  --
+  status : enum
+  validDuring : tstzrange
+}
+
+entity "ProposalReviewAssignment" as review_assignment {
+  *id : uuid <<generated>>
+  --
+  processInstanceId : uuid <<FK>>
+  proposalId : uuid <<FK>>
+  reviewerProfileId : uuid <<FK>>
+  --
+  phaseId : text
+  status : enum
+}
+
+entity "ProposalReview" as review {
+  *id : uuid <<generated>>
+  --
+  assignmentId : uuid <<FK, unique>>
+  --
+  state : enum
+  reviewData : jsonb
+  overallComment : text
+}
+
+entity "ProposalReviewRequest" as review_request {
+  *id : uuid <<generated>>
+  --
+  assignmentId : uuid <<FK>>
+  --
+  state : enum
+  requestComment : text
+  responseComment : text
+}
+
+entity "CategoryReviewer" as category_reviewer {
+  *id : uuid <<generated>>
+  --
+  processInstanceId : uuid <<FK>>
+  taxonomyTermId : uuid <<FK>>
+  reviewerProfileId : uuid <<FK>>
+  --
+  phaseId : text <<nullable>>
+}
+
+entity "DecisionsVoteSubmission" as vote_submission {
+  *id : uuid <<generated>>
+  --
+  processInstanceId : uuid <<FK>>
+  submittedByProfileId : uuid <<FK>>
+  --
+  voteData : jsonb
+  signature : text
+}
+
+entity "DecisionProcessResult" as process_result {
+  *id : uuid <<generated>>
+  --
+  processInstanceId : uuid <<FK>>
+  --
+  success : boolean
+  selectedCount : integer
+  voterCount : integer
+}
+
+entity "DecisionProcessResultSelection" as result_selection {
+  *id : uuid <<generated>>
+  --
+  processResultId : uuid <<FK>>
+  proposalId : uuid <<FK>>
+  --
+  selectionRank : integer
+  allocated : numeric
+}
+
+decision_process ||--o{ process_instance : "defines"
+profile ||--o{ process_instance : "owns"
+
+process_instance ||--o{ proposal : "collects"
+profile ||--o{ proposal : "submits"
+profile ||--o{ proposal : "is subject of"
+
+proposal ||--o{ proposal_history : "versioned as"
+
+proposal ||--o{ review_assignment : "assigned for review"
+profile ||--o{ review_assignment : "reviews as"
+review_assignment ||--o| review : "produces"
+review_assignment ||--o{ review_request : "revision requested via"
+
+process_instance ||--o{ category_reviewer : "scopes"
+taxonomy_term ||--o{ category_reviewer : "covered by"
+profile ||--o{ category_reviewer : "reviews category as"
+
+' proposalCategories is a pure join table (proposalId + taxonomyTermId,
+' no attributes of its own), collapsed into a direct M:N line.
+proposal }o--o{ taxonomy_term : "categorized as"
+
+process_instance ||--o{ vote_submission : "collects"
+profile ||--o{ vote_submission : "casts"
+
+' decisionsVoteProposals is a pure join table (voteSubmissionId + proposalId),
+' collapsed into a direct M:N line.
+vote_submission }o--o{ proposal : "selects"
+
+process_instance ||--o{ process_result : "produces"
+process_result ||--o{ result_selection : "selects"
+proposal ||--o{ result_selection : "selected as"
+
+note bottom of proposal
+  DecisionBoundaries (geo-boundary definitions, scoped to Profile),
+  decisionTransitionProposals, and processTransitions (state-machine
+  bookkeeping) are omitted from this diagram to keep the core
+  propose/review/vote flow legible.
+end note
+@enduml

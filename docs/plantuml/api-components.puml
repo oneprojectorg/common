@@ -1,0 +1,44 @@
+@startuml api-components
+!include <C4/C4_Component>
+
+title Component Diagram — API Host (apps/api)
+
+Container_Boundary(api, "API Host") {
+  Component(routers, "tRPC Routers & Procedures", "@op/api (services/api)", "Defines routers, procedures, and middleware; enforces access control via assertAccess")
+  Component(common, "Shared Business Logic", "@op/common (packages/common)", "Core domain services used by routers: decisions, proposals, reviews, organizations")
+  Component(db, "Database Client", "@op/db (services/db)", "Drizzle ORM schema, relations, and typed Postgres client")
+  Component(ai, "AI Agent Layer", "@op/ai (packages/ai)", "Mastra-based agents for AI-assisted features")
+  Component(cacheLib, "Cache Client", "@op/cache (services/cache)", "Redis-backed caching")
+  Component(realtime, "Realtime", "@op/realtime (services/realtime)", "Live update / subscription support")
+  Component(collab, "Collaboration", "@op/collab (services/collab)", "Real-time collaborative editing support")
+  Component(events, "Events", "@op/events (services/events)", "Internal event/pubsub definitions")
+  Component(translation, "Translation", "@op/translation (services/translation)", "Content translation/i18n support")
+  Component(emailsLib, "Email Templates", "@op/emails (services/emails)", "React Email templates rendered for outbound mail")
+  Component(workflows, "Workflow Functions", "@op/workflows (services/workflows)", "Inngest function definitions for background jobs")
+}
+
+ContainerDb_Ext(postgres, "Postgres", "Supabase-managed PostgreSQL")
+ContainerDb_Ext(redis, "Redis", "Cache store")
+System_Ext(resend, "Resend", "Transactional email")
+System_Ext(anthropic, "Anthropic Claude", "LLM provider")
+System_Ext(inngest, "Inngest", "Workflow orchestration")
+System_Ext(posthog, "PostHog", "Logs & analytics")
+
+Rel(routers, common, "Delegates business logic to")
+Rel(common, db, "Reads/writes via")
+Rel(common, ai, "Invokes for AI features")
+Rel(routers, cacheLib, "Reads/writes cache via")
+Rel(routers, realtime, "Publishes updates via")
+Rel(routers, collab, "Coordinates sessions via")
+Rel(common, events, "Emits/consumes events via")
+Rel(common, translation, "Translates content via")
+Rel(common, emailsLib, "Renders email via")
+Rel(emailsLib, resend, "Delivered through", "SMTP")
+Rel(db, postgres, "Queries", "SQL")
+Rel(cacheLib, redis, "Reads/writes", "Redis protocol")
+Rel(ai, anthropic, "Requests completions", "HTTPS")
+Rel(workflows, inngest, "Registered with / invoked by", "HTTPS")
+Rel(routers, posthog, "Logs via ctx.logger")
+
+SHOW_LEGEND()
+@enduml

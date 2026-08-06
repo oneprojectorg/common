@@ -1,0 +1,36 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "e4bb3382e19c38168e4950fc8dc4df7bc0e0e8490587d8c067d631b227c6a6fd"
+        },
+        "pipfile-spec": 6,
+        "requires": {},
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "pandoc-plantuml-filter": {
+            "hashes": [
+                "sha256:ad8e00752a14acf2a308914615d5ba394a0cea1c6209078076b8cb4e45c6112d",
+                "sha256:f6a5de219b82bb8e26f44a0f08f2fb32011ba04c0df753b294b7db9308646584"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==0.1.5"
+        },
+        "pandocfilters": {
+            "hashes": [
+                "sha256:002b4a555ee4ebc03f8b66307e287fa492e4a77b4ea14d3f934328297bb4939e",
+                "sha256:93be382804a9cdb0a7267585f157e5d1731bbe5545a85b268d6f5fe6232de2bc"
+            ],
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "version": "==1.5.1"
+        }
+    },
+    "develop": {}
+}

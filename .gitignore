@@ -88,3 +88,13 @@ ralph.sh
 tasks/
 .gstack/
 .plans/
+
+# Generated PlantUML output (rendered via `just render`)
+docs/plantuml/**/*.svg
+docs/plantuml/**/*.png
+
+# docs/ pandoc toolchain — venv + pandoc-plantuml-filter's rendered output (via `just docs-html`)
+docs/.venv/
+docs/plantuml-images/
+docs/*.html
+docs/*.svg

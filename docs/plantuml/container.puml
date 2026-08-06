@@ -1,0 +1,41 @@
+@startuml container
+!include <C4/C4_Container>
+
+title Container Diagram — Common Platform
+
+Person(member, "Member", "Submits proposals, votes")
+Person(reviewer, "Reviewer", "Scores proposals against rubrics")
+Person(admin, "Admin", "Configures decision processes")
+
+System_Boundary(platform, "Common Platform") {
+  Container(app, "Web App", "Next.js (App Router), React 19, Tailwind, Zustand", "Renders the UI; calls the tRPC API over HTTPS")
+  Container(api, "API Host", "Next.js, tRPC, OpenAPI", "Hosts tRPC routers/procedures (@op/api) and the OpenAPI spec; runs Inngest workflow functions (@op/workflows)")
+}
+
+ContainerDb_Ext(postgres, "Postgres", "Supabase-managed PostgreSQL", "Application data, accessed via Drizzle ORM (@op/db)")
+System_Ext(supabaseAuth, "Supabase Auth", "Authentication & session management")
+System_Ext(supabaseStorage, "Supabase Storage", "File & media storage")
+ContainerDb_Ext(redis, "Redis", "Cache store (@op/cache)")
+System_Ext(posthog, "PostHog", "Analytics + log sink")
+System_Ext(resend, "Resend", "Transactional email (@op/emails)")
+System_Ext(inngest, "Inngest", "Background workflow orchestration")
+System_Ext(anthropic, "Anthropic Claude", "LLM provider for AI features (@op/ai)")
+
+Rel(member, app, "Uses", "HTTPS")
+Rel(reviewer, app, "Uses", "HTTPS")
+Rel(admin, app, "Uses", "HTTPS")
+
+Rel(app, api, "Calls", "tRPC / HTTPS")
+Rel(app, supabaseAuth, "Authenticates", "HTTPS")
+
+Rel(api, postgres, "Reads/writes", "SQL / Drizzle")
+Rel(api, supabaseAuth, "Verifies sessions", "HTTPS")
+Rel(api, supabaseStorage, "Stores/retrieves files", "HTTPS")
+Rel(api, redis, "Reads/writes cache", "Redis protocol")
+Rel(api, posthog, "Sends logs & events", "HTTPS")
+Rel(api, resend, "Sends email", "SMTP")
+Rel(api, inngest, "Triggers/receives workflow calls", "HTTPS")
+Rel(api, anthropic, "Requests completions", "HTTPS")
+
+SHOW_LEGEND()
+@enduml

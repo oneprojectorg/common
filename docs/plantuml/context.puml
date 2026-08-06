@@ -1,0 +1,29 @@
+@startuml context
+!include <C4/C4_Context>
+
+title System Context — Common Platform
+
+Person(member, "Member", "An organization member who submits proposals and votes")
+Person(reviewer, "Reviewer", "Assigned to score proposals against a rubric during a review phase")
+Person(admin, "Admin", "Configures decision processes, phases, and access for an organization")
+
+System(platform, "Common Platform", "Lets organizations run structured decision-making processes: proposals, reviews, and voting")
+
+System_Ext(supabase, "Supabase", "Postgres database, authentication, and file storage")
+System_Ext(posthog, "PostHog", "Product analytics and centralized log ingestion")
+System_Ext(resend, "Resend", "Transactional email delivery (SMTP)")
+System_Ext(inngest, "Inngest", "Background workflow orchestration")
+System_Ext(anthropic, "Anthropic Claude", "LLM used for AI-assisted features")
+
+Rel(member, platform, "Submits proposals, votes", "HTTPS")
+Rel(reviewer, platform, "Scores proposals against rubrics", "HTTPS")
+Rel(admin, platform, "Configures decision processes", "HTTPS")
+
+Rel(platform, supabase, "Reads/writes data, authenticates users, stores files", "Postgres / HTTPS")
+Rel(platform, posthog, "Sends analytics events and logs", "HTTPS")
+Rel(platform, resend, "Sends transactional email", "SMTP")
+Rel(platform, inngest, "Schedules & runs background workflows", "HTTPS")
+Rel(platform, anthropic, "Requests AI-generated content", "HTTPS")
+
+SHOW_LEGEND()
+@enduml

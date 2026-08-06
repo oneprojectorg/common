@@ -1,0 +1,102 @@
+@startuml data-model-identity
+hide circle
+skinparam linetype ortho
+
+title Data Model — Identity & Access
+
+entity "AuthUser" as auth_user <<external>> {
+  *id : uuid <<generated>>
+  --
+  email : text
+  phone : text <<unique>>
+  isAnonymous : boolean
+}
+
+entity "User" as app_user {
+  *id : uuid <<generated>>
+  --
+  authUserId : uuid <<FK>>
+  profileId : uuid <<FK, nullable>>
+  currentProfileId : uuid <<FK, nullable>>
+  lastOrgId : uuid <<FK, nullable>>
+  --
+  email : text <<unique>>
+  username : text
+  name : text
+}
+
+entity "Profile" as profile {
+  *id : uuid <<generated>>
+  --
+  type : entity_type
+  name : text
+  slug : text <<unique>>
+  bio : text
+}
+
+entity "Organization" as organization {
+  *id : uuid <<generated>>
+  --
+  profileId : uuid <<FK>>
+  --
+  orgType : enum
+  isVerified : boolean
+  isOfferingFunds : boolean
+}
+
+entity "ProfileUser" as profile_user {
+  *id : uuid <<generated>>
+  --
+  authUserId : uuid <<FK>>
+  profileId : uuid <<FK>>
+  --
+  isOwner : boolean
+  name : text
+  email : text
+}
+
+entity "OrganizationUser" as org_user {
+  *id : uuid <<generated>>
+  --
+  authUserId : uuid <<FK>>
+  organizationId : uuid <<FK>>
+  --
+  name : text
+  email : text
+}
+
+entity "AccessRole" as access_role {
+  *id : uuid <<generated>>
+  --
+  profileId : uuid <<FK, nullable>>
+  --
+  name : text
+  description : text
+}
+
+auth_user ||--o{ app_user : "has app record"
+auth_user ||--o{ profile_user : "is member via"
+auth_user ||--o{ org_user : "is member via"
+
+' No unique constraint was found on organizations.profileId in the schema,
+' so this is modeled as one-to-many even though in practice each profile
+' currently has at most one organization row.
+profile ||--o{ organization : "extended by"
+
+profile ||--o{ profile_user : "has member"
+organization ||--o{ org_user : "has member"
+
+' NULL profileId means a global (deployment-wide) role.
+profile |o--o{ access_role : "scopes"
+
+' Pure join tables (profileUser_to_access_roles / organizationUser_to_access_roles)
+' carry no attributes of their own, so they're collapsed into direct M:N lines.
+profile_user }o--o{ access_role : "granted"
+org_user }o--o{ access_role : "granted"
+
+note bottom of app_user
+  users.avatarImageId, profiles.avatarImageId/headerImageId,
+  and users.lastOrgId/currentProfileId are omitted from this
+  diagram (secondary pointer FKs, not core structural relationships).
+end note
+@enduml
