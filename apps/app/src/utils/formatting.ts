@@ -7,7 +7,22 @@ import {
 } from '@op/ui/utils/formatting';
 
 /**
- * Format currency amount using locale-aware formatting
+ * Format a plain number using locale-aware grouping.
+ *
+ * The locale is always explicit: an implicit one resolves to the runtime
+ * default, which is the server's locale during SSR and the browser's on the
+ * client, so the two renders disagree and hydration fails (React #418).
+ */
+export function formatNumber(value: number, locale: string = 'en-US'): string {
+  return new Intl.NumberFormat(locale).format(value);
+}
+
+/**
+ * Format currency amount using locale-aware formatting.
+ *
+ * `locale` defaults to a concrete value rather than falling through to the
+ * runtime default, for the same reason as `formatNumber` above — callers that
+ * render during SSR must produce the same string in both passes.
  */
 export function formatCurrency(
   amount: number,

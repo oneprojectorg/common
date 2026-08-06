@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { Button } from '@op/ui/Button';
 import { MenuItem, MenuList } from '@op/ui/Menu';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
@@ -39,7 +40,7 @@ export function AdminOverviewBar({
 
   const endsLabel = phaseEndDate
     ? t('ends {date}', {
-        date: new Date(phaseEndDate).toLocaleDateString(locale, {
+        date: formatDate(phaseEndDate, locale, {
           month: 'long',
           day: 'numeric',
         }),

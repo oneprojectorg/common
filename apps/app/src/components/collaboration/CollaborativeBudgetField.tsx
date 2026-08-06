@@ -1,6 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import { formatCurrency, formatNumber } from '@/utils/formatting';
 import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
@@ -12,17 +13,12 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 const DEFAULT_CURRENCY = 'USD';
 
+// Derived from the same formatter the pill renders with, so the input prefix
+// and the displayed amount always use the same symbol. Both are locale-pinned:
+// an implicit locale resolves to the server's during SSR and the browser's on
+// the client, and the two renders then disagree (React #418).
 const getCurrencySymbol = (currency: string) =>
-  (0)
-    .toLocaleString(undefined, {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-    .replace(/\d/g, '')
-    .trim();
+  formatCurrency(0, undefined, currency).replace(/\d/g, '').trim();
 
 interface CollaborativeBudgetFieldProps {
   minAmount?: number;
@@ -78,7 +74,7 @@ export function CollaborativeBudgetField({
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
-    ? t('Max {amount}', { amount: maxAmount.toLocaleString() })
+    ? t('Max {amount}', { amount: formatNumber(maxAmount) })
     : t('Enter amount');
 
   // Size the input to its placeholder text instead of the default size=20
@@ -177,12 +173,7 @@ export function CollaborativeBudgetField({
           className="justify-start text-start"
         >
           {budgetAmount !== null
-            ? budgetAmount.toLocaleString(undefined, {
-                style: 'currency',
-                currency,
-                currencyDisplay: 'narrowSymbol',
-                maximumFractionDigits: 0,
-              })
+            ? formatCurrency(budgetAmount, undefined, currency)
             : t('Add budget')}
         </Button>
       )}

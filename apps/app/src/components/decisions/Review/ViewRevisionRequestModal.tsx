@@ -1,8 +1,10 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { useLocale } from 'next-intl';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,6 +20,7 @@ export function ViewRevisionRequestModal({
   onOpenChange,
 }: ViewRevisionRequestModalProps) {
   const t = useTranslations();
+  const locale = useLocale();
   const {
     revisionRequest,
     isOwnRevisionRequest,
@@ -34,8 +37,12 @@ export function ViewRevisionRequestModal({
     return null;
   }
 
-  const sentDate = revisionRequest.requestedAt
-    ? new Date(revisionRequest.requestedAt)
+  const sentDateLabel = revisionRequest.requestedAt
+    ? formatDate(revisionRequest.requestedAt, locale, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
     : null;
 
   return (
@@ -51,15 +58,9 @@ export function ViewRevisionRequestModal({
             <p className="text-base text-neutral-charcoal">
               {revisionRequest.requestComment}
             </p>
-            {sentDate && (
+            {sentDateLabel && (
               <p className="text-sm text-neutral-gray4">
-                {t('Sent {date}', {
-                  date: sentDate.toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  }),
-                })}
+                {t('Sent {date}', { date: sentDateLabel })}
               </p>
             )}
           </div>
