@@ -11,8 +11,9 @@ import { Roboto, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
+import { IconProvider } from '@/components/IconProvider';
+
 import { FileDropGuard } from '../components/FileDropGuard';
-import { IconProvider } from '../components/IconProvider';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';

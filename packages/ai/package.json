@@ -1,0 +1,24 @@
+{
+  "name": "@op/ai",
+  "version": "0.0.0",
+  "private": true,
+  "license": "SEE LICENSE in /LICENSE",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mastra/core": "^1.51.0"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "@types/node": "^22.13.5",
+    "typescript": "7.0.2",
+    "vitest": "catalog:"
+  }
+}

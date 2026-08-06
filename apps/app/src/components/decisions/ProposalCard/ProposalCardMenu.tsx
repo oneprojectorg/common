@@ -3,7 +3,7 @@
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
-import { LuCheck, LuEye, LuEyeOff, LuTrash2, LuX } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,34 +25,16 @@ export function ProposalCardMenu({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const {
-    approve: handleApprove,
-    reject: handleReject,
     toggleVisibility: handleToggleVisibility,
     isHidden,
-    isShortlisted,
-    isRejected,
     isLoading,
   } = useProposalModerationActions(proposal);
 
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
 
-    // Admin actions (shortlist, reject, hide) - not for drafts
+    // Admin actions (hide) - not for drafts
     if (canManage && proposal.status !== ProposalStatus.DRAFT) {
-      items.push({
-        key: 'approve',
-        icon: <LuCheck className="size-5" />,
-        label: t('Shortlist for voting'),
-        onAction: handleApprove,
-        isDisabled: isLoading || isShortlisted,
-      });
-      items.push({
-        key: 'reject',
-        icon: <LuX className="size-5" />,
-        label: t('Reject from shortlist'),
-        onAction: handleReject,
-        isDisabled: isLoading || isRejected,
-      });
       items.push({
         key: 'visibility',
         icon: isHidden ? (
