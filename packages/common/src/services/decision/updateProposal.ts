@@ -168,14 +168,48 @@ export const updateProposal = async ({
           ? parseProposalData(data.proposalData).category
           : null;
 
-    const baseProposalData =
-      collaborationDocVersionId !== null
-        ? {
-            ...(proposalFields.proposalData ??
-              (existingProposal.proposalData as Record<string, unknown>)),
-            collaborationDocVersionId,
-          }
-        : proposalFields.proposalData;
+    // `proposalData` replaces the stored JSON column wholesale, so both
+    // collaboration doc pointers are resolved server-side and re-applied over
+    // the caller's payload rather than read out of it.
+    //
+    // The version pointer: a partial or stale payload must not be able to unpin
+    // a submitted proposal by dropping it (see `submitProposal` for why an
+    // unpinned proposal is a defect). A freshly minted checkpoint version
+    // supersedes the stored one.
+    //
+    // The document id: it addresses a collaboration document, so accepting it
+    // from the caller would let anyone with update access on their own proposal
+    // point it at another proposal's document and render that content as their
+    // own. A stored id is kept as-is; otherwise the caller only gets to decide
+    // *whether* this proposal has a document (legacy HTML-only proposals have
+    // none and must stay that way), never which one — the id itself is derived
+    // exactly as `createProposal` derives it.
+    const storedProposalData = parseProposalData(existingProposal.proposalData);
+    const pinnedVersionId =
+      collaborationDocVersionId ?? storedProposalData.collaborationDocVersionId;
+
+    const incomingProposalData =
+      proposalFields.proposalData ??
+      (collaborationDocVersionId !== null
+        ? (existingProposal.proposalData as Record<string, unknown>)
+        : undefined);
+
+    const collaborationDocId =
+      storedProposalData.collaborationDocId ??
+      (incomingProposalData &&
+      parseProposalData(incomingProposalData).collaborationDocId
+        ? `proposal-${proposalId}`
+        : undefined);
+
+    const baseProposalData = incomingProposalData
+      ? {
+          ...incomingProposalData,
+          ...(collaborationDocId ? { collaborationDocId } : {}),
+          ...(pinnedVersionId !== undefined
+            ? { collaborationDocVersionId: pinnedVersionId }
+            : {}),
+        }
+      : undefined;
 
     const proposalDataWithVersion =
       baseProposalData && categoryLabels

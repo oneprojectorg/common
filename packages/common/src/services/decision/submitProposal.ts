@@ -1,11 +1,10 @@
-import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
-import { logger } from '@op/logging';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { createProposalDocVersion } from './createProposalDocVersion';
 import { decisionPermission } from './permissions';
 import {
   normalizeLocation,
@@ -146,21 +145,20 @@ export const submitProposal = async ({
     }
   }
 
-  // Create a named version snapshot. Best-effort — failures logged, never block.
   if (!parsed.collaborationDocId) {
     throw new ValidationError('Proposal is missing a collaboration document');
   }
 
-  const collaborationDocVersionId = await getTipTapClient()
-    .createVersion(parsed.collaborationDocId, { name: 'Submitted' })
-    .then((v) => v?.version ?? null)
-    .catch((error: unknown) => {
-      logger.error('[submitProposal] Failed to create TipTap version', {
-        collaborationDocId: parsed.collaborationDocId,
-        error,
-      });
-      return null;
-    });
+  // Snapshot the document before any write, so a failure here leaves the
+  // proposal a draft the author can retry rather than a submitted proposal
+  // whose reviewers are reading an unpinned, still-editable document.
+  const collaborationDocVersionId = await createProposalDocVersion({
+    collaborationDocId: parsed.collaborationDocId,
+    versionName: 'Submitted',
+    operation: 'submitProposal',
+    failureMessage:
+      'We could not submit your proposal right now. Please try again.',
+  });
 
   // The authoritative category set for location templates — manual selections
   // plus the location's council district, already filled into the assembled
@@ -171,30 +169,24 @@ export const submitProposal = async ({
       ? normalizeProposalCategories(assembledData.category)
       : null;
 
+  const proposalDataUpdate = {
+    ...(existingProposal.proposalData as Record<string, unknown>),
+    ...(location ? { location } : {}),
+    collaborationDocVersionId,
+    ...(categoryLabels
+      ? {
+          category: categoryLabels.length > 0 ? categoryLabels : undefined,
+        }
+      : {}),
+  };
+
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
-    const proposalDataUpdate =
-      collaborationDocVersionId != null || location || categoryLabels
-        ? {
-            ...(existingProposal.proposalData as Record<string, unknown>),
-            ...(location ? { location } : {}),
-            ...(collaborationDocVersionId != null
-              ? { collaborationDocVersionId }
-              : {}),
-            ...(categoryLabels
-              ? {
-                  category:
-                    categoryLabels.length > 0 ? categoryLabels : undefined,
-                }
-              : {}),
-          }
-        : undefined;
-
     const [submittedProposal] = await tx
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
-        ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
+        proposalData: proposalDataUpdate,
       })
       .where(eq(proposals.id, data.proposalId))
       .returning();
@@ -209,8 +201,7 @@ export const submitProposal = async ({
     await syncProposalProfileLocation(
       tx,
       existingProposal.profileId,
-      proposalDataUpdate ??
-        (existingProposal.proposalData as Record<string, unknown>),
+      proposalDataUpdate,
     );
 
     // Persist the proposal's categories — including the location's council

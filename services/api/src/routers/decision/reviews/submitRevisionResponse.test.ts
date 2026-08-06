@@ -1,4 +1,5 @@
 import { getTipTapClient } from '@op/collab';
+import { mockCollab } from '@op/collab/testing';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -110,6 +111,55 @@ describe.concurrent('submitRevisionResponse', () => {
         revisionRequestId: revisionRequest.id,
       },
     });
+  });
+
+  it('aborts the resubmission when the collaboration doc version cannot be stamped', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Garden Expansion',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+
+    mockCollab.setVersionCreateError(
+      (created.proposal.proposalData as Record<string, unknown>)
+        .collaborationDocId as string,
+      new Error('503 Service Unavailable'),
+    );
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+
+    await expect(
+      authorCaller.decision.submitRevisionResponse({
+        revisionRequestId: revisionRequest.id,
+        resubmitComment: 'Added detailed budget breakdown.',
+      }),
+    ).rejects.toThrow(/could not submit your revision response/i);
+
+    // Nothing may move: the request stays open and the assignment stays with
+    // the author, so a retry is the whole recovery path.
+    const updatedRequest = await db.query.proposalReviewRequests.findFirst({
+      where: { id: revisionRequest.id },
+    });
+
+    expect(updatedRequest?.state).toBe(ProposalReviewRequestState.REQUESTED);
+    expect(updatedRequest?.respondedAt).toBeNull();
+    expect(updatedRequest?.respondedProposalHistoryId).toBeNull();
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(assignment?.status).toBe(
+      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    );
   });
 
   it("updates the assignment's assignedProposalHistoryId to the new snapshot so reviewers see the revised proposal", async ({

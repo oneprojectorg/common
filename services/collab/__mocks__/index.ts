@@ -215,6 +215,9 @@ const docFragmentTextResponses = new Map<string, Record<string, string>>();
 // Per-doc saved versions returned by the version history API.
 const docVersions = new Map<string, TipTapVersion[]>();
 
+// Per-doc errors raised by `createVersion` instead of minting a version.
+const docVersionCreateErrors = new Map<string, Error>();
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -322,6 +325,14 @@ export const mockCollab = {
   setDocError: (docId: string, error: Error) => {
     docResponses.set(docId, () => Promise.reject(error));
   },
+
+  /**
+   * Make `createVersion` reject for a document — the TipTap-unavailable path
+   * that leaves a proposal with no version stamp.
+   */
+  setVersionCreateError: (docId: string, error: Error) => {
+    docVersionCreateErrors.set(docId, error);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -418,6 +429,11 @@ export function createTipTapClient(_config?: unknown) {
       docName: string,
       input?: TipTapVersionCreateInput,
     ): Promise<TipTapVersion | null> => {
+      const seededError = docVersionCreateErrors.get(docName);
+      if (seededError) {
+        throw seededError;
+      }
+
       const payload = input?.name || input?.meta ? input : undefined;
       const existing = docVersions.get(docName) ?? [];
       const nextVersion =

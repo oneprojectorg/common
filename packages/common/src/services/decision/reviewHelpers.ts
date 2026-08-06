@@ -4,7 +4,6 @@ import {
   ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
-import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
@@ -260,20 +259,10 @@ export function resolveAssignmentProposal(assignment: {
     throw new ValidationError(`Proposal ${id} has no document content`);
   }
 
-  // HTML-only proposals (no collaboration doc) are a supported legacy state —
-  // the content check above already accepts them — so they aren't flagged here.
-  // The only unexpected case is a proposal that has a collaboration doc but no
-  // version stamp, meaning the best-effort version snapshot on submit (see
-  // submitProposal) didn't take. That's non-fatal (the version is not the
-  // source of truth for content), so warn rather than error.
-  if (
-    proposalData.collaborationDocId &&
-    proposalData.collaborationDocVersionId == null
-  ) {
-    logger.warn('Proposal is missing collaborationDocVersionId', {
-      proposalId: id,
-    });
-  }
-
+  // A missing `collaborationDocVersionId` is left unflagged: it only occurs on
+  // proposals submitted before the stamp became mandatory (see
+  // `submitProposal`), whose reviewers read the live document instead of a
+  // pinned revision. No read can repair that, and this runs once per proposal
+  // per review-list render.
   return { ...snapshot, id, proposalData };
 }

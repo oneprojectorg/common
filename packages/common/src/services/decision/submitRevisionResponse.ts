@@ -1,5 +1,5 @@
 import { trackRevisionResponseSubmitted } from '@op/analytics';
-import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
+import { invalidateCachedDocumentFragments } from '@op/collab';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -21,6 +21,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { createProposalDocVersion } from './createProposalDocVersion';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -92,21 +93,17 @@ export async function submitRevisionResponse({
     throw new ValidationError('Proposal is missing a collaboration document');
   }
 
-  const collaborationDocVersionId = await getTipTapClient()
-    .createVersion(proposalData.collaborationDocId, {
-      name: 'Resubmitted',
-      meta: {
-        eventType: 'revision_response_submitted',
-        revisionRequestId,
-      },
-    })
-    .then((version) => version?.version ?? null);
-
-  if (collaborationDocVersionId == null) {
-    throw new CommonError(
+  const collaborationDocVersionId = await createProposalDocVersion({
+    collaborationDocId: proposalData.collaborationDocId,
+    versionName: 'Resubmitted',
+    meta: {
+      eventType: 'revision_response_submitted',
+      revisionRequestId,
+    },
+    operation: 'submitRevisionResponse',
+    failureMessage:
       'We could not submit your revision response right now. Please try again.',
-    );
-  }
+  });
 
   const now = new Date().toISOString();
 
