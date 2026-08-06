@@ -502,7 +502,7 @@ function RubricFieldInput({
           <Select
             items={getScoredOptionLabels(options)}
             value={selectedValue}
-            onValueChange={(next: unknown) => {
+            onValueChange={(next) => {
               onChange(parseSelectedValue(next, field.schema));
             }}
           >
@@ -585,21 +585,21 @@ function getScoredOptionLabels(
 }
 
 /**
- * Convert a select value back into the schema's expected primitive type.
+ * Convert a select value back into the schema's expected primitive type. The
+ * options are keyed by `String(option.value)`, so the selection arrives as a
+ * string and an integer-typed criterion has to be coerced back.
  */
 function parseSelectedValue(
-  key: unknown,
+  selected: string | null,
   schema: XFormatPropertySchema,
 ): string | number | null {
-  if (key === null || key === undefined) {
+  if (selected === null) {
     return null;
   }
 
-  const value = String(key);
-
   if (schema.type === 'integer') {
-    return Number(value);
+    return Number(selected);
   }
 
-  return value;
+  return selected;
 }

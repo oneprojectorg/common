@@ -157,7 +157,7 @@ test.describe('Create Process Instance', () => {
       authenticatedPage.getByText('Proposal Categories').first(),
     ).toBeVisible({ timeout: 12_000 });
 
-    // 9. Create one category
+    // 8. Create one category
     await authenticatedPage
       .getByRole('button', { name: 'Create first category' })
       .click();
@@ -182,7 +182,7 @@ test.describe('Create Process Instance', () => {
 
     // ── Step 2: Proposal Template ───────────────────────────────────────
 
-    // 10. Navigate to the Proposal Template step
+    // 9. Navigate to the Proposal Template step
     const templateButton = sidebarNav.getByRole('button', {
       name: 'Proposal Template',
     });
@@ -204,7 +204,7 @@ test.describe('Create Process Instance', () => {
     await addFieldButton.click();
     await templateFieldSaved;
 
-    // 11. Expand the Funding amount card — budget is enabled by default in the
+    // 10. Expand the Funding amount card — budget is enabled by default in the
     //     template. Match "Funding amount Optional/Required", the card header
     //     button.
     await authenticatedPage
@@ -226,7 +226,7 @@ test.describe('Create Process Instance', () => {
 
     // ── Final: Verify Launch Process button is enabled ──────────────────
 
-    // 13. Verify the Launch Process button is enabled (not disabled)
+    // 11. Verify the Launch Process button is enabled (not disabled)
     const launchButton = authenticatedPage.getByRole('button', {
       name: 'Launch Process',
     });
