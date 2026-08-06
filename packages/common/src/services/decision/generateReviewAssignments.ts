@@ -2,15 +2,14 @@ import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
-import { applyCoveragePolicy } from './applyCoveragePolicy';
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
+import { pickSingleReviewerAssignments } from './pickSingleReviewerAssignments';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ReviewsScope } from './schemas/types';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 export interface GenerateReviewAssignmentsInput {
@@ -25,6 +24,17 @@ interface SelectedProposal {
   submittedByProfileId: string | null;
 }
 
+type ZeroCandidateReason =
+  | 'no_eligible_reviewers'
+  | 'category_has_no_eligible_reviewers'
+  | 'uncategorized';
+
+/** A proposal's candidate reviewers, author already excluded. */
+interface CandidateProposal extends AssignableProposal {
+  /** Read only when the set is empty; scopes without a specific reason omit it. */
+  zeroCandidateReason?: ZeroCandidateReason;
+}
+
 /**
  * Generate review assignment rows for proposals entering a review-capable phase.
  *
@@ -35,10 +45,9 @@ interface SelectedProposal {
  * `by_category`: each proposal is assigned only the eligible reviewers whose
  * scope rows cover its categories. Insert-only — never prunes.
  *
- * The scope produces the per-proposal candidate set; the policy decides how much
- * of it is written. `full_coverage` inserts the whole set; `single_reviewer`
- * narrows it to one balanced, deterministic pick per proposal
- * (`applyCoveragePolicy`), skipping proposals already covered in this phase.
+ * The scope builds the candidate set; the policy decides how much of it is
+ * written — `full_coverage` all of it, `single_reviewer` one balanced pick
+ * (`pickSingleReviewerAssignments`).
  */
 export async function generateReviewAssignments({
   instanceId,
@@ -107,20 +116,19 @@ export async function generateReviewAssignments({
           eligibleReviewerProfileIds: reviewerProfileIds,
           historyByProposalId,
         })
-      : selectedProposals.map((proposal) => ({
-          proposalId: proposal.id,
-          submittedByProfileId: proposal.submittedByProfileId,
-          assignedProposalHistoryId:
-            historyByProposalId.get(proposal.id) ?? null,
-          reviewerProfileIds,
-        }));
+      : buildAllScopeProposals({
+          selectedProposals,
+          eligibleReviewerProfileIds: reviewerProfileIds,
+          historyByProposalId,
+        });
+
+  warnUncoverableProposals({ instanceId, phaseId, candidateProposals });
 
   const assignableProposals =
     policy === 'single_reviewer'
       ? await applySingleReviewerPolicy({
           instanceId,
           phaseId,
-          scope,
           candidateProposals,
         })
       : candidateProposals;
@@ -134,21 +142,20 @@ export async function generateReviewAssignments({
 
 /**
  * Narrows the candidate sets to one reviewer per proposal, seeded from the
- * phase's existing assignment rows — which serve double duty as the load
- * counters and the idempotency guard for a re-run.
+ * phase's existing rows — which double as the load counters and the
+ * idempotency guard for a re-run.
  *
- * Only `scope: 'all'` warns here: `by_category` already warned upstream with a
- * more specific reason for exactly the same set of uncoverable proposals.
+ * The read and the downstream insert need no transaction: generation only runs
+ * on the winning side of a phase transition, which serializes on a
+ * `SELECT ... FOR UPDATE` of the instance.
  */
 async function applySingleReviewerPolicy({
   instanceId,
   phaseId,
-  scope,
   candidateProposals,
 }: {
   instanceId: string;
   phaseId: string;
-  scope: ReviewsScope;
   candidateProposals: AssignableProposal[];
 }): Promise<AssignableProposal[]> {
   const existingAssignments = await db.query.proposalReviewAssignments.findMany(
@@ -158,32 +165,79 @@ async function applySingleReviewerPolicy({
     },
   );
 
-  const { assignableProposals, zeroCandidateProposalIds } = applyCoveragePolicy(
-    {
+  const { assignableProposals, alreadyCoveredProposalIds } =
+    pickSingleReviewerAssignments({
       assignableProposals: candidateProposals,
       existingAssignments,
-    },
-  );
+    });
 
-  if (scope === 'all') {
-    for (const proposalId of zeroCandidateProposalIds) {
-      logger.warn('generateReviewAssignments: proposal has zero reviewers', {
+  if (alreadyCoveredProposalIds.length > 0) {
+    logger.info(
+      'generateReviewAssignments: skipped proposals already covered in this phase',
+      {
         instanceId,
         phaseId,
-        proposalId,
-        reason: 'no_eligible_reviewers',
-      });
-    }
+        skippedCount: alreadyCoveredProposalIds.length,
+        proposalIds: alreadyCoveredProposalIds,
+      },
+    );
   }
 
   return assignableProposals;
 }
 
 /**
- * Builds per-proposal reviewer sets for the `by_category` scope: scope rows
- * covering the proposal's categories ∩ eligible reviewers. Proposals that end
- * up with zero reviewers (uncategorized, or a category with no eligible scoped
- * reviewer) are logged but still proceed with an empty set — never blocked.
+ * One warning per uncoverable proposal, for every scope × policy combination.
+ * Reads the candidate sets, not the policy output — a proposal the policy
+ * empties on purpose (already covered) is not a gap.
+ */
+function warnUncoverableProposals({
+  instanceId,
+  phaseId,
+  candidateProposals,
+}: {
+  instanceId: string;
+  phaseId: string;
+  candidateProposals: CandidateProposal[];
+}): void {
+  for (const proposal of candidateProposals) {
+    if (proposal.reviewerProfileIds.length > 0) {
+      continue;
+    }
+
+    logger.warn('generateReviewAssignments: proposal has zero reviewers', {
+      instanceId,
+      phaseId,
+      proposalId: proposal.proposalId,
+      reason: proposal.zeroCandidateReason ?? 'no_eligible_reviewers',
+    });
+  }
+}
+
+/** Every eligible reviewer, minus the proposal's own author. */
+function buildAllScopeProposals({
+  selectedProposals,
+  eligibleReviewerProfileIds,
+  historyByProposalId,
+}: {
+  selectedProposals: SelectedProposal[];
+  eligibleReviewerProfileIds: string[];
+  historyByProposalId: Map<string, string>;
+}): CandidateProposal[] {
+  return selectedProposals.map((proposal) => ({
+    proposalId: proposal.id,
+    submittedByProfileId: proposal.submittedByProfileId,
+    assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
+    reviewerProfileIds: eligibleReviewerProfileIds.filter(
+      (id) => id !== proposal.submittedByProfileId,
+    ),
+  }));
+}
+
+/**
+ * Scope rows covering the proposal's categories ∩ eligible reviewers, minus
+ * the author. A proposal nobody covers is never blocked: it carries the reason
+ * for the warning and proceeds with an empty set.
  */
 async function buildByCategoryProposals({
   instanceId,
@@ -199,7 +253,7 @@ async function buildByCategoryProposals({
   selectedProposals: SelectedProposal[];
   eligibleReviewerProfileIds: string[];
   historyByProposalId: Map<string, string>;
-}): Promise<AssignableProposal[]> {
+}): Promise<CandidateProposal[]> {
   const [scopedByProposal, categorizedRows] = await Promise.all([
     getCategoryReviewersByProposal({
       instanceId,
@@ -219,30 +273,18 @@ async function buildByCategoryProposals({
 
   return selectedProposals.map((proposal) => {
     const scoped = scopedByProposal.get(proposal.id) ?? new Set<string>();
-    const reviewerProfileIds = [...scoped].filter((id) => eligibleSet.has(id));
-
-    // Mirror the downstream self-review exclusion to detect a truly
-    // uncoverable proposal.
-    const coveringReviewers = reviewerProfileIds.filter(
-      (id) => id !== proposal.submittedByProfileId,
+    const reviewerProfileIds = [...scoped].filter(
+      (id) => eligibleSet.has(id) && id !== proposal.submittedByProfileId,
     );
-
-    if (coveringReviewers.length === 0) {
-      logger.warn('generateReviewAssignments: proposal has zero reviewers', {
-        instanceId,
-        phaseId,
-        proposalId: proposal.id,
-        reason: categorizedProposalIds.has(proposal.id)
-          ? 'category_has_no_eligible_reviewers'
-          : 'uncategorized',
-      });
-    }
 
     return {
       proposalId: proposal.id,
       submittedByProfileId: proposal.submittedByProfileId,
       assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
       reviewerProfileIds,
+      zeroCandidateReason: categorizedProposalIds.has(proposal.id)
+        ? 'category_has_no_eligible_reviewers'
+        : 'uncategorized',
     };
   });
 }
