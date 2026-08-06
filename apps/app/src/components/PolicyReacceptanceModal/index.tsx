@@ -6,9 +6,11 @@ import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
 import { type ReactNode, useState } from 'react';
@@ -46,9 +48,6 @@ const PolicyReacceptanceModalContent = () => {
   const utils = trpc.useUtils();
   const reaccept = trpc.account.completeOnboarding.useMutation();
   const [agreed, setAgreed] = useState(false);
-  const [activeDocument, setActiveDocument] = useState<PolicyDocument | null>(
-    null,
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAgree = async () => {
@@ -72,26 +71,18 @@ const PolicyReacceptanceModalContent = () => {
     // Controlled `open` with no `onOpenChange`: Escape and the backdrop have
     // nowhere to write, so the gate can't be dismissed.
     <Dialog open disablePointerDismissal>
-      {/* Column, not the default grid, so each view can put the scroll on its
-          own body instead of on the whole card. */}
+      {/* Column, not the default grid, so the body scrolls rather than the
+          whole card. */}
       <DialogContent
         showCloseButton={false}
         className="flex flex-col overflow-hidden p-0 sm:max-w-[36rem]"
       >
-        {activeDocument ? (
-          <PolicyDocumentView
-            document={activeDocument}
-            onBack={() => setActiveDocument(null)}
-          />
-        ) : (
-          <PolicyReacceptanceMain
-            agreed={agreed}
-            onAgreedChange={setAgreed}
-            onOpenDocument={setActiveDocument}
-            onAgree={handleAgree}
-            isSubmitting={isSubmitting}
-          />
-        )}
+        <PolicyReacceptanceMain
+          agreed={agreed}
+          onAgreedChange={setAgreed}
+          onAgree={handleAgree}
+          isSubmitting={isSubmitting}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -100,13 +91,11 @@ const PolicyReacceptanceModalContent = () => {
 const PolicyReacceptanceMain = ({
   agreed,
   onAgreedChange,
-  onOpenDocument,
   onAgree,
   isSubmitting,
 }: {
   agreed: boolean;
   onAgreedChange: (value: boolean) => void;
-  onOpenDocument: (document: PolicyDocument) => void;
   onAgree: () => void;
   isSubmitting: boolean;
 }) => {
@@ -141,19 +130,13 @@ const PolicyReacceptanceMain = ({
             'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
             {
               terms: (chunks: ReactNode) => (
-                <PolicyLink onOpen={() => onOpenDocument('terms')}>
-                  {chunks}
-                </PolicyLink>
+                <PolicyDocumentDialog document="terms" trigger={chunks} />
               ),
               privacy: (chunks: ReactNode) => (
-                <PolicyLink onOpen={() => onOpenDocument('privacy')}>
-                  {chunks}
-                </PolicyLink>
+                <PolicyDocumentDialog document="privacy" trigger={chunks} />
               ),
               conduct: (chunks: ReactNode) => (
-                <PolicyLink onOpen={() => onOpenDocument('conduct')}>
-                  {chunks}
-                </PolicyLink>
+                <PolicyDocumentDialog document="conduct" trigger={chunks} />
               ),
             },
           )}
@@ -178,12 +161,23 @@ const documentContent: Record<PolicyDocument, () => ReactNode> = {
   conduct: CommunityCommitmentsContent,
 };
 
-const PolicyDocumentView = ({
+/**
+ * A policy document, in its own dialog nested over the gate.
+ *
+ * Nested rather than swapping the gate's content, so base-ui owns the focus:
+ * opening scopes focus into the document and closing returns it to the link
+ * that opened it. Swapping unmounted that link mid-press, dropping focus to the
+ * body with nothing announced.
+ *
+ * The trigger sits next to (not inside) the consent Checkbox's label, so
+ * pressing a link never toggles it.
+ */
+const PolicyDocumentDialog = ({
   document,
-  onBack,
+  trigger,
 }: {
   document: PolicyDocument;
-  onBack: () => void;
+  trigger: ReactNode;
 }) => {
   const t = useTranslations();
   const documentTitle: Record<PolicyDocument, string> = {
@@ -194,39 +188,38 @@ const PolicyDocumentView = ({
   const Content = documentContent[document];
 
   return (
-    <>
-      <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0 pe-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('Back')}
-          onClick={onBack}
-        >
-          <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
-        </Button>
-        {/* Centred on the header, not on the Back button beside it, so `relative`
-            above is load-bearing. */}
-        <DialogTitle className="pointer-events-none absolute inset-x-0 text-center">
-          {documentTitle[document]}
-        </DialogTitle>
-      </DialogHeader>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-        <Content />
-      </div>
-    </>
+    <Dialog>
+      <DialogTrigger
+        render={
+          <Button variant="link" size="inline">
+            {trigger}
+          </Button>
+        }
+      />
+      <DialogContent
+        showCloseButton={false}
+        className="flex flex-col overflow-hidden p-0 sm:max-w-[36rem]"
+      >
+        <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0 pe-4">
+          {/* Back rather than a close X: this reads as a drill-down from the
+              gate, and it's the nested dialog's DialogClose either way. */}
+          <DialogClose
+            render={
+              <Button variant="ghost" size="icon" aria-label={t('Back')} />
+            }
+          >
+            <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
+          </DialogClose>
+          {/* Centred on the header, not on the Back button beside it, so
+              `relative` above is load-bearing. */}
+          <DialogTitle className="pointer-events-none absolute inset-x-0 text-center">
+            {documentTitle[document]}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          <Content />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-// Sits next to (not inside) the consent Checkbox's label, so pressing a link
-// never toggles it.
-const PolicyLink = ({
-  onOpen,
-  children,
-}: {
-  onOpen: () => void;
-  children: ReactNode;
-}) => (
-  <Button variant="link" size="inline" onClick={onOpen}>
-    {children}
-  </Button>
-);
