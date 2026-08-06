@@ -94,7 +94,7 @@ export const DecisionListItem = ({
 
   return (
     <>
-      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+      <div className="flex items-start gap-0 rounded-lg border hover:bg-accent sm:items-center sm:rounded-none sm:border-0 sm:border-b">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
           className={cn(
@@ -105,20 +105,14 @@ export const DecisionListItem = ({
           <DecisionCardHeader
             name={processInstance.name || item.name}
             currentState={currentPhaseName}
+            chipVariant={isDraft ? 'secondary' : 'accent'}
             stewardName={displayProfile?.name}
             stewardAvatarPath={displayProfile?.avatarImage?.name}
-            chipClassName={
-              isDraft ? 'bg-neutral-gray1 text-neutral-charcoal' : undefined
-            }
           >
-            {closingDate && (
-              <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
-                <DecisionClosingDate closingDate={closingDate} />
-              </div>
-            )}
+            {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           </DecisionCardHeader>
 
-          <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+          <div className="flex items-end gap-4 sm:items-center sm:gap-10">
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
@@ -131,15 +125,14 @@ export const DecisionListItem = ({
         </Link>
 
         {(canManage || canDelete) && (
-          <div className="flex items-center pe-4 pt-4 sm:ps-6 sm:pt-0">
+          <div className="flex items-center pe-4 pt-4 sm:ps-8 sm:pt-0">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
                   <Button
                     aria-label={t('Decision options')}
-                    variant="outline"
-                    size="icon-sm"
-                    className="aspect-square rounded bg-white shadow-light"
+                    variant="ghost"
+                    size="icon"
                   />
                 }
               >
@@ -149,7 +142,7 @@ export const DecisionListItem = ({
                 {canManage && (
                   <DropdownMenuLinkItem
                     closeOnClick
-                    render={<Link href={`/decisions/${item.slug}/edit`} />}
+                    href={`/decisions/${item.slug}/edit`}
                   >
                     {t('Settings')}
                   </DropdownMenuLinkItem>
@@ -162,7 +155,7 @@ export const DecisionListItem = ({
                 {canDelete && (
                   <DropdownMenuItem
                     onClick={() => setShowDeleteModal(true)}
-                    className="text-functional-red"
+                    variant="destructive"
                   >
                     {t('Delete')}
                   </DropdownMenuItem>
@@ -255,9 +248,11 @@ export const ProfileDecisionListItem = ({
         name={processInstance.name || item.name}
         currentState={currentPhaseName}
       >
-        <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
+        {/* `w-full` so this takes its own line under the phase chip, which now
+            shares the header's last row. */}
+        <div className="flex w-full flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between">
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
-          <div className="flex items-end gap-4 text-neutral-black">
+          <div className="flex items-end gap-4">
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
@@ -297,7 +292,7 @@ export const LegacyDecisionListItem = ({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-accent hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
     >
       <DecisionCardHeader
         name={name}
@@ -305,14 +300,10 @@ export const LegacyDecisionListItem = ({
         stewardName={ownerName}
         stewardAvatarPath={ownerAvatarPath}
       >
-        {closingDate && (
-          <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
-            <DecisionClosingDate closingDate={closingDate} />
-          </div>
-        )}
+        {closingDate && <DecisionClosingDate closingDate={closingDate} />}
       </DecisionCardHeader>
 
-      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+      <div className="flex items-end gap-4 sm:items-center sm:gap-10">
         <DecisionStat number={participantCount} label="Participants" />
         <DecisionStat number={proposalCount} label="Proposals" />
       </div>
@@ -330,9 +321,12 @@ const DecisionStat = ({
   className?: string;
 }) => (
   <div
-    className={cn('flex items-center gap-1 sm:flex-col sm:gap-0', className)}
+    className={cn(
+      'flex items-center gap-1 sm:flex-col sm:items-center sm:gap-1',
+      className,
+    )}
   >
-    <span className="font-serif text-title-base">{number}</span>
+    <span className="font-serif text-title">{number}</span>
     <span className="text-sm text-muted-foreground">
       <TranslatedText text={label} />
     </span>
@@ -341,21 +335,20 @@ const DecisionStat = ({
 
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   const locale = useLocale();
+  const closingSoon = isClosingSoon(closingDate);
+
   return (
-    <div className="flex items-center gap-1">
-      <LuCalendar
-        className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
+    <div
+      className={cn(
+        'flex items-center gap-2 text-sm',
+        closingSoon ? 'text-destructive' : 'text-muted-foreground',
+      )}
+    >
+      <LuCalendar className="size-4" aria-hidden />
+      <TranslatedText
+        text="Closes on {date}"
+        values={{ date: formatDateShort(closingDate, locale) }}
       />
-      <span
-        className={cn(
-          isClosingSoon(closingDate)
-            ? 'text-functional-red'
-            : 'text-neutral-charcoal',
-          'text-sm',
-        )}
-      >
-        <TranslatedText text="Closes" /> {formatDateShort(closingDate, locale)}
-      </span>
     </div>
   );
 };

@@ -5,7 +5,7 @@
   "Create proposal": "إنشاء مقترح",
   "Post": "منشور",
   "Posts": "منشورات",
-  "Closes": "ينتهي",
+  "Closes on {date}": "ينتهي في {date}",
   "Add your personal details": "أضف بياناتك الشخصية",
   "Tell us about yourself so others can find you.": "أخبرنا عن نفسك حتى يتمكن الآخرون من العثور عليك.",
   "Profile Picture": "صورة الملف الشخصي",
