@@ -98,7 +98,14 @@ function pickLeastLoaded({
   return best!;
 }
 
-/** Mirrors the SQL `md5(reviewerProfileId || proposalId)` tie-break. */
+/**
+ * Equal load is the common case — every reviewer starts at 0 — and the candidate
+ * sets arrive from queries with no `ORDER BY`, so without a tie-break the picks
+ * would drift between runs on identical data. Hashing the pair (rather than
+ * sorting on id) also stops the lowest-id reviewer always drawing the lowest-id
+ * proposal, since the walk is already id-ascending. Same `md5(reviewer ||
+ * proposal)` the reviewer queue's shuffle uses.
+ */
 function stableHash(reviewerProfileId: string, proposalId: string): string {
   return createHash('md5')
     .update(`${reviewerProfileId}${proposalId}`)

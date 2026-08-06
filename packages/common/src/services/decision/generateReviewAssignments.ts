@@ -117,7 +117,7 @@ export async function generateReviewAssignments({
 
   const assignableProposals =
     policy === 'single_reviewer'
-      ? await applySingleReviewerPolicy({
+      ? await resolveSingleReviewerAssignments({
           instanceId,
           phaseId,
           candidateProposals,
@@ -132,15 +132,15 @@ export async function generateReviewAssignments({
 }
 
 /**
- * Narrows the candidate sets to one reviewer per proposal, seeded from the
- * phase's existing rows — which double as the load counters and the
- * idempotency guard for a re-run.
+ * Reads the phase's existing rows — which double as the picker's load counters
+ * and its idempotency guard for a re-run — and hands them to
+ * {@link pickSingleReviewerAssignments}.
  *
  * The read and the downstream insert need no transaction: generation only runs
  * on the winning side of a phase transition, which serializes on a
  * `SELECT ... FOR UPDATE` of the instance.
  */
-async function applySingleReviewerPolicy({
+async function resolveSingleReviewerAssignments({
   instanceId,
   phaseId,
   candidateProposals,
