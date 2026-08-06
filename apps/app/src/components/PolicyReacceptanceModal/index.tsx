@@ -220,7 +220,7 @@ const PolicyDocumentDialog = ({
       <DialogContent
         showCloseButton={false}
         initialFocus={scrollRef}
-        className="flex flex-col overflow-hidden p-0 sm:max-w-[36rem]"
+        className="flex flex-col overflow-hidden p-0 sm:max-w-xl"
       >
         <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0 pe-4">
           {/* Back rather than a close X: this reads as a drill-down from the
