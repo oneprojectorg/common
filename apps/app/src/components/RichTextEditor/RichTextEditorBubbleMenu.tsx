@@ -17,6 +17,7 @@ import {
   LuAlignLeft,
   LuAlignRight,
   LuBold,
+  LuChevronRight,
   LuCode,
   LuHeading1,
   LuHeading2,
@@ -42,6 +43,13 @@ export interface RichTextEditorBubbleMenuProps {
   pluginKey?: string;
   /** Override the default visibility logic (non-empty editable text selection) */
   shouldShow?: BubbleMenuProps['shouldShow'];
+  /**
+   * Offer the collapsible (`details`) toggle. Off by default: the proposal
+   * editor's fields are single-purpose prose and Figma's menu for them has no
+   * collapsible. Can't be inferred from the extensions — `Details` ships in
+   * sense's base set, so every editor has it registered.
+   */
+  allowCollapsible?: boolean;
 }
 
 interface MenuItem {
@@ -61,6 +69,7 @@ export function RichTextEditorBubbleMenu({
   editor,
   pluginKey = 'richTextEditorBubbleMenu',
   shouldShow,
+  allowCollapsible = false,
 }: RichTextEditorBubbleMenuProps) {
   const t = useTranslations();
   const [isEditingLink, setIsEditingLink] = useState(false);
@@ -132,6 +141,7 @@ export function RichTextEditorBubbleMenu({
             alignLeft: e.isActive({ textAlign: 'left' }),
             alignCenter: e.isActive({ textAlign: 'center' }),
             alignRight: e.isActive({ textAlign: 'right' }),
+            details: e.isActive('details'),
           }
         : null,
   });
@@ -275,6 +285,44 @@ export function RichTextEditorBubbleMenu({
         isActive: activeStates.alignRight,
         toggle: () => editor.chain().focus().setTextAlign('right').run(),
       },
+      ...(allowCollapsible
+        ? [
+            {
+              key: 'details',
+              label: t('Collapsible'),
+              icon: LuChevronRight,
+              isActive: activeStates.details,
+              // No `toggleDetails` exists — branch on the active state.
+              toggle: () => {
+                if (activeStates.details) {
+                  editor.chain().focus().unsetDetails().run();
+                  return;
+                }
+
+                editor.chain().focus().setDetails().run();
+
+                // Details is `isolating` with no gap cursor, so one at the end
+                // of the doc traps the caret. Add a trailing paragraph when
+                // nothing follows it.
+                const { state } = editor;
+                const { $from } = state.selection;
+                for (let depth = $from.depth; depth > 0; depth--) {
+                  if ($from.node(depth).type.name === 'details') {
+                    const after = $from.after(depth);
+                    if (!state.doc.nodeAt(after)) {
+                      editor
+                        .chain()
+                        .insertContentAt(after, { type: 'paragraph' })
+                        .run();
+                    }
+
+                    break;
+                  }
+                }
+              },
+            },
+          ]
+        : []),
     ],
   ];
 

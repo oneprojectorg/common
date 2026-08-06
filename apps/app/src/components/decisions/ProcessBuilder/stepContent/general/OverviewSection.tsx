@@ -158,7 +158,7 @@ function OverviewSectionContent({
           onEditorReady={setEditor}
         />
 
-        <RichTextEditorBubbleMenu editor={editor} />
+        <RichTextEditorBubbleMenu editor={editor} allowCollapsible />
       </div>
     </div>
   );
