@@ -110,9 +110,14 @@ export function CollaborativeTitleField({
           return false;
         }
 
-        const next =
-          view.state.doc.textContent.length - (to - from) + text.length;
-        return next > maxLength;
+        const current = view.state.doc.textContent.length;
+        const next = current - (to - from) + text.length;
+
+        // Block only what would exceed the cap *and* grow the title. A title
+        // already over it (restored from a version predating the cap) would
+        // otherwise refuse every keystroke, including typing over a selection
+        // to shorten it — leaving no way to fix it but backspace.
+        return next > maxLength && next > current;
       },
       // Always handled, never deferred to the default: this is a single-value
       // field, so a pasted paragraph break has to become a space rather than a

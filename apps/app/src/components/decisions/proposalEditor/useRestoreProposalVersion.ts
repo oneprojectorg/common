@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
   normalizeProposalCategories,
   parseProposalData,
 } from '@op/common/client';
@@ -53,7 +54,13 @@ export function useRestoreProposalVersion({
     fragmentContents: Record<string, JSONContent | null>,
   ): { title: string; proposalData: ProposalData } {
     const currentProposalData = parseProposalData(proposalData);
-    const nextTitle = getFragmentText(fragmentContents.title);
+    // Clamped to what the API accepts: versions predate the cap, and the
+    // document is reverted before this is persisted, so a title the schema
+    // rejects would leave the body restored and the metadata not.
+    const nextTitle = getFragmentText(fragmentContents.title).slice(
+      0,
+      PROPOSAL_TITLE_MAX_LENGTH,
+    );
     const nextCategory = normalizeProposalCategories(
       getFragmentText(fragmentContents.category),
     );
