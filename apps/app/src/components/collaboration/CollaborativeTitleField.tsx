@@ -191,7 +191,11 @@ export function CollaborativeTitleField({
             // Beside the field, as Figma has it (17950:11356): the title is a
             // single line, so the counter costs no room. Block addons are for
             // the wrapping prose fields.
-            <InputGroupAddon align="inline-end">
+            //
+            // `self-end` opts out of the group's `items-center` so the counter
+            // tracks the last line when 50 characters wrap at a narrow width;
+            // `py-2.5` matches the editor's padding, aligning the two baselines.
+            <InputGroupAddon align="inline-end" className="self-end py-2.5">
               <CharacterCounter
                 id={counterId}
                 count={charCount}
