@@ -1,6 +1,6 @@
 'use client';
 
-import { Header2 } from '@op/sense/Header';
+import { Header1, Header2 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -32,17 +32,14 @@ export const FullScreenSplitAside = ({
       </div>
       <div className="absolute end-0 top-0 -z-10 hidden size-full justify-center p-4 text-offWhite lg:z-10 lg:flex lg:flex-col lg:items-center">
         <div className="flex flex-col items-center justify-center gap-4 px-12">
-          <h1 className="min-w-96 text-center font-serif text-title-xxl leading-[3.3rem] font-light tracking-[-0.075rem]">
+          <Header1 className="min-w-96 text-center leading-[3.3rem]">
             {t('A bridge to the')}
             <br />
             <i>{t('new economy.')}</i>
-          </h1>
+          </Header1>
           <SideImage className="w-full" />
           <div className="flex w-full max-w-80 flex-col items-center justify-center gap-4 text-offWhite">
-            {/* `!text-title-md` (24px) pins the size sense's `text-headline`
-                (30px) would otherwise win — legacy scale token, no sense
-                equivalent at this step; swap-only, so keep the current look. */}
-            <Header2 className="text-center font-serif !text-title-md">
+            <Header2 className="text-center text-title">
               {t('Connect with your network.')}
             </Header2>
             <span className="text-center text-base leading-[150%]">
