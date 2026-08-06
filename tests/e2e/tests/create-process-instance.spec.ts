@@ -205,8 +205,8 @@ test.describe('Create Process Instance', () => {
     await templateFieldSaved;
 
     // 11. Expand the Funding amount card — budget is enabled by default in the
-    //     template. Match "Funding amount Optional/Required" (the card header
-    //     button), not the "Add budget" button in the preview panel.
+    //     template. Match "Funding amount Optional/Required", the card header
+    //     button.
     await authenticatedPage
       .getByRole('button', { name: /^Funding amount (Optional|Required)$/ })
       .click();
@@ -223,23 +223,6 @@ test.describe('Create Process Instance', () => {
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
       timeout: 6_000,
     });
-
-    // 12. Open the Participant Preview modal (toolbar "Preview" button) and
-    //     verify it renders the budget field's "Add budget" entry.
-    await authenticatedPage.getByRole('button', { name: 'Preview' }).click();
-    const previewDialog = authenticatedPage.getByRole('dialog', {
-      name: 'Participant Preview',
-    });
-    await expect(previewDialog).toBeVisible({ timeout: 6_000 });
-    // The readonly preview renders the budget placeholder as a value box, not a
-    // button — a preview has nothing to click.
-    await expect(previewDialog.getByText('Add budget')).toBeVisible({
-      timeout: 6_000,
-    });
-
-    // Close the modal so it doesn't overlay the launch-ready check.
-    await authenticatedPage.keyboard.press('Escape');
-    await expect(previewDialog).not.toBeVisible({ timeout: 6_000 });
 
     // ── Final: Verify Launch Process button is enabled ──────────────────
 

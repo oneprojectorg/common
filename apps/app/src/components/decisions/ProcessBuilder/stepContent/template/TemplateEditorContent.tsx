@@ -8,17 +8,11 @@ import type {
 } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
 import { Header2 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuEye, LuPlus } from 'react-icons/lu';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -52,7 +46,6 @@ import {
   FieldCardDragPreview,
   FieldCardDropIndicator,
 } from './FieldCard';
-import { ParticipantPreview } from './ParticipantPreview';
 import { getFieldLabelKey } from './fieldRegistry';
 
 export function TemplateEditorContent({
@@ -122,7 +115,6 @@ export function TemplateEditorContent({
   const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
   // Participant preview modal
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
@@ -375,14 +367,6 @@ export function TemplateEditorContent({
                   status={autosaveStatus.status}
                   savedAt={autosaveStatus.savedAt}
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPreviewOpen(true)}
-                >
-                  <LuEye className="size-4" />
-                  {t('Preview')}
-                </Button>
               </div>
             </div>
             <p className="text-muted-foreground">
@@ -468,17 +452,6 @@ export function TemplateEditorContent({
         onConfirm={confirmRemoveField}
         onCancel={() => setFieldToDelete(null)}
       />
-
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{t('Participant Preview')}</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto">
-            <ParticipantPreview template={template} />
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

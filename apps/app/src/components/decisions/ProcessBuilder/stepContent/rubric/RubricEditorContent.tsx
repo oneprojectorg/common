@@ -6,17 +6,11 @@ import type {
   XFormatPropertySchema,
 } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
 import { Header1 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuEye, LuPlus } from 'react-icons/lu';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -60,7 +54,6 @@ import {
   RubricCriterionDragPreview,
   RubricCriterionDropIndicator,
 } from './RubricCriterionCard';
-import { RubricParticipantPreview } from './RubricParticipantPreview';
 
 export function RubricEditorContent({
   instanceId,
@@ -109,7 +102,6 @@ export function RubricEditorContent({
   );
 
   // Reviewer preview modal
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Cache scored config so switching type and back doesn't lose score labels
   const scoredConfigCacheRef = useRef<
@@ -357,14 +349,6 @@ export function RubricEditorContent({
                 status={autosaveStatus.status}
                 savedAt={autosaveStatus.savedAt}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPreviewOpen(true)}
-              >
-                <LuEye className="size-4" />
-                {t('Preview')}
-              </Button>
             </div>
           </div>
 
@@ -442,17 +426,6 @@ export function RubricEditorContent({
           </Button>
         </div>
       </main>
-
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="grid max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{t('Participant Preview')}</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto">
-            <RubricParticipantPreview template={template} />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <ConfirmDeleteModal
         isOpen={criterionToDelete !== null}
