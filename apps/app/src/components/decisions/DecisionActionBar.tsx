@@ -47,7 +47,7 @@ export const DecisionActionBar = ({
 
   return (
     <div className="flex w-full justify-center">
-      <div className="flex w-full max-w-[12rem] flex-col items-center justify-center gap-4 sm:flex-row">
+      <div className="flex w-full max-w-48 flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
           <Dialog>
             <DialogTrigger

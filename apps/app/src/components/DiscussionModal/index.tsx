@@ -93,7 +93,7 @@ export function DiscussionModal({
         }
       }}
     >
-      <DialogContent className="grid h-svh w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-h-[80svh] sm:max-w-[32rem] sm:rounded-lg">
+      <DialogContent className="grid h-svh w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-h-[80svh] sm:max-w-lg sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {t.rich("<bdi>{authorName}</bdi>'s Post", {

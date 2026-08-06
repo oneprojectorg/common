@@ -7,7 +7,7 @@ import { FormHeader } from '@/components/form/FormHeader';
 const CommunityCommitmentsPage = () => {
   const t = useTranslations();
   return (
-    <FormContainer className="max-w-[32rem]">
+    <FormContainer className="max-w-lg">
       <FormHeader text={t('Community Commitments')}></FormHeader>
       <CommunityCommitmentsContent />
     </FormContainer>

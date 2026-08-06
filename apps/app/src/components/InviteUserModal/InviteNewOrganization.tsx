@@ -100,7 +100,7 @@ export const InviteNewOrganization = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
+          <div className="flex min-h-20 flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
             <TagGroup>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-md" key={index}>
@@ -120,7 +120,7 @@ export const InviteNewOrganization = ({
                   ? `name1@${user.currentOrganization?.domain || 'solidarityseeds.org'}, name2@${user.currentOrganization?.domain || 'solidarityseeds.org'}, ...`
                   : t('Type emails followed by a comma or line break...')
               }
-              className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-hidden"
+              className="min-w-50 flex-1 resize-none border-none pt-1 outline-hidden"
               rows={1}
             />
           </div>
@@ -135,7 +135,7 @@ export const InviteNewOrganization = ({
             value={personalMessage}
             onChange={(e) => setPersonalMessage(e.target.value)}
             placeholder={t('Add a personal note to your invitation')}
-            className="min-h-[80px] rounded-lg border border-neutral-gray2 p-2 outline-hidden focus-visible:border-primary-teal focus-visible:ring-1 focus-visible:ring-primary-teal"
+            className="min-h-20 rounded-lg border border-neutral-gray2 p-2 outline-hidden focus-visible:border-primary-teal focus-visible:ring-1 focus-visible:ring-primary-teal"
             rows={3}
           />
         </div>

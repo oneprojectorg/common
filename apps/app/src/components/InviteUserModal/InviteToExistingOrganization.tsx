@@ -135,7 +135,7 @@ export const InviteToExistingOrganization = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
+          <div className="flex min-h-20 flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
             <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-md" key={index}>
@@ -156,7 +156,7 @@ export const InviteToExistingOrganization = ({
                   ? `name1@${user.currentOrganization?.domain || 'example.org'}, name2@${user.currentOrganization?.domain || 'example.org'}, ...`
                   : t('Type emails followed by a comma or line break...')
               }
-              className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-hidden"
+              className="min-w-50 flex-1 resize-none border-none pt-1 outline-hidden"
               rows={1}
             />
           </div>

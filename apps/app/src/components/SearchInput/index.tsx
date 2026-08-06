@@ -282,7 +282,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         className={cn(
           !dropdownShowing && 'hidden',
           isMobile
-            ? 'fixed inset-x-0 top-[60px] bottom-0 z-10 overflow-y-auto bg-popover text-base'
+            ? 'fixed inset-x-0 top-15 bottom-0 z-10 overflow-y-auto bg-popover text-base'
             : 'absolute top-12 z-10 w-full rounded border bg-popover text-base shadow',
         )}
       >

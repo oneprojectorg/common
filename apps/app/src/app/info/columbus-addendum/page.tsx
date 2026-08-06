@@ -7,7 +7,7 @@ import { FormHeader } from '@/components/form/FormHeader';
 const ColumbusAddendumPage = () => {
   const t = useTranslations();
   return (
-    <FormContainer className="max-w-[32rem]">
+    <FormContainer className="max-w-lg">
       <FormHeader text={t('Columbus Addendum')}></FormHeader>
       <ColumbusAddendumContent />
     </FormContainer>
