@@ -312,7 +312,7 @@ function ProposalEditorContent({
     <div
       className={cn(
         'flex h-screen bg-background transition-[padding]',
-        !!asideState.aside && 'sm:pr-92',
+        isVersionsAsideOpen && 'sm:pr-92',
       )}
     >
       <ProposalEditor
