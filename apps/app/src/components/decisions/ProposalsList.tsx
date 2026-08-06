@@ -558,6 +558,9 @@ const ProposalsListContent = ({
         {isMapMode && !isEmptyUnfiltered ? (
           // Local boundaries keep the pin query from suspending / erroring
           // the whole list subtree (filter bar + view toggle stay mounted).
+          // A failed pin query says so rather than falling back to the loaded
+          // pages — a map quietly missing pins is the exact bug this endpoint
+          // exists to fix, so it must not come back as an error path.
           <APIErrorBoundary
             fallbacks={{
               default: () => (

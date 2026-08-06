@@ -27,7 +27,6 @@ interface ProposalLocationFilter {
   votedByProfileId?: string;
   status?: ProposalStatus;
   excludeAssignedForReview?: boolean;
-  phase?: 'results';
 }
 
 /** Pins render as one batch, so both pin queries share the list's staleness

@@ -49,9 +49,9 @@ export const listAllProposals = async ({
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
   );
-  // Backstop: if this function throws before the template is awaited (a
-  // malformed cursor), a rejection here must not surface as an unhandled
-  // promise rejection. The later `await` still rethrows.
+  // Backstop: if the main query below rejects before the template is awaited,
+  // a rejection here must not surface as an unhandled promise rejection. The
+  // later `await` still rethrows.
   proposalTemplatePromise.catch(() => {});
 
   // Cursor lives only on the data query, so `total` stays the full match count.

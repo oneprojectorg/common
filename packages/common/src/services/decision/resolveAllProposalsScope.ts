@@ -77,7 +77,13 @@ export const resolveAllProposalsScope = async ({
   const accessUserIds = resolveAccessUserIds(user);
 
   const [currentProfileId, instance] = await Promise.all([
-    user ? getCurrentProfileId(user.id) : undefined,
+    // Public (no-JWT) and anonymous callers have no account profile — treat as
+    // none and let `assertInstanceProfileAccess` below be the gate, matching
+    // `resolveProposalListScope`. Throwing here would reject an anonymous
+    // reader of a public decision before the access check ever ran.
+    user
+      ? getCurrentProfileId(user.id).catch(() => undefined)
+      : Promise.resolve(undefined),
     db.query.processInstances.findFirst({
       where: { id: processInstanceId },
     }),
