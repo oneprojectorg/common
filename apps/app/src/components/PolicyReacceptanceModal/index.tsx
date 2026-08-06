@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
-import { Header1 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -110,7 +109,11 @@ const PolicyReacceptanceMain = ({
   return (
     <div className="flex flex-col gap-6 p-8 sm:px-10 sm:py-10">
       <div className="flex flex-col gap-2 text-center">
-        <DialogTitle render={<Header1 />}>
+        {/* Sized here rather than `render={<Header1 />}`: base-ui concatenates
+            className without merging, so Header1's `text-display` and
+            DialogTitle's `text-title` would both ship and the cascade would
+            pick. */}
+        <DialogTitle className="text-display font-light">
           {t("We've updated our policies.")}
         </DialogTitle>
         <p className="text-base text-muted-foreground">
@@ -121,9 +124,7 @@ const PolicyReacceptanceMain = ({
       {/* @op/ui's `Surface variant="filled"` has no sense counterpart; it was a
           bordered box on the off-white tint, which is `bg-muted`. */}
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted p-4">
-        <span className="font-serif text-title text-foreground">
-          {t("What's changed")}
-        </span>
+        <span className="font-serif text-title">{t("What's changed")}</span>
         <p className="text-base text-muted-foreground">
           {t(
             'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
@@ -137,7 +138,7 @@ const PolicyReacceptanceMain = ({
           checked={agreed}
           onCheckedChange={onAgreedChange}
         />
-        <span id="policy-consent-label" className="text-base text-foreground">
+        <span id="policy-consent-label" className="text-base">
           {t.rich(
             'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
             {
@@ -196,7 +197,9 @@ const PolicyDocumentView = ({
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex min-h-16 items-center border-b border-border bg-background px-4">
+      {/* bg-popover, not bg-background: it has to occlude the text scrolling
+          under it, and the surface it sits on is the dialog's. */}
+      <div className="sticky top-0 z-30 flex min-h-16 items-center border-b border-border bg-popover px-4">
         <Button
           variant="ghost"
           size="icon"
@@ -205,7 +208,7 @@ const PolicyDocumentView = ({
         >
           <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
         </Button>
-        <DialogTitle className="pointer-events-none absolute inset-x-0 text-center font-serif text-title">
+        <DialogTitle className="pointer-events-none absolute inset-x-0 text-center">
           {documentTitle[document]}
         </DialogTitle>
       </div>
