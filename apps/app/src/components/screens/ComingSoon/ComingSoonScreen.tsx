@@ -61,11 +61,7 @@ export const ComingSoonScreen = () => {
           className="relative flex items-center justify-between p-4 md:px-8 md:py-6"
         >
           <img src="/logo-common.svg" alt="Common" className="h-4" />
-          <ButtonLink
-            href="/login"
-            variant="secondary"
-            className="rounded-lg text-black shadow-md"
-          >
+          <ButtonLink href="/login" variant="outline">
             {t('Log in')}
           </ButtonLink>
         </motion.header>
