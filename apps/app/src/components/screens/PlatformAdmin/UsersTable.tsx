@@ -303,7 +303,7 @@ const UsersTableSkeleton = () => {
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
-          <TableRow key={i}>
+          <TableRow key={i} className="h-[61px]">
             {[...Array(7)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />
