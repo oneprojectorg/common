@@ -199,6 +199,23 @@ export const allProposalsFilterSchema = z.object({
 
 export type AllProposalsFilter = z.infer<typeof allProposalsFilterSchema>;
 
+/**
+ * Input schema for `decision.listAllProposalLocations` — the results map's pin
+ * source. Derived from `allProposalsFilterSchema` minus pagination and ordering
+ * (the endpoint returns every located proposal at once), so the pins can never
+ * drift from the filters the "All proposals" list pages through.
+ */
+export const allProposalLocationsFilterSchema = allProposalsFilterSchema.omit({
+  dir: true,
+  orderBy: true,
+  cursor: true,
+  limit: true,
+});
+
+export type AllProposalLocationsFilter = z.infer<
+  typeof allProposalLocationsFilterSchema
+>;
+
 /** Leaner proposal shape for the read-only "All proposals" tab. */
 export const allProposalsListItemSchema = proposalSchema.omit({
   decisionCount: true,

@@ -35,7 +35,7 @@ import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { ProposalsGrid } from './ProposalsGrid';
 import {
-  ProposalsMapView,
+  ProposalsMapWithAllLocations,
   ProposalsMapWithLocations,
 } from './ProposalsMapView';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
@@ -491,6 +491,18 @@ const ProposalsListContent = ({
   // Empty + unfiltered falls through to the grid's empty state instead of a blank map.
   const isEmptyUnfiltered = allProposals.length === 0 && !hasActiveFilter;
 
+  // Everything the map needs apart from its pin query — shared by both
+  // location-sourced variants below.
+  const mapProps = {
+    proposals: allProposals,
+    instanceId,
+    slug,
+    decisionSlug,
+    permissions,
+    mapView,
+    listFooter: renderScrollSentinel(<ProposalCardSkeleton />),
+  };
+
   return (
     <div
       className={cn(
@@ -532,42 +544,36 @@ const ProposalsListContent = ({
         translations={translation.translationState?.translations ?? {}}
       >
         {isMapMode && !isEmptyUnfiltered ? (
-          phase === 'results' ? (
-            // Results uses the phase-agnostic `listAllProposals` set; source
-            // pins from that same loaded data so pins match the results list.
-            <ProposalsMapView
-              proposals={allProposals}
-              pinProposals={allProposals}
-              instanceId={instanceId}
-              slug={slug}
-              decisionSlug={decisionSlug}
-              permissions={permissions}
-              mapView={mapView}
-              listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
-            />
-          ) : (
-            // Local boundaries keep the pin query from suspending / erroring
-            // the whole list subtree (filter bar + view toggle stay mounted).
-            <APIErrorBoundary
-              fallbacks={{
-                default: () => (
-                  <div className="py-8 text-center text-sm text-neutral-charcoal">
-                    {t("Couldn't load the map. Refresh to try again.")}
-                  </div>
-                ),
-              }}
-            >
-              <Suspense fallback={<ProposalListSkeletonGrid />}>
+          // Local boundaries keep the pin query from suspending / erroring
+          // the whole list subtree (filter bar + view toggle stay mounted).
+          <APIErrorBoundary
+            fallbacks={{
+              default: () => (
+                <div className="py-8 text-center text-sm text-neutral-charcoal">
+                  {t("Couldn't load the map. Refresh to try again.")}
+                </div>
+              ),
+            }}
+          >
+            <Suspense fallback={<ProposalListSkeletonGrid />}>
+              {/* Pins come from a dedicated all-locations query (not the loaded
+                  list pages) so the map isn't capped by the page size. Each
+                  variant mirrors the scope of the list beside it: results spans
+                  every phase, everything else is scoped to the viewed phase. */}
+              {phase === 'results' ? (
+                <ProposalsMapWithAllLocations
+                  {...mapProps}
+                  locationFilter={{
+                    processInstanceId: queryParams.processInstanceId,
+                    categoryId: queryParams.categoryId,
+                    submittedByProfileId: queryParams.submittedByProfileId,
+                    votedByProfileId: queryParams.votedByProfileId,
+                    status: queryParams.status,
+                  }}
+                />
+              ) : (
                 <ProposalsMapWithLocations
-                  proposals={allProposals}
-                  instanceId={instanceId}
-                  slug={slug}
-                  decisionSlug={decisionSlug}
-                  permissions={permissions}
-                  mapView={mapView}
-                  // Pins come from a dedicated all-locations query (not the
-                  // loaded list pages) so the map isn't capped by the page
-                  // size. Strip the list-only pagination fields from the filter.
+                  {...mapProps}
                   locationFilter={{
                     processInstanceId: queryParams.processInstanceId,
                     categoryId: queryParams.categoryId,
@@ -577,11 +583,10 @@ const ProposalsListContent = ({
                     excludeAssignedForReview:
                       queryParams.excludeAssignedForReview,
                   }}
-                  listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
                 />
-              </Suspense>
-            </APIErrorBoundary>
-          )
+              )}
+            </Suspense>
+          </APIErrorBoundary>
         ) : (
           <ProposalsGrid
             proposals={allProposals}
