@@ -2,6 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
   formatProposalCategories,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
@@ -9,7 +10,6 @@ import {
   schemaAllowsMultipleSelection,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { cn } from '@op/sense/lib/utils';
 import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -210,7 +210,13 @@ function renderField(
       <CollaborativeTitleField
         title={schema.title ?? t('Proposal name')}
         required={field.required}
-        maxLength={schema.maxLength}
+        // No template sets a title `maxLength`, so without a floor the field
+        // would grow until the `profiles.name` insert fails. A template may ask
+        // for less than the cap, never more.
+        maxLength={Math.min(
+          schema.maxLength ?? PROPOSAL_TITLE_MAX_LENGTH,
+          PROPOSAL_TITLE_MAX_LENGTH,
+        )}
         placeholder={t('Untitled Proposal')}
         onChange={(value) => onFieldChange('title', value)}
       />
@@ -499,7 +505,6 @@ export function ProposalFormRenderer({
 }: ProposalFormRendererProps) {
   const t = useTranslations();
   const gisMapsEnabled = useFeatureFlag('gis_maps');
-  const formGapClass = mode === 'preview-template' ? 'gap-4' : 'gap-8';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
@@ -523,7 +528,7 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div className={cn('flex flex-col', formGapClass)}>
+    <div className="flex flex-col gap-8">
       {titleField && render(titleField)}
 
       {/* One flat stack at the form's field gap — every field is now a labeled
