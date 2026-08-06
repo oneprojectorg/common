@@ -1,17 +1,15 @@
 import { createHash } from 'node:crypto';
 
+import { CommonError } from '../../utils';
 import type { AssignableProposal } from './insertReviewAssignments';
 
-export interface ExistingPhaseAssignment {
+interface ExistingPhaseAssignment {
   proposalId: string;
   reviewerProfileId: string;
 }
 
-export interface PickSingleReviewerAssignmentsInput {
-  /**
-   * Candidate sets built by the caller, author already excluded — a picked
-   * author is dropped downstream and leaves the proposal uncovered.
-   */
+interface PickSingleReviewerAssignmentsInput {
+  /** Candidate sets built by the caller, author already excluded. */
   assignableProposals: AssignableProposal[];
   /** Every assignment row already in the (instance, phase). */
   existingAssignments: ExistingPhaseAssignment[];
@@ -22,9 +20,7 @@ export interface PickSingleReviewerAssignmentsInput {
  * balanced, deterministic pick per proposal. Pure — the caller reads and
  * writes. Skipped and uncoverable proposals come back with an empty set.
  *
- * A proposal that already has ANY assignment in the phase is skipped;
- * `onConflictDoNothing` can't do that, since a re-run picking a different
- * reviewer would insert a second, non-conflicting row.
+ * A proposal that already holds any assignment in the phase keeps it.
  */
 export function pickSingleReviewerAssignments({
   assignableProposals,
@@ -76,35 +72,30 @@ function pickLeastLoaded({
   proposalId: string;
   loadByReviewer: Map<string, number>;
 }): string {
-  let best: string | undefined;
-  let bestLoad = Number.POSITIVE_INFINITY;
-  let bestHash = '';
+  const ranked = candidates.map((reviewerProfileId) => ({
+    reviewerProfileId,
+    load: loadByReviewer.get(reviewerProfileId) ?? 0,
+    hash: stableHash(reviewerProfileId, proposalId),
+  }));
 
-  for (const reviewerProfileId of candidates) {
-    const load = loadByReviewer.get(reviewerProfileId) ?? 0;
-    if (load > bestLoad) {
-      continue;
-    }
+  ranked.sort((a, b) => a.load - b.load || a.hash.localeCompare(b.hash));
 
-    const hash = stableHash(reviewerProfileId, proposalId);
-    if (best === undefined || load < bestLoad || hash < bestHash) {
-      best = reviewerProfileId;
-      bestLoad = load;
-      bestHash = hash;
-    }
+  const [best] = ranked;
+  if (!best) {
+    throw new CommonError(
+      `pickLeastLoaded: no candidates for proposal ${proposalId}`,
+    );
   }
 
-  // The caller only picks from a non-empty candidate set.
-  return best!;
+  return best.reviewerProfileId;
 }
 
 /**
  * Equal load is the common case — every reviewer starts at 0 — and the candidate
- * sets arrive from queries with no `ORDER BY`, so without a tie-break the picks
- * would drift between runs on identical data. Hashing the pair (rather than
- * sorting on id) also stops the lowest-id reviewer always drawing the lowest-id
- * proposal, since the walk is already id-ascending. Same `md5(reviewer ||
- * proposal)` the reviewer queue's shuffle uses.
+ * sets arrive from queries with no `ORDER BY`, so the tie-break is what keeps
+ * the picks stable between runs on identical data. Hashing the pair also spreads
+ * reviewers across proposals, which an id comparison wouldn't: the walk is
+ * already id-ascending. Same `md5(reviewer || proposal)` as the queue shuffle.
  */
 function stableHash(reviewerProfileId: string, proposalId: string): string {
   return createHash('md5')
