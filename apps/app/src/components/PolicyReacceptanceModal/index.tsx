@@ -64,13 +64,9 @@ const PolicyReacceptanceModalContent = () => {
   };
 
   return (
-    // Controlled `open` with no `onOpenChange`, so nothing can close it: Escape
-    // and the backdrop have nowhere to write. `disablePointerDismissal` also
-    // keeps a non-modal outside press from trying.
+    // Controlled `open` with no `onOpenChange`: Escape and the backdrop have
+    // nowhere to write, so the gate can't be dismissed.
     <Dialog open disablePointerDismissal>
-      {/* p-0 because each view owns its padding, and the document view's header
-          has to sit flush to be sticky. Width matches the legal dialogs in
-          Onboarding/ToSAcceptanceScreen. */}
       <DialogContent showCloseButton={false} className="p-0 sm:max-w-[36rem]">
         {activeDocument ? (
           <PolicyDocumentView
@@ -109,20 +105,12 @@ const PolicyReacceptanceMain = ({
   return (
     <div className="flex flex-col gap-6 p-8 sm:px-10 sm:py-10">
       <div className="flex flex-col gap-2 text-center">
-        {/* Sized here rather than `render={<Header1 />}`: base-ui concatenates
-            className without merging, so Header1's `text-display` and
-            DialogTitle's `text-title` would both ship and the cascade would
-            pick. */}
-        <DialogTitle className="text-display font-light">
-          {t("We've updated our policies.")}
-        </DialogTitle>
+        <DialogTitle>{t("We've updated our policies.")}</DialogTitle>
         <p className="text-base text-muted-foreground">
           {t('Review the changes and accept to keep using Common.')}
         </p>
       </div>
 
-      {/* @op/ui's `Surface variant="filled"` has no sense counterpart; it was a
-          bordered box on the off-white tint, which is `bg-muted`. */}
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted p-4">
         <span className="font-serif text-title">{t("What's changed")}</span>
         <p className="text-base text-muted-foreground">
@@ -197,8 +185,6 @@ const PolicyDocumentView = ({
 
   return (
     <>
-      {/* bg-popover, not bg-background: it has to occlude the text scrolling
-          under it, and the surface it sits on is the dialog's. */}
       <div className="sticky top-0 z-30 flex min-h-16 items-center border-b border-border bg-popover px-4">
         <Button
           variant="ghost"
@@ -219,8 +205,8 @@ const PolicyDocumentView = ({
   );
 };
 
-// Opens a policy document inside the modal. Rendered next to (not inside) the
-// consent Checkbox, so pressing a link never toggles it.
+// Sits next to (not inside) the consent Checkbox's label, so pressing a link
+// never toggles it.
 const PolicyLink = ({
   onOpen,
   children,
