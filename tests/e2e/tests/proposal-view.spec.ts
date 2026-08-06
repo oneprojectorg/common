@@ -765,6 +765,12 @@ test.describe('Proposal View', () => {
         await expect(control).toHaveCount(canInteract ? 1 : 0);
       }
 
+      // A count of 0 above is satisfied by the stats vanishing as well as by
+      // them rendering as plain text, so assert the text is there either way —
+      // read-only viewers still see the counts, just not as toggles.
+      await expect(page.getByText(/^\d+ Likes?$/)).toBeVisible();
+      await expect(page.getByText(/^\d+ Followers?$/)).toBeVisible();
+
       await expect(
         page.getByRole('button', { name: 'Report', exact: true }),
       ).toHaveCount(1);
