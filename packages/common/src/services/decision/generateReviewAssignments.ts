@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
+import { applyCoveragePolicy } from './applyCoveragePolicy';
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import {
@@ -9,6 +10,7 @@ import {
   insertReviewAssignments,
 } from './insertReviewAssignments';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { ReviewsScope } from './schemas/types';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 export interface GenerateReviewAssignmentsInput {
@@ -32,6 +34,11 @@ interface SelectedProposal {
  * Scope `all`: every eligible reviewer is assigned every proposal. Scope
  * `by_category`: each proposal is assigned only the eligible reviewers whose
  * scope rows cover its categories. Insert-only — never prunes.
+ *
+ * The scope produces the per-proposal candidate set; the policy decides how much
+ * of it is written. `full_coverage` inserts the whole set; `single_reviewer`
+ * narrows it to one balanced, deterministic pick per proposal
+ * (`applyCoveragePolicy`), skipping proposals already covered in this phase.
  */
 export async function generateReviewAssignments({
   instanceId,
@@ -85,12 +92,12 @@ export async function generateReviewAssignments({
     transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
   );
 
-  const scope = getPhaseReviewSettings(
+  const { scope, policy } = getPhaseReviewSettings(
     instance.instanceData as DecisionInstanceData,
     phaseId,
-  ).scope;
+  );
 
-  const assignableProposals =
+  const candidateProposals =
     scope === 'by_category'
       ? await buildByCategoryProposals({
           instanceId,
@@ -108,11 +115,68 @@ export async function generateReviewAssignments({
           reviewerProfileIds,
         }));
 
+  const assignableProposals =
+    policy === 'single_reviewer'
+      ? await applySingleReviewerPolicy({
+          instanceId,
+          phaseId,
+          scope,
+          candidateProposals,
+        })
+      : candidateProposals;
+
   await insertReviewAssignments({
     instanceId,
     phaseId,
     assignableProposals,
   });
+}
+
+/**
+ * Narrows the candidate sets to one reviewer per proposal, seeded from the
+ * phase's existing assignment rows — which serve double duty as the load
+ * counters and the idempotency guard for a re-run.
+ *
+ * Only `scope: 'all'` warns here: `by_category` already warned upstream with a
+ * more specific reason for exactly the same set of uncoverable proposals.
+ */
+async function applySingleReviewerPolicy({
+  instanceId,
+  phaseId,
+  scope,
+  candidateProposals,
+}: {
+  instanceId: string;
+  phaseId: string;
+  scope: ReviewsScope;
+  candidateProposals: AssignableProposal[];
+}): Promise<AssignableProposal[]> {
+  const existingAssignments = await db.query.proposalReviewAssignments.findMany(
+    {
+      where: { processInstanceId: instanceId, phaseId },
+      columns: { proposalId: true, reviewerProfileId: true },
+    },
+  );
+
+  const { assignableProposals, zeroCandidateProposalIds } = applyCoveragePolicy(
+    {
+      assignableProposals: candidateProposals,
+      existingAssignments,
+    },
+  );
+
+  if (scope === 'all') {
+    for (const proposalId of zeroCandidateProposalIds) {
+      logger.warn('generateReviewAssignments: proposal has zero reviewers', {
+        instanceId,
+        phaseId,
+        proposalId,
+        reason: 'no_eligible_reviewers',
+      });
+    }
+  }
+
+  return assignableProposals;
 }
 
 /**
