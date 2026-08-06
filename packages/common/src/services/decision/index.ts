@@ -68,6 +68,7 @@ export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './listAllProposalLocations';
 export * from './resolveAllProposalsScope';
+export * from './getVotedProposalIds';
 export * from './assignReviewsToReviewer';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';

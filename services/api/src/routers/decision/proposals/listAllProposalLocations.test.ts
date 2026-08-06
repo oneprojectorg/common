@@ -101,51 +101,9 @@ describe.concurrent('listAllProposalLocations', () => {
     expect(firstPage.total).toBe(2);
   });
 
-  it('drops proposals without coordinates and keeps the pin author', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-
-    const [located, unlocated, caller] = await Promise.all([
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'Located' },
-        status: ProposalStatus.SUBMITTED,
-      }),
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'No Location' },
-        status: ProposalStatus.SUBMITTED,
-      }),
-      createAuthenticatedCaller(setup.userEmail),
-    ]);
-
-    await Promise.all([
-      setLocation(located.id, { lat: 40.7, lng: -74 }),
-      setLocation(unlocated.id, null),
-    ]);
-
-    const result = await caller.decision.listAllProposalLocations({
-      processInstanceId: instanceId,
-    });
-
-    expect(result.proposals.map((p) => p.id)).toEqual([located.id]);
-    // The pin needs coordinates + author, so both must survive the slim map.
-    expect(result.proposals[0]?.proposalData.location).toEqual({
-      lat: 40.7,
-      lng: -74,
-    });
-    expect(result.proposals[0]?.submittedBy).toBeDefined();
-  });
+  // Coordinate filtering and the pin projection are covered once, against the
+  // shared `selectProposalLocations` reader, in `listProposalLocations.test.ts`.
+  // What's unique here is the phase-agnostic scope, so these cover that.
 
   it('does not surface a hidden proposal to a non-admin member', async ({
     task,

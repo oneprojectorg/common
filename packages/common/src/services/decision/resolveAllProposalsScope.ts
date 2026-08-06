@@ -13,8 +13,6 @@ import {
 import {
   ProposalStatus,
   Visibility,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
   processInstances,
   profileUsers,
   proposalCategories,
@@ -30,23 +28,21 @@ import {
   resolveAccessUserIds,
 } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
-import type { AllProposalsFilter } from './schemas/proposal';
+import { getVotedProposalIds } from './getVotedProposalIds';
+import type { AllProposalLocationsFilter } from './schemas/proposal';
 
 /**
  * The filter fields that shape which proposals the "All proposals" scope
  * matches. Pagination and ordering belong to the caller, so the paginated list
- * and the unpaginated map-pin read resolve an identical scope.
+ * and the unpaginated map-pin read resolve an identical scope — which is
+ * exactly what the map's wire schema already subtracts.
  */
-export type AllProposalsScopeInput = Omit<
-  AllProposalsFilter,
-  'cursor' | 'limit' | 'orderBy' | 'dir'
->;
+export type AllProposalsScopeInput = AllProposalLocationsFilter;
 
 export interface AllProposalsScope {
   /** Instance row reused by callers for template resolution and enrichment. */
   instance: typeof processInstances.$inferSelect;
   currentProfileId: string | undefined;
-  isAdmin: boolean;
   /**
    * Builds the full WHERE clause for the resolved scope. Parameterized on the
    * table reference so it works for both the v2 relational `findMany` (aliased
@@ -115,26 +111,10 @@ export const resolveAllProposalsScope = async ({
     if (currentProfileId !== input.votedByProfileId) {
       throw new UnauthorizedError('You can only view your own ballot');
     }
-    const votedRows = await db
-      .select({ proposalId: decisionsVoteProposals.proposalId })
-      .from(decisionsVoteSubmissions)
-      .innerJoin(
-        decisionsVoteProposals,
-        eq(
-          decisionsVoteSubmissions.id,
-          decisionsVoteProposals.voteSubmissionId,
-        ),
-      )
-      .where(
-        and(
-          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
-          eq(
-            decisionsVoteSubmissions.submittedByProfileId,
-            input.votedByProfileId,
-          ),
-        ),
-      );
-    votedProposalIds = votedRows.map((row) => row.proposalId);
+    votedProposalIds = await getVotedProposalIds({
+      processInstanceId,
+      voterProfileId: input.votedByProfileId,
+    });
   }
 
   // Param'd on the table ref so it works for both the relational `RAW` alias
@@ -192,5 +172,5 @@ export const resolveAllProposalsScope = async ({
           ),
     )!;
 
-  return { instance, currentProfileId, isAdmin, buildWhereClause };
+  return { instance, currentProfileId, buildWhereClause };
 };

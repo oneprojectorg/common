@@ -12,6 +12,7 @@ import {
   ProposalStatus,
 } from '@op/api/encoders';
 import {
+  type AllProposalLocationsFilter,
   type Proposal,
   ProposalReviewRequestState,
   getLocationFieldMapView,
@@ -185,6 +186,21 @@ const CurrentPhaseProposalsLoader = ({
   );
 };
 
+/**
+ * The scope fields the results tab's `listAllProposals` reads share with its
+ * map pins. Built in one place so a new filter can't reach the list without
+ * also reaching the pins — the exact divergence that capped the results map.
+ */
+const toAllProposalsFilter = (
+  queryParams: ProposalQueryParams,
+): AllProposalLocationsFilter => ({
+  processInstanceId: queryParams.processInstanceId,
+  categoryId: queryParams.categoryId,
+  status: queryParams.status,
+  submittedByProfileId: queryParams.submittedByProfileId,
+  votedByProfileId: queryParams.votedByProfileId,
+});
+
 const ResultsPhaseProposalsLoader = ({
   queryParams,
   children,
@@ -195,13 +211,9 @@ const ResultsPhaseProposalsLoader = ({
   const [paginatedData, query] =
     trpc.decision.listAllProposals.useSuspenseInfiniteQuery(
       {
-        processInstanceId: queryParams.processInstanceId,
+        ...toAllProposalsFilter(queryParams),
         dir: queryParams.dir,
         limit: queryParams.limit,
-        categoryId: queryParams.categoryId,
-        status: queryParams.status,
-        submittedByProfileId: queryParams.submittedByProfileId,
-        votedByProfileId: queryParams.votedByProfileId,
       },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
@@ -556,30 +568,19 @@ const ProposalsListContent = ({
             }}
           >
             <Suspense fallback={<ProposalListSkeletonGrid />}>
-              {/* Pins come from a dedicated all-locations query (not the loaded
-                  list pages) so the map isn't capped by the page size. Each
-                  variant mirrors the scope of the list beside it: results spans
-                  every phase, everything else is scoped to the viewed phase. */}
+              {/* Pins come from a dedicated all-locations query, not the loaded
+                  list pages, so the map isn't capped by the page size. Each
+                  variant mirrors the scope of the list beside it. */}
               {phase === 'results' ? (
                 <ProposalsMapWithAllLocations
                   {...mapProps}
-                  locationFilter={{
-                    processInstanceId: queryParams.processInstanceId,
-                    categoryId: queryParams.categoryId,
-                    submittedByProfileId: queryParams.submittedByProfileId,
-                    votedByProfileId: queryParams.votedByProfileId,
-                    status: queryParams.status,
-                  }}
+                  locationFilter={toAllProposalsFilter(queryParams)}
                 />
               ) : (
                 <ProposalsMapWithLocations
                   {...mapProps}
                   locationFilter={{
-                    processInstanceId: queryParams.processInstanceId,
-                    categoryId: queryParams.categoryId,
-                    submittedByProfileId: queryParams.submittedByProfileId,
-                    votedByProfileId: queryParams.votedByProfileId,
-                    status: queryParams.status,
+                    ...toAllProposalsFilter(queryParams),
                     excludeAssignedForReview:
                       queryParams.excludeAssignedForReview,
                   }}

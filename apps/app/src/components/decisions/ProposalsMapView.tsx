@@ -3,7 +3,10 @@
 import { trpc } from '@op/api/client';
 import type { DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
-import type { MapDefaultView } from '@op/common/client';
+import type {
+  AllProposalLocationsFilter,
+  MapDefaultView,
+} from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { useCallback, useMemo, useState } from 'react';
@@ -25,16 +28,6 @@ interface ProposalLocationFilter {
   status?: ProposalStatus;
   excludeAssignedForReview?: boolean;
   phase?: 'results';
-}
-
-/** Filter for the results-tab pin query. Mirrors the `listAllProposals` filter
- * the results list uses, minus its pagination and ordering fields. */
-interface AllProposalLocationFilter {
-  processInstanceId: string;
-  categoryId?: string;
-  submittedByProfileId?: string;
-  votedByProfileId?: string;
-  status?: ProposalStatus;
 }
 
 /** Pins render as one batch, so both pin queries share the list's staleness
@@ -76,7 +69,7 @@ interface ProposalsMapViewProps {
  * process's default view (`x-map-default`) when no proposal has a location.
  */
 // fallow-ignore-next-line complexity
-export function ProposalsMapView({
+function ProposalsMapView({
   proposals,
   pinProposals,
   instanceId,
@@ -248,17 +241,15 @@ export function ProposalsMapWithLocations({
 }
 
 /**
- * Results-tab counterpart: pins come from `listAllProposalLocations`, the
+ * Results-tab counterpart, sourcing pins from `listAllProposalLocations` — the
  * phase-agnostic query that mirrors the `listAllProposals` list the results tab
- * pages through. Sourcing pins from those loaded pages capped the map at one
- * page; sourcing them from the phase-scoped query would plot a different set of
- * proposals than the list shows.
+ * pages through. See that service for why the results map needs its own scope.
  */
 export function ProposalsMapWithAllLocations({
   locationFilter,
   ...props
 }: Omit<ProposalsMapViewProps, 'pinProposals'> & {
-  locationFilter: AllProposalLocationFilter;
+  locationFilter: AllProposalLocationsFilter;
 }) {
   const [{ proposals: pinProposals }] =
     trpc.decision.listAllProposalLocations.useSuspenseQuery(

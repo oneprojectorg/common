@@ -14,8 +14,6 @@ import {
 import {
   ProposalStatus,
   Visibility,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
   processInstances,
   profileUsers,
   proposalCategories,
@@ -37,6 +35,7 @@ import {
   type PhaseProposalSqlScope,
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
+import { getVotedProposalIds } from './getVotedProposalIds';
 import type { ListProposalsInput } from './listProposals';
 
 type InstanceScopeRow = Pick<
@@ -106,24 +105,10 @@ const resolveExplicitScope = async ({
     throw new UnauthorizedError('You can only view your own ballot');
   }
 
-  const votedRows = await db
-    .select({ proposalId: decisionsVoteProposals.proposalId })
-    .from(decisionsVoteSubmissions)
-    .innerJoin(
-      decisionsVoteProposals,
-      eq(decisionsVoteSubmissions.id, decisionsVoteProposals.voteSubmissionId),
-    )
-    .where(
-      and(
-        eq(decisionsVoteSubmissions.processInstanceId, input.processInstanceId),
-        eq(
-          decisionsVoteSubmissions.submittedByProfileId,
-          input.votedByProfileId,
-        ),
-      ),
-    );
-
-  return votedRows.map((row) => row.proposalId);
+  return getVotedProposalIds({
+    processInstanceId: input.processInstanceId,
+    voterProfileId: input.votedByProfileId,
+  });
 };
 
 /**

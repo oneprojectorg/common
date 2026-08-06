@@ -1,10 +1,10 @@
 import type { User } from '@op/supabase/lib';
 
+import { selectProposalLocations } from './listProposalLocations';
 import {
   type AllProposalsScopeInput,
   resolveAllProposalsScope,
 } from './resolveAllProposalsScope';
-import { selectProposalLocations } from './selectProposalLocations';
 
 /**
  * Every located proposal on the instance, across all phases — the pin source
