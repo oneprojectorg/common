@@ -7,9 +7,9 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Button } from '@op/sense/Button';
+import { Header3 } from '@op/sense/Header';
+import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
@@ -194,10 +194,13 @@ function ReviewerRow({
 }) {
   const t = useTranslations();
   return (
+    // `bare` + `none`: the row keeps its card look and picks up the sense focus
+    // ring, which the hand-rolled `outline-data-blue` one it used to carry was
+    // never going to match.
     <Button
-      unstyled
-      onPress={() => onSelect(item.review.assignmentId)}
-      className="flex h-14 w-full cursor-pointer items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start outline-0 outline-transparent transition-colors duration-200 hover:bg-neutral-offWhite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
+      variant="bare"
+      onClick={() => onSelect(item.review.assignmentId)}
+      className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
       aria-label={t('View review by {name}', {
         name: item.reviewer.name ?? item.reviewer.slug,
       })}

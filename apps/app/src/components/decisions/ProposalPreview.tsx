@@ -2,7 +2,7 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { formatDate } from '@/utils/formatting';
-import { ProposalStatus } from '@op/api/encoders';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalSelection,
@@ -10,14 +10,19 @@ import {
   normalizeProposalCategories,
   parseTranslatedMeta,
 } from '@op/common/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Header1, Header3 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Header1, Header3 } from '@op/sense/Header';
+import { Spinner } from '@op/sense/Spinner';
+import { StatusBadge } from '@op/sense/StatusBadge';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { Toggle } from '@op/sense/Toggle';
+import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
+import type { IconType } from 'react-icons';
 import {
+  LuBadgeCheck,
   LuBookmark,
-  LuCircleCheck,
+  LuEyeOff,
   LuFlag,
   LuHeart,
   LuMessageCircle,
@@ -26,10 +31,13 @@ import {
 import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
 
+import { Bullet } from '../Bullet';
+import { ButtonLink } from '../ButtonLink';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
+import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslationNotice } from './TranslationNotice';
@@ -41,8 +49,23 @@ export type ProposalTranslation = {
   onViewOriginal: () => void;
 };
 
+/**
+ * Like / follow state + handlers. With it the engagement counts become
+ * toggles; without it the row is a static summary (as in the review panes).
+ */
+export type ProposalEngagement = {
+  isLiked: boolean;
+  isFollowing: boolean;
+  onLike: () => void;
+  onFollow: () => void;
+  /** Disables both toggles while a like/follow write is in flight. */
+  isPending?: boolean;
+};
+
 export type ProposalPreviewProps = {
   proposal: Proposal;
+  /** See {@link ProposalEngagement}. Absent → static counts. */
+  engagement?: ProposalEngagement;
   /** Selection record from the latest confirmed result, if any. */
   selection?: ProposalSelection | null;
   /** When set, overrides proposal content with translated HTML and shows attribution */
@@ -63,6 +86,7 @@ export type ProposalPreviewProps = {
 
 export function ProposalPreview({
   proposal,
+  engagement,
   selection,
   translation,
   submissionMetaSuffix,
@@ -76,6 +100,8 @@ export function ProposalPreview({
     (proposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
+  // Draft has its own banner above, so don't also badge it as hidden.
+  const isHidden = !isDraft && proposal.visibility === Visibility.HIDDEN;
 
   const {
     title: originalTitle,
@@ -109,78 +135,86 @@ export function ProposalPreview({
     <div className="flex flex-col gap-4">
       {/* Draft mode banner */}
       {isDraft && (
-        <AlertBanner intent="default" variant="banner">
-          {t(
-            'This proposal is currently in draft mode, only you and collaborators can access it.',
-          )}
-        </AlertBanner>
+        <Alert variant="info">
+          <AlertDescription>
+            {t(
+              'This proposal is currently in draft mode, only you and collaborators can access it.',
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
-      <div className="space-y-4">
-        {selection && (
-          <div className="flex items-center gap-1 text-sm text-functional-green">
-            <LuCircleCheck className="size-4" />
-            <span>{t('Selected')}</span>
-          </div>
-        )}
-
-        {/* Only the author (+ collaborators) and admins ever receive a flagged
-            proposal — everyone else has it filtered out server-side. */}
-        {proposal.isFlagged && (
-          <div className="flex items-center gap-1 text-sm text-functional-red">
-            <LuFlag className="size-4" />
-            <span>{t('Hidden from members after a moderation review')}</span>
-          </div>
-        )}
-
-        <Header1 className="font-serif text-title-lg">
-          {title || t('Untitled Proposal')}
-        </Header1>
-
-        {/* Translation attribution */}
-        {translation && (
-          <TranslationNotice
-            sourceLanguageName={translation.sourceLanguageName}
-            onViewOriginal={translation.onViewOriginal}
-          />
-        )}
-
-        <div className="space-y-6">
-          {/* Budget + Categories — stacked, matching the proposal editor layout */}
-          <div className="flex flex-col items-start gap-4">
-            {selection?.allocated != null ? (
-              <div className="flex flex-wrap items-end gap-2">
-                <BudgetDisplay
-                  value={selection.allocated}
-                  className="font-serif text-title-base text-neutral-black"
-                />
-                {budget && (
-                  <span className="text-sm text-neutral-gray4">
-                    {t('{amount} requested', {
-                      amount: formatBudget(budget) ?? '',
-                    })}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <BudgetDisplay
-                value={budget}
-                className="font-serif text-title-base text-neutral-black"
-              />
+      {/* Figma "Proposal Header" (17924:77055): status row / header / engagement
+          stacked at 24, with the header's own contents at 16. */}
+      <div className="flex flex-col gap-6">
+        {/* Status badges. Unlike ProposalCardView's single-badge
+            `ProposalStatusBadge`, the header shows every applicable state at
+            once, with the longer copy the design spells out. */}
+        {(isHidden || proposal.isFlagged || selection) && (
+          <div className="flex flex-wrap gap-2">
+            {isHidden && (
+              <StatusBadge variant="warning" icon={LuEyeOff}>
+                {t('Hidden from public view')}
+              </StatusBadge>
             )}
-            {categories.length > 0 && (
-              <TagGroup className="max-w-full">
-                {categories.map((category) => (
-                  <Tag
-                    key={category}
-                    className="max-w-full sm:max-w-96 sm:rounded-md"
-                  >
-                    <span className="truncate">{category}</span>
-                  </Tag>
-                ))}
-              </TagGroup>
+            {/* Only the author and admins ever receive a flagged proposal. */}
+            {proposal.isFlagged && (
+              <StatusBadge variant="alert" icon={LuFlag}>
+                {t('Hidden from members after a moderation review')}
+              </StatusBadge>
+            )}
+            {selection && (
+              <StatusBadge variant="success" icon={LuBadgeCheck}>
+                {t('Selected')}
+              </StatusBadge>
             )}
           </div>
+        )}
+
+        <div className="flex flex-col gap-4">
+          {/* 30px serif at 300 — `text-headline` at this column's step. */}
+          <Header1 className="font-serif text-headline font-light">
+            {title || t('Untitled Proposal')}
+          </Header1>
+
+          {/* Translation attribution */}
+          {translation && (
+            <TranslationNotice
+              sourceLanguageName={translation.sourceLanguageName}
+              onViewOriginal={translation.onViewOriginal}
+            />
+          )}
+
+          {/* Budget + categories share a row; either can appear alone. */}
+          {(budget != null ||
+            selection?.allocated != null ||
+            categories.length > 0) && (
+            <TagGroup className="max-w-full">
+              {(budget != null || selection?.allocated != null) && (
+                <Tag size="lg" variant="outline">
+                  <BudgetDisplay
+                    value={
+                      selection?.allocated != null
+                        ? selection.allocated
+                        : budget
+                    }
+                  />
+                </Tag>
+              )}
+              {selection?.allocated != null && budget && (
+                <Tag size="lg">
+                  {t('{amount} requested', {
+                    amount: formatBudget(budget) ?? '',
+                  })}
+                </Tag>
+              )}
+              {categories.map((category) => (
+                <Tag key={category} size="lg">
+                  {category}
+                </Tag>
+              ))}
+            </TagGroup>
+          )}
 
           {/* Author and submission info */}
           <div className="flex items-center gap-2">
@@ -193,25 +227,26 @@ export function ProposalPreview({
                 />
                 <div className="flex flex-col">
                   {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
-                    <span className="text-base text-neutral-black">
+                    <span className="text-base text-foreground">
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </span>
                   ) : (
                     <NavLink
                       href={`/profile/${proposal.submittedBy.slug}`}
-                      className="text-base text-neutral-black hover:no-underline"
+                      // Without this it falls through to the browser's ring.
+                      className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </NavLink>
                   )}
                   {!isDraft && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span>
                         {t('Submitted on')} {formatDate(proposal.createdAt)}
                       </span>
                       {submissionMetaSuffix && (
                         <>
-                          <span className="text-neutral-gray4">•</span>
+                          <Bullet />
                           {submissionMetaSuffix}
                         </>
                       )}
@@ -221,35 +256,9 @@ export function ProposalPreview({
               </>
             )}
           </div>
-
-          {/* Engagement Stats */}
-          <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
-            <div className="flex items-center gap-1">
-              <LuHeart className="h-4 w-4" />
-              <span>
-                {proposal.likesCount || 0} {t('Likes')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <LuMessageCircle className="h-4 w-4" />
-              <span>
-                {proposal.commentsCount || 0}{' '}
-                {(proposal.commentsCount || 0) !== 1
-                  ? t('Comments')
-                  : t('Comment')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <LuBookmark className="size-4" />
-              <span>
-                {proposal.followersCount || 0}{' '}
-                {(proposal.followersCount || 0) !== 1
-                  ? t('Followers')
-                  : t('Follower')}
-              </span>
-            </div>
-          </div>
         </div>
+
+        <EngagementRow proposal={proposal} engagement={engagement} />
       </div>
 
       {headerBanner}
@@ -257,7 +266,7 @@ export function ProposalPreview({
       {/* Proposal Content */}
       {documentState === 'pending' ? (
         <div className="flex justify-center py-8">
-          <LoadingSpinner />
+          <Spinner />
         </div>
       ) : documentState === 'error' ? (
         <DocumentNotAvailable className="py-4" />
@@ -275,10 +284,118 @@ export function ProposalPreview({
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-8">
-          <Header3 className="mb-4 font-sans">{t('Attachments')}</Header3>
+          <Header3 className="mb-4 text-label">{t('Attachments')}</Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Likes / followers / comments, hairline-ruled above and below (Figma's
+ * "Engagement" row).
+ */
+function EngagementRow({
+  proposal,
+  engagement,
+}: {
+  proposal: Proposal;
+  engagement?: ProposalEngagement;
+}) {
+  const t = useTranslations();
+
+  const likesCount = proposal.likesCount || 0;
+  const followersCount = proposal.followersCount || 0;
+  const commentsCount = proposal.commentsCount || 0;
+
+  const likesLabel = `${likesCount} ${likesCount === 1 ? t('Like') : t('Likes')}`;
+  const followersLabel = `${followersCount} ${
+    followersCount === 1 ? t('Follower') : t('Followers')
+  }`;
+  const commentsLabel = `${commentsCount} ${
+    commentsCount === 1 ? t('Comment') : t('Comments')
+  }`;
+
+  return (
+    <div className="flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">
+      <EngagementToggle
+        icon={LuHeart}
+        label={likesLabel}
+        pressed={engagement?.isLiked}
+        onPressedChange={engagement?.onLike}
+        isPending={engagement?.isPending}
+      />
+      <EngagementToggle
+        icon={LuBookmark}
+        label={followersLabel}
+        pressed={engagement?.isFollowing}
+        onPressedChange={engagement?.onFollow}
+        isPending={engagement?.isPending}
+      />
+      {/* A link, not a toggle: jumping to the comments works for any viewer,
+          signed in or not. `px-2` matches the ghost toggles' inset. */}
+      <ButtonLink
+        href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+        variant="ghost"
+        size="sm"
+        className="px-2 text-muted-foreground hover:text-foreground"
+      >
+        <LuMessageCircle aria-hidden />
+        {commentsLabel}
+      </ButtonLink>
+    </div>
+  );
+}
+
+/**
+ * One engagement stat. Interactive when a handler is supplied, otherwise plain
+ * text styled to match.
+ *
+ * Without a handler this must NOT stay a button: it would sit in the tab order
+ * announcing "toggle button, not pressed" while doing nothing, and an
+ * uncontrolled `pressed` would let a click flip the visual state without changing
+ * anything. `aria-readonly` can't paper over that either — ARIA doesn't allow it
+ * on `button`.
+ */
+function EngagementToggle({
+  icon: Icon,
+  label,
+  pressed,
+  onPressedChange,
+  isPending,
+}: {
+  icon: IconType;
+  label: string;
+  pressed?: boolean;
+  onPressedChange?: () => void;
+  isPending?: boolean;
+}) {
+  const isInteractive = Boolean(onPressedChange);
+  const iconClassName = cn(pressed && 'fill-current');
+
+  if (!isInteractive) {
+    // `px-2` mirrors the ghost toggle's inset so both rows align identically.
+    return (
+      <span className="flex items-center gap-1 px-2">
+        <Icon className={cn('size-4', iconClassName)} aria-hidden />
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    // The visible count is the accessible name; on/off comes from aria-pressed,
+    // which base-ui sets from `pressed`.
+    <Toggle
+      size="sm"
+      variant="ghost"
+      pressed={pressed ?? false}
+      onPressedChange={onPressedChange}
+      disabled={isPending}
+    >
+      <Icon className={iconClassName} aria-hidden />
+      {label}
+    </Toggle>
   );
 }

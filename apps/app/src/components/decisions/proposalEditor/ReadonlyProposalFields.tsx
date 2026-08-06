@@ -1,23 +1,35 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { RichTextViewer } from '@op/sense/RichTextEditor';
+import { cn } from '@op/sense/lib/utils';
 import type { JSONContent } from '@tiptap/react';
+import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { getViewerExtensions } from '../../RichTextEditor';
-import { FieldHeader } from '../forms/FieldHeader';
 
 /** Read-only title field used by proposal preview modes. */
-export function ReadonlyTitleField({ value }: { value: string | null }) {
+export function ReadonlyTitleField({
+  title,
+  required,
+  value,
+}: {
+  title?: string;
+  required?: boolean;
+  value: string | null;
+}) {
   const t = useTranslations();
 
   return (
-    <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal">
-      {value || t('Untitled Proposal')}
-    </div>
+    <ReadonlyField title={title} required={required}>
+      <ReadonlyValueBox isEmpty={!value}>
+        {value || t('Untitled Proposal')}
+      </ReadonlyValueBox>
+    </ReadonlyField>
   );
 }
 
@@ -45,31 +57,26 @@ export function ReadonlyTextField({
   );
 
   return (
-    <div className="flex flex-col gap-4">
-      <FieldHeader
-        title={title}
-        description={description}
-        required={required}
-      />
-      {content ? (
-        <RichTextViewer
-          key={contentKey}
-          extensions={getViewerExtensions()}
-          content={content}
-          editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
-        />
-      ) : (
-        <div
-          className={`text-neutral-gray3 ${multiline ? 'min-h-32' : 'min-h-8'}`}
-        >
-          {placeholder}
-        </div>
-      )}
-    </div>
+    <ReadonlyField title={title} description={description} required={required}>
+      <ReadonlyValueBox isEmpty={!content}>
+        {content ? (
+          <RichTextViewer
+            key={contentKey}
+            extensions={getViewerExtensions()}
+            content={content}
+            editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
+          />
+        ) : (
+          <span className={multiline ? 'block min-h-32' : 'block min-h-8'}>
+            {placeholder}
+          </span>
+        )}
+      </ReadonlyValueBox>
+    </ReadonlyField>
   );
 }
 
-/** Read-only dropdown field used by proposal preview modes. */
+/** Read-only single/multi select field used by proposal preview modes. */
 export function ReadonlyDropdownField({
   value,
   title,
@@ -83,25 +90,12 @@ export function ReadonlyDropdownField({
   required?: boolean;
   placeholder: string;
 }) {
-  const content = (
-    <Button variant="pill" color="pill" className="justify-start text-start">
-      {value ?? placeholder}
-    </Button>
-  );
-
-  if (!title && !description) {
-    return content;
-  }
-
   return (
-    <div className="flex flex-col gap-2">
-      <FieldHeader
-        title={title}
-        description={description}
-        required={required}
-      />
-      {content}
-    </div>
+    <ReadonlyField title={title} description={description} required={required}>
+      <ReadonlyValueBox isEmpty={!value}>
+        {value ?? placeholder}
+      </ReadonlyValueBox>
+    </ReadonlyField>
   );
 }
 
@@ -110,27 +104,81 @@ export function ReadonlyBudgetField({
   value,
   title,
   description,
+  required,
   placeholder,
 }: {
   value: string | null;
   title?: string;
   description?: string;
+  required?: boolean;
   placeholder: string;
 }) {
-  const content = (
-    <Button variant="pill" color="pill">
-      {value ?? placeholder}
-    </Button>
-  );
-
-  if (!title && !description) {
-    return content;
-  }
-
   return (
-    <div className="flex flex-col gap-2">
-      <FieldHeader title={title} description={description} />
-      {content}
+    <ReadonlyField
+      title={title}
+      description={description}
+      required={required}
+      className="w-full sm:max-w-68"
+    >
+      <ReadonlyValueBox isEmpty={!value}>
+        {value ?? placeholder}
+      </ReadonlyValueBox>
+    </ReadonlyField>
+  );
+}
+
+/**
+ * Label + description chrome shared by the readonly previews, matching the
+ * editable fields' `Field` composition. `FieldTitle` (a div) rather than
+ * `FieldLabel` because there is no control to associate a `<label>` with.
+ */
+function ReadonlyField({
+  title,
+  description,
+  required,
+  className,
+  children,
+}: {
+  title?: string;
+  description?: string;
+  required?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Field className={className}>
+      {title && (
+        <FieldTitle>
+          {title}
+          {required && <RequiredAsterisk />}
+        </FieldTitle>
+      )}
+      {description && <FieldDescription>{description}</FieldDescription>}
+      {children}
+    </Field>
+  );
+}
+
+/**
+ * The bordered box a readonly value sits in, so previews read as the same
+ * control shape as the editor without pretending to be interactive.
+ */
+function ReadonlyValueBox({
+  isEmpty,
+  children,
+}: {
+  isEmpty: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-input bg-muted px-3 py-2.5 text-base',
+        isEmpty ? 'text-muted-foreground' : 'text-foreground',
+      )}
+      dir="auto"
+    >
+      {children}
     </div>
   );
 }

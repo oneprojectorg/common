@@ -71,6 +71,25 @@ export function calculateDaysRemaining(endDate?: string): number | null {
 }
 
 /**
+ * Format a byte count as a human-readable file size (e.g. `4.8 MB`).
+ *
+ * Lives here rather than in a design-system package so app surfaces don't have
+ * to import from `@op/ui` just for a number formatter.
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) {
+    return '0 Bytes';
+  }
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(k)),
+    sizes.length - 1,
+  );
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+/**
  * Date-time format options for UTC timestamps
  * Used with next-intl's useFormatter().dateTime()
  */

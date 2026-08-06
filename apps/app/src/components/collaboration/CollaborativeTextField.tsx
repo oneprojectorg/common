@@ -1,11 +1,18 @@
 'use client';
 
-import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
-import { cn } from '@op/ui/utils';
+import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
+import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import type { Editor } from '@tiptap/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useId, useMemo, useRef, useState } from 'react';
 
-import { getProposalExtensions } from '../RichTextEditor';
+import { useTranslations } from '@/lib/i18n';
+
+import {
+  RichTextEditorBubbleMenu,
+  getProposalExtensions,
+} from '../RichTextEditor';
+import { CharacterCounter } from './CharacterCounter';
 import { CollaborativeEditor } from './CollaborativeEditor';
 
 /**
@@ -37,24 +44,31 @@ interface CollaborativeTextFieldProps {
 }
 
 /**
- * Collaborative text field backed by TipTap + Yjs.
+ * Collaborative text field backed by TipTap + Yjs, presented as a labelled
+ * sense `Field` whose control sits in a bordered `InputGroup` with the
+ * character counter pinned inside the box (bottom-end).
  *
- * Composes {@link CollaborativeEditor} so we get consistent editor setup,
- * styled content, and Yjs collaboration/snapshotting for free.
+ * `aria-labelledby`, not `htmlFor` — a contenteditable isn't labelable.
  */
 export function CollaborativeTextField({
   fragmentName,
   title,
   required,
   description,
-  placeholder = 'Start typing...',
+  placeholder,
   multiline = false,
   maxLength,
   onChange,
   onEditorFocus,
   onEditorBlur,
 }: CollaborativeTextFieldProps) {
+  const t = useTranslations();
   const [charCount, setCharCount] = useState(0);
+  // Held in state (not a ref) so the bubble menu renders once the editor exists.
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const labelId = useId();
+  const descriptionId = useId();
+  const counterId = useId();
 
   // No Placeholder extension here — useRichTextEditor registers one from the
   // `placeholder` prop below; adding our own would duplicate the extension.
@@ -74,6 +88,7 @@ export function CollaborativeTextField({
   onEditorBlurRef.current = onEditorBlur;
 
   const handleEditorReady = useCallback((editor: Editor) => {
+    setEditor(editor);
     setCharCount(editor.getText().length);
 
     editor.on('update', () => {
@@ -88,41 +103,65 @@ export function CollaborativeTextField({
     });
   }, []);
 
+  const describedBy =
+    [description ? descriptionId : null, maxLength != null ? counterId : null]
+      .filter(Boolean)
+      .join(' ') || undefined;
+
   return (
-    <div data-testid={`field-${fragmentName}`} className="flex flex-col gap-4">
-      {(title || description) && (
-        <div className="flex flex-col gap-2">
-          {title && (
-            <span className="font-serif text-title-sm14 text-neutral-charcoal">
-              {title}
-              {required && <RequiredAsterisk />}
-            </span>
-          )}
-          {description && (
-            <p className="text-sm text-neutral-charcoal">{description}</p>
-          )}
-        </div>
+    <Field data-testid={`field-${fragmentName}`}>
+      {title && (
+        <FieldTitle id={labelId}>
+          {title}
+          {required && <RequiredAsterisk />}
+        </FieldTitle>
       )}
-      <CollaborativeEditor
-        field={fragmentName}
-        extensions={extensions}
-        placeholder={placeholder}
-        onEditorReady={handleEditorReady}
-        editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
-        required={required}
-      />
-      {maxLength != null && (
-        <div className="flex justify-end">
-          <span
-            className={cn(
-              'text-sm text-neutral-gray4',
-              charCount >= maxLength && 'text-functional-red',
-            )}
-          >
-            {charCount}/{maxLength}
-          </span>
-        </div>
+      {description && (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
       )}
-    </div>
+      {/* focus-within, not InputGroup's has-[input:focus-visible] rules: the
+          control is a contenteditable, not an <input>. The editable's own ring
+          is switched off so only the box lights up.
+
+          `has-[[data-bubble-menu]]:z-10` lifts this field above the ones after
+          it while its bubble menu is mounted. The menu is positioned inside the
+          field (portaling it makes scrolling janky), so without the lift a later
+          field paints over it — the location map and search covered it, and no
+          z-index on the menu itself helps, since it only competes inside this
+          subtree. The menu only mounts while the field has focus, so its
+          presence is the condition, and the lift drops on blur with it. `z-10`
+          rather than higher: the editor's sticky topbar is `z-20` and should
+          stay on top. */}
+      <InputGroup className="h-auto flex-col items-stretch focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-[[data-bubble-menu]]:z-10">
+        <CollaborativeEditor
+          field={fragmentName}
+          extensions={extensions}
+          placeholder={placeholder ?? t('Start typing...')}
+          onEditorReady={handleEditorReady}
+          className="w-full"
+          editorClassName={`px-3 py-2.5 focus-visible:ring-0 ${multiline ? 'min-h-32' : 'min-h-8'}`}
+          required={required}
+          ariaLabelledBy={title ? labelId : undefined}
+          ariaDescribedBy={describedBy}
+        />
+        {/* Formatting lives on the selection rather than in a toolbar above the
+            form. Every prose field owns its own menu, so the pluginKey has to be
+            unique per field or TipTap's plugins collide. */}
+        <RichTextEditorBubbleMenu
+          editor={editor}
+          pluginKey={`proposalField-${fragmentName}`}
+          allowImages
+        />
+        {maxLength != null && (
+          <InputGroupAddon align="block-end" className="justify-end">
+            <CharacterCounter
+              id={counterId}
+              count={charCount}
+              max={maxLength}
+            />
+          </InputGroupAddon>
+        )}
+      </InputGroup>
+    </Field>
   );
 }

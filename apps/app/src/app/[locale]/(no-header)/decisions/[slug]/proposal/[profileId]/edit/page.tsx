@@ -13,10 +13,9 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/sense/Button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
@@ -73,7 +72,6 @@ function EditProposalPageContent() {
     reviewRevision: proposalEditorReviewRevisionParser,
   });
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   // -- Data fetching ---------------------------------------------------------
 
@@ -181,24 +179,29 @@ function EditProposalPageContent() {
     ? []
     : firstRevisionRequestId
       ? [
-          <TooltipTrigger key="revision-request">
-            <Button
-              color="secondary"
-              variant="icon"
-              size="small"
-              onPress={toggleRevisionRequest}
-              aria-label={revisionRequestLabel}
-              aria-pressed={Boolean(reviewRevision)}
-              className="relative size-8 min-w-8 rounded-sm p-0"
-            >
-              <LuStickyNote className="size-4" />
-              <span
-                aria-hidden
-                className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
-              />
-            </Button>
-            <Tooltip>{revisionRequestLabel}</Tooltip>
-          </TooltipTrigger>,
+          // The header's action row supplies the tooltip group and its delay
+          // (`ProposalEditorHeader`), so these only need a Tooltip each.
+          <Tooltip key="revision-request">
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={toggleRevisionRequest}
+                  aria-label={revisionRequestLabel}
+                  aria-expanded={Boolean(reviewRevision)}
+                  className="relative"
+                >
+                  <LuStickyNote className="size-4" />
+                  <span
+                    aria-hidden
+                    className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
+                  />
+                </Button>
+              }
+            />
+            <TooltipContent>{revisionRequestLabel}</TooltipContent>
+          </Tooltip>,
           ...asideHeaderIcons,
         ]
       : asideHeaderIcons;
@@ -239,7 +242,6 @@ function EditProposalPageContent() {
           asideState={asideState}
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
-          isMobile={isMobile}
           revisionRequest={revisionRequest}
         />
       </VersionPreviewProvider>
@@ -262,7 +264,6 @@ function ProposalEditorContent({
   asideState,
   setAsideState,
   asideHeaderIcons,
-  isMobile,
   revisionRequest,
 }: {
   proposal: Proposal;
@@ -272,7 +273,6 @@ function ProposalEditorContent({
   asideState: ProposalEditorAsideState;
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
-  isMobile: boolean;
   revisionRequest: ProposalReviewRequest | null;
 }) {
   const versionPreview = useOptionalVersionPreview();
@@ -283,29 +283,45 @@ function ProposalEditorContent({
     fragmentNames,
   });
 
-  const asideSlot =
-    asideState.aside === 'versions' ? (
-      <ProposalVersionsAside
-        versionId={asideState.versionId}
-        onSelectVersion={(nextVersionId) =>
-          setAsideState({
-            aside: 'versions',
-            versionId: nextVersionId,
-          })
+  // Always mounted, toggled via `open` — conditionally rendering the aside
+  // unmounts the base-ui dialog root on close, which skips its exit animation.
+  const isVersionsAsideOpen = asideState.aside === 'versions';
+
+  const asideSlot = (
+    <ProposalVersionsAside
+      open={isVersionsAsideOpen}
+      versionId={isVersionsAsideOpen ? asideState.versionId : null}
+      onSelectVersion={(nextVersionId) =>
+        setAsideState({
+          aside: 'versions',
+          versionId: nextVersionId,
+        })
+      }
+      onRestoreVersion={async (versionId) => {
+        const restored = await restoreVersion(
+          versionId,
+          versionPreview?.fragmentContents ?? {},
+        );
+
+        // Only on success, and closing rather than deselecting: it hands the
+        // editor back so the restored content is immediately editable instead
+        // of sitting behind a readonly preview. A refused restore leaves the
+        // aside open on the version the user picked.
+        if (restored) {
+          setAsideState({ aside: null });
         }
-        onRestoreVersion={async (versionId) => {
-          await restoreVersion(
-            versionId,
-            versionPreview?.fragmentContents ?? {},
-          );
-          setAsideState({ aside: 'versions', versionId: null });
-        }}
-        onClose={() => setAsideState({ aside: null })}
-      />
-    ) : undefined;
+      }}
+      onClose={() => setAsideState({ aside: null })}
+    />
+  );
 
   return (
-    <div className="flex h-screen bg-white">
+    <div
+      className={cn(
+        'flex h-screen bg-background transition-[padding]',
+        isVersionsAsideOpen && 'sm:pr-96',
+      )}
+    >
       <ProposalEditor
         instance={instance}
         backHref={`/decisions/${slug}/current`}
@@ -314,9 +330,11 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        showHeaderActions={isMobile || !asideSlot}
         revisionRequest={revisionRequest}
       />
+      {/* Desktop: a non-modal sheet with no backdrop, so the document stays
+          visible and scrollable beside it. Mobile: a modal drawer, which covers
+          the viewport anyway. */}
       {asideSlot}
     </div>
   );
@@ -349,20 +367,22 @@ function useProposalEditorAsideHeaderIcons({
     const Icon = definition.icon;
 
     return (
-      <TooltipTrigger key={asideKey}>
-        <Button
-          color="secondary"
-          variant="icon"
-          size="small"
-          onPress={() => onToggleAside(asideKey)}
-          aria-label={definition.label}
-          aria-pressed={aside === asideKey}
-          className="size-8 min-w-8 rounded-sm p-0"
-        >
-          <Icon className="size-4" />
-        </Button>
-        <Tooltip>{definition.label}</Tooltip>
-      </TooltipTrigger>
+      <Tooltip key={asideKey}>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onToggleAside(asideKey)}
+              aria-label={definition.label}
+              aria-expanded={aside === asideKey}
+            >
+              <Icon className="size-4" />
+            </Button>
+          }
+        />
+        <TooltipContent>{definition.label}</TooltipContent>
+      </Tooltip>
     );
   });
 }

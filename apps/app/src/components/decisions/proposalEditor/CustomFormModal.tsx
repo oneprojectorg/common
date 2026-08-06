@@ -7,17 +7,37 @@ import type {
 import { schemaValidator } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Textarea } from '@op/sense/Textarea';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
-import { Form } from '@op/ui/Form';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import type { Key } from 'react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,6 +58,15 @@ interface CustomFormModalProps {
   onOpenChange: (open: boolean) => void;
   /** Label for the submit button; defaults to a generic "Submit". */
   submitLabel?: string;
+}
+
+interface CustomFormFieldProps {
+  name: string;
+  field: XFormatPropertySchema;
+  value: unknown;
+  error?: string;
+  isRequired: boolean;
+  onChange: (value: unknown) => void;
 }
 
 export function CustomFormModal({
@@ -95,77 +124,68 @@ export function CustomFormModal({
     .map(([, message]) => message);
 
   return (
-    // Cap the panel below the viewport so a tall form always leaves 2rem of
-    // space above and below (the overlay centers it) and scrolls internally.
-    // Mobile stays full-screen.
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      isDismissable
-      className="flex flex-col sm:max-h-[calc(100svh-4rem)]"
-    >
-      <ModalHeader>{definition.title ?? t('Additional details')}</ModalHeader>
-      <Form
-        onSubmit={handleSubmit}
-        validationBehavior="aria"
-        className="flex flex-1 flex-col gap-0"
-      >
-        <ModalBody className="flex-1 gap-6">
-          {definition.description ? (
-            <p className="text-base text-neutral-charcoal">
-              {definition.description}
-            </p>
-          ) : null}
-          {getFieldOrder(definition).map((key) => {
-            const field = definition.properties?.[key];
-            if (!field || typeof field !== 'object') {
-              return null;
-            }
-            return (
-              <CustomFormField
-                key={key}
-                name={key}
-                field={field}
-                value={values[key]}
-                error={errors[key]}
-                isRequired={requiredFields.has(key)}
-                onChange={(value) => handleFieldChange(key, value)}
-              />
-            );
-          })}
-          {formLevelErrors.length > 0 ? (
-            <div className="flex flex-col gap-1">
-              {formLevelErrors.map((message) => (
-                <p key={message} className="text-sm text-functional-red">
-                  {message}
-                </p>
-              ))}
-            </div>
-          ) : null}
-        </ModalBody>
-        <ModalFooter className="sticky">
-          <Button
-            type="submit"
-            color="primary"
-            className="w-full"
-            isDisabled={isSubmitting}
-          >
-            {isSubmitting ? <LoadingSpinner className="size-4" /> : null}
-            {submitLabel ?? t('Submit')}
-          </Button>
-        </ModalFooter>
-      </Form>
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {/* DialogContent already caps its height and scrolls internally. */}
+      <DialogContent className="flex flex-col gap-0 p-0 sm:max-w-120">
+        <DialogHeader>
+          <DialogTitle>
+            {definition.title ?? t('Additional details')}
+          </DialogTitle>
+        </DialogHeader>
+        {/* `noValidate`, as @op/ui's `<Form validationBehavior="aria">` was:
+            validation is AJV's (`schemaValidator`), and its messages are
+            translated. Without it the browser validates first and `handleSubmit`
+            never runs — and for a checkbox or radio base-ui puts `required` on a
+            visually hidden input, so the native bubble is anchored to something
+            invisible and the dialog just refuses to submit. `required` stays for
+            the `aria-required` base-ui derives from it. */}
+        <form
+          noValidate
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col gap-0"
+        >
+          <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
+            {definition.description ? (
+              <p className="text-base text-muted-foreground">
+                {definition.description}
+              </p>
+            ) : null}
+            {getFieldOrder(definition).map((key) => {
+              const field = definition.properties?.[key];
+              if (!field || typeof field !== 'object') {
+                return null;
+              }
+              return (
+                <CustomFormField
+                  key={key}
+                  name={key}
+                  field={field}
+                  value={values[key]}
+                  error={errors[key]}
+                  isRequired={requiredFields.has(key)}
+                  onChange={(value) => handleFieldChange(key, value)}
+                />
+              );
+            })}
+            {formLevelErrors.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                {formLevelErrors.map((message) => (
+                  <p key={message} className="text-sm text-destructive">
+                    {message}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter className="shrink-0">
+            <Button type="submit" className="w-full" loading={isSubmitting}>
+              {submitLabel ?? t('Submit')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-}
-
-interface CustomFormFieldProps {
-  name: string;
-  field: XFormatPropertySchema;
-  value: unknown;
-  error?: string;
-  isRequired: boolean;
-  onChange: (value: unknown) => void;
 }
 
 function CustomFormField({
@@ -176,6 +196,7 @@ function CustomFormField({
   isRequired,
   onChange,
 }: CustomFormFieldProps) {
+  const fieldId = useId();
   const label = field.title ?? name;
   // Same breakpoint the NPS survey uses to swap its scale control between
   // a horizontal radio row (desktop) and a dropdown (mobile).
@@ -183,20 +204,25 @@ function CustomFormField({
 
   if (field.type === 'boolean') {
     return (
-      <div className="flex flex-col gap-1">
-        <Checkbox
-          isSelected={value === true}
-          // Unchecked is stored as absent (not `false`) so JSON Schema
-          // `required` treats an unchecked required checkbox as missing.
-          onChange={(checked) => onChange(checked ? true : undefined)}
-          isRequired={isRequired}
-        >
-          {label}
-        </Checkbox>
-        {error ? (
-          <span className="text-sm text-functional-red">{error}</span>
-        ) : null}
-      </div>
+      <Field data-invalid={Boolean(error)}>
+        <Field className="items-start" orientation="horizontal">
+          <Checkbox
+            id={fieldId}
+            checked={value === true}
+            // Unchecked is stored as absent (not `false`) so JSON Schema
+            // `required` treats an unchecked required checkbox as missing.
+            onCheckedChange={(checked) => onChange(checked ? true : undefined)}
+            required={isRequired}
+            aria-invalid={Boolean(error)}
+            className="mt-1"
+          />
+          <FieldLabel htmlFor={fieldId}>
+            {label}
+            {isRequired ? <RequiredAsterisk /> : null}
+          </FieldLabel>
+        </Field>
+        {error ? <FieldError>{error}</FieldError> : null}
+      </Field>
     );
   }
 
@@ -217,21 +243,33 @@ function CustomFormField({
       ? value.filter((entry): entry is string => typeof entry === 'string')
       : [];
     return (
-      <CheckboxGroup
-        label={label}
-        description={field.description}
-        errorMessage={error}
-        isInvalid={Boolean(error)}
-        isRequired={isRequired}
-        value={selected}
-        onChange={(next) => onChange(next.length > 0 ? next : undefined)}
-      >
+      <FieldSet>
+        <FieldLegend variant="label">
+          {label}
+          {isRequired ? <RequiredAsterisk /> : null}
+        </FieldLegend>
+        {field.description ? (
+          <FieldDescription>{field.description}</FieldDescription>
+        ) : null}
         {multiOptions.map((option) => (
-          <Checkbox key={option} value={option} size="small">
-            {option}
-          </Checkbox>
+          <Field key={option} className="items-start" orientation="horizontal">
+            <Checkbox
+              id={`${fieldId}-${option}`}
+              checked={selected.includes(option)}
+              onCheckedChange={(checked) => {
+                const next = checked
+                  ? [...selected, option]
+                  : selected.filter((entry) => entry !== option);
+                onChange(next.length > 0 ? next : undefined);
+              }}
+              aria-invalid={Boolean(error)}
+              className="mt-1"
+            />
+            <FieldLabel htmlFor={`${fieldId}-${option}`}>{option}</FieldLabel>
+          </Field>
         ))}
-      </CheckboxGroup>
+        {error ? <FieldError>{error}</FieldError> : null}
+      </FieldSet>
     );
   }
 
@@ -249,71 +287,66 @@ function CustomFormField({
 
     if (isMobile) {
       return (
-        <Select
+        <EnumSelectField
+          fieldId={fieldId}
           label={label}
           description={field.description}
-          errorMessage={error}
+          error={error}
           isRequired={isRequired}
-          selectedKey={selected}
-          onSelectionChange={(key: Key | null) => {
-            onChange(key == null ? undefined : String(key));
-          }}
-        >
-          {enumOptions.map((option) => (
-            <SelectItem key={option} id={option} textValue={option}>
-              {option}
-            </SelectItem>
-          ))}
-        </Select>
+          options={enumOptions}
+          value={selected}
+          onChange={onChange}
+        />
       );
     }
 
     return (
-      <RadioGroup
-        label={label}
-        description={field.description}
-        errorMessage={error}
-        isInvalid={Boolean(error)}
-        isRequired={isRequired}
-        value={selected}
-        onChange={(next) => onChange(next || undefined)}
-        orientation="horizontal"
-        className="[&>div]:w-full [&>div]:justify-between [&>div]:gap-0"
-      >
-        {enumOptions.map((option) => (
-          <Radio
-            key={option}
-            value={option}
-            labelPosition="bottom"
-            className="flex-1"
-          >
-            {option}
-          </Radio>
-        ))}
-      </RadioGroup>
+      <FieldSet>
+        <FieldLegend variant="label">
+          {label}
+          {isRequired ? <RequiredAsterisk /> : null}
+        </FieldLegend>
+        {field.description ? (
+          <FieldDescription>{field.description}</FieldDescription>
+        ) : null}
+        <RadioGroup
+          value={selected}
+          onValueChange={(next) =>
+            onChange(next == null || next === '' ? undefined : String(next))
+          }
+          required={isRequired}
+          aria-invalid={Boolean(error)}
+          className="flex w-full flex-row justify-between gap-1"
+        >
+          {enumOptions.map((option) => (
+            <Field key={option} className="flex-1 items-center gap-1">
+              <RadioGroupItem id={`${fieldId}-${option}`} value={option} />
+              <FieldLabel
+                htmlFor={`${fieldId}-${option}`}
+                className="justify-center"
+              >
+                {option}
+              </FieldLabel>
+            </Field>
+          ))}
+        </RadioGroup>
+        {error ? <FieldError>{error}</FieldError> : null}
+      </FieldSet>
     );
   }
 
   if (field['x-format'] === 'dropdown' || enumOptions.length > 0) {
-    const selected = typeof value === 'string' ? value : undefined;
-    const onSelectionChange = (key: Key | null) => {
-      onChange(key == null ? undefined : String(key));
-    };
     return (
-      <Select
+      <EnumSelectField
+        fieldId={fieldId}
         label={label}
         description={field.description}
-        errorMessage={error}
+        error={error}
         isRequired={isRequired}
-        selectedKey={selected ?? null}
-        onSelectionChange={onSelectionChange}
-      >
-        {enumOptions.map((option) => (
-          <SelectItem key={option} id={option} textValue={option}>
-            {option}
-          </SelectItem>
-        ))}
-      </Select>
+        options={enumOptions}
+        value={typeof value === 'string' ? value : null}
+        onChange={onChange}
+      />
     );
   }
 
@@ -325,38 +358,131 @@ function CustomFormField({
           ? value
           : '';
     return (
-      <TextField
-        label={label}
-        description={field.description}
-        errorMessage={error}
-        isRequired={isRequired}
-        type="number"
-        value={stringValue}
-        onChange={(next) => {
-          if (next === '') {
-            onChange(undefined);
-            return;
-          }
-          const parsed =
-            field.type === 'integer' ? parseInt(next, 10) : parseFloat(next);
-          onChange(Number.isFinite(parsed) ? parsed : undefined);
-        }}
-      />
+      <Field data-invalid={Boolean(error)}>
+        <FieldLabel htmlFor={fieldId}>
+          {label}
+          {isRequired ? <RequiredAsterisk /> : null}
+        </FieldLabel>
+        <Input
+          id={fieldId}
+          type="number"
+          dir="ltr"
+          required={isRequired}
+          aria-invalid={Boolean(error)}
+          value={stringValue}
+          onChange={(event) => {
+            const next = event.target.value;
+            if (next === '') {
+              onChange(undefined);
+              return;
+            }
+            const parsed =
+              field.type === 'integer' ? parseInt(next, 10) : parseFloat(next);
+            onChange(Number.isFinite(parsed) ? parsed : undefined);
+          }}
+        />
+        {error ? <FieldError>{error}</FieldError> : null}
+        {field.description ? (
+          <FieldDescription>{field.description}</FieldDescription>
+        ) : null}
+      </Field>
     );
   }
 
-  const useTextArea = field['x-format'] === 'long-text';
+  const stringValue = typeof value === 'string' ? value : '';
+
   return (
-    <TextField
-      label={label}
-      description={field.description}
-      errorMessage={error}
-      isRequired={isRequired}
-      useTextArea={useTextArea}
-      value={typeof value === 'string' ? value : ''}
-      onChange={onChange}
-      textareaProps={useTextArea ? { rows: 3 } : undefined}
-    />
+    <Field data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={fieldId}>
+        {label}
+        {isRequired ? <RequiredAsterisk /> : null}
+      </FieldLabel>
+      {field['x-format'] === 'long-text' ? (
+        <Textarea
+          id={fieldId}
+          rows={3}
+          required={isRequired}
+          aria-invalid={Boolean(error)}
+          value={stringValue}
+          onChange={(event) => onChange(event.target.value)}
+          className="[unicode-bidi:plaintext]"
+        />
+      ) : (
+        <Input
+          id={fieldId}
+          required={isRequired}
+          aria-invalid={Boolean(error)}
+          value={stringValue}
+          onChange={(event) => onChange(event.target.value)}
+          className="[unicode-bidi:plaintext]"
+        />
+      )}
+      {error ? <FieldError>{error}</FieldError> : null}
+      {field.description ? (
+        <FieldDescription>{field.description}</FieldDescription>
+      ) : null}
+    </Field>
+  );
+}
+
+/**
+ * Enum dropdown. Option values ARE their labels here, so base-ui's
+ * `Select.Value` renders correctly without an `items` label map.
+ */
+function EnumSelectField({
+  fieldId,
+  label,
+  description,
+  error,
+  isRequired,
+  options,
+  value,
+  onChange,
+}: {
+  fieldId: string;
+  label: string;
+  description?: string;
+  error?: string;
+  isRequired: boolean;
+  options: string[];
+  value: string | null;
+  onChange: (value: unknown) => void;
+}) {
+  const t = useTranslations();
+
+  return (
+    <Field data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={fieldId}>
+        {label}
+        {isRequired ? <RequiredAsterisk /> : null}
+      </FieldLabel>
+      <Select
+        value={value}
+        onValueChange={(next) =>
+          onChange(next == null ? undefined : String(next))
+        }
+        required={isRequired}
+      >
+        <SelectTrigger
+          id={fieldId}
+          className="w-full"
+          aria-invalid={Boolean(error)}
+        >
+          <SelectValue placeholder={t('Select an option')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      {error ? <FieldError>{error}</FieldError> : null}
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
+    </Field>
   );
 }
 

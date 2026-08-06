@@ -147,7 +147,9 @@ function OverviewSectionContent({
           }
           placeholder={t('overview_body_placeholder')}
           summaryPlaceholder={t('Write something...')}
-          editorClassName="min-h-40"
+          // No focus ring: the body sits inline in the builder page rather than
+          // in a bordered field, so the ring reads as a stray box.
+          editorClassName="min-h-40 focus-visible:ring-0"
           onChangeJSON={(json) => {
             // Persist the TipTap JSON doc so the overview renders via the
             // static React renderer. tiptap hands us the live editor's JSON, so
@@ -158,7 +160,11 @@ function OverviewSectionContent({
           onEditorReady={setEditor}
         />
 
-        <RichTextEditorBubbleMenu editor={editor} />
+        <RichTextEditorBubbleMenu
+          editor={editor}
+          allowCollapsible
+          allowImages
+        />
       </div>
     </div>
   );

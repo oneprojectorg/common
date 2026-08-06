@@ -235,7 +235,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
 
     // ── 5. Continue with the selection flow.
     const confirmButton = authenticatedPage.getByRole('button', {
-      name: 'Confirm decisions',
+      name: 'Confirm selections',
     });
     await expect(confirmButton).toBeVisible();
     await expect(confirmButton).toBeDisabled();
@@ -248,7 +248,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       .click();
 
     await expect(
-      authenticatedPage.getByText('2 proposals advancing'),
+      authenticatedPage.getByText('2 proposals selected'),
     ).toBeVisible();
     await expect(confirmButton).toBeEnabled();
 
@@ -338,7 +338,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Sanity: footer starts at zero before any cross-page selection.
-    await expect(page.getByText('0 proposals advancing')).toBeVisible();
+    await expect(page.getByText('0 proposals selected')).toBeVisible();
 
     // The proposal title is rendered as a link to the review summary.
     // `exact: true` keeps this from matching the row's "Advance Proposal
@@ -360,6 +360,8 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     await advanceButton.click();
 
     // Same button flips to "Advancing proposal" + count picks up the entry.
+    // This page's footer is `ReviewSummaryAdvanceFooter`, which still counts
+    // "advancing" — the parent list's footer is the one that says "selected".
     await expect(
       page.getByRole('button', { name: 'Advancing proposal', exact: true }),
     ).toBeVisible();
@@ -383,9 +385,9 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       page.getByRole('button', { name: 'Advance Proposal Beta' }),
     ).toBeVisible();
     // Footer count + Confirm CTA reflect the persisted draft.
-    await expect(page.getByText('1 proposal advancing')).toBeVisible();
+    await expect(page.getByText('1 proposal selected')).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Confirm decisions' }),
+      page.getByRole('button', { name: 'Confirm selections' }),
     ).toBeEnabled();
   });
 });

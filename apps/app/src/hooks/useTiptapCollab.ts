@@ -1,7 +1,7 @@
 'use client';
 
 import { logger } from '@op/logging/client';
-import { getAvatarColorForString } from '@op/ui/utils';
+import { getAvatarColorForString } from '@op/styles/constants';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';

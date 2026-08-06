@@ -1,6 +1,8 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
+import { Header4 } from '@op/sense/Header';
+import { useId } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -10,24 +12,26 @@ interface VoteReviewStepProps {
   proposals: Proposal[];
 }
 
+/**
+ * Body of the vote confirmation dialog: the "Selected proposals" label plus the
+ * mini cards for the ballot. The introductory sentence lives in the dialog's
+ * `DialogDescription` so screen readers announce it with the title.
+ */
 export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {
   const t = useTranslations();
+  const labelId = useId();
 
   return (
     <div className="space-y-4">
-      <p className="text-base text-neutral-charcoal">
-        {t('Please confirm your selections before submitting')}
-      </p>
+      <Header4 id={labelId}>{t('Selected proposals')}</Header4>
 
-      <div className="space-y-2">
-        <div className="text-sm tracking-wider text-neutral-gray4 uppercase">
-          {t('YOUR SELECTED PROPOSALS')}
-        </div>
-
+      <ul aria-labelledby={labelId} className="space-y-4">
         {proposals.map((proposal) => (
-          <ProposalMiniCard key={proposal.id} proposal={proposal} />
+          <li key={proposal.id}>
+            <ProposalMiniCard proposal={proposal} />
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };

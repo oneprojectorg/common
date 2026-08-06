@@ -8,7 +8,7 @@ import {
   parseSchemaOptions,
   schemaAllowsMultipleSelection,
 } from '@op/common/client';
-import { cn } from '@op/ui/utils';
+import { logger } from '@op/logging/client';
 import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,7 +22,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
-import { FieldHeader } from '../forms/FieldHeader';
+import { LabeledFieldSet } from '../forms/LabeledFieldSet';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
 import {
@@ -41,6 +41,16 @@ import type { ProposalDraftFields } from './useProposalDraft';
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+/**
+ * Cap on the proposal title (Figma 17950:11356 — the field reads "37/50").
+ *
+ * Below `PROPOSAL_TITLE_MAX_LENGTH`, which the API enforces to keep
+ * `profiles.name` inside its varchar(256). Capping the server at 50 would make
+ * every existing longer-titled proposal unsaveable, since autosave would be
+ * rejected on each tick. A template may ask for less, never more.
+ */
+const TITLE_MAX_LENGTH = 50;
 
 interface ProposalFormRendererProps {
   /** Compiled field descriptors from `compileProposalSchema`. */
@@ -194,6 +204,8 @@ function renderField(
     if (isReadonlyMode) {
       return (
         <ReadonlyTitleField
+          title={schema.title ?? t('Proposal name')}
+          required={field.required}
           value={getPreviewText({
             mode,
             draftValue: draft.title,
@@ -205,6 +217,12 @@ function renderField(
 
     return (
       <CollaborativeTitleField
+        title={schema.title ?? t('Proposal name')}
+        required={field.required}
+        maxLength={Math.min(
+          schema.maxLength ?? TITLE_MAX_LENGTH,
+          TITLE_MAX_LENGTH,
+        )}
         placeholder={t('Untitled Proposal')}
         onChange={(value) => onFieldChange('title', value)}
       />
@@ -216,6 +234,7 @@ function renderField(
   if (key === 'category') {
     const options = extractOptions(schema);
     const isMultipleSelection = schemaAllowsMultipleSelection(schema);
+    const categoryLabel = schema.title ?? t('Select a category');
 
     if (isReadonlyMode) {
       const selectedValues = getPreviewCategories({
@@ -234,13 +253,15 @@ function renderField(
               ? formatProposalCategories(selectedLabels)
               : null
           }
+          title={categoryLabel}
+          required={field.required}
           placeholder={t('Select category')}
         />
       );
     }
 
     // District categories are auto-assigned from the proposal's location, so
-    // they are hidden from the dropdown but kept in the schema (and in the
+    // they are hidden from the picker but kept in the schema (and in the
     // readonly display above) so auto-filled values still validate and render.
     const selectableOptions = options.filter(
       (opt) => !isDistrictCategoryLabel(opt.label),
@@ -248,15 +269,15 @@ function renderField(
 
     if (isMultipleSelection) {
       return (
-        <div className="min-w-0">
-          <CollaborativeMultiSelectField
-            options={selectableOptions}
-            initialValue={draft.category}
-            onChange={(value) => onFieldChange('category', value)}
-            fragmentName="category"
-            placeholder={t('Select category')}
-          />
-        </div>
+        <CollaborativeMultiSelectField
+          options={selectableOptions}
+          initialValue={draft.category}
+          onChange={(value) => onFieldChange('category', value)}
+          fragmentName="category"
+          title={categoryLabel}
+          description={schema.description ?? t('Select all that apply')}
+          required={field.required}
+        />
       );
     }
 
@@ -266,8 +287,10 @@ function renderField(
         initialValue={draft.category[0] ?? null}
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
-        placeholder={t('Select category')}
+        title={categoryLabel}
+        description={schema.description}
         allowEmpty={!field.required}
+        required={field.required}
       />
     );
   }
@@ -283,6 +306,9 @@ function renderField(
             draftValue: draft.budget,
             previewContent,
           })}
+          title={schema.title ?? t('Funding amount')}
+          description={schema.description}
+          required={field.required}
           placeholder={t('Add budget')}
         />
       );
@@ -290,6 +316,9 @@ function renderField(
 
     return (
       <CollaborativeBudgetField
+        title={schema.title ?? t('Funding amount')}
+        description={schema.description}
+        required={field.required}
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
         initialValue={draft.budget}
@@ -345,8 +374,9 @@ function renderField(
               draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
               previewContent,
             })}
-            title={schema.title}
+            title={schema.title ?? t('Funding amount')}
             description={schema.description}
+            required={field.required}
             placeholder={t('Add budget')}
           />
         );
@@ -354,6 +384,9 @@ function renderField(
 
       return (
         <CollaborativeBudgetField
+          title={schema.title ?? t('Funding amount')}
+          description={schema.description}
+          required={field.required}
           minAmount={schema.minimum}
           maxAmount={schema.maximum}
           initialValue={null}
@@ -370,24 +403,27 @@ function renderField(
             : ((draft[key] as ProposalDraftFields['location']) ?? undefined);
 
         return (
-          <div className="flex flex-col gap-2">
-            <FieldHeader
-              title={schema.title}
-              description={schema.description}
-              required={field.required}
-            />
+          <LabeledFieldSet
+            legend={schema.title ?? t('Location')}
+            description={schema.description}
+            required={field.required}
+            data-testid={`field-${key}`}
+          >
             <LocationMapView value={location ?? null} />
-          </div>
+          </LabeledFieldSet>
         );
       }
 
       return (
-        <div className="flex flex-col gap-2">
-          <FieldHeader
-            title={schema.title}
-            description={schema.description}
-            required={field.required}
-          />
+        // fieldset/legend rather than a label: the control is a group (address
+        // search + map + "use my location"), and each part carries its own
+        // accessible name.
+        <LabeledFieldSet
+          legend={schema.title ?? t('Location')}
+          description={schema.description}
+          required={field.required}
+          data-testid={`field-${key}`}
+        >
           <CollaborativeLocationField
             initialValue={
               (draft[key] as ProposalDraftFields['location']) ?? null
@@ -396,7 +432,7 @@ function renderField(
             defaultMapView={schema['x-map-default']}
             onChange={(value) => onFieldChange(key, value)}
           />
-        </div>
+        </LabeledFieldSet>
       );
     }
 
@@ -416,7 +452,7 @@ function renderField(
         return (
           <ReadonlyDropdownField
             value={selectedOption?.label ?? null}
-            title={schema.title}
+            title={schema.title ?? t('Select option')}
             description={schema.description}
             required={field.required}
             placeholder={t('Select option')}
@@ -424,27 +460,24 @@ function renderField(
         );
       }
 
+      // Radio option boxes per the design — every option is on screen, so 20
+      // categories means 20 stacked boxes. No collapse-to-combobox threshold.
       return (
-        <div data-testid={`field-${key}`} className="flex flex-col gap-2">
-          <FieldHeader
-            title={schema.title}
-            description={schema.description}
-            required={field.required}
-          />
-          <CollaborativeDropdownField
-            options={options}
-            initialValue={(draft[key] as string | null) ?? null}
-            onChange={(value) => onFieldChange(key, value)}
-            fragmentName={key}
-            allowEmpty={!field.required}
-            required={field.required}
-          />
-        </div>
+        <CollaborativeDropdownField
+          options={options}
+          initialValue={(draft[key] as string | null) ?? null}
+          onChange={(value) => onFieldChange(key, value)}
+          fragmentName={key}
+          title={schema.title ?? t('Select option')}
+          description={schema.description}
+          allowEmpty={!field.required}
+          required={field.required}
+        />
       );
     }
 
     default: {
-      console.warn(`Unimplemented x-format "${format}" for field "${key}"`);
+      logger.warn(`Unimplemented x-format "${format}" for field "${key}"`);
       return null;
     }
   }
@@ -461,10 +494,8 @@ function renderField(
  * each field. Version and template previews reuse readonly field components,
  * while editing keeps the collaborative Yjs-backed fields.
  *
- * Layout:
- * - Title at full width
- * - Budget stacked above category
- * - Dynamic template fields stacked below
+ * Layout: one flat stack of labeled fields at the form's field gap — title,
+ * budget, category, then the dynamic template fields in schema order.
  */
 export function ProposalFormRenderer({
   fields,
@@ -478,7 +509,6 @@ export function ProposalFormRenderer({
 }: ProposalFormRendererProps) {
   const t = useTranslations();
   const gisMapsEnabled = useFeatureFlag('gis_maps');
-  const formGapClass = mode === 'preview-template' ? 'gap-4' : 'gap-8';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
@@ -502,15 +532,14 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div className={cn('flex flex-col', formGapClass)}>
+    <div className="flex flex-col gap-8">
       {titleField && render(titleField)}
 
-      {(categoryField || budgetField) && (
-        <div className="flex flex-col items-start gap-2">
-          {budgetField && render(budgetField)}
-          {categoryField && render(categoryField)}
-        </div>
-      )}
+      {/* One flat stack at the form's field gap — every field is now a labeled
+          control of the same weight, so budget/category no longer sit in a
+          tighter sub-cluster. */}
+      {budgetField && render(budgetField)}
+      {categoryField && render(categoryField)}
 
       {dynamicFields.map((field) => (
         <div key={field.key}>{render(field)}</div>

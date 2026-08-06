@@ -246,9 +246,12 @@ function ComboboxChip({
   className,
   children,
   showRemove = true,
+  removeLabel = 'Remove',
   ...props
 }: ComboboxPrimitive.Chip.Props & {
   showRemove?: boolean;
+  /** Accessible name for the remove button. Pass a translated string from the app. */
+  removeLabel?: string;
 }) {
   return (
     <ComboboxPrimitive.Chip
@@ -269,6 +272,7 @@ function ComboboxChip({
           data-slot="combobox-chip-remove"
         >
           <LuX className="pointer-events-none" />
+          <span className="sr-only">{removeLabel}</span>
         </ComboboxPrimitive.ChipRemove>
       )}
     </ComboboxPrimitive.Chip>

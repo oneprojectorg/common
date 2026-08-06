@@ -1,12 +1,17 @@
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 
 /**
  * Skeleton for decision page headers.
  * Matches the DecisionHeader + stepper layout.
+ *
+ * Purely decorative — a wall of pulsing bars carries nothing for a screen
+ * reader — so the tree is hidden from assistive tech. Announcing the load is a
+ * separate, app-wide concern (see the skeleton a11y sweep task); no skeleton in
+ * the app does it today.
  */
 export const DecisionHeaderSkeleton = () => {
   return (
-    <div className="bg-neutral-offWhite pb-40">
+    <div aria-hidden="true" className="bg-muted pb-40">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-3">
         <Skeleton className="h-6 w-36" />
@@ -48,7 +53,7 @@ export const DecisionContentSkeleton = () => {
   // here would flash the wrong count on hard refresh. The page's own Suspense
   // fallback (ProposalListSkeleton) draws the one, correctly-measured grid.
   return (
-    <div className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+    <div className="grid w-full grid-cols-1 justify-center border-b bg-muted md:grid-cols-12">
       <div className="mx-auto flex w-full flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex w-full flex-col items-center gap-3">
           <Skeleton className="h-8 w-3/4 md:h-14" />
@@ -69,10 +74,12 @@ export const DecisionContentSkeleton = () => {
  * DecisionInstanceHeader's fixed-height sticky bar so the real header swaps in
  * without shifting the layout: same sticky/border/height classes, with chips
  * where the back link, view toggle, and user controls land.
+ *
+ * Hidden from assistive tech — a wall of pulsing bars carries nothing.
  */
 export const DecisionHeaderBarSkeleton = () => {
   return (
-    <header className="sticky top-0 z-30 border-b bg-white">
+    <header aria-hidden="true" className="sticky top-0 z-30 border-b bg-white">
       <div className="grid h-12 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:h-14 md:px-6">
         <div className="flex items-center gap-3">
           <Skeleton className="size-6 rounded md:size-4" />
@@ -101,7 +108,7 @@ export const DecisionPageSkeleton = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <DecisionHeaderSkeleton />
-      <div className="-mt-36 bg-neutral-offWhite">
+      <div className="-mt-36 bg-muted">
         <DecisionContentSkeleton />
       </div>
     </div>

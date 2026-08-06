@@ -2,8 +2,8 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

@@ -36,7 +36,10 @@ function Pane(_props: SplitPanePaneProps): null {
 // Each pane mounts once — visibility on mobile is toggled via CSS so stateful
 // children (collaborative editors, forms) don't get double-mounted.
 const paneVariants = cva(
-  'flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]',
+  // Chrome makes a keyboard-focusable scroller out of any scroll container, and
+  // paints its own blue ring on focus. A pane sits flush to the viewport edge, so
+  // an outer ring would clip — hence the inset ring, in the standard sense colour.
+  'flex min-w-0 flex-1 flex-col overflow-y-auto outline-none [scrollbar-gutter:stable] focus-visible:inset-ring-3 focus-visible:inset-ring-ring/50',
   {
     variants: {
       padding: {

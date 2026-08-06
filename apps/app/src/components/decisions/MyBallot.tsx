@@ -80,9 +80,7 @@ const MyBallotProposals = ({
 
   return (
     <div className="flex flex-col gap-4 pb-12">
-      <Header3 className="font-serif !text-title-base">
-        {t('My Ballot')}
-      </Header3>
+      <Header3>{t('My Ballot')}</Header3>
 
       <ProposalMasonry>
         {proposalsData.proposals.map((proposal) => {

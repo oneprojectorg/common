@@ -157,7 +157,7 @@ test.describe('Create Process Instance', () => {
       authenticatedPage.getByText('Proposal Categories').first(),
     ).toBeVisible({ timeout: 12_000 });
 
-    // 9. Create one category
+    // 8. Create one category
     await authenticatedPage
       .getByRole('button', { name: 'Create first category' })
       .click();
@@ -182,7 +182,7 @@ test.describe('Create Process Instance', () => {
 
     // ── Step 2: Proposal Template ───────────────────────────────────────
 
-    // 10. Navigate to the Proposal Template step
+    // 9. Navigate to the Proposal Template step
     const templateButton = sidebarNav.getByRole('button', {
       name: 'Proposal Template',
     });
@@ -204,9 +204,9 @@ test.describe('Create Process Instance', () => {
     await addFieldButton.click();
     await templateFieldSaved;
 
-    // 11. Expand the Funding amount card — budget is enabled by default in the
-    //     template. Match "Funding amount Optional/Required" (the card header
-    //     button), not the "Add budget" button in the preview panel.
+    // 10. Expand the Funding amount card — budget is enabled by default in the
+    //     template. Match "Funding amount Optional/Required", the card header
+    //     button.
     await authenticatedPage
       .getByRole('button', { name: /^Funding amount (Optional|Required)$/ })
       .click();
@@ -224,24 +224,9 @@ test.describe('Create Process Instance', () => {
       timeout: 6_000,
     });
 
-    // 12. Open the Participant Preview modal (toolbar "Preview" button) and
-    //     verify it renders the budget field's "Add budget" entry.
-    await authenticatedPage.getByRole('button', { name: 'Preview' }).click();
-    const previewDialog = authenticatedPage.getByRole('dialog', {
-      name: 'Participant Preview',
-    });
-    await expect(previewDialog).toBeVisible({ timeout: 6_000 });
-    await expect(
-      previewDialog.getByRole('button', { name: 'Add budget' }),
-    ).toBeVisible({ timeout: 6_000 });
-
-    // Close the modal so it doesn't overlay the launch-ready check.
-    await authenticatedPage.keyboard.press('Escape');
-    await expect(previewDialog).not.toBeVisible({ timeout: 6_000 });
-
     // ── Final: Verify Launch Process button is enabled ──────────────────
 
-    // 13. Verify the Launch Process button is enabled (not disabled)
+    // 11. Verify the Launch Process button is enabled (not disabled)
     const launchButton = authenticatedPage.getByRole('button', {
       name: 'Launch Process',
     });

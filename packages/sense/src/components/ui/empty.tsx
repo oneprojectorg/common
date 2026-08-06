@@ -1,3 +1,5 @@
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../../lib/utils';
@@ -55,14 +57,26 @@ function EmptyMedia({
   );
 }
 
-function EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="empty-title"
-      className={cn('font-serif text-title font-normal', className)}
-      {...props}
-    />
-  );
+/**
+ * A `div` by default. Pass `render={<h3 />}` where the empty state stands in for
+ * a titled section, so it keeps that section's heading.
+ */
+function EmptyTitle({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'div'>) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: mergeProps<'div'>(
+      {
+        className: cn('font-serif text-title font-normal', className),
+      },
+      props,
+    ),
+    state: { slot: 'empty-title' },
+  });
 }
 
 function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {

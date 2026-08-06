@@ -1,8 +1,13 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { FooterBar } from '@op/ui/FooterBar';
-import { LuCheck } from 'react-icons/lu';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
+import { Toggle } from '@op/sense/Toggle';
+import { LuCheck, LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,27 +43,27 @@ export function ReviewSummaryAdvanceFooter({
 
   return (
     <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-      <FooterBar.Start>
-        <span className="text-base text-neutral-black">
+      <FooterBarStart>
+        <span className="flex items-center gap-2 text-base text-foreground">
+          <LuCircleCheck className="size-4 text-muted-foreground" aria-hidden />
           {t('{count} proposals advancing', { count })}
         </span>
-      </FooterBar.Start>
-      <FooterBar.Center />
-      <FooterBar.End>
-        <Button
-          size="small"
-          color="secondary"
-          onPress={toggle}
-          className={
-            isAdvancing
-              ? 'border-primary-teal bg-primary-tealWhite text-primary-tealBlack hover:bg-primary-tealWhite'
-              : undefined
-          }
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
+        {/* Same control as the selection table's `AdvanceToggleButton` — a
+            pressed Toggle, so the selected look comes from the shared
+            `aria-pressed` styling instead of hand-rolled classes. */}
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={isAdvancing}
+          onPressedChange={toggle}
         >
           {isAdvancing ? <LuCheck className="size-4" /> : null}
           {isAdvancing ? t('Advancing proposal') : t('Advance proposal')}
-        </Button>
-      </FooterBar.End>
+        </Toggle>
+      </FooterBarEnd>
     </FooterBar>
   );
 }

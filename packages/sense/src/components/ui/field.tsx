@@ -1,5 +1,7 @@
 'use client';
 
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { useMemo } from 'react';
 
@@ -98,34 +100,75 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+const fieldLabelVariants = cva(
+  'group/field-label peer/field-label flex gap-2 group-data-[disabled=true]/field:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: [
+          'w-fit has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10',
+          'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
+        ],
+        // Figma `RadioButton`/`Checkbox` → `Type=Box` (identical in both sets).
+        // Invalid only tints once selected; unselected keeps the neutral border.
+        box: [
+          'w-full cursor-pointer rounded-lg border border-input p-3 transition-colors *:data-[slot=field]:p-0',
+          'has-data-checked:border-primary has-data-checked:bg-accent has-data-checked:text-accent-foreground',
+          'has-aria-invalid:text-destructive has-aria-invalid:has-data-checked:border-destructive has-aria-invalid:has-data-checked:bg-destructive-muted',
+          'has-data-disabled:cursor-not-allowed',
+        ],
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
+  },
+);
+
 function FieldLabel({
   className,
+  variant = 'default',
   ...props
-}: React.ComponentProps<typeof Label>) {
+}: React.ComponentProps<typeof Label> &
+  VariantProps<typeof fieldLabelVariants>) {
   return (
     <Label
       data-slot="field-label"
-      className={cn(
-        'group/field-label peer/field-label flex w-fit gap-2 group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10',
-        'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
-        className,
-      )}
+      data-variant={variant}
+      className={cn(fieldLabelVariants({ variant }), className)}
       {...props}
     />
   );
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="field-label"
-      className={cn(
-        'flex w-fit items-center gap-2 text-base font-strong group-data-[disabled=true]/field:opacity-50',
-        className,
-      )}
-      {...props}
-    />
-  );
+/**
+ * The bold line at the top of a field. A `div` by default; pass
+ * `render={<h4 />}` where the field is really a titled section a screen-reader
+ * user should be able to navigate to by heading (a rubric criterion, say).
+ */
+function FieldTitle({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'div'>) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: mergeProps<'div'>(
+      {
+        className: cn(
+          // In a box, trim the half-leading ((24 - 16) / 2) off both edges so the
+          // 12px inset measures to the cap height. Both edges, or a single-line
+          // box stops centring against its control. (`text-box: trim-both`
+          // once it's Baseline.)
+          'flex w-fit items-center gap-1 text-base font-strong group-data-[disabled=true]/field:opacity-50 group-data-[variant=box]/field-label:-my-1',
+          className,
+        ),
+      },
+      props,
+    ),
+    state: { slot: 'field-label' },
+  });
 }
 
 function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
@@ -133,7 +176,9 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
     <p
       data-slot="field-description"
       className={cn(
-        'text-left text-sm font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5',
+        // `text-start`, not `text-left`: it's here to defeat an inherited
+        // `text-center`, and the physical value broke RTL.
+        'text-start text-sm font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5',
         'last:mt-0 nth-last-2:-mt-1',
         '[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary',
         className,
@@ -199,7 +244,7 @@ function FieldError({
     }
 
     return (
-      <ul className="ml-4 flex list-disc flex-col gap-1">
+      <ul className="ms-4 flex list-disc flex-col gap-1">
         {uniqueErrors.map(
           (error, index) =>
             error?.message && <li key={index}>{error.message}</li>,

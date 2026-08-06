@@ -1,7 +1,13 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { FooterBar } from '@op/ui/FooterBar';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
+import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,18 +37,19 @@ export const StandardSelectionFooter = ({
 
   return (
     <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-      <FooterBar.Start>
-        <span className="text-base text-neutral-black">
-          {t('{count} proposals advancing', { count: numSelected })}
+      <FooterBarStart>
+        <span className="flex items-center gap-2 text-base text-foreground">
+          <LuCircleCheck className="size-5 shrink-0" aria-hidden />
+          {t('{count} proposals selected', { count: numSelected })}
         </span>
-      </FooterBar.Start>
-      <FooterBar.Center />
-      <FooterBar.End>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
         <SelectionConfirmShell
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           triggerDisabled={numSelected === 0}
-          triggerLabel={t('Confirm decisions')}
+          triggerLabel={t('Confirm selections')}
           headerLabel={t('Confirm advancing proposals')}
           confirmLabel={t('Publish')}
           isSubmitting={isSubmitting}
@@ -67,7 +74,7 @@ export const StandardSelectionFooter = ({
             </div>
           </div>
         </SelectionConfirmShell>
-      </FooterBar.End>
+      </FooterBarEnd>
     </FooterBar>
   );
 };

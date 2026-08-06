@@ -194,7 +194,7 @@ function ResultsPageContent({
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4">
           <DecisionResultsTabs showBallotTab={showBallotTab}>
-            <DecisionResultsTabPanel id="funded">
+            <DecisionResultsTabPanel value="funded">
               <APIErrorBoundary
                 fallbacks={{
                   404: () => (
@@ -224,7 +224,7 @@ function ResultsPageContent({
               </APIErrorBoundary>
             </DecisionResultsTabPanel>
 
-            <DecisionResultsTabPanel id="all-proposals">
+            <DecisionResultsTabPanel value="all-proposals">
               <Suspense fallback={<ProposalListSkeleton />}>
                 <ProposalsList
                   slug={profileSlug}
@@ -238,7 +238,7 @@ function ResultsPageContent({
             </DecisionResultsTabPanel>
 
             {showBallotTab ? (
-              <DecisionResultsTabPanel id="ballot">
+              <DecisionResultsTabPanel value="ballot">
                 <APIErrorBoundary
                   fallbacks={{
                     default: () => <NoVoteFound />,

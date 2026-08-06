@@ -128,7 +128,10 @@ export function CategoryReviewerCard({
   const isEmpty = count === 0;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div
+      className="flex w-full flex-col gap-2"
+      data-testid={`category-reviewer-card-${category.name}`}
+    >
       <div className="flex items-end justify-between gap-2">
         <span className="font-serif text-title-sm14 text-neutral-black">
           {category.name}

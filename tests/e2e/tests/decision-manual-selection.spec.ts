@@ -231,7 +231,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     });
 
     const confirmButton = authenticatedPage.getByRole('button', {
-      name: 'Confirm decisions',
+      name: 'Confirm selections',
     });
     await expect(confirmButton).toBeVisible({ timeout: 15_000 });
     await expect(confirmButton).toBeDisabled();
@@ -248,7 +248,7 @@ test.describe('Decision Manual Selection — full flow', () => {
       .click();
 
     await expect(
-      authenticatedPage.getByText('2 proposals advancing'),
+      authenticatedPage.getByText('2 proposals selected'),
     ).toBeVisible();
     await expect(confirmButton).toBeEnabled();
 
@@ -285,7 +285,7 @@ test.describe('Decision Manual Selection — full flow', () => {
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Confirm decisions' }),
+      authenticatedPage.getByRole('button', { name: 'Confirm selections' }),
     ).not.toBeVisible();
   });
 
@@ -507,7 +507,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     });
 
     await expect(
-      memberPage.getByRole('button', { name: 'Confirm decisions' }),
+      memberPage.getByRole('button', { name: 'Confirm selections' }),
     ).not.toBeVisible();
   });
 });

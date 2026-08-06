@@ -4,7 +4,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense, cache } from 'react';
@@ -22,7 +22,7 @@ const fetchLegacyInstance = cache(async (instanceId: string) => {
 
 function DecisionHeaderSkeleton() {
   return (
-    <div className="border-b bg-neutral-offWhite">
+    <div aria-hidden="true" className="border-b bg-muted">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
@@ -83,10 +83,12 @@ const DecisionInstancePageContent = async ({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ResourceErrorBoundary>
         <Suspense fallback={<DecisionHeaderSkeleton />}>
-          <div className="bg-neutral-offWhite text-gray-700">
+          <div className="bg-muted text-gray-700">
             <DecisionTranslationProvider>
               <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
-              <Suspense fallback={<Skeleton className="h-96" />}>
+              <Suspense
+                fallback={<Skeleton className="h-96" aria-hidden="true" />}
+              >
                 <DecisionStateRouter
                   instanceId={instanceId}
                   slug={slug}

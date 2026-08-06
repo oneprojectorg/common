@@ -4,8 +4,8 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { usePostHog } from 'posthog-js/react';
 import { type ReactNode, Suspense, useState } from 'react';
 
@@ -27,7 +27,7 @@ export interface PreviousReviewPhase {
 /**
  * Tab shell for the "Review Proposal" panel:
  *
- * - "My review" — the reviewer's own form. Force-mounted so the form
+ * - "My review" — the reviewer's own form. Kept mounted so the form
  *   (autosave, submit, and revision flows) keeps its state while the reviewer
  *   browses the other tabs.
  * - "Other reviews" — the current phase's submitted reviews with the viewer's
@@ -53,13 +53,20 @@ export function ReviewTabs({
 
   return (
     <Tabs
-      defaultSelectedKey={MY_REVIEW_TAB}
-      onSelectionChange={(key) => {
+      className="gap-4"
+      defaultValue={MY_REVIEW_TAB}
+      onValueChange={(value: string, eventDetails) => {
+        // Only user-initiated switches are "opening a tab" — base-ui also
+        // reports automatic selection/fallback changes (initial, disabled,
+        // missing), which the previous react-aria shell never emitted.
+        if (eventDetails.reason !== 'none') {
+          return;
+        }
         // One event covers every tab, split by `tab`: the reviewer's own form,
         // the current phase's "Other reviews", and the previous-phase
         // "Reviews from {phase}" tabs.
         const isPreviousPhase =
-          key !== MY_REVIEW_TAB && key !== OTHER_REVIEWS_TAB;
+          value !== MY_REVIEW_TAB && value !== OTHER_REVIEWS_TAB;
         posthog.capture(
           'review_tab_opened',
           getDecisionCommonProperties({
@@ -67,44 +74,55 @@ export function ReviewTabs({
             proposalId: assignment.proposal.id,
             additionalProps: {
               tab:
-                key === MY_REVIEW_TAB
+                value === MY_REVIEW_TAB
                   ? 'my_review'
-                  : key === OTHER_REVIEWS_TAB
+                  : value === OTHER_REVIEWS_TAB
                     ? 'other_reviews'
                     : 'previous_phase',
               phase_id: isPreviousPhase
-                ? String(key).slice(PHASE_TAB_PREFIX.length)
+                ? value.slice(PHASE_TAB_PREFIX.length)
                 : assignment.phaseId,
             },
           }),
         );
       }}
     >
-      <TabList aria-label={t('Review Proposal')}>
-        <Tab id={MY_REVIEW_TAB}>{t('My review')}</Tab>
-        {showOtherReviews ? (
-          <Tab id={OTHER_REVIEWS_TAB}>{t('Other reviews')}</Tab>
-        ) : null}
-        {previousPhases.map((phase) => (
-          <Tab key={phase.id} id={`${PHASE_TAB_PREFIX}${phase.id}`}>
-            {t('Reviews from {phase}', { phase: phase.name })}
-          </Tab>
-        ))}
-      </TabList>
+      {/* sense `TabsList` is `w-fit`, so the underline track comes from a
+          full-width wrapper (same pattern as the review queue's tabs). */}
+      <div className="w-full border-b">
+        <TabsList
+          variant="line"
+          aria-label={t('Review Proposal')}
+          className="flex gap-4 overflow-x-auto"
+        >
+          <TabsTrigger value={MY_REVIEW_TAB}>{t('My review')}</TabsTrigger>
+          {showOtherReviews ? (
+            <TabsTrigger value={OTHER_REVIEWS_TAB}>
+              {t('Other reviews')}
+            </TabsTrigger>
+          ) : null}
+          {previousPhases.map((phase) => (
+            <TabsTrigger
+              key={phase.id}
+              value={`${PHASE_TAB_PREFIX}${phase.id}`}
+            >
+              {t('Reviews from {phase}', { phase: phase.name })}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
 
-      {/* Force-mounted panels only get an `inert` attribute from React Aria
-          when unselected — no visual hiding — so hide it explicitly or the
-          form stays stacked above the selected tab's content. */}
-      <TabPanel
-        id={MY_REVIEW_TAB}
-        className="data-[inert]:hidden sm:p-0"
-        shouldForceMount
-      >
+      {/* `keepMounted` keeps the reviewer's own form alive across tab switches
+          so in-flight answers and pending autosaves survive (base-ui's
+          equivalent of react-aria's `shouldForceMount`). While hidden the
+          panel carries both `hidden` (so it doesn't stack over the selected
+          panel) and `inert` (so it can't take focus). */}
+      <TabsContent value={MY_REVIEW_TAB} keepMounted>
         {myReview}
-      </TabPanel>
+      </TabsContent>
 
       {showOtherReviews ? (
-        <ReviewsTabPanel id={OTHER_REVIEWS_TAB}>
+        <ReviewsTabPanel value={OTHER_REVIEWS_TAB}>
           <PhaseReviews
             phaseId={assignment.phaseId}
             excludeOwnReview
@@ -114,7 +132,10 @@ export function ReviewTabs({
       ) : null}
 
       {previousPhases.map((phase) => (
-        <ReviewsTabPanel key={phase.id} id={`${PHASE_TAB_PREFIX}${phase.id}`}>
+        <ReviewsTabPanel
+          key={phase.id}
+          value={`${PHASE_TAB_PREFIX}${phase.id}`}
+        >
           <PhaseReviews
             phaseId={phase.id}
             emptyMessage={t('No reviews were submitted in this phase')}
@@ -127,16 +148,16 @@ export function ReviewTabs({
 
 /** Lazily mounted reviews panel with its own error boundary + suspense fallback. */
 function ReviewsTabPanel({
-  id,
+  value,
   children,
 }: {
-  id: string;
+  value: string;
   children: ReactNode;
 }) {
   const t = useTranslations();
 
   return (
-    <TabPanel id={id} className="sm:p-0">
+    <TabsContent value={value}>
       <APIErrorBoundary
         fallbacks={{
           default: () => (
@@ -148,7 +169,7 @@ function ReviewsTabPanel({
       >
         <Suspense fallback={<PhaseReviewsSkeleton />}>{children}</Suspense>
       </APIErrorBoundary>
-    </TabPanel>
+    </TabsContent>
   );
 }
 

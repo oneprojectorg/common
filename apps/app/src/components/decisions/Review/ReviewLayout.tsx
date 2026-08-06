@@ -6,7 +6,7 @@ import {
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import { getPhaseReviewSettings, getPreviousPhases } from '@op/common/client';
-import { SplitPane } from '@op/ui/SplitPane';
+import { SplitPane } from '@op/sense/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
 import { TranslatedText } from '@/components/TranslatedText';

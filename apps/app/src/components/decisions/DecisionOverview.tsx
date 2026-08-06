@@ -223,7 +223,13 @@ function DecisionOverviewContent({
             </Header3>
             <DecisionPhaseTimeline
               phases={phases}
-              currentPhaseId={isActive ? currentPhaseId : ''}
+              // Always the real current phase — the advance flow derives the
+              // next phase from it. `hasStarted` decides presentation: before the
+              // first phase begins nothing reads as current, but an admin can
+              // still advance. (Blanking the id here instead made `currentIndex`
+              // -1, so nothing was advanceable at all.)
+              currentPhaseId={currentPhaseId}
+              hasStarted={isActive}
               instanceId={instanceId}
               isAdmin={instance.access?.admin}
               decisionSlug={decisionSlug}

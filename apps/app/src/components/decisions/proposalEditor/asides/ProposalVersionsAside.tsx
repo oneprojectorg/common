@@ -2,8 +2,14 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@op/sense/Collapsible';
+import { ItemGroup } from '@op/sense/Item';
+import { cn } from '@op/sense/lib/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import {
@@ -24,9 +30,15 @@ import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
+  /**
+   * Controlled open state. Stays mounted while closed so the sheet can animate
+   * out; versions come from the connected collab provider, not a request.
+   */
+  open: boolean;
   versionId: number | null;
   onSelectVersion: (versionId: number | null) => void;
-  onRestoreVersion: (versionId: number) => void;
+  /** Resolves once the restore has settled, so the row can show progress. */
+  onRestoreVersion: (versionId: number) => Promise<void>;
   onClose: () => void;
 }
 
@@ -37,6 +49,7 @@ interface ProposalVersionsAsideProps {
  * restore actions to the parent via `onRestoreVersion`.
  */
 export function ProposalVersionsAside({
+  open,
   versionId,
   onSelectVersion,
   onRestoreVersion,
@@ -75,28 +88,35 @@ export function ProposalVersionsAside({
       return;
     }
 
-    startTransition(() => {
-      onRestoreVersion(versionId);
+    // The callback must be async and awaited: a synchronous one ends the
+    // transition before the mutation resolves, so `isPending` stays false and
+    // every guard built on it — the modal's loading state, its
+    // `disablePointerDismissal`, the disabled rows — never engages.
+    startTransition(async () => {
+      try {
+        await onRestoreVersion(versionId);
+      } finally {
+        setIsRestoreModalOpen(false);
+      }
     });
-    setIsRestoreModalOpen(false);
   }
 
   return (
     <>
       <ProposalEditorAside
+        open={open}
         title={t('Version history')}
         onClose={onClose}
-        bodyClassName="px-4 pt-4"
       >
-        <VersionItem
-          label={t('Current version')}
-          sublabel={t('Latest')}
-          isSelected={versionId === null}
-          isPending={isPending}
-          onSelect={() => onSelectVersion(null)}
-        />
+        <ItemGroup className="gap-2">
+          <VersionItem
+            label={t('Current version')}
+            sublabel={t('Latest')}
+            isSelected={versionId === null}
+            isPending={isPending}
+            onSelect={() => onSelectVersion(null)}
+          />
 
-        <>
           {versions.map((version) => (
             <SavedVersionItem
               key={version.version}
@@ -108,7 +128,7 @@ export function ProposalVersionsAside({
               onSelect={() => onSelectVersion(version.version)}
             />
           ))}
-        </>
+        </ItemGroup>
       </ProposalEditorAside>
 
       {selectedVersion && (
@@ -124,6 +144,14 @@ export function ProposalVersionsAside({
   );
 }
 
+/**
+ * One row of the history list (Figma 17955:8511), 76px collapsed / 120px with
+ * the restore action revealed.
+ *
+ * Selection drives `open`, so a click always selects — a self-toggling row
+ * would collapse while still being previewed. The trigger is the button, not
+ * the row: a `<button>` inside a `<button>` swallows the inner one's clicks.
+ */
 function VersionItem({
   label,
   sublabel,
@@ -141,28 +169,69 @@ function VersionItem({
 }) {
   const t = useTranslations();
 
-  return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-tealWhite',
-        isSelected && 'bg-primary-tealWhite',
-      )}
-    >
-      <Button
-        unstyled
-        onPress={onSelect}
-        isDisabled={isPending}
-        className="flex w-full flex-col items-start text-start shadow-none outline-hidden focus-visible:outline-none"
-      >
-        <p className="text-base text-neutral-black">{label}</p>
-        <p className="text-sm text-neutral-charcoal">{sublabel}</p>
-      </Button>
-      {isSelected && onRestore && (
-        <Button size="small" onPress={onRestore} isDisabled={isPending}>
-          {t('Restore this version')}
+  const rowClassName = cn(
+    'w-full rounded-lg transition-colors',
+    isSelected ? 'bg-accent' : 'hover:bg-muted',
+  );
+  const triggerClassName = cn(
+    'flex w-full flex-col items-start gap-0.5 rounded-lg px-4 pt-4 text-start',
+    // 16px collapsed, 12px expanded — Figma's 76 / 120.
+    isSelected ? 'pb-3' : 'pb-4',
+  );
+  // `bare` + `none`: own look, but keep the focus ring and disabled handling a
+  // raw `<button>` would drop.
+  const rowButton = (
+    <Button
+      variant="bare"
+      onClick={onSelect}
+      disabled={isPending}
+      aria-current={isSelected ? 'true' : undefined}
+    />
+  );
+  const rowContent = (
+    <>
+      <span className="text-base font-strong text-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{sublabel}</span>
+    </>
+  );
+
+  // No restore action means no panel, so no Collapsible: a trigger without one
+  // still advertises `aria-expanded` and points `aria-controls` at an id that
+  // never renders. That row ("Current version") is a plain button.
+  if (!onRestore) {
+    return (
+      <div role="listitem" className={rowClassName}>
+        <Button
+          variant="bare"
+          onClick={onSelect}
+          disabled={isPending}
+          aria-current={isSelected ? 'true' : undefined}
+          className={triggerClassName}
+        >
+          {rowContent}
         </Button>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <Collapsible
+      open={isSelected}
+      render={<div role="listitem" />}
+      className={rowClassName}
+    >
+      <CollapsibleTrigger render={rowButton} className={triggerClassName}>
+        {rowContent}
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+        <div className="px-4 pb-4">
+          <Button size="sm" onClick={onRestore} disabled={isPending}>
+            {t('Restore this version')}
+          </Button>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -193,7 +262,7 @@ function SavedVersionItem({
   return (
     <VersionItem
       label={label}
-      sublabel={t('Auto-saved')}
+      sublabel={t('Auto saved')}
       isSelected={isSelected}
       isPending={isPending}
       onRestore={onRestore}

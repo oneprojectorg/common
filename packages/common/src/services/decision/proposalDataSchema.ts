@@ -3,6 +3,20 @@ import { z } from 'zod';
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
 import type { XFormatPropertySchema } from './types';
 
+/**
+ * Cap on a proposal title, in characters.
+ *
+ * The hard ceiling is the database: a proposal's title is its profile's name,
+ * and `profiles.name` is `varchar(256)` — past that the insert throws. 200
+ * keeps a margin under it and is a sane length for something rendered in
+ * cards, list rows, and OG images. A template may ask for less; it may not ask
+ * for more.
+ *
+ * (`extractProposalConfig` also names 200, but nothing reads the config it
+ * builds, so that value enforces nothing.)
+ */
+export const PROPOSAL_TITLE_MAX_LENGTH = 200;
+
 const categoryValueSchema = z
   .union([z.string(), z.array(z.string()), z.null()])
   .nullish()

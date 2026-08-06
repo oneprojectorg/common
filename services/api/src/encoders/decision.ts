@@ -1,4 +1,5 @@
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
@@ -583,7 +584,11 @@ export const updateProposalInputSchema = createProposalInputSchema
   .omit({ processInstanceId: true })
   .partial()
   .extend({
-    title: z.string().optional(),
+    // The title becomes the proposal profile's name, and `profiles.name` is
+    // varchar(256) — past it the insert throws a raw Postgres error on every
+    // autosave. The editor caps typing, but a remote collaborator, a version
+    // restore, or a direct call to this endpoint doesn't go through it.
+    title: z.string().max(PROPOSAL_TITLE_MAX_LENGTH).optional(),
     visibility: z.enum(Visibility).optional(),
     /**
      * Evaluation status for the proposal. This update endpoint handles evaluation

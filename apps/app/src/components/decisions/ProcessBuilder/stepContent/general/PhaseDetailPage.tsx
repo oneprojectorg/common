@@ -28,6 +28,7 @@ import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -572,11 +573,13 @@ function VoteLimitSelect({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {options.map((key) => (
-          <SelectItem key={key} value={key}>
-            {labelFor(key)}
-          </SelectItem>
-        ))}
+        <SelectGroup>
+          {options.map((key) => (
+            <SelectItem key={key} value={key}>
+              {labelFor(key)}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   );

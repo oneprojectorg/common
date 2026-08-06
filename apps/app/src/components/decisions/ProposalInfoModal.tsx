@@ -1,9 +1,18 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+// viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
+// re-exports a hook (useEffect) and importing it from a server-rendered tree
+// breaks the RSC build.
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import he from 'he';
-import { DialogTrigger } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -26,36 +35,30 @@ export function ProposalInfoModal({
   const translatedContent = !!content.match('INFOTRANSLATION');
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal
-        isDismissable
-        isOpen={isOpen}
-        onOpenChange={(open) => !open && onClose()}
-      >
-        <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col">
-          <ModalHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
             <bdi>{title}</bdi>
-          </ModalHeader>
+          </DialogTitle>
+        </DialogHeader>
 
-          <ModalBody className="flex-1 overflow-y-auto">
-            <div
-              dir="auto"
-              className="prose max-w-none prose-gray"
-              dangerouslySetInnerHTML={{
-                __html: translatedContent
-                  ? he.decode(t('INFOTRANSLATION'))
-                  : content,
-              }}
-            />
-          </ModalBody>
-
-          <div className="flex justify-end border-t bg-white px-6 py-4">
-            <Button variant="primary" onPress={onClose}>
-              OK
-            </Button>
-          </div>
+        <div className="min-h-0 overflow-y-auto px-6 py-4">
+          <div
+            dir="auto"
+            className={viewerProseStyles}
+            dangerouslySetInnerHTML={{
+              __html: translatedContent
+                ? he.decode(t('INFOTRANSLATION'))
+                : content,
+            }}
+          />
         </div>
-      </Modal>
-    </DialogTrigger>
+
+        <DialogFooter>
+          <Button onClick={onClose}>{t('OK')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

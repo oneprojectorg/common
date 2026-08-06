@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProposalReviewRequest } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
+import { Header3, Header4 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -20,12 +20,10 @@ export function ProposalRevisionSubmittedPanel({
 
   return (
     <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
-      <div className="flex flex-col gap-4 border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif text-title-base">
-          {t('Revision submitted')}
-        </Header3>
+      <div className="flex flex-col gap-4 border-b border-border pb-4">
+        <Header3>{t('Revision submitted')}</Header3>
 
-        <p className="text-neutral-black">
+        <p className="text-base text-foreground">
           {t(
             'Your revision has been submitted and reviewers have been notified.',
           )}
@@ -33,9 +31,7 @@ export function ProposalRevisionSubmittedPanel({
       </div>
 
       <div className="flex flex-col gap-4">
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
-          {t('Reviewer feedback')}
-        </span>
+        <Header4>{t('Reviewer feedback')}</Header4>
 
         <RevisionFeedbackCard
           comment={requestComment}
@@ -46,9 +42,7 @@ export function ProposalRevisionSubmittedPanel({
 
       {responseComment && (
         <div className="flex flex-col gap-4">
-          <span className="font-serif text-title-sm14 text-neutral-charcoal">
-            {t('Your revision note')}
-          </span>
+          <Header4>{t('Your revision note')}</Header4>
 
           <RevisionFeedbackCard
             comment={responseComment}

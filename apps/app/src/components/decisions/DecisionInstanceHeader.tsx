@@ -11,7 +11,6 @@ import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-import { Link } from '@/lib/i18n/routing';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
@@ -71,15 +70,16 @@ export const DecisionInstanceHeader = ({
       <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           {canInteract && (
-            <Link
+            <ButtonLink
               href={backTo.href}
-              className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+              variant="link"
+              className="max-md:size-11"
             >
-              <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
+              <LuArrowLeft className="size-4 rtl:-scale-x-100" />
               <span className="hidden md:flex">
                 {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
               </span>
-            </Link>
+            </ButtonLink>
           )}
           {centerSlot ? (
             <>
@@ -119,8 +119,7 @@ export const DecisionInstanceHeader = ({
               href={`/decisions/${decisionSlug}/edit`}
               variant="outline"
               aria-label={t('Settings')}
-              className="sm:w-auto sm:gap-2 sm:px-4"
-              size="icon"
+              className="max-sm:size-11"
             >
               <LuSettings className="size-4" />
               <span className="hidden sm:inline-block">{t('Settings')}</span>

@@ -12,9 +12,9 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { Header2 } from '@op/sense/Header';
+import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
-import { SplitPane } from '@op/ui/SplitPane';
-import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import {
   type ReactNode,
@@ -27,7 +27,6 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { RichTextEditorToolbar } from '../../RichTextEditor';
 import {
   CollaborativeDocProvider,
   CollaborativePresence,
@@ -52,50 +51,12 @@ import { useProposalValidation } from './useProposalValidation';
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
 
-/**
- * Tracks which TipTap editor currently has focus.
- *
- * Handles the blur/focus race condition: when clicking from editor A to
- * editor B, `blur` fires before `focus`. We defer the blur-to-null via
- * `requestAnimationFrame` and cancel it when a focus fires first.
- */
-function useFocusedEditor() {
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const pendingBlur = useRef<number | null>(null);
-
-  const onEditorFocus = useCallback((e: Editor) => {
-    if (pendingBlur.current !== null) {
-      cancelAnimationFrame(pendingBlur.current);
-      pendingBlur.current = null;
-    }
-    setEditor(e);
-  }, []);
-
-  const onEditorBlur = useCallback((e: Editor) => {
-    pendingBlur.current = requestAnimationFrame(() => {
-      pendingBlur.current = null;
-      setEditor((cur) => (cur === e ? null : cur));
-    });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (pendingBlur.current !== null) {
-        cancelAnimationFrame(pendingBlur.current);
-      }
-    };
-  }, []);
-
-  return { editor, onEditorFocus, onEditorBlur };
-}
-
 export function ProposalEditor({
   instance,
   backHref,
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  showHeaderActions = true,
   revisionRequest = null,
 }: {
   instance: ProcessInstance;
@@ -103,7 +64,6 @@ export function ProposalEditor({
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  showHeaderActions?: boolean;
   revisionRequest?: ProposalReviewRequest | null;
 }) {
   const { user } = useRequiredUser();
@@ -144,7 +104,6 @@ export function ProposalEditor({
       proposal={proposal}
       isEditMode={isEditMode}
       asideHeaderIcons={asideHeaderIcons}
-      showHeaderActions={showHeaderActions}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       revisionRequest={revisionRequest}
@@ -176,7 +135,6 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
-  showHeaderActions,
   collaborationDocId,
   proposalTemplate,
   revisionRequest,
@@ -186,7 +144,6 @@ function ProposalEditorInner({
   proposal: Proposal;
   isEditMode: boolean;
   asideHeaderIcons?: ReactNode;
-  showHeaderActions: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   revisionRequest: ProposalReviewRequest | null;
@@ -469,12 +426,6 @@ function ProposalEditorInner({
 
   // -- Render ----------------------------------------------------------------
 
-  const {
-    editor: focusedEditor,
-    onEditorFocus,
-    onEditorBlur,
-  } = useFocusedEditor();
-
   const editorBody = (
     <>
       <ProposalFormRenderer
@@ -482,13 +433,11 @@ function ProposalEditorInner({
         draft={draft}
         decisionProfileId={instance.profileId ?? null}
         onFieldChange={handleFieldChange}
-        onEditorFocus={onEditorFocus}
-        onEditorBlur={onEditorBlur}
         mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />
 
-      <div className="border-t border-neutral-gray1 pt-8">
+      <div className="border-t pt-8">
         <ProposalAttachments
           proposalId={proposal.id}
           attachments={
@@ -515,9 +464,9 @@ function ProposalEditorInner({
       title={isPreviewMode ? previewTitle || draft.title : draft.title}
       statusSlot={
         viewingLabel ? (
-          <div className="rounded-sm bg-neutral-gray1 px-4 py-2 text-sm text-neutral-charcoal">
+          <span className="truncate text-sm text-muted-foreground">
             {viewingLabel}
-          </div>
+          </span>
         ) : undefined
       }
       onSubmitProposal={handleSubmitProposal}
@@ -527,18 +476,13 @@ function ProposalEditorInner({
       readOnlyMode={isPreviewMode}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
-      showHeaderActions={showHeaderActions}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
       revisionRequest={revisionRequest}
     >
-      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[auto_1fr]">
-        <div
-          className="border-b border-neutral-gray1 bg-white"
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          <RichTextEditorToolbar editor={focusedEditor} />
-        </div>
+      {/* Formatting is per-field now: each prose editor renders its own bubble
+          menu on the selection, so there is no toolbar row above the form. */}
+      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
           {revisionRequest ? (
             <SplitPane className="mx-auto w-full max-w-6xl">
@@ -552,15 +496,18 @@ function ProposalEditorInner({
               <SplitPane.Pane
                 id="feedback"
                 label={t('Revision feedback')}
-                className="bg-white"
+                className="bg-background"
                 unpadded
               >
                 <RevisionFeedbackPanel revisionRequest={revisionRequest} />
               </SplitPane.Pane>
             </SplitPane>
           ) : (
-            <div className="flex flex-1 flex-col gap-12 py-12">
-              <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6">
+            <div className="px-4 py-8 sm:px-6 sm:py-14">
+              <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+                <Header2>
+                  {isEditMode ? t('Edit proposal') : t('Create proposal')}
+                </Header2>
                 {editorBody}
               </div>
             </div>

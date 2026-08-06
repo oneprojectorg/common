@@ -165,7 +165,9 @@
   /* ============================================
    * Spacing
    * ============================================ */
-  --spacing-editor-topbar: 4rem;
+  /* Proposal editor top bar. 60px per the Figma "Proposal Bar" component
+   * (was 4rem/64px). Consumed by ProposalEditorHeader only. */
+  --spacing-editor-topbar: 3.75rem;
   --spacing-18: 4.5rem;
 
   /* ============================================

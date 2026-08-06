@@ -46,8 +46,8 @@ const TWO_FIELD_TEMPLATE = {
   },
 } satisfies ProposalTemplateSchema;
 
-test.describe('Proposal Editor Toolbar', () => {
-  test('shared toolbar applies formatting to the focused editor', async ({
+test.describe('Proposal Editor Bubble Menu', () => {
+  test('per-field bubble menu applies formatting to the selection', async ({
     authenticatedPage,
     org,
   }) => {
@@ -98,7 +98,7 @@ test.describe('Proposal Editor Toolbar', () => {
 
     // Wait for editor to fully load
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
+      authenticatedPage.getByRole('button', { name: 'Submit', exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
       authenticatedPage.getByText('Summary', { exact: true }),
@@ -113,78 +113,83 @@ test.describe('Proposal Editor Toolbar', () => {
     const detailsSection = authenticatedPage.getByTestId('field-details');
     const detailsEditor = detailsSection.locator('[contenteditable="true"]');
 
-    // -- Toolbar should be visible but disabled when no editor is focused -----
+    // Each prose field renders its own menu (unique pluginKey per fragment), so
+    // scope every lookup to the one that is currently open.
+    const bubbleMenu = authenticatedPage.getByTestId('rich-text-bubble-menu');
+    const boldButton = bubbleMenu.getByRole('button', { name: 'Bold' });
+    const italicButton = bubbleMenu.getByRole('button', { name: 'Italic' });
 
-    const boldButton = authenticatedPage.locator('button[title="Bold"]');
-    const italicButton = authenticatedPage.locator('button[title="Italic"]');
-    await expect(boldButton).toBeVisible();
-    await expect(boldButton).toBeDisabled();
-
-    // -- Step 1: Click into summary, toolbar becomes active ------------------
-
-    await summaryEditor.click();
-
-    // Toolbar buttons should now be enabled (an editor has focus)
-    await expect(boldButton).toBeEnabled({ timeout: 5_000 });
-
-    // Type text and select all
-    await authenticatedPage.keyboard.type('Summary bold text');
     const isMac = process.platform === 'darwin';
     const modifier = isMac ? 'Meta' : 'Control';
+
+    // -- No toolbar, and no menu until there is a selection -------------------
+
+    // The shared toolbar above the form is gone; formatting is selection-scoped.
+    await expect(authenticatedPage.locator('button[title="Bold"]')).toHaveCount(
+      0,
+    );
+    await expect(bubbleMenu).toBeHidden();
+
+    // -- Step 1: select text in summary, apply bold from the menu -------------
+
+    await summaryEditor.click();
+    await authenticatedPage.keyboard.type('Summary bold text');
+
+    // A collapsed caret is not a selection — still no menu.
+    await expect(bubbleMenu).toBeHidden();
+
     await authenticatedPage.keyboard.press(`${modifier}+a`);
+    await expect(bubbleMenu).toBeVisible({ timeout: 5_000 });
 
-    // Apply bold via toolbar button
     await boldButton.click();
-
-    // Verify bold is applied
     await expect(
       summarySection.locator('strong', { hasText: 'Summary bold text' }),
     ).toBeVisible();
-
-    // Verify bold button shows active state (aria-pressed)
     await expect(boldButton).toHaveAttribute('aria-pressed', 'true');
 
-    // -- Step 2: Click into details, apply italic via toolbar -----------------
+    // -- Step 2: the details field gets its own menu and its own state --------
 
-    await detailsEditor.click();
+    // `focus()`, not `click()`: the menu open over the summary selection floats
+    // across the field below it, so a click aimed at another field can land on
+    // the menu instead. Moving focus directly keeps the step about the editors.
+    await detailsEditor.focus();
     await authenticatedPage.keyboard.type('Details italic text');
     await authenticatedPage.keyboard.press(`${modifier}+a`);
+    await expect(bubbleMenu).toBeVisible({ timeout: 5_000 });
 
-    // Apply italic via toolbar button
     await italicButton.click();
-
-    // Verify italic is applied
     await expect(
       detailsSection.locator('em', { hasText: 'Details italic text' }),
     ).toBeVisible();
-
-    // Verify italic button shows active state
     await expect(italicButton).toHaveAttribute('aria-pressed', 'true');
 
-    // Bold button should NOT be active (we're in details, which has no bold)
+    // Bold is not active here — this menu reflects the details selection only.
     await expect(boldButton).toHaveAttribute('aria-pressed', 'false');
 
-    // -- Step 3: Verify summary still has bold (formatting persisted) ---------
+    // -- Step 3: summary keeps its bold --------------------------------------
 
     await expect(
       summarySection.locator('strong', { hasText: 'Summary bold text' }),
     ).toBeVisible();
 
-    // -- Step 4: Click back into summary, verify toolbar state updates --------
+    // -- Step 4: reselecting summary reflects its own marks ------------------
 
-    await summaryEditor.click();
+    await summaryEditor.focus();
     await authenticatedPage.keyboard.press(`${modifier}+a`);
-
-    // Bold button should now be active again (reflecting summary's bold state)
+    await expect(bubbleMenu).toBeVisible({ timeout: 5_000 });
     await expect(boldButton).toHaveAttribute('aria-pressed', 'true');
-
-    // Italic button should NOT be active (summary has no italic)
     await expect(italicButton).toHaveAttribute('aria-pressed', 'false');
 
-    // Bold text still there
+    // -- Step 5: text alignment is available (it was toolbar-only before) -----
+
     await expect(
-      summarySection.locator('strong', { hasText: 'Summary bold text' }),
+      bubbleMenu.getByRole('button', { name: 'Align Center' }),
     ).toBeVisible();
+
+    // -- Step 6: collapsing the selection dismisses the menu -----------------
+
+    await authenticatedPage.keyboard.press('ArrowRight');
+    await expect(bubbleMenu).toBeHidden({ timeout: 5_000 });
 
     // -- No duplicate tiptap extension registrations --------------------------
 

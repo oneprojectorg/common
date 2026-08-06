@@ -3,9 +3,14 @@
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import { getRubricScoringInfo } from '@op/common/client';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { toast } from '@op/sense/Toast';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -107,14 +112,19 @@ export function ReviewSelectionList({
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon={<LuLeaf className="size-6" />}>
-          <Header3 className="font-serif font-light">
-            {t('No proposals to review yet')}
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
-            {t('Proposals will appear here once they are submitted.')}
-          </p>
-        </EmptyState>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LuLeaf className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle render={<h3 />}>
+              {t('No proposals to review yet')}
+            </EmptyTitle>
+            <EmptyDescription>
+              {t('Proposals will appear here once they are submitted.')}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ReviewSelectionTable
           items={items}

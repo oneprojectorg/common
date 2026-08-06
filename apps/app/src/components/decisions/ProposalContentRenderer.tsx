@@ -2,9 +2,11 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
-// viewerStyles subpath, not the barrel: keeps the TipTap editor machinery out
-// of this viewer-only component's bundle graph.
-import { viewerProseStyles } from '@op/ui/RichTextEditor/viewerStyles';
+import { Header3 } from '@op/sense/Header';
+// viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
+// re-exports a hook (useEffect) and importing it from a server-rendered tree
+// breaks the RSC build. Keep this subpath import — it has regressed before.
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
@@ -19,11 +21,10 @@ interface ProposalContentRendererProps {
   htmlContent?: Record<string, string>;
   /** Structured location value, rendered as a read-only map for location fields. */
   location?: LocationData | null;
-  /** Optional translated field titles, descriptions, and option labels keyed by field key. */
+  /** Optional translated field titles and descriptions keyed by field key. */
   translatedMeta?: {
     fieldTitles: Record<string, string>;
     fieldDescriptions: Record<string, string>;
-    optionLabels: Record<string, Record<string, string>>;
   } | null;
 }
 
@@ -57,7 +58,7 @@ export function ProposalContentRenderer({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {dynamicFields.map((field) => {
         const translatedTitle = translatedMeta?.fieldTitles[field.key];
         const translatedDescription =
@@ -114,16 +115,9 @@ function FieldChrome({
     <div className="flex flex-col gap-2">
       {(title || description) && (
         <div className="flex flex-col gap-2">
-          {title && (
-            <span
-              dir="auto"
-              className="font-serif text-title-sm14 text-neutral-charcoal"
-            >
-              {title}
-            </span>
-          )}
+          {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
-            <p dir="auto" className="text-sm text-neutral-charcoal">
+            <p dir="auto" className="text-sm text-foreground">
               {description}
             </p>
           )}
@@ -159,7 +153,7 @@ function ViewField({
         <ProposalHtmlContent html={html} />
       ) : (
         <div className={viewerProseStyles}>
-          <p className="text-neutral-gray3 italic">—</p>
+          <p className="text-muted-foreground italic">—</p>
         </div>
       )}
     </FieldChrome>
