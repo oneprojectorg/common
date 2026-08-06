@@ -1,6 +1,7 @@
 import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import {
   type PaginatedResult,
@@ -10,9 +11,10 @@ import {
   excludeGlobalUsers,
 } from '../../utils/db';
 import { assertProfile, assertProfileAdmin } from '../assert';
-import type {
-  ProfileUserQueryResult,
-  ProfileUserWithRelations,
+import {
+  type ProfileUserQueryResult,
+  type ProfileUserWithRelations,
+  resolveDisplayName,
 } from './getProfileUserWithRelations';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
@@ -30,6 +32,28 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
   ORDER BY ar.name
   LIMIT 1
 ), '')`;
+
+/**
+ * Builds the sort key for the name column: the linked profile's name when the
+ * user has a profile, otherwise the denormalized `profileUsers.name`. This has
+ * to mirror `resolveDisplayName` — `profileUsers.name` is null or stale for
+ * profile-linked users, so ordering on that column alone leaves the displayed
+ * names looking unsorted. Coalesces to empty string (never null) so ORDER BY
+ * and the cursor condition agree on where nameless rows sit.
+ */
+const buildDisplayNameSubquery = ({
+  authUserIdColumn,
+  nameColumn,
+}: {
+  authUserIdColumn: AnyPgColumn;
+  nameColumn: AnyPgColumn;
+}) => sql`COALESCE(NULLIF((
+  SELECT p.name
+  FROM ${users} u
+  INNER JOIN ${profiles} p ON p.id = u.profile_id
+  WHERE u.auth_user_id = ${authUserIdColumn}
+  LIMIT 1
+), ''), NULLIF(${nameColumn}, ''), '')`;
 
 /**
  * List all members of a profile with cursor-based pagination
@@ -103,20 +127,22 @@ export const listProfileUsers = async ({
       return compareFn(profileUsers.email, decodedCursor.value);
     }
 
+    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
+
     if (orderBy === 'name') {
-      // ORDER BY name, email - compound condition
-      return or(
-        compareFn(profileUsers.name, decodedCursor.value),
-        and(
-          eq(profileUsers.name, decodedCursor.value),
-          compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
-        ),
-      );
+      // ORDER BY display name, email - uses shared subquery helper
+      const displayNameSubquery = buildDisplayNameSubquery({
+        authUserIdColumn: profileUsers.authUserId,
+        nameColumn: profileUsers.name,
+      });
+      return sql`(
+        ${displayNameSubquery} ${compareOp} ${decodedCursor.value}
+        OR (${displayNameSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
+      )`;
     }
 
     // orderBy === 'role' - uses shared subquery helper
     const roleSubquery = buildRoleNameSubquery(profileUsers.id);
-    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
     return sql`(
       ${roleSubquery} ${compareOp} ${decodedCursor.value}
       OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
@@ -171,24 +197,30 @@ export const listProfileUsers = async ({
       }
 
       // Default to name, with email as secondary for consistent ordering
-      return [orderFn(table.name), orderFn(table.email)];
+      const displayNameSubquery = buildDisplayNameSubquery({
+        authUserIdColumn: table.authUserId,
+        nameColumn: table.name,
+      });
+      return [orderFn(displayNameSubquery), orderFn(table.email)];
     },
     limit: limit + 1,
   });
 
   // Check if there are more results
   const hasMore = profileUserResults.length > limit;
-  const resultItems = profileUserResults.slice(0, limit);
+  const resultItems = profileUserResults.slice(
+    0,
+    limit,
+  ) as ProfileUserQueryResult[];
 
   // Transform results
   const items: ProfileUserWithRelations[] = resultItems.map((result) => {
-    const { serviceUser, roles, ...baseProfileUser } =
-      result as ProfileUserQueryResult;
+    const { serviceUser, roles, ...baseProfileUser } = result;
     const userProfile = serviceUser?.profile;
 
     return {
       ...baseProfileUser,
-      name: userProfile?.name || baseProfileUser.name,
+      name: resolveDisplayName(result),
       about: userProfile?.bio || baseProfileUser.about,
       profile: userProfile ?? null,
       roles: roles.map((roleJunction) => roleJunction.accessRole),
@@ -209,7 +241,7 @@ export const listProfileUsers = async ({
 
     if (orderBy === 'name') {
       return encodeCursor<ProfileUserCursor>({
-        value: lastResult.name ?? '',
+        value: resolveDisplayName(lastResult) ?? '',
         tiebreaker: lastResult.email ?? '',
       });
     }

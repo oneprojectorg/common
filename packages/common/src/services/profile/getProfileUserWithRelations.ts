@@ -19,6 +19,16 @@ export type ProfileUserQueryResult = ProfileUser & {
   }>;
 };
 
+/**
+ * The name the API returns for a profile user: the linked profile's name when
+ * the user has a profile, otherwise the denormalized `profileUsers.name`,
+ * which is null or stale for profile-linked users. `listProfileUsers` sorts
+ * and paginates on the SQL equivalent of this, so the two must stay in sync.
+ */
+export const resolveDisplayName = (
+  result: ProfileUserQueryResult,
+): string | null => result.serviceUser?.profile?.name || result.name;
+
 type ProfileWithAvatar = Profile & { avatarImage: ObjectsInStorage | null };
 
 /**
@@ -60,13 +70,13 @@ export const getProfileUserWithRelations = async (
     return null;
   }
 
-  const { serviceUser, roles, ...baseProfileUser } =
-    profileUser as ProfileUserQueryResult;
+  const result = profileUser as ProfileUserQueryResult;
+  const { serviceUser, roles, ...baseProfileUser } = result;
   const userProfile = serviceUser?.profile;
 
   return {
     ...baseProfileUser,
-    name: userProfile?.name || baseProfileUser.name,
+    name: resolveDisplayName(result),
     about: userProfile?.bio || baseProfileUser.about,
     profile: userProfile ?? null,
     roles: roles.map((roleJunction) => roleJunction.accessRole),

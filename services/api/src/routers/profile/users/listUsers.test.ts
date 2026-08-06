@@ -1,6 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { profileUsers, profiles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -146,6 +146,44 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(
         adminUser.email,
       );
+    });
+
+    it('should sort by the displayed profile name, not the denormalized column', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+      const [firstMember, secondMember] = memberUsers;
+      if (!firstMember || !secondMember) {
+        throw new Error('Expected two member users');
+      }
+
+      // Profile-linked users display their own profile's name, while the
+      // denormalized profile_users.name is null or stale. Point the two apart
+      // so a sort on the wrong column produces the wrong order.
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Mika Middle', staleName: null },
+        { user: firstMember, displayName: 'Aaron Ascender', staleName: 'zzz' },
+        { user: secondMember, displayName: 'Zoe Zenith', staleName: 'aaa' },
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      expect(result.items.map((u) => u.name)).toEqual([
+        'Aaron Ascender',
+        'Mika Middle',
+        'Zoe Zenith',
+      ]);
     });
 
     it('should reverse order when switching between asc and desc for email', async ({
@@ -647,6 +685,59 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(allNames).toEqual(sortedNames);
     });
 
+    it('should paginate on the displayed profile name without skipping users', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // Same divergence as the sorting test: a cursor built from the stale
+      // column drops or repeats rows once the pages are stitched together.
+      const memberDisplayNames = ['Bella Beta', 'Cleo Gamma', 'Dara Delta'];
+      const memberAssignments = memberDisplayNames.map((displayName, index) => {
+        const user = memberUsers[index];
+        if (!user) {
+          throw new Error(`Expected a member user at index ${index}`);
+        }
+
+        // Stale names descend while the display names ascend.
+        return {
+          user,
+          displayName,
+          staleName: `stale-${memberDisplayNames.length - index}`,
+        };
+      });
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberAssignments,
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedNames: (string | null)[] = [];
+      let cursor: string | null | undefined;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        pagedNames.push(...page.items.map((u) => u.name));
+        cursor = page.next;
+      } while (cursor);
+
+      expect(pagedNames).toEqual(['Aaron Alpha', ...memberDisplayNames]);
+    });
+
     it('should paginate correctly when ordering by role', async ({
       task,
       onTestFinished,
@@ -748,3 +839,29 @@ describeAccessTierGating('profile.listUsers', {
     },
   ),
 });
+
+/**
+ * Splits a participant's displayed name from the denormalized
+ * `profile_users.name`. The display name goes on the user's own profile, which
+ * is what the participants table renders; the stale value stays on the
+ * membership row. This is the shape profile-linked users have in practice.
+ */
+const setDisplayAndStaleNames = async (
+  assignments: Array<{
+    user: { userProfileId: string; profileUserId: string };
+    displayName: string;
+    staleName: string | null;
+  }>,
+): Promise<void> => {
+  for (const { user, displayName, staleName } of assignments) {
+    await db
+      .update(profiles)
+      .set({ name: displayName })
+      .where(eq(profiles.id, user.userProfileId));
+
+    await db
+      .update(profileUsers)
+      .set({ name: staleName })
+      .where(eq(profileUsers.id, user.profileUserId));
+  }
+};
