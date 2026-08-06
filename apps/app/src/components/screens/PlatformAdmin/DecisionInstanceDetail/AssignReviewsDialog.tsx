@@ -215,7 +215,7 @@ export const AssignReviewsDialog = ({
                       />
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate">
-                          {proposal.title ?? t('Untitled proposal')}
+                          {proposal.title ?? t('Untitled Proposal')}
                         </span>
                         {proposal.author ? (
                           <span className="truncate text-sm text-muted-foreground">

@@ -52,7 +52,7 @@ export function CollaborativeTitleField({
 }: CollaborativeTitleFieldProps) {
   const t = useTranslations();
   const { ydoc, provider, user } = useCollaborativeDoc();
-  const resolvedPlaceholder = placeholder ?? t('Untitled proposal');
+  const resolvedPlaceholder = placeholder ?? t('Untitled Proposal');
   const labelId = useId();
   const counterId = useId();
   const [charCount, setCharCount] = useState(0);

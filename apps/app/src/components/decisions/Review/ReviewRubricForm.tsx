@@ -128,13 +128,14 @@ function MyReviewForm() {
             <AlertTitle>{t('Proposal Revision Requested')}</AlertTitle>
             <AlertDescription>
               {t('Reviewing is paused until author submits a revision.')}{' '}
-              <button
-                type="button"
-                className="cursor-pointer underline"
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 underline"
                 onClick={() => setIsViewModalOpen(true)}
               >
                 {t('View feedback')}
-              </button>
+              </Button>
             </AlertDescription>
           </Alert>
 
@@ -235,9 +236,12 @@ function RubricCriterionSection({
     field.format === 'short-text' || field.format === 'long-text';
   const describedBy = field.schema.description ? descriptionId : undefined;
 
+  // `labelId` goes on the title text, not the whole row: the badge is inside
+  // the heading, and a control named by the row would announce "Innovation
+  // 5 pts".
   const label = (
     <>
-      {field.schema.title}
+      <span id={labelId}>{field.schema.title}</span>
       {badgeLabel ? <Badge variant="secondary">{badgeLabel}</Badge> : null}
     </>
   );
@@ -261,7 +265,6 @@ function RubricCriterionSection({
           <FieldContent>
             <FieldTitle
               render={<h4 />}
-              id={labelId}
               className="flex w-full justify-between gap-2"
             >
               {label}
@@ -283,7 +286,6 @@ function RubricCriterionSection({
           ) : (
             <FieldTitle
               render={<h4 />}
-              id={labelId}
               className="flex w-full justify-between gap-2"
             >
               {label}

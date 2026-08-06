@@ -1325,7 +1325,6 @@
   "{count} proposals advancing": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
   "{count} winning proposals selected": "{count, plural, one {# winning proposal selected} other {# winning proposals selected}}",
   "Eligible proposals": "Eligible proposals",
-  "Untitled proposal": "Untitled proposal",
   "Untitled": "Untitled",
   "Advance {title}": "Advance {title}",
   "Don't advance {title}": "Don't advance {title}",

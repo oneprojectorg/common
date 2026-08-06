@@ -169,46 +169,68 @@ function VersionItem({
 }) {
   const t = useTranslations();
 
+  const rowClassName = cn(
+    'w-full rounded-lg transition-colors',
+    isSelected ? 'bg-accent' : 'hover:bg-muted',
+  );
+  const triggerClassName = cn(
+    'flex w-full flex-col items-start gap-0.5 rounded-lg px-4 pt-4 text-start',
+    // 16px collapsed, 12px expanded — Figma's 76 / 120.
+    isSelected ? 'pb-3' : 'pb-4',
+  );
+  // `bare` + `none`: own look, but keep the focus ring and disabled handling a
+  // raw `<button>` would drop.
+  const rowButton = (
+    <Button
+      variant="bare"
+      onClick={onSelect}
+      disabled={isPending}
+      aria-current={isSelected ? 'true' : undefined}
+    />
+  );
+  const rowContent = (
+    <>
+      <span className="text-base font-strong text-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{sublabel}</span>
+    </>
+  );
+
+  // No restore action means no panel, so no Collapsible: a trigger without one
+  // still advertises `aria-expanded` and points `aria-controls` at an id that
+  // never renders. That row ("Current version") is a plain button.
+  if (!onRestore) {
+    return (
+      <div role="listitem" className={rowClassName}>
+        <Button
+          variant="bare"
+          onClick={onSelect}
+          disabled={isPending}
+          aria-current={isSelected ? 'true' : undefined}
+          className={triggerClassName}
+        >
+          {rowContent}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Collapsible
       open={isSelected}
       render={<div role="listitem" />}
-      className={cn(
-        'w-full rounded-lg transition-colors',
-        isSelected ? 'bg-accent' : 'hover:bg-muted',
-      )}
+      className={rowClassName}
     >
-      <CollapsibleTrigger
-        // `bare` + `none`: own look, but keep the focus ring and disabled
-        // handling a raw `<button>` would drop.
-        render={
-          <Button
-            variant="bare"
-            size="none"
-            onClick={onSelect}
-            disabled={isPending}
-            aria-current={isSelected ? 'true' : undefined}
-          />
-        }
-        className={cn(
-          'flex w-full flex-col items-start gap-0.5 rounded-lg px-4 pt-4 text-start',
-          // 16px collapsed, 12px expanded — Figma's 76 / 120.
-          isSelected ? 'pb-3' : 'pb-4',
-        )}
-      >
-        <span className="text-base font-strong text-foreground">{label}</span>
-        <span className="text-sm text-muted-foreground">{sublabel}</span>
+      <CollapsibleTrigger render={rowButton} className={triggerClassName}>
+        {rowContent}
       </CollapsibleTrigger>
 
-      {onRestore && (
-        <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
-          <div className="px-4 pb-4">
-            <Button size="sm" onClick={onRestore} disabled={isPending}>
-              {t('Restore this version')}
-            </Button>
-          </div>
-        </CollapsibleContent>
-      )}
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+        <div className="px-4 pb-4">
+          <Button size="sm" onClick={onRestore} disabled={isPending}>
+            {t('Restore this version')}
+          </Button>
+        </div>
+      </CollapsibleContent>
     </Collapsible>
   );
 }

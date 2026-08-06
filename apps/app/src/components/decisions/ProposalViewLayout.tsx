@@ -2,7 +2,6 @@
 
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import { Separator } from '@op/sense/Separator';
 import {
   Tooltip,
   TooltipContent,
@@ -30,7 +29,6 @@ import { ReportProposalDialog } from './ReportProposalDialog';
 export function ProposalViewLayout({
   children,
   backHref,
-  title,
   editHref,
   canEdit = false,
   canJoin = false,
@@ -40,7 +38,6 @@ export function ProposalViewLayout({
 }: {
   children: ReactNode;
   backHref: string;
-  title?: string;
   editHref?: string;
   canEdit?: boolean;
   /**
@@ -87,18 +84,6 @@ export function ProposalViewLayout({
             <LuArrowLeft className="size-4 rtl:-scale-x-100" />
             <span className="hidden sm:inline">{backLabel}</span>
           </Button>
-
-          {title ? (
-            <>
-              <Separator
-                orientation="vertical"
-                className="hidden h-5 sm:block"
-              />
-              <span className="hidden truncate text-base text-foreground sm:block">
-                {title}
-              </span>
-            </>
-          ) : null}
         </div>
 
         {/* One tooltip group for the row — `delay` exists on Provider alone. */}

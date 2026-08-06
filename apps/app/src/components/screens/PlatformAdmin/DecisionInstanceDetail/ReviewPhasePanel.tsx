@@ -278,7 +278,7 @@ const AssignmentsList = ({
             className="flex items-center justify-between gap-3 text-sm"
           >
             <span className="truncate">
-              {assignment.proposalTitle ?? t('Untitled proposal')}
+              {assignment.proposalTitle ?? t('Untitled Proposal')}
             </span>
             <Badge variant={statusBadgeVariant(assignment.reviewState)}>
               {STATUS_LABEL[state] ?? state}

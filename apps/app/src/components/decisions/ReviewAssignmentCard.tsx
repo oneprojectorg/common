@@ -100,7 +100,7 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
           // description via base-ui's aria-describedby when open.
           <span
             tabIndex={0}
-            className="cursor-help underline decoration-dotted underline-offset-2 outline-none"
+            className="cursor-help rounded-sm underline decoration-dotted underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         }
       >

@@ -1315,7 +1315,6 @@
   "{count} proposals advancing": "{count, plural, one {# propuesta avanzando} other {# propuestas avanzando}}",
   "{count} winning proposals selected": "{count, plural, one {# propuesta ganadora seleccionada} other {# propuestas ganadoras seleccionadas}}",
   "Eligible proposals": "Propuestas elegibles",
-  "Untitled proposal": "Propuesta sin título",
   "Advance {title}": "Avanzar {title}",
   "Don't advance {title}": "No avanzar {title}",
   "+{count} More": "+{count} más",

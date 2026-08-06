@@ -1,6 +1,5 @@
 'use client';
 
-import type { CollabStatus } from '@/hooks/useTiptapCollab';
 import {
   RichTextEditorSkeleton,
   StyledRichTextContent,
@@ -10,17 +9,11 @@ import Snapshot from '@tiptap-pro/extension-snapshot';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import type { Editor, Extensions } from '@tiptap/react';
-import { forwardRef, useImperativeHandle, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-
-export interface CollaborativeEditorRef {
-  editor: Editor | null;
-  collabStatus: CollabStatus;
-  isSynced: boolean;
-}
 
 export interface CollaborativeEditorProps {
   /** The Yjs field name to bind to (defaults to 'default' for main content) */
@@ -42,79 +35,59 @@ export interface CollaborativeEditorProps {
 }
 
 /** Rich text editor with real-time collaboration via TipTap Cloud */
-export const CollaborativeEditor = forwardRef<
-  CollaborativeEditorRef,
-  CollaborativeEditorProps
->(
-  (
-    {
-      field = 'default',
-      extensions = [],
-      placeholder,
-      onEditorReady,
-      className = '',
-      editorClassName = '',
-      required = false,
-      ariaLabelledBy,
-      ariaDescribedBy,
-    },
-    ref,
-  ) => {
-    const t = useTranslations();
-    const { ydoc, provider, status, isSynced, user } = useCollaborativeDoc();
-    const resolvedPlaceholder = placeholder ?? t('Start writing...');
+export const CollaborativeEditor = ({
+  field = 'default',
+  extensions = [],
+  placeholder,
+  onEditorReady,
+  className = '',
+  editorClassName = '',
+  required = false,
+  ariaLabelledBy,
+  ariaDescribedBy,
+}: CollaborativeEditorProps) => {
+  const t = useTranslations();
+  const { ydoc, provider, user } = useCollaborativeDoc();
+  const resolvedPlaceholder = placeholder ?? t('Start writing...');
 
-    // Build collaborative extensions with cursor support
-    const collaborativeExtensions = useMemo(
-      () => [
-        ...extensions,
-        Collaboration.configure({ document: ydoc, field }),
-        CollaborationCaret.configure({
-          provider,
-          user,
-        }),
-        Snapshot.configure({ provider }),
-      ],
-      [extensions, ydoc, field, provider, user],
-    );
-
-    const editor = useRichTextEditor({
-      extensions: collaborativeExtensions,
-      // The placeholder belongs on the hook: it registers the single TipTap
-      // Placeholder extension that paints it. Passing it to
-      // StyledRichTextContent (as this file used to) only set a dead
-      // `placeholder` attribute on the wrapper div.
-      placeholder: resolvedPlaceholder,
-      editorClassName,
-      onEditorReady,
-      required,
-      ariaLabelledBy,
-      ariaDescribedBy,
-    });
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        editor,
-        collabStatus: status,
-        isSynced,
+  // Build collaborative extensions with cursor support
+  const collaborativeExtensions = useMemo(
+    () => [
+      ...extensions,
+      Collaboration.configure({ document: ydoc, field }),
+      CollaborationCaret.configure({
+        provider,
+        user,
       }),
-      [editor, status, isSynced],
-    );
+      Snapshot.configure({ provider }),
+    ],
+    [extensions, ydoc, field, provider, user],
+  );
 
-    if (!editor) {
-      return <RichTextEditorSkeleton className={className} />;
-    }
+  const editor = useRichTextEditor({
+    extensions: collaborativeExtensions,
+    // The placeholder belongs on the hook: it registers the single TipTap
+    // Placeholder extension that paints it. Passing it to
+    // StyledRichTextContent (as this file used to) only set a dead
+    // `placeholder` attribute on the wrapper div.
+    placeholder: resolvedPlaceholder,
+    editorClassName,
+    onEditorReady,
+    required,
+    ariaLabelledBy,
+    ariaDescribedBy,
+  });
 
-    return (
-      <div className={className}>
-        <StyledRichTextContent
-          dir={editor?.isEmpty ? undefined : 'auto'}
-          editor={editor}
-        />
-      </div>
-    );
-  },
-);
+  if (!editor) {
+    return <RichTextEditorSkeleton className={className} />;
+  }
 
-CollaborativeEditor.displayName = 'CollaborativeEditor';
+  return (
+    <div className={className}>
+      <StyledRichTextContent
+        dir={editor?.isEmpty ? undefined : 'auto'}
+        editor={editor}
+      />
+    </div>
+  );
+};

@@ -199,7 +199,6 @@ function ReviewerRow({
     // never going to match.
     <Button
       variant="bare"
-      size="none"
       onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-neutral-offWhite"
       aria-label={t('View review by {name}', {

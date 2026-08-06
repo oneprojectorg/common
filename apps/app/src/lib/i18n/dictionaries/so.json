@@ -1242,7 +1242,6 @@
   "{count} proposals advancing": "{count, plural, one {# soo jeedin oo horey u socda} other {# soo jeedimo oo horey u socda}}",
   "{count} winning proposals selected": "{count, plural, one {# soo jeedin oo guulaystay oo la doortay} other {# soo jeedimo oo guulaystay oo la doortay}}",
   "Eligible proposals": "Soo jeedimo qalma",
-  "Untitled proposal": "Soo jeedin aan cinwaan laheyn",
   "Advance {title}": "Horey u qaad {title}",
   "Don't advance {title}": "Ha horey u qaadin {title}",
   "+{count} More": "+{count} Wax badan",

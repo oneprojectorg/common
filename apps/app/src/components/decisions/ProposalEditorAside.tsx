@@ -4,7 +4,6 @@ import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { Drawer, DrawerContent, DrawerTitle } from '@op/sense/Drawer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
-import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import type { ReactNode } from 'react';
@@ -20,11 +19,6 @@ interface ProposalEditorAsideProps {
   open: boolean;
   title: ReactNode;
   onClose: () => void;
-  children: ReactNode;
-  bodyClassName?: string;
-}
-
-interface ProposalEditorAsideSkeletonProps {
   children: ReactNode;
   bodyClassName?: string;
 }
@@ -95,27 +89,6 @@ export function ProposalEditorAside({
         {body}
       </SheetContent>
     </Sheet>
-  );
-}
-
-/**
- * Static placeholder matching the aside's header/body rhythm, for suspense
- * boundaries that render before the aside's data is available.
- */
-export function ProposalEditorAsideSkeleton({
-  children,
-  bodyClassName,
-}: ProposalEditorAsideSkeletonProps) {
-  return (
-    <aside className="flex h-full w-96 shrink-0 flex-col border-s bg-background">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b p-6">
-        <Skeleton className="h-4 w-36" />
-        <Skeleton className="size-8 rounded-md" />
-      </div>
-      <div className={cn('min-h-0 flex-1 overflow-y-auto p-6', bodyClassName)}>
-        {children}
-      </div>
-    </aside>
   );
 }
 

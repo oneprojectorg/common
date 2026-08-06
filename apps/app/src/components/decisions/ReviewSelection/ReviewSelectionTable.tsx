@@ -101,7 +101,9 @@ export function ReviewSelectionTable({
               key={item.proposal.id}
               data-state={advancing ? 'selected' : undefined}
             >
-              <TableCell>
+              {/* The cell that names the row, so grid navigation can announce
+                  which proposal a value belongs to. */}
+              <TableCell render={<th scope="row" />} className="font-normal">
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}

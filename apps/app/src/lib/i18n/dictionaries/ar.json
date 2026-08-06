@@ -1211,7 +1211,6 @@
   "Confirm decisions": "تأكيد القرارات",
   "{count} proposals advancing": "{count, plural, one {# مقترح متقدم} other {# مقترحات متقدمة}}",
   "Eligible proposals": "المقترحات المؤهلة",
-  "Untitled proposal": "مقترح بدون عنوان",
   "Advance {title}": "تقدم {title}",
   "Don't advance {title}": "لا تتقدم {title}",
   "+{count} More": "+{count} المزيد",
