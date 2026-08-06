@@ -1,11 +1,10 @@
 import {
+  type FieldDescriptor,
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   type XFormat,
   getProposalTemplateFieldOrder,
 } from '@op/common/client';
-
-import type { FieldDescriptor } from './types';
 
 const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
 const DEFAULT_X_FORMAT: XFormat = 'short-text';

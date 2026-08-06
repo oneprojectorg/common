@@ -2,11 +2,26 @@ import type {
   RubricTemplateSchema,
   XFormat,
   XFormatPropertySchema,
-} from '@op/common/client';
-
-import type { FieldDescriptor } from './types';
+} from './types';
 
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
+
+/**
+ * A compiled field descriptor produced by a schema compiler. Describes a
+ * single field with everything needed to render it.
+ */
+export interface FieldDescriptor {
+  /** Property key in the schema (e.g. "title", "summary"). */
+  key: string;
+  /** Resolved display format. */
+  format: XFormat;
+  /** The raw property schema definition for this field. */
+  schema: XFormatPropertySchema;
+  /** Whether this is a system field (title, category, budget). Only relevant for proposals. */
+  isSystem?: boolean;
+  /** Whether this field is listed in the schema's `required` array. */
+  required?: boolean;
+}
 
 /**
  * Compiles a rubric template schema into field descriptors for rendering.

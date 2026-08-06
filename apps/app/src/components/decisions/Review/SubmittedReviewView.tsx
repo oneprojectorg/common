@@ -1,8 +1,7 @@
 import {
   type ProposalReview,
   type RubricTemplateSchema,
-  findSchemaOption,
-  isOverallRecommendationField,
+  resolveSubmittedReview,
 } from '@op/common/client';
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
@@ -10,10 +9,6 @@ import { Separator } from '@op/sense/Separator';
 import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
-
-import { compileRubricSchema } from '../forms/rubric';
-import type { FieldDescriptor } from '../forms/types';
-import { inferCriterionType } from '../rubricTemplate';
 
 /**
  * A submitted review, read-only: each criterion's prompt above a bordered card
@@ -36,36 +31,41 @@ export function SubmittedReviewView({
   scoreSlot?: ReactNode;
 }) {
   const t = useTranslations();
-  const fields = compileRubricSchema(rubricTemplate);
-  const { answers, rationales } = review.reviewData;
+  const { answers, overallComment } = resolveSubmittedReview(
+    rubricTemplate,
+    review,
+    { t },
+  );
 
   return (
     <div className="flex flex-col gap-8">
-      {fields.map((field) => (
+      {answers.map((answer) => (
         <ResultSection
-          key={field.key}
-          title={field.schema.title}
-          description={field.schema.description}
-          required={field.required}
+          key={answer.key}
+          title={answer.title}
+          description={answer.description}
+          required={answer.required}
         >
-          <RubricFieldResult
-            field={field}
-            value={answers[field.key]}
-            rationale={rationales[field.key]?.trim() || undefined}
-          />
+          {answer.type !== 'unsupported' && (
+            <ResultCard
+              value={answer.valueLabel}
+              description={answer.valueDescription}
+              rationale={answer.rationale}
+            />
+          )}
         </ResultSection>
       ))}
 
       {scoreSlot}
 
-      {review.overallComment && (
+      {overallComment && (
         <ResultSection
-          title={t('Feedback to Author')}
+          title={overallComment.title}
           description={t(
             'Shared anonymously with the author after the review phase',
           )}
         >
-          <ResultCard description={review.overallComment} />
+          <ResultCard description={overallComment.comment} />
         </ResultSection>
       )}
     </div>
@@ -136,62 +136,4 @@ function ResultCard({
       )}
     </div>
   );
-}
-
-function RubricFieldResult({
-  field,
-  value,
-  rationale,
-}: {
-  field: FieldDescriptor;
-  value: unknown;
-  rationale?: string;
-}) {
-  const t = useTranslations();
-
-  if (field.format === 'dropdown') {
-    if (inferCriterionType(field.schema) === 'yes_no') {
-      const label =
-        value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
-      return <ResultCard value={label} rationale={rationale} />;
-    }
-
-    const selected = findSchemaOption(field.schema, value);
-
-    if (isOverallRecommendationField(field.key)) {
-      return (
-        <ResultCard
-          value={selected?.title ?? selected?.value}
-          rationale={rationale}
-        />
-      );
-    }
-
-    // Single-select options store an opaque id as the value, so show the
-    // option's title instead.
-    if (inferCriterionType(field.schema) === 'single_select') {
-      return (
-        <ResultCard
-          value={selected ? selected.title || String(selected.value) : '—'}
-          description={selected?.description}
-          rationale={rationale}
-        />
-      );
-    }
-
-    return (
-      <ResultCard
-        value={selected?.value}
-        description={selected?.title}
-        rationale={rationale}
-      />
-    );
-  }
-
-  if (field.format === 'long-text' || field.format === 'short-text') {
-    const text = typeof value === 'string' ? value.trim() : '';
-    return <ResultCard description={text || '—'} />;
-  }
-
-  return null;
 }

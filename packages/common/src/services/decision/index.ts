@@ -119,6 +119,9 @@ export * from './extractProposalText';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './getRubricScoringInfo';
+export * from './compileRubricSchema';
+export * from './inferCriterionType';
+export * from './resolveSubmittedReview';
 export * from './tiptapExtensions';
 
 // Proposal attachments

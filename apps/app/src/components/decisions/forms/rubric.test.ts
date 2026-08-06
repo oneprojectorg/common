@@ -1,3 +1,4 @@
+import { compileRubricSchema } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,7 +6,6 @@ import {
   createEmptyRubricTemplate,
   setCriterionRequired,
 } from '../rubricTemplate';
-import { compileRubricSchema } from './rubric';
 
 describe('compileRubricSchema', () => {
   it('returns an empty array for a template without criteria', () => {
