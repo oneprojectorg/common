@@ -1,6 +1,7 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
+import { Header4 } from '@op/sense/Header';
 import { useId } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,12 +22,10 @@ export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {
   const labelId = useId();
 
   return (
-    <div className="space-y-2">
-      <h3 id={labelId} className="text-sm text-neutral-gray4">
-        {t('Selected proposals')}
-      </h3>
+    <div className="space-y-4">
+      <Header4 id={labelId}>{t('Selected proposals')}</Header4>
 
-      <ul aria-labelledby={labelId} className="space-y-2">
+      <ul aria-labelledby={labelId} className="space-y-4">
         {proposals.map((proposal) => (
           <li key={proposal.id}>
             <ProposalMiniCard proposal={proposal} />
