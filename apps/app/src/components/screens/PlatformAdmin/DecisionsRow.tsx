@@ -166,7 +166,7 @@ const InstanceDataModal = ({
           <DialogTitle>{t('Instance data for {name}', { name })}</DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-6">
-          <pre className="max-h-[60vh] overflow-auto rounded-lg bg-muted p-4 text-xs">
+          <pre className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap">
             {JSON.stringify(instanceData, null, 2)}
           </pre>
         </div>
