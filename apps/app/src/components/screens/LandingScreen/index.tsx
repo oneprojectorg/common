@@ -126,20 +126,35 @@ const NewOrganizationsList = () => {
   );
 };
 
-const PostFeedSection = async ({
-  showPostUpdate,
+/**
+ * Warms the server query cache so the client hydrates the feed instead of
+ * refetching it. Best-effort — the client fetches on its own if this misses, so
+ * a failure is a warning, not an error.
+ *
+ * Skipped for viewers outside the network: the `(main)` layout's
+ * `assertWalledGardenAccess` is already sending them to the forbidden screen,
+ * but that gate and this render run concurrently, so the prefetch would only
+ * ever come back 403 for them.
+ */
+const prefetchPosts = async ({
+  isNetworkMember,
 }: {
-  showPostUpdate: boolean;
+  isNetworkMember: boolean;
 }) => {
-  // Prefetch posts data on server to prevent hydration mismatch
-  // If this fails, the client will fetch instead
   const { utils, queryClient } = await createServerUtils();
-  try {
-    await utils.organization.listAllPosts.fetchInfinite({ limit: 10 });
-  } catch (e) {
-    logger.error('Homepage post prefetch failed', { error: e });
+
+  if (isNetworkMember) {
+    try {
+      await utils.organization.listAllPosts.fetchInfinite({ limit: 10 });
+    } catch (error) {
+      logger.warn('Homepage post prefetch failed', { error });
+    }
   }
 
+  return queryClient;
+};
+
+const PostFeedSection = ({ showPostUpdate }: { showPostUpdate: boolean }) => {
   return (
     <>
       {showPostUpdate ? (
@@ -162,22 +177,27 @@ const PostFeedSection = async ({
             </div>
           }
         >
-          <HydrationBoundary state={dehydrate(queryClient)}>
-            <Feed />
-          </HydrationBoundary>
+          <Feed />
         </ErrorBoundary>
       </div>
     </>
   );
 };
 
-const LandingScreenFeeds = ({
+const LandingScreenFeeds = async ({
   showPostUpdate,
+  isNetworkMember,
 }: {
   showPostUpdate: boolean;
+  isNetworkMember: boolean;
 }) => {
+  // One prefetch and one hydration boundary for both breakpoints: the desktop
+  // grid and the mobile tab panel render the same feed, so awaiting the
+  // prefetch inside each of them logged every failure twice.
+  const queryClient = await prefetchPosts({ isNetworkMember });
+
   return (
-    <>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="hidden grid-cols-15 sm:grid">
         <div className="col-span-9 flex flex-col gap-4">
           <PostFeedSection showPostUpdate={showPostUpdate} />
@@ -203,7 +223,7 @@ const LandingScreenFeeds = ({
           <PostFeedSection showPostUpdate={showPostUpdate} />
         </TabPanel>
       </Tabs>
-    </>
+    </HydrationBoundary>
   );
 };
 
@@ -251,6 +271,7 @@ const UserContent = async () => {
       <hr />
       <LandingScreenFeeds
         showPostUpdate={user.currentProfile?.type === 'org'}
+        isNetworkMember={user.isNetworkMember}
       />
     </>
   );

@@ -1,5 +1,5 @@
-import { db, inArray } from '@op/db/client';
-import { posts } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/client';
+import { posts, users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
@@ -93,5 +93,42 @@ describe.concurrent('organization.listAllPosts pagination', () => {
     expect(seen.filter((id) => createdIds.includes(id))).toEqual(
       createdIds.slice().reverse(),
     );
+  });
+});
+
+// Regression for the homepage feed 403: `users.current_profile_id` is nulled by
+// its FK when the profile it pointed at is deleted, and the aggregate feed used
+// `getCurrentProfileId`, so those readers got "You don't have access to do
+// this" instead of posts. The profile is only reader context on this feed (the
+// moderation author exception, the "did I react" marker), never authorization —
+// the network gate is what authorizes the read.
+describe.concurrent('organization.listAllPosts without a current profile', () => {
+  it('returns the feed for a reader who has no current profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const data = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { organization, adminUser, memberUsers } =
+      await data.createOrganization({ users: { admin: 1, member: 1 } });
+    const reader = memberUsers[0]!;
+
+    const author = await createAuthenticatedCaller(adminUser.email);
+    const post = await author.organization.createPost({
+      id: organization.id,
+      content: 'no-current-profile reader test post',
+    });
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, post.id));
+    });
+
+    await db
+      .update(users)
+      .set({ currentProfileId: null, lastOrgId: null })
+      .where(eq(users.authUserId, reader.authUserId));
+
+    const caller = await createAuthenticatedCaller(reader.email);
+    const page = await caller.organization.listAllPosts({ limit: 10 });
+
+    expect(page.items.map((item) => item.postId)).toContain(post.id);
   });
 });

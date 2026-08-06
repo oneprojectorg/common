@@ -307,18 +307,29 @@ export const assertInstanceProfileAccess = async ({
   return profileRoles;
 };
 
-// Memoized per request (keyed by authUserId): the current profile is stable
-// within a request, so callers that each resolve it independently — e.g.
-// submitUserFlag and the assertModerationItemAccess gate it invokes — share a
-// single lookup instead of re-hitting getUserSession + the org fallback.
-export const getCurrentProfileId = memoize(
-  async (authUserId: string) => {
+/**
+ * The caller's current profile, or `undefined` when they have none — a real
+ * account that has not yet picked or created one (mid-onboarding, or an invite
+ * accepted but never finished).
+ *
+ * Prefer this on read paths that only use the profile as *reader context* — the
+ * moderation author exception, the "did I react to this" marker. Those pages
+ * are perfectly readable without a profile, and {@link getCurrentProfileId}
+ * would turn them into a 403.
+ *
+ * Memoized per request (keyed by authUserId): the current profile is stable
+ * within a request, so callers that each resolve it independently — e.g.
+ * submitUserFlag and the assertModerationItemAccess gate it invokes — share a
+ * single lookup instead of re-hitting getUserSession + the org fallback.
+ */
+export const findCurrentProfileId = memoize(
+  async (authUserId: string): Promise<string | undefined> => {
     const validatedAuthUserId = validateAuthUserId(authUserId);
     const { user } =
       (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
 
     if (!user) {
-      throw new UnauthorizedError("You don't have access to do this");
+      return undefined;
     }
 
     // Primary: use currentProfileId if available
@@ -343,10 +354,25 @@ export const getCurrentProfileId = memoize(
       }
     }
 
-    throw new UnauthorizedError("You don't have access to do this");
+    return undefined;
   },
   (authUserId) => authUserId,
 );
+
+/**
+ * The caller's current profile, or a 403 when they have none. Use on paths that
+ * genuinely act *as* a profile — posting, reacting, following. Reads that only
+ * need it as context should use {@link findCurrentProfileId} instead.
+ */
+export const getCurrentProfileId = async (authUserId: string) => {
+  const profileId = await findCurrentProfileId(authUserId);
+
+  if (!profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  return profileId;
+};
 
 export const getIndividualProfileId = async (authUserId: string) => {
   const validatedAuthUserId = validateAuthUserId(authUserId);

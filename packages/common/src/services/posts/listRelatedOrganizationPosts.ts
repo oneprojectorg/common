@@ -3,6 +3,7 @@ import { posts } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import {
+  findCurrentProfileId,
   getCurrentProfileId,
   getItemsWithReactionsAndComments,
   getRelatedOrganizations,
@@ -39,8 +40,11 @@ export const listAllRelatedOrganizationPosts = async (
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
 
   // Resolve the reader's profile first so the moderation filter (author
-  // exception) can run inside the SQL where clause below.
-  const profileId = await getCurrentProfileId(authUserId);
+  // exception) can run inside the SQL where clause below. The profile is only
+  // reader context here, so a reader who has none (mid-onboarding) still gets
+  // the feed — they just have no flagged posts of their own to be excepted and
+  // no reaction of their own to mark.
+  const profileId = await findCurrentProfileId(authUserId);
 
   // Fetch posts for all organizations with pagination
   const result = await db.query.postsToOrganizations.findMany({
