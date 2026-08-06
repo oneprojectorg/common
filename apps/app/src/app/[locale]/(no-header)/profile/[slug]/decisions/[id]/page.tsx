@@ -9,7 +9,6 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense, cache } from 'react';
 
-import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
@@ -23,14 +22,7 @@ const fetchLegacyInstance = cache(async (instanceId: string) => {
 
 function DecisionHeaderSkeleton() {
   return (
-    <div
-      role="status"
-      aria-busy="true"
-      className="border-b bg-neutral-offWhite"
-    >
-      <span className="sr-only">
-        <TranslatedText text="Loading..." />
-      </span>
+    <div aria-hidden="true" className="border-b bg-neutral-offWhite">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
@@ -95,13 +87,7 @@ const DecisionInstancePageContent = async ({
             <DecisionTranslationProvider>
               <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
               <Suspense
-                fallback={
-                  <Skeleton className="h-96" role="status" aria-busy="true">
-                    <span className="sr-only">
-                      <TranslatedText text="Loading..." />
-                    </span>
-                  </Skeleton>
-                }
+                fallback={<Skeleton className="h-96" aria-hidden="true" />}
               >
                 <DecisionStateRouter
                   instanceId={instanceId}

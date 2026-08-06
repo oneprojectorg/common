@@ -1,14 +1,13 @@
 import { Skeleton } from '@op/sense/Skeleton';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
 /**
  * Skeleton for decision page headers.
  * Matches the DecisionHeader + stepper layout.
  *
- * Purely decorative: it only ever renders alongside `DecisionContentSkeleton`
- * (see `DecisionPageSkeleton`), which owns the single loading announcement, so
- * this tree is hidden from assistive tech rather than announced twice.
+ * Purely decorative — a wall of pulsing bars carries nothing for a screen
+ * reader — so the tree is hidden from assistive tech. Announcing the load is a
+ * separate, app-wide concern (see the skeleton a11y sweep task); no skeleton in
+ * the app does it today.
  */
 export const DecisionHeaderSkeleton = () => {
   return (
@@ -54,14 +53,7 @@ export const DecisionContentSkeleton = () => {
   // here would flash the wrong count on hard refresh. The page's own Suspense
   // fallback (ProposalListSkeleton) draws the one, correctly-measured grid.
   return (
-    <div
-      role="status"
-      aria-busy="true"
-      className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12"
-    >
-      <span className="sr-only">
-        <TranslatedText text="Loading..." />
-      </span>
+    <div className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
       <div className="mx-auto flex w-full flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex w-full flex-col items-center gap-3">
           <Skeleton className="h-8 w-3/4 md:h-14" />
@@ -83,8 +75,7 @@ export const DecisionContentSkeleton = () => {
  * without shifting the layout: same sticky/border/height classes, with chips
  * where the back link, view toggle, and user controls land.
  *
- * Hidden from assistive tech — the body skeleton rendered below it owns the
- * loading announcement.
+ * Hidden from assistive tech, like the other skeletons here.
  */
 export const DecisionHeaderBarSkeleton = () => {
   return (
