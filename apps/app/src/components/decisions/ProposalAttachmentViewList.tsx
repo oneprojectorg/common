@@ -1,11 +1,11 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Button } from '@op/sense/Button';
 import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '../ButtonLink';
 import { ProposalAttachmentRow } from './ProposalAttachmentRow';
 
 type ProposalAttachment = NonNullable<Proposal['attachments']>[number];
@@ -48,21 +48,17 @@ export function ProposalAttachmentViewList({
           url={file.url}
           trailing={
             file.url ? (
-              <Button
+              <ButtonLink
                 variant="ghost"
                 size="icon-sm"
                 aria-label={t('Download {name}', { name: file.fileName })}
-                render={
-                  <a
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={file.fileName}
-                  />
-                }
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={file.fileName}
               >
                 <LuDownload className="size-4" />
-              </Button>
+              </ButtonLink>
             ) : null
           }
         />
