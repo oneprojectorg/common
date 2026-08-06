@@ -1,5 +1,6 @@
 'use client';
 
+import { formatFileSize } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
@@ -314,16 +315,4 @@ const fileMetaLabel = (file: File): string => {
   const ext = getExtension(file.name);
   const sizeLabel = formatFileSize(file.size);
   return ext ? `${ext} • ${sizeLabel}` : sizeLabel;
-};
-
-// Inlined from @op/ui utils (no @op/sense equivalent — sense keeps this helper
-// private to MediaDisplay). Same formatting the rest of the app used.
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) {
-    return '0 Bytes';
-  }
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };

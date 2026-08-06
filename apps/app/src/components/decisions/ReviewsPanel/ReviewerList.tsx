@@ -200,7 +200,7 @@ function ReviewerRow({
     <Button
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
-      className="flex h-14 w-full items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-neutral-offWhite"
+      className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
       aria-label={t('View review by {name}', {
         name: item.reviewer.name ?? item.reviewer.slug,
       })}

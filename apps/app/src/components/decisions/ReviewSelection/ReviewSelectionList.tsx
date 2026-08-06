@@ -117,7 +117,9 @@ export function ReviewSelectionList({
             <EmptyMedia variant="icon">
               <LuLeaf className="size-6" />
             </EmptyMedia>
-            <EmptyTitle>{t('No proposals to review yet')}</EmptyTitle>
+            <EmptyTitle render={<h3 />}>
+              {t('No proposals to review yet')}
+            </EmptyTitle>
             <EmptyDescription>
               {t('Proposals will appear here once they are submitted.')}
             </EmptyDescription>

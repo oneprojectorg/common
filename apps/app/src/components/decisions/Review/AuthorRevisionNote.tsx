@@ -32,7 +32,7 @@ export function AuthorRevisionNote({
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-lg bg-neutral-offWhite p-4">
+      <div className="flex flex-col gap-3 rounded-lg bg-muted p-4">
         <span className="font-serif text-title-sm14 text-neutral-black">
           {t("Author's note")}
         </span>
@@ -43,7 +43,7 @@ export function AuthorRevisionNote({
           >
             {comment}
           </p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-gray4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
             {respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : null}
             <Button
               variant="link"

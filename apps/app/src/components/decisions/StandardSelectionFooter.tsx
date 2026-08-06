@@ -38,7 +38,7 @@ export const StandardSelectionFooter = ({
   return (
     <FooterBar position="fixed" className="bg-neutral-offWhite/95">
       <FooterBarStart>
-        <span className="flex items-center gap-2 text-base text-neutral-black">
+        <span className="flex items-center gap-2 text-base text-foreground">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
           {t('{count} proposals selected', { count: numSelected })}
         </span>

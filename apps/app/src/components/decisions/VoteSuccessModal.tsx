@@ -57,7 +57,7 @@ const VoteSuccessModalSuspense = ({
                   {t('Your ballot is in!')}
                 </DialogTitle>
 
-                <DialogDescription className="text-base text-neutral-charcoal">
+                <DialogDescription className="text-base">
                   {processTitle
                     ? t(
                         'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
@@ -72,7 +72,7 @@ const VoteSuccessModalSuspense = ({
               </div>
 
               {nextSteps.length > 0 && (
-                <div className="flex w-full flex-col gap-6 text-start text-base text-neutral-charcoal">
+                <div className="flex w-full flex-col gap-6 text-start text-base text-foreground">
                   <Header3 className="font-sans">
                     {t("Here's what will happen next:")}
                   </Header3>

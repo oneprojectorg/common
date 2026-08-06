@@ -94,7 +94,9 @@ const NoProposalsFound = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>{t('No results yet for this decision.')}</EmptyTitle>
+        <EmptyTitle render={<h3 />}>
+          {t('No results yet for this decision.')}
+        </EmptyTitle>
         <EmptyDescription>
           {t('Results are still being worked on.')}
         </EmptyDescription>

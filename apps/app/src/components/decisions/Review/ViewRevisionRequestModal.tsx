@@ -58,8 +58,8 @@ export function ViewRevisionRequestModal({
             {t('Feedback to Author')}
           </span>
 
-          <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-3">
-            <p dir="auto" className="text-base text-neutral-charcoal">
+          <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+            <p dir="auto" className="text-base text-foreground">
               {revisionRequest.requestComment}
             </p>
             {sentDate && (

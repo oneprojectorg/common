@@ -107,7 +107,7 @@ export function ReviewSelectionTable({
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    className="line-clamp-1 text-base text-neutral-black"
+                    className="line-clamp-1 text-base text-foreground"
                   >
                     <bdi>{title}</bdi>
                   </Link>
@@ -119,7 +119,7 @@ export function ReviewSelectionTable({
                 </div>
               </TableCell>
               <TableCell>
-                <span className="text-base text-neutral-black">
+                <span className="text-base text-foreground">
                   {budget
                     ? formatCurrency(budget.amount, undefined, budget.currency)
                     : '—'}
@@ -136,7 +136,7 @@ export function ReviewSelectionTable({
                 />
               </TableCell>
               <TableCell>
-                <span className="text-base text-neutral-black">
+                <span className="text-base text-foreground">
                   <ScoreText value={item.aggregates.averageScore} />
                 </span>
               </TableCell>
@@ -210,7 +210,7 @@ function ProposalCard({
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-          className="text-base text-neutral-black"
+          className="text-base text-foreground"
         >
           {title}
         </Link>
@@ -221,7 +221,7 @@ function ProposalCard({
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {budget && (
-          <span className="text-base text-neutral-black">
+          <span className="text-base text-foreground">
             {formatCurrency(budget.amount, undefined, budget.currency)}
           </span>
         )}
@@ -233,7 +233,7 @@ function ProposalCard({
       />
 
       <div className="flex items-center justify-between">
-        <span className="text-base text-neutral-black">
+        <span className="text-base text-foreground">
           <ScoreText value={item.aggregates.averageScore} />
         </span>
         <AdvanceToggleButton
@@ -254,7 +254,7 @@ function RecommendationCounts({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-wrap items-center gap-4 text-base text-neutral-black">
+    <div className="flex flex-wrap items-center gap-4 text-base text-foreground">
       {Object.values(RECOMMENDATION_OPTION).map((opt) => (
         <CountLabel
           key={opt.value}
@@ -277,7 +277,7 @@ function CountLabel({
   intent: StatusDotIntent;
 }) {
   return (
-    <StatusDot intent={intent} className="text-base text-neutral-black">
+    <StatusDot intent={intent} className="text-base text-foreground">
       {value} {label}
     </StatusDot>
   );

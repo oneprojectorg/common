@@ -22,7 +22,7 @@ const fetchLegacyInstance = cache(async (instanceId: string) => {
 
 function DecisionHeaderSkeleton() {
   return (
-    <div aria-hidden="true" className="border-b bg-neutral-offWhite">
+    <div aria-hidden="true" className="border-b bg-muted">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
@@ -83,7 +83,7 @@ const DecisionInstancePageContent = async ({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ResourceErrorBoundary>
         <Suspense fallback={<DecisionHeaderSkeleton />}>
-          <div className="bg-neutral-offWhite text-gray-700">
+          <div className="bg-muted text-gray-700">
             <DecisionTranslationProvider>
               <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
               <Suspense
