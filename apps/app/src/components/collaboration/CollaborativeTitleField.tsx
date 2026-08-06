@@ -181,16 +181,20 @@ export function CollaborativeTitleField({
         // rules: the control here is a contenteditable, not an <input>.
         // `h-auto`: InputGroup is a fixed 44px row and only relaxes for a real
         // `<textarea>` (`has-[>textarea]:h-auto`), which a contenteditable does
-        // not match — so a wrapped title spilled out of its own border. Grow with
-        // the text and pin the addon to the first line.
-        <InputGroup className="h-auto min-h-11 items-start py-2.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+        // not match — so a wrapped title spilled out of its own border.
+        <InputGroup className="h-auto min-h-11 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
           <EditorContent
-            className="min-w-0 flex-1 px-3"
+            className="min-w-0 flex-1 px-3 py-2.5"
             dir={editor.isEmpty ? undefined : 'auto'}
             editor={editor}
           />
           {maxLength != null && (
-            <InputGroupAddon align="inline-end">
+            // A counter beside a field that wraps would reserve its column on
+            // every line, narrowing the text for the whole height. Figma puts
+            // the counter for a wrapping field in a block addon under it
+            // (`InputGroup / Addon Block`, space-between) and keeps the inline
+            // placement for single-line inputs only.
+            <InputGroupAddon align="block-end" className="justify-end">
               <CharacterCounter
                 id={counterId}
                 count={charCount}
