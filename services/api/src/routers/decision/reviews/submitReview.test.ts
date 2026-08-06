@@ -4,7 +4,8 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { describe, expect, it } from 'vitest';
+import { event } from '@op/events';
+import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
@@ -232,6 +233,49 @@ describe.concurrent('submitReview', () => {
         },
       }),
     ).rejects.toThrow('Rubric validation failed');
+  });
+});
+
+// Sequential on purpose: the emission assertions read the shared `event.send`
+// mock, which the global beforeEach clears — concurrent siblings could wipe
+// the recorded call between the mutation and the assertion.
+describe('submitReview event emission', () => {
+  it('emits review/submitted with the assignment and instance ids', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const mockSend = event.send as unknown as MockInstance;
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 3 },
+        rationales: {},
+      },
+    });
+
+    const submittedCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string }).name === 'review/submitted' &&
+        (call[0] as { data: { assignmentId: string } }).data.assignmentId ===
+          created.assignment.id,
+    );
+    expect(submittedCalls).toHaveLength(1);
+    expect(submittedCalls[0]![0]).toMatchObject({
+      name: 'review/submitted',
+      data: {
+        assignmentId: created.assignment.id,
+        processInstanceId: created.instance.instance.id,
+      },
+    });
   });
 });
 

@@ -3,6 +3,7 @@ export * from './sendProfileInviteEmails';
 export * from './sendProposalSubmittedNotification';
 export * from './sendPhaseTransitionNotification';
 export * from './sendVoteSubmittedNotification';
+export * from './sendReviewReceipt';
 export * from './sendRevisionResubmittedNotification';
 export * from './sendRevisionRequestedNotification';
 export * from './sendDecisionUpdateNotification';

@@ -77,6 +77,7 @@ export * from './reconcileReviewAssignments';
 export * from './getEligibleReviewerProfileIds';
 export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
+export * from './reviewHelpers';
 export * from './listReviewAssignments';
 export * from './listCategoryReviewers';
 export * from './listEligibleReviewers';
