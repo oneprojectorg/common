@@ -4,7 +4,12 @@ import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
-import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -67,7 +72,12 @@ const PolicyReacceptanceModalContent = () => {
     // Controlled `open` with no `onOpenChange`: Escape and the backdrop have
     // nowhere to write, so the gate can't be dismissed.
     <Dialog open disablePointerDismissal>
-      <DialogContent showCloseButton={false} className="p-0 sm:max-w-[36rem]">
+      {/* Column, not the default grid, so each view can put the scroll on its
+          own body instead of on the whole card. */}
+      <DialogContent
+        showCloseButton={false}
+        className="flex flex-col overflow-hidden p-0 sm:max-w-[36rem]"
+      >
         {activeDocument ? (
           <PolicyDocumentView
             document={activeDocument}
@@ -103,17 +113,17 @@ const PolicyReacceptanceMain = ({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-6 p-8 sm:px-10 sm:py-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-8 sm:px-10 sm:py-10">
       <div className="flex flex-col gap-2 text-center">
-        <DialogTitle>{t("We've updated our policies.")}</DialogTitle>
-        <p className="text-base text-muted-foreground">
-          {t('Review the changes and accept to keep using Common.')}
-        </p>
+        <DialogTitle className="text-headline">
+          {t("We've updated our policies.")}
+        </DialogTitle>
+        <p>{t('Review the changes and accept to keep using Common.')}</p>
       </div>
 
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted p-4">
         <span className="font-serif text-title">{t("What's changed")}</span>
-        <p className="text-base text-muted-foreground">
+        <p>
           {t(
             'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
           )}
@@ -126,7 +136,7 @@ const PolicyReacceptanceMain = ({
           checked={agreed}
           onCheckedChange={onAgreedChange}
         />
-        <span id="policy-consent-label" className="text-base">
+        <span id="policy-consent-label" className="-mt-1 text-base">
           {t.rich(
             'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
             {
@@ -185,7 +195,7 @@ const PolicyDocumentView = ({
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex min-h-16 items-center border-b border-border bg-popover px-4">
+      <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0 pe-4">
         <Button
           variant="ghost"
           size="icon"
@@ -194,11 +204,13 @@ const PolicyDocumentView = ({
         >
           <LuArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden />
         </Button>
+        {/* Centred on the header, not on the Back button beside it, so `relative`
+            above is load-bearing. */}
         <DialogTitle className="pointer-events-none absolute inset-x-0 text-center">
           {documentTitle[document]}
         </DialogTitle>
-      </div>
-      <div className="px-6 py-4">
+      </DialogHeader>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
         <Content />
       </div>
     </>
