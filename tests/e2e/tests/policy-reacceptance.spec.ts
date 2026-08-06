@@ -76,8 +76,9 @@ test.describe('Policy re-acceptance modal', () => {
     const agree = gate.getByRole('button', { name: 'Agree and continue' });
     await expect(agree).toBeDisabled();
 
-    // A policy link opens that document over the gate, with a working back
-    // button. The gate stays mounted underneath.
+    // A policy link opens that document over the gate. While it is open the
+    // gate is inert and out of the accessibility tree — correct for a stacked
+    // modal, and why nothing here asserts on the gate until the document closes.
     const termsTrigger = gate.getByRole('button', { name: 'Terms of Use' });
     await termsTrigger.click();
     await expect(
@@ -85,9 +86,6 @@ test.describe('Policy re-acceptance modal', () => {
         name: /TERMS OF SERVICE FOR COMMON PLATFORM/,
       }),
     ).toBeVisible({ timeout: 15000 });
-    await expect(
-      gate.getByRole('heading', { name: "We've updated our policies." }),
-    ).toBeVisible();
 
     // Escape closes the document only — the consent wall must survive it.
     await page.keyboard.press('Escape');
