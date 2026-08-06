@@ -2,7 +2,6 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
-  PROPOSAL_TITLE_MAX_LENGTH,
   formatProposalCategories,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
@@ -42,6 +41,16 @@ import type { ProposalDraftFields } from './useProposalDraft';
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+/**
+ * Cap on the proposal title (Figma 17950:11356 — the field reads "37/50").
+ *
+ * Below `PROPOSAL_TITLE_MAX_LENGTH`, which the API enforces to keep
+ * `profiles.name` inside its varchar(256). Capping the server at 50 would make
+ * every existing longer-titled proposal unsaveable, since autosave would be
+ * rejected on each tick. A template may ask for less, never more.
+ */
+const TITLE_MAX_LENGTH = 50;
 
 interface ProposalFormRendererProps {
   /** Compiled field descriptors from `compileProposalSchema`. */
@@ -210,11 +219,9 @@ function renderField(
       <CollaborativeTitleField
         title={schema.title ?? t('Proposal name')}
         required={field.required}
-        // No template sets one, and past `profiles.name`'s varchar(256) the
-        // insert fails. A template may ask for less, never more.
         maxLength={Math.min(
-          schema.maxLength ?? PROPOSAL_TITLE_MAX_LENGTH,
-          PROPOSAL_TITLE_MAX_LENGTH,
+          schema.maxLength ?? TITLE_MAX_LENGTH,
+          TITLE_MAX_LENGTH,
         )}
         placeholder={t('Untitled Proposal')}
         onChange={(value) => onFieldChange('title', value)}

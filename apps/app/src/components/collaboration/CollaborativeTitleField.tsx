@@ -183,16 +183,15 @@ export function CollaborativeTitleField({
         // InputGroup's `<input>`/`<textarea>` rules never fire for it.
         <InputGroup className="h-auto min-h-11 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
           <EditorContent
-            // `w-full`: the block addon makes InputGroup a column, where its
-            // `items-center` centres children horizontally.
-            className="w-full min-w-0 flex-1 px-3 py-2.5"
+            className="min-w-0 flex-1 px-3 py-2.5"
             dir={editor.isEmpty ? undefined : 'auto'}
             editor={editor}
           />
           {maxLength != null && (
-            // Under the field, not beside it: Figma uses a block addon for
-            // wrapping inputs, and an inline one would narrow every line.
-            <InputGroupAddon align="block-end" className="justify-end">
+            // Beside the field, as Figma has it (17950:11356): the title is a
+            // single line, so the counter costs no room. Block addons are for
+            // the wrapping prose fields.
+            <InputGroupAddon align="inline-end">
               <CharacterCounter
                 id={counterId}
                 count={charCount}
