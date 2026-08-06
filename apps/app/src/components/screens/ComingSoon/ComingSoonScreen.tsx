@@ -1,9 +1,8 @@
 'use client';
 
-import { ButtonLink } from '@op/ui/Button';
-import { Header2, Header3 } from '@op/ui/Header';
-import { LogoLoop } from '@op/ui/LogoLoop';
-import { cn } from '@op/ui/utils';
+import { Header2, Header3 } from '@op/sense/Header';
+import { LogoLoop } from '@op/sense/LogoLoop';
+import { cn } from '@op/sense/lib/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';
@@ -11,6 +10,8 @@ import { ReactNode } from 'react';
 import { LuArrowRight } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import {
   AnimatedGradientBackground,
@@ -60,11 +61,7 @@ export const ComingSoonScreen = () => {
           className="relative flex items-center justify-between p-4 md:px-8 md:py-6"
         >
           <img src="/logo-common.svg" alt="Common" className="h-4" />
-          <ButtonLink
-            href="/login"
-            color="secondary"
-            className="rounded-lg text-black shadow-md"
-          >
+          <ButtonLink href="/login" variant="outline">
             {t('Log in')}
           </ButtonLink>
         </motion.header>
@@ -147,8 +144,8 @@ export const ComingSoonScreen = () => {
               gap={40}
               hoverSpeed={5}
               fadeOut
-              fadeOutColor="#ffffff"
-              ariaLabel="Technology partners"
+              fadeOutColor="var(--color-background)"
+              ariaLabel={t('Technology partners')}
             />
           </section>
         </FadeInWrapper>
