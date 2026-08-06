@@ -123,8 +123,18 @@ export function CollaborativeTextField({
       )}
       {/* focus-within, not InputGroup's has-[input:focus-visible] rules: the
           control is a contenteditable, not an <input>. The editable's own ring
-          is switched off so only the box lights up. */}
-      <InputGroup className="h-auto flex-col items-stretch focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+          is switched off so only the box lights up.
+
+          `has-[[data-bubble-menu]]:z-10` lifts this field above the ones after
+          it while its bubble menu is mounted. The menu is positioned inside the
+          field (portaling it makes scrolling janky), so without the lift a later
+          field paints over it — the location map and search covered it, and no
+          z-index on the menu itself helps, since it only competes inside this
+          subtree. The menu only mounts while the field has focus, so its
+          presence is the condition, and the lift drops on blur with it. `z-10`
+          rather than higher: the editor's sticky topbar is `z-20` and should
+          stay on top. */}
+      <InputGroup className="h-auto flex-col items-stretch focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-[[data-bubble-menu]]:z-10">
         <CollaborativeEditor
           field={fragmentName}
           extensions={extensions}

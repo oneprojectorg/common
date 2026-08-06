@@ -286,23 +286,33 @@ export function RichTextEditorBubbleMenu({
       editor={editor}
       pluginKey={pluginKey}
       shouldShow={shouldShow ?? defaultShouldShow}
+      // Stays inside the field rather than portaling to the body: portaled, it
+      // has to be positioned against the viewport and repositioned on the form's
+      // inner scroll, which is visibly janky. In place it scrolls with the
+      // content for free — the field lifts its own stacking order while the menu
+      // is mounted (`data-bubble-menu` below, read by the field's InputGroup).
       options={{
-        placement: 'top',
+        // Beside the selection, vertically centred on it. Sideways because the
+        // menu is far too tall to sit above or below: Floating UI would flip and
+        // shift it under the editor's sticky topbar or over the next field.
+        // Horizontally there is always the column's margin to put it in.
+        placement: 'right',
         offset: 8,
-        // Floating UI measures against the viewport, which knows nothing about
-        // the editor's sticky topbar — without this the menu happily parks
-        // itself under the bar, where the bar swallows the clicks. Reserve the
-        // bar's height (`--spacing-editor-topbar`, 60px) plus the offset so the
-        // menu flips below the selection instead.
-        flip: { padding: { top: 68 } },
-        shift: { padding: { top: 68 } },
+        // Nudges it back inside the viewport when the selection is near an edge.
+        shift: { padding: 8 },
         onHide: () => {
           closeLinkEditor();
           setIsEditingEmbed(false);
         },
       }}
       data-testid="rich-text-bubble-menu"
-      className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md"
+      // Style hook for the containing field, which lifts itself above later
+      // fields while this is mounted. See CollaborativeTextField.
+      data-bubble-menu=""
+      // `will-change-transform` gives the menu its own compositor layer: it is
+      // absolutely positioned inside the form's scroll container, so otherwise it
+      // repaints with the content on every scroll frame.
+      className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md will-change-transform"
     >
       {/* The toolbar stays mounted while the link editor is open so the
           menu keeps its size and anchor instead of jumping */}
@@ -314,16 +324,16 @@ export function RichTextEditorBubbleMenu({
         >
           {groups.map((group) => (
             <React.Fragment key={group[0]?.key}>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 place-items-center gap-2">
                 {group.map((item) => (
                   <Toggle
                     key={item.key}
-                    size="sm"
                     pressed={item.isActive}
                     onPressedChange={item.toggle}
                     aria-label={item.label}
                     title={item.label}
-                    className="size-8 aria-pressed:bg-primary aria-pressed:text-white"
+                    size="icon-sm"
+                    className="aria-pressed:bg-accent aria-pressed:text-primary"
                   >
                     <item.icon className="size-4" />
                   </Toggle>
