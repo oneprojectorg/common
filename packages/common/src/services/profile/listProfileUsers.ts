@@ -39,7 +39,9 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
  * to mirror `resolveDisplayName` — `profileUsers.name` is null or stale for
  * profile-linked users, so ordering on that column alone leaves the displayed
  * names looking unsorted. Coalesces to empty string (never null) so ORDER BY
- * and the cursor condition agree on where nameless rows sit.
+ * and the cursor condition agree on where nameless rows sit, and orders the
+ * inner select so the sort key can't shift between the two if an auth user
+ * somehow has more than one `users` row.
  */
 const buildDisplayNameSubquery = ({
   authUserIdColumn,
@@ -52,6 +54,7 @@ const buildDisplayNameSubquery = ({
   FROM ${users} u
   INNER JOIN ${profiles} p ON p.id = u.profile_id
   WHERE u.auth_user_id = ${authUserIdColumn}
+  ORDER BY p.name
   LIMIT 1
 ), ''), NULLIF(${nameColumn}, ''), '')`;
 
@@ -127,25 +130,20 @@ export const listProfileUsers = async ({
       return compareFn(profileUsers.email, decodedCursor.value);
     }
 
+    // Name and role both sort on a subquery, so compare against that same
+    // expression with email as the tiebreaker.
+    const sortKey =
+      orderBy === 'name'
+        ? buildDisplayNameSubquery({
+            authUserIdColumn: profileUsers.authUserId,
+            nameColumn: profileUsers.name,
+          })
+        : buildRoleNameSubquery(profileUsers.id);
     const compareOp = dir === 'asc' ? sql`>` : sql`<`;
 
-    if (orderBy === 'name') {
-      // ORDER BY display name, email - uses shared subquery helper
-      const displayNameSubquery = buildDisplayNameSubquery({
-        authUserIdColumn: profileUsers.authUserId,
-        nameColumn: profileUsers.name,
-      });
-      return sql`(
-        ${displayNameSubquery} ${compareOp} ${decodedCursor.value}
-        OR (${displayNameSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
-      )`;
-    }
-
-    // orderBy === 'role' - uses shared subquery helper
-    const roleSubquery = buildRoleNameSubquery(profileUsers.id);
     return sql`(
-      ${roleSubquery} ${compareOp} ${decodedCursor.value}
-      OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
+      ${sortKey} ${compareOp} ${decodedCursor.value}
+      OR (${sortKey} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
     )`;
   };
 
