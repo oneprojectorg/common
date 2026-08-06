@@ -22,6 +22,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
+import { formatBudget } from '../BudgetDisplay';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
@@ -99,12 +100,7 @@ function formatPreviewBudget(
     return text;
   }
 
-  return budget.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: budget.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
+  return formatBudget(budget);
 }
 
 function getPreviewText({
@@ -157,12 +153,7 @@ function getPreviewBudgetValue({
     return null;
   }
 
-  return draftValue.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: draftValue.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
+  return formatBudget(draftValue);
 }
 
 // ---------------------------------------------------------------------------

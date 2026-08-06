@@ -4,7 +4,15 @@
  */
 
 /**
- * Format a date string for display in the user's local timezone.
+ * Format a date string for display.
+ *
+ * Renders in UTC by default, matching the app-wide next-intl `timeZone`. A
+ * timestamp must format identically on the server and in the browser: without
+ * a pinned zone the server (UTC) and a viewer west of the stored offset
+ * disagree by a day — e.g. `2026-07-06T04:00:00Z` is "Jul 6" in UTC and
+ * "Jul 5" in America/Los_Angeles — which fails hydration (React #418). Pass an
+ * explicit `timeZone` in `options` only for values that are genuinely local to
+ * the viewer and rendered after mount.
  */
 export function formatDate(
   dateString: string,
@@ -12,7 +20,7 @@ export function formatDate(
   locale: string = 'en-US',
 ): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString(locale, options);
+  return date.toLocaleDateString(locale, { timeZone: 'UTC', ...options });
 }
 
 /**

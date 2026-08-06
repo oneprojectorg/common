@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -20,14 +21,12 @@ import { TranslatedText } from '../TranslatedText';
 import { DecisionCardHeader } from './DecisionCardHeader';
 import { DuplicateProcessModal } from './DuplicateProcessModal';
 
-const formatDateShort = (dateString: string, locale: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(locale, {
+const formatDateShort = (dateString: string, locale: string) =>
+  formatDate(dateString, locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
-};
 
 const isClosingSoon = (dateString: string) => {
   const date = new Date(dateString);
