@@ -4,7 +4,7 @@ import { FormalSection } from '../FormalSection';
 
 export const PrivacyPolicyContent = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div dir="auto" className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <Header3>One Project Privacy Notice</Header3>
         <p>
