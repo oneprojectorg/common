@@ -4,7 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
-import { useDebounce } from '@op/hooks';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -14,10 +14,10 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { SearchField } from '@op/ui/SearchField';
+import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
-  Key,
   type ReactNode,
   Suspense,
   useEffect,
@@ -112,8 +112,7 @@ function ProfileInviteModalContent({
   const utils = trpc.useUtils();
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
-  const [selectedRoleName, setSelectedRoleName] = useState<string>('');
+  const [requestedRoleId, setRequestedRoleId] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startSendTransition] = useTransition();
@@ -125,27 +124,44 @@ function ProfileInviteModalContent({
     width: 0,
   });
 
-  // Fetch roles with decisions zone permissions to identify admin roles
-  const { data: rolesWithPerms } = trpc.profile.listRoles.useQuery(
-    { profileId, zoneName: 'decisions' },
-    { enabled: isDraft },
-  );
-  const adminRoleIds = useMemo(() => {
-    if (!rolesWithPerms) {
-      return new Set<string>();
-    }
-    return new Set(
-      rolesWithPerms.items.filter((r) => r.permissions?.admin).map((r) => r.id),
-    );
-  }, [rolesWithPerms]);
+  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({
+    profileId,
+    zoneName: 'decisions',
+    limit: 100,
+  });
+  const selectedRole =
+    roles.find((role) => role.id === requestedRoleId) ?? roles[0];
+  const selectedRoleId = selectedRole?.id ?? '';
+  const selectedRoleName = selectedRole?.name ?? '';
+  const showDraftBanner =
+    isDraft && !!selectedRole && !selectedRole.permissions?.admin;
 
-  const showDraftBanner = isDraft && !adminRoleIds.has(selectedRoleId);
-
-  // Fetch existing pending invites and members
+  // Fetch existing pending invites
   const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
     profileId,
   });
-  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({ profileId });
+
+  // Members for the selected role, paginated server-side. React Query caches
+  // per input key, so each role tab paginates independently and switching
+  // tabs preserves already-loaded pages.
+  const {
+    data: usersData,
+    isPending: isMembersPending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = trpc.profile.listUsers.useInfiniteQuery(
+    { profileId, roleId: selectedRoleId, limit: 25 },
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+      enabled: !!selectedRoleId,
+    },
+  );
+
+  const loadedMembers = useMemo(
+    () => usersData?.pages.flatMap((page) => page.items) ?? [],
+    [usersData],
+  );
 
   const [optimisticInvites, dispatchRemoveInvite] = useOptimistic(
     serverInvites,
@@ -153,7 +169,7 @@ function ProfileInviteModalContent({
   );
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
-    usersData.items,
+    loadedMembers,
     (state, profileUserId: string) =>
       state.filter((u) => u.id !== profileUserId),
   );
@@ -167,19 +183,32 @@ function ProfileInviteModalContent({
     [selectedItemsByRole],
   );
 
+  // Member emails cover the loaded pages for the selected role; the invite
+  // service remains authoritative for members on other roles or pages.
+  const takenEmails = useMemo(
+    () =>
+      new Set([
+        ...allSelectedItems.map((item) => item.email.toLowerCase()),
+        ...optimisticUsers
+          .filter(hasEmail)
+          .map((user) => user.email.toLowerCase()),
+        ...optimisticInvites.map((invite) => invite.email.toLowerCase()),
+      ]),
+    [allSelectedItems, optimisticUsers, optimisticInvites],
+  );
+
   // Filter server invites by current role
   const currentRoleInvites = useMemo(
     () => optimisticInvites.filter((i) => i.accessRoleId === selectedRoleId),
     [optimisticInvites, selectedRoleId],
   );
 
-  // Filter members by current role
-  const currentRoleMembers = useMemo(
-    () =>
-      optimisticUsers.filter((u) =>
-        u.roles.some((r) => r.id === selectedRoleId),
-      ),
-    [optimisticUsers, selectedRoleId],
+  // Members are already filtered to the selected role by the server query
+  const currentRoleMembers = optimisticUsers;
+
+  const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
+    fetchNextPage,
+    { hasNextPage, isFetchingNextPage },
   );
 
   // Update dropdown position when search query changes
@@ -217,41 +246,24 @@ function ProfileInviteModalContent({
       .sort((a, b) => b.rank - a.rank);
   }, [searchResults]);
 
-  // Filter out already selected, already invited, and existing members
+  // Filter out already selected, already invited, and loaded members.
   const filteredResults = useMemo(() => {
     const selectedIds = new Set(allSelectedItems.map((item) => item.profileId));
-    const selectedEmails = new Set(
-      allSelectedItems.map((item) => item.email.toLowerCase()),
-    );
-    const existingUserEmails = new Set(
-      optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
-    );
-    const invitedEmails = new Set(
-      optimisticInvites.map((i) => i.email.toLowerCase()),
-    );
     return flattenedResults.filter(
       (result) =>
         !selectedIds.has(result.id) &&
         (!result.user?.email ||
-          (!selectedEmails.has(result.user.email.toLowerCase()) &&
-            !existingUserEmails.has(result.user.email.toLowerCase()) &&
-            !invitedEmails.has(result.user.email.toLowerCase()))),
+          !takenEmails.has(result.user.email.toLowerCase())),
     );
-  }, [flattenedResults, allSelectedItems, optimisticUsers, optimisticInvites]);
+  }, [flattenedResults, allSelectedItems, takenEmails]);
 
-  // Check if query is a valid email that hasn't been selected yet (across all roles)
+  // Check if query is a valid email that hasn't been selected yet.
   const canAddEmail = useMemo(() => {
     if (!isValidEmail(debouncedQuery)) {
       return false;
     }
-    const lowerQuery = debouncedQuery.toLowerCase();
-    const takenEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    return !takenEmails.has(lowerQuery);
-  }, [debouncedQuery, allSelectedItems, optimisticUsers, optimisticInvites]);
+    return !takenEmails.has(debouncedQuery.toLowerCase());
+  }, [debouncedQuery, takenEmails]);
 
   // Mutations
   const inviteMutation = trpc.profile.invite.useMutation();
@@ -261,22 +273,21 @@ function ProfileInviteModalContent({
   // Calculate total people count across all roles (staged only)
   const totalPeople = allSelectedItems.length;
 
-  // Calculate counts by role for the tab badges (staged + server invites + members)
+  // Merge authoritative member counts with staged items and pending invites so
+  // each badge has one final count.
   const countsByRole = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> = Object.fromEntries(
+      roles.map((role) => [role.id, role.memberCount ?? 0]),
+    );
     for (const [roleId, items] of Object.entries(selectedItemsByRole)) {
-      counts[roleId] = items.length;
+      counts[roleId] = (counts[roleId] ?? 0) + items.length;
     }
     for (const invite of optimisticInvites) {
       counts[invite.accessRoleId] = (counts[invite.accessRoleId] ?? 0) + 1;
     }
-    for (const user of optimisticUsers) {
-      for (const role of user.roles) {
-        counts[role.id] = (counts[role.id] ?? 0) + 1;
-      }
-    }
+
     return counts;
-  }, [selectedItemsByRole, optimisticInvites, optimisticUsers]);
+  }, [roles, selectedItemsByRole, optimisticInvites]);
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     if (!result.user?.email || !selectedRoleId) {
@@ -337,15 +348,53 @@ function ProfileInviteModalContent({
     });
   };
 
-  const handleRemoveUser = (profileUserId: string) => {
+  const handleRemoveUser = ({
+    id,
+    roles: memberRoles,
+  }: {
+    id: string;
+    roles: Array<{ id: string }>;
+  }) => {
     startOptimisticTransition(async () => {
-      dispatchRemoveUser(profileUserId);
+      dispatchRemoveUser(id);
+      const removedRoleIds = new Set(memberRoles.map((role) => role.id));
+      const rolesQueryInput = {
+        profileId,
+        zoneName: 'decisions',
+        limit: 100,
+      };
+      const updateMemberCounts = (delta: number) =>
+        utils.profile.listRoles.setData(rolesQueryInput, (rolesData) =>
+          rolesData
+            ? {
+                ...rolesData,
+                items: rolesData.items.map((role) =>
+                  removedRoleIds.has(role.id)
+                    ? {
+                        ...role,
+                        memberCount: Math.max(
+                          0,
+                          (role.memberCount ?? 0) + delta,
+                        ),
+                      }
+                    : role,
+                ),
+              }
+            : rolesData,
+        );
+      updateMemberCounts(-1);
       try {
-        await removeUserMutation.mutateAsync({ profileUserId });
+        await removeUserMutation.mutateAsync({ profileUserId: id });
       } catch {
+        updateMemberCounts(1);
         toast.error({ message: t('Failed to remove user') });
       }
-      await utils.profile.listUsers.invalidate({ profileId });
+      // Partial input matching also invalidates the per-role infinite queries;
+      // listRoles refreshes or restores the optimistic member counts.
+      await Promise.all([
+        utils.profile.listUsers.invalidate({ profileId }),
+        utils.profile.listRoles.invalidate({ profileId }),
+      ]);
     });
   };
 
@@ -363,19 +412,43 @@ function ProfileInviteModalContent({
           return;
         }
 
-        await inviteMutation.mutateAsync({
+        const result = await inviteMutation.mutateAsync({
           invitations,
           profileId,
         });
+
+        if (result.details.failed.length > 0) {
+          const successfulEmails = new Set(result.details.successful);
+          setSelectedItemsByRole((selectedItems) =>
+            Object.fromEntries(
+              Object.entries(selectedItems).map(([roleId, items]) => [
+                roleId,
+                items.filter(
+                  (item) => !successfulEmails.has(item.email.toLowerCase()),
+                ),
+              ]),
+            ),
+          );
+          setSearchQuery('');
+          toast.error({ message: t('Failed to send invite') });
+
+          if (result.details.successful.length > 0) {
+            utils.profile.listUsers.invalidate({ profileId });
+            utils.profile.listProfileInvites.invalidate({ profileId });
+            utils.profile.listRoles.invalidate({ profileId });
+          }
+          return;
+        }
 
         toast.success({ message: t('Invite sent successfully') });
         setSelectedItemsByRole({});
         setSearchQuery('');
         onOpenChange(false);
 
-        // Invalidate both lists
+        // Invalidate the lists and the per-role member counts (tab badges)
         utils.profile.listUsers.invalidate({ profileId });
         utils.profile.listProfileInvites.invalidate({ profileId });
+        utils.profile.listRoles.invalidate({ profileId });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');
@@ -390,12 +463,7 @@ function ProfileInviteModalContent({
       return;
     }
 
-    const existingEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    const emails = parseEmailPaste(pastedText, existingEmails);
+    const emails = parseEmailPaste(pastedText, takenEmails);
     if (!emails) {
       return;
     }
@@ -417,11 +485,8 @@ function ProfileInviteModalContent({
     setSearchQuery('');
   };
 
-  const handleTabChange = (key: Key) => {
-    setSelectedRoleId(String(key));
-  };
-
   const hasNoItems =
+    !isMembersPending &&
     currentRoleItems.length === 0 &&
     currentRoleInvites.length === 0 &&
     currentRoleMembers.length === 0;
@@ -431,15 +496,10 @@ function ProfileInviteModalContent({
       <ModalBody className="space-y-6">
         {/* Role Tabs */}
         <RoleSelector
-          profileId={profileId}
+          roles={roles}
           selectedRoleId={selectedRoleId}
-          onSelectionChange={handleTabChange}
+          onSelectionChange={setRequestedRoleId}
           countsByRole={countsByRole}
-          onRolesLoaded={(roleId, roleName) => {
-            setSelectedRoleId(roleId);
-            setSelectedRoleName(roleName);
-          }}
-          onRoleNameChange={setSelectedRoleName}
         />
 
         {showDraftBanner && (
@@ -556,7 +616,7 @@ function ProfileInviteModalContent({
             </span>
           )}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
             {/* Staged items (not yet sent) */}
             {currentRoleItems.map((item) => (
               <PersonRow
@@ -605,7 +665,9 @@ function ProfileInviteModalContent({
               );
             })}
 
-            {/* Existing members */}
+            {/* Existing members (loading skeletons while the first page of
+                the selected role is pending) */}
+            {isMembersPending && <MemberRowsSkeleton />}
             {currentRoleMembers.map((user) => (
               <PersonRow
                 key={user.id}
@@ -623,13 +685,24 @@ function ProfileInviteModalContent({
                   ) : undefined
                 }
                 onRemove={
-                  !user.isOwner ? () => handleRemoveUser(user.id) : undefined
+                  !user.isOwner ? () => handleRemoveUser(user) : undefined
                 }
                 removeLabel={t('Remove {name}', {
                   name: user.name ?? user.email,
                 })}
               />
             ))}
+
+            {/* Infinite-scroll trigger: loads more members as the user
+                scrolls inside the bounded list container */}
+            {shouldShowTrigger && (
+              <div
+                ref={scrollTriggerRef}
+                className="flex shrink-0 justify-center py-2"
+              >
+                {isFetchingNextPage && <LoadingSpinner className="size-4" />}
+              </div>
+            )}
 
             {/* Empty state */}
             {hasNoItems && selectedRoleName ? (
@@ -660,6 +733,16 @@ function ProfileInviteModalContent({
           {isSubmitting ? t('Adding...') : t('Add')}
         </Button>
       </ModalFooter>
+    </>
+  );
+}
+
+function MemberRowsSkeleton() {
+  return (
+    <>
+      {[0, 1, 2].map((row) => (
+        <Skeleton key={row} className="h-14 w-full shrink-0 rounded-lg" />
+      ))}
     </>
   );
 }

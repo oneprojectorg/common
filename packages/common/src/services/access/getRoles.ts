@@ -11,11 +11,14 @@ import {
   isNull,
   lt,
   or,
+  sql,
 } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   accessZones,
+  profileUserToAccessRoles,
+  profileUsers,
 } from '@op/db/schema';
 import { type Permission, fromBitField } from 'access-zones';
 
@@ -24,6 +27,7 @@ import {
   type SortDir,
   decodeCursor,
   encodeCursor,
+  excludeGlobalUsers,
 } from '../../utils/db';
 
 interface Role {
@@ -31,6 +35,7 @@ interface Role {
   name: string;
   description: string | null;
   permissions?: Permission;
+  memberCount?: number;
 }
 
 /**
@@ -66,6 +71,8 @@ type RoleCursor = { value: string; id: string };
  * - If no profileId: returns only exposable global roles (profileId IS NULL
  *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
+ * - If profileId is present: each role gains a memberCount — the number of
+ *   profile members holding that role, computed in the paginated role query
  */
 export const getRoles = async (params?: {
   profileId?: string;
@@ -114,6 +121,17 @@ export const getRoles = async (params?: {
       : profileCondition;
   };
 
+  // The role junction's accessRoleId index bounds the correlated lookup.
+  const memberCountExpr = (accessRoleCols: typeof accessRoles) => sql<number>`(
+    SELECT COUNT(*)::int
+    FROM ${profileUserToAccessRoles}
+    INNER JOIN ${profileUsers}
+      ON ${profileUsers.id} = ${profileUserToAccessRoles.profileUserId}
+    WHERE ${profileUserToAccessRoles.accessRoleId} = ${accessRoleCols.id}
+      AND ${profileUsers.profileId} = ${profileId}
+      AND ${excludeGlobalUsers(profileUsers.authUserId)}
+  )`;
+
   // Use join-based query when zoneName is provided for DB-level filtering
   if (zoneName) {
     const rows = await db
@@ -122,6 +140,7 @@ export const getRoles = async (params?: {
         name: accessRoles.name,
         description: accessRoles.description,
         permission: accessRolePermissionsOnAccessZones.permission,
+        ...(profileId && { memberCount: memberCountExpr(accessRoles) }),
       })
       .from(accessRoles)
       .leftJoin(
@@ -156,6 +175,7 @@ export const getRoles = async (params?: {
       name: row.name,
       description: row.description,
       permissions: fromBitField(row.permission ?? 0),
+      ...(profileId && { memberCount: row.memberCount ?? 0 }),
     }));
 
     const lastItem = resultItems[resultItems.length - 1];
@@ -176,6 +196,10 @@ export const getRoles = async (params?: {
       dir === 'desc'
         ? { name: 'desc', id: 'desc' }
         : { name: 'asc', id: 'asc' },
+    extras: {
+      memberCount: (table, { sql: sqlOp }) =>
+        sqlOp<number>`${memberCountExpr(table)}`.as('member_count'),
+    },
     limit: limit + 1,
   });
 
@@ -188,6 +212,7 @@ export const getRoles = async (params?: {
     id: role.id,
     name: role.name,
     description: role.description,
+    ...(profileId && { memberCount: role.memberCount ?? 0 }),
   }));
 
   // Build next cursor from last item
