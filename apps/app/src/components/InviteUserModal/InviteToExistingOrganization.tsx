@@ -2,7 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { FieldLabel } from '@op/sense/Field';
+import { Field, FieldLabel } from '@op/sense/Field';
 import {
   Select,
   SelectContent,
@@ -10,13 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
-import { Tag, TagGroup } from '@op/sense/TagGroup';
-import { toast } from '@op/sense/Toast';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { parseEmails, shouldParseEmails } from './emailUtils';
+import { EmailInviteField } from './EmailInviteField';
 
 interface InviteToExistingOrganizationProps {
   emails: string;
@@ -70,107 +68,20 @@ export const InviteToExistingOrganization = ({
     setSelectedOrganization,
   ]);
 
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-  };
-
-  const removeEmailBadge = (emailToRemove: string) => {
-    setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (shouldParseEmails(e.key)) {
-      e.preventDefault();
-      if (emails.trim()) {
-        const { emails: parsedEmails, hasLineBreaks } = parseEmails(emails);
-        const validEmails: string[] = [];
-        const invalidEmails: string[] = [];
-        const duplicateEmails: string[] = [];
-
-        parsedEmails.forEach((email) => {
-          if (!isValidEmail(email)) {
-            invalidEmails.push(email);
-          } else if (emailBadges.includes(email)) {
-            duplicateEmails.push(email);
-          } else {
-            validEmails.push(email);
-          }
-        });
-
-        // Add valid emails as badges in a single state update
-        if (validEmails.length > 0) {
-          setEmailBadges([...emailBadges, ...validEmails]);
-        }
-
-        // Keep invalid emails in the input field, preserving original separator format
-        const separator = hasLineBreaks ? '\n' : ', ';
-        setEmails(invalidEmails.join(separator));
-
-        // Show error for invalid emails if any
-        if (invalidEmails.length > 0) {
-          toast.error(
-            invalidEmails.length === 1
-              ? t('Invalid email')
-              : t('Invalid emails'),
-            {
-              description: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
-            },
-          );
-        }
-
-        // Show info for duplicate emails if any
-        if (duplicateEmails.length > 0) {
-          toast.error(
-            duplicateEmails.length === 1
-              ? t('Duplicate email')
-              : t('Duplicate emails'),
-            {
-              description: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
-            },
-          );
-        }
-      }
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <p>{t('Expand your network and collaborate with others on Common.')}</p>
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="flex min-h-20 flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
-            <TagGroup aria-label={t('Selected emails')}>
-              {emailBadges.map((email, index) => (
-                <Tag
-                  className="sm:rounded-md"
-                  key={index}
-                  onRemove={() => removeEmailBadge(email)}
-                  removeLabel={t('Remove {email}', { email })}
-                >
-                  {email}
-                </Tag>
-              ))}
-            </TagGroup>
-            <textarea
-              aria-label={t('Add emails')}
-              value={emails}
-              onChange={(e) => setEmails(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                emailBadges.length === 0
-                  ? `name1@${user.currentOrganization?.domain || 'example.org'}, name2@${user.currentOrganization?.domain || 'example.org'}, ...`
-                  : t('Type emails followed by a comma or line break...')
-              }
-              className="min-w-50 flex-1 resize-none border-none pt-1 outline-hidden"
-              rows={1}
-            />
-          </div>
-        </div>
+        <EmailInviteField
+          emails={emails}
+          setEmails={setEmails}
+          emailBadges={emailBadges}
+          setEmailBadges={setEmailBadges}
+          fallbackDomain="example.org"
+        />
 
-        <div className="flex flex-col gap-2">
+        <Field>
           <FieldLabel htmlFor="invite-organization">
             {t('Add to organization')}
           </FieldLabel>
@@ -189,9 +100,9 @@ export const InviteToExistingOrganization = ({
               )}
             </SelectContent>
           </Select>
-        </div>
+        </Field>
 
-        <div className="flex flex-col gap-2">
+        <Field>
           <FieldLabel htmlFor="invite-role">{t('Role')}</FieldLabel>
           <Select
             value={selectedRole}
@@ -222,7 +133,7 @@ export const InviteToExistingOrganization = ({
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       </div>
     </div>
   );

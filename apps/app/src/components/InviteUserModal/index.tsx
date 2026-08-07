@@ -255,18 +255,20 @@ export const InviteUserModal = ({
                 value={activeTab}
                 onValueChange={(value) => setActiveTab(value as string)}
               >
-                <TabsList aria-label={t('Invite options')}>
-                  <TabsTrigger value="existing">
-                    {t('Add to my organization')}
-                  </TabsTrigger>
-                  {inviteUserEnabled ? (
-                    <TabsTrigger value="new">
-                      {t('Invite a new organization')}
+                <div className="mb-2 w-full border-b">
+                  <TabsList variant="line" aria-label={t('Invite options')}>
+                    <TabsTrigger value="existing">
+                      {t('Add to my organization')}
                     </TabsTrigger>
-                  ) : null}
-                </TabsList>
+                    {inviteUserEnabled ? (
+                      <TabsTrigger value="new">
+                        {t('Invite a new organization')}
+                      </TabsTrigger>
+                    ) : null}
+                  </TabsList>
+                </div>
 
-                <TabsContent value="existing" className="sm:p-0">
+                <TabsContent value="existing">
                   <Suspense
                     fallback={
                       <div className="animate-pulse">
@@ -289,7 +291,7 @@ export const InviteUserModal = ({
                 </TabsContent>
 
                 {inviteUserEnabled ? (
-                  <TabsContent value="new" className="sm:p-0">
+                  <TabsContent value="new">
                     <InviteNewOrganization
                       emails={emails}
                       setEmails={setEmails}
