@@ -52,14 +52,12 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
           </PostFeed>
 
           {/* Comment Input */}
-          <div className="border-y">
-            <div className="overflow-hidden rounded bg-background py-4">
-              <PostUpdate
-                parentPostId={post.id}
-                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
-                label={t('Comment')}
-              />
-            </div>
+          <div className="border-y py-4">
+            <PostUpdate
+              parentPostId={post.id}
+              placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
+              label={t('Comment')}
+            />
           </div>
 
           {/* Comments Section */}
