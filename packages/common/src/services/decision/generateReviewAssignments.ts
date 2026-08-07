@@ -36,7 +36,7 @@ interface SelectedProposal {
  *
  * The scope builds the candidate set; the policy decides how much of it is
  * written — `full_coverage` all of it, `single_reviewer` one balanced pick
- * (`pickSingleReviewerAssignments`).
+ * (`pickSingleReviewerAssignments`), `none` nothing at all.
  */
 export async function generateReviewAssignments({
   instanceId,
@@ -67,6 +67,22 @@ export async function generateReviewAssignments({
     return;
   }
 
+  const { scope, policy } = getPhaseReviewSettings(
+    instance.instanceData as DecisionInstanceData,
+    phaseId,
+  );
+
+  // Policy `none`: the phase gets no automatic assignments at all — the
+  // operator creates them manually in the backend.
+  if (policy === 'none') {
+    logger.info('generateReviewAssignments: skipped', {
+      instanceId,
+      phaseId,
+      reason: 'phase policy is none',
+    });
+    return;
+  }
+
   const [selectedProposals, reviewerProfileIds, transitionProposalRows] =
     await Promise.all([
       db.query.proposals.findMany({
@@ -88,11 +104,6 @@ export async function generateReviewAssignments({
 
   const historyByProposalId = new Map(
     transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
-  );
-
-  const { scope, policy } = getPhaseReviewSettings(
-    instance.instanceData as DecisionInstanceData,
-    phaseId,
   );
 
   const candidateProposals =

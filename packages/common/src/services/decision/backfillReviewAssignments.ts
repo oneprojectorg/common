@@ -30,10 +30,10 @@ export type BackfillReviewAssignmentsResult =
  * phase membership: mid-phase submissions were never assigned to existing
  * reviewers, and the new reviewer must match them exactly. Never prunes —
  * deleting non-pending assignments would cascade-delete submitted reviews.
- * Expected no-op states (wrong phase, no reviewers, nothing to assign,
- * `single_reviewer` policy) are logged skips, not errors — but corrupt instance
- * data still throws, which event-driven callers should surface (e.g. as a
- * retried job) rather than swallow.
+ * Expected no-op states (wrong phase, no reviewers, nothing to assign, a
+ * non-`full_coverage` policy) are logged skips, not errors — but corrupt
+ * instance data still throws, which event-driven callers should surface (e.g.
+ * as a retried job) rather than swallow.
  */
 export async function backfillReviewAssignments({
   instanceId,
@@ -74,10 +74,11 @@ export async function backfillReviewAssignments({
 
   const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
 
-  // No backfill under `single_reviewer`: adding a mid-phase reviewer would put
-  // a second reviewer on every proposal they cover.
-  if (reviewSettings.policy === 'single_reviewer') {
-    return skip('current phase policy is single_reviewer');
+  // Backfill only makes sense under `full_coverage`: under `single_reviewer` a
+  // mid-phase reviewer would land as a second reviewer on every proposal they
+  // cover, and under `none` nothing is ever assigned automatically.
+  if (reviewSettings.policy !== 'full_coverage') {
+    return skip(`current phase policy is ${reviewSettings.policy}`);
   }
 
   // Most recent transition INTO the current phase — the one whose attachment
