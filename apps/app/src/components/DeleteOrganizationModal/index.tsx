@@ -138,7 +138,7 @@ export const DeleteOrganizationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col overflow-hidden text-start sm:min-w-lg">
+      <DialogContent className="flex flex-col overflow-hidden text-start sm:max-w-md">
         {steps[currentStep]}
       </DialogContent>
     </Dialog>
@@ -181,6 +181,7 @@ const SelectProfileStep = ({
               individual: t('Individual'),
             });
             const optionId = `delete-profile-${profile.id}`;
+            const avatarUrl = profile.avatarImage?.name;
 
             return (
               <OptionBox
@@ -188,7 +189,26 @@ const SelectProfileStep = ({
                 htmlFor={optionId}
                 label={profile.name}
                 description={profileType}
+                controlPlacement="end"
                 control={<RadioGroupItem id={optionId} value={profile.id} />}
+                accessory={
+                  <ProfileAvatar
+                    className="size-11 shrink-0"
+                    name={profile.name}
+                    src={getPublicUrl(avatarUrl)}
+                    alt={profile.name ?? t('User avatar')}
+                    imageRender={
+                      avatarUrl ? (
+                        <Image
+                          src={getPublicUrl(avatarUrl) ?? ''}
+                          fill
+                          className="object-cover"
+                          alt={profile.name ?? t('User avatar')}
+                        />
+                      ) : undefined
+                    }
+                  />
+                }
               />
             );
           })}
@@ -244,9 +264,9 @@ const ConfirmProfileStep = ({
             'You are about to delete this account. This action cannot be undone.',
           )}
         </p>
-        <div className="flex gap-2 rounded border border-destructive-muted p-4">
+        <div className="flex gap-2 rounded border border-destructive p-4">
           <ProfileAvatar
-            className="size-8 shrink-0"
+            className="size-11 shrink-0"
             name={profileToDelete.name}
             src={getPublicUrl(avatarUrl)}
             alt={profileToDelete.name ?? t('User avatar')}
@@ -262,8 +282,8 @@ const ConfirmProfileStep = ({
             }
           />
           <div className="flex flex-col">
-            <p className="font-medium">{profileToDelete.name}</p>
-            <p className="text-sm text-neutral-charcoal">{profileType}</p>
+            <p className="font-strong">{profileToDelete.name}</p>
+            <p className="text-sm text-muted-foreground">{profileType}</p>
           </div>
         </div>
       </div>
