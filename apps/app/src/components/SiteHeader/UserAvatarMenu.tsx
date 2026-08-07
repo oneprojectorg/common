@@ -471,7 +471,7 @@ const LegalDialogs = ({
           on the scroll container (top) instead of the first link deep in the
           legal text, which otherwise opens the dialog scrolled partway down. */}
       <DialogContent
-        className="flex max-h-[85vh] flex-col p-0 sm:max-w-[36rem]"
+        className="flex max-h-[85vh] flex-col p-0 sm:max-w-xl"
         initialFocus={scrollRef}
       >
         <DialogHeader>

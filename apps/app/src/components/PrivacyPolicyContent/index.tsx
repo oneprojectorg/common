@@ -4,16 +4,16 @@ import { FormalSection } from '../FormalSection';
 
 export const PrivacyPolicyContent = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div dir="auto" className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
-        <Header3 className="font-serif">One Project Privacy Notice</Header3>
+        <Header3>One Project Privacy Notice</Header3>
         <p>
           <i>Last Updated: July 2, 2026</i>
         </p>
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Who We Are</Header3>
+        <Header3>Who We Are</Header3>
         <p className="mb-4">
           One Project (collectively One Project, we, our, or us) is a non-profit
           building infrastructure for economic democracy. We build the
@@ -30,7 +30,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Purpose of this Privacy Notice</Header3>
+        <Header3>Purpose of this Privacy Notice</Header3>
         <p className="mb-4">
           This Notice describes the types of Personal Data that One Project may
           collect or process, how we may use and disclose that Personal Data,
@@ -75,7 +75,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
+        <Header3>
           Special Privacy Standards for Specific Platform Instances
         </Header3>
         <p className="mb-4">
@@ -110,9 +110,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          Personal Data Collected, Purposes, and Recipients
-        </Header3>
+        <Header3>Personal Data Collected, Purposes, and Recipients</Header3>
 
         <h4 className="mb-2 font-semibold">What is Personal Data?</h4>
         <p className="mb-4">
@@ -281,7 +279,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Users of the Platform</Header3>
+        <Header3>Users of the Platform</Header3>
         <p className="mb-4">
           We may process your Personal Data when you (1) use the Platform (2)
           contact us or submit information in connection with your use of the
@@ -496,7 +494,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Children</Header3>
+        <Header3>Children</Header3>
         <p className="mb-4">
           One Project does not knowingly collect data from children below the
           age of 13 in the United States, and does not knowingly collect,
@@ -525,7 +523,7 @@ export const PrivacyPolicyContent = () => {
 
       <div id="marketing-and-cookies">
         <FormalSection>
-          <Header3 className="font-serif">Marketing and Cookies</Header3>
+          <Header3>Marketing and Cookies</Header3>
           <p className="mb-4">
             To the extent permitted by law, including with your consent where
             required, we may engage in the following activities:
@@ -583,7 +581,7 @@ export const PrivacyPolicyContent = () => {
       </div>
 
       <FormalSection>
-        <Header3 className="font-serif">Chat Functions on Our Services</Header3>
+        <Header3>Chat Functions on Our Services</Header3>
         <p className="mb-4">
           We may offer a chat feature as a part of our services. If you interact
           with any chat functions, you consent to the processing of your
@@ -595,9 +593,7 @@ export const PrivacyPolicyContent = () => {
 
       <div id="service-providers">
         <FormalSection>
-          <Header3 className="font-serif">
-            Service Providers and Third Parties
-          </Header3>
+          <Header3>Service Providers and Third Parties</Header3>
           <p className="mb-4">
             Service providers or vendors (or processors) acting on our behalf
             must execute agreements requiring them to maintain confidentiality
@@ -611,7 +607,7 @@ export const PrivacyPolicyContent = () => {
       </div>
 
       <FormalSection>
-        <Header3 className="font-serif">
+        <Header3>
           Combination of Data with Data Received from Third Parties and
           Affiliates
         </Header3>
@@ -627,7 +623,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Links to Other Websites</Header3>
+        <Header3>Links to Other Websites</Header3>
         <p className="mb-4">
           Our Services may contain links to other websites, applications, or
           services that are not owned or operated by One Project. Such links do
@@ -642,9 +638,7 @@ export const PrivacyPolicyContent = () => {
 
       <div id="your-rights">
         <FormalSection>
-          <Header3 className="font-serif">
-            Your Rights Regarding Your Personal Data
-          </Header3>
+          <Header3>Your Rights Regarding Your Personal Data</Header3>
           <p className="mb-4">
             Depending on where you live, you may have the following rights with
             respect to some or all of your Personal Data:
@@ -736,7 +730,7 @@ export const PrivacyPolicyContent = () => {
       </div>
 
       <FormalSection>
-        <Header3 className="font-serif">Safeguarding Personal Data</Header3>
+        <Header3>Safeguarding Personal Data</Header3>
         <p className="mb-4">
           Consistent with applicable laws and requirements, One Project has put
           in place physical, technical, and administrative safeguards designed
@@ -752,9 +746,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          How Long Your Personal Data Will Be Kept
-        </Header3>
+        <Header3>How Long Your Personal Data Will Be Kept</Header3>
         <p className="mb-4">
           We generally retain Personal Data for as long as needed for the
           specific purpose or purposes for which it was collected or obtained,
@@ -777,7 +769,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Transfer of Personal Data</Header3>
+        <Header3>Transfer of Personal Data</Header3>
         <p className="mb-4">
           We operate in various countries throughout the world, including, but
           not limited to, the United States and Canada. Please be aware that
@@ -791,7 +783,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Changes to This Privacy Notice</Header3>
+        <Header3>Changes to This Privacy Notice</Header3>
         <p className="mb-4">
           We reserve the right to change this Notice from time to time. We will
           alert you when changes have been made by indicating the date this
@@ -803,7 +795,7 @@ export const PrivacyPolicyContent = () => {
 
       <div id="contact-us">
         <FormalSection>
-          <Header3 className="font-serif">Contact Us</Header3>
+          <Header3>Contact Us</Header3>
           <p className="mb-4">
             If you have questions or comments about this Notice or about how
             your Personal Data is processed, or to exercise your privacy rights,

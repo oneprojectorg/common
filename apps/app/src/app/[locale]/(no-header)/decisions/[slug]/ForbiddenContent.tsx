@@ -115,7 +115,8 @@ const ForbiddenWithInviteCheck = () => {
             </Button>
             <Button
               variant="link"
-              className="h-auto p-0 text-sm font-normal text-primary-teal underline hover:text-primary-teal/80"
+              size="inline"
+              className="text-sm font-normal text-primary-teal underline hover:text-primary-teal/80"
               onClick={() =>
                 declineInvite.mutate({ inviteId: matchingInvite.id })
               }

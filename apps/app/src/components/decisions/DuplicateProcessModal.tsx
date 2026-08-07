@@ -45,7 +45,7 @@ export const DuplicateProcessModal = ({
       open
       onOpenChange={(open) => !open && !isPendingRef.current && onClose()}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('Duplicate process')}</DialogTitle>
         </DialogHeader>
@@ -155,24 +155,26 @@ const DuplicateFormContent = ({
           <FieldLegend className="font-serif text-title-sm12">
             {t('Include')}
           </FieldLegend>
-          {includeOptions.map((option) => (
-            <Field key={option.key} orientation="horizontal">
-              <Checkbox
-                id={`duplicate-include-${option.key}`}
-                checked={selectedIncludes.includes(option.key)}
-                onCheckedChange={(checked) =>
-                  setSelectedIncludes((prev) =>
-                    checked
-                      ? [...prev, option.key]
-                      : prev.filter((key) => key !== option.key),
-                  )
-                }
-              />
-              <FieldLabel htmlFor={`duplicate-include-${option.key}`}>
-                {option.label}
-              </FieldLabel>
-            </Field>
-          ))}
+          <div className="grid grid-cols-2 gap-2">
+            {includeOptions.map((option) => (
+              <Field key={option.key} orientation="horizontal">
+                <Checkbox
+                  id={`duplicate-include-${option.key}`}
+                  checked={selectedIncludes.includes(option.key)}
+                  onCheckedChange={(checked) =>
+                    setSelectedIncludes((prev) =>
+                      checked
+                        ? [...prev, option.key]
+                        : prev.filter((key) => key !== option.key),
+                    )
+                  }
+                />
+                <FieldLabel htmlFor={`duplicate-include-${option.key}`}>
+                  {option.label}
+                </FieldLabel>
+              </Field>
+            ))}
+          </div>
         </FieldSet>
       </div>
       <DialogFooter>

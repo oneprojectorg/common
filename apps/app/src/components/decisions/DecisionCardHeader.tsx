@@ -8,12 +8,18 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import { TranslatedText } from '../TranslatedText';
 
+/**
+ * Name, then who stewards it, then the phase chip alongside whatever metadata
+ * the caller passes as `children` (Figma 17827:3655).
+ *
+ * The chip shares the last line rather than sitting beside the name, so a long
+ * process name gets the full width before it wraps.
+ */
 export const DecisionCardHeader = ({
   name,
   currentState,
   stewardName,
   stewardAvatarPath,
-  chipClassName,
   children,
   className,
 }: {
@@ -21,35 +27,31 @@ export const DecisionCardHeader = ({
   currentState?: string | null;
   stewardName?: string | null;
   stewardAvatarPath?: string | null;
-  chipClassName?: string;
   children?: React.ReactNode;
   className?: string;
 }) => (
-  <div className={cn('flex flex-col gap-2', className)}>
-    <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:justify-start">
-      <Header3 className="font-serif text-neutral-black">{name}</Header3>
-      {currentState ? (
-        <Badge
-          variant="secondary"
-          className={
-            chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
-          }
-        >
-          <TranslatedText text={currentState as TranslationKey} />
-        </Badge>
-      ) : null}
-    </div>
+  <div className={cn('flex flex-col gap-3', className)}>
+    <Header3>{name}</Header3>
     {stewardName ? (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <ProfileAvatar
           name={stewardName}
           src={getPublicUrl(stewardAvatarPath)}
           alt={stewardName}
           size="sm"
         />
-        <span className="text-sm text-neutral-black">{stewardName}</span>
+        <span className="text-sm text-muted-foreground">{stewardName}</span>
       </div>
     ) : null}
-    {children}
+    {currentState || children ? (
+      <div className="flex flex-wrap items-center gap-3">
+        {currentState ? (
+          <Badge variant="accent">
+            <TranslatedText text={currentState as TranslationKey} />
+          </Badge>
+        ) : null}
+        {children}
+      </div>
+    ) : null}
   </div>
 );

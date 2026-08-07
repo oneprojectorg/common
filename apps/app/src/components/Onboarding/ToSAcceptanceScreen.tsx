@@ -117,7 +117,7 @@ function PolicyCheckbox({
       <Dialog>
         <DialogTrigger
           render={
-            <Button variant="link" className="h-auto p-0 text-sm">
+            <Button variant="link" size="inline" className="text-sm">
               {label}
             </Button>
           }
@@ -127,7 +127,7 @@ function PolicyCheckbox({
             container (top) instead of the first link in the legal text, which
             otherwise opens the dialog scrolled partway down. */}
         <DialogContent
-          className="flex max-h-[85vh] flex-col p-0 sm:max-w-[36rem]"
+          className="flex max-h-[85vh] flex-col p-0 sm:max-w-xl"
           initialFocus={scrollRef}
         >
           <DialogHeader>

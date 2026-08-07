@@ -23,11 +23,12 @@ const buttonVariants = cva(
         // Paint removed, behaviour kept: the focus ring, disabled handling,
         // cursor and icon sizing in the base class still apply, so a surface
         // that owns its own appearance (a list row, a card, a cell) doesn't
-        // have to drop to a raw `<button>` and lose them. Carries its own
-        // geometry reset rather than relying on a paired `size`, which was only
-        // ever meaningful with this variant. `[font:inherit]` also resets
-        // line-height, which the base's `text-base` would otherwise impose.
-        bare: 'h-auto gap-0 rounded-none p-0 [font:inherit] text-current active:not-aria-[haspopup]:translate-y-0',
+        // have to drop to a raw `<button>` and lose them. `[font:inherit]` also
+        // resets line-height, which the base's `text-base` would otherwise
+        // impose. Its geometry reset is a compound variant below, not part of
+        // this string: `size` is emitted after `variant`, so `px-4` and
+        // `gap-1.5` would win here.
+        bare: 'rounded-none [font:inherit] text-current active:not-aria-[haspopup]:translate-y-0',
       },
       size: {
         default:
@@ -40,6 +41,11 @@ const buttonVariants = cva(
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
         'icon-sm': 'size-8 rounded-md in-data-[slot=button-group]:rounded-lg',
         'icon-lg': 'size-12',
+        // No button geometry: sits on the text baseline inside a sentence or a
+        // dense row, where a fixed height and side padding break the line. For
+        // `link` mostly — `bare` sheds its geometry via the compound variant
+        // below, which also collapses the gap this size keeps.
+        inline: 'h-auto gap-1 p-0',
       },
     },
     compoundVariants: [
@@ -50,6 +56,14 @@ const buttonVariants = cva(
         size: ['sm', 'xs', 'icon-sm', 'icon-xs'],
         class:
           'bg-destructive-muted text-destructive hover:bg-red-100 active:bg-red-200 focus-visible:ring-destructive/20',
+      },
+      // `bare` means "no chrome", so it shouldn't need a paired size to shed
+      // the default one. Only the default size is overridden: asking for `bare`
+      // *and* an explicit size means you want that size's geometry.
+      {
+        variant: 'bare',
+        size: 'default',
+        class: 'h-auto gap-0 p-0',
       },
     ],
     defaultVariants: {

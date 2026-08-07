@@ -31,8 +31,9 @@ export const TranslationNotice = ({
       <Bullet />
       <Button
         variant="link"
+        size="inline"
         onClick={onViewOriginal}
-        className="inline h-auto p-0 text-sm sm:text-sm"
+        className="inline text-sm sm:text-sm"
       >
         {t('View original')}
       </Button>

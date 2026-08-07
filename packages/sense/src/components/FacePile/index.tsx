@@ -32,7 +32,7 @@ function FacePile({
         className={cn(
           // Ring each face in the background color so overlapping avatars read
           // as distinct instead of blurring together.
-          'flex [&_[data-slot=avatar]]:ring-1 [&_[data-slot=avatar]]:ring-background',
+          'flex [&_[data-slot=avatar]]:ring-1 [&_[data-slot=avatar]]:ring-background/40',
           listClassName,
         )}
       >

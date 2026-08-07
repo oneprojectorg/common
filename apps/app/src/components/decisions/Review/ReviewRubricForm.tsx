@@ -130,8 +130,8 @@ function MyReviewForm() {
               {t('Reviewing is paused until author submits a revision.')}{' '}
               <Button
                 variant="link"
-                size="sm"
-                className="h-auto p-0 underline"
+                size="inline"
+                className="text-sm underline"
                 onClick={() => setIsViewModalOpen(true)}
               >
                 {t('View feedback')}

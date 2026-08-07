@@ -1,14 +1,12 @@
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/sense/Header';
 
 import { FormalSection } from '../FormalSection';
 
 export const ColumbusAddendumContent = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div dir="auto" className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
-        <Header3 className="font-serif">
-          One Project Special Privacy Standards
-        </Header3>
+        <Header3>One Project Special Privacy Standards</Header3>
         <p className="mb-4">
           City of Columbus Participatory Budgeting Project, 2026
         </p>
@@ -39,7 +37,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">What Information We Collect</Header3>
+        <Header3>What Information We Collect</Header3>
         <p className="mb-4">
           In addition to the information discussed in the Notice, we
           specifically collect the following information when you use the
@@ -48,7 +46,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Information You Give Us</Header3>
+        <Header3>Information You Give Us</Header3>
         <p className="mb-4">
           We collect the following information that you provide us directly:
         </p>
@@ -76,9 +74,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          Automatically Collected Information
-        </Header3>
+        <Header3>Automatically Collected Information</Header3>
         <p className="mb-4">We also collect the following information:</p>
         <ul className="mb-4 list-disc ps-6">
           <li className="mb-2">
@@ -115,9 +111,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          How We Use the Information That We Collect
-        </Header3>
+        <Header3>How We Use the Information That We Collect</Header3>
         <p className="mb-4">
           Our reasons for processing the data are listed in our{' '}
           <a href="/info/privacy" className="text-primary-teal underline">
@@ -129,12 +123,12 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Information That We Share</Header3>
+        <Header3>Information That We Share</Header3>
         <p className="mb-4">We share your information in the following ways:</p>
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Public Content</Header3>
+        <Header3>Public Content</Header3>
         <p className="mb-4">
           Some content, such as project proposals and comments, is designed to
           be shared publicly or with other users of the Instance or Services. We
@@ -143,7 +137,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Instance Administrators</Header3>
+        <Header3>Instance Administrators</Header3>
         <p className="mb-4">
           One Project works with local representatives of the community where
           the Instance is focused. This may include representatives of the
@@ -173,9 +167,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          One Project and Its Contractors
-        </Header3>
+        <Header3>One Project and Its Contractors</Header3>
         <p className="mb-4">
           Members of the One Project team, and any independent contractors that
           they work with, may have access to your information as it is
@@ -184,7 +176,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Third-Party Service Providers</Header3>
+        <Header3>Third-Party Service Providers</Header3>
         <p className="mb-4">
           One Project may work with third-party service providers in order to
           operate the Instance and the Services, and for the other reasons for
@@ -232,7 +224,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Business Transfer</Header3>
+        <Header3>Business Transfer</Header3>
         <p className="mb-4">
           If One Project is acquired by another company, goes into dissolution,
           or otherwise transfers ownership or assets, it may sell or transfer
@@ -242,7 +234,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Legal Compliance</Header3>
+        <Header3>Legal Compliance</Header3>
         <p className="mb-4">
           One Project may share information if we believe, in our sole
           discretion, that such disclosure is necessary in order to comply with
@@ -261,7 +253,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Non-Identifiable Data</Header3>
+        <Header3>Non-Identifiable Data</Header3>
         <p className="mb-4">
           We may share data that cannot be used to identify a specific person or
           that cannot be linked or associated with a specific individual for any
@@ -276,9 +268,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          Management and Deletion of Information
-        </Header3>
+        <Header3>Management and Deletion of Information</Header3>
         <p className="mb-4">
           Please see our{' '}
           <a
@@ -294,7 +284,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Children Under 13 Years of Age</Header3>
+        <Header3>Children Under 13 Years of Age</Header3>
         <p className="mb-4">
           Children under the age of 13 are not permitted to use, access or
           register for use of the Instance or Services in any way. We do not
@@ -306,7 +296,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Changes to This Policy</Header3>
+        <Header3>Changes to This Policy</Header3>
         <p className="mb-4">
           We may update these Special Standards from time to time at our sole
           discretion. If we do, we’ll let you know by posting the updated
@@ -316,7 +306,7 @@ export const ColumbusAddendumContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Contact Us</Header3>
+        <Header3>Contact Us</Header3>
         <p className="mb-4">
           If you have any questions about these Special Standards, the Instance,
           or the Services more generally, please contact{' '}

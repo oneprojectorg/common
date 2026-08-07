@@ -47,9 +47,9 @@ export function AuthorRevisionNote({
             {respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : null}
             <Button
               variant="link"
-              size="sm"
+              size="inline"
               onClick={() => setIsModalOpen(true)}
-              className="h-auto p-0 text-sm underline"
+              className="text-sm underline"
             >
               {t('View revision request')}
             </Button>

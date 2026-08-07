@@ -49,9 +49,9 @@ export function ReviewerDetail({
     <div className="flex flex-col gap-6">
       <Button
         variant="link"
-        size="sm"
+        size="inline"
         onClick={onBack}
-        className="h-auto gap-1 self-start p-0 text-base"
+        className="self-start text-base"
       >
         <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {t('Back to all reviewers')}
