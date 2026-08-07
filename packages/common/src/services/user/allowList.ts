@@ -4,8 +4,8 @@ import { allowList } from '@op/db/schema';
 
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
-// An allow-list row carries one user's invitation (its organizationId and
-// role), so the cache entry holding it must be keyed to that one user.
+// Nothing invalidates an allow-list entry when an invite is revoked, so this
+// TTL is the only bound on how long a revoked invite keeps working.
 const ALLOW_LIST_CACHE_TTL_MS = 30 * 60 * 1000;
 
 /**
@@ -62,12 +62,12 @@ export const getAllowListUser = async ({
  * `allowList` cache: it owns the key, the TTL and the fetch together so the
  * call sites cannot drift apart on any of them.
  */
-export const getCachedAllowListUser = async ({
+export const getCachedAllowListUser = ({
   email,
 }: {
   email: string;
 }): Promise<AllowListUser | undefined> =>
-  cache<ReturnType<typeof getAllowListUser>>({
+  cache<AllowListUser | undefined>({
     type: 'allowList',
     params: allowListCacheKey({ email }),
     fetch: () => getAllowListUser({ email }),
