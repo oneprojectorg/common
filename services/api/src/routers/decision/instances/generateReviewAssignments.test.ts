@@ -288,6 +288,49 @@ describe.concurrent('generateReviewAssignments', () => {
     expect(assignments).toHaveLength(0);
   });
 
+  it("policy 'none' writes nothing", async ({ task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createReviewInstance(testData, {
+      reviewsPolicy: 'none',
+    });
+
+    // The author is a plain member, not the creator-admin — so the admin's
+    // default REVIEW capability is not cancelled out by the self-review
+    // exclusion, and full_coverage would write one assignment here.
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal under policy none' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const advanceResult = await advanceToReviewPhase(instance.instance.id);
+    // Guard against a vacuous pass: the empty-selection early return sits above
+    // the policy check, so the proposal has to actually reach the review phase.
+    expect(advanceResult.selectedProposalIds).toHaveLength(1);
+
+    await generateReviewAssignments({
+      instanceId: instance.instance.id,
+      phaseId: 'review',
+      selectedProposalIds: advanceResult.selectedProposalIds,
+      transitionHistoryId: advanceResult.transitionHistoryId,
+    });
+
+    const assignments = await db
+      .select()
+      .from(proposalReviewAssignments)
+      .where(
+        eq(proposalReviewAssignments.processInstanceId, instance.instance.id),
+      );
+
+    expect(assignments).toEqual([]);
+  });
+
   it('is idempotent — calling twice does not duplicate rows', async ({
     task,
     onTestFinished,
