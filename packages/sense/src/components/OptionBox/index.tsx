@@ -16,6 +16,18 @@ interface OptionBoxProps {
    * to the container (the stacked radio option rows).
    */
   width?: 'hug' | 'fill';
+  /**
+   * Which side the control sits on (Figma's `Control Placement`). `end` pushes
+   * it to the trailing edge and lets the label fill the space — logical, so it
+   * flips with the writing direction.
+   */
+  controlPlacement?: 'start' | 'end';
+  /**
+   * Content on the side opposite the control — an avatar, icon or thumbnail.
+   * It follows `controlPlacement` rather than taking a side of its own, so the
+   * two can never collide.
+   */
+  accessory?: ReactNode;
   className?: string;
 }
 
@@ -33,8 +45,24 @@ function OptionBox({
   label,
   description,
   width = 'fill',
+  controlPlacement = 'start',
+  accessory,
   className,
 }: OptionBoxProps) {
+  // A description already needs the block; so does anything that has to sit at
+  // an edge, since the label is what takes up the slack between them.
+  const content =
+    description || controlPlacement === 'end' || accessory ? (
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <FieldTitle>{label}</FieldTitle>
+        {description ? (
+          <FieldDescription>{description}</FieldDescription>
+        ) : null}
+      </div>
+    ) : (
+      <FieldTitle>{label}</FieldTitle>
+    );
+
   return (
     <FieldLabel
       variant="box"
@@ -52,14 +80,18 @@ function OptionBox({
         orientation="horizontal"
         className={cn(description && 'items-start')}
       >
-        {control}
-        {description ? (
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <FieldTitle>{label}</FieldTitle>
-            <FieldDescription>{description}</FieldDescription>
-          </div>
+        {controlPlacement === 'end' ? (
+          <>
+            {accessory}
+            {content}
+            {control}
+          </>
         ) : (
-          <FieldTitle>{label}</FieldTitle>
+          <>
+            {control}
+            {content}
+            {accessory}
+          </>
         )}
       </Field>
     </FieldLabel>
