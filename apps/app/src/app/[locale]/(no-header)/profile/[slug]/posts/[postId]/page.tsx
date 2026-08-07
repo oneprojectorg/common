@@ -4,7 +4,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense, cache } from 'react';

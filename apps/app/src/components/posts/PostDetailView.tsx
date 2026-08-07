@@ -2,7 +2,6 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Surface } from '@op/ui/Surface';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import React from 'react';
@@ -54,13 +53,13 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
 
           {/* Comment Input */}
           <div className="border-y">
-            <Surface className="border-0 px-0 py-4">
+            <div className="overflow-hidden rounded bg-background py-4">
               <PostUpdate
                 parentPostId={post.id}
                 placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
               />
-            </Surface>
+            </div>
           </div>
 
           {/* Comments Section */}

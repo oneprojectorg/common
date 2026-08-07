@@ -1,4 +1,4 @@
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/sense/Header';
 import type { ReactNode } from 'react';
 
 /**
@@ -17,9 +17,7 @@ export const StatusScreen = ({
 }) => (
   <div className="flex size-full flex-col items-center justify-center gap-8">
     <div className="flex flex-col items-center gap-4">
-      <Header2 className="font-serif text-[4rem] leading-[110%] font-light">
-        {code}
-      </Header2>
+      <Header2 className="text-[4rem] leading-[110%]">{code}</Header2>
       {description}
     </div>
     {actions}
