@@ -1,8 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import type { Organization } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { ProfileItem } from '@op/sense/ProfileItem';
 import { ReactNode } from 'react';
 
 type OrganizationForList = Pick<
@@ -31,29 +30,26 @@ export const OrganizationListItem = ({
       .filter((name): name is string => !!name)
       .join(' • ') ?? '';
 
-  const avatar = (
-    <Avatar placeholder={organization.profile.name} className="size-8 shrink-0">
-      {organization.avatarImage?.name ? (
-        <Image
-          src={getPublicUrl(organization.avatarImage.name) ?? ''}
-          alt={`${organization.profile.name} avatar`}
-          fill
-          className="object-cover"
-        />
-      ) : null}
-    </Avatar>
-  );
-
-  const description =
-    whereWeWork && whereWeWork.length > 0 ? (
-      <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
-        {whereWeWork}
-      </div>
-    ) : null;
+  const avatarUrl = organization.avatarImage?.name
+    ? (getPublicUrl(organization.avatarImage.name) ?? undefined)
+    : undefined;
 
   return (
-    <ProfileItem avatar={avatar} title={organization.profile.name}>
-      {description}
+    <ProfileItem
+      avatar={
+        <Avatar>
+          {avatarUrl ? (
+            <AvatarImage
+              src={avatarUrl}
+              alt={`${organization.profile.name} avatar`}
+            />
+          ) : null}
+          <AvatarFallback name={organization.profile.name} />
+        </Avatar>
+      }
+      title={organization.profile.name}
+      description={whereWeWork || undefined}
+    >
       {children}
     </ProfileItem>
   );

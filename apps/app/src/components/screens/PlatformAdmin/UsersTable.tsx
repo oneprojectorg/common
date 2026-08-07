@@ -3,21 +3,33 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Toast';
-import { Header2 } from '@op/ui/Header';
-import { MenuItem } from '@op/ui/Menu';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { Pagination } from '@op/ui/Pagination';
-import { SearchField } from '@op/ui/SearchField';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { Header2 } from '@op/sense/Header';
+import { PaginationBar } from '@op/sense/PaginationBar';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
 import {
   Suspense,
   useCallback,
@@ -25,11 +37,11 @@ import {
   useState,
   useTransition,
 } from 'react';
-import { LuDownload } from 'react-icons/lu';
+import { LuDownload, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ResponsiveSelect } from '../../decisions/ResponsiveSelect';
+import { TableSearchField } from './TableSearchField';
 import { UsersRowCells } from './UsersRow';
 
 /** Anonymous-account filter options for the users list */
@@ -72,9 +84,9 @@ export const UsersTable = () => {
   const includeAnonymous = anonFilter === 'include';
   const [isExporting, startExportTransition] = useTransition();
 
-  const anonFilterItems: Array<{ id: AnonFilter; label: string }> = [
-    { id: 'exclude', label: t('Exclude anonymous users') },
-    { id: 'include', label: t('Include anonymous users') },
+  const anonFilterItems: Array<{ value: AnonFilter; label: string }> = [
+    { value: 'exclude', label: t('Exclude anonymous users') },
+    { value: 'include', label: t('Include anonymous users') },
   ];
 
   const handleExportAllUsers = useCallback(() => {
@@ -106,37 +118,63 @@ export const UsersTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <Header2 className="text-md font-serif">
-          {t('platformAdmin_allUsers')}
-        </Header2>
+        <Header2 className="text-title">{t('platformAdmin_allUsers')}</Header2>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="w-full sm:w-64">
-            <SearchField
-              aria-label={t('Search users by name or email')}
-              placeholder={t('Search users by name or email')}
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
-          </div>
-          <ResponsiveSelect<AnonFilter>
-            selectedKey={anonFilter}
-            onSelectionChange={setAnonFilter}
-            items={anonFilterItems}
-            aria-label={t('Filter anonymous users')}
-            size="default"
-            className="min-w-36 flex-1 sm:w-36 sm:flex-none"
+          <TableSearchField
+            className="w-full sm:w-64"
+            aria-label={t('Search users by name or email')}
+            placeholder={t('Search users by name or email')}
+            value={searchQuery}
+            onChange={setSearchQuery}
           />
-          <OptionMenu
-            aria-label={t('User options')}
-            variant="outline"
-            size="medium"
-            className="me-1"
+          <Select
+            items={anonFilterItems}
+            value={anonFilter}
+            onValueChange={(value) => {
+              if (value) {
+                setAnonFilter(value);
+              }
+            }}
           >
-            <MenuItem onAction={handleExportAllUsers} isDisabled={isExporting}>
-              <LuDownload className="size-4" />
-              {t('Export all users')}
-            </MenuItem>
-          </OptionMenu>
+            <SelectTrigger
+              aria-label={t('Filter anonymous users')}
+              className="min-w-36 flex-1 sm:w-36 sm:flex-none"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {anonFilterItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t('User options')}
+                  className="me-1"
+                >
+                  <LuEllipsis />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleExportAllUsers}
+                disabled={isExporting}
+              >
+                <LuDownload className="size-4" />
+                {t('Export all users')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <Suspense fallback={<UsersTableSkeleton />}>
@@ -192,35 +230,40 @@ const UsersTableContent = ({
 
   return (
     <>
-      <Table
-        aria-label={t('platformAdmin_allUsers')}
-        key={users.map((u) => u.id).join(',')}
-      >
+      <Table aria-label={t('platformAdmin_allUsers')}>
         <TableHeader>
-          <TableColumn isRowHeader>{t('Name')}</TableColumn>
-          <TableColumn>{t('Email')}</TableColumn>
-          <TableColumn>{t('Role')}</TableColumn>
-          <TableColumn>{t('Organization')}</TableColumn>
-          <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn>{t('Last sign in')}</TableColumn>
-          <TableColumn className="text-end">{t('Actions')}</TableColumn>
+          <TableRow>
+            <TableHead>{t('Name')}</TableHead>
+            <TableHead>{t('Email')}</TableHead>
+            <TableHead>{t('Role')}</TableHead>
+            <TableHead>{t('Organization')}</TableHead>
+            <TableHead>{t('Created')}</TableHead>
+            <TableHead>{t('Last sign in')}</TableHead>
+            <TableHead className="text-end">{t('Actions')}</TableHead>
+          </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <TableRow key={user.id} id={user.id}>
+            <TableRow key={user.id}>
               <UsersRowCells user={user} />
             </TableRow>
           ))}
         </TableBody>
       </Table>
       <div className="mt-4">
-        <Pagination
-          range={{
-            totalItems: total,
-            itemsPerPage: limit,
-            page: currentPage,
-            label: t('users'),
-          }}
+        <PaginationBar
+          range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
+          renderRange={({ start, end, total: count }) =>
+            t('{start} - {end} of {total} {label}', {
+              start,
+              end,
+              total: count,
+              label: t('users'),
+            })
+          }
+          previousLabel={t('Previous')}
+          nextLabel={t('Next')}
+          navLabel={t('Pagination Navigation')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
@@ -234,31 +277,33 @@ const UsersTableSkeleton = () => {
   return (
     <Table aria-label="Loading users">
       <TableHeader>
-        <TableColumn isRowHeader>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-12" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-20" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
+        <TableRow>
+          <TableHead>
+            <Skeleton className="h-4 w-16" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-16" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-12" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-20" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-14" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-14" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-14" />
+          </TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
-          <TableRow key={i} id={`skeleton-${i}`}>
+          <TableRow key={i} className="h-[61px]">
             {[...Array(7)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />

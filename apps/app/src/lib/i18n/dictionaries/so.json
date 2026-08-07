@@ -1508,5 +1508,10 @@
   "Select a category": "Dooro qayb",
   "{count} of {max} characters used": "{count} xaraf oo laga isticmaalay {max}",
   "Character limit reached": "Xadka xarfaha waa la gaaray",
-  "Hidden from public view": "Laga qariyay dadweynaha"
+  "Hidden from public view": "Laga qariyay dadweynaha",
+  "Clear search": "Nadiifi raadinta",
+  "Pagination Navigation": "Navigation-ka bogagga",
+  "{start} - {end} of {total} {label}": "{start} - {end} ee {total} {label}",
+  "No organizations found": "Ma jiraan ururo la helay",
+  "No roles found": "Ma jiraan doorar la helay"
 }

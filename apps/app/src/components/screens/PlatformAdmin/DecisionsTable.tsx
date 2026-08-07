@@ -2,23 +2,23 @@
 
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
-import { Header2 } from '@op/ui/Header';
-import { Pagination } from '@op/ui/Pagination';
-import { SearchField } from '@op/ui/SearchField';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Header2 } from '@op/sense/Header';
+import { PaginationBar } from '@op/sense/PaginationBar';
+import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionsRowCells } from './DecisionsRow';
+import { TableSearchField } from './TableSearchField';
 
 /** Main decisions table component with suspense boundary */
 export const DecisionsTable = () => {
@@ -29,15 +29,14 @@ export const DecisionsTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <Header2 className="text-md font-serif">{t('All Decisions')}</Header2>
-        <div className="w-64">
-          <SearchField
-            aria-label={t('Search decisions by name')}
-            placeholder={t('Search decisions by name')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </div>
+        <Header2 className="text-title">{t('All Decisions')}</Header2>
+        <TableSearchField
+          className="w-64"
+          aria-label={t('Search decisions by name')}
+          placeholder={t('Search decisions by name')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
       </div>
       <Suspense fallback={<DecisionsTableSkeleton />}>
         <DecisionsTableContent searchQuery={debouncedQuery} />
@@ -82,36 +81,41 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <Table
-        aria-label={t('All Decisions')}
-        key={decisions.map((d) => d.id).join(',')}
-      >
+      <Table aria-label={t('All Decisions')}>
         <TableHeader>
-          <TableColumn isRowHeader>{t('Name')}</TableColumn>
-          <TableColumn>{t('Current Phase')}</TableColumn>
-          <TableColumn>{t('Steward')}</TableColumn>
-          <TableColumn>{t('Proposals')}</TableColumn>
-          <TableColumn>{t('Participants')}</TableColumn>
-          <TableColumn>{t('Status')}</TableColumn>
-          <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn className="text-end">{t('Actions')}</TableColumn>
+          <TableRow>
+            <TableHead>{t('Name')}</TableHead>
+            <TableHead>{t('Current Phase')}</TableHead>
+            <TableHead>{t('Steward')}</TableHead>
+            <TableHead>{t('Proposals')}</TableHead>
+            <TableHead>{t('Participants')}</TableHead>
+            <TableHead>{t('Status')}</TableHead>
+            <TableHead>{t('Created')}</TableHead>
+            <TableHead className="text-end">{t('Actions')}</TableHead>
+          </TableRow>
         </TableHeader>
         <TableBody>
           {decisions.map((decision) => (
-            <TableRow key={decision.id} id={decision.id}>
+            <TableRow key={decision.id}>
               <DecisionsRowCells decision={decision} />
             </TableRow>
           ))}
         </TableBody>
       </Table>
       <div className="mt-4">
-        <Pagination
-          range={{
-            totalItems: total,
-            itemsPerPage: limit,
-            page: currentPage,
-            label: t('decisions'),
-          }}
+        <PaginationBar
+          range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
+          renderRange={({ start, end, total: count }) =>
+            t('{start} - {end} of {total} {label}', {
+              start,
+              end,
+              total: count,
+              label: t('decisions'),
+            })
+          }
+          previousLabel={t('Previous')}
+          nextLabel={t('Next')}
+          navLabel={t('Pagination Navigation')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
@@ -127,18 +131,20 @@ const DecisionsTableSkeleton = () => {
   return (
     <Table aria-label="Loading decisions">
       <TableHeader>
-        <TableColumn isRowHeader>{t('Name')}</TableColumn>
-        <TableColumn>{t('Current Phase')}</TableColumn>
-        <TableColumn>{t('Steward')}</TableColumn>
-        <TableColumn>{t('Proposals')}</TableColumn>
-        <TableColumn>{t('Participants')}</TableColumn>
-        <TableColumn>{t('Status')}</TableColumn>
-        <TableColumn>{t('Created')}</TableColumn>
-        <TableColumn className="text-end">{t('Actions')}</TableColumn>
+        <TableRow>
+          <TableHead>{t('Name')}</TableHead>
+          <TableHead>{t('Current Phase')}</TableHead>
+          <TableHead>{t('Steward')}</TableHead>
+          <TableHead>{t('Proposals')}</TableHead>
+          <TableHead>{t('Participants')}</TableHead>
+          <TableHead>{t('Status')}</TableHead>
+          <TableHead>{t('Created')}</TableHead>
+          <TableHead className="text-end">{t('Actions')}</TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
-          <TableRow key={i} id={`skeleton-${i}`}>
+          <TableRow key={i} className="h-[61px]">
             {[...Array(8)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />

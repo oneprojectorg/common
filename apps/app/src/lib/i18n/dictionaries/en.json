@@ -1572,5 +1572,10 @@
   "Select a category": "Select a category",
   "{count} of {max} characters used": "{count} of {max} characters used",
   "Character limit reached": "Character limit reached",
-  "Hidden from public view": "Hidden from public view"
+  "Hidden from public view": "Hidden from public view",
+  "Clear search": "Clear search",
+  "Pagination Navigation": "Pagination Navigation",
+  "{start} - {end} of {total} {label}": "{start} - {end} of {total} {label}",
+  "No organizations found": "No organizations found",
+  "No roles found": "No roles found"
 }

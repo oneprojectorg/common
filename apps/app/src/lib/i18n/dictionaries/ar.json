@@ -1506,5 +1506,10 @@
   "Select a category": "اختر فئة",
   "{count} of {max} characters used": "{count} من {max} حرفًا مستخدمة",
   "Character limit reached": "تم الوصول إلى الحد الأقصى للأحرف",
-  "Hidden from public view": "مخفي عن العرض العام"
+  "Hidden from public view": "مخفي عن العرض العام",
+  "Clear search": "مسح البحث",
+  "Pagination Navigation": "التنقل بين الصفحات",
+  "{start} - {end} of {total} {label}": "{start} - {end} من {total} {label}",
+  "No organizations found": "لم يتم العثور على منظمات",
+  "No roles found": "لم يتم العثور على أدوار"
 }

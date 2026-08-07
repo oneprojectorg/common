@@ -2,31 +2,40 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
-import { toast } from '@op/sense/Toast';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { Chip } from '@op/ui/Chip';
-import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Badge } from '@op/sense/Badge';
+import { Button } from '@op/sense/Button';
+import { Card } from '@op/sense/Card';
 import {
-  FormEvent,
-  ReactNode,
-  Suspense,
-  useMemo,
-  useState,
-  useTransition,
-} from 'react';
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Label } from '@op/sense/Label';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
+import { toast } from '@op/sense/Toast';
+import { FormEvent, Suspense, useMemo, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { OrganizationListItem } from '@/components/Organizations/OrganizationListItem';
 
 import type { User } from './types';
+
+type ComboboxOption = { value: string; label: string };
 
 /**
  * Modal to add a user to an organization with a specific role
@@ -41,17 +50,19 @@ export const AddUserToOrgModal = ({
   onOpenChange: (isOpen: boolean) => void;
 }) => {
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <Suspense
-        fallback={
-          <div className="p-6">
-            <LoadingSpinner />
-          </div>
-        }
-      >
-        <AddUserToOrgModalContent user={user} onOpenChange={onOpenChange} />
-      </Suspense>
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <Suspense
+          fallback={
+            <div className="flex justify-center p-6">
+              <Spinner className="size-6 text-primary" />
+            </div>
+          }
+        >
+          <AddUserToOrgModalContent user={user} onOpenChange={onOpenChange} />
+        </Suspense>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -105,36 +116,32 @@ const AddUserToOrgModalContent = ({
     });
   };
 
-  const avatarContent: ReactNode = user.avatarImage?.name ? (
-    <Image
-      src={getPublicUrl(user.avatarImage.name) ?? ''}
-      alt={`${user.profile?.name ?? user.name} avatar`}
-      fill
-      className="object-cover"
-    />
-  ) : null;
+  const avatarUrl = user.avatarImage?.name
+    ? (getPublicUrl(user.avatarImage.name) ?? undefined)
+    : undefined;
+  const userName = user.profile?.name ?? user.name ?? t('Unknown user');
 
   return (
     <form onSubmit={handleSubmit} className="contents">
       {/* Header */}
-      <ModalHeader>{t('Add user to organization')}</ModalHeader>
+      <DialogHeader>
+        <DialogTitle>{t('Add user to organization')}</DialogTitle>
+      </DialogHeader>
 
       {/* Body */}
-      <ModalBody className="space-y-4">
+      <div className="flex flex-col gap-4 px-6 py-4">
         {/* User Info */}
-        <div className="rounded-lg bg-neutral-gray-1 p-4">
+        <div className="rounded-lg bg-muted p-4">
           <ProfileItem
             avatar={
-              <Avatar
-                placeholder={
-                  user.profile?.name ?? user.name ?? t('Unknown user')
-                }
-                className="size-10 shrink-0"
-              >
-                {avatarContent}
+              <Avatar size="lg">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={`${userName} avatar`} />
+                ) : null}
+                <AvatarFallback name={userName} />
               </Avatar>
             }
-            title={user.profile?.name ?? user.name ?? t('Unknown user')}
+            title={userName}
             description={user.email ?? undefined}
           />
         </div>
@@ -143,7 +150,7 @@ const AddUserToOrgModalContent = ({
         {user.organizationUsers && user.organizationUsers.length > 0 ? (
           <>
             <div>
-              <div className="mb-2 text-sm font-medium text-neutral-black">
+              <div className="mb-2 text-sm font-medium text-foreground">
                 {t('Current organizations')}
               </div>
               <div className="space-y-2">
@@ -158,10 +165,7 @@ const AddUserToOrgModalContent = ({
                       : [t('No roles')];
 
                   return (
-                    <Surface
-                      key={orgUser.organizationId}
-                      className="flex flex-col gap-2 p-3"
-                    >
+                    <Card key={orgUser.organizationId} className="gap-2 p-3">
                       <OrganizationListItem
                         organization={{
                           id: orgUser.organizationId,
@@ -172,11 +176,13 @@ const AddUserToOrgModalContent = ({
                       >
                         <div className="mt-2 flex gap-2">
                           {roles.map((role) => (
-                            <Chip key={role}>{role}</Chip>
+                            <Badge key={role} variant="secondary">
+                              {role}
+                            </Badge>
                           ))}
                         </div>
                       </OrganizationListItem>
-                    </Surface>
+                    </Card>
                   );
                 })}
               </div>
@@ -195,22 +201,18 @@ const AddUserToOrgModalContent = ({
             setSelectedRoleId={setSelectedRoleId}
           />
         </Suspense>
-      </ModalBody>
+      </div>
 
       {/* Footer */}
-      <ModalFooter>
+      <DialogFooter>
         <Button
-          color="primary"
           type="submit"
-          isPending={isSubmitting}
-          isDisabled={!selectedOrgId || !selectedRoleId || isSubmitting}
+          disabled={!selectedOrgId || !selectedRoleId || isSubmitting}
         >
-          <div className="flex gap-2">
-            {isSubmitting ? <LoadingSpinner /> : null}
-            {t('Add to organization')}
-          </div>
+          {isSubmitting ? <Spinner className="size-4" /> : null}
+          {t('Add to organization')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </form>
   );
 };
@@ -259,9 +261,6 @@ const OrganizationAndRoleSelection = ({
     t.organization.getRoles(),
   ]);
 
-  // Find Member role and set as default
-  const memberRole = rolesData.roles.find((role) => role.name === 'Member');
-
   // Filter out organizations user is already a member of
   const availableOrganizations = useMemo(() => {
     const userOrgIds = new Set(
@@ -270,55 +269,111 @@ const OrganizationAndRoleSelection = ({
     return organizationsData.items.filter((org) => !userOrgIds.has(org.id));
   }, [organizationsData.items, user.organizationUsers]);
 
+  const orgItems: ComboboxOption[] = availableOrganizations.map((org) => ({
+    value: org.id,
+    label: org.profile.name,
+  }));
+  const orgById = new Map(availableOrganizations.map((org) => [org.id, org]));
+
+  const roleItems: ComboboxOption[] = rolesData.roles.map((role) => ({
+    value: role.id,
+    label: role.name,
+  }));
+  const roleById = new Map(rolesData.roles.map((role) => [role.id, role]));
+
   return (
     <>
       {/* Organization Selection */}
-      <ComboBox
-        label={t('Select organization')}
-        selectedKey={selectedOrgId}
-        onSelectionChange={(key) => setSelectedOrgId(String(key))}
-        items={availableOrganizations}
-        popoverProps={{ className: 'max-w-md' }}
-      >
-        {(org) => (
-          <ComboBoxItem key={org.id} id={org.id} textValue={org.profile.name}>
-            <OrganizationListItem
-              organization={{
-                id: org.id,
-                profile: {
-                  name: org.profile.name,
-                  slug: org.profile.slug,
-                  bio: org.profile.bio,
-                },
-                avatarImage: org.avatarImage,
-                whereWeWork: org.whereWeWork,
-              }}
-            />
-          </ComboBoxItem>
-        )}
-      </ComboBox>
+      <div className="flex flex-col gap-2">
+        <Label>{t('Select organization')}</Label>
+        <Combobox
+          items={orgItems}
+          value={orgItems.find((item) => item.value === selectedOrgId) ?? null}
+          onValueChange={(item: ComboboxOption | null) =>
+            setSelectedOrgId(item?.value ?? '')
+          }
+          isItemEqualToValue={(a: ComboboxOption, b: ComboboxOption) =>
+            a.value === b.value
+          }
+        >
+          <ComboboxInput placeholder={t('Select organization')} />
+          <ComboboxContent>
+            <ComboboxList>
+              <ComboboxCollection>
+                {(item: ComboboxOption) => {
+                  const org = orgById.get(item.value);
+                  if (!org) {
+                    return null;
+                  }
+                  return (
+                    <ComboboxItem key={item.value} value={item}>
+                      <OrganizationListItem
+                        organization={{
+                          id: org.id,
+                          profile: {
+                            name: org.profile.name,
+                            slug: org.profile.slug,
+                            bio: org.profile.bio,
+                          },
+                          avatarImage: org.avatarImage,
+                          whereWeWork: org.whereWeWork,
+                        }}
+                      />
+                    </ComboboxItem>
+                  );
+                }}
+              </ComboboxCollection>
+              <ComboboxEmpty>{t('No organizations found')}</ComboboxEmpty>
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </div>
 
       {/* Role Selection */}
-      <ComboBox
-        label={t('Select role')}
-        selectedKey={selectedRoleId}
-        onSelectionChange={(key) => setSelectedRoleId(String(key))}
-        defaultSelectedKey={memberRole?.id}
-        items={rolesData.roles}
-      >
-        {(role) => (
-          <ComboBoxItem key={role.id} id={role.id} textValue={role.name}>
-            <div>
-              <div className="leading-base text-neutral-black">{role.name}</div>
-              {role.description && (
-                <div className="text-xs text-neutral-charcoal">
-                  {role.description}
-                </div>
-              )}
-            </div>
-          </ComboBoxItem>
-        )}
-      </ComboBox>
+      <div className="flex flex-col gap-2">
+        <Label>{t('Select role')}</Label>
+        <Combobox
+          items={roleItems}
+          value={
+            roleItems.find((item) => item.value === selectedRoleId) ?? null
+          }
+          onValueChange={(item: ComboboxOption | null) =>
+            setSelectedRoleId(item?.value ?? '')
+          }
+          isItemEqualToValue={(a: ComboboxOption, b: ComboboxOption) =>
+            a.value === b.value
+          }
+        >
+          <ComboboxInput placeholder={t('Select role')} />
+          <ComboboxContent>
+            <ComboboxList>
+              <ComboboxCollection>
+                {(item: ComboboxOption) => {
+                  const role = roleById.get(item.value);
+                  if (!role) {
+                    return null;
+                  }
+                  return (
+                    <ComboboxItem key={item.value} value={item}>
+                      <div>
+                        <div className="leading-base text-foreground">
+                          {role.name}
+                        </div>
+                        {role.description ? (
+                          <div className="text-xs text-muted-foreground">
+                            {role.description}
+                          </div>
+                        ) : null}
+                      </div>
+                    </ComboboxItem>
+                  );
+                }}
+              </ComboboxCollection>
+              <ComboboxEmpty>{t('No roles found')}</ComboboxEmpty>
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </div>
     </>
   );
 };

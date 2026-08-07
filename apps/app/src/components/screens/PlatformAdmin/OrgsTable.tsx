@@ -2,23 +2,23 @@
 
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
-import { Header2 } from '@op/ui/Header';
-import { Pagination } from '@op/ui/Pagination';
-import { SearchField } from '@op/ui/SearchField';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Header2 } from '@op/sense/Header';
+import { PaginationBar } from '@op/sense/PaginationBar';
+import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { OrgsRowCells } from './OrgsRow';
+import { TableSearchField } from './TableSearchField';
 
 /** Main organizations table component with suspense boundary */
 export const OrgsTable = () => {
@@ -29,17 +29,14 @@ export const OrgsTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <Header2 className="text-md font-serif">
-          {t('All Organizations')}
-        </Header2>
-        <div className="w-64">
-          <SearchField
-            aria-label={t('Search organizations by name')}
-            placeholder={t('Search organizations by name')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </div>
+        <Header2 className="text-title">{t('All Organizations')}</Header2>
+        <TableSearchField
+          className="w-64"
+          aria-label={t('Search organizations by name')}
+          placeholder={t('Search organizations by name')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
       </div>
       <Suspense fallback={<OrgsTableSkeleton />}>
         <OrgsTableContent searchQuery={debouncedQuery} />
@@ -85,33 +82,38 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <Table
-        aria-label={t('All Organizations')}
-        key={orgs.map((o) => o.id).join(',')}
-      >
+      <Table aria-label={t('All Organizations')}>
         <TableHeader>
-          <TableColumn isRowHeader>{t('Name')}</TableColumn>
-          <TableColumn>{t('Domain')}</TableColumn>
-          <TableColumn>{t('Members')}</TableColumn>
-          <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn className="text-end">{t('Actions')}</TableColumn>
+          <TableRow>
+            <TableHead>{t('Name')}</TableHead>
+            <TableHead>{t('Domain')}</TableHead>
+            <TableHead>{t('Members')}</TableHead>
+            <TableHead>{t('Created')}</TableHead>
+            <TableHead className="text-end">{t('Actions')}</TableHead>
+          </TableRow>
         </TableHeader>
         <TableBody>
           {orgs.map((org) => (
-            <TableRow key={org.id} id={org.id}>
+            <TableRow key={org.id}>
               <OrgsRowCells org={org} />
             </TableRow>
           ))}
         </TableBody>
       </Table>
       <div className="mt-4">
-        <Pagination
-          range={{
-            totalItems: total,
-            itemsPerPage: limit,
-            page: currentPage,
-            label: t('organizations'),
-          }}
+        <PaginationBar
+          range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
+          renderRange={({ start, end, total: count }) =>
+            t('{start} - {end} of {total} {label}', {
+              start,
+              end,
+              total: count,
+              label: t('organizations'),
+            })
+          }
+          previousLabel={t('Previous')}
+          nextLabel={t('Next')}
+          navLabel={t('Pagination Navigation')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
@@ -125,25 +127,27 @@ const OrgsTableSkeleton = () => {
   return (
     <Table aria-label="Loading organizations">
       <TableHeader>
-        <TableColumn isRowHeader>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
+        <TableRow>
+          <TableHead>
+            <Skeleton className="h-4 w-16" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-16" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-14" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-14" />
+          </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-14" />
+          </TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
-          <TableRow key={i} id={`skeleton-${i}`}>
+          <TableRow key={i} className="h-[61px]">
             {[...Array(5)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />

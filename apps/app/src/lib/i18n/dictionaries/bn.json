@@ -1509,5 +1509,10 @@
   "Select a category": "একটি বিভাগ নির্বাচন করুন",
   "{count} of {max} characters used": "{max}টির মধ্যে {count}টি অক্ষর ব্যবহৃত",
   "Character limit reached": "অক্ষরের সীমা পূর্ণ হয়েছে",
-  "Hidden from public view": "সর্বসাধারণের কাছে লুকানো"
+  "Hidden from public view": "সর্বসাধারণের কাছে লুকানো",
+  "Clear search": "অনুসন্ধান সাফ করুন",
+  "Pagination Navigation": "পৃষ্ঠা নেভিগেশন",
+  "{start} - {end} of {total} {label}": "{total} {label} এর মধ্যে {start} - {end}",
+  "No organizations found": "কোনো সংস্থা পাওয়া যায়নি",
+  "No roles found": "কোনো ভূমিকা পাওয়া যায়নি"
 }
