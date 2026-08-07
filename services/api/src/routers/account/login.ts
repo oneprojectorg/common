@@ -1,9 +1,8 @@
-import { cache } from '@op/cache';
 import {
   CommonError,
   UnauthorizedError,
   ValidationError,
-  getAllowListUser,
+  getCachedAllowListUser,
 } from '@op/common';
 import {
   APP_NAME,
@@ -76,12 +75,8 @@ const login = router({
       }
 
       if (!ownsExistingAccount) {
-        const allowedUserEmail = await cache<
-          ReturnType<typeof getAllowListUser>
-        >({
-          type: 'allowList',
-          params: [input.email],
-          fetch: () => getAllowListUser({ email: input.email }),
+        const allowedUserEmail = await getCachedAllowListUser({
+          email: input.email,
         });
 
         // No account and not invited: add them to the waitlist.
