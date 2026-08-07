@@ -138,7 +138,9 @@ export const DeleteOrganizationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="text-start">{steps[currentStep]}</DialogContent>
+      <DialogContent className="flex flex-col overflow-hidden text-start">
+        {steps[currentStep]}
+      </DialogContent>
     </Dialog>
   );
 };
@@ -159,10 +161,10 @@ const SelectProfileStep = ({
   const t = useTranslations();
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="shrink-0">
         <DialogTitle>{t('Delete an Account')}</DialogTitle>
       </DialogHeader>
-      <div className="flex flex-col gap-4 px-6 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
         <p id="select-accounts-label">
           {t(
             "Please select the account you'd like to delete. This action cannot be undone.",
@@ -194,7 +196,7 @@ const SelectProfileStep = ({
           })}
         </RadioGroup>
       </div>
-      <DialogFooter>
+      <DialogFooter className="shrink-0">
         <Button
           variant="outline"
           onClick={cancelButtonAction}
@@ -235,10 +237,10 @@ const ConfirmProfileStep = ({
   const avatarUrl = profileToDelete.avatarImage?.name;
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="shrink-0">
         <DialogTitle>{t('Delete an Account')}</DialogTitle>
       </DialogHeader>
-      <div className="flex flex-col gap-2 px-6 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
         <p>
           {t(
             'You are about to delete this account. This action cannot be undone.',
@@ -267,7 +269,7 @@ const ConfirmProfileStep = ({
           </div>
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter className="shrink-0">
         <Button
           className="w-full sm:w-auto"
           variant="outline"
@@ -299,10 +301,10 @@ const SuccessStep = ({
   const t = useTranslations();
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="shrink-0">
         <DialogTitle>{t('Account Deleted')}</DialogTitle>
       </DialogHeader>
-      <div className="flex flex-col gap-2 px-6 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
         <p>
           {t(
             '{profileName} has been deleted. All associated data have been permanently removed.',
@@ -310,7 +312,7 @@ const SuccessStep = ({
           )}
         </p>
       </div>
-      <DialogFooter>
+      <DialogFooter className="shrink-0">
         <Button
           className="w-full sm:w-auto"
           type="button"
