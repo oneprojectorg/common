@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Field, FieldLabel } from '@op/sense/Field';
+import { OptionBox } from '@op/sense/OptionBox';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { toast } from '@op/sense/Toast';
@@ -138,7 +138,7 @@ export const DeleteOrganizationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col overflow-hidden text-start">
+      <DialogContent className="flex flex-col overflow-hidden text-start sm:min-w-lg">
         {steps[currentStep]}
       </DialogContent>
     </Dialog>
@@ -183,15 +183,13 @@ const SelectProfileStep = ({
             const optionId = `delete-profile-${profile.id}`;
 
             return (
-              <Field key={profile.id} orientation="horizontal" className="py-2">
-                <RadioGroupItem id={optionId} value={profile.id} />
-                <div className="flex flex-col gap-0.5">
-                  <FieldLabel htmlFor={optionId} className="leading-[1.05]">
-                    {profile.name}
-                  </FieldLabel>
-                  <p className="text-muted-foreground">{profileType}</p>
-                </div>
-              </Field>
+              <OptionBox
+                key={profile.id}
+                htmlFor={optionId}
+                label={profile.name}
+                description={profileType}
+                control={<RadioGroupItem id={optionId} value={profile.id} />}
+              />
             );
           })}
         </RadioGroup>

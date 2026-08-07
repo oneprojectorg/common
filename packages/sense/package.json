@@ -61,6 +61,7 @@
     "./NavigationMenu": "./src/components/ui/navigation-menu.tsx",
     "./NotificationPanel": "./src/components/NotificationPanel/index.tsx",
     "./NumberField": "./src/components/NumberField/index.tsx",
+    "./OptionBox": "./src/components/OptionBox/index.tsx",
     "./Pagination": "./src/components/ui/pagination.tsx",
     "./PaginationBar": "./src/components/PaginationBar/index.tsx",
     "./PhaseCard": "./src/components/PhaseCard/index.tsx",

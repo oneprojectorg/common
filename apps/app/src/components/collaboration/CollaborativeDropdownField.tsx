@@ -1,13 +1,13 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { useEffect, useId, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { LabeledFieldSet } from '@/components/decisions/forms/LabeledFieldSet';
-import { OptionBox } from '@/components/decisions/forms/OptionBox';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
