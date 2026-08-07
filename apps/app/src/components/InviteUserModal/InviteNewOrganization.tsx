@@ -1,9 +1,8 @@
 'use client';
 
 import { useRequiredUser } from '@/utils/UserProvider';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -101,13 +100,15 @@ export const InviteNewOrganization = ({
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
           <div className="flex min-h-20 flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
-            <TagGroup>
+            <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
-                <Tag className="sm:rounded-md" key={index}>
+                <Tag
+                  className="sm:rounded-md"
+                  key={index}
+                  onRemove={() => removeEmailBadge(email)}
+                  removeLabel={t('Remove {email}', { email })}
+                >
                   {email}
-                  <button onClick={() => removeEmailBadge(email)}>
-                    <LuX className="size-3" />
-                  </button>
                 </Tag>
               ))}
             </TagGroup>

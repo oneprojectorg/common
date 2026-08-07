@@ -2,11 +2,17 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { FieldLabel } from '@op/sense/Field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
-import { Select, SelectItem } from '@op/ui/Select';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import React from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -138,11 +144,13 @@ export const InviteToExistingOrganization = ({
           <div className="flex min-h-20 flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
             <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
-                <Tag className="sm:rounded-md" key={index}>
+                <Tag
+                  className="sm:rounded-md"
+                  key={index}
+                  onRemove={() => removeEmailBadge(email)}
+                  removeLabel={t('Remove {email}', { email })}
+                >
                   {email}
-                  <button onClick={() => removeEmailBadge(email)}>
-                    <LuX className="size-3" />
-                  </button>
                 </Tag>
               ))}
             </TagGroup>
@@ -162,38 +170,59 @@ export const InviteToExistingOrganization = ({
           </div>
         </div>
 
-        <Select
-          label={t('Add to organization')}
-          selectedKey={selectedOrganization}
-          onSelectionChange={(key) => setSelectedOrganization(key as string)}
-        >
-          {user.currentOrganization && (
-            <SelectItem id={user.currentOrganization.id}>
-              {user.currentProfile?.name}
-            </SelectItem>
-          )}
-        </Select>
+        <div className="flex flex-col gap-2">
+          <FieldLabel htmlFor="invite-organization">
+            {t('Add to organization')}
+          </FieldLabel>
+          <Select
+            value={selectedOrganization}
+            onValueChange={(value) => setSelectedOrganization(value ?? '')}
+          >
+            <SelectTrigger id="invite-organization" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {user.currentOrganization && (
+                <SelectItem value={user.currentOrganization.id}>
+                  {user.currentProfile?.name}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select
-          label={t('Role')}
-          selectedKey={selectedRole}
-          onSelectionChange={(key) => {
-            const roleName = key as string;
-            const selectedRoleData = rolesData.roles.find(
-              (role: any) => role.name === roleName,
-            );
-            setSelectedRole(roleName);
-            if (selectedRoleData) {
-              setSelectedRoleId(selectedRoleData.id);
-            }
-          }}
-        >
-          {rolesData.roles.map((role) => (
-            <SelectItem key={role.name} id={role.name}>
-              {role.name}
-            </SelectItem>
-          ))}
-        </Select>
+        <div className="flex flex-col gap-2">
+          <FieldLabel htmlFor="invite-role">{t('Role')}</FieldLabel>
+          <Select
+            value={selectedRole}
+            onValueChange={(roleName) => {
+              if (!roleName) {
+                return;
+              }
+
+              const selectedRoleData = rolesData.roles.find(
+                (role) => role.name === roleName,
+              );
+
+              setSelectedRole(roleName);
+
+              if (selectedRoleData) {
+                setSelectedRoleId(selectedRoleData.id);
+              }
+            }}
+          >
+            <SelectTrigger id="invite-role" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {rolesData.roles.map((role) => (
+                <SelectItem key={role.name} value={role.name}>
+                  {role.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );

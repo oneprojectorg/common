@@ -4,13 +4,19 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { Suspense, useEffect, useState } from 'react';
+import { type ReactElement, Suspense, useEffect, useState } from 'react';
 import { LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -203,47 +209,64 @@ export const InviteUserModal = ({
     }
   };
 
-  const triggerButton = isOrg
-    ? children || (
-        <>
-          <Button color="secondary" variant="icon" className="hidden sm:flex">
+  const defaultTriggers = (
+    <>
+      <DialogTrigger
+        render={
+          <Button variant="secondary" className="hidden sm:flex">
             <LuUserPlus className="min-h-4 min-w-4" />
-            <div className="hidden text-nowrap md:block">
+            <span className="hidden text-nowrap md:block">
               {t('Invite users')}
-            </div>
+            </span>
           </Button>
+        }
+      />
+      <DialogTrigger
+        render={
           <Button
-            color="neutral"
-            unstyled
-            variant="icon"
-            className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
+            aria-label={t('Invite users')}
+            variant="bare"
+            className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground sm:hidden"
           >
-            <LuUserPlus className="min-h-4 min-w-4 text-neutral-gray4" />
+            <LuUserPlus className="min-h-4 min-w-4" />
           </Button>
-        </>
-      )
-    : null;
+        }
+      />
+    </>
+  );
 
   return (
     <>
-      <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-        {controlledIsOpen === undefined ? triggerButton : null}
-        <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-          <ModalHeader>{t('Invite others to Common')}</ModalHeader>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        {controlledIsOpen === undefined && isOrg ? (
+          children ? (
+            <DialogTrigger render={children as ReactElement} />
+          ) : (
+            defaultTriggers
+          )
+        ) : null}
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t('Invite others to Common')}</DialogTitle>
+          </DialogHeader>
           <ErrorBoundary>
-            <ModalBody className="h-auto gap-6 p-6">
+            <div className="flex flex-col gap-6 p-6">
               <Tabs
-                selectedKey={activeTab}
-                onSelectionChange={(key) => setActiveTab(key as string)}
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as string)}
               >
-                <TabList aria-label={t('Invite options')}>
-                  <Tab id="existing">{t('Add to my organization')}</Tab>
+                <TabsList aria-label={t('Invite options')}>
+                  <TabsTrigger value="existing">
+                    {t('Add to my organization')}
+                  </TabsTrigger>
                   {inviteUserEnabled ? (
-                    <Tab id="new">{t('Invite a new organization')}</Tab>
+                    <TabsTrigger value="new">
+                      {t('Invite a new organization')}
+                    </TabsTrigger>
                   ) : null}
-                </TabList>
+                </TabsList>
 
-                <TabPanel id="existing" className="sm:p-0">
+                <TabsContent value="existing" className="sm:p-0">
                   <Suspense
                     fallback={
                       <div className="animate-pulse">
@@ -263,10 +286,10 @@ export const InviteUserModal = ({
                       setSelectedOrganization={setSelectedOrganization}
                     />
                   </Suspense>
-                </TabPanel>
+                </TabsContent>
 
                 {inviteUserEnabled ? (
-                  <TabPanel id="new" className="sm:p-0">
+                  <TabsContent value="new" className="sm:p-0">
                     <InviteNewOrganization
                       emails={emails}
                       setEmails={setEmails}
@@ -275,26 +298,25 @@ export const InviteUserModal = ({
                       personalMessage={personalMessage}
                       setPersonalMessage={setPersonalMessage}
                     />
-                  </TabPanel>
+                  </TabsContent>
                 ) : null}
               </Tabs>
-            </ModalBody>
-            <ModalFooter>
+            </div>
+            <DialogFooter>
               <Button
-                color="primary"
                 className="w-full sm:w-fit"
-                onPress={handleSendInvite}
-                isDisabled={
+                onClick={handleSendInvite}
+                disabled={
                   (!emails.trim() && emailBadges.length === 0) ||
                   inviteUser.isPending
                 }
               >
                 {inviteUser.isPending ? t('Sending...') : t('Send')}
               </Button>
-            </ModalFooter>
+            </DialogFooter>
           </ErrorBoundary>
-        </Modal>
-      </DialogTrigger>
+        </DialogContent>
+      </Dialog>
 
       <InviteSuccessModal
         isOpen={isSuccessModalOpen}
