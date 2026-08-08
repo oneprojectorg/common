@@ -11,13 +11,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { type ReactElement, Suspense, useEffect, useState } from 'react';
-import { LuUserPlus } from 'react-icons/lu';
+import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -27,14 +25,17 @@ import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
 import { parseEmails } from './emailUtils';
 
+/**
+ * Invite people to the current organization. Purely controlled — the opener
+ * lives with the caller (today the header's Create menu, which also decides
+ * whether the viewer has an organization to invite to at all).
+ */
 export const InviteUserModal = ({
-  children,
-  isOpen: controlledIsOpen,
-  onOpenChange: controlledOnOpenChange,
+  isOpen: isModalOpen,
+  onOpenChange: setIsModalOpen,
 }: {
-  children?: React.ReactNode;
-  isOpen?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
 }) => {
   const [emails, setEmails] = useState('');
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
@@ -42,7 +43,6 @@ export const InviteUserModal = ({
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [personalMessage, setPersonalMessage] = useState('');
-  const [internalIsModalOpen, setInternalIsModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [lastInvitedEmail, setLastInvitedEmail] = useState('');
   const [invitedCount, setInvitedCount] = useState(0);
@@ -51,14 +51,9 @@ export const InviteUserModal = ({
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
 
-  const isModalOpen = controlledIsOpen ?? internalIsModalOpen;
-  const setIsModalOpen = controlledOnOpenChange ?? setInternalIsModalOpen;
-
   const inviteUserEnabled =
     useFeatureFlagEnabled('invite_admin_user') ||
     user.currentOrganization?.networkOrganization;
-
-  const isOrg = user.currentOrganization;
 
   // Initialize selected organization when user data is available
   useEffect(() => {
@@ -209,42 +204,9 @@ export const InviteUserModal = ({
     }
   };
 
-  const defaultTriggers = (
-    <>
-      <DialogTrigger
-        render={
-          <Button variant="secondary" className="hidden sm:flex">
-            <LuUserPlus className="min-h-4 min-w-4" />
-            <span className="hidden text-nowrap md:block">
-              {t('Invite users')}
-            </span>
-          </Button>
-        }
-      />
-      <DialogTrigger
-        render={
-          <Button
-            aria-label={t('Invite users')}
-            variant="bare"
-            className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground sm:hidden"
-          >
-            <LuUserPlus className="min-h-4 min-w-4" />
-          </Button>
-        }
-      />
-    </>
-  );
-
   return (
     <>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        {controlledIsOpen === undefined && isOrg ? (
-          children ? (
-            <DialogTrigger render={children as ReactElement} />
-          ) : (
-            defaultTriggers
-          )
-        ) : null}
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{t('Invite others to Common')}</DialogTitle>
