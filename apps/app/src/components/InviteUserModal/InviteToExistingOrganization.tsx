@@ -6,6 +6,7 @@ import { Field, FieldLabel } from '@op/sense/Field';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -43,6 +44,21 @@ export const InviteToExistingOrganization = ({
   const { user } = useRequiredUser();
 
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+
+  // `items` is what lets Select render a label in the trigger rather than the
+  // raw value — without it the organization shows its id.
+  const organizationItems = user.currentOrganization
+    ? [
+        {
+          value: user.currentOrganization.id,
+          label: user.currentProfile?.name ?? '',
+        },
+      ]
+    : [];
+  const roleItems = rolesData.roles.map((role) => ({
+    value: role.name,
+    label: role.name,
+  }));
 
   React.useEffect(() => {
     if (!selectedRole) {
@@ -86,6 +102,7 @@ export const InviteToExistingOrganization = ({
             {t('Add to organization')}
           </FieldLabel>
           <Select
+            items={organizationItems}
             value={selectedOrganization}
             onValueChange={(value) => setSelectedOrganization(value ?? '')}
           >
@@ -93,11 +110,13 @@ export const InviteToExistingOrganization = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {user.currentOrganization && (
-                <SelectItem value={user.currentOrganization.id}>
-                  {user.currentProfile?.name}
-                </SelectItem>
-              )}
+              <SelectGroup>
+                {user.currentOrganization && (
+                  <SelectItem value={user.currentOrganization.id}>
+                    {user.currentProfile?.name}
+                  </SelectItem>
+                )}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </Field>
@@ -105,6 +124,7 @@ export const InviteToExistingOrganization = ({
         <Field>
           <FieldLabel htmlFor="invite-role">{t('Role')}</FieldLabel>
           <Select
+            items={roleItems}
             value={selectedRole}
             onValueChange={(roleName) => {
               if (!roleName) {
@@ -126,11 +146,13 @@ export const InviteToExistingOrganization = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {rolesData.roles.map((role) => (
-                <SelectItem key={role.name} value={role.name}>
-                  {role.name}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                {rolesData.roles.map((role) => (
+                  <SelectItem key={role.name} value={role.name}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </Field>
