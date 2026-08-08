@@ -1,5 +1,7 @@
 {
+  "Invite more people": "Invitar a más personas",
   "Remove {email}": "Eliminar {email}",
+  "Sent": "Enviado",
   "Switching to {name}…": "Cambiando a {name}…",
   "Technology partners": "Socios tecnológicos",
   "Already have an account? <login>Log in</login>": "¿Ya tienes una cuenta? <login>Inicia sesión</login>",
@@ -53,6 +55,8 @@
   "Agree and continue": "Aceptar y continuar",
   "Media": "Medios",
   "We've found your organization": "Hemos encontrado tu organización",
+  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.": "Has invitado a <bold>{count, plural, one {# persona} other {# personas}}</bold> a unirse a <bold>{organization}</bold>.",
+  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.": "Has invitado a <bold>{email}</bold> a unirse a <bold>{organization}</bold>.",
   "join_subheader": "Basado en tu dominio de correo electrónico, tienes acceso para unirte a esta organización.",
   "Confirm Administrator Access": "Confirmar acceso de administrador",
   "Get Started": "Comenzar",

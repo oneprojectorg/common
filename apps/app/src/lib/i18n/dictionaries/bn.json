@@ -1,5 +1,7 @@
 {
+  "Invite more people": "আরও লোককে আমন্ত্রণ জানান",
   "Remove {email}": "{email} সরান",
+  "Sent": "পাঠানো হয়েছে",
   "Switching to {name}…": "{name}-এ পরিবর্তন করা হচ্ছে…",
   "Technology partners": "প্রযুক্তি অংশীদার",
   "Already have an account? <login>Log in</login>": "ইতিমধ্যে একটি অ্যাকাউন্ট আছে? <login>লগ ইন করুন</login>",
@@ -54,6 +56,8 @@
   "Agree and continue": "সম্মত হয়ে চালিয়ে যান",
   "Media": "মিডিয়া",
   "We've found your organization": "আমরা আপনার সংস্থা খুঁজে পেয়েছি",
+  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{count, plural, one {# জনকে} other {# জনকে}}</bold> আমন্ত্রণ জানিয়েছেন।",
+  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{email}</bold>-কে আমন্ত্রণ জানিয়েছেন।",
   "join_subheader": "আপনার ইমেইল ডোমেইনের ভিত্তিতে, আপনার এই সংস্থায় যোগ দেওয়ার অ্যাক্সেস আছে।",
   "Confirm Administrator Access": "প্রশাসক অ্যাক্সেস নিশ্চিত করুন",
   "Get Started": "শুরু করুন",

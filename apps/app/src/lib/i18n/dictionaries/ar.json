@@ -1,5 +1,7 @@
 {
+  "Invite more people": "دعوة المزيد من الأشخاص",
   "Remove {email}": "إزالة {email}",
+  "Sent": "تم الإرسال",
   "Switching to {name}…": "جارٍ التبديل إلى {name}…",
   "Technology partners": "شركاء التكنولوجيا",
   "Already have an account? <login>Log in</login>": "لديك حساب بالفعل؟ <login>تسجيل الدخول</login>",
@@ -54,6 +56,8 @@
   "Agree and continue": "الموافقة والمتابعة",
   "Media": "الوسائط",
   "We've found your organization": "لقد وجدنا مؤسستك",
+  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.": "لقد دعوت <bold>{count, plural, zero {# شخص} one {شخصًا واحدًا} two {شخصين} few {# أشخاص} many {# شخصًا} other {# شخص}}</bold> للانضمام إلى <bold>{organization}</bold>.",
+  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.": "لقد دعوت <bold>{email}</bold> للانضمام إلى <bold>{organization}</bold>.",
   "join_subheader": "بناءً على نطاق بريدك الإلكتروني، يمكنك الانضمام إلى هذه المؤسسة.",
   "Confirm Administrator Access": "تأكيد صلاحيات المسؤول",
   "Get Started": "ابدأ الآن",

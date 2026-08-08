@@ -1,5 +1,7 @@
 {
+  "Invite more people": "Casuun dad kale",
   "Remove {email}": "Ka saar {email}",
+  "Sent": "La diray",
   "Switching to {name}…": "U beddelaya {name}…",
   "Technology partners": "Shuraakada tignoolajiyada",
   "Already have an account? <login>Log in</login>": "Horeyba akoon ma leedahay? <login>Soo gal</login>",
@@ -54,6 +56,8 @@
   "Agree and continue": "Aqbal oo sii wad",
   "Media": "Warbaahinta",
   "We've found your organization": "Waxaan helay ururkaaga",
+  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.": "Waxaad casuuntay <bold>{count, plural, one {# qof} other {# qof}}</bold> inay ku biiraan <bold>{organization}</bold>.",
+  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.": "Waxaad casuuntay <bold>{email}</bold> inuu ku biiro <bold>{organization}</bold>.",
   "join_subheader": "Iyadoo lagu saleynayo domain-ka iimeelkaaga, waxaad xaq u leedahay inaad ku biirto ururkan.",
   "Confirm Administrator Access": "Xaqiiji Gelitaanka Maamulaha",
   "Get Started": "Bilow",
