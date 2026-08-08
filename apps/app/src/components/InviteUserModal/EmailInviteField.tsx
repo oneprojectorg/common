@@ -114,6 +114,7 @@ export const EmailInviteField = ({
           {emailBadges.map((email) => (
             <Tag
               key={email}
+              size="lg"
               onRemove={() => removeEmailBadge(email)}
               removeLabel={t('Remove {email}', { email })}
             >
@@ -131,7 +132,7 @@ export const EmailInviteField = ({
               ? `name1@${domain}, name2@${domain}, ...`
               : t('Type emails followed by a comma or line break...')
           }
-          className="min-h-0 min-w-50 flex-1 py-0 pt-1"
+          className="min-h-0 min-w-50 flex-1 px-0 py-0 pt-1"
           rows={1}
         />
       </InputGroup>
