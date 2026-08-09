@@ -73,17 +73,6 @@ export const InviteToExistingOrganization = ({
     }
   }, [selectedRole, setSelectedRole, setSelectedRoleId]);
 
-  // Ensure first organization is selected if no selection exists
-  React.useEffect(() => {
-    if (!selectedOrganization && user.currentOrganization?.id) {
-      setSelectedOrganization(user.currentOrganization.id);
-    }
-  }, [
-    selectedOrganization,
-    user.currentOrganization?.id,
-    setSelectedOrganization,
-  ]);
-
   return (
     <div className="flex flex-col gap-6">
       <p>{t('Expand your network and collaborate with others on Common.')}</p>

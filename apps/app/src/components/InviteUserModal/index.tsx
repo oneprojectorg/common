@@ -55,12 +55,13 @@ export const InviteUserModal = ({
     useFeatureFlagEnabled('invite_admin_user') ||
     user.currentOrganization?.networkOrganization;
 
-  // Initialize selected organization when user data is available
+  // Follow the profile switcher. This modal stays mounted across a switch, so
+  // only initialising when empty left the previous org's id in state — the
+  // select then showed a raw uuid (no matching item) and, worse, the invite was
+  // sent to the org the user had just left.
   useEffect(() => {
-    if (user.currentOrganization?.id && !selectedOrganization) {
-      setSelectedOrganization(user.currentOrganization.id);
-    }
-  }, [user.currentOrganization?.id, selectedOrganization]);
+    setSelectedOrganization(user.currentOrganization?.id ?? '');
+  }, [user.currentOrganization?.id]);
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
