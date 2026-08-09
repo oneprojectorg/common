@@ -121,7 +121,6 @@ export const InviteToExistingOrganization = ({
             {t('Add to organization')}
           </FieldLabel>
           <Select
-            modal={false}
             items={organizationItems}
             value={selectedOrganization}
             onValueChange={(value) => setSelectedOrganization(value ?? '')}
@@ -147,7 +146,6 @@ export const InviteToExistingOrganization = ({
         <Field>
           <FieldLabel htmlFor="invite-role">{t('Role')}</FieldLabel>
           <Select
-            modal={false}
             items={roleItems}
             value={selectedRole}
             onValueChange={(roleName) => {
