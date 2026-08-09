@@ -22,8 +22,7 @@ interface InviteToExistingOrganizationProps {
   setEmails: (emails: string) => void;
   emailBadges: string[];
   setEmailBadges: (badges: string[]) => void;
-  selectedRole: string;
-  setSelectedRole: (role: string) => void;
+  selectedRoleId: string;
   setSelectedRoleId: (roleId: string) => void;
   selectedOrganization: string;
   setSelectedOrganization: (orgId: string) => void;
@@ -34,8 +33,7 @@ export const InviteToExistingOrganization = ({
   setEmails,
   emailBadges,
   setEmailBadges,
-  selectedRole,
-  setSelectedRole,
+  selectedRoleId,
   setSelectedRoleId,
   selectedOrganization,
   setSelectedOrganization,
@@ -45,21 +43,22 @@ export const InviteToExistingOrganization = ({
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 
   const organizationItems = useAdminOrganizations();
+  // Keyed on the role id, which is what the invite sends; SelectValue reads the
+  // name back off `items`.
   const roleItems = rolesData.roles.map((role) => ({
-    value: role.name,
+    value: role.id,
     label: role.name,
   }));
 
   React.useEffect(() => {
-    if (!selectedRole) {
+    if (!selectedRoleId) {
       const memberRole = rolesData.roles.find((role) => role.name === 'Member');
       const defaultRole = memberRole || rolesData.roles[0];
       if (defaultRole) {
-        setSelectedRole(defaultRole.name);
         setSelectedRoleId(defaultRole.id);
       }
     }
-  }, [selectedRole, setSelectedRole, setSelectedRoleId]);
+  }, [selectedRoleId, setSelectedRoleId]);
 
   // The parent defaults to the active organization, which the viewer may only
   // be a member of — it would not be in this admin-only list. Never substitute
@@ -126,20 +125,10 @@ export const InviteToExistingOrganization = ({
           <FieldLabel htmlFor="invite-role">{t('Role')}</FieldLabel>
           <Select
             items={roleItems}
-            value={selectedRole}
-            onValueChange={(roleName) => {
-              if (!roleName) {
-                return;
-              }
-
-              const selectedRoleData = rolesData.roles.find(
-                (role) => role.name === roleName,
-              );
-
-              setSelectedRole(roleName);
-
-              if (selectedRoleData) {
-                setSelectedRoleId(selectedRoleData.id);
+            value={selectedRoleId}
+            onValueChange={(roleId) => {
+              if (roleId) {
+                setSelectedRoleId(roleId);
               }
             }}
           >
@@ -148,9 +137,9 @@ export const InviteToExistingOrganization = ({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {rolesData.roles.map((role) => (
-                  <SelectItem key={role.name} value={role.name}>
-                    {role.name}
+                {roleItems.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
                   </SelectItem>
                 ))}
               </SelectGroup>
