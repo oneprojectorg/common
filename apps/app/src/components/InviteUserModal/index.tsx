@@ -23,12 +23,16 @@ import ErrorBoundary from '../ErrorBoundary';
 import { InviteSuccessModal } from '../InviteSuccessModal';
 import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
-import { parseEmails } from './emailUtils';
+import { isValidEmail, parseEmails } from './emailUtils';
+import { useAdminOrganizations } from './useAdminOrganizations';
+
+type InviteTab = 'existing' | 'new';
 
 /**
- * Invite people to the current organization. Purely controlled — the opener
- * lives with the caller (today the header's Create menu, which also decides
- * whether the viewer has an organization to invite to at all).
+ * Invite people to Common — either to an organization the viewer administers or
+ * as a brand new organization. Purely controlled: the opener lives with the
+ * caller (today the header's Create menu, which only renders it while the
+ * active profile is an organization).
  */
 export const InviteUserModal = ({
   isOpen: isModalOpen,
@@ -46,51 +50,59 @@ export const InviteUserModal = ({
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [lastInvitedEmail, setLastInvitedEmail] = useState('');
   const [invitedCount, setInvitedCount] = useState(0);
-  const [activeTab, setActiveTab] = useState('existing');
+  const [activeTab, setActiveTab] = useState<InviteTab>('existing');
   const t = useTranslations();
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
+  const organizationItems = useAdminOrganizations();
 
   const inviteUserEnabled =
     useFeatureFlagEnabled('invite_admin_user') ||
     user.currentOrganization?.networkOrganization;
 
   // Follow the profile switcher. This modal stays mounted across a switch, so
-  // only initialising when empty left the previous org's id in state — the
-  // select then showed a raw uuid (no matching item) and, worse, the invite was
-  // sent to the org the user had just left.
+  // initialising only when empty left the previous org's id in state, and that
+  // id is what the invite is sent to.
   useEffect(() => {
     setSelectedOrganization(user.currentOrganization?.id ?? '');
   }, [user.currentOrganization?.id]);
 
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-  };
+  const collectEmails = () => [...emailBadges, ...parseEmails(emails).emails];
 
   const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: () => {
-      handleInviteSuccess();
+    onSuccess: (result) => {
+      // A 200 only means the request was accepted. The server reports per-email
+      // outcomes in the payload, and `success` is merely "at least one landed",
+      // so an all-failed batch arrives here rather than in onError.
+      const failed = result.details?.failed ?? [];
+
+      if (!result.success) {
+        logger.error('Invite sent no invitations', {
+          context: 'InviteUserModal.sendInvite',
+          failed,
+        });
+        toast.error(t('No invitations were sent'), {
+          description: describeFailures(failed),
+        });
+        return;
+      }
+
+      if (failed.length > 0) {
+        toast.warning(t('Some invitations could not be sent'), {
+          description: describeFailures(failed),
+        });
+      }
+
+      handleInviteSuccess(result.details?.successful ?? []);
     },
     onError: (error) => {
       handleInviteError(error, t('Failed to send invite'));
     },
   });
 
-  const handleInviteSuccess = () => {
-    // Store the first invited email for display in success modal
-    const allEmails = [...emailBadges];
-
-    // Parse the current input for emails
-    if (emails.trim()) {
-      const { emails: emailsFromInput } = parseEmails(emails);
-      allEmails.push(...emailsFromInput);
-    }
-
-    if (allEmails.length > 0) {
-      setLastInvitedEmail(allEmails[0] || '');
-      setInvitedCount(allEmails.length);
-    }
+  const handleInviteSuccess = (invitedEmails: string[]) => {
+    setLastInvitedEmail(invitedEmails[0] ?? '');
+    setInvitedCount(invitedEmails.length);
 
     setEmails('');
     setEmailBadges([]);
@@ -99,7 +111,7 @@ export const InviteUserModal = ({
     setIsSuccessModalOpen(true);
   };
 
-  const handleInviteError = (error: any, title: string) => {
+  const handleInviteError = (error: unknown, title: string) => {
     logger.error('Failed to send invite', {
       error,
       context: 'InviteUserModal.sendInvite',
@@ -118,14 +130,7 @@ export const InviteUserModal = ({
     }
   };
 
-  const sendInvite = (props: {
-    emails: string[];
-    roleId?: string;
-    organizationId?: string;
-    message?: string;
-  }) => {
-    const { emails, roleId, organizationId, message } = props;
-
+  const sendInvite = (recipients: string[]) => {
     if (!isOnline) {
       toast.error(t('No connection'), {
         description: t('Please check your internet connection and try again.'),
@@ -133,32 +138,22 @@ export const InviteUserModal = ({
       return;
     }
 
-    const inviteData: any = {
-      emails,
-    };
-
-    if (activeTab === 'new') {
-      // New organization invite
-      if (message) {
-        inviteData.personalMessage = message;
-      }
-    } else {
-      // Existing organization invite
-      inviteData.roleId = roleId;
-      inviteData.organizationId = organizationId;
-    }
-
-    inviteUser.mutate(inviteData);
+    inviteUser.mutate(
+      activeTab === 'new'
+        ? {
+            emails: recipients,
+            ...(personalMessage ? { personalMessage } : {}),
+          }
+        : {
+            emails: recipients,
+            roleId: selectedRoleId,
+            organizationId: selectedOrganization,
+          },
+    );
   };
 
   const handleSendInvite = () => {
-    const allEmails = [...emailBadges];
-
-    // Parse the current input for emails
-    if (emails.trim()) {
-      const { emails: emailsFromInput } = parseEmails(emails);
-      allEmails.push(...emailsFromInput);
-    }
+    const allEmails = collectEmails();
 
     if (allEmails.length === 0) {
       return;
@@ -189,21 +184,14 @@ export const InviteUserModal = ({
       return;
     }
 
-    if (activeTab === 'existing') {
-      sendInvite({
-        emails: allEmails,
-        roleId: selectedRoleId,
-        organizationId: selectedOrganization,
-      });
-    } else {
-      // For new organization invites, we need to handle this differently
-      // since roleId might not be applicable
-      sendInvite({
-        emails: allEmails,
-        message: personalMessage,
-      });
-    }
+    sendInvite(allEmails);
   };
+
+  // The existing-organization tab needs a target the server will accept; an
+  // empty id fails the input schema and surfaces as a raw validation error.
+  const canSend =
+    (emails.trim().length > 0 || emailBadges.length > 0) &&
+    (activeTab === 'new' || Boolean(selectedOrganization && selectedRoleId));
 
   return (
     <>
@@ -216,8 +204,15 @@ export const InviteUserModal = ({
             <div className="flex min-h-0 flex-col gap-6 overflow-y-scroll p-6">
               <Tabs
                 value={activeTab}
-                onValueChange={(value) => setActiveTab(value as string)}
+                onValueChange={(value) => {
+                  if (value === 'existing' || value === 'new') {
+                    setActiveTab(value);
+                  }
+                }}
               >
+                {/* Negative margin + matching padding let the tab strip scroll
+                    edge to edge inside the padded dialog; the rule is sticky so
+                    it stays full width as the strip scrolls under it. */}
                 <div className="-mx-6 mb-2 no-scrollbar min-w-full overflow-x-scroll px-6">
                   <TabsList variant="line" aria-label={t('Invite options')}>
                     <TabsTrigger value="existing">
@@ -272,10 +267,7 @@ export const InviteUserModal = ({
               <Button
                 className="w-full sm:w-fit"
                 onClick={handleSendInvite}
-                disabled={
-                  (!emails.trim() && emailBadges.length === 0) ||
-                  inviteUser.isPending
-                }
+                disabled={!canSend || inviteUser.isPending}
               >
                 {inviteUser.isPending ? t('Sending...') : t('Send')}
               </Button>
@@ -293,12 +285,20 @@ export const InviteUserModal = ({
         }}
         invitedEmail={lastInvitedEmail}
         invitedCount={invitedCount}
+        // The org actually invited to, which since the select lists every
+        // organization the viewer administers is not necessarily the active one.
         organizationName={
-          activeTab === 'existing'
-            ? user.currentProfile?.name || 'Common'
-            : 'Common'
+          (activeTab === 'existing'
+            ? organizationItems.find(
+                (item) => item.value === selectedOrganization,
+              )?.label
+            : undefined) || 'Common'
         }
       />
     </>
   );
 };
+
+/** Server-side reasons are already English strings; keep them verbatim. */
+const describeFailures = (failed: { email: string; reason: string }[]) =>
+  failed.map(({ email, reason }) => `${email}: ${reason}`).join('\n');

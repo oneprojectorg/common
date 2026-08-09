@@ -1517,5 +1517,9 @@
   "Pagination Navigation": "Navegación de paginación",
   "{start} - {end} of {total} {label}": "{start} - {end} de {total} {label}",
   "No organizations found": "No se encontraron organizaciones",
-  "No roles found": "No se encontraron roles"
+  "No roles found": "No se encontraron roles",
+  "No invitations were sent": "No se envió ninguna invitación",
+  "Some invitations could not be sent": "No se pudieron enviar algunas invitaciones",
+  "Select an organization": "Selecciona una organización",
+  "You can only invite people to organizations you administer.": "Solo puedes invitar personas a organizaciones que administras."
 }

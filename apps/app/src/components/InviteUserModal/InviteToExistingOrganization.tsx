@@ -1,8 +1,7 @@
 'use client';
 
-import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Field, FieldLabel } from '@op/sense/Field';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import {
   Select,
   SelectContent,
@@ -16,6 +15,7 @@ import React from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { EmailInviteField } from './EmailInviteField';
+import { useAdminOrganizations } from './useAdminOrganizations';
 
 interface InviteToExistingOrganizationProps {
   emails: string;
@@ -41,36 +41,10 @@ export const InviteToExistingOrganization = ({
   setSelectedOrganization,
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
-  const { user } = useRequiredUser();
 
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 
-  // Every organization the viewer administers, not just the active one — the
-  // same admin rule the server applies in account.getUserProfiles. Note the
-  // value is the *organization* id: that is what inviteUser matches on, and it
-  // is not the profile id that getUserProfiles returns.
-  const organizationItems = React.useMemo(
-    () =>
-      (user.organizationUsers ?? [])
-        .filter((membership) =>
-          membership.roles?.some(
-            (role) => role.accessRole?.name?.toLowerCase() === 'admin',
-          ),
-        )
-        .flatMap((membership) => {
-          const organization = membership.organization;
-
-          return organization
-            ? [
-                {
-                  value: organization.id,
-                  label: organization.profile?.name ?? '',
-                },
-              ]
-            : [];
-        }),
-    [user.organizationUsers],
-  );
+  const organizationItems = useAdminOrganizations();
   const roleItems = rolesData.roles.map((role) => ({
     value: role.name,
     label: role.name,
@@ -78,8 +52,6 @@ export const InviteToExistingOrganization = ({
 
   React.useEffect(() => {
     if (!selectedRole) {
-      // Initialize default role if none selected
-      // Default to Admin if available, otherwise first role
       const memberRole = rolesData.roles.find((role) => role.name === 'Member');
       const defaultRole = memberRole || rolesData.roles[0];
       if (defaultRole) {
@@ -89,18 +61,19 @@ export const InviteToExistingOrganization = ({
     }
   }, [selectedRole, setSelectedRole, setSelectedRoleId]);
 
-  // The parent defaults to the active organization, which the viewer may only be
-  // a member of — it would not be in this admin-only list, leaving the select
-  // with a value it cannot label. Fall back to the first one they can invite to.
+  // The parent defaults to the active organization, which the viewer may only
+  // be a member of — it would not be in this admin-only list. Never substitute
+  // another organization silently: only pick when there is no choice to make,
+  // otherwise clear it and let them choose (Send stays disabled until they do).
   React.useEffect(() => {
-    const firstOrganization = organizationItems[0];
-
-    if (
-      firstOrganization &&
-      !organizationItems.some((item) => item.value === selectedOrganization)
-    ) {
-      setSelectedOrganization(firstOrganization.value);
+    if (organizationItems.some((item) => item.value === selectedOrganization)) {
+      return;
     }
+
+    const onlyOrganization =
+      organizationItems.length === 1 ? organizationItems[0] : undefined;
+
+    setSelectedOrganization(onlyOrganization?.value ?? '');
   }, [organizationItems, selectedOrganization, setSelectedOrganization]);
 
   return (
@@ -120,27 +93,33 @@ export const InviteToExistingOrganization = ({
           <FieldLabel htmlFor="invite-organization">
             {t('Add to organization')}
           </FieldLabel>
-          <Select
-            items={organizationItems}
-            value={selectedOrganization}
-            onValueChange={(value) => setSelectedOrganization(value ?? '')}
-          >
-            <SelectTrigger id="invite-organization" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {organizationItems.map((organization) => (
-                  <SelectItem
-                    key={organization.value}
-                    value={organization.value}
-                  >
-                    {organization.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          {organizationItems.length === 0 ? (
+            <FieldDescription>
+              {t('You can only invite people to organizations you administer.')}
+            </FieldDescription>
+          ) : (
+            <Select
+              items={organizationItems}
+              value={selectedOrganization}
+              onValueChange={(value) => setSelectedOrganization(value ?? '')}
+            >
+              <SelectTrigger id="invite-organization" className="w-full">
+                <SelectValue placeholder={t('Select an organization')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {organizationItems.map((organization) => (
+                    <SelectItem
+                      key={organization.value}
+                      value={organization.value}
+                    >
+                      {organization.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
         </Field>
 
         <Field>

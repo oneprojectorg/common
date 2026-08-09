@@ -1519,5 +1519,9 @@
   "Pagination Navigation": "Navigation-ka bogagga",
   "{start} - {end} of {total} {label}": "{start} - {end} ee {total} {label}",
   "No organizations found": "Ma jiraan ururo la helay",
-  "No roles found": "Ma jiraan doorar la helay"
+  "No roles found": "Ma jiraan doorar la helay",
+  "No invitations were sent": "Casuumaad lama dirin",
+  "Some invitations could not be sent": "Casuumaadaha qaarkood lama diri karin",
+  "Select an organization": "Dooro urur",
+  "You can only invite people to organizations you administer.": "Waxaad dad ku casuumi kartaa oo keliya ururrada aad maamusho."
 }

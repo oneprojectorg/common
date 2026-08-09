@@ -6,6 +6,7 @@ import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -90,6 +91,11 @@ export const DeleteOrganizationModal = ({
         router.refresh();
         setCurrentStep(2);
       } catch (error) {
+        logger.error('Failed to delete organization', {
+          error,
+          context: 'DeleteOrganizationModal.handleSubmit',
+          organizationProfileId: selectedProfileId,
+        });
         toast.error(t('Failed to delete account'));
       }
     });

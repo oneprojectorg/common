@@ -52,8 +52,6 @@ export default function PageError({ error }: ErrorProps) {
     }),
   });
 
-  console.error('App Error:', error.message);
-
   return (
     <ClientOnly>
       <StatusScreen

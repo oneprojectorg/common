@@ -1583,5 +1583,9 @@
   "Pagination Navigation": "Pagination Navigation",
   "{start} - {end} of {total} {label}": "{start} - {end} of {total} {label}",
   "No organizations found": "No organizations found",
-  "No roles found": "No roles found"
+  "No roles found": "No roles found",
+  "No invitations were sent": "No invitations were sent",
+  "Some invitations could not be sent": "Some invitations could not be sent",
+  "Select an organization": "Select an organization",
+  "You can only invite people to organizations you administer.": "You can only invite people to organizations you administer."
 }

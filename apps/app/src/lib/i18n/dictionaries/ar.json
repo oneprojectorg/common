@@ -1517,5 +1517,9 @@
   "Pagination Navigation": "التنقل بين الصفحات",
   "{start} - {end} of {total} {label}": "{start} - {end} من {total} {label}",
   "No organizations found": "لم يتم العثور على منظمات",
-  "No roles found": "لم يتم العثور على أدوار"
+  "No roles found": "لم يتم العثور على أدوار",
+  "No invitations were sent": "لم يتم إرسال أي دعوات",
+  "Some invitations could not be sent": "تعذّر إرسال بعض الدعوات",
+  "Select an organization": "اختر مؤسسة",
+  "You can only invite people to organizations you administer.": "يمكنك دعوة أشخاص فقط إلى المؤسسات التي تديرها."
 }
