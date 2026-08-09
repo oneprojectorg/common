@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { stampExceptionWithTraceContext } from '../lib/otelErrorTracking';
 
 // This component replaces the root layout on catastrophic errors, so
-// PostHogProvider, next-intl, Tailwind, and @op/ui are all unavailable.
+// PostHogProvider, next-intl, Tailwind, and @op/sense are all unavailable.
 // Hardcoded strings, inline styles, and the manual posthog.init are intentional.
 export default function GlobalError({
   error,

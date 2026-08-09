@@ -208,17 +208,17 @@ export const InviteUserModal = ({
   return (
     <>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="flex flex-col sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{t('Invite others to Common')}</DialogTitle>
           </DialogHeader>
           <ErrorBoundary>
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex min-h-0 flex-col gap-6 overflow-y-scroll p-6">
               <Tabs
                 value={activeTab}
                 onValueChange={(value) => setActiveTab(value as string)}
               >
-                <div className="mb-2 w-full border-b">
+                <div className="-mx-6 mb-2 no-scrollbar min-w-full overflow-x-scroll px-6">
                   <TabsList variant="line" aria-label={t('Invite options')}>
                     <TabsTrigger value="existing">
                       {t('Add to my organization')}
@@ -229,6 +229,7 @@ export const InviteUserModal = ({
                       </TabsTrigger>
                     ) : null}
                   </TabsList>
+                  <hr className="sticky start-0" />
                 </div>
 
                 <TabsContent value="existing">

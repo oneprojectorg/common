@@ -1,13 +1,13 @@
-import { Header2 } from '@op/sense/Header';
+import { Header1 } from '@op/sense/Header';
 
 import { ButtonLink } from '@/components/ButtonLink';
 import { TranslatedText } from '@/components/TranslatedText';
 
 export default function PageNotFound() {
   return (
-    <div className="flex size-full flex-col items-center justify-center gap-8">
+    <div className="flex size-full flex-col items-center justify-center gap-8 p-6">
       <div className="flex flex-col items-center gap-4">
-        <Header2 className="text-[4rem] leading-[110%]">404</Header2>
+        <Header1>404</Header1>
         <p className="text-center">
           <TranslatedText text="Oops! We can't find that page." />
           <br />

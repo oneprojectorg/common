@@ -20,7 +20,7 @@ const NoAccessMessage = () => {
   const t = useTranslations();
 
   return (
-    <div className="flex size-full flex-col items-center justify-center gap-4 text-center">
+    <div className="flex size-full flex-col items-center justify-center gap-4 p-6 text-center">
       <Header1>{t("You don't have access to this page")}</Header1>
       <p className="text-muted-foreground">
         {t(
@@ -76,7 +76,7 @@ const ForbiddenWithInviteCheck = () => {
   const steward = matchingInvite.profile?.processInstance?.steward;
 
   return (
-    <div className="flex size-full flex-col items-center justify-center">
+    <div className="flex size-full flex-col items-center justify-center p-6">
       <div className="flex w-full max-w-lg flex-col justify-center">
         <FormContainer className="gap-6">
           <div className="flex flex-col gap-2 text-center">
