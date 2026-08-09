@@ -10,10 +10,7 @@ import { useId } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { parseEmails, shouldParseEmails } from './emailUtils';
-
-const isValidEmail = (email: string): boolean =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+import { isValidEmail, parseEmails, shouldParseEmails } from './emailUtils';
 
 interface EmailInviteFieldProps {
   /** Raw text still in the box — everything not yet accepted as a chip. */
@@ -30,8 +27,9 @@ interface EmailInviteFieldProps {
 
 /**
  * The "Send to" chips input shared by both invite tabs: type addresses, and a
- * comma or line break turns the valid ones into chips. Invalid and duplicate
- * addresses stay in the box and are reported by toast, so nothing is lost.
+ * comma or line break turns the valid ones into chips. Invalid ones stay in the
+ * box to be corrected; duplicates are dropped (they are already chips). Both
+ * are reported by toast.
  */
 export const EmailInviteField = ({
   emails,
@@ -80,7 +78,8 @@ export const EmailInviteField = ({
       setEmailBadges([...emailBadges, ...validEmails]);
     }
 
-    // Anything rejected stays in the box, in the separator style it arrived in.
+    // Invalid addresses go back in the box, in the separator style they arrived
+    // in; everything else clears it.
     setEmails(invalidEmails.join(hasLineBreaks ? '\n' : ', '));
 
     if (invalidEmails.length > 0) {
@@ -132,7 +131,7 @@ export const EmailInviteField = ({
               ? `name1@${domain}, name2@${domain}, ...`
               : t('Type emails followed by a comma or line break...')
           }
-          className="min-h-0 min-w-50 flex-1 px-0 py-0 pt-1"
+          className="min-h-0 min-w-50 px-0 pt-1 pb-0"
           rows={1}
         />
       </InputGroup>
