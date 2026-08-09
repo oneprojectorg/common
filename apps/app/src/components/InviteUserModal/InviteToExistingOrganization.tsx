@@ -45,16 +45,32 @@ export const InviteToExistingOrganization = ({
 
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 
-  // `items` is what lets Select render a label in the trigger rather than the
-  // raw value — without it the organization shows its id.
-  const organizationItems = user.currentOrganization
-    ? [
-        {
-          value: user.currentOrganization.id,
-          label: user.currentProfile?.name ?? '',
-        },
-      ]
-    : [];
+  // Every organization the viewer administers, not just the active one — the
+  // same admin rule the server applies in account.getUserProfiles. Note the
+  // value is the *organization* id: that is what inviteUser matches on, and it
+  // is not the profile id that getUserProfiles returns.
+  const organizationItems = React.useMemo(
+    () =>
+      (user.organizationUsers ?? [])
+        .filter((membership) =>
+          membership.roles?.some(
+            (role) => role.accessRole?.name?.toLowerCase() === 'admin',
+          ),
+        )
+        .flatMap((membership) => {
+          const organization = membership.organization;
+
+          return organization
+            ? [
+                {
+                  value: organization.id,
+                  label: organization.profile?.name ?? '',
+                },
+              ]
+            : [];
+        }),
+    [user.organizationUsers],
+  );
   const roleItems = rolesData.roles.map((role) => ({
     value: role.name,
     label: role.name,
@@ -72,6 +88,20 @@ export const InviteToExistingOrganization = ({
       }
     }
   }, [selectedRole, setSelectedRole, setSelectedRoleId]);
+
+  // The parent defaults to the active organization, which the viewer may only be
+  // a member of — it would not be in this admin-only list, leaving the select
+  // with a value it cannot label. Fall back to the first one they can invite to.
+  React.useEffect(() => {
+    const firstOrganization = organizationItems[0];
+
+    if (
+      firstOrganization &&
+      !organizationItems.some((item) => item.value === selectedOrganization)
+    ) {
+      setSelectedOrganization(firstOrganization.value);
+    }
+  }, [organizationItems, selectedOrganization, setSelectedOrganization]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,11 +130,14 @@ export const InviteToExistingOrganization = ({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {user.currentOrganization && (
-                  <SelectItem value={user.currentOrganization.id}>
-                    {user.currentProfile?.name}
+                {organizationItems.map((organization) => (
+                  <SelectItem
+                    key={organization.value}
+                    value={organization.value}
+                  >
+                    {organization.label}
                   </SelectItem>
-                )}
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
