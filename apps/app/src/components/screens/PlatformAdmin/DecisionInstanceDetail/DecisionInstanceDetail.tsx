@@ -66,7 +66,7 @@ const DecisionInstanceDetailContent = ({
           href="/admin/decisions"
           className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
-          <LuArrowLeft className="size-3.5 rtl:rotate-180" />
+          <LuArrowLeft className="size-3.5 rtl:-scale-x-100" />
           {t('All Decisions')}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
@@ -82,7 +82,10 @@ const DecisionInstanceDetailContent = ({
               className={`${buttonVariants({ variant: 'outline', size: 'sm' })} ms-auto`}
             >
               {t('View decision')}
-              <LuArrowUpRight data-icon="inline-end" />
+              <LuArrowUpRight
+                data-icon="inline-end"
+                className="rtl:-scale-x-100"
+              />
             </Link>
           ) : null}
         </div>

@@ -228,7 +228,7 @@ const ReviewerRow = ({
           {isExpanded ? (
             <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:rotate-180" />
+            <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:-scale-x-100" />
           )}
           {reviewer.profile.name ?? reviewer.profile.slug}
         </span>

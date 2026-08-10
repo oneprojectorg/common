@@ -129,7 +129,7 @@ const ProfileMenuRow = ({
         titleClassName="font-normal"
         description={description}
       />
-      <LuChevronRight className="size-4" />
+      <LuChevronRight className="size-4 rtl:-scale-x-100" />
     </>
   );
 
@@ -379,7 +379,7 @@ const AvatarMenuContent = ({
             onClose?.();
           }}
         >
-          <LuLogOut className="size-4" /> {t('Log out')}
+          <LuLogOut className="size-4 rtl:-scale-x-100" /> {t('Log out')}
         </ActionRow>
       </MenuSection>
 

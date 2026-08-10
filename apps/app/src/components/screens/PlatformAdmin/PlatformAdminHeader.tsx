@@ -26,7 +26,7 @@ export const PlatformAdminHeader = () => {
           window.open(posthogUIHost, '_blank');
         }}
       >
-        <LuArrowUpRight className="size-4" />
+        <LuArrowUpRight className="size-4 rtl:-scale-x-100" />
         {t('View all analytics')}
       </Button>
     </div>

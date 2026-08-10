@@ -144,7 +144,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <LuChevronRight className="ms-auto rtl:rotate-180" />
+      <LuChevronRight className="ms-auto rtl:-scale-x-100" />
     </MenuPrimitive.SubmenuTrigger>
   );
 }

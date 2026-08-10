@@ -74,7 +74,7 @@ function PaginationPrevious({
       className={cn('ps-2.5!', className)}
       {...props}
     >
-      <LuChevronLeft className="rtl:rotate-180" data-icon="inline-start" />
+      <LuChevronLeft className="rtl:-scale-x-100" data-icon="inline-start" />
       <span className="hidden sm:block">{text}</span>
     </PaginationLink>
   );
@@ -93,7 +93,7 @@ function PaginationNext({
       {...props}
     >
       <span className="hidden sm:block">{text}</span>
-      <LuChevronRight className="rtl:rotate-180" data-icon="inline-end" />
+      <LuChevronRight className="rtl:-scale-x-100" data-icon="inline-end" />
     </PaginationLink>
   );
 }

@@ -125,7 +125,7 @@ function CurrentPhaseCard({
           aria-hidden
           className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         >
-          <LuArrowRight className="size-4 rtl:rotate-180" />
+          <LuArrowRight className="size-4 rtl:-scale-x-100" />
         </span>
       </a>
     </li>
