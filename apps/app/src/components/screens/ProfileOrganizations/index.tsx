@@ -9,6 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
+import { Header2 } from '@op/sense/Header';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -56,12 +57,12 @@ export const ProfileOrganizationsSuspense = ({
           </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="font-serif text-headline font-light">
+          <Header2>
             {t(
               'Member of {count, plural, =1 {# Organization} other {# Organizations}}',
               { count: organizations.length },
             )}
-          </div>
+          </Header2>
         </div>
       </div>
       <OrganizationCardList organizations={organizations} />

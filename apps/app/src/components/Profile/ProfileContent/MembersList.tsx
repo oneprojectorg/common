@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
@@ -350,11 +351,11 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-headline font-light">
+          <Header2 className="w-full">
             {t('{count, plural, =1 {1 member} other {# members}}', {
               count: members.length,
             })}
-          </div>
+          </Header2>
           <div className="w-72"></div>
         </div>
       </div>
