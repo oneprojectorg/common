@@ -485,15 +485,9 @@ function RubricFieldInput({
                   key={optionValue}
                   htmlFor={optionId}
                   control={<RadioGroupItem id={optionId} value={optionValue} />}
-                  // Wrapped rather than a `dir` prop on OptionBox: the
-                  // component is mid-move into @op/sense (#1741), so leave it
-                  // untouched and give it the passthrough there.
-                  label={<span dir="auto">{option.title || optionValue}</span>}
-                  description={
-                    option.description ? (
-                      <span dir="auto">{option.description}</span>
-                    ) : undefined
-                  }
+                  dir="auto"
+                  label={option.title || optionValue}
+                  description={option.description}
                 />
               );
             })}

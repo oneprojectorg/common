@@ -112,6 +112,7 @@ export function CollaborativeDropdownField({
             <OptionBox
               key={option.value}
               htmlFor={optionId}
+              dir="auto"
               label={option.label}
               control={<RadioGroupItem id={optionId} value={option.value} />}
             />

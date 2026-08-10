@@ -28,6 +28,13 @@ interface OptionBoxProps {
    * two can never collide.
    */
   accessory?: ReactNode;
+  /**
+   * Direction for the label and description. Pass `auto` when they carry
+   * authored content — an option written in another script keeps its own
+   * direction instead of borrowing the reader's, which is what moves trailing
+   * punctuation to the wrong end.
+   */
+  dir?: 'ltr' | 'rtl' | 'auto';
   className?: string;
 }
 
@@ -47,6 +54,7 @@ function OptionBox({
   width = 'fill',
   controlPlacement = 'start',
   accessory,
+  dir,
   className,
 }: OptionBoxProps) {
   // A description already needs the block; so does anything that has to sit at
@@ -54,13 +62,13 @@ function OptionBox({
   const content =
     description || controlPlacement === 'end' || accessory ? (
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <FieldTitle>{label}</FieldTitle>
+        <FieldTitle dir={dir}>{label}</FieldTitle>
         {description ? (
-          <FieldDescription>{description}</FieldDescription>
+          <FieldDescription dir={dir}>{description}</FieldDescription>
         ) : null}
       </div>
     ) : (
-      <FieldTitle>{label}</FieldTitle>
+      <FieldTitle dir={dir}>{label}</FieldTitle>
     );
 
   return (
