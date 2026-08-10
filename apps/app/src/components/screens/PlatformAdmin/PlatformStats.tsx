@@ -77,7 +77,7 @@ const StatCard = ({
     >
       <div className="flex flex-col gap-2">
         <div className="text-muted-foreground">{label}</div>
-        <div className="font-serif text-title-xxl">{value}</div>
+        <div className="font-serif text-display">{value}</div>
       </div>
     </Card>
   );

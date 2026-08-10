@@ -20,9 +20,7 @@ export const ProposalsListHeader = ({
 }) => {
   const t = useTranslations();
   if (hideFilters) {
-    return (
-      <span className="font-serif text-title-base">{t('My proposals')}</span>
-    );
+    return <span className="font-serif text-title">{t('My proposals')}</span>;
   }
   return <ProposalCount count={count} total={total} />;
 };

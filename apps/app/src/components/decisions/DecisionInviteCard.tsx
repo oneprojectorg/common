@@ -54,7 +54,7 @@ export const DecisionInviteCard = ({
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4 rounded-lg border p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-2">
-          <Header2 className="font-serif text-title">{profile.name}</Header2>
+          <Header2 className="text-title">{profile.name}</Header2>
           <ProfileItem
             size="small"
             className="items-center gap-1"
@@ -113,7 +113,7 @@ export const DecisionInviteCard = ({
 
 const DecisionStat = ({ number, label }: { number: number; label: string }) => (
   <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
-    <span className="font-serif text-title-base">{number}</span>
+    <span className="font-serif text-title">{number}</span>
     <span className="text-sm">{label}</span>
   </div>
 );

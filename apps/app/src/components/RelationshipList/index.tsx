@@ -182,9 +182,7 @@ export const RelationshipList = ({
       {title && (
         <div className="flex flex-col gap-4 px-0">
           <div className="flex items-center justify-between">
-            <div className="w-full font-serif text-title-sm sm:text-title-lg">
-              {title}
-            </div>
+            <div className="w-full font-serif text-headline">{title}</div>
           </div>
         </div>
       )}

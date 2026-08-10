@@ -79,9 +79,7 @@ export const ProcessBuilderProcessCard = ({
     >
       <div className="flex gap-2 md:flex-col md:items-center md:gap-6">
         <Avatar className="shrink-0 md:size-20" />
-        <Header2 className="font-serif text-xl leading-6 font-light">
-          {name}
-        </Header2>
+        <Header2 className="text-xl leading-6 font-light">{name}</Header2>
       </div>
       <p className="text-muted-foreground">{description}</p>
     </button>

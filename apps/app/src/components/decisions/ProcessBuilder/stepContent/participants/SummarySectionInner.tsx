@@ -83,7 +83,7 @@ export function SummarySectionInner({
       <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">{t('Summary')}</p>
-          <Header2 className="font-serif text-title-base">
+          <Header2 className="text-title">
             {t('Your process still needs more information')}
           </Header2>
         </div>
@@ -130,9 +130,7 @@ export function SummarySectionInner({
     <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">{t('Summary')} 🚀</p>
-        <Header2 className="font-serif text-title-base">
-          {t('Review your process')}
-        </Header2>
+        <Header2 className="text-title">{t('Review your process')}</Header2>
       </div>
       <p>
         {t.rich(

@@ -62,7 +62,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
     <div className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col gap-4 px-4 pt-8 sm:gap-10 sm:px-8 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
-          <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
+          <Header1 className="text-center text-transparent">
             <TranslatedText text="Welcome back, to Common!" />
           </Header1>
         </Skeleton>
@@ -228,7 +228,7 @@ const WelcomeSkeleton = () => {
   return (
     <div className="flex flex-col gap-2">
       <Skeleton>
-        <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
+        <Header1 className="text-center text-transparent">
           <TranslatedText text="Welcome back, to Common!" />
         </Header1>
       </Skeleton>

@@ -252,7 +252,7 @@ function PhaseDetailForm({
               total: phaseCount,
             })}
           </p>
-          <Header2 className="font-serif text-title-base">
+          <Header2 className="text-title">
             {phase.name?.trim() ? phase.name : t('Add phase')}
           </Header2>
         </div>

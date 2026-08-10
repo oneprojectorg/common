@@ -87,7 +87,7 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
         <LuLeaf className="size-6 text-muted-foreground" />
       </div>
       <div className="flex max-w-md flex-col gap-2">
-        <Header2 className="font-serif text-title-base">
+        <Header2 className="text-title">
           {isProcessAdmin
             ? t('Set up your decision-making process')
             : t('There are no current decision-making processes')}

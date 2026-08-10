@@ -111,7 +111,7 @@ function ReviewProgressStat({
         hasImage ? 'text-white' : 'text-foreground',
       )}
     >
-      <span className="font-serif text-title-lg">{value}</span>
+      <span className="font-serif text-headline">{value}</span>
       <span className="text-sm whitespace-nowrap">{label}</span>
     </div>
   );
