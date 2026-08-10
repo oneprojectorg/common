@@ -524,12 +524,18 @@ const ProposalsListContent = ({
               <ExportProposalsButton
                 processInstanceId={queryParams.processInstanceId}
                 isEmpty={total === 0}
+                // Forwarded straight from the list's own query params (minus
+                // pagination) so the export can't scope differently from the
+                // list it was launched off.
                 filters={{
                   categoryId: queryParams.categoryId,
                   submittedByProfileId: queryParams.submittedByProfileId,
+                  votedByProfileId: queryParams.votedByProfileId,
                   status: queryParams.status,
                   dir: queryParams.dir,
-                  proposalFilter,
+                  phase: queryParams.phase,
+                  excludeAssignedForReview:
+                    queryParams.excludeAssignedForReview,
                 }}
               />
             ) : null

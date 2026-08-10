@@ -3,6 +3,7 @@ import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
+  type ExportStatusData,
   assertUserByAuthId,
   exportFilePath,
   exportStatusCacheKey,
@@ -16,11 +17,16 @@ type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
-// Helper to update export status in cache
-const updateExportStatus = async (exportId: string, updates: any) => {
+// Helper to merge a partial update into the cached export status. The record is
+// seeded in full when the export is requested, so every write here is a patch
+// over an existing record rather than a fresh one.
+const updateExportStatus = async (
+  exportId: string,
+  updates: Partial<ExportStatusData>,
+) => {
   const key = exportStatusCacheKey(exportId);
-  const existing = await get(key);
-  const updated = { ...(existing || {}), ...updates };
+  const existing = (await get(key)) as ExportStatusData | null;
+  const updated = { ...(existing ?? {}), ...updates };
   await set(key, updated, EXPORT_CACHE_TTL_SECONDS);
 };
 
@@ -52,20 +58,30 @@ export const exportProposals = inngest.createFunction(
     try {
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
-        const userRecord = await assertUserByAuthId(userId);
+        // Confirm the requester still exists, then hand `listProposals` an
+        // auth-shaped user. Every identity path it reaches — `getCurrentProfileId`,
+        // `assertUserByAuthId`, `resolveAccessUserIds` — reads `user.id` as an
+        // *auth* user id, so passing the `users` row (whose `id` is the database
+        // key) silently resolved the wrong caller.
+        await assertUserByAuthId(userId);
 
         const result = await listProposals({
           input: {
             processInstanceId,
+            // Mirror the list query the export was requested from. Anything
+            // omitted here widens the file beyond what the admin was looking at.
             categoryId: filters.categoryId,
             submittedByProfileId: filters.submittedByProfileId,
+            votedByProfileId: filters.votedByProfileId,
             status: filters.status,
             dir: filters.dir,
+            phase: filters.phase,
+            excludeAssignedForReview: filters.excludeAssignedForReview,
             limit: 1000, // High limit for exports
             skipAccessCheck: true, // Access already verified when export was created
             includeDocumentContent: true, // CSV descriptions come from the full fragments
           },
-          user: userRecord as any,
+          user: { id: userId },
         });
 
         return result.proposals;

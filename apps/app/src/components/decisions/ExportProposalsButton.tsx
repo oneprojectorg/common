@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ProposalFilter, ProposalStatus } from '@op/api/encoders';
+import type { ProposalStatus } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
@@ -18,16 +18,19 @@ import {
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
   /**
-   * The filters currently applied to the list. The export runs server-side off
-   * these same values so the CSV matches what the admin is looking at, rather
-   * than silently exporting the whole instance.
+   * The filters currently applied to the list. These are the list's own
+   * resolved query params — not its filter-tab identity — so the export
+   * reproduces the same server-side query and the CSV matches what the admin is
+   * looking at, rather than silently exporting the whole instance.
    */
   filters: {
     categoryId?: string;
     submittedByProfileId?: string;
+    votedByProfileId?: string;
     status?: ProposalStatus;
     dir: 'asc' | 'desc';
-    proposalFilter?: ProposalFilter;
+    phase?: 'results';
+    excludeAssignedForReview?: boolean;
   };
   /** Nothing to export — the list is empty under the active filter. */
   isEmpty?: boolean;

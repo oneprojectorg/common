@@ -1,4 +1,5 @@
 import { getExportStatus } from '@op/common';
+import { proposalExportFiltersSchema } from '@op/events';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -17,7 +18,7 @@ const exportStatusOutputSchema = z.union([
     userId: z.string(),
     format: z.string(),
     status: z.enum(['pending', 'processing', 'completed', 'failed']),
-    filters: z.any(),
+    filters: proposalExportFiltersSchema,
     fileName: z.string().optional(),
     signedUrl: z.string().optional(),
     urlExpiresAt: z.string().optional(),
