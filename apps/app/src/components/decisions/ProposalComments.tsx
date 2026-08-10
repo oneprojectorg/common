@@ -114,7 +114,7 @@ export function ProposalComments({
                     post={comment}
                     organization={null}
                     user={user}
-                    withLinks={false}
+                    withLinks={true}
                     onReactionClick={handleReactionClick}
                     className="sm:px-0"
                   />
