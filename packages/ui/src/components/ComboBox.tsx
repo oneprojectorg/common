@@ -13,6 +13,7 @@ import type {
   ValidationResult,
 } from 'react-aria-components';
 import { LuChevronDown } from 'react-icons/lu';
+import type { ComboBoxState } from 'react-stately';
 
 import { cn } from '../lib/utils';
 import { composeTailwindRenderProps } from '../utils';
@@ -109,6 +110,38 @@ export const ComboBox = <T extends object>({
   );
 };
 
+// Mobile soft keyboards (notably iOS) never fire the arrow-key navigation
+// React Aria uses to mark a "focused" list item, so the default Enter handler
+// sees `focusedKey == null` and closes the popover without committing anything.
+// Walk the collection to find the first selectable suggestion (skipping section
+// headers and disabled rows) so Enter behaves like a search submit when the
+// user hasn't actively highlighted a row.
+const isSelectableItem = (state: ComboBoxState<object>, key: string | number) =>
+  state.collection.getItem(key)?.type === 'item' &&
+  !state.disabledKeys.has(key);
+
+const findFirstSelectableKey = (state: ComboBoxState<object>) => {
+  for (
+    let key = state.collection.getFirstKey();
+    key != null;
+    key = state.collection.getKeyAfter(key)
+  ) {
+    if (isSelectableItem(state, key)) {
+      return key;
+    }
+  }
+  return null;
+};
+
+const isEnterWithoutFocus = (
+  e: React.KeyboardEvent<HTMLInputElement>,
+  state: ComboBoxState<object>,
+) =>
+  e.key === 'Enter' &&
+  !e.nativeEvent.isComposing &&
+  state.isOpen &&
+  state.selectionManager.focusedKey == null;
+
 const ComboBoxInput = ({
   className,
   placeholder,
@@ -117,11 +150,21 @@ const ComboBoxInput = ({
   placeholder?: string;
 }) => {
   const state = useContext(ComboBoxStateContext);
+  const handleKeyDownCapture = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!state || !isEnterWithoutFocus(e, state)) {
+      return;
+    }
+    const firstKey = findFirstSelectableKey(state);
+    if (firstKey != null) {
+      state.setSelectedKey(firstKey);
+    }
+  };
   return (
     <Input
       className={className}
       placeholder={placeholder}
       onClick={() => state?.open()}
+      onKeyDownCapture={handleKeyDownCapture}
     />
   );
 };
