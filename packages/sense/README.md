@@ -78,6 +78,23 @@ After running it, **add an entry to `package.json#exports`**:
 If you forget, consumers will get a clear `Cannot find module
 '@op/sense/<PascalName>'` error from TypeScript — that's our drift signal.
 
+`components.json` sets `"rtl": true`, so the CLI writes logical classes
+(`ms-`/`me-`, `start-`/`end-`) instead of physical ones and adds `rtl:` variants
+where no logical equivalent exists. It cannot do everything:
+
+- **Calendar, Pagination and Sidebar** are on shadcn's manual list. Sidebar in
+  particular keys physical positions off a physical `side`, so a blind rename
+  breaks the pair.
+- **Rotated elements** keep physical corners — `rounded-tl` on a `rotate-45`
+  arrow is its tip, and `rounded-ss` moves the rounding to a side in RTL.
+- **`space-x-*`** needs nothing: v4 already emits `margin-inline-end`. The CLI's
+  `rtl:space-x-reverse` rule is a v3 holdover and *introduces* a bug here.
+- **Icons** are only flipped if they carry the `cn-rtl-flip` marker. Ours use
+  `rtl:-scale-x-100` directly; keep to that spelling.
+
+Run it from this package only — the app has no shadcn config, by design, so new
+primitives can't land outside the design system.
+
 ## Internal imports
 
 Inside the package, components import each other via **relative paths**, not

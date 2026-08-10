@@ -1,6 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
   "style": "base-nova",
+  "rtl": true,
   "rsc": true,
   "tsx": true,
   "tailwind": {
