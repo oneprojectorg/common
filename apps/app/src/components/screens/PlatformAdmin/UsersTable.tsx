@@ -35,6 +35,9 @@ import { UsersRowCells } from './UsersRow';
 /** Anonymous-account filter options for the users list */
 type AnonFilter = 'exclude' | 'include';
 
+/** Users rendered per page — also drives the loading skeleton's row count */
+const USERS_PER_PAGE = 50;
+
 /**
  * Exports user data to CSV and triggers download
  */
@@ -166,7 +169,7 @@ const UsersTableContent = ({
     handlePrevious,
     canGoPrevious,
     reset,
-  } = useCursorPagination(5);
+  } = useCursorPagination(USERS_PER_PAGE);
 
   // Reset pagination when the search query or anonymous filter changes
   useEffect(() => {
@@ -257,7 +260,7 @@ const UsersTableSkeleton = () => {
         </TableColumn>
       </TableHeader>
       <TableBody>
-        {[...Array(5)].map((_, i) => (
+        {[...Array(USERS_PER_PAGE)].map((_, i) => (
           <TableRow key={i} id={`skeleton-${i}`}>
             {[...Array(7)].map((_, j) => (
               <TableCell key={j}>
