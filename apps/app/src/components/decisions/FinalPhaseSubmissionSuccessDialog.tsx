@@ -55,7 +55,7 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
       >
         <CheckIcon />
         <div className="flex flex-col gap-3">
-          <DialogTitle className="text-headline text-foreground">
+          <DialogTitle className="text-headline">
             {t('Results are live!')}
           </DialogTitle>
           <DialogDescription className="max-w-sm text-base">
