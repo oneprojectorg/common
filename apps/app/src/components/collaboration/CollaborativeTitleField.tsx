@@ -178,10 +178,11 @@ export function CollaborativeTitleField({
   }, [editor]);
 
   return (
-    <Field data-testid="field-title">
-      {/* Same reasoning as the editor below: the label is authored template
-          text, so its direction comes from the content. */}
-      <FieldTitle id={labelId} dir="auto">
+    // `dir="auto"`: the label is authored template text. The editor below sets
+    // its own once it has content, so a latin title inside an arabic-labelled
+    // field still reads correctly.
+    <Field data-testid="field-title" dir="auto">
+      <FieldTitle id={labelId}>
         {title ?? t('Proposal name')}
         {required && <RequiredAsterisk />}
       </FieldTitle>

@@ -146,17 +146,16 @@ function ReadonlyField({
   children: ReactNode;
 }) {
   return (
-    <Field className={className}>
-      {/* Authored template text, so direction follows the content. */}
+    // Authored template text, so direction follows the content — resolved once
+    // for the block rather than per element.
+    <Field className={className} dir="auto">
       {title && (
-        <FieldTitle dir="auto">
+        <FieldTitle>
           {title}
           {required && <RequiredAsterisk />}
         </FieldTitle>
       )}
-      {description && (
-        <FieldDescription dir="auto">{description}</FieldDescription>
-      )}
+      {description && <FieldDescription>{description}</FieldDescription>}
       {children}
     </Field>
   );

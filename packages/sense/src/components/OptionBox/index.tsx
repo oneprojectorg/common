@@ -29,10 +29,10 @@ interface OptionBoxProps {
    */
   accessory?: ReactNode;
   /**
-   * Direction for the label and description. Pass `auto` when they carry
-   * authored content — an option written in another script keeps its own
-   * direction instead of borrowing the reader's, which is what moves trailing
-   * punctuation to the wrong end.
+   * Direction for the whole box. Pass `auto` when the label and description
+   * carry authored content: an option written in another script then reads as
+   * one coherent block — control, label and description on the same side —
+   * rather than each part resolving on its own and disagreeing.
    */
   dir?: 'ltr' | 'rtl' | 'auto';
   className?: string;
@@ -62,19 +62,20 @@ function OptionBox({
   const content =
     description || controlPlacement === 'end' || accessory ? (
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <FieldTitle dir={dir}>{label}</FieldTitle>
+        <FieldTitle>{label}</FieldTitle>
         {description ? (
-          <FieldDescription dir={dir}>{description}</FieldDescription>
+          <FieldDescription>{description}</FieldDescription>
         ) : null}
       </div>
     ) : (
-      <FieldTitle dir={dir}>{label}</FieldTitle>
+      <FieldTitle>{label}</FieldTitle>
     );
 
   return (
     <FieldLabel
       variant="box"
       htmlFor={htmlFor}
+      dir={dir}
       className={cn(width === 'hug' && 'w-fit', className)}
     >
       {/* Deliberately no `FieldContent` around the description. The horizontal

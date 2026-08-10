@@ -239,14 +239,9 @@ function RubricCriterionSection({
   // `labelId` goes on the title text, not the whole row: the badge is inside
   // the heading, and a control named by the row would announce "Innovation
   // 5 pts".
-  // `dir="auto"` on the authored parts only: the badge is a translated string
-  // and follows the locale. Without it an English criterion on an Arabic page
-  // loses its trailing punctuation to the start of the line.
   const label = (
     <>
-      <span id={labelId} dir="auto">
-        {field.schema.title}
-      </span>
+      <span id={labelId}>{field.schema.title}</span>
       {badgeLabel ? <Badge variant="secondary">{badgeLabel}</Badge> : null}
     </>
   );
@@ -266,7 +261,12 @@ function RubricCriterionSection({
     <section className="border-b pb-6">
       {/* Yes/no reads as a setting: prompt on the left, switch on the right. */}
       {criterionType === 'yes_no' ? (
-        <Field orientation="horizontal">
+        // `dir="auto"` here rather than on the title and description
+        // separately: resolved per element they disagree, because the title is
+        // a flex row that keeps the locale direction while the description is a
+        // block that flips. One unit, one direction — and the control and the
+        // scored select inherit it.
+        <Field orientation="horizontal" dir="auto">
           <FieldContent>
             <FieldTitle
               render={<h4 />}
@@ -275,7 +275,7 @@ function RubricCriterionSection({
               {label}
             </FieldTitle>
             {field.schema.description ? (
-              <FieldDescription id={descriptionId} dir="auto">
+              <FieldDescription id={descriptionId}>
                 {field.schema.description}
               </FieldDescription>
             ) : null}
@@ -283,7 +283,7 @@ function RubricCriterionSection({
           {control}
         </Field>
       ) : (
-        <Field>
+        <Field dir="auto">
           {isTextInput ? (
             <h4>
               <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
@@ -297,7 +297,7 @@ function RubricCriterionSection({
             </FieldTitle>
           )}
           {field.schema.description ? (
-            <FieldDescription id={descriptionId} dir="auto">
+            <FieldDescription id={descriptionId}>
               {field.schema.description}
             </FieldDescription>
           ) : null}
@@ -448,13 +448,10 @@ function RubricFieldInput({
                   key={optionValue}
                   orientation="horizontal"
                   className="w-auto"
+                  dir="auto"
                 >
                   <RadioGroupItem id={optionId} value={optionValue} />
-                  <FieldLabel
-                    htmlFor={optionId}
-                    className="font-normal"
-                    dir="auto"
-                  >
+                  <FieldLabel htmlFor={optionId} className="font-normal">
                     {option.title || optionValue}
                   </FieldLabel>
                 </Field>
@@ -523,7 +520,9 @@ function RubricFieldInput({
             >
               <SelectValue placeholder={t('Select an option')} />
             </SelectTrigger>
-            <SelectContent className={'max-w-(--anchor-width)'}>
+            {/* The popup is portaled, so it inherits nothing from the field —
+                it resolves its own direction from the option labels. */}
+            <SelectContent className={'max-w-(--anchor-width)'} dir="auto">
               <SelectGroup>
                 {options.map((option) => (
                   <SelectItem
@@ -533,10 +532,7 @@ function RubricFieldInput({
                     {option.title ? (
                       <div className="flex flex-col">
                         <span>{option.value}</span>
-                        <span
-                          className="text-sm text-muted-foreground"
-                          dir="auto"
-                        >
+                        <span className="text-sm text-muted-foreground">
                           {option.title}
                         </span>
                       </div>

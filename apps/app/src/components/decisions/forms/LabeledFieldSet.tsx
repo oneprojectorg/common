@@ -34,19 +34,23 @@ export function LabeledFieldSet({
   children,
 }: LabeledFieldSetProps) {
   return (
-    <FieldSet className={cn('gap-3', className)} data-testid={testId}>
-      {/* `dir="auto"`: legends and helper lines here are proposal-template text
-          someone authored, so the direction follows the content rather than the
-          reader's locale. Harmless for the translated fallbacks a few fields
-          pass instead — those resolve to the locale direction anyway. */}
-      <FieldLegend variant="label" id={legendId} dir="auto">
+    // `dir="auto"`: legend, helper line and controls are proposal-template text
+    // someone authored, so the direction follows the content rather than the
+    // reader's locale — and resolving it here keeps the parts consistent with
+    // each other. Harmless for the translated fallbacks a few fields pass.
+    <FieldSet
+      className={cn('gap-3', className)}
+      data-testid={testId}
+      dir="auto"
+    >
+      <FieldLegend variant="label" id={legendId}>
         {legend}
         {required && <RequiredAsterisk />}
       </FieldLegend>
       {description && (
         // Sits flush under the legend via FieldDescription's own
         // `[[data-variant=legend]+&]:-mt-1.5`, which cancels the FieldSet gap.
-        <FieldDescription dir="auto">{description}</FieldDescription>
+        <FieldDescription>{description}</FieldDescription>
       )}
       {children}
     </FieldSet>
