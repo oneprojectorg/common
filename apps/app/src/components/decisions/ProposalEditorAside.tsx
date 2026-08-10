@@ -2,6 +2,7 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
+import { useDirection } from '@op/sense/Direction';
 import { Drawer, DrawerContent, DrawerTitle } from '@op/sense/Drawer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { cn } from '@op/sense/lib/utils';
@@ -24,7 +25,7 @@ interface ProposalEditorAsideProps {
 }
 
 /**
- * Responsive editor aside shell: a right-side sheet on desktop and a bottom
+ * Responsive editor aside shell: an inline-end sheet on desktop and a bottom
  * drawer on mobile (Figma "Sheet" instance, 384 wide, header/body padding 24).
  *
  * The desktop sheet is non-modal so a version can be previewed beside the
@@ -40,6 +41,10 @@ export function ProposalEditorAside({
   bodyClassName,
 }: ProposalEditorAsideProps) {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
+  // Sheet takes a physical side, but callers reserve the gap beside it with
+  // logical padding (`sm:pe-96`) — hardcoding "right" put the panel and its
+  // reserved space on opposite edges in Arabic.
+  const isRtl = useDirection() === 'rtl';
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -80,7 +85,7 @@ export function ProposalEditorAside({
       disablePointerDismissal
       onOpenChange={handleOpenChange}
     >
-      <SheetContent side="right" showOverlay={false}>
+      <SheetContent side={isRtl ? 'left' : 'right'} showOverlay={false}>
         <SheetHeader>
           <SheetTitle>
             <bdi>{title}</bdi>
