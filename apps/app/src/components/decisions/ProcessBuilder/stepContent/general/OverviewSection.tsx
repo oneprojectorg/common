@@ -133,7 +133,7 @@ function OverviewSectionContent({
           />
         </div>
 
-        <hr className="border-neutral-gray1" />
+        <hr className="border-border" />
 
         <RichTextEditor
           extensions={extensions}
@@ -177,7 +177,7 @@ function OverviewSectionSkeleton() {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-5 w-full" />
       </div>
-      <hr className="border-neutral-gray1" />
+      <hr className="border-border" />
       <div className="flex flex-col gap-2">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />

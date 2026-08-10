@@ -60,13 +60,15 @@ export function AdminOverviewBar({
         </span>
         {phaseName ? (
           <>
-            <span aria-hidden="true" className="text-neutral-black">
+            <span aria-hidden="true" className="text-foreground">
               |
             </span>
             <span className="flex items-end gap-1.5">
-              <span className="text-neutral-black">{phaseName}</span>
+              <span className="text-foreground">{phaseName}</span>
               {endsLabel ? (
-                <span className="text-sm text-neutral-gray4">{endsLabel}</span>
+                <span className="text-sm text-muted-foreground">
+                  {endsLabel}
+                </span>
               ) : null}
             </span>
           </>
@@ -86,7 +88,7 @@ export function AdminOverviewBar({
           <div className="flex min-w-full flex-col">
             <button
               type="button"
-              className="px-6 py-4 text-start text-base hover:bg-neutral-gray1"
+              className="px-6 py-4 text-start text-base hover:bg-secondary"
               onClick={() => {
                 setSheetOpen(false);
                 setBannerOpen(true);
@@ -96,7 +98,7 @@ export function AdminOverviewBar({
             </button>
             <button
               type="button"
-              className="px-6 py-4 text-start text-base hover:bg-neutral-gray1"
+              className="px-6 py-4 text-start text-base hover:bg-secondary"
               onClick={() => router.push(`/decisions/${decisionSlug}/edit`)}
             >
               {t('Process settings')}

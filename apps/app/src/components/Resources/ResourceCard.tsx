@@ -163,7 +163,7 @@ const ResourceCardShell = ({
       <p
         dir="auto"
         className={cn(
-          'truncate font-serif text-title-sm text-neutral-black',
+          'truncate font-serif text-title-sm text-foreground',
           trailing && 'pe-8',
         )}
       >
@@ -177,7 +177,7 @@ const ResourceCardShell = ({
           </p>
         ) : null}
         {subtitle ? (
-          <p dir="auto" className="truncate text-sm text-neutral-gray4">
+          <p dir="auto" className="truncate text-sm text-muted-foreground">
             {subtitle}
           </p>
         ) : null}
@@ -216,7 +216,7 @@ const ResourcePreviewImage = ({
   src: string;
   onError?: () => void;
 }) => (
-  <div className="h-44 w-full overflow-hidden rounded-lg border border-neutral-gray2">
+  <div className="h-44 w-full overflow-hidden rounded-lg border border-input">
     <img
       src={src}
       alt=""
@@ -228,7 +228,7 @@ const ResourcePreviewImage = ({
 );
 
 const ResourcePreviewFallback = ({ icon }: { icon: ReactNode }) => (
-  <div className="flex h-44 w-full items-center justify-center rounded-lg border border-neutral-gray2 bg-neutral-gray1 text-neutral-gray4">
+  <div className="flex h-44 w-full items-center justify-center rounded-lg border border-input bg-secondary text-muted-foreground">
     {icon}
   </div>
 );

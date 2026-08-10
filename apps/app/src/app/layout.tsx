@@ -91,7 +91,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <TRPCProvider ssrCookies={ssrCookies}>
         <QueryInvalidationSubscriber />
         <body
-          className={`${roboto.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
+          className={`${roboto.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-foreground antialiased`}
         >
           <FileDropGuard />
           {/* base-ui reads direction from this context and nowhere else — its

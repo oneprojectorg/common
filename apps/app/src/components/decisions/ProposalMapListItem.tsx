@@ -44,9 +44,7 @@ export function ProposalMapListItem({
         showMetrics
         className={cn(
           'min-w-0 transition-colors',
-          isActive
-            ? 'border-neutral-gray2 bg-neutral-offWhite'
-            : 'hover:bg-neutral-offWhite',
+          isActive ? 'border-input bg-muted' : 'hover:bg-muted',
         )}
         aside={
           canManage ? (

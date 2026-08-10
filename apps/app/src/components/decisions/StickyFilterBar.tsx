@@ -82,10 +82,10 @@ export const StickyFilterBar = ({
           'group sticky z-20 flex flex-wrap items-center justify-between gap-4 overflow-visible bg-white py-3 transition-shadow md:top-0!',
           // Top hairline fades in on pin — mobile only (>=md has no floating
           // toggle above the bar, so no top edge to delineate).
-          "max-md:before:pointer-events-none max-md:before:absolute max-md:before:top-0 max-md:before:left-1/2 max-md:before:w-screen max-md:before:-translate-x-1/2 max-md:before:border-t max-md:before:border-neutral-gray1 max-md:before:opacity-0 max-md:before:content-['']",
+          "max-md:before:pointer-events-none max-md:before:absolute max-md:before:top-0 max-md:before:left-1/2 max-md:before:w-screen max-md:before:-translate-x-1/2 max-md:before:border-t max-md:before:border-border max-md:before:opacity-0 max-md:before:content-['']",
           'max-md:data-[pinned=true]:before:opacity-100',
           // Bottom hairline fades in on pin — all breakpoints.
-          "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
+          "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-border after:opacity-0 after:content-['']",
           'data-[pinned=true]:after:opacity-100',
           className,
         )}

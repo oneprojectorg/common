@@ -59,14 +59,14 @@ export const PinnedResourceCard = ({
     >
       <div className="flex items-center gap-2">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary-tealWhite group-hover:bg-white">
-          <Icon className="size-4 text-neutral-black" />
+          <Icon className="size-4 text-foreground" />
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p dir="auto" className="truncate text-base text-neutral-black">
+          <p dir="auto" className="truncate text-base text-foreground">
             {title}
           </p>
           {resource.createdAt ? (
-            <p className="truncate text-sm text-neutral-gray4">
+            <p className="truncate text-sm text-muted-foreground">
               {t('Added {date}', { date: formatDate(resource.createdAt) })}
             </p>
           ) : null}

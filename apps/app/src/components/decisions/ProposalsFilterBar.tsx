@@ -21,7 +21,7 @@ export const ProposalsListHeader = ({
   const t = useTranslations();
   if (hideFilters) {
     return (
-      <span className="font-serif text-title-base text-neutral-black">
+      <span className="font-serif text-title-base text-foreground">
         {t('My proposals')}
       </span>
     );

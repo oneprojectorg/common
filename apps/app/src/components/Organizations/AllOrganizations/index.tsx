@@ -59,7 +59,7 @@ export const AllOrganizationsSuspense = ({
       {shouldShowTrigger && (
         <div ref={ref} className="flex justify-center py-4">
           {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
+            <div className="text-sm text-muted-foreground">
               <SkeletonText lines={3} />
             </div>
           ) : null}

@@ -36,7 +36,7 @@ export const StandardSelectionFooter = ({
   const t = useTranslations();
 
   return (
-    <FooterBar position="fixed" className="bg-neutral-offWhite/95">
+    <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
         <span className="flex items-center gap-2 text-base text-foreground">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
@@ -64,7 +64,7 @@ export const StandardSelectionFooter = ({
             </p>
 
             <div className="space-y-2">
-              <div className="text-sm tracking-wider text-neutral-gray4 uppercase">
+              <div className="text-sm tracking-wider text-muted-foreground uppercase">
                 {t('PROPOSALS TO ADVANCE')}
               </div>
 

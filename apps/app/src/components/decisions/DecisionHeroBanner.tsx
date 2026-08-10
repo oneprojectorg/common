@@ -51,10 +51,7 @@ export function DecisionHeroBackgroundImage({
       />
       {/* Dark scrim so the white banner text stays legible over arbitrary
           photos. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-neutral-black/50"
-      />
+      <div aria-hidden="true" className="absolute inset-0 bg-foreground/50" />
     </>
   );
 }

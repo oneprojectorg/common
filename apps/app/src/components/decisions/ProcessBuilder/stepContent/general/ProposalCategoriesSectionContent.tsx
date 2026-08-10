@@ -178,7 +178,7 @@ export function ProposalCategoriesSectionContent({
             savedAt={autosaveStatus.savedAt}
           />
         </div>
-        <p className="text-neutral-gray4">
+        <p className="text-muted-foreground">
           {t(
             'Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.',
           )}
@@ -235,7 +235,7 @@ export function ProposalCategoriesSectionContent({
                   <span className="text-neutral-charcoal">
                     {category.label}
                   </span>
-                  <p className="text-sm text-neutral-gray4">
+                  <p className="text-sm text-muted-foreground">
                     {category.description}
                   </p>
                 </div>
@@ -432,7 +432,7 @@ function CategoryField({
           {maxLength != null && (
             <span
               className={cn(
-                'text-sm text-neutral-gray4',
+                'text-sm text-muted-foreground',
                 value.length === maxLength && 'text-functional-red',
               )}
             >

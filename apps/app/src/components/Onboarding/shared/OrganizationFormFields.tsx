@@ -167,7 +167,7 @@ export const OrganizationFormFields = ({
           <field.TextField
             label={t('Website')}
             isRequired
-            icon={<LuLink className="size-4 text-neutral-black" />}
+            icon={<LuLink className="size-4 text-foreground" />}
             placeholder={t("Enter your organization's website here")}
             // Not `type="url"`: our zodUrl validation accepts a bare domain
             // (e.g. "venuecms.com") and auto-prefixes `https://`, but the

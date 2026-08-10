@@ -36,7 +36,7 @@ export const FinalPhaseSelectionFooter = ({
   const t = useTranslations();
 
   return (
-    <FooterBar position="fixed" className="bg-neutral-offWhite/95">
+    <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
         <span className="flex items-center gap-2 text-base text-foreground">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
@@ -95,7 +95,7 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
   const voteCount = proposal.voteCount ?? 0;
 
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-3">
+    <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted p-3">
       <div className="flex items-start justify-between gap-2">
         <span className="truncate font-serif text-title-sm14 text-foreground">
           <bdi>{title}</bdi>

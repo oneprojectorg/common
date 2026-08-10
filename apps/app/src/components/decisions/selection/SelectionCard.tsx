@@ -22,7 +22,7 @@ export function SelectionCard({
         'flex flex-col gap-3 rounded-lg border p-4',
         isSelected
           ? 'border-primary-teal bg-primary-tealWhite'
-          : 'border-neutral-gray1 bg-white',
+          : 'border-border bg-white',
         className,
       )}
     >

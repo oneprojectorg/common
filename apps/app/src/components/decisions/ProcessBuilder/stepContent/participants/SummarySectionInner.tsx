@@ -82,12 +82,12 @@ export function SummarySectionInner({
     return (
       <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-neutral-gray4">{t('Summary')}</p>
+          <p className="text-sm text-muted-foreground">{t('Summary')}</p>
           <Header2 className="font-serif text-title-base">
             {t('Your process still needs more information')}
           </Header2>
         </div>
-        <p className="text-base text-neutral-black">
+        <p className="text-base text-foreground">
           {t.rich(
             '<highlight>{processName}</highlight> is missing information in order to go live.',
             {
@@ -102,7 +102,7 @@ export function SummarySectionInner({
           {incompleteItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center justify-between">
-                <span className="text-base text-neutral-black">
+                <span className="text-base text-foreground">
                   {t(item.labelKey)}
                 </span>
                 <Button
@@ -119,7 +119,7 @@ export function SummarySectionInner({
                 </Button>
               </div>
               {index < incompleteItems.length - 1 && (
-                <div className="mt-2 border-t border-neutral-gray1" />
+                <div className="mt-2 border-t border-border" />
               )}
             </div>
           ))}
@@ -131,7 +131,7 @@ export function SummarySectionInner({
   return (
     <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-neutral-gray4">{t('Summary')} 🚀</p>
+        <p className="text-sm text-muted-foreground">{t('Summary')} 🚀</p>
         <Header2 className="font-serif text-title-base">
           {t('Review your process')}
         </Header2>
@@ -151,28 +151,30 @@ export function SummarySectionInner({
       <div className="flex flex-col space-y-2 rounded-lg border p-4">
         <div>
           <div className="flex items-center justify-between">
-            <span className="text-base text-neutral-gray4">{t('Phases')}</span>
+            <span className="text-base text-muted-foreground">
+              {t('Phases')}
+            </span>
             <span className="text-base text-neutral-charcoal">
               {phasesCount}
             </span>
           </div>
-          <div className="mt-2 border-t border-neutral-gray1" />
+          <div className="mt-2 border-t border-border" />
         </div>
         {organizeByCategories && (
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-base text-neutral-gray4">
+              <span className="text-base text-muted-foreground">
                 {t('Categories')}
               </span>
               <span className="text-base text-neutral-charcoal">
                 {categories.length}
               </span>
             </div>
-            <div className="mt-2 border-t border-neutral-gray1" />
+            <div className="mt-2 border-t border-border" />
           </div>
         )}
         <div className="flex items-center justify-between">
-          <span className="text-base text-neutral-gray4">
+          <span className="text-base text-muted-foreground">
             {t('Participants Invited')}
           </span>
           <span className="text-base text-neutral-charcoal">

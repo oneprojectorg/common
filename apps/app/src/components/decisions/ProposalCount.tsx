@@ -13,7 +13,7 @@ export const ProposalCount = ({
   const narrowed = total != null && count < total;
   if (!narrowed) {
     return (
-      <span className="font-serif text-title-base text-neutral-black">
+      <span className="font-serif text-title-base text-foreground">
         <TranslatedText
           text="{count, plural, one {# proposal} other {# proposals}}"
           values={{ count: total ?? count }}
@@ -23,10 +23,10 @@ export const ProposalCount = ({
   }
   return (
     <span className="flex items-baseline gap-1">
-      <span className="font-serif text-title-base text-neutral-black">
+      <span className="font-serif text-title-base text-foreground">
         {count}
       </span>
-      <span className="text-base text-neutral-gray4">
+      <span className="text-base text-muted-foreground">
         <TranslatedText
           text="of {total, plural, one {# proposal} other {# proposals}}"
           values={{ total }}

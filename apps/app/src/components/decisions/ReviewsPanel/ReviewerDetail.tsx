@@ -57,7 +57,7 @@ export function ReviewerDetail({
         {t('Back to all reviewers')}
       </Button>
 
-      <div className="flex items-center justify-between border-b border-neutral-gray1 pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-2">
           <ProfileAvatar
             profile={item.reviewer}
@@ -74,13 +74,13 @@ export function ReviewerDetail({
               <StatusDot
                 intent={recommendationIntent(item.overallRecommendation)}
               >
-                <span className="text-sm text-neutral-black">
+                <span className="text-sm text-foreground">
                   {recommendationLabel}
                 </span>
               </StatusDot>
             )}
             {hasScoring && (
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 ({item.score}/{totalPoints})
               </span>
             )}

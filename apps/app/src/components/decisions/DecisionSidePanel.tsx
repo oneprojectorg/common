@@ -129,7 +129,7 @@ const PanelContents = ({
       }}
       className="min-h-0 flex-1 gap-0"
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pe-4 sm:pt-4">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border pe-4 sm:pt-4">
         <TabsList
           variant="line"
           aria-label={t('Decision side panel tabs')}

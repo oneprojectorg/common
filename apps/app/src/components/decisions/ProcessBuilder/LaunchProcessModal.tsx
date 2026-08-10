@@ -106,14 +106,14 @@ export const LaunchProcessModal = ({
           )}
 
           {/* Summary Section */}
-          <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-4">
-            <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
-              <span className="text-neutral-gray4">{t('Phases')}</span>
+          <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">{t('Phases')}</span>
               <span className="text-neutral-charcoal">{phasesCount}</span>
             </div>
             {organizeByCategories && (
               <div className="flex items-center justify-between">
-                <span className="text-neutral-gray4">{t('Categories')}</span>
+                <span className="text-muted-foreground">{t('Categories')}</span>
                 <span className="text-neutral-charcoal">
                   {categoriesCount === 0 ? t('None') : categoriesCount}
                 </span>

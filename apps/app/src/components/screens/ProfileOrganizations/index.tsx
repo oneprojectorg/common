@@ -79,8 +79,8 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
       href={`/org/${organization.profile.slug}`}
       className="flex items-center gap-2"
     >
-      <LuArrowLeft className="size-6 text-neutral-black rtl:-scale-x-100" />
-      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
+      <LuArrowLeft className="size-6 text-foreground rtl:-scale-x-100" />
+      <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
         <OrganizationAvatar profile={organization.profile} className="size-6" />
         {organization.profile.name}
       </div>

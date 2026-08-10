@@ -136,7 +136,7 @@ export const OrganizationCardList = ({
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
                 <Link
-                  className="truncate font-semibold text-neutral-black"
+                  className="truncate font-semibold text-foreground"
                   href={`/org/${relationshipOrg.profile.slug}`}
                 >
                   <bdi>{relationshipOrg.profile.name}</bdi>
@@ -190,7 +190,7 @@ export const OrganizationSummaryList = ({
                 className="size-8 sm:size-12"
               />
 
-              <div className="flex flex-col gap-3 text-neutral-black">
+              <div className="flex flex-col gap-3 text-foreground">
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/org/${org.profile.slug}`}
@@ -201,7 +201,7 @@ export const OrganizationSummaryList = ({
                   {org.whereWeWork?.length > 0 ? (
                     <span
                       dir="auto"
-                      className="text-sm text-neutral-gray4 sm:text-base"
+                      className="text-sm text-muted-foreground sm:text-base"
                     >
                       {whereWeWork}
                     </span>

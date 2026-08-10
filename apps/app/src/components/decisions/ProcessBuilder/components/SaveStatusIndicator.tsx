@@ -30,13 +30,13 @@ export function SaveStatusIndicator({
       {status === 'saving' && (
         <>
           <Spinner className="size-4" />
-          <span className="text-neutral-gray4">{t('Saving...')}</span>
+          <span className="text-muted-foreground">{t('Saving...')}</span>
         </>
       )}
       {status === 'saved' && (
         <>
           <LuCheck className="size-4 text-functional-green" />
-          <span className="text-neutral-gray4">
+          <span className="text-muted-foreground">
             {savedAt
               ? t('Saved at {time}', { time: formatTime(savedAt) })
               : t('Saved')}

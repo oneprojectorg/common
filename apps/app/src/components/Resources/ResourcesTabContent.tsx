@@ -63,7 +63,7 @@ export const ResourcesTabContent = ({
         </div>
       </div>
       {canManage && !adding && !isEmpty ? (
-        <div className="shrink-0 border-t border-neutral-gray1 bg-white px-4 py-6 sm:px-6">
+        <div className="shrink-0 border-t border-border bg-white px-4 py-6 sm:px-6">
           <Button
             variant="outline"
             size="sm"
@@ -76,7 +76,7 @@ export const ResourcesTabContent = ({
         </div>
       ) : null}
       {canManage && adding ? (
-        <div className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-t-lg border-t border-neutral-gray1 bg-white shadow-lg">
+        <div className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-t-lg border-t border-border bg-white shadow-lg">
           <AddResourcePanel
             profileId={profileId}
             onClose={() => setAdding(false)}

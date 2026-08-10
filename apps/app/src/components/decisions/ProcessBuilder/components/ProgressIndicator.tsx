@@ -49,7 +49,7 @@ export function ProgressIndicator({
         className={
           clamped === 100
             ? 'shrink-0 bg-linear-to-r from-functional-green to-primary-teal bg-clip-text text-base text-transparent'
-            : 'shrink-0 text-base text-neutral-black'
+            : 'shrink-0 text-base text-foreground'
         }
       >
         {t('{count}% complete', { count: clamped })}

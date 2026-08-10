@@ -14,7 +14,7 @@ export const ProcessBuilderProcessSelector = () => {
 
   return (
     <div className="size-full grow p-4 sm:p-8">
-      <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto rounded-lg border bg-neutral-offWhite p-4 md:gap-8 md:p-8">
+      <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto rounded-lg border bg-muted p-4 md:gap-8 md:p-8">
         <Header1 className="text-center">
           {t('How do you want to structure your decision-making process?')}
         </Header1>
@@ -83,7 +83,7 @@ export const ProcessBuilderProcessCard = ({
           {name}
         </Header2>
       </div>
-      <p className="text-neutral-gray4">{description}</p>
+      <p className="text-muted-foreground">{description}</p>
     </button>
   );
 };

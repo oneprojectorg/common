@@ -326,7 +326,7 @@ const AssignedCategoriesLabel = ({
 
   return (
     <span
-      className="min-w-0 truncate text-base text-neutral-gray4"
+      className="min-w-0 truncate text-base text-muted-foreground"
       title={label}
     >
       {label}

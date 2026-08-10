@@ -26,7 +26,7 @@ export const CollectionSection = ({
       value={collectionId}
       className="rounded-none border-0 bg-transparent"
     >
-      <AccordionTrigger className="w-full gap-1 text-sm font-normal text-neutral-black">
+      <AccordionTrigger className="w-full gap-1 text-sm font-normal text-foreground">
         <span className="truncate">{name}</span>
       </AccordionTrigger>
       <AccordionContent>

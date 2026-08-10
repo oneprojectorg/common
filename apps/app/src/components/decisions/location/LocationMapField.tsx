@@ -155,7 +155,7 @@ export function LocationMapField({
 
       <div
         className={`overflow-hidden rounded-lg border ${
-          isWithinArea ? 'border-neutral-gray1' : 'border-functional-red'
+          isWithinArea ? 'border-border' : 'border-functional-red'
         }`}
       >
         <MapCanvas
@@ -174,7 +174,7 @@ export function LocationMapField({
           <div className="flex min-w-0 flex-col gap-0.5">
             <span
               className={
-                isWithinArea ? 'text-neutral-black' : 'text-functional-red'
+                isWithinArea ? 'text-foreground' : 'text-functional-red'
               }
               dir="auto"
             >

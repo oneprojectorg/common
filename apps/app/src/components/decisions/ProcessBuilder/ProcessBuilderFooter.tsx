@@ -159,7 +159,7 @@ export const ProcessBuilderFooter = ({
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
               {hasUnsavedChanges && (
-                <span className="text-sm text-neutral-gray4">
+                <span className="text-sm text-muted-foreground">
                   {t('Unsaved changes')}
                 </span>
               )}

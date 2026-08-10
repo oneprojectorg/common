@@ -112,7 +112,7 @@ export function ReviewSelectionTable({
                     <bdi>{title}</bdi>
                   </Link>
                   {submitterName && (
-                    <span className="line-clamp-1 text-sm text-neutral-gray4">
+                    <span className="line-clamp-1 text-sm text-muted-foreground">
                       <bdi>{submitterName}</bdi>
                     </span>
                   )}
@@ -159,7 +159,7 @@ export function ReviewSelectionTable({
 export function ReviewSelectionTableSkeleton() {
   return (
     <div className="flex w-full flex-col gap-2">
-      <div className="flex w-full items-center justify-between border-b border-neutral-gray1 py-2">
+      <div className="flex w-full items-center justify-between border-b border-border py-2">
         <Skeleton className="h-4 w-20" />
         <div className="hidden gap-8 md:flex">
           <Skeleton className="h-4 w-12" />
@@ -172,7 +172,7 @@ export function ReviewSelectionTableSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="flex w-full items-center justify-between gap-4 border-b border-neutral-gray1 py-2"
+          className="flex w-full items-center justify-between gap-4 border-b border-border py-2"
         >
           <div className="flex flex-col gap-1">
             <Skeleton className="h-4 w-40" />
@@ -215,7 +215,7 @@ function ProposalCard({
           {title}
         </Link>
         {submitterName && (
-          <span className="text-sm text-neutral-gray4">{submitterName}</span>
+          <span className="text-sm text-muted-foreground">{submitterName}</span>
         )}
       </div>
 

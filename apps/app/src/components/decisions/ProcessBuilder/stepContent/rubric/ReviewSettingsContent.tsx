@@ -186,13 +186,13 @@ export function ReviewSettingsContent({
 
         {byCategoryEnabled && settings.scope === 'by_category' && (
           <>
-            <hr className="border-neutral-gray1" />
+            <hr className="border-border" />
             <CategoryReviewerCards instanceId={instanceId} />
           </>
         )}
       </section>
 
-      <hr className="border-neutral-gray1" />
+      <hr className="border-border" />
 
       {/* Revisions */}
       <section className="space-y-4">

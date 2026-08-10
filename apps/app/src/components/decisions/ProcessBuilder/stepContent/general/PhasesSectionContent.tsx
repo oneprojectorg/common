@@ -166,7 +166,7 @@ export function PhasesSectionContent({
       {phases.length === 0 ? (
         <div className="space-y-4">
           <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
-            <p className="text-neutral-gray4">{t('No phases defined')}</p>
+            <p className="text-muted-foreground">{t('No phases defined')}</p>
           </div>
           <Button
             variant="ghost"
@@ -220,7 +220,7 @@ export function PhasesSectionContent({
                           {phaseDateRange(phase)}
                         </span>
                       ) : (
-                        <span className="text-sm text-neutral-gray4">
+                        <span className="text-sm text-muted-foreground">
                           {t('Not configured yet')}
                         </span>
                       )}
@@ -316,7 +316,7 @@ const PhaseDragPreview = ({
               {dateRange}
             </span>
           ) : (
-            <span className="text-sm text-neutral-gray4">
+            <span className="text-sm text-muted-foreground">
               {t('Not configured yet')}
             </span>
           )}
