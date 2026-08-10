@@ -1,6 +1,5 @@
 'use client';
 
-import { useRequiredUser } from '@/utils/UserProvider';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { InputGroup, InputGroupTextarea } from '@op/sense/InputGroup';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
@@ -19,8 +18,8 @@ interface EmailInviteFieldProps {
   /** Accepted addresses, shown as removable chips. */
   emailBadges: string[];
   setEmailBadges: (badges: string[]) => void;
-  /** Domain used in the empty-state placeholder when the org has none. */
-  fallbackDomain: string;
+  /** Seeds the empty-state placeholder — the target org's domain, or an example. */
+  domain: string;
   /** Optional helper text under the box. */
   description?: ReactNode;
 }
@@ -36,13 +35,11 @@ export const EmailInviteField = ({
   setEmails,
   emailBadges,
   setEmailBadges,
-  fallbackDomain,
+  domain,
   description,
 }: EmailInviteFieldProps) => {
   const t = useTranslations();
-  const { user } = useRequiredUser();
   const id = useId();
-  const domain = user.currentOrganization?.domain || fallbackDomain;
 
   const removeEmailBadge = (emailToRemove: string) => {
     setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));

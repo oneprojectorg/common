@@ -43,6 +43,9 @@ export const InviteToExistingOrganization = ({
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 
   const organizationItems = useAdminOrganizations();
+  const selectedOrganizationItem = organizationItems.find(
+    (item) => item.value === selectedOrganization,
+  );
   // Keyed on the role id, which is what the invite sends; SelectValue reads the
   // name back off `items`.
   const roleItems = rolesData.roles.map((role) => ({
@@ -85,7 +88,7 @@ export const InviteToExistingOrganization = ({
           setEmails={setEmails}
           emailBadges={emailBadges}
           setEmailBadges={setEmailBadges}
-          fallbackDomain="example.org"
+          domain={selectedOrganizationItem?.domain || 'example.org'}
         />
 
         <Field>

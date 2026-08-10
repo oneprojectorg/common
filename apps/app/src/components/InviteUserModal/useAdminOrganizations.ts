@@ -8,6 +8,8 @@ export interface AdminOrganizationItem {
    * profile id that `account.getUserProfiles` returns. */
   value: string;
   label: string;
+  /** Seeds the email placeholder, so it follows the selected organization. */
+  domain: string | null;
 }
 
 /**
@@ -35,6 +37,7 @@ export const useAdminOrganizations = (): AdminOrganizationItem[] => {
                 {
                   value: organization.id,
                   label: organization.profile?.name ?? '',
+                  domain: organization.domain ?? null,
                 },
               ]
             : [];

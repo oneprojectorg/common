@@ -1,5 +1,6 @@
 'use client';
 
+import { useRequiredUser } from '@/utils/UserProvider';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { Textarea } from '@op/sense/Textarea';
 import { useId } from 'react';
@@ -26,6 +27,7 @@ export const InviteNewOrganization = ({
   setPersonalMessage,
 }: InviteNewOrganizationProps) => {
   const t = useTranslations();
+  const { user } = useRequiredUser();
   const messageId = useId();
 
   return (
@@ -38,7 +40,8 @@ export const InviteNewOrganization = ({
           setEmails={setEmails}
           emailBadges={emailBadges}
           setEmailBadges={setEmailBadges}
-          fallbackDomain="solidarityseeds.org"
+          // No target org on this tab — invitees are new organizations.
+          domain={user.currentOrganization?.domain || 'solidarityseeds.org'}
           description={t('Separate multiple emails with commas or line breaks')}
         />
 
