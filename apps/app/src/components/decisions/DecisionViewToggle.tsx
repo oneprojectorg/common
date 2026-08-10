@@ -26,16 +26,21 @@ export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
   return (
     <Tabs value={activeView}>
       <TabsList>
+        {/* nativeButton={false}: each tab renders an <a>, not a <button>, so
+            base-ui must skip the native-button semantics (and the invalid
+            type="button" it would otherwise put on the anchor). */}
         <TabsTrigger
           value="overview"
-          className="font-normal hover:no-underline"
+          nativeButton={false}
+          className="hover:no-underline"
           render={<Link href={`/decisions/${decisionSlug}`} />}
         >
           {t('Overview')}
         </TabsTrigger>
         <TabsTrigger
           value="current"
-          className="font-normal hover:no-underline"
+          nativeButton={false}
+          className="hover:no-underline"
           render={<Link href={`/decisions/${decisionSlug}/current`} />}
         >
           {t('Current Phase')}
