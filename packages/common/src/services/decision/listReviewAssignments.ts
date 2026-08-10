@@ -40,15 +40,23 @@ const STATUS_SORT_RANK: Record<string, number> = {
 /** Any unmapped (future) status sorts after all known ones. */
 const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
-/** Returns all authorized review assignments for the current reviewer in a process instance. */
+/**
+ * Returns the reviewer's authorized review assignments for a single phase of a
+ * process instance — the requested `phaseId`, else the instance's current phase.
+ * Without the phase scope a reviewer who holds assignments in more than one
+ * review phase sees the past phase's work mixed into the current queue.
+ */
 export async function listReviewAssignments({
   processInstanceId,
+  phaseId: requestedPhaseId,
   status,
   categoryIds,
   sort = 'leastReviewed',
   user,
 }: {
   processInstanceId: string;
+  /** Phase to scope the queue to — defaults to the instance's current phase. */
+  phaseId?: string;
   status?: string;
   /** Taxonomy term ids — limits results to assignments whose proposal is in any of the categories. */
   categoryIds?: string[];
@@ -67,6 +75,11 @@ export async function listReviewAssignments({
   if (!instance.access.review && !instance.access.admin) {
     throw new UnauthorizedError("You don't have access to review proposals");
   }
+
+  // Same resolution as listProposalsWithReviewAggregates: explicit phase, else
+  // the current one. `phaseId` is NOT NULL on every assignment row, so the
+  // filter can only be skipped when the instance itself has no current phase.
+  const phaseId = requestedPhaseId ?? instance.currentStateId ?? undefined;
 
   // Resolve the categories' proposal IDs up front (same approach as
   // resolveProposalListScope): assignments have no category column, so the
@@ -94,13 +107,18 @@ export async function listReviewAssignments({
   // COMPLETED reviews for the proposal across *all* reviewers — the same
   // "≥1 completed = reviewed" definition shown as the "N Reviewed" badge. A
   // correlated subquery (own `pra_completed` alias) so it isn't constrained by
-  // the outer query's per-reviewer filter.
+  // the outer query's per-reviewer filter. Phase-scoped like the list itself,
+  // so a previous phase's completed reviews don't inflate the badge or skew
+  // the least-reviewed sort.
+  const completedPhaseFilter = phaseId
+    ? sql` AND pra_completed.phase_id = ${phaseId}`
+    : sql``;
   const completedReviewCount = (t: typeof proposalReviewAssignments) =>
     sql<number>`(
       SELECT COUNT(*)::int FROM ${proposalReviewAssignments} AS pra_completed
       WHERE pra_completed.proposal_id = ${t.proposalId}
         AND pra_completed.process_instance_id = ${processInstanceId}
-        AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}
+        AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}${completedPhaseFilter}
     )`;
 
   const statusRank = (t: typeof proposalReviewAssignments) =>
@@ -121,6 +139,7 @@ export async function listReviewAssignments({
     where: {
       processInstanceId,
       reviewerProfileId: dbUser.profileId,
+      ...(phaseId && { phaseId }),
       ...(status && { status }),
       ...(categoryProposalIds && {
         proposalId: { in: categoryProposalIds },
@@ -200,7 +219,8 @@ export async function listReviewAssignments({
           htmlContent,
         },
       },
-      // Assignments in this list can span phases, each with its own rubric.
+      // Resolved from the assignment's own phase, which each carries its own
+      // rubric (the list is phase-scoped, so this is uniform in practice).
       rubricTemplate: getPhaseRubricTemplate(
         instance.instanceData,
         assignment.phaseId,

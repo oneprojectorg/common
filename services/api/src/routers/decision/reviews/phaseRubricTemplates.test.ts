@@ -217,17 +217,29 @@ describe.concurrent('per-phase rubric templates', () => {
     });
 
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
-    const { assignments } = await reviewerCaller.decision.listReviewAssignments(
+    // The queue is phase-scoped, so each phase is listed on its own — the
+    // rubric still comes from the listed assignment's phase.
+    const feasibilityList = await reviewerCaller.decision.listReviewAssignments(
       {
         processInstanceId: context.instance.instance.id,
+        phaseId: FEASIBILITY_PHASE,
       },
     );
+    expect(feasibilityList.assignments.map((a) => a.assignment.id)).toEqual([
+      feasibilityScenario.assignment.id,
+    ]);
+    expect(feasibilityList.assignments[0]?.rubricTemplate).toMatchObject({
+      properties: { viability: { title: 'Viability' } },
+    });
 
-    const byId = new Map(assignments.map((a) => [a.assignment.id, a]));
-    expect(
-      byId.get(feasibilityScenario.assignment.id)?.rubricTemplate,
-    ).toMatchObject({ properties: { viability: { title: 'Viability' } } });
-    expect(byId.get(communityAssignment.id)?.rubricTemplate).toMatchObject({
+    // Community is the current phase, so the default scope lands there.
+    const communityList = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+    });
+    expect(communityList.assignments.map((a) => a.assignment.id)).toEqual([
+      communityAssignment.id,
+    ]);
+    expect(communityList.assignments[0]?.rubricTemplate).toMatchObject({
       properties: { impact: { title: 'Impact' } },
     });
   });

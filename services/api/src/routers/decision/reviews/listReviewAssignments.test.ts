@@ -1,5 +1,8 @@
 import { mockCollab } from '@op/collab/testing';
-import type { RubricTemplateSchema } from '@op/common';
+import type {
+  DecisionSchemaDefinition,
+  RubricTemplateSchema,
+} from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -50,9 +53,69 @@ const rubricTemplate: RubricTemplateSchema = {
   required: ['impact'],
 };
 
+/** Phase the test fixtures pin their assignments to (`createReviewScenario`'s default). */
+const REVIEW_PHASE = 'review';
+
+const FEASIBILITY_PHASE = 'feasibility';
+const COMMUNITY_PHASE = 'community';
+
+/** Two back-to-back review phases — the shape that exposed the missing phase filter. */
+const twoReviewPhaseSchema = {
+  id: 'two-review-phases',
+  version: '1.0.0',
+  name: 'Two Review Phases',
+  description: 'Feasibility review followed by a community review.',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Proposal Submission',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'date' as const, endDate: '2026-01-01' },
+      },
+    },
+    {
+      id: FEASIBILITY_PHASE,
+      name: 'Feasibility Review',
+      rules: {
+        reviews: { submit: true },
+        advancement: { method: 'date' as const, endDate: '2026-01-02' },
+      },
+    },
+    {
+      id: COMMUNITY_PHASE,
+      name: 'Community Review',
+      rules: {
+        reviews: { submit: true },
+        advancement: { method: 'date' as const, endDate: '2026-01-03' },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/**
+ * The queue is phase-scoped to the instance's current phase, and fixtures pin
+ * assignments to `'review'`, so the instance has to sit on that phase — the
+ * default context starts on `'submission'`.
+ */
+async function createReviewPhaseContext(testData: TestReviewsDataManager) {
+  const context = await testData.createContext();
+  await testData.setCurrentPhase(context.instance.instance.id, REVIEW_PHASE);
+  return context;
+}
+
+/** Two-review-phase instance sitting on the second (community) review phase. */
+async function createTwoReviewPhaseContext(testData: TestReviewsDataManager) {
+  const context = await testData.createContext({
+    processSchema: twoReviewPhaseSchema,
+  });
+  await testData.setCurrentPhase(context.instance.instance.id, COMMUNITY_PHASE);
+  return context;
 }
 
 async function attachCategoryToProposal({
@@ -99,6 +162,7 @@ describe.concurrent('listReviewAssignments', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Live Proposal Review',
     });
 
@@ -125,12 +189,13 @@ describe.concurrent('listReviewAssignments', () => {
     });
   });
 
-  it('returns all assignments for the reviewer in the instance', async ({
+  it('returns all assignments for the reviewer in the current phase', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const first = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Community Garden Expansion',
     });
 
@@ -168,6 +233,7 @@ describe.concurrent('listReviewAssignments', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Community Garden Expansion',
     });
 
@@ -225,6 +291,7 @@ describe.concurrent('listReviewAssignments', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Needs Revision',
       status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
     });
@@ -269,6 +336,7 @@ describe.concurrent('listReviewAssignments', () => {
 
     // Three proposals assigned to the same reviewer, all pending for them.
     const zero = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Zero completed reviews',
     });
     const context = zero.context;
@@ -334,6 +402,7 @@ describe.concurrent('listReviewAssignments', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
 
     const pending = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Not started',
     });
     const context = pending.context;
@@ -365,12 +434,130 @@ describe.concurrent('listReviewAssignments', () => {
     );
   });
 
+  it('scopes the queue to the current phase and honors an explicit phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await createTwoReviewPhaseContext(testData);
+
+    // The playtest case: one reviewer, one proposal, an assignment in each
+    // review phase. Instance-scoped reads listed the proposal twice — once
+    // Completed (feasibility), once Not Started (community).
+    const feasibility = await testData.createReviewAssignment({
+      context,
+      title: 'Reviewed in both phases',
+      phaseId: FEASIBILITY_PHASE,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    const communityAssignment = await createReviewAssignmentRow({
+      processInstanceId: context.instance.instance.id,
+      proposalId: feasibility.proposal.id,
+      reviewerProfileId: feasibility.reviewer.profileId,
+      phaseId: COMMUNITY_PHASE,
+    });
+
+    const { collaborationDocId } = feasibility.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      feasibility.reviewer.email,
+    );
+
+    const current = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+    });
+    expect(current.assignments.map((a) => a.assignment.id)).toEqual([
+      communityAssignment.id,
+    ]);
+
+    // The past phase is still reachable when asked for explicitly.
+    const past = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: FEASIBILITY_PHASE,
+    });
+    expect(past.assignments.map((a) => a.assignment.id)).toEqual([
+      feasibility.assignment.id,
+    ]);
+  });
+
+  it('counts only the scoped phase’s completed reviews for the least-reviewed sort', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await createTwoReviewPhaseContext(testData);
+    const instanceId = context.instance.instance.id;
+
+    // Covered once in the current phase.
+    const coveredNow = await testData.createReviewAssignment({
+      context,
+      title: 'One completed review this phase',
+      phaseId: COMMUNITY_PHASE,
+    });
+    const reviewer = coveredNow.reviewer;
+    // Covered twice, but only in the past phase — zero coverage for this one.
+    const coveredBefore = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Two completed reviews last phase',
+      phaseId: COMMUNITY_PHASE,
+    });
+
+    for (const created of [coveredNow, coveredBefore]) {
+      const { collaborationDocId } = created.proposal.proposalData as {
+        collaborationDocId: string;
+      };
+      seedMockCollab(collaborationDocId);
+    }
+
+    const otherA = await testData.createReviewer(context);
+    const otherB = await testData.createReviewer(context);
+    await createReviewAssignmentRow({
+      processInstanceId: instanceId,
+      proposalId: coveredNow.proposal.id,
+      reviewerProfileId: otherA.profileId,
+      phaseId: COMMUNITY_PHASE,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createReviewAssignmentRow({
+      processInstanceId: instanceId,
+      proposalId: coveredBefore.proposal.id,
+      reviewerProfileId: otherA.profileId,
+      phaseId: FEASIBILITY_PHASE,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createReviewAssignmentRow({
+      processInstanceId: instanceId,
+      proposalId: coveredBefore.proposal.id,
+      reviewerProfileId: otherB.profileId,
+      phaseId: FEASIBILITY_PHASE,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: instanceId,
+      sort: 'leastReviewed',
+    });
+
+    // Instance-scoped counting would rank the past phase's two completions
+    // above the current phase's single one, flipping this order.
+    expect(result.assignments.map((a) => a.assignment.proposal.id)).toEqual([
+      coveredBefore.proposal.id,
+      coveredNow.proposal.id,
+    ]);
+  });
+
   it('filters assignments by category, matching any of the requested categories', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const inDistrictOne = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'District 1 proposal',
     });
     const inDistrictTwo = await testData.createReviewAssignment({
@@ -440,6 +627,7 @@ describe.concurrent('listReviewAssignments', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
       title: 'Uncategorized proposal',
     });
 
