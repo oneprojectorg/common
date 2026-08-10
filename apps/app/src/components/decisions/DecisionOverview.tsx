@@ -344,16 +344,9 @@ const OverviewHero = ({
               Over a banner image the clipped gradient loses contrast against
               the dark scrim, so switch to plain white text instead. */}
           {hasImage ? (
-            // The wrapper is a leftover: it existed because twMerge read the
-            // legacy text-title-* size as a colour and dropped it when
-            // text-white merged in. The sense steps are registered, so
-            // text-white could move onto Header1 — left alone here to keep
-            // this to a type-scale change.
-            <div className="text-white">
-              <Header1>
-                <bdi>{headline}</bdi>
-              </Header1>
-            </div>
+            <Header1 className="text-white">
+              <bdi>{headline}</bdi>
+            </Header1>
           ) : (
             <GradientHeader>
               <Header1>
