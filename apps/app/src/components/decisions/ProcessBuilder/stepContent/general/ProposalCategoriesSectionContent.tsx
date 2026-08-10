@@ -241,7 +241,7 @@ export function ProposalCategoriesSectionContent({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-5 p-0 text-foreground"
+                    className="size-5 p-0"
                     onClick={() => handleEdit(category)}
                     aria-label={`Edit ${category.label}`}
                   >
@@ -250,7 +250,7 @@ export function ProposalCategoriesSectionContent({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-5 p-0 text-foreground hover:text-destructive"
+                    className="size-5 p-0 hover:text-destructive"
                     onClick={() => handleDelete(category.id)}
                     aria-label={`Delete ${category.label}`}
                   >

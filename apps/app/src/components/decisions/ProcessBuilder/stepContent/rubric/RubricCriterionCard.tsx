@@ -242,10 +242,7 @@ export function RubricCriterionCard({
           {/* Footer: Required toggle + Delete button */}
           <div className="flex items-center justify-between gap-4 border-t pt-4">
             <Field orientation="horizontal" className="w-auto">
-              <FieldLabel
-                className="text-foreground"
-                htmlFor={requiredToggleId}
-              >
+              <FieldLabel htmlFor={requiredToggleId}>
                 {t('Required?')}
               </FieldLabel>
               <Switch

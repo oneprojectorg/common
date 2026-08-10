@@ -105,11 +105,7 @@ export const AuthGoogleButton = ({ onPress }: { onPress: () => void }) => {
   const t = useTranslations();
 
   return (
-    <Button
-      variant="outline"
-      className="w-full text-foreground"
-      onClick={onPress}
-    >
+    <Button variant="outline" className="w-full" onClick={onPress}>
       <GoogleIcon className="size-4 stroke-none" />
       {t('Continue with Google')}
     </Button>

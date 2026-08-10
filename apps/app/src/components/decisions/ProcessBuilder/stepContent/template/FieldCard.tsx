@@ -250,9 +250,7 @@ export function FieldCard({
         {/* Footer: Required toggle + Delete button */}
         <div className="flex items-center justify-between gap-4 border-t pt-4">
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel className="text-foreground" htmlFor={requiredToggleId}>
-              {t('Required?')}
-            </FieldLabel>
+            <FieldLabel htmlFor={requiredToggleId}>{t('Required?')}</FieldLabel>
             <Switch
               id={requiredToggleId}
               checked={isLocation || field.required}
