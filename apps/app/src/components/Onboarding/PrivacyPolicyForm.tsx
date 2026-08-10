@@ -43,9 +43,7 @@ export const PrivacyPolicyForm = ({
     >
       <FormContainer className="max-w-lg">
         <FormHeader text={t('Privacy Policy Overview')}></FormHeader>
-        <span className="text-neutral-charcoal">
-          {t('Effective Date: March 15, 2025')}
-        </span>
+        <span>{t('Effective Date: March 15, 2025')}</span>
         <PrivacyPolicyContentShort />
 
         <FormHeader text={t('Privacy Policy')}></FormHeader>

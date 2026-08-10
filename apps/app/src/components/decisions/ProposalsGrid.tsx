@@ -428,7 +428,7 @@ const VotingProposalsList = ({
       {canVote && !isReadOnly && (
         <FooterBar position="fixed" className="bg-muted/95">
           <FooterBarStart>
-            <span className="text-base text-foreground">
+            <span className="text-base">
               {maxVotesPerMember !== undefined
                 ? t.rich(
                     '<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected',

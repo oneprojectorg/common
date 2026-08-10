@@ -74,9 +74,7 @@ export function ReviewerDetail({
               <StatusDot
                 intent={recommendationIntent(item.overallRecommendation)}
               >
-                <span className="text-sm text-foreground">
-                  {recommendationLabel}
-                </span>
+                <span className="text-sm">{recommendationLabel}</span>
               </StatusDot>
             )}
             {hasScoring && (

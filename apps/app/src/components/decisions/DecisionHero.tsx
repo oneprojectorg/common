@@ -46,7 +46,7 @@ export function DecisionHero({
           className={cn(
             'flex flex-col gap-2 text-base',
             variant !== 'results' &&
-              (hasImage ? 'text-white' : 'text-neutral-charcoal'),
+              (hasImage ? 'text-white' : 'text-foreground'),
           )}
         >
           {typeof description === 'string' ? (

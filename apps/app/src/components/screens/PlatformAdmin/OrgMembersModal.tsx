@@ -62,7 +62,7 @@ export const OrgMembersModal = ({
             </div>
           ) : (
             <div>
-              <div className="mb-2 text-sm font-medium text-foreground">
+              <div className="mb-2 text-sm font-medium">
                 {t('Members')} ({members.length})
               </div>
               <div className="space-y-2">

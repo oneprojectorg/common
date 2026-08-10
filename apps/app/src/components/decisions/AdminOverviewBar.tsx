@@ -54,17 +54,15 @@ export function AdminOverviewBar({
         onClick={() => setSheetOpen(true)}
         className="flex w-full items-center justify-center gap-2 bg-primary-tealWhite px-4 py-2 text-base md:hidden"
       >
-        <span className="flex items-center gap-1.5 text-neutral-charcoal">
+        <span className="flex items-center gap-1.5">
           <LuEye className="size-4" aria-hidden="true" />
           {t('Admin')}
         </span>
         {phaseName ? (
           <>
-            <span aria-hidden="true" className="text-foreground">
-              |
-            </span>
+            <span aria-hidden="true">|</span>
             <span className="flex items-end gap-1.5">
-              <span className="text-foreground">{phaseName}</span>
+              <span>{phaseName}</span>
               {endsLabel ? (
                 <span className="text-sm text-muted-foreground">
                   {endsLabel}

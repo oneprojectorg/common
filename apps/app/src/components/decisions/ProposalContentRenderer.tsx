@@ -117,7 +117,7 @@ function FieldChrome({
         <div className="flex flex-col gap-2">
           {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
-            <p dir="auto" className="text-sm text-foreground">
+            <p dir="auto" className="text-sm">
               {description}
             </p>
           )}

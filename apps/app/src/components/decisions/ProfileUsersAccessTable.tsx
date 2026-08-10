@@ -485,13 +485,11 @@ const MobileProfileUserCard = ({
                 {displayName}
               </Link>
             ) : (
-              <span className="text-base text-foreground">{displayName}</span>
+              <span className="text-base">{displayName}</span>
             )}
             <span className="text-sm text-muted-foreground">{status}</span>
           </div>
-          <span className="truncate text-base text-foreground">
-            {profileUser.email}
-          </span>
+          <span className="truncate text-base">{profileUser.email}</span>
         </div>
       </div>
       <ProfileUserRoleSelect
@@ -532,15 +530,13 @@ const MobileInviteCard = ({
         />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
-            <span className="text-base text-foreground">{displayName}</span>
+            <span className="text-base">{displayName}</span>
             <InviteStatusLabel
               notifiedAt={invite.notifiedAt}
               isDraft={isDraft}
             />
           </div>
-          <span className="truncate text-base text-foreground">
-            {invite.email}
-          </span>
+          <span className="truncate text-base">{invite.email}</span>
         </div>
       </div>
       <InviteRoleSelect
@@ -726,9 +722,7 @@ const ProfileUsersAccessTableContent = ({
                       profile={invite.inviteeProfile ?? { email: invite.email }}
                     />
                     <div className="flex min-w-0 flex-col">
-                      <span className="truncate text-base text-foreground">
-                        {displayName}
-                      </span>
+                      <span className="truncate text-base">{displayName}</span>
                       <InviteStatusLabel
                         notifiedAt={invite.notifiedAt}
                         isDraft={isDraft}
@@ -737,7 +731,7 @@ const ProfileUsersAccessTableContent = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="block truncate text-base text-foreground">
+                  <span className="block truncate text-base">
                     {invite.email}
                   </span>
                 </TableCell>
@@ -780,7 +774,7 @@ const ProfileUsersAccessTableContent = ({
                           {displayName}
                         </Link>
                       ) : (
-                        <span className="truncate text-base text-foreground">
+                        <span className="truncate text-base">
                           {displayName}
                         </span>
                       )}
@@ -791,7 +785,7 @@ const ProfileUsersAccessTableContent = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="block truncate text-base text-foreground">
+                  <span className="block truncate text-base">
                     {profileUser.email}
                   </span>
                 </TableCell>

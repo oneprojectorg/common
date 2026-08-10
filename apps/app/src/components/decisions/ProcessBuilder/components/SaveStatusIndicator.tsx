@@ -45,8 +45,8 @@ export function SaveStatusIndicator({
       )}
       {status === 'error' && (
         <>
-          <LuX className="size-4 text-functional-red" />
-          <span className="text-functional-red">{t('Failed to save')}</span>
+          <LuX className="size-4 text-destructive" />
+          <span className="text-destructive">{t('Failed to save')}</span>
         </>
       )}
     </div>

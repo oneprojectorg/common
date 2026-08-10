@@ -56,7 +56,7 @@ export function OverviewTextField({
         // color and strips this class, letting the headline inherit the
         // foreground, while the description keeps it — charcoal here made the
         // subhead too light.
-        'field-sizing-content resize-none overflow-hidden bg-transparent text-foreground placeholder:text-neutral-gray3 focus:outline-none',
+        'field-sizing-content resize-none overflow-hidden bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none',
         showCount ? 'min-w-0 flex-1' : 'w-full',
         variant === 'headline' && 'font-serif text-title-lg',
         variant === 'description' && 'text-base',
@@ -77,9 +77,7 @@ export function OverviewTextField({
         className={cn(
           'shrink-0 text-sm transition-opacity',
           value.length > 0 ? 'opacity-100' : 'opacity-0',
-          value.length >= maxLength
-            ? 'text-functional-red'
-            : 'text-neutral-charcoal',
+          value.length >= maxLength ? 'text-destructive' : 'text-foreground',
         )}
       >
         {value.length}/{maxLength}

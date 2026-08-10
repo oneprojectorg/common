@@ -388,13 +388,13 @@ export function TemplateEditorContent({
                 }
                 locked
               >
-                <div className="-mt-4 px-11 pb-4">
-                  <p className="m-0">
+                <div className="-mt-3 px-11 pb-4">
+                  <p className="m-0 text-sm">
                     {t('These are the categories you defined in')}{' '}
                     <Button
                       variant="link"
                       size="inline"
-                      className="inline"
+                      className="inline text-sm underline"
                       onClick={() => {
                         void setStep('general');
                         void setSection('proposalCategories');

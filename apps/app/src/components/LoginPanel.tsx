@@ -183,7 +183,7 @@ export const LoginPanel = () => {
     }
     if (combinedError || tokenError) {
       return (
-        <span className={cn(tokenError && 'text-functional-red')}>
+        <span className={cn(tokenError && 'text-destructive')}>
           {combinedError ||
             tokenError ||
             t('There was an error signing you in.')}
@@ -253,7 +253,7 @@ export const LoginPanel = () => {
               }}
             >
               {isRefetchingUser ? (
-                <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-gray3" />
+                <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-input" />
               ) : (
                 t('Try again')
               )}
@@ -298,7 +298,7 @@ export const LoginPanel = () => {
               {t('Back to home')}
             </ButtonLink>
 
-            <SocialLinks iconClassName="size-5 stroke-none text-neutral-gray3" />
+            <SocialLinks iconClassName="size-5 stroke-none text-muted-foreground" />
           </div>
         )}
 

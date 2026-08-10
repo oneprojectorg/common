@@ -251,7 +251,9 @@
    *   - functional-yellowWhite borrows the orange-50 tint
    *   - status-green / status-greenBg share the functional green scale
    * ============================================ */
-  --color-primary: var(--color-primary-600);
+  /* `--color-primary` is no longer aliased here — sense-theme.css owns it as a
+   * semantic (`--primary`), so `bg-primary` resolves through the Colors Scale
+   * instead of the legacy ramp. Same value either way. */
   --color-primary-teal: var(--color-primary-600);
   --color-primary-tealBlack: var(--color-primary-700);
   --color-primary-tealWhite: var(--color-primary-50);

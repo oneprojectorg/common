@@ -453,9 +453,7 @@ function ShareProposalModalContent({
         </Combobox>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-foreground">
-            {t('People with access')}
-          </span>
+          <span className="text-sm">{t('People with access')}</span>
 
           <div className="flex flex-col gap-2">
             {pendingInvites.map((item) => (

@@ -33,14 +33,9 @@ export function AuthorRevisionNote({
   return (
     <>
       <div className="flex flex-col gap-3 rounded-lg bg-muted p-4">
-        <span className="font-serif text-title-sm14 text-foreground">
-          {t("Author's note")}
-        </span>
+        <span className="font-serif text-title-sm14">{t("Author's note")}</span>
         <div className="flex flex-col gap-2">
-          <p
-            dir="auto"
-            className="text-base whitespace-pre-wrap text-neutral-charcoal"
-          >
+          <p dir="auto" className="text-base whitespace-pre-wrap">
             {comment}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">

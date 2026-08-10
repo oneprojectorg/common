@@ -127,7 +127,7 @@ export function StandardDecisionPage({
                 <EmptyTitle className="font-light">
                   {t('Results pending')}
                 </EmptyTitle>
-                <EmptyDescription className="text-base text-neutral-charcoal">
+                <EmptyDescription className="text-base text-foreground">
                   {t("Results for this process haven't been processed yet.")}
                 </EmptyDescription>
               </EmptyHeader>
@@ -144,7 +144,7 @@ export function StandardDecisionPage({
                       <EmptyTitle className="font-light">
                         {t("Couldn't load manual selection")}
                       </EmptyTitle>
-                      <EmptyDescription className="text-base text-neutral-charcoal">
+                      <EmptyDescription className="text-base text-foreground">
                         {t('Refresh the page to try again.')}
                       </EmptyDescription>
                     </EmptyHeader>
@@ -172,7 +172,7 @@ export function StandardDecisionPage({
                       <EmptyTitle className="font-light">
                         {t("Couldn't load proposals")}
                       </EmptyTitle>
-                      <EmptyDescription className="text-base text-neutral-charcoal">
+                      <EmptyDescription className="text-base text-foreground">
                         {t('Refresh the page to try again.')}
                       </EmptyDescription>
                     </EmptyHeader>

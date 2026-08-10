@@ -242,10 +242,7 @@ export function RubricCriterionCard({
           {/* Footer: Required toggle + Delete button */}
           <div className="flex items-center justify-between gap-4 border-t pt-4">
             <Field orientation="horizontal" className="w-auto">
-              <FieldLabel
-                className="text-neutral-charcoal"
-                htmlFor={requiredToggleId}
-              >
+              <FieldLabel htmlFor={requiredToggleId}>
                 {t('Required?')}
               </FieldLabel>
               <Switch
@@ -398,7 +395,7 @@ function ScoredCriterionConfig({
       />
 
       <div className="space-y-2">
-        <h4 className="text-foreground">{t('Define what each score means')}</h4>
+        <h4>{t('Define what each score means')}</h4>
         <p className="text-sm">
           {t(
             'Help reviewers score consistently by describing what each point value represents',
@@ -512,8 +509,8 @@ function SingleSelectCriterionConfig({
     }
     return (
       <div className="flex items-center gap-2">
-        <LuGripVertical className="size-4 text-neutral-gray3" />
-        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
+        <LuGripVertical className="size-4 text-muted-foreground" />
+        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
           {item.value || t('Option')}
         </span>
       </div>
@@ -591,7 +588,7 @@ function SingleSelectCriterionConfig({
                 <DragHandle
                   {...dragHandleProps}
                   aria-label={t('Drag to reorder option')}
-                  className="text-neutral-gray3 hover:text-muted-foreground"
+                  className="text-muted-foreground hover:text-muted-foreground"
                 />
                 <Input
                   value={option.value}

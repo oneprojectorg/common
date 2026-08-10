@@ -86,7 +86,7 @@ export const DecisionInstanceHeader = ({
               {canInteract && (
                 <span
                   aria-hidden
-                  className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
+                  className="hidden h-6 w-px shrink-0 bg-border md:block"
                 />
               )}
               <DecisionTitle title={title} className="hidden md:block" />

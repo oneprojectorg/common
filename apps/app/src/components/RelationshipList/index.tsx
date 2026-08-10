@@ -94,14 +94,14 @@ const RelationshipListContent = ({
                       <bdi>{profile.name}</bdi>
                     </Link>
                   ) : (
-                    <span className="truncate font-semibold text-foreground">
+                    <span className="truncate font-semibold">
                       <bdi>{profile.name}</bdi>
                     </span>
                   )}
 
                   {/* Show relationship types if available */}
                   {profile.relationships && relationshipMap ? (
-                    <div className="text-foreground">
+                    <div>
                       {profile.relationships.map((relationship, i, arr) => (
                         <React.Fragment key={relationship.relationshipType}>
                           {relationshipMap[relationship.relationshipType]
@@ -121,7 +121,7 @@ const RelationshipListContent = ({
                     </div>
                   ) : (
                     /* Show profile type if no relationships */
-                    <div className="text-sm text-neutral-charcoal capitalize">
+                    <div className="text-sm capitalize">
                       {profile.type === 'org'
                         ? t('Organization')
                         : t('Individual')}
@@ -130,10 +130,7 @@ const RelationshipListContent = ({
                 </div>
 
                 {profile.bio && (
-                  <div
-                    dir="auto"
-                    className="line-clamp-3 text-neutral-charcoal"
-                  >
+                  <div dir="auto" className="line-clamp-3">
                     {profile.bio.length > 200
                       ? `${profile.bio.slice(0, 200)}...`
                       : profile.bio}

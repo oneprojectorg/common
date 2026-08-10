@@ -38,7 +38,7 @@ export function ViewerCollapsibleSummary({
   return (
     <CollapsibleTrigger
       render={<button type="button" />}
-      className="group/summary flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-start font-serif text-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="group/summary flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-start font-serif text-lg transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <LuChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-data-panel-open/summary:rotate-90 rtl:-scale-x-100" />
       {/* The node's children are already-rendered prose, so they can't be

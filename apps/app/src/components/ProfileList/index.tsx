@@ -56,7 +56,7 @@ export const ProfileSummaryList = ({
                 className="size-8 sm:size-12"
               />
 
-              <div className="flex flex-col gap-2 text-foreground">
+              <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-1">
                   {canLinkToProfile ? (
                     <Link
@@ -79,7 +79,7 @@ export const ProfileSummaryList = ({
                     </span>
                   ) : null}
                 </div>
-                <span dir="auto" className="leading-5 text-foreground">
+                <span dir="auto" className="leading-5">
                   {trimmedBio}
                 </span>
               </div>

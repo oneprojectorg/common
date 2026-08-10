@@ -174,7 +174,7 @@ const MemberMenu = ({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleRemoveFromOrganization}
-          className="px-3 py-1 text-functional-red"
+          className="px-3 py-1 text-destructive"
         >
           {t('Remove from organization')}
         </DropdownMenuItem>
@@ -254,9 +254,7 @@ const MembersListContent = ({
                       {displayName}
                     </Link>
                   ) : (
-                    <div className="truncate font-semibold text-foreground">
-                      {displayName}
-                    </div>
+                    <div className="truncate font-semibold">{displayName}</div>
                   )}
 
                   {/* Show role information */}
@@ -271,14 +269,12 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">
-                      {t('Member')}
-                    </div>
+                    <div className="text-sm">{t('Member')}</div>
                   )}
 
                   {/* Show email if different from display name */}
                   {(member.name || profile?.name) && (
-                    <div className="text-sm text-neutral-charcoal">
+                    <div className="text-sm">
                       {member.profile?.email || member.email}
                     </div>
                   )}
@@ -286,7 +282,7 @@ const MembersListContent = ({
 
                 {/* Show about/bio information if available */}
                 {bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="line-clamp-3">
                     {bio.length > 200 ? `${bio.slice(0, 200)}...` : bio}
                   </div>
                 )}
@@ -340,10 +336,10 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">
           <LuUsers className="h-6 w-6 text-muted-foreground" />
         </div>
-        <div className="mb-2 font-serif text-title-base text-foreground">
+        <div className="mb-2 font-serif text-title-base">
           {t('No members found')}
         </div>
-        <p className="max-w-md text-sm text-neutral-charcoal">
+        <p className="max-w-md text-sm">
           {t("This organization doesn't have any members yet.")}
         </p>
       </div>

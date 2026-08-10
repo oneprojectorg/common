@@ -47,18 +47,14 @@ export const ProfileSearchResultsSuspense = ({
           <span className="text-muted-foreground">
             {t.rich('Results for <highlight>{query}</highlight>', {
               query: query,
-              highlight: (chunks: React.ReactNode) => (
-                <span className="text-foreground">{chunks}</span>
-              ),
+              highlight: (chunks: React.ReactNode) => <span>{chunks}</span>,
             })}
           </span>
         ) : (
           <span className="text-muted-foreground">
             {t.rich('No results for <highlight>{query}</highlight>', {
               query: query,
-              highlight: (chunks: React.ReactNode) => (
-                <span className="text-foreground">{chunks}</span>
-              ),
+              highlight: (chunks: React.ReactNode) => <span>{chunks}</span>,
             })}
           </span>
         )}
@@ -68,7 +64,7 @@ export const ProfileSearchResultsSuspense = ({
         <TabbedProfileSearchResults profiles={profileSearchResults} />
       ) : (
         <div className="flex justify-center">
-          <span className="max-w-96 text-center text-foreground">
+          <span className="max-w-96 text-center">
             {t(
               'You may want to try using different keywords, checking for typos, or adjusting your filters.',
             )}

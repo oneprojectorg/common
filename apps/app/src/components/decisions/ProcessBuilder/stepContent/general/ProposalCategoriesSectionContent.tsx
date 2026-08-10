@@ -232,9 +232,7 @@ export function ProposalCategoriesSectionContent({
                 className="group flex items-start gap-2 border-b py-3"
               >
                 <div className="min-w-0 flex-1">
-                  <span className="text-neutral-charcoal">
-                    {category.label}
-                  </span>
+                  <span>{category.label}</span>
                   <p className="text-sm text-muted-foreground">
                     {category.description}
                   </p>
@@ -243,7 +241,7 @@ export function ProposalCategoriesSectionContent({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-5 p-0 text-neutral-charcoal"
+                    className="size-5 p-0"
                     onClick={() => handleEdit(category)}
                     aria-label={`Edit ${category.label}`}
                   >
@@ -252,7 +250,7 @@ export function ProposalCategoriesSectionContent({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-5 p-0 text-neutral-charcoal hover:text-red"
+                    className="size-5 p-0 hover:text-destructive"
                     onClick={() => handleDelete(category.id)}
                     aria-label={`Delete ${category.label}`}
                   >
@@ -433,7 +431,7 @@ function CategoryField({
             <span
               className={cn(
                 'text-sm text-muted-foreground',
-                value.length === maxLength && 'text-functional-red',
+                value.length === maxLength && 'text-destructive',
               )}
             >
               {value.length}/{maxLength}

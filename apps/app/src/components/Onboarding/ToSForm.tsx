@@ -43,9 +43,7 @@ export const ToSForm = ({
     >
       <FormContainer className="max-w-lg">
         <FormHeader text={t('Terms of Service Overview')}></FormHeader>
-        <span className="text-neutral-charcoal">
-          {t('Effective Date: March 15, 2025')}
-        </span>
+        <span>{t('Effective Date: March 15, 2025')}</span>
 
         <ToSContentShort />
 

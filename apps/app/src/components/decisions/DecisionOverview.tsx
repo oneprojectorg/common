@@ -105,7 +105,7 @@ export function DecisionOverview({
               <EmptyTitle className="font-light">
                 {t("Couldn't load the overview")}
               </EmptyTitle>
-              <EmptyDescription className="text-base text-neutral-charcoal">
+              <EmptyDescription className="text-base text-foreground">
                 {t('Refresh the page to try again.')}
               </EmptyDescription>
             </EmptyHeader>
@@ -363,7 +363,7 @@ const OverviewHero = ({
             <div
               className={cn(
                 'flex flex-wrap items-center justify-center gap-x-2 gap-y-1',
-                hasImage ? 'text-white' : 'text-neutral-charcoal',
+                hasImage ? 'text-white' : 'text-foreground',
               )}
             >
               {stewardName ? (
@@ -419,7 +419,7 @@ const OverviewHero = ({
               dir="auto"
               className={cn(
                 'text-base text-balance',
-                hasImage ? 'text-white' : 'text-neutral-charcoal',
+                hasImage ? 'text-white' : 'text-foreground',
               )}
             >
               {subhead}

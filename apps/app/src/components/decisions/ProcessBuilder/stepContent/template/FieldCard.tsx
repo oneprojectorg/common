@@ -240,7 +240,7 @@ export function FieldCard({
         {errors.length > 0 && (
           <div className="space-y-1">
             {errors.map((error) => (
-              <p key={error} className="text-functional-red">
+              <p key={error} className="text-destructive">
                 {t(error as TranslationKey)}
               </p>
             ))}
@@ -250,12 +250,7 @@ export function FieldCard({
         {/* Footer: Required toggle + Delete button */}
         <div className="flex items-center justify-between gap-4 border-t pt-4">
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel
-              className="text-neutral-charcoal"
-              htmlFor={requiredToggleId}
-            >
-              {t('Required?')}
-            </FieldLabel>
+            <FieldLabel htmlFor={requiredToggleId}>{t('Required?')}</FieldLabel>
             <Switch
               id={requiredToggleId}
               checked={isLocation || field.required}

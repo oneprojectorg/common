@@ -133,9 +133,7 @@ export function CategoryReviewerCard({
       data-testid={`category-reviewer-card-${category.name}`}
     >
       <div className="flex items-end justify-between gap-2">
-        <span className="font-serif text-title-sm14 text-foreground">
-          {category.name}
-        </span>
+        <span className="font-serif text-title-sm14">{category.name}</span>
         <span
           className={
             isEmpty
@@ -193,9 +191,7 @@ export function CategoryReviewerCard({
                   <Avatar className="size-6 shrink-0">
                     <AvatarFallback name={reviewer.profile.name} />
                   </Avatar>
-                  <span className="text-base text-foreground">
-                    {reviewer.profile.name}
-                  </span>
+                  <span className="text-base">{reviewer.profile.name}</span>
                 </div>
                 <Button
                   variant="ghost"

@@ -64,7 +64,7 @@ export function ReviewerList({
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
           <Header3 className="font-serif">{t('Review Summary')}</Header3>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base">
             {t(
               '{submitted} out of {total} reviewers submitted a review for this proposal',
               { submitted: reviewsSubmittedCount, total: assignmentsCount },
@@ -172,7 +172,7 @@ function RecommendationGroup({
   return (
     <div className="flex flex-col gap-4">
       <StatusDot intent={recommendationIntent(value)} className="gap-2">
-        <span className="font-serif !text-title-sm14 text-foreground">
+        <span className="font-serif !text-title-sm14">
           {label} ({count})
         </span>
       </StatusDot>
@@ -212,11 +212,11 @@ function ReviewerRow({
           className="size-6"
         />
         <div className="flex flex-col">
-          <span className="text-base text-foreground">
+          <span className="text-base">
             {item.reviewer.name ?? item.reviewer.slug}
           </span>
           {showScore && (
-            <span className="text-sm text-foreground">
+            <span className="text-sm">
               {item.score}
               <span className="text-muted-foreground">/{totalPoints}pts</span>
             </span>

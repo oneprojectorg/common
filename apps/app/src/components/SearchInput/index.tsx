@@ -330,7 +330,7 @@ const ProfileCommandItem = ({
         <AvatarFallback name={profile.name} />
       </Avatar>
 
-      <div className="flex flex-col font-semibold text-foreground">
+      <div className="flex flex-col font-semibold">
         {highlightName(profile.name, query)}
         <span dir="auto" className="text-sm text-muted-foreground capitalize">
           {subtitle}

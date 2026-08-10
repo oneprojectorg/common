@@ -59,7 +59,7 @@ export function RestoreProposalVersionModal({
           </span>
           <DialogTitle>{t('Restore this version?')}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4 px-6 py-4 text-base text-foreground">
+        <div className="flex flex-col gap-4 px-6 py-4 text-base">
           <p>
             {t.rich(
               'Your proposal will be restored to the version from <bold>{date}</bold>.',

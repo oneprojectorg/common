@@ -70,7 +70,7 @@ export const MemberParticipationFacePile = ({
         <span
           className={cn(
             'w-fit text-sm',
-            hasImage ? 'text-white' : 'text-neutral-charcoal',
+            hasImage ? 'text-white' : 'text-foreground',
           )}
         >
           {t(

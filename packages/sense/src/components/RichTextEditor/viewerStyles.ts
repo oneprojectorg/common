@@ -15,7 +15,7 @@
  * `Header*` design-system components.
  */
 export const viewerProseStyles = [
-  'prose prose-lg !text-base text-neutral-black',
+  'prose prose-lg !text-base text-foreground',
   '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
   '[&_li_p]:my-0',
   '[&_blockquote]:font-normal',
@@ -52,7 +52,7 @@ const placeholderStyles = [
   '[&_.is-editor-empty:first-child]:before:pointer-events-none',
   '[&_.is-editor-empty:first-child]:before:float-start',
   '[&_.is-editor-empty:first-child]:before:h-0',
-  '[&_.is-editor-empty:first-child]:before:text-neutral-gray3',
+  '[&_.is-editor-empty:first-child]:before:text-muted-foreground',
   '[&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]',
 ].join(' ');
 
@@ -68,7 +68,7 @@ const detailsSummaryPlaceholderStyles = [
   // at the start of the summary, not after the placeholder text.
   '[&_summary.is-empty]:before:float-start',
   '[&_summary.is-empty]:before:h-0',
-  '[&_summary.is-empty]:before:text-neutral-gray3',
+  '[&_summary.is-empty]:before:text-muted-foreground',
   '[&_summary.is-empty]:before:content-[attr(data-placeholder)]',
   '[&_summary.is-empty]:before:font-serif',
 ].join(' ');
@@ -83,4 +83,4 @@ const detailsSummaryPlaceholderStyles = [
 // Without it Firefox takes the `requiresGeckoHackNode` path and appends a
 // trailing <br> to any block whose text ends in a space, which would match the
 // empty-block selector above and drop that paragraph out of per-line bidi.
-export const baseEditorStyles = `${viewerProseStyles} whitespace-pre-wrap rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 placeholder:text-neutral-gray2 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
+export const baseEditorStyles = `${viewerProseStyles} whitespace-pre-wrap rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 placeholder:text-muted-foreground ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;

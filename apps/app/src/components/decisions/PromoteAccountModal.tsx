@@ -5,7 +5,7 @@ import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent } from '@op/sense/Dialog';
 import { Field, FieldLabel } from '@op/sense/Field';
-import { Header1 } from '@op/sense/Header';
+import { Header2 } from '@op/sense/Header';
 import { CheckIcon } from '@op/sense/icons';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
@@ -40,7 +40,7 @@ export const PromoteAccountModal = () => {
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[29rem]">
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
         <PromoteAccountModalContent
           onContinueAsGuest={close}
           proposalId={proposalId}
@@ -83,25 +83,20 @@ const PromoteAccountModalContent = ({
       <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
         <div className="flex flex-col gap-2">
-          <Header1>{t('Your idea was submitted.')}</Header1>
-          <p className="text-base text-neutral-charcoal">
-            {t('Want to follow what happens next?')}
-          </p>
+          <Header2>{t('Your idea was submitted.')}</Header2>
+          <p className="text-base">{t('Want to follow what happens next?')}</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
         <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-white p-4 text-start">
           <div className="flex items-center gap-1">
-            <LuUserRoundMinus
-              className="size-4 text-neutral-charcoal"
-              aria-hidden
-            />
-            <span className="font-serif text-title-sm text-neutral-charcoal">
+            <LuUserRoundMinus className="size-4 text-foreground" aria-hidden />
+            <span className="font-serif text-title-sm">
               {t('Continue as a guest')}
             </span>
           </div>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base">
             {t('Stay anonymous. React to comments with emoji.')}
           </p>
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
@@ -139,17 +134,14 @@ const PromoteAccountModalContent = ({
           </Button>
         </section>
 
-        <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-neutral-off-white p-4 text-start">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-muted p-4 text-start">
           <div className="flex items-center gap-1">
-            <LuUserRoundPlus
-              className="size-4 text-neutral-charcoal"
-              aria-hidden
-            />
-            <span className="font-serif text-title-sm text-neutral-charcoal">
+            <LuUserRoundPlus className="size-4 text-foreground" aria-hidden />
+            <span className="font-serif text-title-sm">
               {t('With an account')}
             </span>
           </div>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base">
             {t(
               'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
             )}

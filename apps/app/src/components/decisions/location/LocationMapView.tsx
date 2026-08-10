@@ -23,7 +23,7 @@ export function LocationMapView({ value }: LocationMapViewProps) {
   const styleUrl = useMapStyleUrl();
 
   if (!value) {
-    return <p className="text-sm text-neutral-gray3 italic">—</p>;
+    return <p className="text-sm text-muted-foreground italic">—</p>;
   }
 
   return (
@@ -36,7 +36,7 @@ export function LocationMapView({ value }: LocationMapViewProps) {
         className="border-b border-border"
       />
       <div className="flex flex-col gap-0.5 p-4">
-        <span className="text-foreground" dir="auto">
+        <span dir="auto">
           {value.address ?? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}`}
         </span>
       </div>

@@ -108,7 +108,7 @@ function ReviewProgressStat({
     <div
       className={cn(
         'flex flex-col items-center',
-        hasImage ? 'text-white' : 'text-neutral-charcoal',
+        hasImage ? 'text-white' : 'text-foreground',
       )}
     >
       <span className="font-serif text-title-lg">{value}</span>
@@ -118,5 +118,5 @@ function ReviewProgressStat({
 }
 
 function Divider() {
-  return <div className="h-8 w-px bg-neutral-gray2" />;
+  return <div className="h-8 w-px bg-border" />;
 }

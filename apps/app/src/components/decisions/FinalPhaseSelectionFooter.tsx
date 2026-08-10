@@ -38,7 +38,7 @@ export const FinalPhaseSelectionFooter = ({
   return (
     <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
-        <span className="flex items-center gap-2 text-base text-foreground">
+        <span className="flex items-center gap-2 text-base">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
           {/* Keeps "winning": this footer drives the irreversible final-phase
               publish, and Figma has no frame for this variant. */}
@@ -65,7 +65,7 @@ export const FinalPhaseSelectionFooter = ({
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
-            <p className="text-base text-neutral-charcoal">
+            <p className="text-base">
               {t(
                 'These {numProposals} proposals will be funded and results will be shared with all participants.',
                 { numProposals: numSelected },
@@ -97,16 +97,14 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted p-3">
       <div className="flex items-start justify-between gap-2">
-        <span className="truncate font-serif text-title-sm14 text-foreground">
+        <span className="truncate font-serif text-title-sm14">
           <bdi>{title}</bdi>
         </span>
         {budget ? (
-          <span className="font-serif text-title-sm14 text-neutral-charcoal">
-            {budget}
-          </span>
+          <span className="font-serif text-title-sm14">{budget}</span>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         {submitterName ? <span>{submitterName}</span> : null}
         {submitterName && hasCategories ? <Bullet /> : null}
         {categories.map((category) => (

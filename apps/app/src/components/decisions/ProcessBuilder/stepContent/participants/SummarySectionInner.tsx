@@ -87,7 +87,7 @@ export function SummarySectionInner({
             {t('Your process still needs more information')}
           </Header2>
         </div>
-        <p className="text-base text-foreground">
+        <p className="text-base">
           {t.rich(
             '<highlight>{processName}</highlight> is missing information in order to go live.',
             {
@@ -102,9 +102,7 @@ export function SummarySectionInner({
           {incompleteItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center justify-between">
-                <span className="text-base text-foreground">
-                  {t(item.labelKey)}
-                </span>
+                <span className="text-base">{t(item.labelKey)}</span>
                 <Button
                   variant="outline"
                   className="shrink-0"
@@ -154,9 +152,7 @@ export function SummarySectionInner({
             <span className="text-base text-muted-foreground">
               {t('Phases')}
             </span>
-            <span className="text-base text-neutral-charcoal">
-              {phasesCount}
-            </span>
+            <span className="text-base">{phasesCount}</span>
           </div>
           <div className="mt-2 border-t border-border" />
         </div>
@@ -166,9 +162,7 @@ export function SummarySectionInner({
               <span className="text-base text-muted-foreground">
                 {t('Categories')}
               </span>
-              <span className="text-base text-neutral-charcoal">
-                {categories.length}
-              </span>
+              <span className="text-base">{categories.length}</span>
             </div>
             <div className="mt-2 border-t border-border" />
           </div>
@@ -177,9 +171,7 @@ export function SummarySectionInner({
           <span className="text-base text-muted-foreground">
             {t('Participants Invited')}
           </span>
-          <span className="text-base text-neutral-charcoal">
-            {participantsCount}
-          </span>
+          <span className="text-base">{participantsCount}</span>
         </div>
       </div>
     </div>

@@ -113,13 +113,9 @@ function ResultCard({
     <div className="mt-1 flex flex-col gap-3 rounded-lg border p-6">
       {hasTopRow && (
         <div className="flex items-start gap-4">
-          {hasValue && (
-            <span className="font-serif text-title text-foreground">
-              {value}
-            </span>
-          )}
+          {hasValue && <span className="font-serif text-title">{value}</span>}
           {hasDescription && (
-            <div className="mt-0.75 min-w-0 flex-1 text-base whitespace-pre-wrap text-foreground">
+            <div className="mt-0.75 min-w-0 flex-1 text-base whitespace-pre-wrap">
               {description}
             </div>
           )}

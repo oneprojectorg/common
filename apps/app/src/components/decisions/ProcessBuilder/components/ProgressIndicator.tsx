@@ -1,5 +1,7 @@
 'use client';
 
+import { Progress } from '@op/sense/Progress';
+
 import { useTranslations } from '@/lib/i18n';
 
 export function ProgressIndicator({
@@ -11,48 +13,31 @@ export function ProgressIndicator({
 }) {
   const t = useTranslations();
   const clamped = Math.min(100, Math.max(0, percentage));
+  const label = t('{count}% complete', { count: clamped });
 
+  // Progress owns role="progressbar" and the aria-value* attributes, so the
+  // only thing left to supply is the accessible name.
   if (variant === 'strip') {
     return (
-      <div
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={clamped}
-        aria-label={t('{count}% complete', { count: clamped })}
-        className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-neutral-gray2 md:hidden"
-      >
-        <div
-          className="h-full bg-linear-to-r from-functional-green to-primary-teal transition-all duration-300"
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
+      <Progress
+        value={clamped}
+        aria-label={label}
+        className="absolute inset-x-0 top-0 md:hidden"
+      />
     );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-160 items-center gap-4">
-      <div
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={clamped}
-        aria-label={t('{count}% complete', { count: clamped })}
-        className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2"
-      >
-        <div
-          className="h-full rounded-full bg-linear-to-r from-functional-green to-primary-teal transition-all duration-300"
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
+      <Progress value={clamped} aria-label={label} className="flex-1" />
       <span
         className={
           clamped === 100
-            ? 'shrink-0 bg-linear-to-r from-functional-green to-primary-teal bg-clip-text text-base text-transparent'
+            ? 'shrink-0 text-base text-primary'
             : 'shrink-0 text-base text-foreground'
         }
       >
-        {t('{count}% complete', { count: clamped })}
+        {label}
       </span>
     </div>
   );

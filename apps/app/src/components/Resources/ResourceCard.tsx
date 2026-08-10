@@ -162,17 +162,14 @@ const ResourceCardShell = ({
     <div className="flex flex-col gap-2">
       <p
         dir="auto"
-        className={cn(
-          'truncate font-serif text-title-sm text-foreground',
-          trailing && 'pe-8',
-        )}
+        className={cn('truncate font-serif text-title-sm', trailing && 'pe-8')}
       >
         {title}
       </p>
       {preview}
       <div className="flex flex-col gap-0.5">
         {description ? (
-          <p dir="auto" className="line-clamp-2 text-sm text-neutral-charcoal">
+          <p dir="auto" className="line-clamp-2 text-sm">
             {description}
           </p>
         ) : null}

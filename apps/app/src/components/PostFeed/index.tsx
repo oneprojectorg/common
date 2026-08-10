@@ -104,7 +104,7 @@ const PostFlaggedIndicator = ({ post }: { post: Post }) => {
   }
 
   return (
-    <div className="flex items-center gap-1 text-sm text-functional-red">
+    <div className="flex items-center gap-1 text-sm text-destructive">
       <LuFlag className="size-4" />
       <span>{t('Flagged')}</span>
     </div>

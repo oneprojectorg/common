@@ -117,7 +117,7 @@ export const TermsMultiSelect = ({
       {label && (
         <Label>
           {label}
-          {isRequired && <span className="text-functional-red"> *</span>}
+          {isRequired && <span className="text-destructive"> *</span>}
         </Label>
       )}
       <Combobox
@@ -169,7 +169,7 @@ export const TermsMultiSelect = ({
         </ComboboxContent>
       </Combobox>
       {errorMessage && (
-        <p className="text-sm text-functional-red">{errorMessage}</p>
+        <p className="text-sm text-destructive">{errorMessage}</p>
       )}
     </div>
   );

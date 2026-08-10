@@ -190,7 +190,7 @@ function VersionItem({
   );
   const rowContent = (
     <>
-      <span className="text-base font-strong text-foreground">{label}</span>
+      <span className="text-base font-strong">{label}</span>
       <span className="text-sm text-muted-foreground">{sublabel}</span>
     </>
   );

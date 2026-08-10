@@ -702,7 +702,7 @@ function MobileRoleFormCard({
             size="icon-sm"
             onClick={() => onDelete(role)}
             aria-label={t('Delete')}
-            className="text-functional-red"
+            className="text-destructive"
           >
             <LuTrash2 className="size-4" />
           </Button>

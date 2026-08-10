@@ -82,7 +82,7 @@ export const ProposalsStickyFilterBar = ({
           />
           {hasLocationField && (
             <div className="hidden items-center gap-4 sm:flex">
-              <span aria-hidden className="h-6 w-px bg-neutral-gray2" />
+              <span aria-hidden className="h-6 w-px bg-border" />
               <ProposalViewToggle
                 value={effectiveView}
                 onChange={onViewChange}
