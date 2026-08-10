@@ -1,6 +1,11 @@
 import { get, set } from '@op/cache';
 import {
+  EXPORTS_BUCKET,
+  EXPORT_CACHE_TTL_SECONDS,
+  EXPORT_URL_TTL_SECONDS,
   assertUserByAuthId,
+  exportFilePath,
+  exportStatusCacheKey,
   generateProposalsCsv,
   listProposals,
 } from '@op/common';
@@ -11,15 +16,12 @@ type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
-// Helper to get cache key for export status
-const getExportCacheKey = (exportId: string) => `export:proposal:${exportId}`;
-
 // Helper to update export status in cache
 const updateExportStatus = async (exportId: string, updates: any) => {
-  const key = getExportCacheKey(exportId);
+  const key = exportStatusCacheKey(exportId);
   const existing = await get(key);
   const updated = { ...(existing || {}), ...updates };
-  await set(key, updated, 2 * 60 * 60); // 2 hours
+  await set(key, updated, EXPORT_CACHE_TTL_SECONDS);
 };
 
 const { proposalExportRequested } = Events;
@@ -94,11 +96,11 @@ export const exportProposals = inngest.createFunction(
           const supabase = createSBServiceClient();
           const timestamp = Date.now();
           const fileName = `proposals_export_${timestamp}.${extension}`;
-          const filePath = `exports/proposals/${processInstanceId}/${fileName}`;
+          const filePath = exportFilePath(processInstanceId, fileName);
 
           // Upload CSV to Supabase storage
           const { error: uploadError } = await supabase.storage
-            .from('assets')
+            .from(EXPORTS_BUCKET)
             .upload(filePath, Buffer.from(content), {
               contentType: mimeType,
               upsert: false,
@@ -108,10 +110,9 @@ export const exportProposals = inngest.createFunction(
             throw new Error(`Storage upload failed: ${uploadError.message}`);
           }
 
-          // Generate 2-hour signed URL
           const { data: urlData, error: urlError } = await supabase.storage
-            .from('assets')
-            .createSignedUrl(filePath, 2 * 60 * 60); // 2 hours
+            .from(EXPORTS_BUCKET)
+            .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
 
           if (urlError || !urlData) {
             throw new Error(
@@ -133,7 +134,7 @@ export const exportProposals = inngest.createFunction(
           fileName,
           signedUrl,
           urlExpiresAt: new Date(
-            Date.now() + 24 * 60 * 60 * 1000,
+            Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
           ).toISOString(),
           completedAt: new Date().toISOString(),
         });

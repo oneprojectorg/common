@@ -45,6 +45,12 @@ file_size_limit = "50MiB"
 [storage.buckets.assets]
 public = true
 
+# Proposal exports are private: the CSV carries submitter names and email
+# addresses, so downloads go through short-lived signed URLs rather than the
+# public object root that `assets` is served from.
+[storage.buckets.exports]
+public = false
+
 [storage.buckets.avatars]
 public = true
 objects_path = "./storage/avatars"

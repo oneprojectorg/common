@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { EXPORT_CACHE_TTL_SECONDS, exportStatusCacheKey } from './exports';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -61,9 +62,8 @@ export const exportProposals = async ({
   const exportId = randomUUID();
 
   // Set initial 'pending' status in cache so frontend can poll immediately
-  const cacheKey = `export:proposal:${exportId}`;
   await set(
-    cacheKey,
+    exportStatusCacheKey(exportId),
     {
       exportId,
       processInstanceId: input.processInstanceId,
@@ -71,7 +71,7 @@ export const exportProposals = async ({
       status: 'pending',
       createdAt: new Date().toISOString(),
     },
-    2 * 60 * 60, // 2 hours
+    EXPORT_CACHE_TTL_SECONDS,
   );
 
   // Trigger workflow

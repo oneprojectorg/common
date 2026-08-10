@@ -7,6 +7,13 @@ import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import {
+  EXPORTS_BUCKET,
+  EXPORT_CACHE_TTL_SECONDS,
+  EXPORT_URL_TTL_SECONDS,
+  exportFilePath,
+  exportStatusCacheKey,
+} from './exports';
 
 export interface ExportStatusData {
   exportId: string;
@@ -33,7 +40,7 @@ export const getExportStatus = async ({
   logger: { info: (message: string, meta?: any) => void };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache
-  const key = `export:proposal:${exportId}`;
+  const key = exportStatusCacheKey(exportId);
   const exportStatus = (await get(key)) as ExportStatusData | null;
 
   if (!exportStatus) {
@@ -69,10 +76,11 @@ export const getExportStatus = async ({
     permissions: [{ decisions: permission.ADMIN }],
   });
 
-  // Refresh signed URL if expired but file exists
+  // Signed URLs are shorter-lived than the export record, so a completed export
+  // is re-signed on read once its current URL has lapsed.
   if (
     exportStatus.status === 'completed' &&
-    exportStatus.signedUrl &&
+    exportStatus.fileName &&
     exportStatus.urlExpiresAt
   ) {
     const expiresAt = new Date(exportStatus.urlExpiresAt);
@@ -82,23 +90,23 @@ export const getExportStatus = async ({
         exportId,
       });
 
-      // Extract file path from the export status
-      // We need to reconstruct it from the filename
-      const filePath = `exports/proposals/${exportStatus.processInstanceId}/${exportStatus.fileName}`;
+      const filePath = exportFilePath(
+        exportStatus.processInstanceId,
+        exportStatus.fileName,
+      );
 
       const supabase = await createSBServerClient();
       const { data: urlData, error: urlError } = await supabase.storage
-        .from('assets')
-        .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
+        .from(EXPORTS_BUCKET)
+        .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
 
       if (!urlError && urlData) {
         exportStatus.signedUrl = urlData.signedUrl;
         exportStatus.urlExpiresAt = new Date(
-          Date.now() + 24 * 60 * 60 * 1000,
+          Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
         ).toISOString();
 
-        // Update cache with new signed URL (24 hours TTL)
-        await set(key, exportStatus, 24 * 60 * 60);
+        await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
       }
     }
   }
