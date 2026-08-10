@@ -163,7 +163,7 @@ function AdvanceablePhaseCard({
         onClick={() => onAdvance?.()}
         className="shrink-0"
       >
-        <LuPlay className="size-4" aria-hidden />
+        <LuPlay className="size-4 rtl:-scale-x-100" aria-hidden />
         {advanceLabel}
       </Button>
     </li>

@@ -114,7 +114,7 @@ function StepIndicator({
             stepState === 'completed' ? (
               <LuCheck className="size-4" />
             ) : (
-              <LuPlay className="size-3 fill-current" />
+              <LuPlay className="size-3 fill-current rtl:-scale-x-100" />
             )
           ) : (
             content
