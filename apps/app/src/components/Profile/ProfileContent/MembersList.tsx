@@ -336,7 +336,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">
           <LuUsers className="h-6 w-6 text-muted-foreground" />
         </div>
-        <div className="mb-2 font-serif text-title">
+        <div className="mb-2 font-serif text-title font-light">
           {t('No members found')}
         </div>
         <p className="max-w-md text-sm">
@@ -350,7 +350,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-headline">
+          <div className="w-full font-serif text-headline font-light">
             {t('{count, plural, =1 {1 member} other {# members}}', {
               count: members.length,
             })}

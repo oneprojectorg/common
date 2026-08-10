@@ -108,7 +108,7 @@ export const ProfileRelationshipsSuspense = ({
           </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-headline">
+          <div className="w-full font-serif text-headline font-light">
             {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
               count,
             })}

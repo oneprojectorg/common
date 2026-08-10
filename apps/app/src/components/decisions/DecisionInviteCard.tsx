@@ -113,7 +113,7 @@ export const DecisionInviteCard = ({
 
 const DecisionStat = ({ number, label }: { number: number; label: string }) => (
   <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
-    <span className="font-serif text-title">{number}</span>
+    <span className="font-serif text-title font-light">{number}</span>
     <span className="text-sm">{label}</span>
   </div>
 );

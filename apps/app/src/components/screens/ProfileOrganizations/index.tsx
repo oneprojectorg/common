@@ -56,7 +56,7 @@ export const ProfileOrganizationsSuspense = ({
           </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="font-serif text-headline">
+          <div className="font-serif text-headline font-light">
             {t(
               'Member of {count, plural, =1 {# Organization} other {# Organizations}}',
               { count: organizations.length },

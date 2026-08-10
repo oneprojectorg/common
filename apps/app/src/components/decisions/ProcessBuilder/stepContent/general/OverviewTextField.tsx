@@ -53,7 +53,7 @@ export function OverviewTextField({
         // headlines/descriptions wrap instead of getting cut off.
         'field-sizing-content resize-none overflow-hidden bg-transparent placeholder:text-muted-foreground focus:outline-none',
         showCount ? 'min-w-0 flex-1' : 'w-full',
-        variant === 'headline' && 'font-serif text-headline',
+        variant === 'headline' && 'font-serif text-headline font-light',
         variant === 'description' && 'text-base',
       )}
     />
