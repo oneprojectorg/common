@@ -246,7 +246,7 @@ function PhaseDetailForm({
     <div className="mx-auto w-full space-y-10 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t('Phase {index} of {total}', {
               index: phaseIndex,
               total: phaseCount,
@@ -313,7 +313,7 @@ function PhaseDetailForm({
             className="rounded-lg border border-input"
             editorClassName="min-h-24 p-3"
           />
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t(
               'Any additional information will appear in a modal titled "About the process"',
             )}
@@ -652,7 +652,7 @@ function PhaseField({
           {maxLength != null && (
             <span
               className={cn(
-                'text-sm text-neutral-gray4',
+                'text-sm text-muted-foreground',
                 (value.length === maxLength || isInvalid) &&
                   'text-functional-red',
               )}

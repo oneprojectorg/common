@@ -447,7 +447,7 @@ function RolesSectionContent({
 
       <Suspense
         fallback={
-          <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
+          <div className="h-48 animate-pulse rounded-lg bg-secondary" />
         }
       >
         <RolesTable
@@ -600,7 +600,7 @@ function MobileRoleCard({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
         <Header3 className="font-serif text-base">{role.name}</Header3>
         {(onDelete || onEdit) && (
@@ -669,7 +669,7 @@ function MobileRoleFormCard({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-md border border-border p-4">
       <div className="flex items-center justify-between gap-2">
         <Input
           placeholder={t('Role name…')}

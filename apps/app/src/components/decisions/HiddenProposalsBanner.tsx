@@ -37,7 +37,7 @@ export function HiddenProposalsBanner({
   return (
     <Alert
       variant="warning"
-      className="rounded-none border-x-0 border-t-0 border-b-neutral-gray1"
+      className="rounded-none border-x-0 border-t-0 border-b-border"
       role="status"
       aria-live="polite"
     >

@@ -21,7 +21,7 @@ export const PostDetailHeader = () => {
       <div className="flex items-center gap-3">
         <Link
           href="/"
-          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+          className="flex items-center gap-2 text-base text-foreground hover:text-primary-tealBlack md:text-primary-teal"
         >
           <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
           <span className="hidden md:flex">{t('Home')}</span>

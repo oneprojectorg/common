@@ -623,7 +623,7 @@ const PostUpdateWithUser = ({
               className="size-8 bg-white"
             />
           ) : (
-            <div className="size-8 rounded-full bg-neutral-gray1" />
+            <div className="size-8 rounded-full bg-secondary" />
           )}
         </InputGroupAddon>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -642,7 +642,7 @@ const PostUpdateWithUser = ({
                   {filePreview.uploading ? (
                     <Skeleton className="relative flex aspect-video w-full items-center justify-center rounded text-white" />
                   ) : filePreview.file.type.startsWith('image/') ? (
-                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-secondary text-white">
                       {filePreview.error ? (
                         <p className="text-sm">{filePreview.error}</p>
                       ) : (

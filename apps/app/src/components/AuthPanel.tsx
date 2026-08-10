@@ -88,7 +88,7 @@ export const AuthPanelShell = ({
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center sm:text-headline">{title}</Header1>
-            <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
+            <div className="px-4 text-center text-sm leading-[130%] text-muted-foreground sm:text-base">
               {subtitle}
             </div>
           </section>
@@ -122,9 +122,9 @@ export const AuthDivider = () => {
 
   return (
     <div className="flex w-full items-center justify-center gap-4">
-      <div className="h-px grow bg-neutral-gray1" />
-      <span className="text-sm text-neutral-gray4">{t('or')}</span>
-      <div className="h-px grow bg-neutral-gray1" />
+      <div className="h-px grow bg-secondary" />
+      <span className="text-sm text-muted-foreground">{t('or')}</span>
+      <div className="h-px grow bg-secondary" />
     </div>
   );
 };

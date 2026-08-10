@@ -45,14 +45,14 @@ export const ToggleRow = ({
       className={cn('rounded-xl py-2', className)}
     >
       <FieldContent>
-        <FieldLabel
-          htmlFor={controlId}
-          className="text-base text-neutral-black"
-        >
+        <FieldLabel htmlFor={controlId} className="text-base text-foreground">
           {label}
         </FieldLabel>
         {description && (
-          <FieldDescription id={descriptionId} className="text-neutral-gray4">
+          <FieldDescription
+            id={descriptionId}
+            className="text-muted-foreground"
+          >
             {description}
           </FieldDescription>
         )}

@@ -54,7 +54,7 @@ export function ViewRevisionRequestModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-2 px-6 py-4">
-          <span className="text-base text-neutral-black">
+          <span className="text-base text-foreground">
             {t('Feedback to Author')}
           </span>
 
@@ -63,7 +63,7 @@ export function ViewRevisionRequestModal({
               {revisionRequest.requestComment}
             </p>
             {sentDate && (
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t('Sent {date}', {
                   date: sentDate.toLocaleDateString(undefined, {
                     month: 'short',

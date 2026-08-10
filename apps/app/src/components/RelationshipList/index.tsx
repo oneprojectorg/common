@@ -84,7 +84,7 @@ const RelationshipListContent = ({
                   {/* Public/non-member viewers can't reach the profile page. */}
                   {canLinkToProfile ? (
                     <Link
-                      className="truncate font-semibold text-neutral-black"
+                      className="truncate font-semibold text-foreground"
                       href={
                         profile.type === 'org'
                           ? `/org/${profile.slug}`
@@ -94,14 +94,14 @@ const RelationshipListContent = ({
                       <bdi>{profile.name}</bdi>
                     </Link>
                   ) : (
-                    <span className="truncate font-semibold text-neutral-black">
+                    <span className="truncate font-semibold text-foreground">
                       <bdi>{profile.name}</bdi>
                     </span>
                   )}
 
                   {/* Show relationship types if available */}
                   {profile.relationships && relationshipMap ? (
-                    <div className="text-neutral-black">
+                    <div className="text-foreground">
                       {profile.relationships.map((relationship, i, arr) => (
                         <React.Fragment key={relationship.relationshipType}>
                           {relationshipMap[relationship.relationshipType]

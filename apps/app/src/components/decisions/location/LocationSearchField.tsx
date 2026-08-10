@@ -126,7 +126,7 @@ export function LocationSearchField({
       >
         <InputGroupAddon align="inline-start">
           {isSearching ? (
-            <Spinner className="size-4 text-neutral-gray4" />
+            <Spinner className="size-4 text-muted-foreground" />
           ) : (
             <LuSearch aria-hidden className="size-4" />
           )}
@@ -147,7 +147,7 @@ export function LocationSearchField({
                   "Starbucks" + "123 Main St", not as the bare street address. */}
               <div className="flex min-w-0 flex-col">
                 {item.name && (
-                  <span className="truncate text-neutral-black" dir="auto">
+                  <span className="truncate text-foreground" dir="auto">
                     {item.name}
                   </span>
                 )}
@@ -155,7 +155,7 @@ export function LocationSearchField({
                   className={
                     item.name
                       ? 'truncate text-sm text-neutral-charcoal'
-                      : 'truncate text-neutral-black'
+                      : 'truncate text-foreground'
                   }
                   dir="auto"
                 >

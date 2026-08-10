@@ -161,7 +161,7 @@ function ReviewsTabPanel({
       <APIErrorBoundary
         fallbacks={{
           default: () => (
-            <p className="py-8 text-center text-base text-neutral-gray4">
+            <p className="py-8 text-center text-base text-muted-foreground">
               {t('Failed to load reviews')}
             </p>
           ),
@@ -232,7 +232,7 @@ function PhaseReviews({
 
   if (visibleReviews.length === 0) {
     return (
-      <p className="py-8 text-center text-base text-neutral-gray4">
+      <p className="py-8 text-center text-base text-muted-foreground">
         {emptyMessage}
       </p>
     );

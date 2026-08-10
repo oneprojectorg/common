@@ -34,7 +34,7 @@ export const PlatformHighlights = () => {
                 {t('new organizations to explore')}
               </HighlightLabel>
             </Highlight>
-            <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+            <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
           </>
         )}
         <Highlight>
@@ -48,14 +48,14 @@ export const PlatformHighlights = () => {
             )}
           </HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
@@ -63,7 +63,7 @@ export const PlatformHighlights = () => {
           <HighlightLabel>{t('people on Common')}</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-muted p-6 text-sm sm:flex-row sm:items-center">
         <Suspense>
           <div className="flex max-w-full items-center gap-2">
             <OrganizationFacePile>

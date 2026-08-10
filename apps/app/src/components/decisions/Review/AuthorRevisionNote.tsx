@@ -33,7 +33,7 @@ export function AuthorRevisionNote({
   return (
     <>
       <div className="flex flex-col gap-3 rounded-lg bg-muted p-4">
-        <span className="font-serif text-title-sm14 text-neutral-black">
+        <span className="font-serif text-title-sm14 text-foreground">
           {t("Author's note")}
         </span>
         <div className="flex flex-col gap-2">

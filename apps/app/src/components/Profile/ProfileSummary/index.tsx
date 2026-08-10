@@ -46,7 +46,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       </Header1>
 
       {whereWeWork.length ? (
-        <div dir="auto" className="text-base text-neutral-gray4">
+        <div dir="auto" className="text-base text-muted-foreground">
           {whereWeWork}
         </div>
       ) : null}
@@ -57,7 +57,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
 
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
-          <div className="flex gap-1 text-base text-neutral-gray4">
+          <div className="flex gap-1 text-base text-muted-foreground">
             <Suspense fallback={<Skeleton className="h-5 w-32" />}>
               <RelationshipCount profile={profile} />
             </Suspense>

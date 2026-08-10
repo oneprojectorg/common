@@ -136,7 +136,7 @@ export const OrganizationSearchScreen = ({
           <div ref={containerRef} className="relative">
             <InputGroup>
               <InputGroupAddon align="inline-start">
-                <LuSearch className="size-4 text-neutral-gray4" />
+                <LuSearch className="size-4 text-muted-foreground" />
               </InputGroupAddon>
               <InputGroupInput
                 value={searchQuery}
@@ -147,7 +147,7 @@ export const OrganizationSearchScreen = ({
             </InputGroup>
 
             {isDropdownOpen && (
-              <div className="absolute start-0 end-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg">
+              <div className="absolute start-0 end-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-white shadow-lg">
                 <SearchDropdown
                   searchResults={searchResults}
                   isFetching={isFetching}
@@ -229,7 +229,7 @@ function SearchDropdown({
               key={org.id}
               type="button"
               disabled={isMember}
-              className="flex w-full items-center px-4 py-3 text-start hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+              className="flex w-full items-center px-4 py-3 text-start hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
               onClick={() => onSelect(result)}
             >
               <ProfileItem
@@ -244,14 +244,16 @@ function SearchDropdown({
                 title={org.profile?.name ?? ''}
               >
                 {location && (
-                  <div className="text-xs text-neutral-gray4">{location}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {location}
+                  </div>
                 )}
               </ProfileItem>
             </button>
           );
         })
       ) : (
-        <div className="px-4 py-3 text-sm text-neutral-gray4">
+        <div className="px-4 py-3 text-sm text-muted-foreground">
           {t('No results')}
         </div>
       )}
@@ -259,7 +261,7 @@ function SearchDropdown({
       {onAddOrganization && searchQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-start text-primary-teal hover:bg-neutral-offWhite"
+          className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-start text-primary-teal hover:bg-muted"
           onClick={() => onAddOrganization(searchQuery)}
         >
           <LuPlus className="size-4" />
@@ -283,7 +285,7 @@ function SelectedOrgChip({
   const location = getOrgLocation(org);
 
   return (
-    <div className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
+    <div className="flex items-center gap-6 rounded-lg border border-border bg-white px-3 py-2">
       <div className="flex items-center gap-2">
         <OrganizationAvatar
           profile={org.profile}
@@ -295,13 +297,13 @@ function SelectedOrgChip({
             {org.profile?.name}
           </span>
           {location && (
-            <span className="text-xs text-neutral-gray4">{location}</span>
+            <span className="text-xs text-muted-foreground">{location}</span>
           )}
         </div>
       </div>
       <button
         type="button"
-        className="rounded-full p-1 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
+        className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-neutral-charcoal"
         onClick={onRemove}
         aria-label={t('Remove')}
       >
@@ -315,9 +317,9 @@ function OrDivider() {
   const t = useTranslations();
   return (
     <div className="flex items-center gap-4">
-      <div className="h-px flex-1 bg-neutral-gray1" />
+      <div className="h-px flex-1 bg-secondary" />
       <span className="text-sm text-muted-foreground">{t('or')}</span>
-      <div className="h-px flex-1 bg-neutral-gray1" />
+      <div className="h-px flex-1 bg-secondary" />
     </div>
   );
 }

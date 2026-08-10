@@ -175,7 +175,7 @@ export function ProcessSettingsForm({
                   savedAt={autosaveStatus.savedAt}
                 />
               </div>
-              <p className="mt-2 text-neutral-gray4">
+              <p className="mt-2 text-muted-foreground">
                 {t('Define the key details for your decision process.')}
               </p>
             </div>

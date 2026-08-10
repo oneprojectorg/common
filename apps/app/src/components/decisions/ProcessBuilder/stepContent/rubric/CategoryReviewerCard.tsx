@@ -133,14 +133,14 @@ export function CategoryReviewerCard({
       data-testid={`category-reviewer-card-${category.name}`}
     >
       <div className="flex items-end justify-between gap-2">
-        <span className="font-serif text-title-sm14 text-neutral-black">
+        <span className="font-serif text-title-sm14 text-foreground">
           {category.name}
         </span>
         <span
           className={
             isEmpty
               ? 'text-sm text-primary-orange2'
-              : 'text-sm text-neutral-gray4'
+              : 'text-sm text-muted-foreground'
           }
         >
           {t(
@@ -187,13 +187,13 @@ export function CategoryReviewerCard({
             return (
               <div
                 key={reviewer.scopeId}
-                className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+                className="flex items-center gap-6 rounded-lg border border-border bg-white px-3 py-2"
               >
                 <div className="flex items-center gap-2">
                   <Avatar className="size-6 shrink-0">
                     <AvatarFallback name={reviewer.profile.name} />
                   </Avatar>
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base text-foreground">
                     {reviewer.profile.name}
                   </span>
                 </div>

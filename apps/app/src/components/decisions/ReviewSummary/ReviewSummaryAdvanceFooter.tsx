@@ -42,7 +42,7 @@ export function ReviewSummaryAdvanceFooter({
   };
 
   return (
-    <FooterBar position="fixed" className="bg-neutral-offWhite/95">
+    <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
         <span className="flex items-center gap-2 text-base text-foreground">
           <LuCircleCheck className="size-4 text-muted-foreground" aria-hidden />

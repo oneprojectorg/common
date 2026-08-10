@@ -101,11 +101,11 @@ export function ReviewSelectionList({
     <div className="flex flex-col gap-6 pb-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-foreground">
             {t('All proposals')}
           </span>
           <Bullet />
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-foreground">
             {total}
           </span>
         </div>
@@ -156,7 +156,7 @@ export function ReviewSelectionList({
 export function ReviewSelectionListSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="h-8 w-32 animate-pulse rounded bg-neutral-gray1" />
+      <div className="h-8 w-32 animate-pulse rounded bg-secondary" />
       <ReviewSelectionTableSkeleton />
     </div>
   );

@@ -365,7 +365,7 @@ export function RubricEditorContent({
             />
           </ToggleRow>
 
-          <hr className="border-neutral-gray1" />
+          <hr className="border-border" />
           {criteria.length > 0 && (
             <Sortable
               items={criteria}

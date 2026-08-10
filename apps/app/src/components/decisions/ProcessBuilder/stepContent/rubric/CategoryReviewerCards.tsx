@@ -101,7 +101,7 @@ function CategoryReviewerCardsContent({
           </AlertTitle>
         </Alert>
       ) : (
-        <p className="text-base text-neutral-black">
+        <p className="text-base text-foreground">
           {t.rich(
             'Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.',
             {
@@ -135,14 +135,14 @@ function CategoryReviewerCardsContent({
 function CategoryReviewerCardsSkeleton() {
   return (
     <div className="flex animate-pulse flex-col gap-6">
-      <div className="h-4 w-80 rounded bg-neutral-gray1" />
+      <div className="h-4 w-80 rounded bg-secondary" />
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="h-4 w-40 rounded bg-neutral-gray1" />
-            <div className="h-4 w-20 rounded bg-neutral-gray1" />
+            <div className="h-4 w-40 rounded bg-secondary" />
+            <div className="h-4 w-20 rounded bg-secondary" />
           </div>
-          <div className="h-10 w-full rounded-lg bg-neutral-gray1" />
+          <div className="h-10 w-full rounded-lg bg-secondary" />
         </div>
       ))}
     </div>

@@ -25,7 +25,7 @@ export const TranslationNotice = ({
 
   return (
     <div className="flex items-center gap-1">
-      <p className={cn('text-sm text-neutral-gray4', className)}>
+      <p className={cn('text-sm text-muted-foreground', className)}>
         {t('Translated from {language}', { language: sourceLanguageName })}
       </p>
       <Bullet />

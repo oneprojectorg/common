@@ -100,7 +100,7 @@ export const AddResourceLinkForm = ({
           </FieldLabel>
           <InputGroup>
             <InputGroupAddon align="inline-start">
-              <LuLink className="size-4 text-neutral-gray4" />
+              <LuLink className="size-4 text-muted-foreground" />
             </InputGroupAddon>
             <InputGroupInput
               id="resource-url"

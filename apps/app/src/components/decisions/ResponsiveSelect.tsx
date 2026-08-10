@@ -94,7 +94,7 @@ export function ResponsiveSelect<T extends string>({
                   disabled={item.isDisabled}
                   className={cn(
                     'bg-transparent px-6 py-4 text-start outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal disabled:pointer-events-none disabled:opacity-50',
-                    index < items.length - 1 && 'border-b border-neutral-gray1',
+                    index < items.length - 1 && 'border-b border-border',
                     item.id === selectedKey && 'bg-primary-tealWhite',
                   )}
                   onClick={() => {

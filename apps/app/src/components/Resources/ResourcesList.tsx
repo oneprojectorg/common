@@ -120,7 +120,7 @@ export const ResourcesList = ({
         renderItem={renderItem}
       >
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-gray2 px-6 py-10 text-center text-neutral-gray4">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input px-6 py-10 text-center text-muted-foreground">
             <LuUpload className="size-6" />
             <p className="text-sm">{t('Drag a file or link here to add it')}</p>
           </div>

@@ -132,12 +132,10 @@ export const FundingInformationForm = ({
                           label={t(
                             'Where can people contribute to your organization?',
                           )}
-                          icon={
-                            <LuLink className="size-4 text-neutral-black" />
-                          }
+                          icon={<LuLink className="size-4 text-foreground" />}
                           placeholder={t('Add your contribution page here')}
                         />
-                        <span className="text-sm text-neutral-gray4">
+                        <span className="text-sm text-muted-foreground">
                           {t(
                             'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
                           )}
@@ -193,7 +191,7 @@ export const FundingInformationForm = ({
                                     : t('Where can organizations learn more?')
                                 }
                                 icon={
-                                  <LuLink className="size-4 text-neutral-black" />
+                                  <LuLink className="size-4 text-foreground" />
                                 }
                                 placeholder={
                                   acceptingApplicationsField.state.value
@@ -205,7 +203,7 @@ export const FundingInformationForm = ({
                                       )
                                 }
                               />
-                              <span className="text-sm text-neutral-gray4">
+                              <span className="text-sm text-muted-foreground">
                                 {acceptingApplicationsField.state.value
                                   ? null
                                   : t(

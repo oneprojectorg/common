@@ -38,7 +38,7 @@ export const OverviewPinnedResourcesSuspense = ({
           actual resources — an empty list returns null above, no orphan rule. */}
       <Separator />
       <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-neutral-gray4">
+        <Header3 className="font-sans text-sm text-muted-foreground">
           {t('Pinned Resources')}
         </Header3>
         {items.map((resource) => (
@@ -70,7 +70,7 @@ export const PinnedResourcesError = () => {
     <>
       <Separator />
       <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-neutral-gray4">
+        <Header3 className="font-sans text-sm text-muted-foreground">
           {t('Pinned Resources')}
         </Header3>
         <p className="text-neutral-charcoal">

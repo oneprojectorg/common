@@ -172,7 +172,7 @@ function RecommendationGroup({
   return (
     <div className="flex flex-col gap-4">
       <StatusDot intent={recommendationIntent(value)} className="gap-2">
-        <span className="font-serif !text-title-sm14 text-neutral-black">
+        <span className="font-serif !text-title-sm14 text-foreground">
           {label} ({count})
         </span>
       </StatusDot>
@@ -212,18 +212,18 @@ function ReviewerRow({
           className="size-6"
         />
         <div className="flex flex-col">
-          <span className="text-base text-neutral-black">
+          <span className="text-base text-foreground">
             {item.reviewer.name ?? item.reviewer.slug}
           </span>
           {showScore && (
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm text-foreground">
               {item.score}
-              <span className="text-neutral-gray4">/{totalPoints}pts</span>
+              <span className="text-muted-foreground">/{totalPoints}pts</span>
             </span>
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-neutral-gray4 rtl:-scale-x-100" />
+      <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
     </Button>
   );
 }

@@ -218,7 +218,7 @@ function DecisionOverviewContent({
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
         <div className="flex flex-col gap-6 md:col-span-4">
           <div className="flex flex-col gap-4">
-            <Header3 className="font-sans text-sm text-neutral-gray4">
+            <Header3 className="font-sans text-sm text-muted-foreground">
               {t('Process Overview')}
             </Header3>
             <DecisionPhaseTimeline
@@ -323,7 +323,7 @@ const OverviewHero = ({
   return (
     // Admin-uploaded background sits behind the content as an <Image fill>; the
     // offWhite gradient is the empty-state fallback when no image is set.
-    <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-neutral-offWhite md:grid-cols-12">
+    <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-muted md:grid-cols-12">
       {heroImageUrl ? (
         <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />
       ) : null}
@@ -397,7 +397,9 @@ const OverviewHero = ({
               {stewardName && isPublic ? (
                 <span
                   aria-hidden="true"
-                  className={hasImage ? 'text-white/80' : 'text-neutral-gray4'}
+                  className={
+                    hasImage ? 'text-white/80' : 'text-muted-foreground'
+                  }
                 >
                   •
                 </span>

@@ -145,7 +145,7 @@ export const AddResourceDocumentForm = ({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:px-6">
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-neutral-black">{t('Upload file')}</span>
+          <span className="text-sm text-foreground">{t('Upload file')}</span>
           <input
             ref={inputRef}
             type="file"
@@ -155,7 +155,7 @@ export const AddResourceDocumentForm = ({
           />
           {file ? (
             isImage ? (
-              <div className="relative h-44 w-full overflow-hidden rounded-lg border border-neutral-gray1 bg-neutral-offWhite">
+              <div className="relative h-44 w-full overflow-hidden rounded-lg border border-border bg-muted">
                 {previewUrl ? (
                   <img
                     src={previewUrl}
@@ -180,9 +180,9 @@ export const AddResourceDocumentForm = ({
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-4 rounded-lg border border-neutral-gray1 bg-white p-4">
+              <div className="flex items-center gap-4 rounded-lg border border-border bg-white p-4">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-tealWhite">
-                  <LuFileText className="size-5 text-neutral-gray4" />
+                  <LuFileText className="size-5 text-muted-foreground" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
                   {uploading ? (
@@ -195,7 +195,7 @@ export const AddResourceDocumentForm = ({
                       <span className="truncate text-base font-medium text-neutral-charcoal">
                         {file.name}
                       </span>
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {fileMetaLabel(file)}
                       </span>
                     </>
@@ -231,17 +231,17 @@ export const AddResourceDocumentForm = ({
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-neutral-offWhite px-12 py-6 text-center transition-colors',
+                'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-muted px-12 py-6 text-center transition-colors',
                 isDragging
                   ? 'bg-primary-teal50 border-primary-teal'
-                  : 'border-neutral-gray2 hover:border-neutral-gray3',
+                  : 'border-input hover:border-neutral-gray3',
               )}
             >
-              <div className="flex size-20 items-center justify-center rounded-full bg-neutral-gray1 text-neutral-charcoal">
+              <div className="flex size-20 items-center justify-center rounded-full bg-secondary text-neutral-charcoal">
                 <LuFilePlus2 className="size-10" />
               </div>
               <div className="flex flex-col gap-2 text-base">
-                <p className="text-neutral-black">
+                <p className="text-foreground">
                   {t.rich('Drag a file here or <browse>browse</browse>', {
                     browse: (chunks: ReactNode) => (
                       <span className="text-primary-teal underline">
@@ -250,7 +250,7 @@ export const AddResourceDocumentForm = ({
                     ),
                   })}
                 </p>
-                <p className="text-neutral-gray4">
+                <p className="text-muted-foreground">
                   {t('Accepts PDF, DOCX, XLSX, and images up to {size} MB', {
                     size: MAX_SIZE_MB,
                   })}

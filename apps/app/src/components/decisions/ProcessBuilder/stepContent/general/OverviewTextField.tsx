@@ -51,11 +51,12 @@ export function OverviewTextField({
       className={cn(
         // field-sizing-content grows the textarea with its content so long
         // headlines/descriptions wrap instead of getting cut off.
-        // neutral-black (not charcoal) so the description matches the headline:
-        // twMerge misreads the headline's custom `text-title-lg` as a color and
-        // strips this class, letting the headline inherit neutral-black, while
-        // the description keeps it — charcoal here made the subhead too light.
-        'field-sizing-content resize-none overflow-hidden bg-transparent text-neutral-black placeholder:text-neutral-gray3 focus:outline-none',
+        // text-foreground (not charcoal) so the description matches the
+        // headline: twMerge misreads the headline's custom `text-title-lg` as a
+        // color and strips this class, letting the headline inherit the
+        // foreground, while the description keeps it — charcoal here made the
+        // subhead too light.
+        'field-sizing-content resize-none overflow-hidden bg-transparent text-foreground placeholder:text-neutral-gray3 focus:outline-none',
         showCount ? 'min-w-0 flex-1' : 'w-full',
         variant === 'headline' && 'font-serif text-title-lg',
         variant === 'description' && 'text-base',

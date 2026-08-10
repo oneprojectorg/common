@@ -162,7 +162,7 @@ const MemberMenu = ({
             aria-label={t('Member options')}
             variant="ghost"
             size="icon-xs"
-            className="aria-expanded:bg-neutral-gray1"
+            className="aria-expanded:bg-secondary"
           >
             <LuEllipsis className="size-4" />
           </Button>
@@ -244,7 +244,7 @@ const MembersListContent = ({
                       reach it (walled garden), otherwise plain text. */}
                   {profile && canLinkToProfile ? (
                     <Link
-                      className="truncate font-semibold text-neutral-black"
+                      className="truncate font-semibold text-foreground"
                       href={
                         profile.type === 'org'
                           ? `/org/${profile.slug}`
@@ -254,7 +254,7 @@ const MembersListContent = ({
                       {displayName}
                     </Link>
                   ) : (
-                    <div className="truncate font-semibold text-neutral-black">
+                    <div className="truncate font-semibold text-foreground">
                       {displayName}
                     </div>
                   )}
@@ -337,10 +337,10 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
   if (!members || members.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
-          <LuUsers className="h-6 w-6 text-neutral-gray4" />
+        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">
+          <LuUsers className="h-6 w-6 text-muted-foreground" />
         </div>
-        <div className="mb-2 font-serif text-title-base text-neutral-black">
+        <div className="mb-2 font-serif text-title-base text-foreground">
           {t('No members found')}
         </div>
         <p className="max-w-md text-sm text-neutral-charcoal">

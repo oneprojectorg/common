@@ -13,13 +13,13 @@ export function AverageScoreBar({
 }: AverageScoreBarProps) {
   const t = useTranslations();
   return (
-    <div className="flex items-center justify-between rounded-lg bg-neutral-offWhite p-4">
-      <span className="font-serif text-title-sm text-neutral-black">
+    <div className="flex items-center justify-between rounded-lg bg-muted p-4">
+      <span className="font-serif text-title-sm text-foreground">
         {t('Average Score')}
       </span>
-      <span className="font-serif text-title-sm text-neutral-black">
+      <span className="font-serif text-title-sm text-foreground">
         {formatScore(averageScore)}
-        <span className="text-neutral-gray4">/{totalPoints}pts</span>
+        <span className="text-muted-foreground">/{totalPoints}pts</span>
       </span>
     </div>
   );
