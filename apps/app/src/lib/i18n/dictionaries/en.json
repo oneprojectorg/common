@@ -1,4 +1,8 @@
 {
+  "Invite more people": "Invite more people",
+  "Remove {email}": "Remove {email}",
+  "Sent": "Sent",
+  "Switching to {name}…": "Switching to {name}…",
   "Technology partners": "Technology partners",
   "Check your connection and try again.": "Check your connection and try again.",
   "Couldn't add that image": "Couldn't add that image",
@@ -51,6 +55,8 @@
   "Agree and continue": "Agree and continue",
   "Media": "Media",
   "We've found your organization": "We've found your organization",
+  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.": "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.",
+  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.": "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.",
   "join_subheader": "Based on your email domain, you have access to join this organization.",
   "Confirm Administrator Access": "Confirm Administrator Access",
   "Get Started": "Get Started",
@@ -1577,5 +1583,9 @@
   "Pagination Navigation": "Pagination Navigation",
   "{start} - {end} of {total} {label}": "{start} - {end} of {total} {label}",
   "No organizations found": "No organizations found",
-  "No roles found": "No roles found"
+  "No roles found": "No roles found",
+  "No invitations were sent": "No invitations were sent",
+  "Some invitations could not be sent": "Some invitations could not be sent",
+  "Select an organization": "Select an organization",
+  "You can only invite people to organizations you administer.": "You can only invite people to organizations you administer."
 }

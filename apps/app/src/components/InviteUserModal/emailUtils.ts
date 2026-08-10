@@ -23,3 +23,6 @@ export const parseEmails = (
 export const shouldParseEmails = (key: string): boolean => {
   return key === ',' || key === 'Enter';
 };
+
+export const isValidEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());

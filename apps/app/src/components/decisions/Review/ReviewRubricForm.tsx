@@ -19,6 +19,7 @@ import {
   FieldTitle,
 } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import {
   Select,
@@ -35,7 +36,6 @@ import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { OptionBox } from '../forms/OptionBox';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';

@@ -28,6 +28,9 @@ function TagGroup({
   errorMessage,
   className,
   children,
+  // The name belongs on the list, not on the roleless wrapper the rest of the
+  // props land on — left there it is dropped and the list stays unnamed.
+  'aria-label': ariaLabel,
   ...props
 }: TagGroupProps) {
   // A <label> can't label a <ul>, so the group name rides aria-labelledby.
@@ -43,6 +46,7 @@ function TagGroup({
       {label ? <FieldLabel id={labelId}>{label}</FieldLabel> : null}
       <ul
         data-slot="tag-list"
+        aria-label={ariaLabel}
         aria-labelledby={label ? labelId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         className="flex flex-wrap gap-2"
