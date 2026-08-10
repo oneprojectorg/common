@@ -414,7 +414,6 @@ function CategoryField({
           maxLength={maxLength}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="[unicode-bidi:plaintext]"
         />
       ) : (
         <Input
@@ -423,7 +422,6 @@ function CategoryField({
           maxLength={maxLength}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="[unicode-bidi:plaintext]"
         />
       )}
       {(description || maxLength != null) && (

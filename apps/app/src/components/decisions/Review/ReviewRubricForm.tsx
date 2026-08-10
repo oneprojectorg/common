@@ -345,7 +345,7 @@ function RubricRationaleField({
       <FieldLabel htmlFor={noteId}>{t('Note')}</FieldLabel>
       <Textarea
         id={noteId}
-        className="min-h-20 [unicode-bidi:plaintext]"
+        className="min-h-20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -377,7 +377,6 @@ function FeedbackToAuthorField({
       </FieldDescription>
       <Textarea
         id={fieldId}
-        className="[unicode-bidi:plaintext]"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={3}
@@ -547,7 +546,6 @@ function RubricFieldInput({
         <Textarea
           id={controlId}
           aria-describedby={describedBy}
-          className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('Start typing...')}
@@ -560,7 +558,6 @@ function RubricFieldInput({
         <Input
           id={controlId}
           aria-describedby={describedBy}
-          className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('Start typing...')}

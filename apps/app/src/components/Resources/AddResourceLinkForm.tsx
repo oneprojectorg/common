@@ -119,7 +119,6 @@ export const AddResourceLinkForm = ({
                 }
               }}
               aria-invalid={urlError ? true : undefined}
-              className="[unicode-bidi:plaintext]"
             />
           </InputGroup>
           {urlError ? <FieldError>{urlError}</FieldError> : null}
@@ -136,7 +135,6 @@ export const AddResourceLinkForm = ({
             required
             maxLength={RESOURCE_TITLE_MAX_LEN}
             placeholder={t('Add a title')}
-            className="[unicode-bidi:plaintext]"
           />
         </Field>
         <Field>
@@ -149,7 +147,6 @@ export const AddResourceLinkForm = ({
             onChange={(event) => setDescription(event.target.value)}
             maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
             placeholder={t('Add a description')}
-            className="[unicode-bidi:plaintext]"
           />
         </Field>
       </div>

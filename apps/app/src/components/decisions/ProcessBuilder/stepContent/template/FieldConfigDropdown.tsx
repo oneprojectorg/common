@@ -146,7 +146,7 @@ function FieldConfigDropdownOptions({
                 onChange={(e) => handleUpdateOption(option.id, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, option)}
                 placeholder={t('Option {number}', { number: index + 1 })}
-                className="w-full [unicode-bidi:plaintext]"
+                className="w-full"
               />
               <Tooltip disabled={options.length > 2}>
                 <TooltipTrigger

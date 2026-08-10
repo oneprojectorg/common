@@ -138,7 +138,6 @@ const DuplicateFormContent = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="[unicode-bidi:plaintext]"
               />
             </Field>
           </div>

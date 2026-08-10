@@ -405,7 +405,6 @@ function CustomFormField({
           aria-invalid={Boolean(error)}
           value={stringValue}
           onChange={(event) => onChange(event.target.value)}
-          className="[unicode-bidi:plaintext]"
         />
       ) : (
         <Input
@@ -414,7 +413,6 @@ function CustomFormField({
           aria-invalid={Boolean(error)}
           value={stringValue}
           onChange={(event) => onChange(event.target.value)}
-          className="[unicode-bidi:plaintext]"
         />
       )}
       {error ? <FieldError>{error}</FieldError> : null}

@@ -139,7 +139,6 @@ export const OrganizationSearchScreen = ({
                 <LuSearch className="size-4 text-neutral-gray4" />
               </InputGroupAddon>
               <InputGroupInput
-                className="[unicode-bidi:plaintext]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('Search or add your organization...')}

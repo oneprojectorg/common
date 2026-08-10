@@ -86,7 +86,6 @@ export function RequestRevisionModal({
             <Textarea
               id={FEEDBACK_FIELD_ID}
               aria-describedby={FEEDBACK_DESCRIPTION_ID}
-              className="[unicode-bidi:plaintext]"
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder={t('What changes should the author make?')}
