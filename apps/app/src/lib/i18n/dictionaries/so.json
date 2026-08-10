@@ -1184,7 +1184,7 @@
   "Filter by status": "Ku shaandhee xaaladda",
   "in {categories}": "gudaha {categories}",
   "Sort order": "Habka kala soocida",
-  "{count} Reviewed": "{count} La dib u eegay",
+  "{count} Reviews": "{count} dib-u-eegis",
   "{count} of {total} completed": "{count} ee {total} la dhammaystiray",
   "Revision Request": "Codsiga Dib-u-habeynta",
   "A reviewer has requested changes to {proposalName}": "Dib-u-eegahe wuxuu codsaday isbeddelo {proposalName}",

@@ -269,9 +269,14 @@ test.describe('Review Summary page', () => {
     // Step 1: Header reflects submitted/total + Average Score
     // ====================================================================
 
+    // The instance sits in the review phase, so no shortlisting yet.
     await expect(
-      page.getByRole('heading', { name: 'Review Summary' }),
+      page.getByRole('heading', { name: 'Review Progress' }),
     ).toBeVisible({ timeout: 36_000 });
+
+    await expect(
+      page.getByRole('button', { name: /^Advanc(e|ing) proposal$/ }),
+    ).toHaveCount(0);
 
     await expect(
       page

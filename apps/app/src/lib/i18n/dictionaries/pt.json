@@ -1252,7 +1252,7 @@
   "Filter by status": "Filtrar por status",
   "in {categories}": "em {categories}",
   "Sort order": "Ordenar",
-  "{count} Reviewed": "{count} Revisados",
+  "{count} Reviews": "{count} avaliações",
   "{count} of {total} completed": "{count} de {total} concluídos",
   "Revision Request": "Solicitação de revisão",
   "A reviewer has requested changes to {proposalName}": "Um revisor solicitou alterações em {proposalName}",

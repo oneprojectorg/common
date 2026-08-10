@@ -27,6 +27,7 @@ interface ReviewerListProps {
   rubricSummary: RubricSummary;
   onSelectAssignment: (assignmentId: string) => void;
   hideSummaryHeader?: boolean;
+  title?: string;
 }
 
 export function ReviewerList({
@@ -36,6 +37,7 @@ export function ReviewerList({
   rubricSummary,
   onSelectAssignment,
   hideSummaryHeader,
+  title,
 }: ReviewerListProps) {
   const t = useTranslations();
   const { reviewsSubmittedCount, assignmentsCount, averageScore } =
@@ -63,7 +65,9 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3 className="font-serif">{t('Review Summary')}</Header3>
+          <Header3 className="font-serif">
+            {title ?? t('Review Summary')}
+          </Header3>
           <p className="text-base text-neutral-charcoal">
             {t(
               '{submitted} out of {total} reviewers submitted a review for this proposal',
