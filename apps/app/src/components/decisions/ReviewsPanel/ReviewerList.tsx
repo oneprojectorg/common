@@ -103,9 +103,7 @@ export function ReviewerList({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Header3 className="font-serif !text-title-sm">
-            {t('Submitted Reviews')}
-          </Header3>
+          <Header3 className="text-label">{t('Submitted Reviews')}</Header3>
           <div className="flex flex-col gap-2">
             {reviews.map((item) => (
               <ReviewerRow

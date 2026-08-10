@@ -469,7 +469,7 @@ export const ProfileTabsMobile = ({
             <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div className="-mx-4">
-                <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
+                <Header2 className="px-4 py-2 text-label leading-normal">
                   {t('Posts')}
                 </Header2>
                 <ProfileFeedProvider profile={profile}>

@@ -170,9 +170,7 @@ export function ProposalCategoriesSectionContent({
     <div className="mx-auto w-full space-y-6 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Header2 className="font-serif text-title-sm">
-            {t('Proposal Categories')}
-          </Header2>
+          <Header2 className="text-label">{t('Proposal Categories')}</Header2>
           <SaveStatusIndicator
             status={autosaveStatus.status}
             savedAt={autosaveStatus.savedAt}

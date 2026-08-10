@@ -123,7 +123,7 @@ export function ReviewSettingsContent({
 
       {/* Scope */}
       <section className="space-y-4">
-        <Header3 className="font-serif text-title-sm">{t('Scope')}</Header3>
+        <Header3 className="text-label">{t('Scope')}</Header3>
         <FieldSet>
           <FieldLegend className="mb-3 text-base!">
             {t('What should each reviewer be responsible for?')}
@@ -196,7 +196,7 @@ export function ReviewSettingsContent({
 
       {/* Revisions */}
       <section className="space-y-4">
-        <Header3 className="font-serif text-title-sm">{t('Revisions')}</Header3>
+        <Header3 className="text-label">{t('Revisions')}</Header3>
         <div className="space-y-2">
           <ToggleRow
             label={t('Reviewers can request revisions')}
