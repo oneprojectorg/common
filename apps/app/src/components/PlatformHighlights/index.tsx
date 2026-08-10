@@ -101,7 +101,7 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center text-foreground xxs:col-span-3">
+    <div className="col-span-2 flex h-12 max-w-32 items-center xxs:col-span-3">
       {children}
     </div>
   );

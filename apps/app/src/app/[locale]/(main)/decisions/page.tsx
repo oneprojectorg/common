@@ -23,7 +23,7 @@ const DecisionsListingPage = () => {
         <Header1 className="text-headline">
           <TranslatedText text="Decision-making processes" />
         </Header1>
-        <p className="text-foreground">
+        <p>
           <TranslatedText text="Discover new ways to collectively decide together." />
         </p>
       </div>

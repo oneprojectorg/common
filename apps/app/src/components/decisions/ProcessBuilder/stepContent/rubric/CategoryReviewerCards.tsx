@@ -101,7 +101,7 @@ function CategoryReviewerCardsContent({
           </AlertTitle>
         </Alert>
       ) : (
-        <p className="text-base text-foreground">
+        <p className="text-base">
           {t.rich(
             'Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.',
             {

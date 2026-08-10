@@ -38,7 +38,7 @@ export const StandardSelectionFooter = ({
   return (
     <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
-        <span className="flex items-center gap-2 text-base text-foreground">
+        <span className="flex items-center gap-2 text-base">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
           {t('{count} proposals selected', { count: numSelected })}
         </span>
@@ -56,7 +56,7 @@ export const StandardSelectionFooter = ({
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
-            <p className="text-base text-foreground">
+            <p className="text-base">
               {t(
                 'These {numProposals} proposals will move on to the {phaseName} phase',
                 { numProposals: numSelected, phaseName },

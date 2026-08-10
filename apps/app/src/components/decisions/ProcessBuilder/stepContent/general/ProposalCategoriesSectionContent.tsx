@@ -232,7 +232,7 @@ export function ProposalCategoriesSectionContent({
                 className="group flex items-start gap-2 border-b py-3"
               >
                 <div className="min-w-0 flex-1">
-                  <span className="text-foreground">{category.label}</span>
+                  <span>{category.label}</span>
                   <p className="text-sm text-muted-foreground">
                     {category.description}
                   </p>

@@ -143,7 +143,7 @@ export const OrganizationCardList = ({
                 </Link>
               </div>
 
-              <div dir="auto" className="line-clamp-3 text-foreground">
+              <div dir="auto" className="line-clamp-3">
                 {relationshipOrg.profile.bio &&
                 relationshipOrg.profile.bio.length > 200
                   ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
@@ -190,7 +190,7 @@ export const OrganizationSummaryList = ({
                 className="size-8 sm:size-12"
               />
 
-              <div className="flex flex-col gap-3 text-foreground">
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/org/${org.profile.slug}`}
@@ -207,9 +207,7 @@ export const OrganizationSummaryList = ({
                     </span>
                   ) : null}
                 </div>
-                <span dir="auto" className="text-foreground">
-                  {trimmedBio}
-                </span>
+                <span dir="auto">{trimmedBio}</span>
               </div>
             </div>
           </div>

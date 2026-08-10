@@ -145,7 +145,7 @@ export const AddResourceDocumentForm = ({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:px-6">
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-foreground">{t('Upload file')}</span>
+          <span className="text-sm">{t('Upload file')}</span>
           <input
             ref={inputRef}
             type="file"
@@ -192,7 +192,7 @@ export const AddResourceDocumentForm = ({
                     </>
                   ) : (
                     <>
-                      <span className="truncate text-base font-medium text-foreground">
+                      <span className="truncate text-base font-medium">
                         {file.name}
                       </span>
                       <span className="text-sm text-muted-foreground">
@@ -237,11 +237,11 @@ export const AddResourceDocumentForm = ({
                   : 'border-input hover:border-neutral-gray3',
               )}
             >
-              <div className="flex size-20 items-center justify-center rounded-full bg-secondary text-foreground">
+              <div className="flex size-20 items-center justify-center rounded-full bg-secondary">
                 <LuFilePlus2 className="size-10" />
               </div>
               <div className="flex flex-col gap-2 text-base">
-                <p className="text-foreground">
+                <p>
                   {t.rich('Drag a file here or <browse>browse</browse>', {
                     browse: (chunks: ReactNode) => (
                       <span className="text-primary-teal underline">

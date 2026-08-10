@@ -156,7 +156,7 @@ const PostFeedSection = async ({
       <ErrorBoundary
         fallback={
           <div className="flex flex-col items-center justify-center py-8">
-            <span className="text-foreground">
+            <span>
               <TranslatedText text="Unable to load posts. Please try refreshing." />
             </span>
           </div>
@@ -217,7 +217,7 @@ const WelcomeSection = async () => {
   return (
     <div className="flex flex-col gap-2">
       <Welcome user={user} />
-      <span className="text-center text-foreground">
+      <span className="text-center">
         <TranslatedText text="Explore new connections and strengthen existing relationships." />
       </span>
     </div>

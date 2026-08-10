@@ -63,7 +63,7 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
           </DialogHeader>
 
           <div className="px-6 py-4">
-            <p className="text-base text-foreground">
+            <p className="text-base">
               {t(
                 "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.",
               )}

@@ -44,7 +44,7 @@ export function ReviewSummaryAdvanceFooter({
   return (
     <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
-        <span className="flex items-center gap-2 text-base text-foreground">
+        <span className="flex items-center gap-2 text-base">
           <LuCircleCheck className="size-4 text-muted-foreground" aria-hidden />
           {t('{count} proposals advancing', { count })}
         </span>

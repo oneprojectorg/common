@@ -548,9 +548,7 @@ function ProfileInviteModalContent({
         {/* People list for current role */}
         <div className="flex flex-col gap-2">
           {!hasNoItems && (
-            <span className="text-sm text-foreground">
-              {t('People with access')}
-            </span>
+            <span className="text-sm">{t('People with access')}</span>
           )}
 
           <div className="flex flex-col gap-2">
@@ -648,7 +646,7 @@ function ProfileInviteModalContent({
       </div>
 
       <DialogFooter className="flex-row items-center justify-between sm:justify-between">
-        <div className="text-base text-foreground">
+        <div className="text-base">
           {totalPeople > 0
             ? t('{count, plural, =1 {1 person} other {# people}}', {
                 count: totalPeople,

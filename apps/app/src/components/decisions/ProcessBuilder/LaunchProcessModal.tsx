@@ -87,7 +87,7 @@ export const LaunchProcessModal = ({
           {invitesLoading ? (
             <Skeleton className="h-6 w-full" />
           ) : pendingNotificationCount > 0 ? (
-            <p className="text-foreground">
+            <p>
               {t('Launching your process will notify')}{' '}
               <span className="font-bold">
                 {t(
@@ -97,7 +97,7 @@ export const LaunchProcessModal = ({
               </span>
             </p>
           ) : (
-            <p className="text-foreground">
+            <p>
               {t(
                 'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
                 { processName },
@@ -109,19 +109,19 @@ export const LaunchProcessModal = ({
           <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
             <div className="flex items-center justify-between border-b border-border pb-2">
               <span className="text-muted-foreground">{t('Phases')}</span>
-              <span className="text-foreground">{phasesCount}</span>
+              <span>{phasesCount}</span>
             </div>
             {organizeByCategories && (
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">{t('Categories')}</span>
-                <span className="text-foreground">
+                <span>
                   {categoriesCount === 0 ? t('None') : categoriesCount}
                 </span>
               </div>
             )}
           </div>
 
-          <p className="text-sm text-foreground">
+          <p className="text-sm">
             {t('You can edit settings and advance phases after launching.')}
           </p>
 

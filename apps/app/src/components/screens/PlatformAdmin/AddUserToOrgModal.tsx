@@ -150,7 +150,7 @@ const AddUserToOrgModalContent = ({
         {user.organizationUsers && user.organizationUsers.length > 0 ? (
           <>
             <div>
-              <div className="mb-2 text-sm font-medium text-foreground">
+              <div className="mb-2 text-sm font-medium">
                 {t('Current organizations')}
               </div>
               <div className="space-y-2">
@@ -356,9 +356,7 @@ const OrganizationAndRoleSelection = ({
                   return (
                     <ComboboxItem key={item.value} value={item}>
                       <div>
-                        <div className="leading-base text-foreground">
-                          {role.name}
-                        </div>
+                        <div className="leading-base">{role.name}</div>
                         {role.description ? (
                           <div className="text-xs text-muted-foreground">
                             {role.description}

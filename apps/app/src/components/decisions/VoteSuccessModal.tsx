@@ -72,7 +72,7 @@ const VoteSuccessModalSuspense = ({
               </div>
 
               {nextSteps.length > 0 && (
-                <div className="flex w-full flex-col gap-6 text-start text-base text-foreground">
+                <div className="flex w-full flex-col gap-6 text-start text-base">
                   <Header3 className="font-sans">
                     {t("Here's what will happen next:")}
                   </Header3>

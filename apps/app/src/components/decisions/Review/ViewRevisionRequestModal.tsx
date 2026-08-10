@@ -54,12 +54,10 @@ export function ViewRevisionRequestModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-2 px-6 py-4">
-          <span className="text-base text-foreground">
-            {t('Feedback to Author')}
-          </span>
+          <span className="text-base">{t('Feedback to Author')}</span>
 
           <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-            <p dir="auto" className="text-base text-foreground">
+            <p dir="auto" className="text-base">
               {revisionRequest.requestComment}
             </p>
             {sentDate && (

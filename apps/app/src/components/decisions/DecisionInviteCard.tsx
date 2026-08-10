@@ -83,7 +83,7 @@ export const DecisionInviteCard = ({
             title={steward?.name ?? ''}
           />
         </div>
-        <div className="flex items-end gap-4 text-foreground sm:items-center sm:gap-12">
+        <div className="flex items-end gap-4 sm:items-center sm:gap-12">
           <DecisionStat
             number={invite.participantCount}
             label={t('Participants')}

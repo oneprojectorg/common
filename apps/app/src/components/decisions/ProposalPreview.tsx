@@ -227,7 +227,7 @@ export function ProposalPreview({
                 />
                 <div className="flex flex-col">
                   {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
-                    <span className="text-base text-foreground">
+                    <span className="text-base">
                       {proposal.submittedBy.name || proposal.submittedBy.slug}
                     </span>
                   ) : (

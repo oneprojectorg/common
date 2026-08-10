@@ -719,7 +719,7 @@ const PostUpdateWithUser = ({
             >
               <LuImage /> {t('Media')}
             </InputGroupButton>
-            <div className="flex items-center gap-2 text-foreground">
+            <div className="flex items-center gap-2">
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <InputGroupButton

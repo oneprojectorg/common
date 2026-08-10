@@ -121,7 +121,7 @@ export const LinkPreview = memo(
               e.stopPropagation();
               onRemove();
             }}
-            className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-border bg-white text-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-secondary focus-visible:opacity-100"
+            className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-border bg-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-secondary focus-visible:opacity-100"
             aria-label={t('Remove preview')}
           >
             <LuX className="size-4" />
@@ -148,7 +148,7 @@ export const LinkPreview = memo(
             </div>
           ) : null}
           <div className="px-4 py-4">
-            <span className="text-sm text-foreground">
+            <span className="text-sm">
               {title ?? domain}
               {title && (
                 <>

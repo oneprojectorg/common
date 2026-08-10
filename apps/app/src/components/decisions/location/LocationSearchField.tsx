@@ -147,7 +147,7 @@ export function LocationSearchField({
                   "Starbucks" + "123 Main St", not as the bare street address. */}
               <div className="flex min-w-0 flex-col">
                 {item.name && (
-                  <span className="truncate text-foreground" dir="auto">
+                  <span className="truncate" dir="auto">
                     {item.name}
                   </span>
                 )}

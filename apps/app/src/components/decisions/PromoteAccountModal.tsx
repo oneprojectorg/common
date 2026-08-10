@@ -84,9 +84,7 @@ const PromoteAccountModalContent = ({
         <CheckIcon />
         <div className="flex flex-col gap-2">
           <Header1>{t('Your idea was submitted.')}</Header1>
-          <p className="text-base text-foreground">
-            {t('Want to follow what happens next?')}
-          </p>
+          <p className="text-base">{t('Want to follow what happens next?')}</p>
         </div>
       </div>
 
@@ -94,11 +92,11 @@ const PromoteAccountModalContent = ({
         <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-white p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundMinus className="size-4 text-foreground" aria-hidden />
-            <span className="font-serif text-title-sm text-foreground">
+            <span className="font-serif text-title-sm">
               {t('Continue as a guest')}
             </span>
           </div>
-          <p className="text-base text-foreground">
+          <p className="text-base">
             {t('Stay anonymous. React to comments with emoji.')}
           </p>
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
@@ -139,11 +137,11 @@ const PromoteAccountModalContent = ({
         <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-neutral-off-white p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundPlus className="size-4 text-foreground" aria-hidden />
-            <span className="font-serif text-title-sm text-foreground">
+            <span className="font-serif text-title-sm">
               {t('With an account')}
             </span>
           </div>
-          <p className="text-base text-foreground">
+          <p className="text-base">
             {t(
               'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
             )}

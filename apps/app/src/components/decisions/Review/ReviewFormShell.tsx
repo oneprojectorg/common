@@ -45,7 +45,7 @@ export function TotalScoreCard({
   return (
     // The one filled row in the panel: a 16/450 label against a 20px figure.
     <Card className="flex-row items-center justify-between bg-muted p-4">
-      <span className="text-base font-strong text-foreground">
+      <span className="text-base font-strong">
         <TranslatedText text="Total score:" />
       </span>
       <span className="font-serif text-title">{display}</span>

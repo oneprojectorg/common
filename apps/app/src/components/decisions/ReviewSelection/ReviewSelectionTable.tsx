@@ -119,7 +119,7 @@ export function ReviewSelectionTable({
                 </div>
               </TableCell>
               <TableCell>
-                <span className="text-base text-foreground">
+                <span className="text-base">
                   {budget
                     ? formatCurrency(budget.amount, undefined, budget.currency)
                     : '—'}
@@ -136,7 +136,7 @@ export function ReviewSelectionTable({
                 />
               </TableCell>
               <TableCell>
-                <span className="text-base text-foreground">
+                <span className="text-base">
                   <ScoreText value={item.aggregates.averageScore} />
                 </span>
               </TableCell>
@@ -221,7 +221,7 @@ function ProposalCard({
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {budget && (
-          <span className="text-base text-foreground">
+          <span className="text-base">
             {formatCurrency(budget.amount, undefined, budget.currency)}
           </span>
         )}
@@ -233,7 +233,7 @@ function ProposalCard({
       />
 
       <div className="flex items-center justify-between">
-        <span className="text-base text-foreground">
+        <span className="text-base">
           <ScoreText value={item.aggregates.averageScore} />
         </span>
         <AdvanceToggleButton
@@ -254,7 +254,7 @@ function RecommendationCounts({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-wrap items-center gap-4 text-base text-foreground">
+    <div className="flex flex-wrap items-center gap-4 text-base">
       {Object.values(RECOMMENDATION_OPTION).map((opt) => (
         <CountLabel
           key={opt.value}

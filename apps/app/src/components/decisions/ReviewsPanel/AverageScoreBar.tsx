@@ -14,10 +14,8 @@ export function AverageScoreBar({
   const t = useTranslations();
   return (
     <div className="flex items-center justify-between rounded-lg bg-muted p-4">
-      <span className="font-serif text-title-sm text-foreground">
-        {t('Average Score')}
-      </span>
-      <span className="font-serif text-title-sm text-foreground">
+      <span className="font-serif text-title-sm">{t('Average Score')}</span>
+      <span className="font-serif text-title-sm">
         {formatScore(averageScore)}
         <span className="text-muted-foreground">/{totalPoints}pts</span>
       </span>

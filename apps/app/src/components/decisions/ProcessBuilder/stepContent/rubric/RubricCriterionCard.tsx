@@ -398,7 +398,7 @@ function ScoredCriterionConfig({
       />
 
       <div className="space-y-2">
-        <h4 className="text-foreground">{t('Define what each score means')}</h4>
+        <h4>{t('Define what each score means')}</h4>
         <p className="text-sm">
           {t(
             'Help reviewers score consistently by describing what each point value represents',
@@ -513,7 +513,7 @@ function SingleSelectCriterionConfig({
     return (
       <div className="flex items-center gap-2">
         <LuGripVertical className="size-4 text-neutral-gray3" />
-        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 text-foreground shadow-lg">
+        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
           {item.value || t('Option')}
         </span>
       </div>

@@ -23,7 +23,7 @@ export function ProposalRevisionSubmittedPanel({
       <div className="flex flex-col gap-4 border-b border-border pb-4">
         <Header3>{t('Revision submitted')}</Header3>
 
-        <p className="text-base text-foreground">
+        <p className="text-base">
           {t(
             'Your revision has been submitted and reviewers have been notified.',
           )}

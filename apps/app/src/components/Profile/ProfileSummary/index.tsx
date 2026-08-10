@@ -51,7 +51,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
         </div>
       ) : null}
 
-      <div dir="auto" className="max-w-xl text-base text-foreground">
+      <div dir="auto" className="max-w-xl text-base">
         {profile.profile.bio}
       </div>
 

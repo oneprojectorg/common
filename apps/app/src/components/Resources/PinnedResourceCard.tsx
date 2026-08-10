@@ -62,7 +62,7 @@ export const PinnedResourceCard = ({
           <Icon className="size-4 text-foreground" />
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p dir="auto" className="truncate text-base text-foreground">
+          <p dir="auto" className="truncate text-base">
             {title}
           </p>
           {resource.createdAt ? (

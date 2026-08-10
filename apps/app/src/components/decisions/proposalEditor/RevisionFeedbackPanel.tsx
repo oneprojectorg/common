@@ -21,7 +21,7 @@ export function RevisionFeedbackPanel({
       <div className="flex flex-col gap-4 border-b pb-4">
         <Header3>{t('Revision feedback')}</Header3>
 
-        <p className="text-foreground">
+        <p>
           {t(
             'A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.',
           )}
@@ -29,9 +29,7 @@ export function RevisionFeedbackPanel({
       </div>
 
       <div className="flex flex-col gap-4">
-        <span className="font-serif text-label text-foreground">
-          {t('Reviewer feedback')}
-        </span>
+        <span className="font-serif text-label">{t('Reviewer feedback')}</span>
 
         <RevisionFeedbackCard
           comment={revisionRequest.requestComment}
