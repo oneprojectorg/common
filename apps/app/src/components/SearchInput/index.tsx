@@ -268,7 +268,9 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           aria-label={t('Search')}
           className={cn(
             'flex-1 bg-transparent ps-1.5 text-base text-foreground outline-none placeholder:text-muted-foreground',
-            '[unicode-bidi:plaintext]',
+            // Not the sense `Input` (cmdk owns this one), so it carries the
+            // primitive's bidi rule itself.
+            '[unicode-bidi:plaintext] placeholder-shown:[unicode-bidi:normal]',
             localeDirection === 'rtl' && 'pl-4',
           )}
         />
