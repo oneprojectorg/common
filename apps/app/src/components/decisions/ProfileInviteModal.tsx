@@ -684,7 +684,13 @@ function PersonRow({
         avatar={
           <Avatar placeholder={name} className="size-6 shrink-0">
             {avatarUrl ? (
-              <Image src={avatarUrl} alt={name} fill className="object-cover" />
+              <Image
+                src={avatarUrl}
+                alt={name}
+                fill
+                sizes="24px"
+                className="object-cover"
+              />
             ) : null}
           </Avatar>
         }
