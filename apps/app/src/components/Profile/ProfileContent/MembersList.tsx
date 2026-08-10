@@ -174,7 +174,7 @@ const MemberMenu = ({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleRemoveFromOrganization}
-          className="px-3 py-1 text-functional-red"
+          className="px-3 py-1 text-destructive"
         >
           {t('Remove from organization')}
         </DropdownMenuItem>

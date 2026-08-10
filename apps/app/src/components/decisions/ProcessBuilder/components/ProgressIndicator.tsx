@@ -20,7 +20,7 @@ export function ProgressIndicator({
         aria-valuemax={100}
         aria-valuenow={clamped}
         aria-label={t('{count}% complete', { count: clamped })}
-        className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-neutral-gray2 md:hidden"
+        className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-secondary md:hidden"
       >
         <div
           className="h-full bg-linear-to-r from-functional-green to-primary-teal transition-all duration-300"
@@ -38,7 +38,7 @@ export function ProgressIndicator({
         aria-valuemax={100}
         aria-valuenow={clamped}
         aria-label={t('{count}% complete', { count: clamped })}
-        className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2"
+        className="h-1 flex-1 overflow-hidden rounded-full bg-secondary"
       >
         <div
           className="h-full rounded-full bg-linear-to-r from-functional-green to-primary-teal transition-all duration-300"

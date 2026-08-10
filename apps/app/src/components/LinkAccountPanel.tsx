@@ -165,7 +165,7 @@ export const LinkAccountPanel = () => {
   const subtitle = (() => {
     if (errorMessage) {
       return (
-        <span className={tokenError ? 'text-functional-red' : undefined}>
+        <span className={tokenError ? 'text-destructive' : undefined}>
           {errorMessage}
         </span>
       );

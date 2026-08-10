@@ -118,5 +118,5 @@ function ReviewProgressStat({
 }
 
 function Divider() {
-  return <div className="h-8 w-px bg-neutral-gray2" />;
+  return <div className="h-8 w-px bg-border" />;
 }

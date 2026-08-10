@@ -653,8 +653,7 @@ function PhaseField({
             <span
               className={cn(
                 'text-sm text-muted-foreground',
-                (value.length === maxLength || isInvalid) &&
-                  'text-functional-red',
+                (value.length === maxLength || isInvalid) && 'text-destructive',
               )}
             >
               {value.length}/{maxLength}

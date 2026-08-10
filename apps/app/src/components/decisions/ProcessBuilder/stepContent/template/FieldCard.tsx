@@ -240,7 +240,7 @@ export function FieldCard({
         {errors.length > 0 && (
           <div className="space-y-1">
             {errors.map((error) => (
-              <p key={error} className="text-functional-red">
+              <p key={error} className="text-destructive">
                 {t(error as TranslationKey)}
               </p>
             ))}

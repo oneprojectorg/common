@@ -250,7 +250,7 @@ export function ProposalCategoriesSectionContent({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-5 p-0 text-foreground hover:text-red"
+                    className="size-5 p-0 text-foreground hover:text-destructive"
                     onClick={() => handleDelete(category.id)}
                     aria-label={`Delete ${category.label}`}
                   >
@@ -431,7 +431,7 @@ function CategoryField({
             <span
               className={cn(
                 'text-sm text-muted-foreground',
-                value.length === maxLength && 'text-functional-red',
+                value.length === maxLength && 'text-destructive',
               )}
             >
               {value.length}/{maxLength}

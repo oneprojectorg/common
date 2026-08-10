@@ -73,7 +73,7 @@ export const GeoNamesMultiSelect = ({
     <div className="flex w-full flex-col gap-2">
       <Label>
         {label}
-        {isRequired && <span className="text-functional-red"> *</span>}
+        {isRequired && <span className="text-destructive"> *</span>}
       </Label>
       <Combobox
         multiple

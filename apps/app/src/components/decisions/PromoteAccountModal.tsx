@@ -134,7 +134,7 @@ const PromoteAccountModalContent = ({
           </Button>
         </section>
 
-        <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-neutral-off-white p-4 text-start">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-muted p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundPlus className="size-4 text-foreground" aria-hidden />
             <span className="font-serif text-title-sm">

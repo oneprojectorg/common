@@ -23,7 +23,7 @@ export function LocationMapView({ value }: LocationMapViewProps) {
   const styleUrl = useMapStyleUrl();
 
   if (!value) {
-    return <p className="text-sm text-neutral-gray3 italic">—</p>;
+    return <p className="text-sm text-muted-foreground italic">—</p>;
   }
 
   return (

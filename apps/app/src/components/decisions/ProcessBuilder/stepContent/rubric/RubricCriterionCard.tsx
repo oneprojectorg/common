@@ -512,7 +512,7 @@ function SingleSelectCriterionConfig({
     }
     return (
       <div className="flex items-center gap-2">
-        <LuGripVertical className="size-4 text-neutral-gray3" />
+        <LuGripVertical className="size-4 text-muted-foreground" />
         <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
           {item.value || t('Option')}
         </span>
@@ -591,7 +591,7 @@ function SingleSelectCriterionConfig({
                 <DragHandle
                   {...dragHandleProps}
                   aria-label={t('Drag to reorder option')}
-                  className="text-neutral-gray3 hover:text-muted-foreground"
+                  className="text-muted-foreground hover:text-muted-foreground"
                 />
                 <Input
                   value={option.value}

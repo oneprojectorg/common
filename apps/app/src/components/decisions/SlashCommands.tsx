@@ -105,7 +105,9 @@ const SlashCommandsList = forwardRef<
             </div>
             <div>
               <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-gray2">{item.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {item.description}
+              </p>
             </div>
           </button>
         ))

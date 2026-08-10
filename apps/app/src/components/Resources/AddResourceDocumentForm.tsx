@@ -234,7 +234,7 @@ export const AddResourceDocumentForm = ({
                 'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-muted px-12 py-6 text-center transition-colors',
                 isDragging
                   ? 'bg-primary-teal50 border-primary-teal'
-                  : 'border-input hover:border-neutral-gray3',
+                  : 'border-input hover:border-input',
               )}
             >
               <div className="flex size-20 items-center justify-center rounded-full bg-secondary">

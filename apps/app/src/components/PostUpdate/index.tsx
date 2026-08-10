@@ -40,7 +40,7 @@ const TextCounter = ({ text, max }: { text: string; max: number }) => {
 
   return (
     <span
-      className={cn('text-foreground', countDown < 0 && 'text-functional-red')}
+      className={cn('text-foreground', countDown < 0 && 'text-destructive')}
     >
       {countDown}
     </span>

@@ -138,7 +138,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
       renderOverflow={(count) => (
         <Link href="/org" className={avatarLinkClassName}>
           <Avatar>
-            <AvatarFallback className="bg-foreground text-sm text-neutral-offWhite">
+            <AvatarFallback className="bg-foreground text-sm text-background">
               <span className="align-super">+</span>
               {count}
             </AvatarFallback>

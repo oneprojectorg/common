@@ -165,7 +165,7 @@ export function PhasesSectionContent({
 
       {phases.length === 0 ? (
         <div className="space-y-4">
-          <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
+          <div className="rounded-lg border border-dashed border-input p-8 text-center">
             <p className="text-muted-foreground">{t('No phases defined')}</p>
           </div>
           <Button

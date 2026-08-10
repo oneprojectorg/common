@@ -94,7 +94,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
     {
       id: 'decline',
       label: 'Decline',
-      icon: <LuX className="size-4 text-functional-red" />,
+      icon: <LuX className="size-4 text-destructive" />,
       onAction: handleDecline,
     },
   ];
@@ -107,7 +107,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
         render={
           <Button
             loading={isPending}
-            className="min-w-full bg-primary-teal text-neutral-offWhite sm:min-w-fit"
+            className="min-w-full bg-primary-teal text-background sm:min-w-fit"
           >
             <LuUserPlus className="size-4" />
             Respond
