@@ -5,7 +5,7 @@ import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent } from '@op/sense/Dialog';
 import { Field, FieldLabel } from '@op/sense/Field';
-import { Header1 } from '@op/sense/Header';
+import { Header2 } from '@op/sense/Header';
 import { CheckIcon } from '@op/sense/icons';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
@@ -40,7 +40,7 @@ export const PromoteAccountModal = () => {
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[29rem]">
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
         <PromoteAccountModalContent
           onContinueAsGuest={close}
           proposalId={proposalId}
@@ -83,7 +83,7 @@ const PromoteAccountModalContent = ({
       <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
         <div className="flex flex-col gap-2">
-          <Header1>{t('Your idea was submitted.')}</Header1>
+          <Header2>{t('Your idea was submitted.')}</Header2>
           <p className="text-base">{t('Want to follow what happens next?')}</p>
         </div>
       </div>
