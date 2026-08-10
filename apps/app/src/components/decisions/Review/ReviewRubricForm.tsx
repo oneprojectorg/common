@@ -270,7 +270,7 @@ function RubricCriterionSection({
           <FieldContent>
             <FieldTitle
               render={<h4 />}
-              className="flex w-full justify-between gap-2"
+              className="flex w-full items-start justify-between gap-2"
             >
               {label}
             </FieldTitle>
@@ -291,7 +291,7 @@ function RubricCriterionSection({
           ) : (
             <FieldTitle
               render={<h4 />}
-              className="flex w-full justify-between gap-2"
+              className="flex w-full items-start justify-between gap-2"
             >
               {label}
             </FieldTitle>

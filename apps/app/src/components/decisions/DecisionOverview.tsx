@@ -25,6 +25,8 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
 import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
@@ -424,13 +426,13 @@ const OverviewHero = ({
         </div>
         {showCtas ? (
           <div className="align-stretch flex w-full flex-col gap-4 md:flex-row md:justify-center">
-            <Button
-              render={<Link href={currentPhaseHref} />}
+            <ButtonLink
+              href={currentPhaseHref}
               variant="outline"
               className="w-auto"
             >
               {t('Browse proposals')}
-            </Button>
+            </ButtonLink>
             {canSubmitProposal ? (
               <Button
                 className="w-auto"
