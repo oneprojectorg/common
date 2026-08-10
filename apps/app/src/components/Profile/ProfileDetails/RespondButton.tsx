@@ -105,10 +105,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button
-            loading={isPending}
-            className="min-w-full bg-primary-teal text-background sm:min-w-fit"
-          >
+          <Button loading={isPending} className="min-w-full sm:min-w-fit">
             <LuUserPlus className="size-4" />
             Respond
           </Button>
