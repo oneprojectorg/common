@@ -54,7 +54,7 @@ export function AdminOverviewBar({
         onClick={() => setSheetOpen(true)}
         className="flex w-full items-center justify-center gap-2 bg-primary-tealWhite px-4 py-2 text-base md:hidden"
       >
-        <span className="flex items-center gap-1.5 text-neutral-charcoal">
+        <span className="flex items-center gap-1.5 text-foreground">
           <LuEye className="size-4" aria-hidden="true" />
           {t('Admin')}
         </span>

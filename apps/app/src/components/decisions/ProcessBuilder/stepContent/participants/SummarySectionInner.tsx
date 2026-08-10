@@ -154,9 +154,7 @@ export function SummarySectionInner({
             <span className="text-base text-muted-foreground">
               {t('Phases')}
             </span>
-            <span className="text-base text-neutral-charcoal">
-              {phasesCount}
-            </span>
+            <span className="text-base text-foreground">{phasesCount}</span>
           </div>
           <div className="mt-2 border-t border-border" />
         </div>
@@ -166,7 +164,7 @@ export function SummarySectionInner({
               <span className="text-base text-muted-foreground">
                 {t('Categories')}
               </span>
-              <span className="text-base text-neutral-charcoal">
+              <span className="text-base text-foreground">
                 {categories.length}
               </span>
             </div>
@@ -177,9 +175,7 @@ export function SummarySectionInner({
           <span className="text-base text-muted-foreground">
             {t('Participants Invited')}
           </span>
-          <span className="text-base text-neutral-charcoal">
-            {participantsCount}
-          </span>
+          <span className="text-base text-foreground">{participantsCount}</span>
         </div>
       </div>
     </div>

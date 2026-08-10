@@ -143,7 +143,7 @@ export const OrganizationCardList = ({
                 </Link>
               </div>
 
-              <div dir="auto" className="line-clamp-3 text-neutral-charcoal">
+              <div dir="auto" className="line-clamp-3 text-foreground">
                 {relationshipOrg.profile.bio &&
                 relationshipOrg.profile.bio.length > 200
                   ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
@@ -207,7 +207,7 @@ export const OrganizationSummaryList = ({
                     </span>
                   ) : null}
                 </div>
-                <span dir="auto" className="text-neutral-charcoal">
+                <span dir="auto" className="text-foreground">
                   {trimmedBio}
                 </span>
               </div>

@@ -95,7 +95,7 @@ const SlashCommandsList = forwardRef<
             className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-start hover:bg-secondary ${
               index === selectedIndex
                 ? 'bg-secondary text-foreground'
-                : 'text-neutral-charcoal'
+                : 'text-foreground'
             }`}
             key={index}
             onClick={() => selectItem(index)}

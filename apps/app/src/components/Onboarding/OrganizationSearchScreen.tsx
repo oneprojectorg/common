@@ -293,9 +293,7 @@ function SelectedOrgChip({
           className="size-6"
         />
         <div className="flex flex-col leading-normal">
-          <span className="text-sm text-neutral-charcoal">
-            {org.profile?.name}
-          </span>
+          <span className="text-sm text-foreground">{org.profile?.name}</span>
           {location && (
             <span className="text-xs text-muted-foreground">{location}</span>
           )}
@@ -303,7 +301,7 @@ function SelectedOrgChip({
       </div>
       <button
         type="button"
-        className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-neutral-charcoal"
+        className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
         onClick={onRemove}
         aria-label={t('Remove')}
       >

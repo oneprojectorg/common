@@ -64,7 +64,7 @@ export function ReviewerList({
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
           <Header3 className="font-serif">{t('Review Summary')}</Header3>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base text-foreground">
             {t(
               '{submitted} out of {total} reviewers submitted a review for this proposal',
               { submitted: reviewsSubmittedCount, total: assignmentsCount },

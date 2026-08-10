@@ -551,7 +551,7 @@ const ProposalsListContent = ({
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <div className="py-8 text-center text-sm text-neutral-charcoal">
+                  <div className="py-8 text-center text-sm text-foreground">
                     {t("Couldn't load the map. Refresh to try again.")}
                   </div>
                 ),

@@ -108,7 +108,7 @@ function ReviewProgressStat({
     <div
       className={cn(
         'flex flex-col items-center',
-        hasImage ? 'text-white' : 'text-neutral-charcoal',
+        hasImage ? 'text-white' : 'text-foreground',
       )}
     >
       <span className="font-serif text-title-lg">{value}</span>

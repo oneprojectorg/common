@@ -192,7 +192,7 @@ export const AddResourceDocumentForm = ({
                     </>
                   ) : (
                     <>
-                      <span className="truncate text-base font-medium text-neutral-charcoal">
+                      <span className="truncate text-base font-medium text-foreground">
                         {file.name}
                       </span>
                       <span className="text-sm text-muted-foreground">
@@ -237,7 +237,7 @@ export const AddResourceDocumentForm = ({
                   : 'border-input hover:border-neutral-gray3',
               )}
             >
-              <div className="flex size-20 items-center justify-center rounded-full bg-secondary text-neutral-charcoal">
+              <div className="flex size-20 items-center justify-center rounded-full bg-secondary text-foreground">
                 <LuFilePlus2 className="size-10" />
               </div>
               <div className="flex flex-col gap-2 text-base">

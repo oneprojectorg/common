@@ -243,7 +243,7 @@ export function RubricCriterionCard({
           <div className="flex items-center justify-between gap-4 border-t pt-4">
             <Field orientation="horizontal" className="w-auto">
               <FieldLabel
-                className="text-neutral-charcoal"
+                className="text-foreground"
                 htmlFor={requiredToggleId}
               >
                 {t('Required?')}
@@ -513,7 +513,7 @@ function SingleSelectCriterionConfig({
     return (
       <div className="flex items-center gap-2">
         <LuGripVertical className="size-4 text-neutral-gray3" />
-        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
+        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 text-foreground shadow-lg">
           {item.value || t('Option')}
         </span>
       </div>

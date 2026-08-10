@@ -93,7 +93,7 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
             : t('There are no current decision-making processes')}
         </Header2>
         {isProcessAdmin && (
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base text-foreground">
             {t(
               'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
             )}
@@ -154,7 +154,7 @@ export const ProfileDecisionsSuspense = ({
     <Suspense
       fallback={
         <div className="flex min-h-96 items-center justify-center">
-          <div className="animate-pulse text-base text-neutral-charcoal">
+          <div className="animate-pulse text-base text-foreground">
             {t('Loading...')}
           </div>
         </div>

@@ -65,7 +65,7 @@ export const FinalPhaseSelectionFooter = ({
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
-            <p className="text-base text-neutral-charcoal">
+            <p className="text-base text-foreground">
               {t(
                 'These {numProposals} proposals will be funded and results will be shared with all participants.',
                 { numProposals: numSelected },
@@ -101,12 +101,12 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
           <bdi>{title}</bdi>
         </span>
         {budget ? (
-          <span className="font-serif text-title-sm14 text-neutral-charcoal">
+          <span className="font-serif text-title-sm14 text-foreground">
             {budget}
           </span>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
         {submitterName ? <span>{submitterName}</span> : null}
         {submitterName && hasCategories ? <Bullet /> : null}
         {categories.map((category) => (

@@ -121,7 +121,7 @@ const RelationshipListContent = ({
                     </div>
                   ) : (
                     /* Show profile type if no relationships */
-                    <div className="text-sm text-neutral-charcoal capitalize">
+                    <div className="text-sm text-foreground capitalize">
                       {profile.type === 'org'
                         ? t('Organization')
                         : t('Individual')}
@@ -130,10 +130,7 @@ const RelationshipListContent = ({
                 </div>
 
                 {profile.bio && (
-                  <div
-                    dir="auto"
-                    className="line-clamp-3 text-neutral-charcoal"
-                  >
+                  <div dir="auto" className="line-clamp-3 text-foreground">
                     {profile.bio.length > 200
                       ? `${profile.bio.slice(0, 200)}...`
                       : profile.bio}

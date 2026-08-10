@@ -107,7 +107,7 @@ export const AuthGoogleButton = ({ onPress }: { onPress: () => void }) => {
   return (
     <Button
       variant="outline"
-      className="w-full text-neutral-charcoal"
+      className="w-full text-foreground"
       onClick={onPress}
     >
       <GoogleIcon className="size-4 stroke-none" />

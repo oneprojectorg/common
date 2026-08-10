@@ -56,7 +56,7 @@ export const StandardSelectionFooter = ({
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
-            <p className="text-base text-neutral-charcoal">
+            <p className="text-base text-foreground">
               {t(
                 'These {numProposals} proposals will move on to the {phaseName} phase',
                 { numProposals: numSelected, phaseName },

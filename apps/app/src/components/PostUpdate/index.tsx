@@ -40,10 +40,7 @@ const TextCounter = ({ text, max }: { text: string; max: number }) => {
 
   return (
     <span
-      className={cn(
-        'text-neutral-charcoal',
-        countDown < 0 && 'text-functional-red',
-      )}
+      className={cn('text-foreground', countDown < 0 && 'text-functional-red')}
     >
       {countDown}
     </span>
@@ -722,7 +719,7 @@ const PostUpdateWithUser = ({
             >
               <LuImage /> {t('Media')}
             </InputGroupButton>
-            <div className="flex items-center gap-2 text-neutral-charcoal">
+            <div className="flex items-center gap-2 text-foreground">
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <InputGroupButton

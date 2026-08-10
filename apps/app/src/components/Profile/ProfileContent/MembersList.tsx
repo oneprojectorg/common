@@ -271,14 +271,12 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">
-                      {t('Member')}
-                    </div>
+                    <div className="text-sm text-foreground">{t('Member')}</div>
                   )}
 
                   {/* Show email if different from display name */}
                   {(member.name || profile?.name) && (
-                    <div className="text-sm text-neutral-charcoal">
+                    <div className="text-sm text-foreground">
                       {member.profile?.email || member.email}
                     </div>
                   )}
@@ -286,7 +284,7 @@ const MembersListContent = ({
 
                 {/* Show about/bio information if available */}
                 {bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="line-clamp-3 text-foreground">
                     {bio.length > 200 ? `${bio.slice(0, 200)}...` : bio}
                   </div>
                 )}
@@ -343,7 +341,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         <div className="mb-2 font-serif text-title-base text-foreground">
           {t('No members found')}
         </div>
-        <p className="max-w-md text-sm text-neutral-charcoal">
+        <p className="max-w-md text-sm text-foreground">
           {t("This organization doesn't have any members yet.")}
         </p>
       </div>

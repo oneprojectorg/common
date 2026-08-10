@@ -77,9 +77,7 @@ export function OverviewTextField({
         className={cn(
           'shrink-0 text-sm transition-opacity',
           value.length > 0 ? 'opacity-100' : 'opacity-0',
-          value.length >= maxLength
-            ? 'text-functional-red'
-            : 'text-neutral-charcoal',
+          value.length >= maxLength ? 'text-functional-red' : 'text-foreground',
         )}
       >
         {value.length}/{maxLength}

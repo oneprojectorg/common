@@ -258,7 +258,7 @@ export const ProcessSurveyModal = ({
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
-            <p className="text-base text-neutral-charcoal">
+            <p className="text-base text-foreground">
               {t(
                 'Take our 1-minute survey. Your responses are always anonymous.',
               )}

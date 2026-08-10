@@ -101,7 +101,7 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center text-neutral-charcoal xxs:col-span-3">
+    <div className="col-span-2 flex h-12 max-w-32 items-center text-foreground xxs:col-span-3">
       {children}
     </div>
   );
@@ -138,7 +138,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
       renderOverflow={(count) => (
         <Link href="/org" className={avatarLinkClassName}>
           <Avatar>
-            <AvatarFallback className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+            <AvatarFallback className="bg-foreground text-sm text-neutral-offWhite">
               <span className="align-super">+</span>
               {count}
             </AvatarFallback>

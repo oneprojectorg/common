@@ -154,7 +154,7 @@ export function LocationSearchField({
                 <span
                   className={
                     item.name
-                      ? 'truncate text-sm text-neutral-charcoal'
+                      ? 'truncate text-sm text-foreground'
                       : 'truncate text-foreground'
                   }
                   dir="auto"

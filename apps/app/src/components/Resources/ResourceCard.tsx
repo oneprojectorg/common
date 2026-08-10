@@ -172,7 +172,7 @@ const ResourceCardShell = ({
       {preview}
       <div className="flex flex-col gap-0.5">
         {description ? (
-          <p dir="auto" className="line-clamp-2 text-sm text-neutral-charcoal">
+          <p dir="auto" className="line-clamp-2 text-sm text-foreground">
             {description}
           </p>
         ) : null}

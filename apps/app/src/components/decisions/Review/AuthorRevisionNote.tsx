@@ -39,7 +39,7 @@ export function AuthorRevisionNote({
         <div className="flex flex-col gap-2">
           <p
             dir="auto"
-            className="text-base whitespace-pre-wrap text-neutral-charcoal"
+            className="text-base whitespace-pre-wrap text-foreground"
           >
             {comment}
           </p>
