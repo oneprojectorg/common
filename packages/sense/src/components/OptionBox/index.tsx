@@ -28,6 +28,14 @@ interface OptionBoxProps {
    * two can never collide.
    */
   accessory?: ReactNode;
+  /**
+   * Direction for the whole box, resolved from the label's first strong
+   * character by default: an option written in another script reads as one
+   * coherent block, control and description on the same side, rather than each
+   * part resolving on its own and disagreeing. Pin it to `ltr`/`rtl` when the
+   * label is UI chrome rather than content.
+   */
+  dir?: 'ltr' | 'rtl' | 'auto';
   className?: string;
 }
 
@@ -47,6 +55,7 @@ function OptionBox({
   width = 'fill',
   controlPlacement = 'start',
   accessory,
+  dir = 'auto',
   className,
 }: OptionBoxProps) {
   // A description already needs the block; so does anything that has to sit at
@@ -67,6 +76,7 @@ function OptionBox({
     <FieldLabel
       variant="box"
       htmlFor={htmlFor}
+      dir={dir}
       className={cn(width === 'hug' && 'w-fit', className)}
     >
       {/* Deliberately no `FieldContent` around the description. The horizontal

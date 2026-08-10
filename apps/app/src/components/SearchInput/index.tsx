@@ -15,12 +15,13 @@ import {
 } from '@op/sense/Command';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { Spinner } from '@op/sense/Spinner';
+import { firstStrongDirection } from '@op/sense/lib/textDirection';
 import { cn } from '@op/sense/lib/utils';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuClock, LuSearch } from 'react-icons/lu';
 
-import { getLocaleDirection, useRouter } from '@/lib/i18n';
+import { useRouter } from '@/lib/i18n';
 
 interface ProfileCommandItemProps {
   profile: ProfileSearchResult;
@@ -39,8 +40,6 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
-  const locale = useLocale();
-  const localeDirection = getLocaleDirection(locale);
   const canLinkToProfile = useCanLinkToProfile();
 
   useEffect(() => {
@@ -248,7 +247,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             setQuery(value);
             setShowResults(true);
           }}
-          dir={query.length > 0 ? 'auto' : undefined}
+          dir={firstStrongDirection(query) ?? undefined}
           placeholder={t('Search')}
           onFocus={() => {
             // Re-focusing (e.g. selecting a recent search) must cancel a
@@ -268,8 +267,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           aria-label={t('Search')}
           className={cn(
             'flex-1 bg-transparent ps-1.5 text-base text-foreground outline-none placeholder:text-muted-foreground',
-            '[unicode-bidi:plaintext]',
-            localeDirection === 'rtl' && 'pl-4',
+            // cmdk owns this input, so the primitives' rule is inlined here:
+            // direction comes from the query (see `dir` above), and `rtl:pl-4`
+            // is the trailing gap the clear button needs.
+            'rtl:pl-4',
           )}
         />
       </InputGroup>

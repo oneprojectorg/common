@@ -260,7 +260,7 @@ export function RichTextEditorToolbar({
           noEditor={noEditor}
           label={t('Undo')}
         >
-          <LuUndo className="size-4" />
+          <LuUndo className="size-4 rtl:-scale-x-100" />
         </ActionButton>
         <ActionButton
           onClick={() => editor?.chain().focus().redo().run()}
@@ -268,7 +268,7 @@ export function RichTextEditorToolbar({
           noEditor={noEditor}
           label={t('Redo')}
         >
-          <LuRedo className="size-4" />
+          <LuRedo className="size-4 rtl:-scale-x-100" />
         </ActionButton>
 
         {divider}

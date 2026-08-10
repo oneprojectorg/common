@@ -24,6 +24,18 @@ export const viewerProseStyles = [
   // direction from content, so mixed LTR/RTL prose aligns correctly without
   // a per-element dir attribute (text-align: start follows each block's dir).
   '[&_:is(p,h1,h2,h3,h4,li,blockquote)]:[unicode-bidi:plaintext]',
+  // ...except when the block has no content to resolve from. `plaintext` runs
+  // UAX9 P2/P3, and P3 makes a paragraph with no strong character LTR — it does
+  // not fall back to the element's direction. That put the caret (and an empty
+  // editor's placeholder) on the left of an Arabic page until the first letter
+  // was typed. Empty blocks inherit the surrounding direction instead.
+  // ProseMirror fills an empty textblock with a trailing <br>, so `:empty` only
+  // covers the static viewer.
+  '[&_:is(p,h1,h2,h3,h4,li,blockquote):empty]:[unicode-bidi:normal]',
+  // `br:only-child` rather than the trailing-break class: it covers both the
+  // hack node ProseMirror puts in an empty textblock and a block holding only a
+  // hard break (Shift+Enter), which serialises to a bare `<br>` in the viewer.
+  '[&_:is(p,h1,h2,h3,h4,li,blockquote):has(>br:only-child)]:[unicode-bidi:normal]',
   'leading-5 max-w-none break-words overflow-wrap-anywhere',
   // Details/Summary (collapsible) chrome lives in one raw-CSS block in
   // `@op/styles` (`.details` in shared-styles.css), shared by the editor's
@@ -67,4 +79,8 @@ const detailsSummaryPlaceholderStyles = [
 // Standard sense focus ring on the editable itself (for bare editors), but
 // suppressed inside a `[data-slot=rich-text-editor-field]` container — there the
 // field rings via focus-within so the whole box (toolbar + editable) lights up.
-export const baseEditorStyles = `${viewerProseStyles} rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 placeholder:text-neutral-gray2 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
+// `whitespace-pre-wrap` is what ProseMirror expects (its own stylesheet sets it).
+// Without it Firefox takes the `requiresGeckoHackNode` path and appends a
+// trailing <br> to any block whose text ends in a space, which would match the
+// empty-block selector above and drop that paragraph out of per-line bidi.
+export const baseEditorStyles = `${viewerProseStyles} whitespace-pre-wrap rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 placeholder:text-neutral-gray2 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;

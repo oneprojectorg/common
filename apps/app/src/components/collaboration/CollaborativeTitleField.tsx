@@ -87,8 +87,11 @@ export function CollaborativeTitleField({
     extensions,
     editorProps: {
       attributes: {
+        // Bidi sits on the paragraph, not the host: an empty block has no
+        // strong character, and plaintext resolves that to LTR rather than to
+        // the surrounding direction, which parked the caret on the wrong side.
         class:
-          'w-full border-0 bg-transparent p-0 text-base text-foreground outline-none [unicode-bidi:plaintext]',
+          'w-full border-0 bg-transparent p-0 text-base whitespace-pre-wrap text-foreground outline-none [&_p]:[unicode-bidi:plaintext] [&_p:has(>br:only-child)]:[unicode-bidi:normal]',
         // `role="textbox"` first: the aria attributes below are illegal on a
         // generic element. Enter is swallowed in handleKeyDown.
         role: 'textbox',
@@ -178,7 +181,10 @@ export function CollaborativeTitleField({
   }, [editor]);
 
   return (
-    <Field data-testid="field-title">
+    // `dir="auto"`: the label is authored template text. The editor below sets
+    // its own once it has content, so a latin title inside an arabic-labelled
+    // field still reads correctly.
+    <Field data-testid="field-title" dir="auto">
       <FieldTitle id={labelId}>
         {title ?? t('Proposal name')}
         {required && <RequiredAsterisk />}

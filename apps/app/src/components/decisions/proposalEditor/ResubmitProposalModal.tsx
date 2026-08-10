@@ -89,7 +89,6 @@ export function ResubmitProposalModal({
               placeholder={t('Describe what you changed…')}
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              className="[unicode-bidi:plaintext]"
             />
           </Field>
         </div>

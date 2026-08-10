@@ -35,7 +35,15 @@ export function FieldConfigText({
       label={t('Character limit')}
       className="w-32"
       value={value}
-      onChange={(next) => onUpdateJsonSchema({ maxLength: next ?? undefined })}
+      // Ignore the empty step: clearing the box used to write `undefined`,
+      // which sent `value` back to the type's default and overwrote what was
+      // being typed. The schema keeps the previous limit until a new number
+      // replaces it, and the box restores it on blur if left empty.
+      onChange={(next) => {
+        if (next !== null) {
+          onUpdateJsonSchema({ maxLength: next });
+        }
+      }}
       errorMessage={
         value < MIN_CHAR_LIMIT
           ? t('Must be at least {min}', {

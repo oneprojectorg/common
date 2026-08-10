@@ -442,7 +442,6 @@ export const ProcessSurveyModal = ({
                       }));
                     }}
                     aria-invalid={!!errors.promoterReasonsOther}
-                    className="[unicode-bidi:plaintext]"
                   />
                 )}
                 {errors.promoterReasons ? (
@@ -524,7 +523,6 @@ export const ProcessSurveyModal = ({
                       }));
                     }}
                     aria-invalid={!!errors.detractorReasonsOther}
-                    className="[unicode-bidi:plaintext]"
                   />
                 )}
                 {errors.detractorReasons ? (
@@ -547,7 +545,6 @@ export const ProcessSurveyModal = ({
                 rows={3}
                 value={additionalFeedback}
                 onChange={(e) => setAdditionalFeedback(e.target.value)}
-                className="[unicode-bidi:plaintext]"
               />
             </Field>
 
@@ -560,7 +557,6 @@ export const ProcessSurveyModal = ({
                 rows={3}
                 value={additionalComments}
                 onChange={(e) => setAdditionalComments(e.target.value)}
-                className="[unicode-bidi:plaintext]"
               />
             </Field>
           </div>

@@ -105,7 +105,7 @@ export function StatusBadge({
       ) : null}
       {children}
       {hasArrow ? (
-        <LuArrowRight aria-hidden className="size-3 rtl:rotate-180" />
+        <LuArrowRight aria-hidden className="size-3 rtl:-scale-x-100" />
       ) : null}
     </span>
   );

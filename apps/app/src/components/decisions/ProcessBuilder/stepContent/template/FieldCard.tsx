@@ -176,7 +176,7 @@ export function FieldCard({
               maxLength={50}
               required
               aria-required
-              className="bg-white [unicode-bidi:plaintext]"
+              className="bg-white"
             />
           </Field>
           {!isLocation && (
@@ -214,7 +214,7 @@ export function FieldCard({
               onChange={(e) => onUpdateDescription?.(field.id, e.target.value)}
               maxLength={DESCRIPTION_MAX_LENGTH}
               placeholder={t('Provide additional guidance for participants...')}
-              className="min-h-16 [unicode-bidi:plaintext]"
+              className="min-h-16"
             />
             <InputGroupAddon align="block-end" className="justify-end">
               {t('{count}/{max}', {

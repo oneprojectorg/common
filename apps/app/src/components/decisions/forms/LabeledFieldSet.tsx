@@ -34,7 +34,15 @@ export function LabeledFieldSet({
   children,
 }: LabeledFieldSetProps) {
   return (
-    <FieldSet className={cn('gap-3', className)} data-testid={testId}>
+    // `dir="auto"`: legend, helper line and controls are proposal-template text
+    // someone authored, so the direction follows the content rather than the
+    // reader's locale — and resolving it here keeps the parts consistent with
+    // each other. Harmless for the translated fallbacks a few fields pass.
+    <FieldSet
+      className={cn('gap-3', className)}
+      data-testid={testId}
+      dir="auto"
+    >
       <FieldLegend variant="label" id={legendId}>
         {legend}
         {required && <RequiredAsterisk />}

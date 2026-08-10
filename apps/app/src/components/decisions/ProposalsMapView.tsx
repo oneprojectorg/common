@@ -179,7 +179,7 @@ export function ProposalsMapView({
   // margin break out of the page container's horizontal padding.
   if (isMobile) {
     return (
-      <div className="-mb-4 ml-[calc(50%_-_50vw)] h-[calc(100dvh_-_3.5rem)] w-screen overflow-hidden">
+      <div className="ms-[calc(50%_-_50vw)] -mb-4 h-[calc(100dvh_-_3.5rem)] w-screen overflow-hidden">
         {map}
       </div>
     );

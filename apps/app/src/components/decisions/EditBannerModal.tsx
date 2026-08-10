@@ -28,7 +28,7 @@ export function EditBannerModal({
       <Button
         variant="outline"
         size="sm"
-        className="absolute top-4 right-4 z-10 hidden md:flex"
+        className="absolute end-4 top-4 z-10 hidden md:flex"
         onClick={() => setIsOpen(true)}
       >
         <LuImage className="size-4" aria-hidden="true" />

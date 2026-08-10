@@ -47,7 +47,7 @@ export const ComingSoonScreen = () => {
                     className="inline-flex items-center gap-1 align-bottom whitespace-nowrap text-primary-teal underline hover:no-underline"
                   >
                     {chunks}
-                    <LuArrowRight className="size-4" />
+                    <LuArrowRight className="size-4 rtl:-scale-x-100" />
                   </a>
                 ),
               },

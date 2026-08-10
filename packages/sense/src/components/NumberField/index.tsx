@@ -92,9 +92,13 @@ function NumberField({
 
     // Canonicalize on blur ("00003" → "3", "5." → "5"). toPlainString never
     // emits scientific notation, so extreme magnitudes stay round-trippable
-    // through filterNumericInput (which would strip an "e").
-    if (numeric !== null) {
-      setDisplayValue(toPlainString(numeric));
+    // through filterNumericInput (which would strip an "e"). An emptied box
+    // falls back to the value we're controlled by, so a caller that reads null
+    // as "no change" isn't left showing a blank that disagrees with its state.
+    const canonical = numeric ?? value;
+
+    if (canonical != null) {
+      setDisplayValue(toPlainString(canonical));
     }
 
     onBlur?.(event);

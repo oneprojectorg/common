@@ -1,5 +1,6 @@
 'use client';
 
+import { useDirection } from '@op/sense/Direction';
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +24,11 @@ interface NavLinkProps {
 export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
+  // The Sidebar positions itself with physical left/right, so the side has to
+  // be told — otherwise the nav stays on the left in Arabic while everything
+  // else mirrors around it.
+  const isRtl = useDirection() === 'rtl';
+
   return (
     // Mirrors the old op/ui behavior on the new shadcn Sidebar: offcanvas (nav
     // hidden until the header trigger opens it, pushing content), overlay Sheet
@@ -30,6 +36,7 @@ export const SidebarNav = () => {
     // desktop fixed panel is offset below the full-width header via
     // --header-height (set on the content row in the (main) layout).
     <Sidebar
+      side={isRtl ? 'right' : 'left'}
       collapsible="offcanvas"
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]! border-e"
     >

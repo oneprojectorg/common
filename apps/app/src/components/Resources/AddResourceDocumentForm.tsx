@@ -272,7 +272,6 @@ export const AddResourceDocumentForm = ({
             maxLength={RESOURCE_TITLE_MAX_LEN}
             disabled={!uploaded}
             placeholder={t('Resource name')}
-            className="[unicode-bidi:plaintext]"
           />
         </Field>
         <Field>
@@ -286,7 +285,6 @@ export const AddResourceDocumentForm = ({
             maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
             disabled={!uploaded}
             placeholder={t('Brief description of this resource')}
-            className="[unicode-bidi:plaintext]"
           />
         </Field>
       </div>

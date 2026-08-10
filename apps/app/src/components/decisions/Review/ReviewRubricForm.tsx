@@ -261,7 +261,12 @@ function RubricCriterionSection({
     <section className="border-b pb-6">
       {/* Yes/no reads as a setting: prompt on the left, switch on the right. */}
       {criterionType === 'yes_no' ? (
-        <Field orientation="horizontal">
+        // One `dir="auto"` for the whole field rather than one per part:
+        // resolved separately, each element reads from its own text, so the
+        // title (which also carries the points badge) can land on the opposite
+        // side from its own description. The controls inherit this; the portaled
+        // select popup can't, and sets its own below.
+        <Field orientation="horizontal" dir="auto">
           <FieldContent>
             <FieldTitle
               render={<h4 />}
@@ -278,7 +283,7 @@ function RubricCriterionSection({
           {control}
         </Field>
       ) : (
-        <Field>
+        <Field dir="auto">
           {isTextInput ? (
             <h4>
               <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
@@ -345,7 +350,7 @@ function RubricRationaleField({
       <FieldLabel htmlFor={noteId}>{t('Note')}</FieldLabel>
       <Textarea
         id={noteId}
-        className="min-h-20 [unicode-bidi:plaintext]"
+        className="min-h-20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -377,7 +382,6 @@ function FeedbackToAuthorField({
       </FieldDescription>
       <Textarea
         id={fieldId}
-        className="[unicode-bidi:plaintext]"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={3}
@@ -477,6 +481,7 @@ function RubricFieldInput({
                   key={optionValue}
                   htmlFor={optionId}
                   control={<RadioGroupItem id={optionId} value={optionValue} />}
+                  dir="auto"
                   label={option.title || optionValue}
                   description={option.description}
                 />
@@ -514,7 +519,9 @@ function RubricFieldInput({
             >
               <SelectValue placeholder={t('Select an option')} />
             </SelectTrigger>
-            <SelectContent className={'max-w-(--anchor-width)'}>
+            {/* The popup is portaled, so it inherits nothing from the field —
+                it resolves its own direction from the option labels. */}
+            <SelectContent className={'max-w-(--anchor-width)'} dir="auto">
               <SelectGroup>
                 {options.map((option) => (
                   <SelectItem
@@ -547,7 +554,6 @@ function RubricFieldInput({
         <Textarea
           id={controlId}
           aria-describedby={describedBy}
-          className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('Start typing...')}
@@ -560,7 +566,6 @@ function RubricFieldInput({
         <Input
           id={controlId}
           aria-describedby={describedBy}
-          className="[unicode-bidi:plaintext]"
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('Start typing...')}

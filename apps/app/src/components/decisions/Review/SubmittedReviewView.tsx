@@ -80,7 +80,9 @@ function ResultSection({
   children: ReactNode;
 }) {
   return (
-    <Field>
+    // Authored content: one direction for the block, so the title and its
+    // description can't resolve differently and disagree.
+    <Field dir="auto">
       {/* `h4`, as in the editable form — a long review is navigated by heading. */}
       {title ? <FieldTitle render={<h4 />}>{title}</FieldTitle> : null}
       {description ? <FieldDescription>{description}</FieldDescription> : null}

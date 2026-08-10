@@ -629,7 +629,6 @@ function PhaseField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           aria-invalid={isInvalid || undefined}
-          className="[unicode-bidi:plaintext]"
         />
       ) : (
         <Input
@@ -639,7 +638,6 @@ function PhaseField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           aria-invalid={isInvalid || undefined}
-          className="[unicode-bidi:plaintext]"
         />
       )}
       {(description || errorMessage || maxLength != null) && (

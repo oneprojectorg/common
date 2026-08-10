@@ -159,7 +159,6 @@ export function RubricCriterionCard({
                 maxLength={MAX_LABEL_LENGTH}
                 value={criterion.label}
                 onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
-                className="[unicode-bidi:plaintext]"
               />
               <InputGroupAddon align="inline-end">
                 {t('{count}/{max}', {
@@ -186,7 +185,7 @@ export function RubricCriterionCard({
                 placeholder={t(
                   'Provide additional guidance for participants...',
                 )}
-                className="min-h-24 [unicode-bidi:plaintext]"
+                className="min-h-24"
               />
               <InputGroupAddon align="block-end" className="justify-end">
                 {t('{count}/{max}', {
@@ -423,7 +422,7 @@ function ScoredCriterionConfig({
                   placeholder={t('Describe what earns {number} points...', {
                     number: scoreValue,
                   })}
-                  className="w-full [unicode-bidi:plaintext]"
+                  className="w-full"
                 />
               </div>
             );

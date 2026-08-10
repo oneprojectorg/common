@@ -146,7 +146,9 @@ function ReadonlyField({
   children: ReactNode;
 }) {
   return (
-    <Field className={className}>
+    // Authored template text, so direction follows the content — resolved once
+    // for the block rather than per element.
+    <Field className={className} dir="auto">
       {title && (
         <FieldTitle>
           {title}
