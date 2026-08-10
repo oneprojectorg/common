@@ -47,34 +47,17 @@ const startupParameters = isMaintenance
       ),
     };
 
-const createDb = () =>
-  drizzle({
-    connection: {
-      url: process.env.DATABASE_URL,
-      max: poolMax,
-      connect_timeout: parsePositiveInt(process.env.DB_CONNECT_TIMEOUT_S, 30),
-      connection: startupParameters,
-      onnotice: () => {},
-      prepare: false,
-    },
-    casing: config.casing,
-    schema,
-    relations,
-    logger: false,
-  });
-
-// Next dev/HMR re-evaluates this module on every recompile — and a single new
-// Tailwind class forces a ~50-route recompile storm (the global stylesheet
-// regenerates, so the whole route graph under the root layout invalidates).
-// Without a global guard, each pass spins up a fresh postgres-js pool and leaks
-// the previous one, quickly exhausting the DB pool and ballooning RAM. Reuse a
-// single pool across reloads in dev.
-declare global {
-  var __opDb: ReturnType<typeof createDb> | undefined;
-}
-
-export const db = globalThis.__opDb ?? createDb();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__opDb = db;
-}
+export const db = drizzle({
+  connection: {
+    url: process.env.DATABASE_URL,
+    max: poolMax,
+    connect_timeout: parsePositiveInt(process.env.DB_CONNECT_TIMEOUT_S, 30),
+    connection: startupParameters,
+    onnotice: () => {},
+    prepare: false,
+  },
+  casing: config.casing,
+  schema,
+  relations,
+  logger: false,
+});
