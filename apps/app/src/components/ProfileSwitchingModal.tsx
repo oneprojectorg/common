@@ -1,11 +1,12 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal } from '@op/ui/Modal';
+import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { Spinner } from '@op/sense/Spinner';
 import Image from 'next/image';
-import { ReactNode } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 interface ProfileSwitchingModalProps {
   isOpen: boolean;
@@ -22,30 +23,42 @@ export const ProfileSwitchingModal = ({
   profileName,
   onOpenChange,
 }: ProfileSwitchingModalProps) => {
-  const avatarContent: ReactNode = avatarImage?.name ? (
-    <Image
-      src={getPublicUrl(avatarImage.name) ?? ''}
-      alt={`${profileName} avatar`}
-      fill
-      className="object-cover"
-    />
-  ) : null;
+  const t = useTranslations();
+  const avatarUrl = getPublicUrl(avatarImage?.name);
+  const switchingTo = t('Switching to {name}…', { name: profileName ?? '' });
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false}>
-      <div className="flex flex-col items-center justify-center gap-6 p-12">
-        <div className="relative flex size-28">
-          <Avatar placeholder={profileName} className="size-full">
-            {avatarContent}
-          </Avatar>
-          <div className="absolute start-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <LoadingSpinner color="teal" size="md" />
+    // `disablePointerDismissal`: the switch is in flight and closing this would
+    // leave the header showing the profile the user just left.
+    <Dialog open={isOpen} onOpenChange={onOpenChange} disablePointerDismissal>
+      <DialogContent showCloseButton={false} className="sm:max-w-sm">
+        <div className="flex flex-col items-center justify-center gap-6 p-12">
+          <div className="relative flex size-28">
+            <ProfileAvatar
+              name={profileName}
+              src={avatarUrl}
+              alt={switchingTo}
+              className="size-full"
+              imageRender={
+                avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt={switchingTo}
+                    fill
+                    className="object-cover"
+                  />
+                ) : undefined
+              }
+            />
+            <div className="absolute start-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <Spinner />
+            </div>
           </div>
+          <DialogTitle className="text-center text-base">
+            {switchingTo}
+          </DialogTitle>
         </div>
-        <div className="text-center">
-          <p className="text-neutral-black">Switching to {profileName}…</p>
-        </div>
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };

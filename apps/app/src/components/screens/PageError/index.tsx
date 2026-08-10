@@ -2,7 +2,7 @@
 
 import { ClientOnly } from '@/utils/ClientOnly';
 import { match } from '@op/core';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 
@@ -32,9 +32,7 @@ export default function PageError({ error }: ErrorProps) {
         </p>
       ),
       actions: (
-        <Button onPress={() => window.history.back()} color="primary">
-          {t('Go back')}
-        </Button>
+        <Button onClick={() => window.history.back()}>{t('Go back')}</Button>
       ),
     }),
     _: () => ({
@@ -47,14 +45,12 @@ export default function PageError({ error }: ErrorProps) {
         </p>
       ),
       actions: (
-        <Button onPress={() => window.location.reload()} color="primary">
+        <Button onClick={() => window.location.reload()}>
           {t('Try again')}
         </Button>
       ),
     }),
   });
-
-  console.error('App Error:', error.message);
 
   return (
     <ClientOnly>

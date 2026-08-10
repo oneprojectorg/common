@@ -6,11 +6,19 @@ import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
+import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { OptionBox } from '@op/sense/OptionBox';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { toast } from '@op/sense/Toast';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -83,6 +91,11 @@ export const DeleteOrganizationModal = ({
         router.refresh();
         setCurrentStep(2);
       } catch (error) {
+        logger.error('Failed to delete organization', {
+          error,
+          context: 'DeleteOrganizationModal.handleSubmit',
+          organizationProfileId: selectedProfileId,
+        });
         toast.error(t('Failed to delete account'));
       }
     });
@@ -130,14 +143,11 @@ export const DeleteOrganizationModal = ({
   ];
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      isDismissable
-      className="text-start"
-    >
-      {steps[currentStep]}
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="flex flex-col overflow-hidden text-start sm:max-w-md">
+        {steps[currentStep]}
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -157,8 +167,10 @@ const SelectProfileStep = ({
   const t = useTranslations();
   return (
     <>
-      <ModalHeader>{t('Delete an Account')}</ModalHeader>
-      <div className="flex flex-col gap-4 px-6 py-4">
+      <DialogHeader className="shrink-0">
+        <DialogTitle>{t('Delete an Account')}</DialogTitle>
+      </DialogHeader>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
         <p id="select-accounts-label">
           {t(
             "Please select the account you'd like to delete. This action cannot be undone.",
@@ -166,49 +178,66 @@ const SelectProfileStep = ({
         </p>
         <RadioGroup
           aria-labelledby="select-accounts-label"
-          value={selectedProfile}
-          onChange={setSelectedProfile}
+          value={selectedProfile ?? ''}
+          onValueChange={(value) => setSelectedProfile(value ?? '')}
         >
           {allProfiles.map((profile) => {
             const profileType = match(profile.type, {
               org: t('Organization'),
               individual: t('Individual'),
             });
+            const optionId = `delete-profile-${profile.id}`;
+            const avatarUrl = profile.avatarImage?.name;
+
             return (
-              <Radio
+              <OptionBox
                 key={profile.id}
-                className="items-start py-2"
-                value={profile.id}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-base leading-[1.05] text-neutral-charcoal">
-                    {profile.name}
-                  </span>
-                  <p className="text-neutral-gray4">{profileType}</p>
-                </div>
-              </Radio>
+                htmlFor={optionId}
+                label={profile.name}
+                description={profileType}
+                controlPlacement="end"
+                control={<RadioGroupItem id={optionId} value={profile.id} />}
+                accessory={
+                  <ProfileAvatar
+                    className="size-11 shrink-0"
+                    name={profile.name}
+                    src={getPublicUrl(avatarUrl)}
+                    alt={profile.name ?? t('User avatar')}
+                    imageRender={
+                      avatarUrl ? (
+                        <Image
+                          src={getPublicUrl(avatarUrl) ?? ''}
+                          fill
+                          className="object-cover"
+                          alt={profile.name ?? t('User avatar')}
+                        />
+                      ) : undefined
+                    }
+                  />
+                }
+              />
             );
           })}
         </RadioGroup>
       </div>
-      <ModalFooter>
+      <DialogFooter className="shrink-0">
         <Button
-          color="neutral"
-          onPress={cancelButtonAction}
+          variant="outline"
+          onClick={cancelButtonAction}
           className="w-full sm:w-auto"
         >
           {t('Cancel')}
         </Button>
         <Button
-          color="destructive"
+          variant="destructive"
           type="button"
-          onPress={submitButtonAction}
-          isDisabled={!selectedProfile}
+          onClick={submitButtonAction}
+          disabled={!selectedProfile}
           className="w-full sm:w-auto"
         >
           {t('Remove')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </>
   );
 };
@@ -232,52 +261,56 @@ const ConfirmProfileStep = ({
   const avatarUrl = profileToDelete.avatarImage?.name;
   return (
     <>
-      <ModalHeader>{t('Delete an Account')}</ModalHeader>
-      <div className="flex flex-col gap-2 px-6 py-4">
+      <DialogHeader className="shrink-0">
+        <DialogTitle>{t('Delete an Account')}</DialogTitle>
+      </DialogHeader>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
         <p>
           {t(
             'You are about to delete this account. This action cannot be undone.',
           )}
         </p>
-        <div className="flex gap-2 rounded border border-red-100 p-4">
-          <Avatar
-            className="size-8 shrink-0"
-            placeholder={profileToDelete.name ?? ''}
-          >
-            {avatarUrl ? (
-              <Image
-                src={getPublicUrl(avatarUrl) ?? ''}
-                fill
-                className="object-cover"
-                alt={profileToDelete.name ?? t('User avatar')}
-              />
-            ) : null}
-          </Avatar>
+        <div className="flex gap-2 rounded border border-destructive p-4">
+          <ProfileAvatar
+            className="size-11 shrink-0"
+            name={profileToDelete.name}
+            src={getPublicUrl(avatarUrl)}
+            alt={profileToDelete.name ?? t('User avatar')}
+            imageRender={
+              avatarUrl ? (
+                <Image
+                  src={getPublicUrl(avatarUrl) ?? ''}
+                  fill
+                  className="object-cover"
+                  alt={profileToDelete.name ?? t('User avatar')}
+                />
+              ) : undefined
+            }
+          />
           <div className="flex flex-col">
-            <p className="font-medium">{profileToDelete.name}</p>
-            <p className="text-sm text-neutral-charcoal">{profileType}</p>
+            <p className="font-strong">{profileToDelete.name}</p>
+            <p className="text-sm text-muted-foreground">{profileType}</p>
           </div>
         </div>
       </div>
-      <ModalFooter>
+      <DialogFooter className="shrink-0">
         <Button
           className="w-full sm:w-auto"
-          color="neutral"
-          onPress={backButtonAction}
+          variant="outline"
+          onClick={backButtonAction}
         >
           {t('Back')}
         </Button>
         <Button
           className="w-full sm:w-auto"
-          color="destructive"
+          variant="destructive"
           type="button"
-          onPress={submitButtonAction}
-          isPending={isSubmitting}
-          isDisabled={isSubmitting}
+          onClick={submitButtonAction}
+          loading={isSubmitting}
         >
           {isSubmitting ? t('Removing...') : t('Remove')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </>
   );
 };
@@ -292,8 +325,10 @@ const SuccessStep = ({
   const t = useTranslations();
   return (
     <>
-      <ModalHeader>{t('Account Deleted')}</ModalHeader>
-      <div className="flex flex-col gap-2 px-6 py-4">
+      <DialogHeader className="shrink-0">
+        <DialogTitle>{t('Account Deleted')}</DialogTitle>
+      </DialogHeader>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
         <p>
           {t(
             '{profileName} has been deleted. All associated data have been permanently removed.',
@@ -301,15 +336,15 @@ const SuccessStep = ({
           )}
         </p>
       </div>
-      <ModalFooter>
+      <DialogFooter className="shrink-0">
         <Button
           className="w-full sm:w-auto"
           type="button"
-          onPress={submitButtonAction}
+          onClick={submitButtonAction}
         >
           {t('Done')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </>
   );
 };

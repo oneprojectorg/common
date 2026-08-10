@@ -1,4 +1,8 @@
 {
+  "Invite more people": "আরও লোককে আমন্ত্রণ জানান",
+  "Remove {email}": "{email} সরান",
+  "Sent": "পাঠানো হয়েছে",
+  "Switching to {name}…": "{name}-এ পরিবর্তন করা হচ্ছে…",
   "Technology partners": "প্রযুক্তি অংশীদার",
   "Already have an account? <login>Log in</login>": "ইতিমধ্যে একটি অ্যাকাউন্ট আছে? <login>লগ ইন করুন</login>",
   "Check your connection and try again.": "আপনার সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
@@ -52,6 +56,8 @@
   "Agree and continue": "সম্মত হয়ে চালিয়ে যান",
   "Media": "মিডিয়া",
   "We've found your organization": "আমরা আপনার সংস্থা খুঁজে পেয়েছি",
+  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{count, plural, one {# জনকে} other {# জনকে}}</bold> আমন্ত্রণ জানিয়েছেন।",
+  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{email}</bold>-কে আমন্ত্রণ জানিয়েছেন।",
   "join_subheader": "আপনার ইমেইল ডোমেইনের ভিত্তিতে, আপনার এই সংস্থায় যোগ দেওয়ার অ্যাক্সেস আছে।",
   "Confirm Administrator Access": "প্রশাসক অ্যাক্সেস নিশ্চিত করুন",
   "Get Started": "শুরু করুন",
@@ -1514,5 +1520,9 @@
   "Pagination Navigation": "পৃষ্ঠা নেভিগেশন",
   "{start} - {end} of {total} {label}": "{total} {label} এর মধ্যে {start} - {end}",
   "No organizations found": "কোনো সংস্থা পাওয়া যায়নি",
-  "No roles found": "কোনো ভূমিকা পাওয়া যায়নি"
+  "No roles found": "কোনো ভূমিকা পাওয়া যায়নি",
+  "No invitations were sent": "কোনো আমন্ত্রণ পাঠানো হয়নি",
+  "Some invitations could not be sent": "কিছু আমন্ত্রণ পাঠানো যায়নি",
+  "Select an organization": "একটি সংস্থা নির্বাচন করুন",
+  "You can only invite people to organizations you administer.": "আপনি শুধু সেই সংস্থাগুলিতে মানুষকে আমন্ত্রণ জানাতে পারেন যেগুলি আপনি পরিচালনা করেন।"
 }

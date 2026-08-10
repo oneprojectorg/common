@@ -3,10 +3,10 @@
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
 import { Checkbox } from '@op/sense/Checkbox';
+import { OptionBox } from '@op/sense/OptionBox';
 import { useEffect, useId, useMemo, useRef } from 'react';
 
 import { LabeledFieldSet } from '@/components/decisions/forms/LabeledFieldSet';
-import { OptionBox } from '@/components/decisions/forms/OptionBox';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
