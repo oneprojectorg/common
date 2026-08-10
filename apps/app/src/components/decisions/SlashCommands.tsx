@@ -92,7 +92,7 @@ const SlashCommandsList = forwardRef<
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-start hover:bg-neutral-gray1 rtl:space-x-reverse ${
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-start hover:bg-neutral-gray1 ${
               index === selectedIndex
                 ? 'bg-neutral-gray1 text-neutral-black'
                 : 'text-neutral-charcoal'

@@ -36,10 +36,9 @@ export function FieldConfigText({
       className="w-32"
       value={value}
       // Ignore the empty step: clearing the box used to write `undefined`,
-      // which sent `value` back to the default and overwrote what was being
-      // typed — so deleting the last digit snapped the field to 500. The schema
-      // keeps the previous limit until a new number replaces it, and the box
-      // restores it on blur if it is left empty.
+      // which sent `value` back to the type's default and overwrote what was
+      // being typed. The schema keeps the previous limit until a new number
+      // replaces it, and the box restores it on blur if left empty.
       onChange={(next) => {
         if (next !== null) {
           onUpdateJsonSchema({ maxLength: next });

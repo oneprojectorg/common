@@ -193,7 +193,6 @@ const SelectProfileStep = ({
               <OptionBox
                 key={profile.id}
                 htmlFor={optionId}
-                dir="auto"
                 label={profile.name}
                 description={profileType}
                 controlPlacement="end"

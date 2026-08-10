@@ -261,11 +261,11 @@ function RubricCriterionSection({
     <section className="border-b pb-6">
       {/* Yes/no reads as a setting: prompt on the left, switch on the right. */}
       {criterionType === 'yes_no' ? (
-        // `dir="auto"` here rather than on the title and description
-        // separately: resolved per element they disagree, because the title is
-        // a flex row that keeps the locale direction while the description is a
-        // block that flips. One unit, one direction — and the control and the
-        // scored select inherit it.
+        // One `dir="auto"` for the whole field rather than one per part:
+        // resolved separately, each element reads from its own text, so the
+        // title (which also carries the points badge) can land on the opposite
+        // side from its own description. The controls inherit this; the portaled
+        // select popup can't, and sets its own below.
         <Field orientation="horizontal" dir="auto">
           <FieldContent>
             <FieldTitle
@@ -448,7 +448,6 @@ function RubricFieldInput({
                   key={optionValue}
                   orientation="horizontal"
                   className="w-auto"
-                  dir="auto"
                 >
                   <RadioGroupItem id={optionId} value={optionValue} />
                   <FieldLabel htmlFor={optionId} className="font-normal">

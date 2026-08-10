@@ -29,10 +29,11 @@ interface OptionBoxProps {
    */
   accessory?: ReactNode;
   /**
-   * Direction for the whole box. Pass `auto` when the label and description
-   * carry authored content: an option written in another script then reads as
-   * one coherent block — control, label and description on the same side —
-   * rather than each part resolving on its own and disagreeing.
+   * Direction for the whole box, resolved from the label's first strong
+   * character by default: an option written in another script reads as one
+   * coherent block, control and description on the same side, rather than each
+   * part resolving on its own and disagreeing. Pin it to `ltr`/`rtl` when the
+   * label is UI chrome rather than content.
    */
   dir?: 'ltr' | 'rtl' | 'auto';
   className?: string;
@@ -54,7 +55,7 @@ function OptionBox({
   width = 'fill',
   controlPlacement = 'start',
   accessory,
-  dir,
+  dir = 'auto',
   className,
 }: OptionBoxProps) {
   // A description already needs the block; so does anything that has to sit at

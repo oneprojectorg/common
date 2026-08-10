@@ -112,7 +112,6 @@ export function CollaborativeMultiSelectField({
               key={option.value}
               htmlFor={optionId}
               width="hug"
-              dir="auto"
               label={option.label}
               control={
                 <Checkbox

@@ -91,7 +91,7 @@ export function CollaborativeTitleField({
         // strong character, and plaintext resolves that to LTR rather than to
         // the surrounding direction, which parked the caret on the wrong side.
         class:
-          'w-full border-0 bg-transparent p-0 text-base text-foreground outline-none [&_p]:[unicode-bidi:plaintext] [&_p:has(>br.ProseMirror-trailingBreak:only-child)]:[unicode-bidi:normal]',
+          'w-full border-0 bg-transparent p-0 text-base whitespace-pre-wrap text-foreground outline-none [&_p]:[unicode-bidi:plaintext] [&_p:has(>br:only-child)]:[unicode-bidi:normal]',
         // `role="textbox"` first: the aria attributes below are illegal on a
         // generic element. Enter is swallowed in handleKeyDown.
         role: 'textbox',

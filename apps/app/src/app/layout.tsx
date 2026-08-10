@@ -97,8 +97,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           {/* base-ui reads direction from this context and nowhere else — its
               `useDirection` falls back to 'ltr', so `dir` on <html> alone left
               every select, menu, combobox, accordion, scroll area and slider
-              navigating and positioning as if the page were LTR. Wraps the
-              toasts too, which portal out of the tree below. */}
+              navigating and positioning as if the page were LTR. */}
           <DirectionProvider direction={dir}>
             <I18nProvider locale={locale} messages={messages}>
               <OTelBrowserProvider>

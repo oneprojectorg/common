@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
     "./lib/utils": "./src/lib/utils.ts",
+    "./lib/textDirection": "./src/lib/textDirection.ts",
     "./hooks/use-mobile": "./src/hooks/use-mobile.ts",
     "./Accordion": "./src/components/ui/accordion.tsx",
     "./Alert": "./src/components/ui/alert.tsx",

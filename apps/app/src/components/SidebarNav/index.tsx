@@ -1,5 +1,6 @@
 'use client';
 
+import { useDirection } from '@op/sense/Direction';
 import {
   Sidebar,
   SidebarContent,
@@ -8,17 +9,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@op/sense/Sidebar';
-import { useLocale } from 'next-intl';
 import { ReactNode } from 'react';
 import { usePress } from 'react-aria';
 import { LuHouse, LuMessageCircle, LuUsers } from 'react-icons/lu';
 
-import {
-  Link,
-  getLocaleDirection,
-  usePathname,
-  useTranslations,
-} from '@/lib/i18n';
+import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
 interface NavLinkProps {
   href: string;
@@ -30,9 +25,9 @@ export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
   // The Sidebar positions itself with physical left/right, so the side has to
-  // come from the locale — otherwise the nav stays on the left in Arabic while
-  // everything else mirrors around it.
-  const isRtl = getLocaleDirection(useLocale()) === 'rtl';
+  // be told — otherwise the nav stays on the left in Arabic while everything
+  // else mirrors around it.
+  const isRtl = useDirection() === 'rtl';
 
   return (
     // Mirrors the old op/ui behavior on the new shadcn Sidebar: offcanvas (nav
