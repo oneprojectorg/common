@@ -239,9 +239,14 @@ function RubricCriterionSection({
   // `labelId` goes on the title text, not the whole row: the badge is inside
   // the heading, and a control named by the row would announce "Innovation
   // 5 pts".
+  // `dir="auto"` on the authored parts only: the badge is a translated string
+  // and follows the locale. Without it an English criterion on an Arabic page
+  // loses its trailing punctuation to the start of the line.
   const label = (
     <>
-      <span id={labelId}>{field.schema.title}</span>
+      <span id={labelId} dir="auto">
+        {field.schema.title}
+      </span>
       {badgeLabel ? <Badge variant="secondary">{badgeLabel}</Badge> : null}
     </>
   );
@@ -270,7 +275,7 @@ function RubricCriterionSection({
               {label}
             </FieldTitle>
             {field.schema.description ? (
-              <FieldDescription id={descriptionId}>
+              <FieldDescription id={descriptionId} dir="auto">
                 {field.schema.description}
               </FieldDescription>
             ) : null}
@@ -292,7 +297,7 @@ function RubricCriterionSection({
             </FieldTitle>
           )}
           {field.schema.description ? (
-            <FieldDescription id={descriptionId}>
+            <FieldDescription id={descriptionId} dir="auto">
               {field.schema.description}
             </FieldDescription>
           ) : null}
@@ -445,7 +450,11 @@ function RubricFieldInput({
                   className="w-auto"
                 >
                   <RadioGroupItem id={optionId} value={optionValue} />
-                  <FieldLabel htmlFor={optionId} className="font-normal">
+                  <FieldLabel
+                    htmlFor={optionId}
+                    className="font-normal"
+                    dir="auto"
+                  >
                     {option.title || optionValue}
                   </FieldLabel>
                 </Field>
@@ -476,8 +485,15 @@ function RubricFieldInput({
                   key={optionValue}
                   htmlFor={optionId}
                   control={<RadioGroupItem id={optionId} value={optionValue} />}
-                  label={option.title || optionValue}
-                  description={option.description}
+                  // Wrapped rather than a `dir` prop on OptionBox: the
+                  // component is mid-move into @op/sense (#1741), so leave it
+                  // untouched and give it the passthrough there.
+                  label={<span dir="auto">{option.title || optionValue}</span>}
+                  description={
+                    option.description ? (
+                      <span dir="auto">{option.description}</span>
+                    ) : undefined
+                  }
                 />
               );
             })}
@@ -523,7 +539,10 @@ function RubricFieldInput({
                     {option.title ? (
                       <div className="flex flex-col">
                         <span>{option.value}</span>
-                        <span className="text-sm text-muted-foreground">
+                        <span
+                          className="text-sm text-muted-foreground"
+                          dir="auto"
+                        >
                           {option.title}
                         </span>
                       </div>

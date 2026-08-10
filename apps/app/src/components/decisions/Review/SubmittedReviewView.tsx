@@ -82,8 +82,15 @@ function ResultSection({
   return (
     <Field>
       {/* `h4`, as in the editable form — a long review is navigated by heading. */}
-      {title ? <FieldTitle render={<h4 />}>{title}</FieldTitle> : null}
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      {/* Authored content, so the direction comes from it, not the locale. */}
+      {title ? (
+        <FieldTitle render={<h4 />} dir="auto">
+          {title}
+        </FieldTitle>
+      ) : null}
+      {description ? (
+        <FieldDescription dir="auto">{description}</FieldDescription>
+      ) : null}
       {children}
     </Field>
   );

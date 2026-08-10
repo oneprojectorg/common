@@ -179,7 +179,9 @@ export function CollaborativeTitleField({
 
   return (
     <Field data-testid="field-title">
-      <FieldTitle id={labelId}>
+      {/* Same reasoning as the editor below: the label is authored template
+          text, so its direction comes from the content. */}
+      <FieldTitle id={labelId} dir="auto">
         {title ?? t('Proposal name')}
         {required && <RequiredAsterisk />}
       </FieldTitle>

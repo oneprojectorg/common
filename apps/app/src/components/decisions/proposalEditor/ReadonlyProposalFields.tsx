@@ -147,13 +147,16 @@ function ReadonlyField({
 }) {
   return (
     <Field className={className}>
+      {/* Authored template text, so direction follows the content. */}
       {title && (
-        <FieldTitle>
+        <FieldTitle dir="auto">
           {title}
           {required && <RequiredAsterisk />}
         </FieldTitle>
       )}
-      {description && <FieldDescription>{description}</FieldDescription>}
+      {description && (
+        <FieldDescription dir="auto">{description}</FieldDescription>
+      )}
       {children}
     </Field>
   );
