@@ -22,6 +22,22 @@ function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   );
 }
 
+// The sizes are cva variants rather than `data-[variant=…]:` classes so a
+// caller can override them: a data- variant compiles to an attribute selector,
+// which out-specifies a plain class from className and can't be merged away.
+// `data-variant` stays on the element — LabeledFieldSet selects siblings on it.
+const fieldLegendVariants = cva('mb-1.5 font-strong', {
+  variants: {
+    variant: {
+      legend: 'text-lg',
+      label: 'text-base',
+    },
+  },
+  defaultVariants: {
+    variant: 'legend',
+  },
+});
+
 function FieldLegend({
   className,
   variant = 'legend',
@@ -31,10 +47,7 @@ function FieldLegend({
     <legend
       data-slot="field-legend"
       data-variant={variant}
-      className={cn(
-        'mb-1.5 font-strong data-[variant=label]:text-base data-[variant=legend]:text-lg',
-        className,
-      )}
+      className={cn(fieldLegendVariants({ variant }), className)}
       {...props}
     />
   );

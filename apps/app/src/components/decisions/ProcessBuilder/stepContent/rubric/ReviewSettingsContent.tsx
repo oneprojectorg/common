@@ -125,7 +125,7 @@ export function ReviewSettingsContent({
       <section className="space-y-4">
         <Header3 className="text-label">{t('Scope')}</Header3>
         <FieldSet>
-          <FieldLegend className="mb-3 text-base!">
+          <FieldLegend className="mb-3 text-base">
             {t('What should each reviewer be responsible for?')}
           </FieldLegend>
           <RadioGroup
