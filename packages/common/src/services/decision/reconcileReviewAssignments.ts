@@ -68,10 +68,10 @@ const PRUNABLE_STATUS = ProposalReviewAssignmentStatus.PENDING;
  *     never retracts submitted or in-flight work; it only stops future work.
  *
  * A no-op (logged skip) unless the instance is published, in a review-capable
- * phase, with `scope === 'by_category'`. The proposal universe is the phase's
- * inbound-transition attachment set (matching generation/backfill), so inserts
- * carry the same `assignedProposalHistoryId` and proposals not in the phase are
- * ignored.
+ * phase, with `scope === 'by_category'` and a `full_coverage` policy. The
+ * proposal universe is the phase's inbound-transition attachment set (matching
+ * generation/backfill), so inserts carry the same `assignedProposalHistoryId`
+ * and proposals not in the phase are ignored.
  */
 export async function reconcileReviewAssignments({
   instanceId,
@@ -109,9 +109,16 @@ export async function reconcileReviewAssignments({
   if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
-  if (
-    getPhaseReviewSettings(instanceData, currentPhaseId).scope !== 'by_category'
-  ) {
+  const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
+
+  // Reconcile only runs under `full_coverage`: its expected set is the whole
+  // scope⨝eligibility intersection, so under `single_reviewer` it would fan out
+  // full-coverage inserts, and under `none` it would create the very rows the
+  // policy exists to suppress.
+  if (reviewSettings.policy !== 'full_coverage') {
+    return skip(`current phase policy is ${reviewSettings.policy}`);
+  }
+  if (reviewSettings.scope !== 'by_category') {
     return skip('current phase scope is not by_category');
   }
 

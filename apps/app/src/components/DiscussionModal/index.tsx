@@ -138,7 +138,7 @@ export function DiscussionModal({
                         post={comment}
                         organization={organization ?? null}
                         user={user}
-                        withLinks={false}
+                        withLinks={true}
                         onReactionClick={handleReactionClick}
                         onCommentClick={handleCommentClick}
                         className="px-4"

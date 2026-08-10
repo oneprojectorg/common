@@ -8,6 +8,7 @@ import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
+import { pickSingleReviewerAssignments } from './pickSingleReviewerAssignments';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
@@ -32,6 +33,10 @@ interface SelectedProposal {
  * Scope `all`: every eligible reviewer is assigned every proposal. Scope
  * `by_category`: each proposal is assigned only the eligible reviewers whose
  * scope rows cover its categories. Insert-only — never prunes.
+ *
+ * The scope builds the candidate set; the policy decides how much of it is
+ * written — `full_coverage` all of it, `single_reviewer` one balanced pick
+ * (`pickSingleReviewerAssignments`), `none` nothing at all.
  */
 export async function generateReviewAssignments({
   instanceId,
@@ -62,6 +67,22 @@ export async function generateReviewAssignments({
     return;
   }
 
+  const { scope, policy } = getPhaseReviewSettings(
+    instance.instanceData as DecisionInstanceData,
+    phaseId,
+  );
+
+  // Policy `none`: the phase gets no automatic assignments at all — the
+  // operator creates them manually in the backend.
+  if (policy === 'none') {
+    logger.info('generateReviewAssignments: skipped', {
+      instanceId,
+      phaseId,
+      reason: 'phase policy is none',
+    });
+    return;
+  }
+
   const [selectedProposals, reviewerProfileIds, transitionProposalRows] =
     await Promise.all([
       db.query.proposals.findMany({
@@ -85,12 +106,7 @@ export async function generateReviewAssignments({
     transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
   );
 
-  const scope = getPhaseReviewSettings(
-    instance.instanceData as DecisionInstanceData,
-    phaseId,
-  ).scope;
-
-  const assignableProposals =
+  const candidateProposals =
     scope === 'by_category'
       ? await buildByCategoryProposals({
           instanceId,
@@ -105,8 +121,19 @@ export async function generateReviewAssignments({
           submittedByProfileId: proposal.submittedByProfileId,
           assignedProposalHistoryId:
             historyByProposalId.get(proposal.id) ?? null,
-          reviewerProfileIds,
+          reviewerProfileIds: reviewerProfileIds.filter(
+            (id) => id !== proposal.submittedByProfileId,
+          ),
         }));
+
+  const assignableProposals =
+    policy === 'single_reviewer'
+      ? await resolveSingleReviewerAssignments({
+          instanceId,
+          phaseId,
+          candidateProposals,
+        })
+      : candidateProposals;
 
   await insertReviewAssignments({
     instanceId,
@@ -116,10 +143,40 @@ export async function generateReviewAssignments({
 }
 
 /**
- * Builds per-proposal reviewer sets for the `by_category` scope: scope rows
- * covering the proposal's categories ∩ eligible reviewers. Proposals that end
- * up with zero reviewers (uncategorized, or a category with no eligible scoped
- * reviewer) are logged but still proceed with an empty set — never blocked.
+ * Reads the phase's existing rows — which double as the picker's load counters
+ * and its idempotency guard for a re-run — and hands them to
+ * {@link pickSingleReviewerAssignments}.
+ *
+ * The read and the downstream insert need no transaction: generation only runs
+ * on the winning side of a phase transition, which serializes on a
+ * `SELECT ... FOR UPDATE` of the instance.
+ */
+async function resolveSingleReviewerAssignments({
+  instanceId,
+  phaseId,
+  candidateProposals,
+}: {
+  instanceId: string;
+  phaseId: string;
+  candidateProposals: AssignableProposal[];
+}): Promise<AssignableProposal[]> {
+  const existingAssignments = await db.query.proposalReviewAssignments.findMany(
+    {
+      where: { processInstanceId: instanceId, phaseId },
+      columns: { proposalId: true, reviewerProfileId: true },
+    },
+  );
+
+  return pickSingleReviewerAssignments({
+    assignableProposals: candidateProposals,
+    existingAssignments,
+  });
+}
+
+/**
+ * Scope rows covering the proposal's categories ∩ eligible reviewers, minus
+ * the author. A proposal nobody covers proceeds with an empty set — never
+ * blocked.
  */
 async function buildByCategoryProposals({
   instanceId,
@@ -136,49 +193,24 @@ async function buildByCategoryProposals({
   eligibleReviewerProfileIds: string[];
   historyByProposalId: Map<string, string>;
 }): Promise<AssignableProposal[]> {
-  const [scopedByProposal, categorizedRows] = await Promise.all([
-    getCategoryReviewersByProposal({
-      instanceId,
-      phaseId,
-      proposalIds: selectedProposalIds,
-    }),
-    db.query.proposalCategories.findMany({
-      where: { proposalId: { in: selectedProposalIds } },
-      columns: { proposalId: true },
-    }),
-  ]);
+  const scopedByProposal = await getCategoryReviewersByProposal({
+    instanceId,
+    phaseId,
+    proposalIds: selectedProposalIds,
+  });
 
-  const categorizedProposalIds = new Set(
-    categorizedRows.map((row) => row.proposalId),
-  );
   const eligibleSet = new Set(eligibleReviewerProfileIds);
 
   return selectedProposals.map((proposal) => {
     const scoped = scopedByProposal.get(proposal.id) ?? new Set<string>();
-    const reviewerProfileIds = [...scoped].filter((id) => eligibleSet.has(id));
-
-    // Mirror the downstream self-review exclusion to detect a truly
-    // uncoverable proposal.
-    const coveringReviewers = reviewerProfileIds.filter(
-      (id) => id !== proposal.submittedByProfileId,
-    );
-
-    if (coveringReviewers.length === 0) {
-      logger.warn('generateReviewAssignments: proposal has zero reviewers', {
-        instanceId,
-        phaseId,
-        proposalId: proposal.id,
-        reason: categorizedProposalIds.has(proposal.id)
-          ? 'category_has_no_eligible_reviewers'
-          : 'uncategorized',
-      });
-    }
 
     return {
       proposalId: proposal.id,
       submittedByProfileId: proposal.submittedByProfileId,
       assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
-      reviewerProfileIds,
+      reviewerProfileIds: [...scoped].filter(
+        (id) => eligibleSet.has(id) && id !== proposal.submittedByProfileId,
+      ),
     };
   });
 }

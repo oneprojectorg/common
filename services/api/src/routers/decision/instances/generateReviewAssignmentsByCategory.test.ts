@@ -16,9 +16,8 @@ import {
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { logger } from '@op/logging';
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 
@@ -593,7 +592,7 @@ describe.concurrent('generateReviewAssignments — by_category scope', () => {
     );
   });
 
-  it('warns and inserts no rows for 0-reviewer-category and uncategorized proposals, without blocking the transition', async ({
+  it('inserts no rows for 0-reviewer-category and uncategorized proposals, without blocking the transition', async ({
     task,
     onTestFinished,
   }) => {
@@ -664,28 +663,6 @@ describe.concurrent('generateReviewAssignments — by_category scope', () => {
     expect(
       assignments.filter((a) => a.proposalId === uncategorized.id),
     ).toHaveLength(0);
-
-    // Both gap proposals are surfaced via logger.warn with their reason.
-    const warnCalls = vi.mocked(logger.warn).mock.calls;
-    const warnFor = (proposalId: string) =>
-      warnCalls.find(
-        ([, meta]) =>
-          (meta as { proposalId?: string } | undefined)?.proposalId ===
-          proposalId,
-      );
-
-    expect(warnFor(emptyCategory.id)?.[1]).toMatchObject({
-      instanceId: instance.instance.id,
-      phaseId: 'review',
-      reason: 'category_has_no_eligible_reviewers',
-    });
-    expect(warnFor(uncategorized.id)?.[1]).toMatchObject({
-      instanceId: instance.instance.id,
-      phaseId: 'review',
-      reason: 'uncategorized',
-    });
-    // The covered proposal must NOT warn.
-    expect(warnFor(covered.id)).toBeUndefined();
   });
 
   it('resolves active-phase and instance-wide scope rows, excludes other-phase rows, and dedupes their overlap', async ({

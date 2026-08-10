@@ -73,7 +73,7 @@ export function Comments({
               post={comment}
               organization={organization}
               user={user}
-              withLinks={false}
+              withLinks={true}
               onReactionClick={onReactionClick}
               className="sm:px-0"
             />

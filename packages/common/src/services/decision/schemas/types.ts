@@ -69,7 +69,14 @@ export interface ProposalCategory {
   description: string;
 }
 
-export const REVIEWS_POLICIES = ['full_coverage'] as const;
+export const REVIEWS_POLICIES = [
+  /** Every candidate reviewer reviews each proposal. */
+  'full_coverage',
+  /** Each proposal gets exactly one reviewer, balanced and deterministic. */
+  'single_reviewer',
+  /** No reviewer is assigned. Escape hatch for processes whose assignments are created manually in the backend (config-only, no Process Builder control). */
+  'none',
+] as const;
 
 export type ReviewsPolicy = (typeof REVIEWS_POLICIES)[number];
 
@@ -96,7 +103,10 @@ export const phaseReviewSettingsSchema = z.object({
    * categories.
    */
   scope: z.enum(REVIEWS_SCOPES).optional(),
-  /** How proposals are distributed to reviewers within `scope`. */
+  /**
+   * How proposals are distributed to reviewers within `scope`. Absent =
+   * `'full_coverage'`. See `REVIEWS_POLICIES` for the meaning of each value.
+   */
   policy: z.enum(REVIEWS_POLICIES).optional(),
   allowRevisions: z.boolean().optional(),
   anonymousFeedback: z.boolean().optional(),

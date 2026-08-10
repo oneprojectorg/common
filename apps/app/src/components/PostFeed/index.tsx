@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
@@ -10,6 +11,7 @@ import type {
   Organization,
   Post,
   PostAttachment,
+  Profile,
 } from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -43,19 +45,28 @@ import { DeletePostMenuItem } from './DeletePostMenuItem';
 import { ReportPostModal } from './ReportPostModal';
 
 const PostDisplayName = ({
+  profile,
   displayName,
-  displaySlug,
   withLinks,
 }: {
+  profile?: Profile;
   displayName?: string;
-  displaySlug?: string;
   withLinks: boolean;
 }) => {
+  const canLinkToProfile = useCanLinkToProfile();
+
   if (!displayName) return null;
 
-  if (withLinks) {
+  const slug = profile?.slug;
+  // Match the avatar: only network members can reach profile pages, so
+  // everyone else sees the name as plain text.
+  const linked = withLinks && canLinkToProfile && Boolean(slug);
+
+  if (linked) {
+    const href = profile?.type === 'org' ? `/org/${slug}` : `/profile/${slug}`;
+
     return (
-      <Link href={`/org/${displaySlug}`}>
+      <Link href={href}>
         <bdi>{displayName}</bdi>
       </Link>
     );
@@ -427,8 +438,6 @@ export const PostItem = ({
   // TODO: this is too complex. We need to refactor this
   const displayName =
     post?.profile?.name ?? organization?.profile.name ?? 'Unknown User';
-  const displaySlug =
-    post?.profile?.slug ?? organization?.profile.slug ?? 'Unknown User';
   const profile = post.profile ?? organization?.profile;
 
   return (
@@ -443,8 +452,8 @@ export const PostItem = ({
           <div className="flex flex-col items-baseline gap-2">
             <Header3 className="font-sans text-base leading-3 font-normal">
               <PostDisplayName
+                profile={profile}
                 displayName={displayName}
-                displaySlug={displaySlug}
                 withLinks={withLinks}
               />
             </Header3>
@@ -505,8 +514,6 @@ export const PostItemOnDetailPage = ({
   // TODO: this is too complex. We need to refactor this
   const displayName =
     post?.profile?.name ?? organization?.profile.name ?? 'Unknown User';
-  const displaySlug =
-    post?.profile?.slug ?? organization?.profile.slug ?? 'Unknown User';
   const profile = post.profile ?? organization?.profile;
 
   return (
@@ -521,8 +528,8 @@ export const PostItemOnDetailPage = ({
           <div className="flex items-baseline gap-2">
             <Header3 className="font-sans leading-3 font-semibold">
               <PostDisplayName
+                profile={profile}
                 displayName={displayName}
-                displaySlug={displaySlug}
                 withLinks={withLinks}
               />
             </Header3>
