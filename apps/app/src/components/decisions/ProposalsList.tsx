@@ -26,6 +26,7 @@ import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ExportProposalsButton } from './ExportProposalsButton';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import {
   ProposalCardSkeleton,
@@ -518,6 +519,21 @@ const ProposalsListContent = ({
           hasLocationField={hasLocationField}
           effectiveView={effectiveView}
           onViewChange={handleViewChange}
+          exportControl={
+            canManageProposals ? (
+              <ExportProposalsButton
+                processInstanceId={queryParams.processInstanceId}
+                isEmpty={total === 0}
+                filters={{
+                  categoryId: queryParams.categoryId,
+                  submittedByProfileId: queryParams.submittedByProfileId,
+                  status: queryParams.status,
+                  dir: queryParams.dir,
+                  proposalFilter,
+                }}
+              />
+            ) : null
+          }
         />
       )}
 

@@ -1536,5 +1536,9 @@
   "Select an organization": "Selecione uma organização",
   "You can only invite people to organizations you administer.": "Você só pode convidar pessoas para organizações que administra.",
   "+ Add review": "+ Adicionar avaliação",
-  "{name} (You)": "{name} (Você)"
+  "{name} (You)": "{name} (Você)",
+  "Download CSV": "Baixar CSV",
+  "Failed to start export": "Não foi possível iniciar a exportação",
+  "Export failed": "A exportação falhou",
+  "Export timed out. Please try again.": "A exportação expirou. Tente novamente."
 }

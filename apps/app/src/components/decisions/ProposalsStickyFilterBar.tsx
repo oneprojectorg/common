@@ -25,6 +25,8 @@ export interface ProposalsStickyFilterBarProps {
   hasLocationField: boolean;
   effectiveView: ProposalView;
   onViewChange: (next: ProposalView) => void;
+  /** Admin-only CSV export control; omitted entirely for non-admins. */
+  exportControl?: React.ReactNode;
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
    * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
@@ -55,6 +57,7 @@ export const ProposalsStickyFilterBar = ({
   hasLocationField,
   effectiveView,
   onViewChange,
+  exportControl,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => {
   return (
@@ -87,6 +90,12 @@ export const ProposalsStickyFilterBar = ({
                 value={effectiveView}
                 onChange={onViewChange}
               />
+            </div>
+          )}
+          {exportControl && (
+            <div className="flex items-center gap-4">
+              <span aria-hidden className="h-6 w-px bg-border" />
+              {exportControl}
             </div>
           )}
         </div>

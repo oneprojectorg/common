@@ -1539,5 +1539,9 @@
   "Select an organization": "একটি সংস্থা নির্বাচন করুন",
   "You can only invite people to organizations you administer.": "আপনি শুধু সেই সংস্থাগুলিতে মানুষকে আমন্ত্রণ জানাতে পারেন যেগুলি আপনি পরিচালনা করেন।",
   "+ Add review": "+ পর্যালোচনা যোগ করুন",
-  "{name} (You)": "{name} (আপনি)"
+  "{name} (You)": "{name} (আপনি)",
+  "Download CSV": "CSV ডাউনলোড করুন",
+  "Failed to start export": "রপ্তানি শুরু করা যায়নি",
+  "Export failed": "রপ্তানি ব্যর্থ হয়েছে",
+  "Export timed out. Please try again.": "রপ্তানির সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।"
 }

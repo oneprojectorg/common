@@ -1536,5 +1536,9 @@
   "Select an organization": "اختر مؤسسة",
   "You can only invite people to organizations you administer.": "يمكنك دعوة أشخاص فقط إلى المؤسسات التي تديرها.",
   "+ Add review": "+ إضافة مراجعة",
-  "{name} (You)": "{name} (أنت)"
+  "{name} (You)": "{name} (أنت)",
+  "Download CSV": "تنزيل CSV",
+  "Failed to start export": "تعذّر بدء التصدير",
+  "Export failed": "فشل التصدير",
+  "Export timed out. Please try again.": "انتهت مهلة التصدير. يرجى المحاولة مرة أخرى."
 }
