@@ -436,8 +436,7 @@ describe.concurrent('listReviewAssignments', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await createTwoReviewPhaseContext(testData);
 
-    // One reviewer, one proposal, an assignment in each review phase — the
-    // playtest case that listed the proposal twice.
+    // One reviewer, one proposal, an assignment in each review phase.
     const feasibility = await testData.createReviewAssignment({
       context,
       title: 'Reviewed in both phases',
@@ -535,8 +534,8 @@ describe.concurrent('listReviewAssignments', () => {
       sort: 'leastReviewed',
     });
 
-    // Instance-scoped counting would rank the past phase's two completions
-    // above this phase's single one, flipping the order.
+    // Coverage counts within the scoped phase, so the proposal whose two
+    // completions sit in the feasibility phase leads with zero.
     expect(result.assignments.map((a) => a.assignment.proposal.id)).toEqual([
       coveredBefore.proposal.id,
       coveredNow.proposal.id,

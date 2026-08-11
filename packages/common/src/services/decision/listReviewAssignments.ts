@@ -42,8 +42,7 @@ const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
 /**
  * Returns the reviewer's authorized review assignments for a single phase — the
- * requested `phaseId`, else the current one. Unscoped, a reviewer with
- * assignments in two review phases sees the past phase's work in their queue.
+ * requested `phaseId`, else the current one.
  */
 export async function listReviewAssignments({
   processInstanceId,
@@ -105,8 +104,8 @@ export async function listReviewAssignments({
   // COMPLETED reviews for the proposal across *all* reviewers — the same
   // "≥1 completed = reviewed" definition shown as the "N Reviewed" badge. A
   // correlated subquery (own `pra_completed` alias) so it isn't constrained by
-  // the outer query's per-reviewer filter. Phase-scoped like the list, so a
-  // past phase's reviews don't inflate the badge or skew the sort.
+  // the outer query's per-reviewer filter. Phase-scoped like the list, so the
+  // badge and the sort count this phase's reviews only.
   const completedPhaseFilter = phaseId
     ? sql` AND pra_completed.phase_id = ${phaseId}`
     : sql``;
