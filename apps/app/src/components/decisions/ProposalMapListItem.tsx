@@ -16,6 +16,8 @@ interface ProposalMapListItemProps {
    * matching the grid view's `showMenu = canManageProposals` logic.
    */
   canManage?: boolean;
+  /** Whether the viewer may like/follow — mirrors the grid's metric toggles. */
+  canEngage?: boolean;
   /** Called when the pointer enters the row (desktop hover sync). */
   onActivate: () => void;
   /** Called when the pointer leaves the row. */
@@ -33,6 +35,7 @@ export function ProposalMapListItem({
   href,
   isActive,
   canManage = false,
+  canEngage = false,
   onActivate,
   onDeactivate,
 }: ProposalMapListItemProps) {
@@ -42,6 +45,7 @@ export function ProposalMapListItem({
         proposal={proposal}
         href={href}
         showMetrics
+        canEngage={canEngage}
         className={cn(
           'min-w-0 transition-colors',
           isActive ? 'border-input bg-muted' : 'hover:bg-muted',

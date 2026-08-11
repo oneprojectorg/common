@@ -69,6 +69,10 @@ export function ProposalsMapView({
   listFooter,
 }: ProposalsMapViewProps) {
   const canManageProposals = permissions?.admin ?? false;
+  // Same gate as the grid — the map's cards never carry owner actions, so
+  // there's nothing to hand the row over to.
+  const canEngage =
+    (permissions?.submitProposals ?? false) || canManageProposals;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
@@ -195,6 +199,7 @@ export function ProposalsMapView({
             href={hrefFor(proposal)}
             isActive={activeId === proposal.id}
             canManage={canManageProposals || Boolean(proposal.isEditable)}
+            canEngage={canEngage}
             onActivate={() => setActiveId(proposal.id)}
             onDeactivate={() => setActiveId(null)}
           />
