@@ -79,9 +79,17 @@
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
-  /* A count ticking over — slides in from the direction it moved. */
-  --animate-count-up: count-up 0.18s ease-out;
-  --animate-count-down: count-down 0.18s ease-out;
+  /* A count ticking over: the old number slides out as the new one slides in,
+   * both moving the same way. Tune the pair here — the four animations share
+   * them. (Tailwind also mints `duration-count` / `ease-count` from these.) */
+  --duration-count: 0.4s;
+  --ease-count: cubic-bezier(0.86, 0, 0.07, 1);
+  --animate-count-up: count-up var(--duration-count) var(--ease-count);
+  --animate-count-down: count-down var(--duration-count) var(--ease-count);
+  --animate-count-up-out: count-up-out var(--duration-count) var(--ease-count)
+    forwards;
+  --animate-count-down-out: count-down-out var(--duration-count)
+    var(--ease-count) forwards;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
@@ -183,7 +191,7 @@
 @keyframes count-up {
   from {
     opacity: 0;
-    transform: translateY(0.35em);
+    transform: translateY(0.5em);
   }
   to {
     opacity: 1;
@@ -194,11 +202,35 @@
 @keyframes count-down {
   from {
     opacity: 0;
-    transform: translateY(-0.35em);
+    transform: translateY(-0.5em);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* The outgoing halves: same direction of travel as the number replacing them,
+ * so the pair reads as one movement rather than two. */
+@keyframes count-up-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.5em);
+  }
+}
+
+@keyframes count-down-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.5em);
   }
 }
 

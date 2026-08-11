@@ -1,19 +1,22 @@
 'use client';
 
-import { useRef } from 'react';
+import { useState } from 'react';
 
 import { cn } from '../../lib/utils';
 
 /**
- * A number that slides as it changes — up when it grows, down when it shrinks.
+ * A number that swaps as it changes — the old value slides out as the new one
+ * slides in, both travelling the same way (upward when the count grows).
  *
- * The span is keyed on the value, so React swaps the element and the CSS
- * animation plays on mount. No JS animation loop and no measurement: the travel
- * is in `em`, so it tracks whatever text size it inherits, including the sense
- * steps that change at the md breakpoint.
+ * The two sit in one grid cell so they overlap without absolute positioning,
+ * and the outgoing one is removed once its animation ends, so the box goes back
+ * to the width of a single number. No JS animation loop and no measurement: the
+ * travel is in `em`, so it tracks whatever text size it inherits.
  *
- * Silent on first paint — a grid of cards shouldn't tick as it loads — and
- * `motion-reduce` drops it to a straight swap.
+ * Silent on first paint — a grid of cards shouldn't tick as it loads. Under
+ * `motion-reduce` the outgoing number is `hidden` rather than merely
+ * un-animated: it would otherwise sit on top of the new one, and with no
+ * animation there'd be no `animationend` to clear it.
  */
 export function AnimatedCount({
   value,
@@ -22,29 +25,46 @@ export function AnimatedCount({
   value: number;
   className?: string;
 }) {
-  const previous = useRef(value);
-  // Direction is remembered rather than recomputed per render: under StrictMode
-  // the second render sees `previous` already caught up, and comparing there
-  // would call every change a decrease.
-  const direction = useRef<'up' | 'down' | null>(null);
+  // One piece of state so the value and the number it replaced can't disagree.
+  const [seen, setSeen] = useState<{ value: number; outgoing: number | null }>({
+    value,
+    outgoing: null,
+  });
 
-  if (previous.current !== value) {
-    direction.current = value > previous.current ? 'up' : 'down';
-    previous.current = value;
+  if (seen.value !== value) {
+    // A render-phase update: React re-runs this component with the new state
+    // before committing, so the stale `seen` below never reaches the DOM.
+    setSeen({ value, outgoing: seen.value });
   }
 
+  const { outgoing } = seen;
+  const grew = outgoing !== null && value > outgoing;
+
   return (
-    <span
-      key={value}
-      className={cn(
-        'inline-block tabular-nums',
-        direction.current === 'up' && 'animate-count-up',
-        direction.current === 'down' && 'animate-count-down',
-        'motion-reduce:animate-none',
-        className,
+    <span className={cn('inline-grid tabular-nums', className)}>
+      {outgoing !== null && (
+        <span
+          key={outgoing}
+          aria-hidden
+          className={cn(
+            'col-start-1 row-start-1 motion-reduce:hidden',
+            grew ? 'animate-count-up-out' : 'animate-count-down-out',
+          )}
+          onAnimationEnd={() => setSeen((s) => ({ ...s, outgoing: null }))}
+        >
+          {outgoing}
+        </span>
       )}
-    >
-      {value}
+      <span
+        key={value}
+        className={cn(
+          'col-start-1 row-start-1 motion-reduce:animate-none',
+          outgoing !== null &&
+            (grew ? 'animate-count-up' : 'animate-count-down'),
+        )}
+      >
+        {value}
+      </span>
     </span>
   );
 }
