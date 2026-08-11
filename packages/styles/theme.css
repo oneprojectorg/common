@@ -83,7 +83,7 @@
    * both moving the same way. Tune the pair here — the four animations share
    * them. (Tailwind also mints `duration-count` / `ease-count` from these.) */
   --duration-count: 0.3s;
-  --ease-count: cubic-bezier(0.19,1,0.22,1);
+  --ease-count: cubic-bezier(0.08,0.82,0.17,1);
   --distance-count: 0.75em;
   --animate-count-up: count-up var(--duration-count) var(--ease-count);
   --animate-count-down: count-down var(--duration-count) var(--ease-count);
