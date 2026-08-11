@@ -94,5 +94,10 @@ export function bumpProposalCount(
     };
   }
 
+  // A bare proposal — what `decision.getProposal` caches for the detail view.
+  if ('profileId' in record) {
+    return bumpRow(record as ProposalRow, profileId, field, delta);
+  }
+
   return data;
 }

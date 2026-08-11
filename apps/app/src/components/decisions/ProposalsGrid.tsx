@@ -566,7 +566,11 @@ const ViewProposalsList = ({
             aside={aside}
             actions={actions}
             showMetrics={!isDraft}
-            canEngage={canEngage}
+            // Engagement replaced the old Like/Follow footer, and that footer
+            // shared one slot with the owner and revision actions — so an
+            // author never saw Like/Follow on their own card. Keep that: the
+            // toggles light up only where those buttons used to.
+            canEngage={canEngage && !actions}
             revisionRequested={hasRevisionRequest}
             className={isDraft ? 'bg-muted' : undefined}
           />

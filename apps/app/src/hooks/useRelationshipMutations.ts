@@ -4,7 +4,6 @@ import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { getQueryKey } from '@trpc/react-query';
 import { useCallback } from 'react';
 
 import {
@@ -103,13 +102,15 @@ export function useRelationshipMutations({
   const queryClient = useQueryClient();
 
   /**
-   * Move the proposal's like/follow count in every cached `listProposals`
-   * result and hand back a snapshot to roll back with.
+   * Move the proposal's like/follow count everywhere it is cached, and hand
+   * back a snapshot to roll back with.
    *
-   * Matched on the router path alone rather than a specific input: the same
-   * proposal can sit in several lists at once (different filters or sorts, plus
-   * the ballot's non-infinite query), and the row is found by profileId
-   * wherever it appears.
+   * Matched with a predicate on the tRPC path rather than a built query key:
+   * the same proposal sits in several caches at once — any number of
+   * `listProposals` results (different filters or sorts, plus the ballot's
+   * non-infinite query) and the `getProposal` entry the detail view reads — and
+   * a predicate matches all of them without depending on how tRPC happens to
+   * encode inputs in the key.
    */
   const patchCachedCounts = (relationshipType: string, delta: number) => {
     if (!targetProfileId) {
@@ -120,10 +121,22 @@ export function useRelationshipMutations({
       relationshipType === ProfileRelationshipType.LIKES
         ? 'likesCount'
         : 'followersCount';
-    const queryKey = getQueryKey(trpc.decision.listProposals);
-    const snapshot = queryClient.getQueriesData({ queryKey });
 
-    queryClient.setQueriesData({ queryKey }, (old: unknown) =>
+    const filter = {
+      predicate: (query: { queryKey: readonly unknown[] }) => {
+        const [path] = query.queryKey;
+
+        return (
+          Array.isArray(path) &&
+          path[0] === 'decision' &&
+          (path[1] === 'listProposals' || path[1] === 'getProposal')
+        );
+      },
+    };
+
+    const snapshot = queryClient.getQueriesData(filter);
+
+    queryClient.setQueriesData(filter, (old: unknown) =>
       bumpProposalCount(old, targetProfileId, field, delta),
     );
 

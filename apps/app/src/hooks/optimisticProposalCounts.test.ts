@@ -60,6 +60,25 @@ describe('bumpProposalCount', () => {
     expect(next.items[0]!.likesCount).toBe(0);
   });
 
+  it('moves a bare proposal, the shape getProposal caches', () => {
+    const single = { profileId: 'p1', likesCount: 4, followersCount: 3 };
+    const next = bumpProposalCount(
+      single,
+      'p1',
+      'likesCount',
+      1,
+    ) as typeof single;
+
+    expect(next).toMatchObject({ likesCount: 5, followersCount: 3 });
+    expect(single.likesCount).toBe(4);
+  });
+
+  it('leaves a bare proposal for someone else alone', () => {
+    const single = { profileId: 'p2', likesCount: 4 };
+
+    expect(bumpProposalCount(single, 'p1', 'likesCount', 1)).toBe(single);
+  });
+
   it('leaves unrecognised cache shapes untouched', () => {
     const odd = { somethingElse: true };
 
