@@ -26,7 +26,7 @@ export const viewerProseStyles = [
   '[&_:is(p,h1,h2,h3,h4,li,blockquote)]:[unicode-bidi:plaintext]',
   'leading-5 max-w-none break-words overflow-wrap-anywhere',
   // Details/Summary (collapsible) chrome lives in one raw-CSS block in
-  // `@op/styles` (`.details` in shared-styles.css), shared by the editor's
+  // `@op/styles` (`.details` in theme.css), shared by the editor's
   // built-in node view AND the viewer's native <details>. Nothing here.
 ].join(' ');
 

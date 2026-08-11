@@ -25,9 +25,9 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 
 - **Always prefer existing `@op/ui` components over vanilla html elements such as `<button>` or `<h2>`**
 - **Always use design tokens** — never arbitrary Tailwind values (e.g. `text-[14px]`, `bg-[#333]`):
-  - Colors: token-mapped Tailwind classes (e.g. `text-primary-teal`, `bg-neutral-gray1`) — source tokens in `packages/styles/tokens.css` (`--op-*`) mapped via `shared-styles.css`
-  - Text sizes: the custom type scale (e.g. `text-title-lg`, `text-sm`) defined in `packages/styles/shared-styles.css` — no raw Tailwind size utilities we haven't defined
-- Tailwind configuration is centralized in `@op/styles` (`packages/styles/shared-styles.css`)
+  - Colors: token-mapped Tailwind classes (e.g. `text-primary-teal`, `bg-neutral-gray1`) — raw values in `packages/styles/tokens.css`, semantic names in `packages/styles/theme.css`
+  - Text sizes: the sense type scale (`text-label`, `text-title`, `text-headline`, `text-display`) defined in `packages/styles/tokens.css` — no raw Tailwind size utilities we haven't defined
+- Tailwind configuration is centralized in `@op/styles`: `tokens.css` holds raw values, `theme.css` holds semantics and is the package entry
 
 ### Database & tRPC
 

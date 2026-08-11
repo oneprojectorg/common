@@ -50,12 +50,12 @@ component has an explicit entry in `package.json#exports`.
 
 Shadcn's semantic CSS variables (`--background`, `--foreground`, `--primary`,
 etc.) are mapped onto OP brand tokens in
-[`packages/styles/sense-theme.css`](../styles/sense-theme.css), which is
-imported by `@op/styles/shared-styles.css`. Apps that already consume
+[`packages/styles/theme.css`](../styles/theme.css), which is the
+`@op/styles` entry point. Apps that already consume
 `@op/styles` get sense theming for free — no extra CSS import needed.
 
 To rebrand a semantic role (e.g. change what `--primary` resolves to), edit
-`sense-theme.css`. Do **not** edit individual component files.
+`theme.css`. Do **not** edit individual component files.
 
 ## Adding a new shadcn component
 

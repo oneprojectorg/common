@@ -2,7 +2,7 @@
  * Intent UI Theme
  * Maps Intent UI CSS variables to @op/styles tokens
  *
- * Note: Border color defaults and radius values are defined in shared-styles.css
+ * Note: Border color defaults and radius values are defined in theme.css
  * Note: Alpha tints use color-mix() against the semantic --color-* tokens since
  * the raw --op-* layer now stores full hsla() values rather than HSL triplets.
  */

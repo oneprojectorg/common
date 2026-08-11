@@ -2,12 +2,12 @@
  * OP Brand Design Tokens — Figma source of truth
  *
  * Raw palette values from the design-system Figma file. Consumed by
- * shared-styles.css, which maps these into the Tailwind `@theme` layer
+ * theme.css, which maps these into the Tailwind `@theme` layer
  * as `--color-*` tokens (plus legacy aliases for the pre-rename naming).
  *
  * Naming: --op-<category>[-<role>]-<scale>
  *
- * Figma↔code gaps (handled by semantic aliases in shared-styles.css):
+ * Figma↔code gaps (handled by semantic aliases in theme.css):
  *   - one orange   → orange1 + orange2 collapse to a single hue
  *   - no separate status-green → uses functional-green-600 / -100
  */
@@ -17,8 +17,8 @@
    * Colors Scale — the current raw palette
    *
    * The Figma "Colors Scale" variables collection. This is the ramp the
-   * sense semantic tokens alias (see sense-theme.css) and the one new work
-   * should build on. Exposed to Tailwind by shared-styles.css, so it
+   * sense semantic tokens alias (see theme.css) and the one new work
+   * should build on. Exposed to Tailwind by theme.css, so it
    * intentionally overrides Tailwind's default palette for these eight hues:
    * `bg-teal-500`, `text-gray-600`, etc. resolve to brand ramps.
    * ============================================ */
@@ -199,4 +199,68 @@
    * ============================================ */
   --op-data-purple: var(--color-purple-500); /* #A1649F */
   --op-data-blue: var(--color-blue-500); /* #4444CC */
+}
+
+/* ============================================
+ * Scale — the rest of the raw design values
+ *
+ * Non-colour primitives from the Figma file: type, spacing, radius,
+ * breakpoints, shadows. Same rule as the Colors Scale above — values only,
+ * no meaning. The semantic layer that names them lives in theme.css.
+ * ============================================ */
+@theme {
+  /* ============================================
+   * Breakpoints (screens)
+   * ============================================ */
+  --breakpoint-xxs: 320px;
+  --breakpoint-xs: 480px;
+  /* sm, md, lg, xl, 2xl use Tailwind defaults */
+
+  /* ============================================
+   * Border Radius
+   * ============================================ */
+  --radius-xs: 0px; /* TW default is 0.125rem */
+  --radius: 0.5rem;
+  --radius-3xl: 1.25rem; /* TW default is 1.5rem */
+  --radius-4xl: 1.5rem; /* TW default is 2rem */
+
+  /* ============================================
+   * Font Families
+   * ============================================ */
+  --font-accent:
+    var(--font-accent), ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif:
+    var(--font-serif), ui-serif, Georgia, Cambria, 'Times New Roman', Times,
+    serif;
+  --font-sans:
+    var(--font-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  /* No web font for mono — the app relies on system monospace fonts */
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+
+  /* ============================================
+   * Line Height
+   * ============================================ */
+  --leading-base: 0.875rem;
+
+  /* ============================================
+   * Spacing
+   * ============================================ */
+  /* Proposal editor top bar. 60px per the Figma "Proposal Bar" component
+   * (was 4rem/64px). Consumed by ProposalEditorHeader only. */
+  --spacing-editor-topbar: 3.75rem;
+  --spacing-18: 4.5rem;
+
+  /* ============================================
+   * Box Shadows
+   * ============================================ */
+  --shadow-light: 0px 0px 16px 0px rgba(20, 35, 38, 0.04);
+  --shadow-green: 0px 0px 16px 0px rgba(193, 255, 173, 0.88);
+  --shadow-orange: 0px 0px 16px 0px rgba(242, 183, 5, 0.64);
+
+  /* Backdrop Blur — --blur-sm (8px) matches Tailwind's default; inherited. */
+
 }

@@ -41,7 +41,7 @@
       "selectValueClassName"
     ],
     "functions": ["twMerge", "clsx", "cn", "tv"],
-    "stylesheet": "./packages/styles/shared-styles.css"
+    "stylesheet": "./packages/styles/theme.css"
   },
   "ignorePatterns": [
     "pnpm-lock.yaml",

@@ -11,9 +11,9 @@
     "./constants": "./constants.ts"
   },
   "scripts": {
-    "build": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css --minify",
-    "dev": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css --watch",
-    "dev:e2e": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css --watch",
+    "build": "tailwindcss -i ./theme.css -o ./dist/styles.css --minify",
+    "dev": "tailwindcss -i ./theme.css -o ./dist/styles.css --watch",
+    "dev:e2e": "tailwindcss -i ./theme.css -o ./dist/styles.css --watch",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
