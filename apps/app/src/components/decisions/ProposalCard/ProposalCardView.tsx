@@ -180,23 +180,27 @@ export const ProposalCardView = ({
       ? undefined
       : displayCategories;
 
+  // Labels are passed rather than left to the card's English defaults: they're
+  // the metrics' accessible names.
   const metrics = showMetrics
     ? {
-        likes: engagement
-          ? {
-              count: proposal.likesCount || 0,
-              active: engagement.isLiked,
-              onClick: engagement.onLike,
-            }
-          : proposal.likesCount || 0,
-        bookmarks: engagement
-          ? {
-              count: proposal.followersCount || 0,
-              active: engagement.isFollowed,
-              onClick: engagement.onFollow,
-            }
-          : proposal.followersCount || 0,
-        comments: proposal.commentsCount || 0,
+        likes: {
+          count: proposal.likesCount || 0,
+          label: t('Likes'),
+          ...(engagement && {
+            active: engagement.isLiked,
+            onClick: engagement.onLike,
+          }),
+        },
+        bookmarks: {
+          count: proposal.followersCount || 0,
+          label: t('Followers'),
+          ...(engagement && {
+            active: engagement.isFollowed,
+            onClick: engagement.onFollow,
+          }),
+        },
+        comments: { count: proposal.commentsCount || 0, label: t('Comments') },
       }
     : undefined;
 

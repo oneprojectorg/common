@@ -33,7 +33,13 @@ export interface ProposalCardAuthor {
 /** A single engagement metric — a bare count, or a pressable toggle/button. */
 export type ProposalCardMetric =
   | number
-  | { count?: number; active?: boolean; onClick?: () => void; label?: string };
+  | {
+      count?: number;
+      active?: boolean;
+      onClick?: () => void;
+      /** Accessible name for the metric. Translate it — the default is English. */
+      label?: string;
+    };
 
 export interface ProposalCardMetrics {
   likes?: ProposalCardMetric;
@@ -342,9 +348,36 @@ function metricParts(metric: ProposalCardMetric) {
 
 const METRIC_CLASS = 'gap-1 px-2 font-normal text-muted-foreground';
 
+/**
+ * Icon, name, count — the accessible name of every metric, interactive or not.
+ *
+ * The name is rendered rather than set with `aria-label` so it includes the
+ * count: `aria-label` would replace the content, and a toggle announced as just
+ * "Like" leaves a screen reader with no read on the number that moved.
+ */
+function MetricContent({
+  icon: Icon,
+  count,
+  label,
+  active,
+}: {
+  icon: IconType;
+  count?: number;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <>
+      <Icon className={cn('size-4', active && 'fill-current')} aria-hidden />
+      <span className="sr-only">{label}: </span>
+      <AnimatedCount value={count ?? 0} />
+    </>
+  );
+}
+
 /** Non-interactive count (no handler) — matches the app's display-only chips. */
 function MetricDisplay({
-  icon: Icon,
+  icon,
   count,
   label,
 }: {
@@ -353,14 +386,8 @@ function MetricDisplay({
   label: string;
 }) {
   return (
-    <span
-      className={cn(
-        'inline-flex h-8 items-center px-2 text-sm text-muted-foreground',
-      )}
-    >
-      <Icon className="me-1 size-4" aria-hidden />
-      <span className="sr-only">{label}: </span>
-      <AnimatedCount value={count ?? 0} />
+    <span className="inline-flex h-8 items-center gap-1 px-2 text-sm text-muted-foreground">
+      <MetricContent icon={icon} count={count} label={label} />
     </span>
   );
 }
@@ -378,21 +405,28 @@ function MetricToggle({
   if (metric == null) {
     return null;
   }
-  const { count, active, onClick } = metricParts(metric);
+  const {
+    count,
+    active,
+    onClick,
+    label: metricLabel = label,
+  } = metricParts(metric);
   if (!onClick) {
-    return <MetricDisplay icon={icon} count={count} label={label} />;
+    return <MetricDisplay icon={icon} count={count} label={metricLabel} />;
   }
-  const Icon = icon;
   return (
     <Toggle
       size="sm"
       pressed={active}
       onPressedChange={() => onClick()}
-      aria-label={label}
       className={METRIC_CLASS}
     >
-      <Icon className={cn('size-4', active && 'fill-current')} aria-hidden />
-      <AnimatedCount value={count ?? 0} />
+      <MetricContent
+        icon={icon}
+        count={count}
+        label={metricLabel}
+        active={active}
+      />
     </Toggle>
   );
 }
@@ -410,21 +444,18 @@ function MetricButton({
   if (metric == null) {
     return null;
   }
-  const { count, onClick } = metricParts(metric);
+  const { count, onClick, label: metricLabel = label } = metricParts(metric);
   if (!onClick) {
-    return <MetricDisplay icon={icon} count={count} label={label} />;
+    return <MetricDisplay icon={icon} count={count} label={metricLabel} />;
   }
-  const Icon = icon;
   return (
     <Button
       variant="ghost"
       size="sm"
       onClick={onClick}
-      aria-label={label}
       className={METRIC_CLASS}
     >
-      <Icon className="size-4" aria-hidden />
-      <AnimatedCount value={count ?? 0} />
+      <MetricContent icon={icon} count={count} label={metricLabel} />
     </Button>
   );
 }
