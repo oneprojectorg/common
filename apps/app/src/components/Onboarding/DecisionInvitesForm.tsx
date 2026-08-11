@@ -142,7 +142,8 @@ export const DecisionInvitesForm = ({
           {invites.length === 1 && invites[0] && (
             <Button
               variant="link"
-              className="h-10 px-2 py-2.5 text-sm font-normal text-primary underline hover:text-primary/80 disabled:opacity-50"
+              size="sm"
+              className="font-normal underline hover:text-primary/80"
               onClick={() => handleDecline(invites[0]!.id)}
               disabled={declineInvite.isPending}
             >
