@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useAnyContentNeedsTranslation } from "@/hooks/useAnyContentNeedsTranslation";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { APIErrorBoundary } from "@/utils/APIErrorBoundary";
-import { useUser } from "@/utils/UserProvider";
-import { trpc } from "@op/api/client";
+import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import {
   type DecisionAccess,
   type InstancePhaseData,
   ProposalFilter,
   ProposalStatus,
-} from "@op/api/encoders";
+} from '@op/api/encoders';
 import {
   type Proposal,
   ProposalReviewRequestState,
@@ -24,27 +24,27 @@ import { cn } from '@op/sense/lib/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
-import { useTranslations } from "@/lib/i18n";
+import { useTranslations } from '@/lib/i18n';
 
-import { ExportProposalsButton } from "./ExportProposalsButton";
-import { MobileViewSwitch } from "./MobileViewSwitch";
+import { ExportProposalsButton } from './ExportProposalsButton';
+import { MobileViewSwitch } from './MobileViewSwitch';
 import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
-} from "./ProposalListSkeleton";
-import { ProposalTranslationProvider } from "./ProposalTranslationContext";
-import { PROPOSAL_VIEWS, type ProposalView } from "./ProposalViewToggle";
-import { ProposalsGrid } from "./ProposalsGrid";
+} from './ProposalListSkeleton';
+import { ProposalTranslationProvider } from './ProposalTranslationContext';
+import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
+import { ProposalsGrid } from './ProposalsGrid';
 import {
   ProposalsMapView,
   ProposalsMapWithLocations,
-} from "./ProposalsMapView";
-import { ProposalsStickyFilterBar } from "./ProposalsStickyFilterBar";
-import { TranslateBanner } from "./TranslateBanner";
-import { TranslationNotice } from "./TranslationNotice";
-import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from "./location/mapConfig";
-import { getProposalDetectionText } from "./translationDetectionText";
-import { useTranslateDecision } from "./useTranslateDecision";
+} from './ProposalsMapView';
+import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
+import { TranslateBanner } from './TranslateBanner';
+import { TranslationNotice } from './TranslationNotice';
+import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
+import { getProposalDetectionText } from './translationDetectionText';
+import { useTranslateDecision } from './useTranslateDecision';
 
 export interface ProposalsListProps {
   slug: string;
@@ -58,7 +58,7 @@ export interface ProposalsListProps {
   /** Override the default proposal filter */
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
-  phase?: "results";
+  phase?: 'results';
   /** Current phase; capability flags are derived from `rules`. */
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
@@ -85,9 +85,9 @@ type ProposalQueryParams = {
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;
-  dir: "asc" | "desc";
+  dir: 'asc' | 'desc';
   limit: number;
-  phase?: "results";
+  phase?: 'results';
   excludeAssignedForReview?: boolean;
 };
 
@@ -126,7 +126,7 @@ const useProposalsLoaderRenderProps = (
       hasNextPage,
       isFetchingNextPage,
       threshold: 0.1,
-      rootMargin: "50px",
+      rootMargin: '50px',
     },
   );
 
@@ -153,7 +153,7 @@ const CurrentPhaseProposalsLoader = ({
       staleTime: 30 * 1000,
       // Force a client-side fetch so the query registers its invalidation
       // channel via the client link. TODO: find a cleaner way to register.
-      refetchOnMount: "always",
+      refetchOnMount: 'always',
     });
 
   // Unfiltered count for the "of N" denominator — same endpoint/visibility as
@@ -207,7 +207,7 @@ const ResultsPhaseProposalsLoader = ({
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
         staleTime: 30 * 1000,
-        refetchOnMount: "always",
+        refetchOnMount: 'always',
       },
     );
 
@@ -249,15 +249,15 @@ export const ProposalsList = (props: ProposalsListProps) => {
   // nuqs holds the filters in the URL. `filter` has no default so an absent
   // value can fall back to the ballot-aware default derived below.
   const [selectedCategory, setSelectedCategory] = useQueryState(
-    "category",
-    parseAsString.withDefault("all-categories"),
+    'category',
+    parseAsString.withDefault('all-categories'),
   );
   const [sortOrder, setSortOrder] = useQueryState(
-    "sort",
-    parseAsString.withDefault("newest"),
+    'sort',
+    parseAsString.withDefault('newest'),
   );
   const [filterParam, setProposalFilter] = useQueryState(
-    "filter",
+    'filter',
     parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
   );
   const requestedFilter =
@@ -275,13 +275,13 @@ export const ProposalsList = (props: ProposalsListProps) => {
   const queryParams = useMemo<ProposalQueryParams>(() => {
     const params: ProposalQueryParams = {
       processInstanceId: instanceId,
-      dir: sortOrder === "newest" ? "desc" : "asc",
+      dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: PROPOSALS_PAGE_LIMIT,
       phase,
       excludeAssignedForReview,
     };
 
-    if (selectedCategory !== "all-categories") {
+    if (selectedCategory !== 'all-categories') {
       params.categoryId = selectedCategory;
     }
 
@@ -320,7 +320,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     />
   );
 
-  if (phase === "results") {
+  if (phase === 'results') {
     return (
       <ResultsPhaseProposalsLoader queryParams={queryParams}>
         {renderContent}
@@ -396,14 +396,14 @@ const ProposalsListContent = ({
   // Nullable so the default below can depend on whether the process collects a
   // location; the contextual default is stripped from the URL in setView.
   const [view, setView] = useQueryState(
-    "view",
+    'view',
     parseAsStringLiteral(PROPOSAL_VIEWS),
   );
 
   // Map browse mode is offered only when the process collects a location and
   // the GIS flag is on. The map fits the proposal markers; this default view
   // (`x-map-default`) is the fallback camera for when none have a location.
-  const gisMapsEnabled = useFeatureFlag("gis_maps");
+  const gisMapsEnabled = useFeatureFlag('gis_maps');
   const proposalTemplate = instance.instanceData?.proposalTemplate;
   const hasLocationField =
     !!gisMapsEnabled && templateCollectsLocation(proposalTemplate);
@@ -413,11 +413,11 @@ const ProposalsListContent = ({
   // Lead with the map when the process has one — users came here to see places,
   // not titles — and fall back to grid otherwise. Ignores a stale `?view=map`
   // when this process has no map.
-  const defaultView: ProposalView = hasLocationField ? "map" : "grid";
+  const defaultView: ProposalView = hasLocationField ? 'map' : 'grid';
   const effectiveView: ProposalView = hasLocationField
     ? (view ?? defaultView)
-    : "grid";
-  const isMapMode = hasLocationField && effectiveView === "map";
+    : 'grid';
+  const isMapMode = hasLocationField && effectiveView === 'map';
 
   const handleViewChange = (next: ProposalView) => {
     // Strip the param when picking the contextual default so the URL stays clean.
@@ -433,7 +433,7 @@ const ProposalsListContent = ({
   // CSV export is behind a flag for staged rollout. Defaulted rather than left
   // as `boolean | undefined` so the control stays hidden while flags load
   // instead of appearing and then vanishing.
-  const exportEnabled = useFeatureFlag("export-feature") ?? false;
+  const exportEnabled = useFeatureFlag('export-feature') ?? false;
   const canExportProposals = canManageProposals && exportEnabled;
 
   const { data: revisionRequestsData } =
@@ -486,7 +486,7 @@ const ProposalsListContent = ({
   // True for any active filter (category OR All/Mine/Shortlisted) so an empty
   // result reads "none match your filters", not "none yet".
   const hasActiveFilter =
-    selectedCategory !== "all-categories" ||
+    selectedCategory !== 'all-categories' ||
     proposalFilter !== ProposalFilter.ALL;
 
   // With nothing to filter, sort, or export, the control bar is just noise —
@@ -501,9 +501,9 @@ const ProposalsListContent = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-6 pb-12",
+        'relative flex flex-col gap-6 pb-12',
         // On mobile the map view is edge-to-edge and flush to the bottom.
-        isMapMode && "max-sm:pb-0",
+        isMapMode && 'max-sm:pb-0',
       )}
     >
       {showFilterBar && (
@@ -560,7 +560,7 @@ const ProposalsListContent = ({
         translations={translation.translationState?.translations ?? {}}
       >
         {isMapMode && !isEmptyUnfiltered ? (
-          phase === "results" ? (
+          phase === 'results' ? (
             // Results uses the phase-agnostic `listAllProposals` set; source
             // pins from that same loaded data so pins match the results list.
             <ProposalsMapView
