@@ -181,7 +181,7 @@ export const AddResourceDocumentForm = ({
               </div>
             ) : (
               <div className="flex items-center gap-4 rounded-lg border border-border bg-white p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-tealWhite">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent">
                   <LuFileText className="size-5 text-muted-foreground" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -233,7 +233,7 @@ export const AddResourceDocumentForm = ({
               className={cn(
                 'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-muted px-12 py-6 text-center transition-colors',
                 isDragging
-                  ? 'bg-primary-teal50 border-primary-teal'
+                  ? 'border-primary bg-accent'
                   : 'border-input hover:border-input',
               )}
             >
@@ -244,9 +244,7 @@ export const AddResourceDocumentForm = ({
                 <p>
                   {t.rich('Drag a file here or <browse>browse</browse>', {
                     browse: (chunks: ReactNode) => (
-                      <span className="text-primary-teal underline">
-                        {chunks}
-                      </span>
+                      <span className="text-primary underline">{chunks}</span>
                     ),
                   })}
                 </p>

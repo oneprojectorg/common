@@ -22,7 +22,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@op/sense/Field';
-import { Header2 } from '@op/sense/Header';
+import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
@@ -252,9 +252,9 @@ function PhaseDetailForm({
               total: phaseCount,
             })}
           </p>
-          <Header2 className="text-title">
+          <Header1 className="text-headline">
             {phase.name?.trim() ? phase.name : t('Add phase')}
-          </Header2>
+          </Header1>
         </div>
         <SaveStatusIndicator
           status={autosaveStatus.status}

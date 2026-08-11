@@ -20,9 +20,7 @@ export function SelectionCard({
     <div
       className={cn(
         'flex flex-col gap-3 rounded-lg border p-4',
-        isSelected
-          ? 'border-primary-teal bg-primary-tealWhite'
-          : 'border-border bg-white',
+        isSelected ? 'border-primary bg-accent' : 'border-border bg-white',
         className,
       )}
     >

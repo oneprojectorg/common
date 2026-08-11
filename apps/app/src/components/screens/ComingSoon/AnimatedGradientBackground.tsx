@@ -126,7 +126,7 @@ export function AnimatedGradientText({
 
   const backgroundImage = useMotionTemplate`radial-gradient(
     50% 120% at ${gradientX}% ${gradientY}%,
-    var(--op-functional-green-500) 0%,
+    var(--color-green-400) 0%,
     var(--op-brand-blue) 70%
   )`;
 

@@ -261,7 +261,7 @@ function SearchDropdown({
       {onAddOrganization && searchQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-start text-primary-teal hover:bg-muted"
+          className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-start text-primary hover:bg-muted"
           onClick={() => onAddOrganization(searchQuery)}
         >
           <LuPlus className="size-4" />

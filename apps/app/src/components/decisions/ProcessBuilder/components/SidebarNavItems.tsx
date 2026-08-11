@@ -32,9 +32,16 @@ interface SidebarNavItemsProps {
   onSectionClick: (sectionId: string) => void;
 }
 
-// Teal dot flagging a section that still needs configuration.
+// Dot flagging a section that still needs configuration. The testid is the
+// e2e hook — the assertion used to select on the colour class and broke when
+// the token was renamed.
 function IncompleteDot() {
-  return <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />;
+  return (
+    <span
+      data-testid="section-incomplete-dot"
+      className="size-1.5 shrink-0 rounded-full bg-primary"
+    />
+  );
 }
 
 // A single nav row built on the (context-free) sense SidebarMenuSubButton —

@@ -184,9 +184,7 @@ const DecisionUpdatesToggle = ({
       onClick={() => setPanel(isOpen ? null : 'updates')}
       aria-label={ariaLabel}
       aria-pressed={isOpen}
-      className={
-        isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-foreground'
-      }
+      className={isOpen ? 'bg-accent text-primary' : 'text-foreground'}
     >
       <MegaphoneIcon className="size-4 stroke-[1.5]" />
     </Button>

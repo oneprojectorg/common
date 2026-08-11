@@ -12,7 +12,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
-import { Header2, Header3 } from '@op/sense/Header';
+import { Header1, Header3 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Switch } from '@op/sense/Switch';
@@ -170,7 +170,9 @@ export function ProposalCategoriesSectionContent({
     <div className="mx-auto w-full space-y-6 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Header2 className="text-label">{t('Proposal Categories')}</Header2>
+          <Header1 className="text-headline">
+            {t('Proposal Categories')}
+          </Header1>
           <SaveStatusIndicator
             status={autosaveStatus.status}
             savedAt={autosaveStatus.savedAt}
@@ -260,8 +262,8 @@ export function ProposalCategoriesSectionContent({
           )}
           {!isFormVisible && (
             <Button
-              variant="ghost"
-              className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
+              variant="outline"
+              className="mt-4 w-full"
               onClick={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />

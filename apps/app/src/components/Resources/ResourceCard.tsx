@@ -190,7 +190,7 @@ const ResourceCardShell = ({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={title}
-          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {body}
         </a>

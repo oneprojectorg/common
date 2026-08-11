@@ -172,7 +172,7 @@ const PolicyLink = ({
     href={href}
     target="_blank"
     rel="noreferrer"
-    className="text-primary-teal underline"
+    className="text-primary underline"
     onClick={(e) => e.stopPropagation()}
     onPointerDown={(e) => e.stopPropagation()}
   >

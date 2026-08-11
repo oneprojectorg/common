@@ -38,11 +38,11 @@ const BOUNDARY_SOURCE_ID = 'decision-boundaries';
 // we inline the literal values of the brand teal tokens. Pinned here as the
 // single source of truth — if a token ever shifts, update the constant in
 // lockstep.
-const PRIMARY_TEAL = '#387582'; // --op-primary-600 / primary-teal
-const PRIMARY_TEAL_50 = '#F1F9FA'; // --op-primary-50 / primary-teal-50
+const PRIMARY_TEAL = '#387582'; // --color-teal-500 / --primary
+const PRIMARY_TEAL_50 = '#EFF7F9'; // --color-teal-50 / --accent
 
-// Boundary fill in primary-teal-50 (per design) with the outline at full
-// primary-teal. The fill opacity of 0.32 matches the Figma spec.
+// Boundary fill in the accent tint with the outline at full primary. The fill
+// opacity of 0.32 matches the Figma spec.
 const BOUNDARY_FILL_LAYER: LayerProps = {
   id: 'decision-boundaries-fill',
   type: 'fill',

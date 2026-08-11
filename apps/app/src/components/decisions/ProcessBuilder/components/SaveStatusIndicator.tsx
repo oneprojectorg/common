@@ -35,7 +35,7 @@ export function SaveStatusIndicator({
       )}
       {status === 'saved' && (
         <>
-          <LuCheck className="size-4 text-functional-green" />
+          <LuCheck className="size-4 text-success" />
           <span className="text-muted-foreground">
             {savedAt
               ? t('Saved at {time}', { time: formatTime(savedAt) })

@@ -24,7 +24,7 @@ const TEAL_GRADIENT = `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`;
 // satori can't read Tailwind tokens or var(), so the four avatar gradients
 // (getAvatarColorForString) are inlined here as resolved hex. Values mirror the
 // bg-gradient / bg-redTeal / bg-blueGreen / bg-orangePurple @utility blocks in
-// shared-styles.css, keyed by the class name the shared helper returns, giving
+// theme.css, keyed by the class name the shared helper returns, giving
 // each decision a stable brand-palette background. Typing the table by the
 // helper's return union makes a new avatar gradient a compile error here, not a
 // silent miss.
