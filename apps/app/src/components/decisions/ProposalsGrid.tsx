@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
@@ -31,7 +30,6 @@ import { useTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 
 import {
-  ProposalCardActions,
   ProposalCardMenu,
   ProposalCardOwnerActions,
   ProposalCardReviseAction,
@@ -506,7 +504,6 @@ const ViewProposalsList = ({
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
-  const { user } = useUser();
   const canManageProposals = permissions?.admin ?? false;
   // Like/Follow require SUBMIT_PROPOSALS (or admin) on the parent decision —
   // don't offer buttons the API would reject (e.g. reviewer-only roles).
@@ -553,14 +550,12 @@ const ViewProposalsList = ({
         ) : undefined;
 
         // Only pass `actions` when something will actually render — otherwise
-        // the card draws a separator + empty row. Like/Follow render nothing
-        // for non-interacting (anonymous) users, so gate that branch.
+        // the card draws a separator + empty row. Like/Follow aren't here: they
+        // are the metric toggles, driven by `canEngage`.
         const actions = hasRevisionRequest ? (
           <ProposalCardReviseAction editHref={reviseHref} />
         ) : isDraft || isEditable ? (
           <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
-        ) : userCanInteract(user) && canEngage ? (
-          <ProposalCardActions proposal={proposal} canEngage={canEngage} />
         ) : undefined;
 
         return (
@@ -571,6 +566,7 @@ const ViewProposalsList = ({
             aside={aside}
             actions={actions}
             showMetrics={!isDraft}
+            canEngage={canEngage}
             revisionRequested={hasRevisionRequest}
             className={isDraft ? 'bg-muted' : undefined}
           />

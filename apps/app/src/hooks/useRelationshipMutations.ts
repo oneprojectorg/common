@@ -7,6 +7,12 @@ import { useCallback } from 'react';
 
 interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
+  /**
+   * Skip the relationship lookup entirely. For surfaces that render the
+   * like/follow state but can't act on it — a reviewer-only role, say — so they
+   * don't subscribe to a list they'll never use.
+   */
+  enabled?: boolean;
   onSuccess?: () => void;
   invalidateQueries?: Array<{
     processInstanceId?: string;
@@ -49,6 +55,7 @@ type UserRelationships = Partial<
  */
 export function useRelationshipMutations({
   targetProfileId,
+  enabled = true,
   onSuccess,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
@@ -64,7 +71,7 @@ export function useRelationshipMutations({
   // Get user's likes and follows
   const { data: userRelationships, isLoading: isLoadingRelationships } =
     trpc.profile.getRelationships.useQuery(relationshipQueryKey, {
-      enabled: !!user,
+      enabled: !!user && enabled,
     });
 
   // Check if current user has liked/followed this profile

@@ -1,10 +1,8 @@
 'use client';
 
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
-import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
+import { useProposalEngagement } from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
-import { useUser } from '@/utils/UserProvider';
-import { userCanInteract } from '@/utils/userCanInteract';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
@@ -115,17 +113,11 @@ export function ProposalView({
     [processInstanceId, proposalId],
   );
 
-  const { user } = useUser();
-
-  // Use relationship mutations hook for like/follow functionality
-  const {
-    isLiked: isLikedByUser,
-    isFollowed: isFollowedByUser,
-    isLoading,
-    handleLike,
-    handleFollow,
-  } = useRelationshipMutations({
-    targetProfileId: currentProposal.profileId,
+  // Same hook the proposal card's metric toggles use, so the two surfaces
+  // can't drift. Returns undefined when the viewer can't act.
+  const engagement = useProposalEngagement({
+    proposal: currentProposal,
+    canEngage: currentProposal.access?.submitProposals === true,
   });
 
   // Check if current user can edit (submitter or org admin)
@@ -241,19 +233,16 @@ export function ProposalView({
         proposal={currentProposal}
         selection={selection}
         documentState={documentState}
-        // Like/Follow are user-scoped writes gated at the API — only offer the
-        // toggles to a signed-in, non-anonymous member who also holds
-        // engagement access (SUBMIT_PROPOSALS). Everyone else still sees the
-        // counts, just not the controls.
+        // Everyone sees the counts; only a signed-in member with engagement
+        // access gets the controls (the hook returns undefined otherwise).
         engagement={
-          userCanInteract(user) &&
-          currentProposal.access?.submitProposals === true
+          engagement
             ? {
-                isLiked: isLikedByUser,
-                isFollowing: isFollowedByUser,
-                onLike: handleLike,
-                onFollow: handleFollow,
-                isPending: isLoading,
+                isLiked: engagement.isLiked,
+                isFollowing: engagement.isFollowed,
+                onLike: engagement.onLike,
+                onFollow: engagement.onFollow,
+                isPending: engagement.isPending,
               }
             : undefined
         }

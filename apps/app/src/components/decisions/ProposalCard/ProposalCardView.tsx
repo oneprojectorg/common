@@ -1,6 +1,7 @@
 'use client';
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
+import { useProposalEngagement } from '@/hooks/useProposalEngagement';
 import { getPublicUrl } from '@/utils';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
@@ -126,8 +127,15 @@ export interface ProposalCardViewProps extends Omit<
   aside?: ReactNode;
   /** Action row (Revise / Edit / Delete / Read full proposal). */
   actions?: ReactNode;
-  /** Show display-only engagement counts (likes / follows / comments). */
+  /** Show the engagement counts (likes / follows / comments). */
   showMetrics?: boolean;
+  /**
+   * Makes the like and follow counts pressable. The counts are the controls —
+   * there is no separate Like/Follow pair repeating the same two icons. Ignored
+   * for viewers who can't act (anonymous, or no engagement access), who get the
+   * plain numbers.
+   */
+  canEngage?: boolean;
   /** Render the "Revision requested" badge instead of the status badge. */
   revisionRequested?: boolean;
   /** Show the proposal's status/visibility badge above the title. */
@@ -153,6 +161,7 @@ export const ProposalCardView = ({
   aside,
   actions,
   showMetrics = false,
+  canEngage = false,
   revisionRequested = false,
   showStatusBadge = true,
   selected,
@@ -164,6 +173,7 @@ export const ProposalCardView = ({
   const t = useTranslations();
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);
+  const engagement = useProposalEngagement({ proposal, canEngage });
 
   const tags =
     revisionRequested || displayCategories.length === 0
@@ -172,8 +182,20 @@ export const ProposalCardView = ({
 
   const metrics = showMetrics
     ? {
-        likes: proposal.likesCount || 0,
-        bookmarks: proposal.followersCount || 0,
+        likes: engagement
+          ? {
+              count: proposal.likesCount || 0,
+              active: engagement.isLiked,
+              onClick: engagement.onLike,
+            }
+          : proposal.likesCount || 0,
+        bookmarks: engagement
+          ? {
+              count: proposal.followersCount || 0,
+              active: engagement.isFollowed,
+              onClick: engagement.onFollow,
+            }
+          : proposal.followersCount || 0,
         comments: proposal.commentsCount || 0,
       }
     : undefined;
