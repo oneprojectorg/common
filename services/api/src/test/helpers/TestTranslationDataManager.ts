@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
+import type { TranslationFormat } from '@op/translation';
 import { hashContent } from '@op/translation';
 import { inArray } from 'drizzle-orm';
 
@@ -21,16 +22,22 @@ export class TestTranslationDataManager {
     translatedText,
     sourceLocale,
     targetLocale,
+    format = 'html',
   }: {
     contentKey: string;
     sourceText: string;
     translatedText: string;
     sourceLocale: string;
     targetLocale: string;
+    /**
+     * Must match the format the service sends the entry with — the hash folds
+     * it in, so seeding a plain field as `html` produces a key nothing looks up.
+     */
+    format?: TranslationFormat;
   }): Promise<void> {
     this.ensureCleanupRegistered();
 
-    const contentHash = hashContent(sourceText);
+    const contentHash = hashContent(sourceText, format);
 
     const [row] = await db
       .insert(contentTranslations)

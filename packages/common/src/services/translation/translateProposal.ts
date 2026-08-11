@@ -41,18 +41,23 @@ export async function translateProposal({
   const { proposalData } = proposal;
 
   // TODO: eventually use `htmlContent` for all fields
+  const plainTextFields = {
+    title: proposal.profile?.name,
+    category: proposalData.category,
+  };
   entries.push(
-    ...flattenTranslatableFields(`proposal:${proposalId}:`, {
-      title: proposal.profile?.name,
-      category: proposalData.category,
-    }),
+    ...flattenTranslatableFields(`proposal:${proposalId}:`, plainTextFields),
   );
 
   // HTML fragments from TipTap — proposal.htmlContent is the server-generated HTML (Record<string, string>)
   if (proposal.htmlContent) {
     const htmlContent = proposal.htmlContent as Record<string, string>;
     for (const [fragmentName, html] of Object.entries(htmlContent)) {
-      if (html) {
+      // Templates expose title/category as fields, so those also come back as
+      // document fragments whose HTML carries a `<p xmlns="…xhtml">` wrapper.
+      // They share the plain field's content key, and `unflattenTranslatedFields`
+      // is last-write-wins, so emitting both leaks the tag into the title.
+      if (html && !(fragmentName in plainTextFields)) {
         entries.push({
           contentKey: `proposal:${proposalId}:${fragmentName}`,
           text: html,
