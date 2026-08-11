@@ -179,39 +179,37 @@ export function useRelationshipMutations({
         const previousData =
           utils.profile.getRelationships.getData(relationshipQueryKey);
 
-        // Optimistically update the cache
-        if (
-          previousData &&
-          variables.targetProfileId &&
-          typeof previousData === 'object' &&
-          !Array.isArray(previousData)
-        ) {
-          // Create a minimal relationship object for optimistic update
-          const optimisticRelationship = {
-            relationshipType: variables.relationshipType,
-            pending: false,
-            createdAt: new Date().toISOString(),
-            targetProfile: {
-              id: variables.targetProfileId,
-              name: '',
-              slug: '',
-              bio: null,
-              avatarImage: null,
-              type: 'proposal',
-            },
-          };
-
-          const optimisticData = { ...previousData };
-          const existingRelationships =
-            optimisticData[variables.relationshipType] || [];
-          optimisticData[variables.relationshipType] = [
-            ...existingRelationships,
-            optimisticRelationship,
-          ];
+        // Optimistically update the cache. Not gated on `previousData`: a press
+        // before the relationship query resolves must still flip the button,
+        // and an empty base is the right starting point either way.
+        if (variables.targetProfileId) {
+          const targetProfileId = variables.targetProfileId;
 
           utils.profile.getRelationships.setData(
             relationshipQueryKey,
-            optimisticData,
+            (old) => {
+              const base = old ?? {};
+
+              return {
+                ...base,
+                [variables.relationshipType]: [
+                  ...(base[variables.relationshipType] ?? []),
+                  {
+                    relationshipType: variables.relationshipType,
+                    pending: false,
+                    createdAt: new Date().toISOString(),
+                    targetProfile: {
+                      id: targetProfileId,
+                      name: '',
+                      slug: '',
+                      bio: null,
+                      avatarImage: null,
+                      type: 'proposal',
+                    },
+                  },
+                ],
+              };
+            },
           );
         }
 
@@ -228,13 +226,13 @@ export function useRelationshipMutations({
         }
       },
       onError: (error, variables, context) => {
-        // Rollback on error
-        if (context?.previousData) {
-          utils.profile.getRelationships.setData(
-            relationshipQueryKey,
-            context.previousData,
-          );
-        }
+        // Rollback. `setData(key, undefined)` is a no-op in React Query, so an
+        // empty set stands in when nothing was cached — the press wrote state
+        // that has to come back off, and onSettled refetches the truth anyway.
+        utils.profile.getRelationships.setData(
+          relationshipQueryKey,
+          context?.previousData ?? {},
+        );
         restoreCachedCounts(context?.previousLists);
         logger.error('Failed to add relationship', {
           error,
@@ -262,24 +260,23 @@ export function useRelationshipMutations({
         const previousData =
           utils.profile.getRelationships.getData(relationshipQueryKey);
 
-        // Optimistically update the cache
-        if (
-          previousData &&
-          variables.targetProfileId &&
-          typeof previousData === 'object' &&
-          !Array.isArray(previousData)
-        ) {
-          const optimisticData = { ...previousData };
-          const existingRelationships =
-            optimisticData[variables.relationshipType] || [];
-          optimisticData[variables.relationshipType] =
-            existingRelationships.filter(
-              (rel) => rel.targetProfile?.id !== variables.targetProfileId,
-            );
-
+        // See the add mutation: ungated, so the button flips even if the
+        // relationship query hasn't landed yet.
+        if (variables.targetProfileId) {
           utils.profile.getRelationships.setData(
             relationshipQueryKey,
-            optimisticData,
+            (old) => {
+              const base = old ?? {};
+
+              return {
+                ...base,
+                [variables.relationshipType]: (
+                  base[variables.relationshipType] ?? []
+                ).filter(
+                  (rel) => rel.targetProfile?.id !== variables.targetProfileId,
+                ),
+              };
+            },
           );
         }
 
@@ -294,13 +291,13 @@ export function useRelationshipMutations({
         }
       },
       onError: (error, variables, context) => {
-        // Rollback on error
-        if (context?.previousData) {
-          utils.profile.getRelationships.setData(
-            relationshipQueryKey,
-            context.previousData,
-          );
-        }
+        // Rollback. `setData(key, undefined)` is a no-op in React Query, so an
+        // empty set stands in when nothing was cached — the press wrote state
+        // that has to come back off, and onSettled refetches the truth anyway.
+        utils.profile.getRelationships.setData(
+          relationshipQueryKey,
+          context?.previousData ?? {},
+        );
         restoreCachedCounts(context?.previousLists);
         logger.error('Failed to remove relationship', {
           error,
