@@ -31,6 +31,7 @@ export function SubmittedReviewView({
           key={field.key}
           title={field.schema.title}
           description={field.schema.description}
+          required={field.required}
         >
           <RubricFieldResult
             field={field}
@@ -52,15 +53,21 @@ export function SubmittedReviewView({
 function ResultSection({
   title,
   description,
+  required,
   children,
 }: {
   title?: string;
   description?: string;
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      <FieldHeader title={title} description={description} />
+      <FieldHeader
+        title={title}
+        description={description}
+        required={required}
+      />
       {children}
     </section>
   );

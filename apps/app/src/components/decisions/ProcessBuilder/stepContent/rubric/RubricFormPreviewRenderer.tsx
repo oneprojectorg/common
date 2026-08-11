@@ -60,7 +60,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     const recOptions = parseSchemaOptions(schema);
     return (
       <div className="flex flex-col gap-3">
-        <FieldHeader title={schema.title} />
+        <FieldHeader title={schema.title} required={field.required} />
         <RadioGroup
           className="gap-0"
           aria-label={schema.title}
@@ -84,6 +84,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             <FieldHeader
               title={schema.title}
               badge={t('No/Yes')}
+              required={field.required}
               className="gap-1"
             />
             <div className="flex items-center gap-3">
@@ -110,6 +111,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             title={schema.title}
             description={schema.description}
             badge={badge}
+            required={field.required}
             className="gap-1"
           />
           <Select
@@ -132,6 +134,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
           <FieldHeader
             title={schema.title}
             description={schema.description}
+            required={field.required}
             className="gap-1"
           />
           <div
