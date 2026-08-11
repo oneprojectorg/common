@@ -23,15 +23,32 @@ process.env.DEEPL_API_KEY = 'test-fake-key';
 
 // Mock DeepL's translateText — prefixes each text with [ES] so we can
 // distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
+//
+// It also mirrors the behaviour this file exists to pin: with tagHandling on,
+// DeepL parses the input as a document, so a bare string comes back wrapped in
+// a namespaced <p>. Plain fields must therefore be sent without tagHandling.
+const mockTranslateText = vi.fn(
+  (
+    texts: string | string[],
+    _sourceLang?: unknown,
+    _targetLang?: unknown,
+    options?: { tagHandling?: string },
+  ) => {
+    const arr = Array.isArray(texts) ? texts : [texts];
+    const results = arr.map((t) => {
+      const looksLikeMarkup = /^\s*</.test(t);
+      const translated =
+        options?.tagHandling === 'html' && !looksLikeMarkup
+          ? `<p xmlns="http://www.w3.org/1999/xhtml">[ES] ${t}</p>`
+          : `[ES] ${t}`;
+
+      return { text: translated, detectedSourceLang: 'en' };
+    });
+
+    // Mirror deepl-node: a single-string input returns a single result object.
+    return Array.isArray(texts) ? results : results[0];
+  },
+);
 
 // Mock deepl-node so we never hit the real API
 vi.mock('deepl-node', () => ({
@@ -258,13 +275,19 @@ describe('translation.translateProposal', () => {
       },
     });
 
+    // The title is a bare string. If it were sent with tagHandling, DeepL
+    // would hand back `<p xmlns=…>[ES] Community Garden Project</p>` and the
+    // proposal header would render that markup as literal text.
+    expect(result.translated.title).toBe('[ES] Community Garden Project');
+    expect(result.translated.title).not.toContain('<p');
+
     // Verify what was sent to DeepL (mapped from 'es' → 'ES'). DeepL is called
     // once per text so batch size can't exceed its per-request cap.
     expect(mockTranslateText).toHaveBeenCalledWith(
       'Community Garden Project',
       null,
       'ES',
-      expect.objectContaining({ tagHandling: 'html' }),
+      expect.objectContaining({ tagHandling: undefined }),
     );
     expect(mockTranslateText).toHaveBeenCalledWith(
       '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
@@ -487,7 +510,7 @@ describe('translation.translateProposal', () => {
       'Legacy Proposal',
       null,
       'ES',
-      expect.objectContaining({ tagHandling: 'html' }),
+      expect.objectContaining({ tagHandling: undefined }),
     );
     expect(mockTranslateText).toHaveBeenCalledWith(
       '<p>Old-style HTML content</p>',

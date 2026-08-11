@@ -6,6 +6,8 @@ export {
   OpenLTranslationProvider,
 } from './providers';
 export type {
+  TranslationFormat,
+  TranslationInput,
   TranslationProvider,
   TranslationProviderResult,
 } from './providers';

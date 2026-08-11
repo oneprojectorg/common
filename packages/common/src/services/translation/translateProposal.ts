@@ -69,12 +69,14 @@ export async function translateProposal({
         entries.push({
           contentKey: `proposal:${proposalId}:field_title:${fieldKey}`,
           text: property.title,
+          format: 'text',
         });
       }
       if (property.description) {
         entries.push({
           contentKey: `proposal:${proposalId}:field_desc:${fieldKey}`,
           text: property.description,
+          format: 'text',
         });
       }
 
@@ -85,6 +87,7 @@ export async function translateProposal({
           entries.push({
             contentKey: `proposal:${proposalId}:option:${fieldKey}:${option.value}`,
             text: option.title,
+            format: 'text',
           });
         }
       }
