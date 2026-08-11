@@ -6,6 +6,8 @@ import { toast } from '@op/sense/Toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import {
   type ProposalCountField,
   bumpProposalCount,
@@ -65,6 +67,7 @@ export function useRelationshipMutations({
   onSuccess,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
 
   const { user } = useUser();
@@ -102,8 +105,7 @@ export function useRelationshipMutations({
   const queryClient = useQueryClient();
 
   /**
-   * Move the proposal's like/follow count everywhere it is cached, and hand
-   * back a snapshot to roll back with.
+   * Move the proposal's like/follow count everywhere it is cached.
    *
    * Matched with a predicate on the tRPC path rather than a built query key:
    * the same proposal sits in several caches at once — any number of
@@ -111,10 +113,15 @@ export function useRelationshipMutations({
    * plus the ballot's non-infinite query) and the `getProposal` entry — and
    * a predicate matches all of them without depending on how tRPC happens to
    * encode inputs in the key.
+   *
+   * Rolling back applies the opposite delta rather than restoring a snapshot.
+   * Every card on the page writes to these same caches, so a snapshot taken
+   * before this mutation would also undo whatever another card did in the
+   * meantime.
    */
   const patchCachedCounts = (relationshipType: string, delta: number) => {
     if (!targetProfileId) {
-      return [];
+      return;
     }
 
     const field: ProposalCountField =
@@ -122,35 +129,67 @@ export function useRelationshipMutations({
         ? 'likesCount'
         : 'followersCount';
 
-    const filter = {
-      predicate: (query: { queryKey: readonly unknown[] }) => {
-        const [path] = query.queryKey;
+    queryClient.setQueriesData(
+      {
+        predicate: (query: { queryKey: readonly unknown[] }) => {
+          const [path] = query.queryKey;
 
-        return (
-          Array.isArray(path) &&
-          path[0] === 'decision' &&
-          (path[1] === 'listProposals' ||
-            path[1] === 'listAllProposals' ||
-            path[1] === 'getProposal')
-        );
+          return (
+            Array.isArray(path) &&
+            path[0] === 'decision' &&
+            (path[1] === 'listProposals' ||
+              path[1] === 'listAllProposals' ||
+              path[1] === 'getProposal')
+          );
+        },
       },
-    };
-
-    const snapshot = queryClient.getQueriesData(filter);
-
-    queryClient.setQueriesData(filter, (old: unknown) =>
-      bumpProposalCount(old, targetProfileId, field, delta),
+      (old: unknown) => bumpProposalCount(old, targetProfileId, field, delta),
     );
-
-    return snapshot;
   };
 
-  const restoreCachedCounts = (
-    snapshot: ReturnType<typeof patchCachedCounts> | undefined,
+  /**
+   * Add or drop this proposal in the viewer's relationship list.
+   *
+   * Same reasoning as the counts: one cache entry (`{ types: [...] }`) is
+   * shared by every card on the page, so rollback removes exactly what this
+   * mutation added rather than reinstating a stale copy of the whole list.
+   */
+  const patchCachedRelationship = (
+    relationshipType: ProfileRelationshipType,
+    present: boolean,
   ) => {
-    snapshot?.forEach(([key, data]) =>
-      queryClient.setQueryData<unknown>(key, data),
-    );
+    if (!targetProfileId) {
+      return;
+    }
+
+    utils.profile.getRelationships.setData(relationshipQueryKey, (old) => {
+      const base = old ?? {};
+      const without = (base[relationshipType] ?? []).filter(
+        (rel) => rel.targetProfile?.id !== targetProfileId,
+      );
+
+      return {
+        ...base,
+        [relationshipType]: present
+          ? [
+              ...without,
+              {
+                relationshipType,
+                pending: false,
+                createdAt: new Date().toISOString(),
+                targetProfile: {
+                  id: targetProfileId,
+                  name: '',
+                  slug: '',
+                  bio: null,
+                  avatarImage: null,
+                  type: 'proposal',
+                },
+              },
+            ]
+          : without,
+      };
+    });
   };
 
   const invalidateAfterMutation = async () => {
@@ -172,52 +211,14 @@ export function useRelationshipMutations({
   const addRelationshipMutation =
     trpc.decision.addProposalRelationship.useMutation({
       onMutate: async (variables) => {
-        // Cancel outgoing refetches for the relationship queries
+        // Stop an in-flight relationship fetch from landing on top of the
+        // optimistic write below.
         await utils.profile.getRelationships.cancel(relationshipQueryKey);
 
-        // Snapshot the previous value
-        const previousData =
-          utils.profile.getRelationships.getData(relationshipQueryKey);
-
-        // Optimistically update the cache. Not gated on `previousData`: a press
-        // before the relationship query resolves must still flip the button,
-        // and an empty base is the right starting point either way.
-        if (variables.targetProfileId) {
-          const targetProfileId = variables.targetProfileId;
-
-          utils.profile.getRelationships.setData(
-            relationshipQueryKey,
-            (old) => {
-              const base = old ?? {};
-
-              return {
-                ...base,
-                [variables.relationshipType]: [
-                  ...(base[variables.relationshipType] ?? []),
-                  {
-                    relationshipType: variables.relationshipType,
-                    pending: false,
-                    createdAt: new Date().toISOString(),
-                    targetProfile: {
-                      id: targetProfileId,
-                      name: '',
-                      slug: '',
-                      bio: null,
-                      avatarImage: null,
-                      type: 'proposal',
-                    },
-                  },
-                ],
-              };
-            },
-          );
-        }
-
+        patchCachedRelationship(variables.relationshipType, true);
         // The pressed state comes from the cache above; the number beside it
         // lives on the list rows, so move it here too or it lags the refetch.
-        const previousLists = patchCachedCounts(variables.relationshipType, 1);
-
-        return { previousData, previousLists };
+        patchCachedCounts(variables.relationshipType, 1);
       },
       onSuccess: () => {
         // Call user-provided onSuccess callback
@@ -225,26 +226,21 @@ export function useRelationshipMutations({
           onSuccess();
         }
       },
-      onError: (error, variables, context) => {
-        // Rollback. `setData(key, undefined)` is a no-op in React Query, so an
-        // empty set stands in when nothing was cached — the press wrote state
-        // that has to come back off, and onSettled refetches the truth anyway.
-        utils.profile.getRelationships.setData(
-          relationshipQueryKey,
-          context?.previousData ?? {},
-        );
-        restoreCachedCounts(context?.previousLists);
+      onError: (error, variables) => {
+        patchCachedRelationship(variables.relationshipType, false);
+        patchCachedCounts(variables.relationshipType, -1);
         logger.error('Failed to add relationship', {
           error,
           context: 'useRelationshipMutations.add',
         });
 
-        // Show user-facing error notification
-        const action =
+        // Four whole sentences rather than a verb slotted into one template:
+        // the pieces don't reassemble into a sentence in every language.
+        toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
-            ? 'like'
-            : 'follow';
-        toast.error(`Failed to ${action}. Please try again.`);
+            ? t("Couldn't like this proposal. Please try again.")
+            : t("Couldn't follow this proposal. Please try again."),
+        );
       },
       onSettled: invalidateAfterMutation,
     });
@@ -253,36 +249,10 @@ export function useRelationshipMutations({
   const removeRelationshipMutation =
     trpc.decision.removeProposalRelationship.useMutation({
       onMutate: async (variables) => {
-        // Cancel outgoing refetches for the relationship queries
         await utils.profile.getRelationships.cancel(relationshipQueryKey);
 
-        // Snapshot the previous value
-        const previousData =
-          utils.profile.getRelationships.getData(relationshipQueryKey);
-
-        // See the add mutation: ungated, so the button flips even if the
-        // relationship query hasn't landed yet.
-        if (variables.targetProfileId) {
-          utils.profile.getRelationships.setData(
-            relationshipQueryKey,
-            (old) => {
-              const base = old ?? {};
-
-              return {
-                ...base,
-                [variables.relationshipType]: (
-                  base[variables.relationshipType] ?? []
-                ).filter(
-                  (rel) => rel.targetProfile?.id !== variables.targetProfileId,
-                ),
-              };
-            },
-          );
-        }
-
-        const previousLists = patchCachedCounts(variables.relationshipType, -1);
-
-        return { previousData, previousLists };
+        patchCachedRelationship(variables.relationshipType, false);
+        patchCachedCounts(variables.relationshipType, -1);
       },
       onSuccess: () => {
         // Call user-provided onSuccess callback
@@ -290,26 +260,19 @@ export function useRelationshipMutations({
           onSuccess();
         }
       },
-      onError: (error, variables, context) => {
-        // Rollback. `setData(key, undefined)` is a no-op in React Query, so an
-        // empty set stands in when nothing was cached — the press wrote state
-        // that has to come back off, and onSettled refetches the truth anyway.
-        utils.profile.getRelationships.setData(
-          relationshipQueryKey,
-          context?.previousData ?? {},
-        );
-        restoreCachedCounts(context?.previousLists);
+      onError: (error, variables) => {
+        patchCachedRelationship(variables.relationshipType, true);
+        patchCachedCounts(variables.relationshipType, 1);
         logger.error('Failed to remove relationship', {
           error,
           context: 'useRelationshipMutations.remove',
         });
 
-        // Show user-facing error notification
-        const action =
+        toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
-            ? 'unlike'
-            : 'unfollow';
-        toast.error(`Failed to ${action}. Please try again.`);
+            ? t("Couldn't remove your like. Please try again.")
+            : t("Couldn't unfollow this proposal. Please try again."),
+        );
       },
       onSettled: invalidateAfterMutation,
     });
