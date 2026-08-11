@@ -29,14 +29,18 @@ export const DeleteProposalDialog = ({
   open,
   onOpenChange,
   trigger,
+  onDeleted,
 }: {
   proposalId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Optional opener (e.g. the Delete button). Omit when opened imperatively. */
   trigger?: ReactElement;
+  /** Runs after a successful delete — e.g. leave the page you just deleted. */
+  onDeleted?: () => void;
 }) => {
   const t = useTranslations();
+  const utils = trpc.useUtils();
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
     onError: (error) => {
@@ -44,6 +48,9 @@ export const DeleteProposalDialog = ({
     },
     onSuccess: () => {
       toast.success(t('Proposal deleted successfully'));
+      // Nothing else drops the deleted row, so any list still holding it —
+      // the grid, the map, the ballot — would keep rendering it.
+      utils.decision.invalidate();
     },
   });
 
@@ -51,6 +58,7 @@ export const DeleteProposalDialog = ({
     try {
       await deleteProposalMutation.mutateAsync({ proposalId });
       onOpenChange(false);
+      onDeleted?.();
     } catch (error) {
       // Error already surfaced via the mutation's onError toast; keep the
       // dialog open so the user can retry.

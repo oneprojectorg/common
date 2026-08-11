@@ -2,10 +2,12 @@
 
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { LuEye, LuEyeOff } from 'react-icons/lu';
+import { useState } from 'react';
+import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { DeleteProposalDialog } from './ProposalCard/DeleteProposalDialog';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
@@ -13,7 +15,8 @@ import {
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
- * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide.
+ * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide
+ * and delete.
  * Mirrors the browse-card kebab (`ProposalCard/ProposalCardMenu`) and shares its
  * mutation + toast copy via {@link useProposalModerationActions}, so the two
  * surfaces can't drift.
@@ -22,11 +25,19 @@ import { useProposalModerationActions } from './useProposalModerationActions';
  * removed those actions from the app, so they aren't offered on either surface.
  *
  * Renders nothing unless the viewer has decision-admin access and the proposal
- * has left draft. Delete is deliberately absent — deleting the proposal you're
- * reading belongs on the card surface, and the Figma menu omits it here.
+ * has left draft.
  */
-export function ProposalAdminMenu({ proposal }: { proposal: Proposal }) {
+export function ProposalAdminMenu({
+  proposal,
+  backHref,
+}: {
+  proposal: Proposal;
+  /** Where to go after deleting — this page is about to 404. */
+  backHref: string;
+}) {
   const t = useTranslations();
+  const router = useRouter();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
@@ -40,7 +51,7 @@ export function ProposalAdminMenu({ proposal }: { proposal: Proposal }) {
 
   const triggerLabel = t('Proposal options');
 
-  const visibilityItems: ProposalOptionsMenuItem[] = [
+  const items: ProposalOptionsMenuItem[] = [
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -52,13 +63,28 @@ export function ProposalAdminMenu({ proposal }: { proposal: Proposal }) {
       onAction: toggleVisibility,
       isDisabled: isLoading,
     },
+    {
+      key: 'delete',
+      icon: <LuTrash2 className="size-5" />,
+      label: t('Delete'),
+      onAction: () => setIsDeleteModalOpen(true),
+      isDisabled: isLoading,
+      isDestructive: true,
+    },
   ];
 
   return (
     <ProposalOptionsMenu
-      groups={[visibilityItems]}
+      groups={[items]}
       label={triggerLabel}
       triggerProps={{ variant: 'outline', size: 'icon' }}
-    />
+    >
+      <DeleteProposalDialog
+        proposalId={proposal.id}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        onDeleted={() => router.push(backHref)}
+      />
+    </ProposalOptionsMenu>
   );
 }
