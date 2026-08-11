@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
@@ -24,18 +25,35 @@ interface ProposalOptionsMenuItemBase {
   key: string;
   icon: ReactNode;
   label: string;
-  isDisabled?: boolean;
-  isDestructive?: boolean;
 }
 
-/** An item either does something or goes somewhere — never both, never neither. */
+/**
+ * An item either does something or goes somewhere — never both, never neither.
+ * Only the acting kind can be disabled or destructive: a link can't be either
+ * (the anchor would navigate anyway, and nothing destructive is a navigation).
+ */
 export type ProposalOptionsMenuItem =
-  | (ProposalOptionsMenuItemBase & { onAction: () => void; href?: never })
+  | (ProposalOptionsMenuItemBase & {
+      onAction: () => void;
+      isDisabled?: boolean;
+      isDestructive?: boolean;
+      href?: never;
+    })
   | (ProposalOptionsMenuItemBase & {
       /** Renders the row as a link, so it keeps middle-click and open-in-new-tab. */
       href: string;
       onAction?: never;
     });
+
+/**
+ * Narrows to the navigating kind. `href` is a `string`, not a literal, so it
+ * can't discriminate the union on its own.
+ */
+function isLinkItem(
+  item: ProposalOptionsMenuItem,
+): item is Extract<ProposalOptionsMenuItem, { href: string }> {
+  return item.href !== undefined;
+}
 
 /**
  * The `…` overflow menu shared by the proposal card and the proposal page: a
@@ -93,38 +111,43 @@ export function ProposalOptionsMenu({
             </SheetHeader>
             <div className="pb-safe flex min-w-full flex-col">
               {items.map((item, index) => {
-                const rowProps = {
-                  variant: 'ghost',
-                  disabled: item.isDisabled,
-                  className: cn(
-                    'h-auto w-full justify-start gap-2 rounded-none px-6 py-4',
-                    item.isDestructive && 'text-destructive',
-                    index < items.length - 1 && 'border-b border-border',
-                  ),
-                  children: (
-                    <>
-                      {item.icon}
-                      {item.label}
-                    </>
-                  ),
-                } as const;
+                const rowClass = cn(
+                  'h-auto w-full justify-start gap-2 rounded-none px-6 py-4',
+                  index < items.length - 1 && 'border-b border-border',
+                );
+                const rowContent = (
+                  <>
+                    {item.icon}
+                    {item.label}
+                  </>
+                );
 
-                return item.href ? (
+                return isLinkItem(item) ? (
                   <ButtonLink
                     key={item.key}
                     href={item.href}
+                    variant="ghost"
                     onClick={() => setIsSheetOpen(false)}
-                    {...rowProps}
-                  />
+                    className={rowClass}
+                  >
+                    {rowContent}
+                  </ButtonLink>
                 ) : (
                   <Button
                     key={item.key}
+                    variant="ghost"
                     onClick={() => {
                       setIsSheetOpen(false);
-                      item.onAction?.();
+                      item.onAction();
                     }}
-                    {...rowProps}
-                  />
+                    disabled={item.isDisabled}
+                    className={cn(
+                      rowClass,
+                      item.isDestructive && 'text-destructive',
+                    )}
+                  >
+                    {rowContent}
+                  </Button>
                 );
               })}
             </div>
@@ -154,19 +177,29 @@ export function ProposalOptionsMenu({
               {/* A group per set, so a separator sits between them rather than
                   inside one `role="group"`. */}
               <DropdownMenuGroup>
-                {group.map((item) => (
-                  <DropdownMenuItem
-                    key={item.key}
-                    onClick={item.onAction}
-                    render={item.href ? <Link href={item.href} /> : undefined}
-                    disabled={item.isDisabled}
-                    variant={item.isDestructive ? 'destructive' : 'default'}
-                    className="min-w-48"
-                  >
-                    {item.icon}
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
+                {group.map((item) =>
+                  isLinkItem(item) ? (
+                    <DropdownMenuLinkItem
+                      key={item.key}
+                      render={<Link href={item.href} />}
+                      className="min-w-48"
+                    >
+                      {item.icon}
+                      {item.label}
+                    </DropdownMenuLinkItem>
+                  ) : (
+                    <DropdownMenuItem
+                      key={item.key}
+                      onClick={item.onAction}
+                      disabled={item.isDisabled}
+                      variant={item.isDestructive ? 'destructive' : 'default'}
+                      className="min-w-48"
+                    >
+                      {item.icon}
+                      {item.label}
+                    </DropdownMenuItem>
+                  ),
+                )}
               </DropdownMenuGroup>
             </Fragment>
           ))}
