@@ -1,6 +1,7 @@
 'use client';
 
 import type { ComponentProps, ElementType, ReactNode } from 'react';
+import { useId } from 'react';
 
 /** Props the title/author link element must accept (a plain `<a>`, an i18n
  *  `Link`, a router `Link`, …). Typing `linkComponent` as `ElementType<this>`
@@ -127,6 +128,9 @@ export function ProposalCard({
   className,
   ...rest
 }: ProposalCardProps) {
+  // Points the metric controls at the title. Without it a grid of cards gives a
+  // screen reader a run of identically-named "Likes: 4" toggles.
+  const titleId = useId();
   const hasTags = Boolean(budget) || (tags?.length ?? 0) > 0;
 
   if (variant === 'pin') {
@@ -170,6 +174,7 @@ export function ProposalCard({
       <div className={cn('flex flex-col gap-3', aside && 'pe-10')}>
         {headerBadge}
         <h3
+          id={titleId}
           className={cn(
             'font-serif text-title',
             selected ? 'text-teal-600' : 'text-foreground',
@@ -196,16 +201,23 @@ export function ProposalCard({
       ) : null}
       {metrics ? (
         <div className="relative z-10 flex items-center gap-1">
-          <MetricToggle icon={LuHeart} metric={metrics.likes} label="Like" />
+          <MetricToggle
+            icon={LuHeart}
+            metric={metrics.likes}
+            label="Like"
+            describedBy={titleId}
+          />
           <MetricToggle
             icon={LuBookmark}
             metric={metrics.bookmarks}
             label="Follow"
+            describedBy={titleId}
           />
           <MetricButton
             icon={LuMessageCircle}
             metric={metrics.comments}
             label="Comments"
+            describedBy={titleId}
           />
         </div>
       ) : null}
@@ -397,10 +409,13 @@ function MetricToggle({
   icon,
   metric,
   label,
+  describedBy,
 }: {
   icon: IconType;
   metric?: ProposalCardMetric;
   label: string;
+  /** Id of the card title, so the control says which proposal it acts on. */
+  describedBy?: string;
 }) {
   if (metric == null) {
     return null;
@@ -419,6 +434,7 @@ function MetricToggle({
       size="sm"
       pressed={active}
       onPressedChange={() => onClick()}
+      aria-describedby={describedBy}
       className={METRIC_CLASS}
     >
       <MetricContent
@@ -436,10 +452,13 @@ function MetricButton({
   icon,
   metric,
   label,
+  describedBy,
 }: {
   icon: IconType;
   metric?: ProposalCardMetric;
   label: string;
+  /** Id of the card title, so the control says which proposal it acts on. */
+  describedBy?: string;
 }) {
   if (metric == null) {
     return null;
@@ -453,6 +472,7 @@ function MetricButton({
       variant="ghost"
       size="sm"
       onClick={onClick}
+      aria-describedby={describedBy}
       className={METRIC_CLASS}
     >
       <MetricContent icon={icon} count={count} label={metricLabel} />
