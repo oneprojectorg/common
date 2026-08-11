@@ -106,9 +106,7 @@ export const ProfileUsersAccess = ({
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-10">
         <div className="flex items-center justify-between gap-4">
-          <Header2 className="font-serif text-title-sm">
-            {t('Manage Participants')}
-          </Header2>
+          <Header2 className="text-label">{t('Manage Participants')}</Header2>
           <Button onClick={() => setIsInviteModalOpen(true)}>
             <LuUserPlus className="size-4" />
             {t('Invite')}

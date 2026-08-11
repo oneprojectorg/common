@@ -97,12 +97,10 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted p-3">
       <div className="flex items-start justify-between gap-2">
-        <span className="truncate font-serif text-title-sm14">
+        <span className="truncate font-serif text-sm">
           <bdi>{title}</bdi>
         </span>
-        {budget ? (
-          <span className="font-serif text-title-sm14">{budget}</span>
-        ) : null}
+        {budget ? <span className="font-serif text-sm">{budget}</span> : null}
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         {submitterName ? <span>{submitterName}</span> : null}

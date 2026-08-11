@@ -431,7 +431,7 @@ function RolesSectionContent({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm font-light">
+        <Header2 className="text-label font-light">
           {t('Roles & permissions')}
         </Header2>
         <Button
@@ -602,7 +602,7 @@ function MobileRoleCard({
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
-        <Header3 className="font-serif text-base">{role.name}</Header3>
+        <Header3 className="text-base">{role.name}</Header3>
         {(onDelete || onEdit) && (
           <DropdownMenu>
             <DropdownMenuTrigger

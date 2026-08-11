@@ -129,9 +129,7 @@ const ProfileAbout = ({
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
       {orgType ? (
-        <Header2 className="font-serif text-label leading-normal">
-          {t('About')}
-        </Header2>
+        <Header2 className="text-label leading-normal">{t('About')}</Header2>
       ) : null}
       <div className="flex flex-col gap-10 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
@@ -286,7 +284,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
 
   return (
     <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
-      <Header2 className="font-serif text-label leading-normal sm:px-6">
+      <Header2 className="text-label leading-normal sm:px-6">
         {t('Decisions')}
       </Header2>
       {data.items.map((item, index) => (
@@ -469,7 +467,7 @@ export const ProfileTabsMobile = ({
             <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div className="-mx-4">
-                <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
+                <Header2 className="px-4 py-2 text-label leading-normal">
                   {t('Posts')}
                 </Header2>
                 <ProfileFeedProvider profile={profile}>

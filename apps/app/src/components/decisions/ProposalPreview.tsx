@@ -173,7 +173,7 @@ export function ProposalPreview({
 
         <div className="flex flex-col gap-4">
           {/* 30px serif at 300 — `text-headline` at this column's step. */}
-          <Header1 className="font-serif text-headline font-light">
+          <Header1 className="text-headline font-light">
             {title || t('Untitled Proposal')}
           </Header1>
 

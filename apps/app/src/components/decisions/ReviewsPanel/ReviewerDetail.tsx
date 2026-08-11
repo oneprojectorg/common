@@ -64,9 +64,7 @@ export function ReviewerDetail({
             withLink={false}
             className="size-6"
           />
-          <Header3 className="font-serif">
-            {item.reviewer.name ?? item.reviewer.slug}
-          </Header3>
+          <Header3>{item.reviewer.name ?? item.reviewer.slug}</Header3>
         </div>
         {(recommendationLabel || hasScoring) && (
           <div className="flex items-center gap-1">

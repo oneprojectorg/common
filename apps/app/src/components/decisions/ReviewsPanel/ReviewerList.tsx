@@ -63,7 +63,7 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3 className="font-serif">{t('Review Summary')}</Header3>
+          <Header3>{t('Review Summary')}</Header3>
           <p className="text-base">
             {t(
               '{submitted} out of {total} reviewers submitted a review for this proposal',
@@ -103,9 +103,7 @@ export function ReviewerList({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Header3 className="font-serif !text-title-sm">
-            {t('Submitted Reviews')}
-          </Header3>
+          <Header3 className="text-label">{t('Submitted Reviews')}</Header3>
           <div className="flex flex-col gap-2">
             {reviews.map((item) => (
               <ReviewerRow
@@ -172,7 +170,7 @@ function RecommendationGroup({
   return (
     <div className="flex flex-col gap-4">
       <StatusDot intent={recommendationIntent(value)} className="gap-2">
-        <span className="font-serif !text-title-sm14">
+        <span className="font-serif text-sm">
           {label} ({count})
         </span>
       </StatusDot>

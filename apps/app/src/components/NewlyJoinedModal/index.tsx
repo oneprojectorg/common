@@ -47,7 +47,7 @@ export const NewlyJoinedModal = () => {
             <div className="flex flex-col items-center justify-center gap-4">
               <CheckIcon className="size-20" />
               <div className="flex flex-col gap-2">
-                <Header1 className="sm:text-title-lg">
+                <Header1 className="text-headline">
                   {t("You're all set!")}
                 </Header1>
                 <p className="text-muted-foreground">

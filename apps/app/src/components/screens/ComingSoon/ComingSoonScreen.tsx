@@ -74,11 +74,11 @@ export const ComingSoonScreen = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 2, delay: 0.25 }}
           >
-            <h1 className="flex flex-col font-serif text-title-md font-normal text-balance sm:text-3xl">
+            <h1 className="flex flex-col font-serif text-headline font-normal text-balance">
               <span>
                 {t('Helping people decide together how to use their resources')}
               </span>
-              <span className="font-serif text-title-md font-normal sm:text-3xl">
+              <span className="font-serif text-headline font-normal">
                 <AnimatedGradientText>
                   {t('simply, intuitively, and effectively.')}
                 </AnimatedGradientText>
@@ -151,9 +151,7 @@ export const ComingSoonScreen = () => {
         </FadeInWrapper>
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
-            <Header2 className="font-serif text-title-md sm:text-title-lg">
-              {t('Get early access')}
-            </Header2>
+            <Header2>{t('Get early access')}</Header2>
             <div className="sm:text-lg">
               <p>
                 {t(

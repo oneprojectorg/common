@@ -92,7 +92,7 @@ const PromoteAccountModalContent = ({
         <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-white p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundMinus className="size-4 text-foreground" aria-hidden />
-            <span className="font-serif text-title-sm">
+            <span className="font-serif text-label">
               {t('Continue as a guest')}
             </span>
           </div>
@@ -137,7 +137,7 @@ const PromoteAccountModalContent = ({
         <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-muted p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundPlus className="size-4 text-foreground" aria-hidden />
-            <span className="font-serif text-title-sm">
+            <span className="font-serif text-label">
               {t('With an account')}
             </span>
           </div>

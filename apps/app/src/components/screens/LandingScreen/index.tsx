@@ -62,7 +62,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
     <div className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col gap-4 px-4 pt-8 sm:gap-10 sm:px-8 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
-          <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
+          <Header1 className="text-center text-transparent">
             <TranslatedText text="Welcome back, to Common!" />
           </Header1>
         </Skeleton>
@@ -84,7 +84,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
         <span />
         <div className="col-span-5">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm text-transparent">
+            <Skeleton className="text-label text-transparent">
               <TranslatedText text="New Organizations" />
             </Skeleton>
             <OrganizationListSkeleton />
@@ -104,7 +104,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
         <TabsContent value="discover" className="p-0">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm text-transparent">
+            <Skeleton className="text-label text-transparent">
               <TranslatedText text="New Organizations" />
             </Skeleton>
             <div className="flex flex-col gap-2">
@@ -124,7 +124,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
 const NewOrganizationsList = () => {
   return (
     <div className="flex flex-col gap-6 border-0 py-0 sm:mx-0 sm:border sm:p-5">
-      <Header3 className="px-4 font-serif text-title-sm sm:px-0">
+      <Header3 className="px-4 text-label sm:px-0">
         <TranslatedText text="New Organizations" />
       </Header3>
       <NewOrganizations />
@@ -228,7 +228,7 @@ const WelcomeSkeleton = () => {
   return (
     <div className="flex flex-col gap-2">
       <Skeleton>
-        <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
+        <Header1 className="text-center text-transparent">
           <TranslatedText text="Welcome back, to Common!" />
         </Header1>
       </Skeleton>
@@ -285,7 +285,7 @@ const UserContentSkeleton = () => {
         <span />
         <div className="col-span-5">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm text-transparent">
+            <Skeleton className="text-label text-transparent">
               <TranslatedText text="New Organizations" />
             </Skeleton>
             <OrganizationListSkeleton />

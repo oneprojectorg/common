@@ -133,7 +133,7 @@ export function CategoryReviewerCard({
       data-testid={`category-reviewer-card-${category.name}`}
     >
       <div className="flex items-end justify-between gap-2">
-        <span className="font-serif text-title-sm14">{category.name}</span>
+        <span className="font-serif text-sm">{category.name}</span>
         <span
           className={
             isEmpty

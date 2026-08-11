@@ -151,7 +151,7 @@ const DuplicateFormContent = ({
         </div>
 
         <FieldSet className="gap-2">
-          <FieldLegend className="font-serif text-title-sm12">
+          <FieldLegend className="font-serif text-label">
             {t('Include')}
           </FieldLegend>
           <div className="grid grid-cols-2 gap-2">

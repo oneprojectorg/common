@@ -2,6 +2,7 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
+import { Header2 } from '@op/sense/Header';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { cn } from '@op/sense/lib/utils';
 import { getGradientForString } from '@op/styles/constants';
@@ -182,9 +183,7 @@ export const RelationshipList = ({
       {title && (
         <div className="flex flex-col gap-4 px-0">
           <div className="flex items-center justify-between">
-            <div className="w-full font-serif text-title-sm sm:text-title-lg">
-              {title}
-            </div>
+            <Header2 className="w-full">{title}</Header2>
           </div>
         </div>
       )}

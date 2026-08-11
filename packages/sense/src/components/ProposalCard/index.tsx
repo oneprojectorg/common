@@ -131,7 +131,7 @@ export function ProposalCard({
         )}
         {...rest}
       >
-        <h3 className="line-clamp-2 font-serif text-title-sm text-foreground">
+        <h3 className="line-clamp-2 font-serif text-label text-foreground">
           <TitleLink href={href} linkComponent={linkComponent}>
             {title}
           </TitleLink>

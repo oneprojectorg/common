@@ -155,9 +155,7 @@ export const LinkAccountPanel = () => {
     return (
       <div className="flex flex-col items-center justify-center gap-4">
         <CheckIcon />
-        <span className="text-title-base sm:text-title-lg">
-          {t('Email sent!')}
-        </span>
+        <span className="text-headline">{t('Email sent!')}</span>
       </div>
     );
   })();

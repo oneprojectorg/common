@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
@@ -336,7 +337,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">
           <LuUsers className="h-6 w-6 text-muted-foreground" />
         </div>
-        <div className="mb-2 font-serif text-title-base">
+        <div className="mb-2 font-serif text-title font-light">
           {t('No members found')}
         </div>
         <p className="max-w-md text-sm">
@@ -350,11 +351,11 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-title-sm sm:text-title-lg">
+          <Header2 className="w-full">
             {t('{count, plural, =1 {1 member} other {# members}}', {
               count: members.length,
             })}
-          </div>
+          </Header2>
           <div className="w-72"></div>
         </div>
       </div>

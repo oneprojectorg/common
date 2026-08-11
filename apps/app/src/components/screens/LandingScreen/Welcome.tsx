@@ -18,10 +18,7 @@ export const Welcome = ({ user }: { user: CommonUser }) => {
   const name = orgName ? `, ${orgName}` : t(' to Common');
 
   return (
-    <Header1
-      data-testid="welcome-heading"
-      className="text-center text-title-md sm:text-title-xl"
-    >
+    <Header1 data-testid="welcome-heading" className="text-center">
       {isNew ? `${t('Welcome')}${name}!` : `${t('Welcome back')}${name}!`}
     </Header1>
   );

@@ -10,6 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
+import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
@@ -108,11 +109,11 @@ export const ProfileRelationshipsSuspense = ({
           </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-title-sm sm:text-title-lg">
+          <Header2 className="w-full">
             {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
               count,
             })}
-          </div>
+          </Header2>
           <div className="w-72"></div>
         </div>
       </div>
