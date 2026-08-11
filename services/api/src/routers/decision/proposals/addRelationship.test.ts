@@ -1,8 +1,10 @@
+import { createDecisionRole } from '@op/common';
 import { db } from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
   profileRelationships,
+  profileUsers,
   proposals,
 } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -145,6 +147,76 @@ describe.concurrent('proposal relationship engagement access', () => {
     expect(await relationshipRows(ProfileRelationshipType.LIKES)).toHaveLength(
       1,
     );
+  });
+
+  it('rejects a reviewer-only caller — engagement stays gated on SUBMIT_PROPOSALS', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Reviewed proposal' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    // An external reviewer: only a READ+REVIEW grant on the decision, from an
+    // unrelated org (the owning org's Member role carries SUBMIT_PROPOSALS
+    // and would admit them via the org fallback).
+    const reviewerHome = await new TestDecisionsDataManager(
+      `${task.id}-reviewer-home`,
+      onTestFinished,
+    ).createDecisionSetup({ instanceCount: 0, grantAccess: true });
+    const reviewer = await testData.createMemberUser({
+      organization: reviewerHome.organization,
+    });
+
+    const reviewerRole = await createDecisionRole({
+      name: `Reviewer-${task.id}`,
+      profileId: setup.instance.profileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: true,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
+    });
+    await db.insert(profileUsers).values({
+      profileId: setup.instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+    });
+    await testData.assignRole(
+      reviewer.authUserId,
+      setup.instance.profileId,
+      reviewerRole.id,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      reviewerCaller.decision.addProposalRelationship({
+        targetProfileId: proposal.profileId,
+        relationshipType: 'likes',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects a confirmed account with no standing on the decision', async ({

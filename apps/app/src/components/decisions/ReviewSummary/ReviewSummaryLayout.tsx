@@ -5,7 +5,7 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { isReviewPhase } from '@op/common/client';
+import { assertInstancePhase, isReviewPhase } from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 
 import { ReviewSummaryView } from './ReviewSummaryView';
@@ -81,6 +81,13 @@ export async function ReviewSummaryLayout({
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
 
+  // isReviewPhase guards the resolver's fallback, which returns the current
+  // phase when the instance has no review phase at all.
+  const isPhaseInProgress =
+    !!phaseId &&
+    phaseId === instance.currentStateId &&
+    isReviewPhase(assertInstancePhase({ instance, phaseId }));
+
   await utils.decision.getProposalWithReviewAggregates.prefetch({
     processInstanceId: instanceId,
     proposalId,
@@ -95,6 +102,7 @@ export async function ReviewSummaryLayout({
         proposalId={proposalId}
         proposalProfileId={proposalProfileId}
         phaseId={phaseId}
+        isPhaseInProgress={isPhaseInProgress}
       />
     </HydrationBoundary>
   );

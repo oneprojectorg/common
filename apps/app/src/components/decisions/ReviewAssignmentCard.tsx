@@ -1,14 +1,13 @@
 'use client';
 
+import { type DecisionAccess } from '@op/api/encoders';
 import {
-  ProposalReviewAssignmentStatus,
   type ProposalReviewAggregates,
   type ProposalReviewAssignment,
   type ReviewAssignmentExtended,
 } from '@op/common/client';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import type { IconType } from 'react-icons';
 import {
   LuCircleAlert,
@@ -24,6 +23,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { TranslatedText } from '@/components/TranslatedText';
 
 import { useProposalCardData } from './ProposalCard';
+import { ProposalReviewsCount } from './ProposalReviewsCount';
 
 type AssignmentStatus = ProposalReviewAssignment['status'];
 
@@ -33,6 +33,9 @@ interface ReviewAssignmentCardProps {
   assignment: ReviewAssignmentExtended;
   viewHref?: string;
   reviewers?: Reviewers;
+  /** Review summary route for the assignment's proposal. */
+  reviewsHref: string;
+  access?: DecisionAccess;
   /** Whether to show the proposal's category tag (see ReviewAssignmentsList). */
   showCategory?: boolean;
 }
@@ -41,6 +44,8 @@ export function ReviewAssignmentCard({
   assignment: { assignment },
   viewHref,
   reviewers,
+  reviewsHref,
+  access,
   showCategory = true,
 }: ReviewAssignmentCardProps) {
   const t = useTranslations();
@@ -71,43 +76,15 @@ export function ReviewAssignmentCard({
       }
       status={<ReviewStatusBadge status={status} />}
       reviewedLabel={
-        reviewers ? <ReviewersTooltip reviewers={reviewers} /> : undefined
+        reviewers ? (
+          <ProposalReviewsCount
+            reviewers={reviewers}
+            href={reviewsHref}
+            access={access}
+          />
+        ) : undefined
       }
     />
-  );
-}
-
-function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
-  const t = useTranslations();
-
-  const completedReviewers = reviewers.filter(
-    (r) => r.status === ProposalReviewAssignmentStatus.COMPLETED,
-  );
-
-  if (completedReviewers.length === 0) {
-    return null;
-  }
-
-  const names = completedReviewers.map((r) => r.profile.name).join(', ');
-
-  return (
-    // The root layout provides the tooltip group and delay.
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          // No aria-label: the visible "{count} Reviewed" text is the
-          // accessible name; the tooltip popup (names) is exposed as the
-          // description via base-ui's aria-describedby when open.
-          <span
-            tabIndex={0}
-            className="cursor-help rounded-sm underline decoration-dotted underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
-        }
-      >
-        {t('{count} Reviewed', { count: completedReviewers.length })}
-      </TooltipTrigger>
-      <TooltipContent className="text-sm">{names}</TooltipContent>
-    </Tooltip>
   );
 }
 

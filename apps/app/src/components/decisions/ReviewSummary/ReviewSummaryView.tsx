@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { SplitPane } from '@op/sense/SplitPane';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 
 import { useTranslations } from '@/lib/i18n';
@@ -19,6 +20,7 @@ interface ReviewSummaryViewProps {
   proposalId: string;
   proposalProfileId: string;
   phaseId: string | undefined;
+  isPhaseInProgress?: boolean;
 }
 
 export function ReviewSummaryView({
@@ -27,6 +29,7 @@ export function ReviewSummaryView({
   proposalId,
   proposalProfileId,
   phaseId,
+  isPhaseInProgress = false,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
   const [[proposalWithReviews, proposal]] = trpc.useSuspenseQueries((t) => [
@@ -46,7 +49,12 @@ export function ReviewSummaryView({
   );
 
   return (
-    <div className="flex h-dvh flex-col bg-white pb-14">
+    <div
+      className={cn(
+        'flex h-dvh flex-col bg-white',
+        !isPhaseInProgress && 'pb-14',
+      )}
+    >
       <DecisionSubpageHeader
         backHref={`/decisions/${decisionSlug}/current`}
         backLabel={t('Back')}
@@ -61,22 +69,31 @@ export function ReviewSummaryView({
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
-          label={<TranslatedText text="Review Summary" />}
+          label={
+            isPhaseInProgress ? (
+              <TranslatedText text="Review Progress" />
+            ) : (
+              <TranslatedText text="Review Summary" />
+            )
+          }
         >
           <ReviewsPanel
             proposalWithReviews={proposalWithReviews}
             rubricTemplate={rubricTemplate}
             selectedAssignmentId={selectedAssignmentId}
             onSelectAssignment={setSelectedAssignmentId}
+            title={isPhaseInProgress ? t('Review Progress') : undefined}
           />
         </SplitPane.Pane>
       </SplitPane>
 
-      <ReviewSummaryAdvanceFooter
-        instanceId={instanceId}
-        proposalId={proposalId}
-        phaseId={phaseId}
-      />
+      {!isPhaseInProgress && (
+        <ReviewSummaryAdvanceFooter
+          instanceId={instanceId}
+          proposalId={proposalId}
+          phaseId={phaseId}
+        />
+      )}
     </div>
   );
 }

@@ -242,10 +242,12 @@ export function ProposalView({
         selection={selection}
         documentState={documentState}
         // Like/Follow are user-scoped writes gated at the API — only offer the
-        // toggles to a signed-in, non-anonymous member. Everyone else still
-        // sees the counts, just not the controls.
+        // toggles to a signed-in, non-anonymous member who also holds
+        // engagement access (SUBMIT_PROPOSALS). Everyone else still sees the
+        // counts, just not the controls.
         engagement={
-          userCanInteract(user)
+          userCanInteract(user) &&
+          currentProposal.access?.submitProposals === true
             ? {
                 isLiked: isLikedByUser,
                 isFollowing: isFollowedByUser,

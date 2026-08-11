@@ -1279,7 +1279,7 @@
   "Filter by status": "Filter by status",
   "in {categories}": "in {categories}",
   "Sort order": "Sort order",
-  "{count} Reviewed": "{count} Reviewed",
+  "{count} Reviews": "{count} Reviews",
   "{count} of {total} completed": "{count} of {total} completed",
   "Revision Request": "Revision Request",
   "A reviewer has requested changes to {proposalName}": "A reviewer has requested changes to {proposalName}",

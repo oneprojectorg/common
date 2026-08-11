@@ -4,6 +4,7 @@ import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
+import { type DecisionAccess } from '@op/api/encoders';
 import {
   ProposalReviewAssignmentStatus,
   REVIEW_ASSIGNMENT_SORTS,
@@ -47,15 +48,16 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
-  canViewReviewers = false,
+  access,
   pinOffset,
 }: {
   processInstanceId: string;
   decisionSlug: string;
-  canViewReviewers?: boolean;
+  access?: DecisionAccess;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
 }) {
+  const canViewReviewers = Boolean(access?.admin);
   const t = useTranslations();
 
   const [statusFilter, setStatusFilter] = useQueryState(
@@ -261,6 +263,8 @@ export function ReviewAssignmentsList({
                   (i) => i.proposal.id === item.assignment.proposal.id,
                 )?.aggregates.reviewers
               }
+              reviewsHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
+              access={access}
               showCategory={showCategory}
             />
           ))}

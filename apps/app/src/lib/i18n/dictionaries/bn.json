@@ -1268,7 +1268,7 @@
   "Filter by status": "স্ট্যাটাস অনুযায়ী ফিল্টার",
   "in {categories}": "{categories}-এ",
   "Sort order": "সাজানোর ক্রম",
-  "{count} Reviewed": "{count} পর্যালোচিত",
+  "{count} Reviews": "{count} পর্যালোচনা",
   "{count} of {total} completed": "{count} / {total} সম্পন্ন",
   "Revision Request": "সংশোধনের অনুরোধ",
   "A reviewer has requested changes to {proposalName}": "একজন পর্যালোচক {proposalName}-এ পরিবর্তনের অনুরোধ করেছেন",

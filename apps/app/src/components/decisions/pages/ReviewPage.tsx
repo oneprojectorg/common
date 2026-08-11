@@ -150,7 +150,7 @@ export function ReviewPage({
                     <ReviewAssignmentsList
                       processInstanceId={instance.id}
                       decisionSlug={decisionSlug}
-                      canViewReviewers={isAdmin}
+                      access={instance.access}
                       pinOffset={pinOffset}
                     />
                   </Suspense>

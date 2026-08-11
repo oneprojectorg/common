@@ -1267,7 +1267,7 @@
   "Filter by status": "Filtrar por estado",
   "in {categories}": "en {categories}",
   "Sort order": "Orden",
-  "{count} Reviewed": "{count} Revisados",
+  "{count} Reviews": "{count} evaluaciones",
   "{count} of {total} completed": "{count} de {total} completados",
   "Revision Request": "Solicitud de revisión",
   "A reviewer has requested changes to {proposalName}": "Un revisor ha solicitado cambios en {proposalName}",

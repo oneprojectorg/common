@@ -1177,7 +1177,7 @@
   "Filter by status": "تصفية حسب الحالة",
   "in {categories}": "في {categories}",
   "Sort order": "ترتيب الفرز",
-  "{count} Reviewed": "تمت مراجعة {count}",
+  "{count} Reviews": "{count} مراجعة",
   "{count} of {total} completed": "{count} من {total} مكتمل",
   "Revision Request": "طلب تعديل",
   "A reviewer has requested changes to {proposalName}": "طلب أحد المراجعين إجراء تغييرات على {proposalName}",
