@@ -53,13 +53,12 @@ const rubricTemplate: RubricTemplateSchema = {
   required: ['impact'],
 };
 
-/** Phase the test fixtures pin their assignments to (`createReviewScenario`'s default). */
+/** Phase the fixtures pin assignments to (`createReviewScenario`'s default). */
 const REVIEW_PHASE = 'review';
 
 const FEASIBILITY_PHASE = 'feasibility';
 const COMMUNITY_PHASE = 'community';
 
-/** Two back-to-back review phases — the shape that exposed the missing phase filter. */
 const twoReviewPhaseSchema = {
   id: 'two-review-phases',
   version: '1.0.0',
@@ -98,11 +97,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * The queue is phase-scoped to the instance's current phase, and fixtures pin
- * assignments to `'review'`, so the instance has to sit on that phase — the
- * default context starts on `'submission'`.
- */
+/** The default context starts on `'submission'`; the queue reads the current phase. */
 async function createReviewPhaseContext(testData: TestReviewsDataManager) {
   const context = await testData.createContext();
   await testData.setCurrentPhase(context.instance.instance.id, REVIEW_PHASE);
@@ -441,9 +436,8 @@ describe.concurrent('listReviewAssignments', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await createTwoReviewPhaseContext(testData);
 
-    // The playtest case: one reviewer, one proposal, an assignment in each
-    // review phase. Instance-scoped reads listed the proposal twice — once
-    // Completed (feasibility), once Not Started (community).
+    // One reviewer, one proposal, an assignment in each review phase — the
+    // playtest case that listed the proposal twice.
     const feasibility = await testData.createReviewAssignment({
       context,
       title: 'Reviewed in both phases',
@@ -473,7 +467,7 @@ describe.concurrent('listReviewAssignments', () => {
       communityAssignment.id,
     ]);
 
-    // The past phase is still reachable when asked for explicitly.
+    // The past phase stays reachable when asked for explicitly.
     const past = await reviewerCaller.decision.listReviewAssignments({
       processInstanceId: context.instance.instance.id,
       phaseId: FEASIBILITY_PHASE,
@@ -491,14 +485,12 @@ describe.concurrent('listReviewAssignments', () => {
     const context = await createTwoReviewPhaseContext(testData);
     const instanceId = context.instance.instance.id;
 
-    // Covered once in the current phase.
     const coveredNow = await testData.createReviewAssignment({
       context,
       title: 'One completed review this phase',
       phaseId: COMMUNITY_PHASE,
     });
     const reviewer = coveredNow.reviewer;
-    // Covered twice, but only in the past phase — zero coverage for this one.
     const coveredBefore = await testData.createReviewAssignment({
       context,
       reviewer,
@@ -544,7 +536,7 @@ describe.concurrent('listReviewAssignments', () => {
     });
 
     // Instance-scoped counting would rank the past phase's two completions
-    // above the current phase's single one, flipping this order.
+    // above this phase's single one, flipping the order.
     expect(result.assignments.map((a) => a.assignment.proposal.id)).toEqual([
       coveredBefore.proposal.id,
       coveredNow.proposal.id,

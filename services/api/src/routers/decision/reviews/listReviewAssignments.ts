@@ -14,7 +14,7 @@ export const listReviewAssignmentsRouter = router({
     .input(
       z.object({
         processInstanceId: z.uuid(),
-        /** Defaults to the instance's current phase. */
+        /** Defaults to the current phase. */
         phaseId: z.string().optional(),
         status: z.enum(ProposalReviewAssignmentStatus).optional(),
         categoryIds: z.array(z.string()).optional(),

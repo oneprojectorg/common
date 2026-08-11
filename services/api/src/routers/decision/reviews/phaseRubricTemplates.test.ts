@@ -217,8 +217,7 @@ describe.concurrent('per-phase rubric templates', () => {
     });
 
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
-    // The queue is phase-scoped, so each phase is listed on its own — the
-    // rubric still comes from the listed assignment's phase.
+    // The queue is phase-scoped, so each phase is listed on its own.
     const feasibilityList = await reviewerCaller.decision.listReviewAssignments(
       {
         processInstanceId: context.instance.instance.id,
@@ -232,7 +231,7 @@ describe.concurrent('per-phase rubric templates', () => {
       properties: { viability: { title: 'Viability' } },
     });
 
-    // Community is the current phase, so the default scope lands there.
+    // Community is current, so the default scope lands there.
     const communityList = await reviewerCaller.decision.listReviewAssignments({
       processInstanceId: context.instance.instance.id,
     });
