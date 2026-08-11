@@ -15,8 +15,10 @@ interface ProposalMapListItemProps {
   permissions?: DecisionAccess | null;
   /** Id of this proposal's open revision request, if it has one. */
   revisionRequestId?: string;
-  /** Highlighted because its marker (or this row) is hovered/active. */
+  /** Highlighted because its marker or this row is hovered. */
   isActive: boolean;
+  /** The highlight came from the map, so the row tints rather than just outlining. */
+  isPinHovered?: boolean;
   /** Called when the pointer enters the row (desktop hover sync). */
   onActivate: () => void;
   /** Called when the pointer leaves the row. */
@@ -29,6 +31,7 @@ interface ProposalMapListItemProps {
  */
 export function ProposalMapListItem({
   isActive,
+  isPinHovered = false,
   onActivate,
   onDeactivate,
   ...card
@@ -40,7 +43,8 @@ export function ProposalMapListItem({
         className={cn(
           // `min-w-0` so a long title can't widen the list column.
           'min-w-0 transition-colors',
-          isActive ? 'border-input bg-muted' : 'hover:bg-muted',
+          isActive && 'border-input',
+          isPinHovered && 'bg-muted',
         )}
       />
     </li>

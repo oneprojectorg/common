@@ -76,7 +76,18 @@ export function ProposalsMapView({
   const styleUrl = useMapStyleUrl();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // Which proposal is highlighted, and whether the map did the highlighting.
+  // The list row tints its background only for a pin — hovering the row itself
+  // is a border change, so the pointer doesn't repaint what it's already on.
+  const [active, setActive] = useState<{
+    id: string;
+    fromPin: boolean;
+  } | null>(null);
+  const activeId = active?.id ?? null;
+  const activateFromPin = useCallback(
+    (id: string) => setActive({ id, fromPin: true }),
+    [],
+  );
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
@@ -111,7 +122,7 @@ export function ProposalsMapView({
   const handleMarkerClick = useCallback(
     (id: string) => {
       if (isMobile && activeId !== id) {
-        setActiveId(id);
+        activateFromPin(id);
         return;
       }
       const proposal = proposalsById.get(id);
@@ -119,18 +130,18 @@ export function ProposalsMapView({
         router.push(hrefFor(proposal));
       }
     },
-    [isMobile, activeId, proposalsById, router, hrefFor],
+    [isMobile, activeId, activateFromPin, proposalsById, router, hrefFor],
   );
 
   // Only clear when it's still our id — a leave's dismiss-delay timer can
   // land after another pin has become active and would otherwise flicker it.
   const handleMarkerLeave = useCallback((id: string) => {
-    setActiveId((prev) => (prev === id ? null : prev));
+    setActive((prev) => (prev?.id === id ? null : prev));
   }, []);
 
   // Mobile: tapping the map background dismisses the open preview.
   const handleMapClick = useCallback(() => {
-    setActiveId(null);
+    setActive(null);
   }, []);
 
   const renderHovercard = useCallback(
@@ -156,7 +167,7 @@ export function ProposalsMapView({
         onMapClick: handleMapClick,
       }
     : {
-        onMarkerEnter: setActiveId,
+        onMarkerEnter: activateFromPin,
         onMarkerLeave: handleMarkerLeave,
         controlledOpenId: undefined,
         onMapClick: undefined,
@@ -200,8 +211,9 @@ export function ProposalsMapView({
             permissions={permissions}
             revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
             isActive={activeId === proposal.id}
-            onActivate={() => setActiveId(proposal.id)}
-            onDeactivate={() => setActiveId(null)}
+            isPinHovered={active?.fromPin === true && active.id === proposal.id}
+            onActivate={() => setActive({ id: proposal.id, fromPin: false })}
+            onDeactivate={() => setActive(null)}
           />
         ))}
         {listFooter && <li>{listFooter}</li>}
