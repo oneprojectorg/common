@@ -3,7 +3,14 @@ import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { getQueryKey } from '@trpc/react-query';
 import { useCallback } from 'react';
+
+import {
+  type ProposalCountField,
+  bumpProposalCount,
+} from './optimisticProposalCounts';
 
 interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
@@ -93,6 +100,44 @@ export function useRelationshipMutations({
   // it isn't invalidated here; the proposal list deliberately isn't
   // channel-invalidated, so callers pass processInstanceId to refresh their
   // own list counts.
+  const queryClient = useQueryClient();
+
+  /**
+   * Move the proposal's like/follow count in every cached `listProposals`
+   * result and hand back a snapshot to roll back with.
+   *
+   * Matched on the router path alone rather than a specific input: the same
+   * proposal can sit in several lists at once (different filters or sorts, plus
+   * the ballot's non-infinite query), and the row is found by profileId
+   * wherever it appears.
+   */
+  const patchCachedCounts = (relationshipType: string, delta: number) => {
+    if (!targetProfileId) {
+      return [];
+    }
+
+    const field: ProposalCountField =
+      relationshipType === ProfileRelationshipType.LIKES
+        ? 'likesCount'
+        : 'followersCount';
+    const queryKey = getQueryKey(trpc.decision.listProposals);
+    const snapshot = queryClient.getQueriesData({ queryKey });
+
+    queryClient.setQueriesData({ queryKey }, (old: unknown) =>
+      bumpProposalCount(old, targetProfileId, field, delta),
+    );
+
+    return snapshot;
+  };
+
+  const restoreCachedCounts = (
+    snapshot: ReturnType<typeof patchCachedCounts> | undefined,
+  ) => {
+    snapshot?.forEach(([key, data]) =>
+      queryClient.setQueryData<unknown>(key, data),
+    );
+  };
+
   const invalidateAfterMutation = async () => {
     await Promise.all([
       utils.profile.getRelationships.invalidate(relationshipQueryKey),
@@ -155,7 +200,11 @@ export function useRelationshipMutations({
           );
         }
 
-        return { previousData };
+        // The pressed state comes from the cache above; the number beside it
+        // lives on the list rows, so move it here too or it lags the refetch.
+        const previousLists = patchCachedCounts(variables.relationshipType, 1);
+
+        return { previousData, previousLists };
       },
       onSuccess: () => {
         // Call user-provided onSuccess callback
@@ -171,6 +220,7 @@ export function useRelationshipMutations({
             context.previousData,
           );
         }
+        restoreCachedCounts(context?.previousLists);
         logger.error('Failed to add relationship', {
           error,
           context: 'useRelationshipMutations.add',
@@ -218,7 +268,9 @@ export function useRelationshipMutations({
           );
         }
 
-        return { previousData };
+        const previousLists = patchCachedCounts(variables.relationshipType, -1);
+
+        return { previousData, previousLists };
       },
       onSuccess: () => {
         // Call user-provided onSuccess callback
@@ -234,6 +286,7 @@ export function useRelationshipMutations({
             context.previousData,
           );
         }
+        restoreCachedCounts(context?.previousLists);
         logger.error('Failed to remove relationship', {
           error,
           context: 'useRelationshipMutations.remove',

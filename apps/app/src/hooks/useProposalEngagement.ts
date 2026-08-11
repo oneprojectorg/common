@@ -23,9 +23,10 @@ export interface ProposalEngagement {
  * as plain numbers in that case rather than dead controls.
  *
  * Counts are NOT read here. They live on the proposal row the caller already
- * has, and the mutation invalidates `listProposals`; `decision.getProposal` is
- * never invalidated on like/follow, so reading a count from it leaves the
- * number frozen while the toggle flips.
+ * has, which the mutation patches optimistically and then refetches via
+ * `listProposals`. Don't source a count from `decision.getProposal` instead —
+ * nothing invalidates that on like/follow, so the number would sit frozen while
+ * the toggle flips.
  */
 export function useProposalEngagement({
   proposal,
