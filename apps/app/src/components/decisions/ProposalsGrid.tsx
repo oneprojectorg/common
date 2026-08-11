@@ -38,6 +38,7 @@ import {
   CustomFormModal,
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
+import { proposalHref } from './proposalHrefs';
 
 export interface ProposalsProps {
   proposals?: Proposal[];
@@ -302,9 +303,11 @@ const VotingProposalsList = ({
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          const proposalHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const href = proposalHref(proposal.profileId, {
+            decisionSlug,
+            slug,
+            instanceId,
+          });
 
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
@@ -312,7 +315,7 @@ const VotingProposalsList = ({
               <ProposalCardView
                 key={proposal.id}
                 proposal={proposal}
-                href={proposalHref}
+                href={href}
                 selected={isVotedFor}
                 showStatusBadge={false}
                 aside={
@@ -381,11 +384,7 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink
-                    href={proposalHref}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <ButtonLink href={href} variant="outline" className="w-full">
                     {t('Read full proposal')}
                   </ButtonLink>
                 }
@@ -405,11 +404,7 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink
-                    href={proposalHref}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <ButtonLink href={href} variant="outline" className="w-full">
                     {t('Read full proposal')}
                   </ButtonLink>
                 }

@@ -43,15 +43,20 @@ export function AnimatedCount({
   const grew = outgoing !== null && value > outgoing;
 
   return (
-    <span className={cn('inline-grid tabular-nums', className)}>
+    <span
+      className={cn(
+        'inline-grid tabular-nums',
+        // Sets `--count-travel`; both halves read it, so they can't disagree
+        // about which way the number moved.
+        grew ? 'count-rising' : 'count-falling',
+        className,
+      )}
+    >
       {outgoing !== null && (
         <span
           key={outgoing}
           aria-hidden
-          className={cn(
-            'col-start-1 row-start-1 motion-reduce:hidden',
-            grew ? 'animate-count-up-out' : 'animate-count-down-out',
-          )}
+          className="col-start-1 row-start-1 animate-count-out motion-reduce:hidden"
           onAnimationEnd={() => setSeen((s) => ({ ...s, outgoing: null }))}
         >
           {outgoing}
@@ -61,8 +66,7 @@ export function AnimatedCount({
         key={value}
         className={cn(
           'col-start-1 row-start-1 motion-reduce:animate-none',
-          outgoing !== null &&
-            (grew ? 'animate-count-up' : 'animate-count-down'),
+          outgoing !== null && 'animate-count-in',
         )}
       >
         {value}

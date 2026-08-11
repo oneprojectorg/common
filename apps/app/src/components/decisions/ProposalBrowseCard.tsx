@@ -10,6 +10,7 @@ import {
   ProposalCardReviseAction,
   ProposalCardView,
 } from './ProposalCard';
+import { proposalEditHref, proposalHref } from './proposalHrefs';
 
 interface ProposalBrowseCardProps {
   proposal: Proposal;
@@ -51,16 +52,12 @@ export function ProposalBrowseCard({
   const showMenu = canManageProposals || isEditable;
   const hasRevisionRequest = revisionRequestId !== undefined;
 
-  // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
-  const editHref = decisionSlug
-    ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
-    : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
+  const route = { decisionSlug, slug, instanceId };
+  const editHref = proposalEditHref(proposal.profileId, route);
   const reviseHref = revisionRequestId
     ? `${editHref}?reviewRevision=${revisionRequestId}`
     : editHref;
-  const viewHref = decisionSlug
-    ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-    : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+  const viewHref = proposalHref(proposal.profileId, route);
 
   // Only pass `actions` when something will actually render — otherwise the
   // card draws a separator + empty row. Like/Follow aren't here: they are the

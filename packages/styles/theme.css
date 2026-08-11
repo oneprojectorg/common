@@ -85,12 +85,9 @@
   --duration-count: 0.3s;
   --ease-count: cubic-bezier(0.08,0.82,0.17,1);
   --distance-count: 0.75em;
-  --animate-count-up: count-up var(--duration-count) var(--ease-count);
-  --animate-count-down: count-down var(--duration-count) var(--ease-count);
-  --animate-count-up-out: count-up-out var(--duration-count) var(--ease-count)
+  --animate-count-in: count-in var(--duration-count) var(--ease-count);
+  --animate-count-out: count-out var(--duration-count) var(--ease-count)
     forwards;
-  --animate-count-down-out: count-down-out var(--duration-count)
-    var(--ease-count) forwards;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
@@ -186,13 +183,23 @@
   }
 }
 
-/* Offsets are in em so the slide tracks the text size it inherits. No
- * clipping: the travel is small enough to read as a tick without needing a
+/* One pair of keyframes for both directions: `--count-travel` decides which
+ * way, so a decrement is the increment's mirror rather than its own copy.
+ * Offsets are in em, so the slide tracks the text size it inherits. No
+ * clipping: the travel is small enough to read as a tick without a
  * fixed-height, overflow-hidden box that could misalign against the line. */
-@keyframes count-up {
+@utility count-rising {
+  --count-travel: var(--distance-count);
+}
+
+@utility count-falling {
+  --count-travel: calc(var(--distance-count) * -1);
+}
+
+@keyframes count-in {
   from {
     opacity: 0;
-    transform: translateY(var(--distance-count));
+    transform: translateY(var(--count-travel));
   }
   to {
     opacity: 1;
@@ -200,38 +207,16 @@
   }
 }
 
-@keyframes count-down {
-  from {
-    opacity: 0;
-    transform: translateY(calc(var(--distance-count) * -1));
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* The outgoing halves: same direction of travel as the number replacing them,
- * so the pair reads as one movement rather than two. */
-@keyframes count-up-out {
+/* The outgoing half travels the way the incoming one came from, so the pair
+ * reads as one movement rather than two. */
+@keyframes count-out {
   from {
     opacity: 1;
     transform: none;
   }
   to {
     opacity: 0;
-    transform: translateY(calc(var(--distance-count) * -1));
-  }
-}
-
-@keyframes count-down-out {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: translateY(var(--distance-count));
+    transform: translateY(calc(var(--count-travel) * -1));
   }
 }
 

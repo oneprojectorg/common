@@ -11,6 +11,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
+import { proposalHref } from './proposalHrefs';
 
 export const NoVoteFound = () => {
   const t = useTranslations();
@@ -84,9 +85,11 @@ const MyBallotProposals = ({
 
       <ProposalMasonry>
         {proposalsData.proposals.map((proposal) => {
-          const viewHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const viewHref = proposalHref(proposal.profileId, {
+            decisionSlug,
+            slug,
+            instanceId,
+          });
           return (
             <ProposalCardView
               key={proposal.id}
