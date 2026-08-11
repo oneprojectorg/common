@@ -73,7 +73,7 @@ export const ToSContentShort = () => {
             href="/info/community-commitments"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-teal hover:underline"
+            className="text-primary hover:underline"
           >
             Community Commitments
           </a>
@@ -210,7 +210,7 @@ export const ToSContentShort = () => {
           Questions? Email us at{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal hover:underline"
+            className="text-primary hover:underline"
           >
             support@oneproject.org
           </a>

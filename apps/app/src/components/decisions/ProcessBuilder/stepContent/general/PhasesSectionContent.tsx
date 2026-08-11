@@ -170,7 +170,7 @@ export function PhasesSectionContent({
           </div>
           <Button
             variant="ghost"
-            className="text-primary-teal hover:text-primary-tealBlack"
+            className="text-primary hover:text-primary-tealBlack"
             onClick={addPhase}
           >
             <LuPlus className="size-4" />
@@ -215,7 +215,7 @@ export function PhasesSectionContent({
                     <div className="flex-1">
                       <p className="font-serif text-label">{phase.name}</p>
                       {configured ? (
-                        <span className="flex items-center gap-1 text-sm text-primary-teal">
+                        <span className="flex items-center gap-1 text-sm text-primary">
                           <LuCheck className="size-3" />
                           {phaseDateRange(phase)}
                         </span>
@@ -311,7 +311,7 @@ const PhaseDragPreview = ({
         <div className="flex-1">
           <p className="font-serif text-label">{phase.name}</p>
           {configured ? (
-            <span className="flex items-center gap-1 text-sm text-primary-teal">
+            <span className="flex items-center gap-1 text-sm text-primary">
               <LuCheck className="size-3" />
               {dateRange}
             </span>

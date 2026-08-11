@@ -98,7 +98,7 @@ export const ToSContent = () => {
           information, including, but not limited to, personal information. We
           will treat any personal information that you submit through the
           Services in accordance with our{' '}
-          <a href="/info/privacy" className="text-primary-teal underline">
+          <a href="/info/privacy" className="text-primary underline">
             Privacy Notice
           </a>
           . You may need to create an account with a user name and password to
@@ -128,7 +128,7 @@ export const ToSContent = () => {
           see our{' '}
           <a
             href="/info/community-commitments"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             Community Commitments
           </a>{' '}
@@ -292,7 +292,7 @@ export const ToSContent = () => {
             that violates our{' '}
             <a
               href="/info/community-commitments#prohibited-content"
-              className="text-primary-teal underline"
+              className="text-primary underline"
             >
               Prohibited Content Policy
             </a>
@@ -366,7 +366,7 @@ export const ToSContent = () => {
           that violates our{' '}
           <a
             href="/info/community-commitments#prohibited-content"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             Prohibited Content Policy
           </a>
@@ -394,7 +394,7 @@ export const ToSContent = () => {
           One Project’s Copyright Agent at{' '}
           <a
             href="mailto:privacy@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             privacy@oneproject.org
           </a>{' '}
@@ -787,7 +787,7 @@ export const ToSContent = () => {
             href="https://www.jamsadr.com/rules-streamlined-arbitration/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             https://www.jamsadr.com/rules-streamlined-arbitration/
           </a>
@@ -797,7 +797,7 @@ export const ToSContent = () => {
             href="https://www.jamsadr.com/consumer-minimum-standards/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             https://www.jamsadr.com/consumer-minimum-standards/
           </a>
@@ -882,7 +882,7 @@ export const ToSContent = () => {
           notice sent to that address to{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             support@oneproject.org
           </a>
@@ -891,7 +891,7 @@ export const ToSContent = () => {
           of Service should be directed to:{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             support@oneproject.org
           </a>

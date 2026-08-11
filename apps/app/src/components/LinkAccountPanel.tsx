@@ -171,7 +171,7 @@ export const LinkAccountPanel = () => {
     if (!loginSuccess) {
       return t.rich('Already have an account? <login>Log in</login>', {
         login: (chunks: React.ReactNode) => (
-          <a href={regularLoginHref} className="text-primary-teal underline">
+          <a href={regularLoginHref} className="text-primary underline">
             {chunks}
           </a>
         ),

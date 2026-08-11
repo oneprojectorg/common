@@ -55,7 +55,7 @@ export const PinnedResourceCard = ({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={title}
-      className="group block rounded-lg border p-2 outline-none hover:bg-primary-tealWhite focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+      className="group block rounded-lg border p-2 outline-none hover:bg-primary-tealWhite focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <div className="flex items-center gap-2">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary-tealWhite group-hover:bg-white">

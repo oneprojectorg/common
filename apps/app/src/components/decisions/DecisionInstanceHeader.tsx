@@ -185,7 +185,7 @@ const DecisionUpdatesToggle = ({
       aria-label={ariaLabel}
       aria-pressed={isOpen}
       className={
-        isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-foreground'
+        isOpen ? 'bg-primary-tealWhite text-primary' : 'text-foreground'
       }
     >
       <MegaphoneIcon className="size-4 stroke-[1.5]" />

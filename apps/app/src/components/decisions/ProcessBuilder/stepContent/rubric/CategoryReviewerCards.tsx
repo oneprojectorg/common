@@ -63,7 +63,7 @@ function CategoryReviewerCardsContent({
               link: (chunks: React.ReactNode) => (
                 <button
                   type="button"
-                  className="text-primary-teal underline"
+                  className="text-primary underline"
                   onClick={() => void setSection('proposalCategories')}
                 >
                   {chunks}
@@ -90,7 +90,7 @@ function CategoryReviewerCardsContent({
                 link: (chunks: React.ReactNode) => (
                   <button
                     type="button"
-                    className="text-primary-teal underline"
+                    className="text-primary underline"
                     onClick={() => void setSection('participants')}
                   >
                     {chunks}
@@ -108,7 +108,7 @@ function CategoryReviewerCardsContent({
               link: (chunks: React.ReactNode) => (
                 <button
                   type="button"
-                  className="text-primary-teal underline"
+                  className="text-primary underline"
                   onClick={() => void setSection('proposalCategories')}
                 >
                   {chunks}

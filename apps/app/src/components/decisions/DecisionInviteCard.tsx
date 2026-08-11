@@ -96,7 +96,7 @@ export const DecisionInviteCard = ({
         <Button
           variant="link"
           size="inline"
-          className="self-center text-sm font-normal text-primary-teal underline hover:text-primary-teal/80"
+          className="self-center text-sm font-normal text-primary underline hover:text-primary/80"
           onClick={() => onDecline(invite.id)}
           disabled={isDeclining || isAccepting}
         >

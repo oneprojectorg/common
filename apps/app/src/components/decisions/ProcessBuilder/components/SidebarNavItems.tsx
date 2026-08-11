@@ -34,7 +34,7 @@ interface SidebarNavItemsProps {
 
 // Teal dot flagging a section that still needs configuration.
 function IncompleteDot() {
-  return <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />;
+  return <span className="size-1.5 shrink-0 rounded-full bg-primary" />;
 }
 
 // A single nav row built on the (context-free) sense SidebarMenuSubButton —

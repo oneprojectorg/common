@@ -436,7 +436,7 @@ const VotingProposalsList = ({
                       numSelected,
                       max: maxVotesPerMember,
                       highlight: (chunks: ReactNode) => (
-                        <span className="text-primary-teal">{chunks}</span>
+                        <span className="text-primary">{chunks}</span>
                       ),
                     },
                   )
@@ -445,7 +445,7 @@ const VotingProposalsList = ({
                     {
                       numSelected,
                       highlight: (chunks: ReactNode) => (
-                        <span className="text-primary-teal">{chunks}</span>
+                        <span className="text-primary">{chunks}</span>
                       ),
                     },
                   )}

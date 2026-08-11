@@ -45,7 +45,7 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
     <TabsTrigger value="decisions">
       {t('Decisions')}
       {hasPublishedDecisions && (
-        <span className="ms-1.5 inline-block size-1 rounded-full bg-functional-green" />
+        <span className="ms-1.5 inline-block size-1 rounded-full bg-success" />
       )}
     </TabsTrigger>
   );

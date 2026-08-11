@@ -95,7 +95,7 @@ export const PrivacyPolicyContent = () => {
           <li className="mb-2">
             <a
               href="/info/columbus-addendum"
-              className="text-primary-teal underline"
+              className="text-primary underline"
             >
               Special Privacy Standards for City of Columbus Participatory
               Budgeting Project
@@ -537,7 +537,7 @@ export const PrivacyPolicyContent = () => {
               services by declining to receive such emails when registering, in
               our subsequent communications by following opt-out or unsubscribe
               instructions included in the email, by{' '}
-              <a href="#contact-us" className="text-primary-teal underline">
+              <a href="#contact-us" className="text-primary underline">
                 contacting us
               </a>
               , or at other information collection points while using the
@@ -559,7 +559,7 @@ export const PrivacyPolicyContent = () => {
               href="http://www.allaboutcookies.org/manage-cookies/index.html"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary-teal underline"
+              className="text-primary underline"
             >
               http://www.allaboutcookies.org/manage-cookies/index.html
             </a>{' '}
@@ -680,7 +680,7 @@ export const PrivacyPolicyContent = () => {
             In the event you wish to make a right request, file a complaint
             about how we process your Personal Data, or appeal the denial of one
             of your requests, please{' '}
-            <a href="#contact-us" className="text-primary-teal underline">
+            <a href="#contact-us" className="text-primary underline">
               contact us
             </a>
             . Even if you make a complaint to us, you may also in some
@@ -805,7 +805,7 @@ export const PrivacyPolicyContent = () => {
             Email:{' '}
             <a
               href="mailto:privacy@oneproject.org"
-              className="text-primary-teal underline"
+              className="text-primary underline"
             >
               privacy@oneproject.org
             </a>
