@@ -19,6 +19,7 @@ export {
   isVotingPhase,
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
+export { assertInstancePhase } from './services/decision/utils/instance';
 export {
   getPhaseIndex,
   getPreviousPhases,
