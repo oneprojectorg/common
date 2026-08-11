@@ -79,6 +79,9 @@
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  /* A count ticking over — slides in from the direction it moved. */
+  --animate-count-up: count-up 0.18s ease-out;
+  --animate-count-down: count-down 0.18s ease-out;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
@@ -171,6 +174,31 @@
     --text-headline--line-height: 2.25rem;
     --text-display: 3rem;
     --text-display--line-height: 3.625rem;
+  }
+}
+
+/* Offsets are in em so the slide tracks the text size it inherits. No
+ * clipping: the travel is small enough to read as a tick without needing a
+ * fixed-height, overflow-hidden box that could misalign against the line. */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes count-down {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

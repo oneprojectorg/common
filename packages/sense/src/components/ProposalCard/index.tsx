@@ -15,6 +15,7 @@ import type { IconType } from 'react-icons';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { AnimatedCount } from '../AnimatedCount';
 import { FacePile } from '../FacePile';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
@@ -359,7 +360,7 @@ function MetricDisplay({
     >
       <Icon className="me-1 size-4" aria-hidden />
       <span className="sr-only">{label}: </span>
-      {count ?? 0}
+      <AnimatedCount value={count ?? 0} />
     </span>
   );
 }
@@ -391,7 +392,7 @@ function MetricToggle({
       className={METRIC_CLASS}
     >
       <Icon className={cn('size-4', active && 'fill-current')} aria-hidden />
-      {count ?? 0}
+      <AnimatedCount value={count ?? 0} />
     </Toggle>
   );
 }
@@ -423,7 +424,7 @@ function MetricButton({
       className={METRIC_CLASS}
     >
       <Icon className="size-4" aria-hidden />
-      {count ?? 0}
+      <AnimatedCount value={count ?? 0} />
     </Button>
   );
 }

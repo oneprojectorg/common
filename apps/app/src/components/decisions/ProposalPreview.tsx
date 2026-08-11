@@ -11,6 +11,7 @@ import {
   parseTranslatedMeta,
 } from '@op/common/client';
 import { Alert, AlertDescription } from '@op/sense/Alert';
+import { AnimatedCount } from '@op/sense/AnimatedCount';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Spinner } from '@op/sense/Spinner';
 import { StatusBadge } from '@op/sense/StatusBadge';
@@ -309,26 +310,26 @@ function EngagementRow({
   const followersCount = proposal.followersCount || 0;
   const commentsCount = proposal.commentsCount || 0;
 
-  const likesLabel = `${likesCount} ${likesCount === 1 ? t('Like') : t('Likes')}`;
-  const followersLabel = `${followersCount} ${
-    followersCount === 1 ? t('Follower') : t('Followers')
-  }`;
-  const commentsLabel = `${commentsCount} ${
-    commentsCount === 1 ? t('Comment') : t('Comments')
-  }`;
+  // The noun is separate from the number so the number can animate on its own;
+  // together they still read as the toggle's accessible name ("3 Likes").
+  const likesNoun = likesCount === 1 ? t('Like') : t('Likes');
+  const followersNoun = followersCount === 1 ? t('Follower') : t('Followers');
+  const commentsNoun = commentsCount === 1 ? t('Comment') : t('Comments');
 
   return (
     <div className="flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">
       <EngagementToggle
         icon={LuHeart}
-        label={likesLabel}
+        count={likesCount}
+        noun={likesNoun}
         pressed={engagement?.isLiked}
         onPressedChange={engagement?.onLike}
         isPending={engagement?.isPending}
       />
       <EngagementToggle
         icon={LuBookmark}
-        label={followersLabel}
+        count={followersCount}
+        noun={followersNoun}
         pressed={engagement?.isFollowing}
         onPressedChange={engagement?.onFollow}
         isPending={engagement?.isPending}
@@ -342,7 +343,7 @@ function EngagementRow({
         className="px-2 text-muted-foreground hover:text-foreground"
       >
         <LuMessageCircle aria-hidden />
-        {commentsLabel}
+        <AnimatedCount value={commentsCount} /> {commentsNoun}
       </ButtonLink>
     </div>
   );
@@ -360,13 +361,15 @@ function EngagementRow({
  */
 function EngagementToggle({
   icon: Icon,
-  label,
+  count,
+  noun,
   pressed,
   onPressedChange,
   isPending,
 }: {
   icon: IconType;
-  label: string;
+  count: number;
+  noun: string;
   pressed?: boolean;
   onPressedChange?: () => void;
   isPending?: boolean;
@@ -379,7 +382,7 @@ function EngagementToggle({
     return (
       <span className="flex items-center gap-1 px-2">
         <Icon className={cn('size-4', iconClassName)} aria-hidden />
-        {label}
+        <AnimatedCount value={count} /> {noun}
       </span>
     );
   }
@@ -395,7 +398,7 @@ function EngagementToggle({
       disabled={isPending}
     >
       <Icon className={iconClassName} aria-hidden />
-      {label}
+      <AnimatedCount value={count} /> {noun}
     </Toggle>
   );
 }

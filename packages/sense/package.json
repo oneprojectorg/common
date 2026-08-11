@@ -13,6 +13,7 @@
     "./Accordion": "./src/components/ui/accordion.tsx",
     "./Alert": "./src/components/ui/alert.tsx",
     "./AlertDialog": "./src/components/ui/alert-dialog.tsx",
+    "./AnimatedCount": "./src/components/AnimatedCount/index.tsx",
     "./AspectRatio": "./src/components/ui/aspect-ratio.tsx",
     "./Avatar": "./src/components/ui/avatar.tsx",
     "./AvatarUploader": "./src/components/AvatarUploader/index.tsx",
