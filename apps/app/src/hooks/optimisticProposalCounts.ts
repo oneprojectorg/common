@@ -12,6 +12,13 @@
  * and lets this walk whatever shape it finds.
  */
 
+/**
+ * The routers disagree on what the array is called: `listProposals` pages carry
+ * `proposals` (and so does the ballot's flat result), while `listAllProposals`
+ * carries `items`. Both are walked rather than picking one.
+ */
+const ROW_ARRAY_KEYS = ['proposals', 'items'] as const;
+
 /** Count fields a relationship can move. */
 export type ProposalCountField = 'likesCount' | 'followersCount';
 
@@ -51,10 +58,29 @@ function bumpItems(
   );
 }
 
+/** Rewrites whichever row array(s) the container happens to use. */
+function bumpRowArrays(
+  container: Record<string, unknown>,
+  profileId: string,
+  field: ProposalCountField,
+  delta: number,
+): Record<string, unknown> {
+  let next = container;
+
+  for (const key of ROW_ARRAY_KEYS) {
+    if (Array.isArray(next[key])) {
+      next = { ...next, [key]: bumpItems(next[key], profileId, field, delta) };
+    }
+  }
+
+  return next;
+}
+
 /**
  * Returns `data` with the matching proposal's count moved by `delta`. Handles
- * both the flat `{ items }` result and the infinite `{ pages: [{ items }] }`
- * one, and returns the input untouched for anything it doesn't recognise.
+ * both the flat result and the infinite `{ pages: [...] }` one, whichever row
+ * array the router uses, and returns the input untouched for anything it
+ * doesn't recognise.
  */
 export function bumpProposalCount(
   data: unknown,
@@ -73,25 +99,19 @@ export function bumpProposalCount(
       ...record,
       pages: record.pages.map((page) =>
         page && typeof page === 'object'
-          ? {
-              ...(page as Record<string, unknown>),
-              items: bumpItems(
-                (page as Record<string, unknown>).items,
-                profileId,
-                field,
-                delta,
-              ),
-            }
+          ? bumpRowArrays(
+              page as Record<string, unknown>,
+              profileId,
+              field,
+              delta,
+            )
           : page,
       ),
     };
   }
 
-  if (Array.isArray(record.items)) {
-    return {
-      ...record,
-      items: bumpItems(record.items, profileId, field, delta),
-    };
+  if (ROW_ARRAY_KEYS.some((key) => Array.isArray(record[key]))) {
+    return bumpRowArrays(record, profileId, field, delta);
   }
 
   // A bare proposal — what `decision.getProposal` caches for the detail view.

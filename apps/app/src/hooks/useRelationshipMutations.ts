@@ -107,8 +107,8 @@ export function useRelationshipMutations({
    *
    * Matched with a predicate on the tRPC path rather than a built query key:
    * the same proposal sits in several caches at once — any number of
-   * `listProposals` results (different filters or sorts, plus the ballot's
-   * non-infinite query) and the `getProposal` entry the detail view reads — and
+   * `listProposals` / `listAllProposals` results (different filters or sorts,
+   * plus the ballot's non-infinite query) and the `getProposal` entry — and
    * a predicate matches all of them without depending on how tRPC happens to
    * encode inputs in the key.
    */
@@ -129,7 +129,9 @@ export function useRelationshipMutations({
         return (
           Array.isArray(path) &&
           path[0] === 'decision' &&
-          (path[1] === 'listProposals' || path[1] === 'getProposal')
+          (path[1] === 'listProposals' ||
+            path[1] === 'listAllProposals' ||
+            path[1] === 'getProposal')
         );
       },
     };

@@ -14,6 +14,22 @@ const infinite = (likes: number) => ({
   pages: [flat(likes)],
 });
 
+// listProposals — what the current-phase grid reads — names the array
+// `proposals`, not `items`. Getting this wrong is invisible: the patch simply
+// finds nothing and the count sits still.
+const proposalsShape = (likes: number) => ({
+  pageParams: [undefined],
+  pages: [
+    {
+      total: 2,
+      proposals: [
+        { profileId: 'p1', likesCount: likes, followersCount: 3 },
+        { profileId: 'p2', likesCount: 99, followersCount: 0 },
+      ],
+    },
+  ],
+});
+
 describe('bumpProposalCount', () => {
   it('moves the matching row in a flat list and leaves the others alone', () => {
     const next = bumpProposalCount(
@@ -58,6 +74,32 @@ describe('bumpProposalCount', () => {
     ) as ReturnType<typeof flat>;
 
     expect(next.items[0]!.likesCount).toBe(0);
+  });
+
+  it('walks pages that name the array `proposals` (listProposals)', () => {
+    const next = bumpProposalCount(
+      proposalsShape(4),
+      'p1',
+      'likesCount',
+      1,
+    ) as ReturnType<typeof proposalsShape>;
+
+    expect(next.pages[0]!.proposals[0]).toMatchObject({ likesCount: 5 });
+    expect(next.pages[0]!.proposals[1]).toMatchObject({ likesCount: 99 });
+  });
+
+  it('walks a flat `proposals` result (the ballot)', () => {
+    const ballot = {
+      proposals: [{ profileId: 'p1', likesCount: 4, followersCount: 3 }],
+    };
+    const next = bumpProposalCount(
+      ballot,
+      'p1',
+      'followersCount',
+      1,
+    ) as typeof ballot;
+
+    expect(next.proposals[0]).toMatchObject({ followersCount: 4 });
   });
 
   it('moves a bare proposal, the shape getProposal caches', () => {
