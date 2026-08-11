@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
+import type { DecisionAccess } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -29,12 +29,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
-import {
-  ProposalCardMenu,
-  ProposalCardOwnerActions,
-  ProposalCardReviseAction,
-  ProposalCardView,
-} from './ProposalCard';
+import { ProposalBrowseCard } from './ProposalBrowseCard';
+import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
@@ -504,11 +500,6 @@ const ViewProposalsList = ({
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
-  const canManageProposals = permissions?.admin ?? false;
-  // Like/Follow require SUBMIT_PROPOSALS (or admin) on the parent decision —
-  // don't offer buttons the API would reject (e.g. reviewer-only roles).
-  const canEngage =
-    (permissions?.submitProposals ?? false) || canManageProposals;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
@@ -523,59 +514,17 @@ const ViewProposalsList = ({
 
   return (
     <ProposalMasonry loadingMore={isFetchingNextPage}>
-      {proposals.map((proposal) => {
-        const isDraft = proposal.status === ProposalStatus.DRAFT;
-        const isEditable = Boolean(proposal.isEditable);
-        const showMenu = canManageProposals || isEditable;
-        const revisionRequestId = revisionRequestIdByProposalId?.get(
-          proposal.id,
-        );
-        const hasRevisionRequest = revisionRequestId !== undefined;
-        // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
-        const editHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
-        const reviseHref = revisionRequestId
-          ? `${editHref}?reviewRevision=${revisionRequestId}`
-          : editHref;
-        const viewHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
-
-        const aside = showMenu ? (
-          <ProposalCardMenu
-            proposal={proposal}
-            canManage={canManageProposals}
-          />
-        ) : undefined;
-
-        // Only pass `actions` when something will actually render — otherwise
-        // the card draws a separator + empty row. Like/Follow aren't here: they
-        // are the metric toggles, driven by `canEngage`.
-        const actions = hasRevisionRequest ? (
-          <ProposalCardReviseAction editHref={reviseHref} />
-        ) : isDraft || isEditable ? (
-          <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
-        ) : undefined;
-
-        return (
-          <ProposalCardView
-            key={proposal.id}
-            proposal={proposal}
-            href={viewHref}
-            aside={aside}
-            actions={actions}
-            showMetrics={!isDraft}
-            // Engagement replaced the old Like/Follow footer, and that footer
-            // shared one slot with the owner and revision actions — so an
-            // author never saw Like/Follow on their own card. Keep that: the
-            // toggles light up only where those buttons used to.
-            canEngage={canEngage && !actions}
-            revisionRequested={hasRevisionRequest}
-            className={isDraft ? 'bg-muted' : undefined}
-          />
-        );
-      })}
+      {proposals.map((proposal) => (
+        <ProposalBrowseCard
+          key={proposal.id}
+          proposal={proposal}
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          permissions={permissions}
+          revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
+        />
+      ))}
     </ProposalMasonry>
   );
 };

@@ -37,6 +37,8 @@ interface ProposalsMapViewProps {
   slug: string;
   /** Decision profile slug for building proposal links. */
   decisionSlug?: string;
+  /** Open revision requests, keyed by proposal id — drives the revise action. */
+  revisionRequestIdByProposalId?: Map<string, string>;
   /** Role-based capabilities for the current user — drives the admin
    * proposal menu on each list-column card (same logic as the grid view). */
   permissions?: DecisionAccess | null;
@@ -65,14 +67,10 @@ export function ProposalsMapView({
   slug,
   decisionSlug,
   permissions,
+  revisionRequestIdByProposalId,
   mapView,
   listFooter,
 }: ProposalsMapViewProps) {
-  const canManageProposals = permissions?.admin ?? false;
-  // Same gate as the grid — the map's cards never carry owner actions, so
-  // there's nothing to hand the row over to.
-  const canEngage =
-    (permissions?.submitProposals ?? false) || canManageProposals;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
@@ -196,10 +194,12 @@ export function ProposalsMapView({
           <ProposalMapListItem
             key={proposal.id}
             proposal={proposal}
-            href={hrefFor(proposal)}
+            instanceId={instanceId}
+            slug={slug}
+            decisionSlug={decisionSlug}
+            permissions={permissions}
+            revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
             isActive={activeId === proposal.id}
-            canManage={canManageProposals || Boolean(proposal.isEditable)}
-            canEngage={canEngage}
             onActivate={() => setActiveId(proposal.id)}
             onDeactivate={() => setActiveId(null)}
           />

@@ -542,6 +542,7 @@ const ProposalsListContent = ({
               slug={slug}
               decisionSlug={decisionSlug}
               permissions={permissions}
+              revisionRequestIdByProposalId={revisionRequestIdByProposalId}
               mapView={mapView}
               listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
             />
@@ -564,6 +565,7 @@ const ProposalsListContent = ({
                   slug={slug}
                   decisionSlug={decisionSlug}
                   permissions={permissions}
+                  revisionRequestIdByProposalId={revisionRequestIdByProposalId}
                   mapView={mapView}
                   // Pins come from a dedicated all-locations query (not the
                   // loaded list pages) so the map isn't capped by the page

@@ -358,7 +358,8 @@ function metricParts(metric: ProposalCardMetric) {
   return typeof metric === 'number' ? { count: metric } : metric;
 }
 
-const METRIC_CLASS = 'gap-1 px-2 font-normal text-muted-foreground';
+const METRIC_CLASS =
+  'gap-1 px-2 font-normal text-muted-foreground hover:text-foreground hover:bg-muted';
 
 /**
  * Icon, name, count — the accessible name of every metric, interactive or not.

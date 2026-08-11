@@ -1,23 +1,22 @@
 'use client';
 
+import { type DecisionAccess } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
 
-import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
+import { ProposalBrowseCard } from './ProposalBrowseCard';
 
 interface ProposalMapListItemProps {
   proposal: Proposal;
-  /** Proposal detail link — the whole card navigates here. */
-  href: string;
+  instanceId: string;
+  slug: string;
+  /** Decision profile slug for building proposal links. */
+  decisionSlug?: string;
+  permissions?: DecisionAccess | null;
+  /** Id of this proposal's open revision request, if it has one. */
+  revisionRequestId?: string;
   /** Highlighted because its marker (or this row) is hovered/active. */
   isActive: boolean;
-  /**
-   * When true the admin proposal menu (triple dots) renders in the header,
-   * matching the grid view's `showMenu = canManageProposals` logic.
-   */
-  canManage?: boolean;
-  /** Whether the viewer may like/follow — mirrors the grid's metric toggles. */
-  canEngage?: boolean;
   /** Called when the pointer enters the row (desktop hover sync). */
   onActivate: () => void;
   /** Called when the pointer leaves the row. */
@@ -25,43 +24,24 @@ interface ProposalMapListItemProps {
 }
 
 /**
- * A compact proposal card for the map browse view's list column. The card's
- * stretched title link navigates to the proposal (the whole card is clickable),
- * while the admin menu stays independently clickable above it. Hovering syncs
- * the active state with the matching map marker.
+ * One row of the map browse view's list column: the same card the grid
+ * renders, plus the hover highlight that syncs with the matching map marker.
  */
 export function ProposalMapListItem({
-  proposal,
-  href,
   isActive,
-  canManage = false,
-  canEngage = false,
   onActivate,
   onDeactivate,
+  ...card
 }: ProposalMapListItemProps) {
   return (
     <li onMouseEnter={onActivate} onMouseLeave={onDeactivate}>
-      <ProposalCardView
-        proposal={proposal}
-        href={href}
-        showMetrics
-        canEngage={canEngage}
+      <ProposalBrowseCard
+        {...card}
         className={cn(
+          // `min-w-0` so a long title can't widen the list column.
           'min-w-0 transition-colors',
           isActive ? 'border-input bg-muted' : 'hover:bg-muted',
         )}
-        aside={
-          canManage ? (
-            // The title's stretched link covers the card; swallow the menu's
-            // pointer events so opening it doesn't also navigate.
-            <div
-              onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <ProposalCardMenu proposal={proposal} canManage={canManage} />
-            </div>
-          ) : undefined
-        }
       />
     </li>
   );
