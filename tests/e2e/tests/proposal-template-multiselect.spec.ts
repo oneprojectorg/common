@@ -114,12 +114,16 @@ test.describe('Proposal template — multi-select category', () => {
     const settingsNav = sidebarNav.getByRole('button', {
       name: 'General Information',
     });
-    await expect(settingsNav.locator('span.bg-primary-teal')).toHaveCount(1);
+    await expect(settingsNav.getByTestId('section-incomplete-dot')).toHaveCount(
+      1,
+    );
 
     // 7. The Proposal Template section must NOT show the incomplete dot.
     const templateNav = sidebarNav.getByRole('button', {
       name: 'Proposal Template',
     });
-    await expect(templateNav.locator('span.bg-primary-teal')).toHaveCount(0);
+    await expect(templateNav.getByTestId('section-incomplete-dot')).toHaveCount(
+      0,
+    );
   });
 });
