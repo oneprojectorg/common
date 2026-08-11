@@ -780,6 +780,11 @@ export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
 // Re-export shared types from @op/common so consumers can import from either package
 export type { Proposal, ProposalList } from '@op/common/client';
 
+// The proposal-export filter set, surfaced here because `apps/app` takes its
+// API types from the encoders and does not depend on `@op/events` directly.
+// Type-only, so no part of the events runtime reaches the client bundle.
+export type { ProposalExportFilters } from '@op/events';
+
 // Legacy type exports (for backwards compatibility during migration)
 export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;
 export type LegacyDecisionProfileList = z.infer<

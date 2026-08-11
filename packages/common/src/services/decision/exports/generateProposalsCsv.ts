@@ -42,6 +42,10 @@ export async function generateProposalsCsv(
   proposals: ProposalFromList[],
 ): Promise<string> {
   const rows = proposals.map((p) => {
+    // Deferred: the non-description fields still come from the stored
+    // `proposalData` snapshot, which goes stale once a field is edited in the
+    // collab doc. The authoritative values live in TipTap and want the same
+    // REST fetch `getDocumentDescription` already does above.
     const proposalData = parseProposalData(p.proposalData);
 
     return {

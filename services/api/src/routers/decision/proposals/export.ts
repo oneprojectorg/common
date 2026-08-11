@@ -23,7 +23,7 @@ export const exportProposalsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
-      const { exportId, organizationId } = await exportProposals({
+      const { exportId } = await exportProposals({
         input: {
           processInstanceId: input.processInstanceId,
           format: input.format,
@@ -43,7 +43,6 @@ export const exportProposalsRouter = router({
         userId: user.id,
         processInstanceId: input.processInstanceId,
         format: input.format,
-        organizationId,
       });
 
       return { exportId };

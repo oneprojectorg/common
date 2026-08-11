@@ -5,6 +5,7 @@ import {
   EXPORT_URL_TTL_SECONDS,
   type ExportStatusData,
   assertUserByAuthId,
+  exportFileName,
   exportFilePath,
   exportStatusCacheKey,
   generateProposalsCsv,
@@ -110,8 +111,8 @@ export const exportProposals = inngest.createFunction(
         async () => {
           // Use service role client to bypass RLS in background job
           const supabase = createSBServiceClient();
-          const timestamp = Date.now();
-          const fileName = `proposals_export_${timestamp}.${extension}`;
+
+          const fileName = exportFileName(extension);
           const filePath = exportFilePath(processInstanceId, fileName);
 
           // Upload CSV to Supabase storage

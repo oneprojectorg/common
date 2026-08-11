@@ -1,6 +1,6 @@
 import { set } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { Events, type ProposalExportFilters, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -35,20 +35,22 @@ export const exportProposals = async ({
 }: {
   input: ExportProposalsInput;
   user: User;
-}): Promise<{ exportId: string; organizationId: string }> => {
+}): Promise<{ exportId: string }> => {
   const { processInstanceId } = input;
 
-  // Get process instance with profile and org info
+  // Resolve the decision profile the export belongs to. Authorization hangs off
+  // this profile; there is no organization lookup because exports are written
+  // to the shared `assets` bucket and no longer need an owning org.
+  //
+  // Deferred: joining `profiles` would make the null-profileId branch below
+  // unrepresentable, but it also collapses "no such instance" and "instance has
+  // no profile" into one indistinguishable miss. Kept as two lookups until we
+  // decide which error those callers should see.
   const result = await db
     .select({
       profileId: processInstances.profileId,
-      organizationId: organizations.id,
     })
     .from(processInstances)
-    .innerJoin(
-      organizations,
-      eq(organizations.profileId, processInstances.ownerProfileId),
-    )
     .where(eq(processInstances.id, processInstanceId))
     .limit(1);
 
@@ -56,14 +58,16 @@ export const exportProposals = async ({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  if (!result[0].profileId) {
+  const { profileId } = result[0];
+
+  if (!profileId) {
     throw new NotFoundError('Decision profile', processInstanceId);
   }
 
   // Check user permissions via profile
   await assertProfileAccess({
     user,
-    profileId: result[0].profileId,
+    profileId,
     permissions: [{ decisions: permission.ADMIN }],
   });
 
@@ -83,6 +87,12 @@ export const exportProposals = async ({
   // can poll immediately and read the same shape it gets once the workflow
   // takes over. A partial seed would answer the first poll with a record
   // missing `format`/`filters`, which no longer satisfies the status contract.
+
+  // Deferred: this record exists because the client polls. Once export state
+  // moves onto a realtime channel the workflow can broadcast readiness and the
+  // finished URL directly, and the client re-fetches on that message instead of
+  // on a timer. Inngest already holds the run state and can be queried for it,
+  // so the cache record becomes redundant rather than authoritative.
   await set(
     exportStatusCacheKey(exportId),
     {
@@ -111,6 +121,5 @@ export const exportProposals = async ({
 
   return {
     exportId,
-    organizationId: result[0].organizationId,
   };
 };

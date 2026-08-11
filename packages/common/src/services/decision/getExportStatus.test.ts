@@ -30,6 +30,7 @@ import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
+  exportFilePath,
 } from './exports';
 import { getExportStatus } from './getExportStatus';
 
@@ -113,7 +114,7 @@ describe('getExportStatus', () => {
 
     expect(storageFrom).toHaveBeenCalledWith(EXPORTS_BUCKET);
     expect(createSignedUrl).toHaveBeenCalledWith(
-      `proposals/${INSTANCE_ID}/proposals_export_123.csv`,
+      exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
     );
   });
@@ -177,7 +178,7 @@ describe('getExportStatus', () => {
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
     expect(createSignedUrl).toHaveBeenCalledWith(
-      `proposals/${INSTANCE_ID}/proposals_export_123.csv`,
+      exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
     );
     expect(result).toMatchObject({

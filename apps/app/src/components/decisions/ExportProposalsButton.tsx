@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ProposalStatus } from '@op/api/encoders';
+import type { ProposalExportFilters } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
@@ -22,16 +22,13 @@ export interface ExportProposalsButtonProps {
    * resolved query params — not its filter-tab identity — so the export
    * reproduces the same server-side query and the CSV matches what the admin is
    * looking at, rather than silently exporting the whole instance.
+   *
+   * Taken from the shared schema rather than restated here: it is the one
+   * definition the event payload, the request input, and the status response
+   * all derive from, and a fourth hand-written copy is how a newly added filter
+   * ends up silently not forwarded.
    */
-  filters: {
-    categoryId?: string;
-    submittedByProfileId?: string;
-    votedByProfileId?: string;
-    status?: ProposalStatus;
-    dir: 'asc' | 'desc';
-    phase?: 'results';
-    excludeAssignedForReview?: boolean;
-  };
+  filters: ProposalExportFilters;
   /** Nothing to export — the list is empty under the active filter. */
   isEmpty?: boolean;
 }
@@ -80,10 +77,10 @@ export const ExportProposalsButton = ({
     },
   );
 
-  const isResolved =
-    status && status.status !== 'not_found' && status.status === 'completed';
-  const isFailed =
-    status && status.status !== 'not_found' && status.status === 'failed';
+  // `not_found` is not a member of ExportStatusData['status'], so matching a
+  // terminal state narrows away the not-found branch on its own.
+  const isResolved = status?.status === 'completed';
+  const isFailed = status?.status === 'failed';
   const isStale = exportId !== null && startedFilterKey.current !== filterKey;
   const isRunning =
     exportId !== null && !isResolved && !isFailed && !hasTimedOut && !isStale;

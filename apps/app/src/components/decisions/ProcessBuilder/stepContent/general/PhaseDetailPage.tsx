@@ -150,6 +150,12 @@ function PhaseDetailForm({
   const allPhasesRef = useRef(allPhases);
   allPhasesRef.current = allPhases;
 
+  // The next phase is computed here rather than inside a `setPhase` updater:
+  // updaters must be pure, and React runs them during render, so saving from
+  // one wrote to the autosave store mid-render and scheduled an update on
+  // ProcessBuilderHeaderContent while this component was still rendering.
+  // Safe to read `phase` from the closure because every caller updates once
+  // per event — if that ever changes, this needs a ref, not an updater.
   const updatePhase = (updates: Partial<PhaseDefinition>) => {
     if (!phase) {
       return;
