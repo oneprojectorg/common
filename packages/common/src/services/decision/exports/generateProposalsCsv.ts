@@ -5,6 +5,7 @@ import { stringify } from 'csv-stringify/sync';
 import type { listProposals } from '../listProposals';
 import {
   formatProposalCategories,
+  getPlaceCoordinates,
   parseProposalData,
 } from '../proposalDataSchema';
 
@@ -48,6 +49,15 @@ export async function generateProposalsCsv(
     // REST fetch `getDocumentDescription` already does above.
     const proposalData = parseProposalData(p.proposalData);
 
+    // Geocoded place coordinates, so co-located ideas plot on one point rather
+    // than scattering by however precisely each submitter dropped their pin.
+    // `getPlaceCoordinates` falls back to the pin when the geocoder found no
+    // match — emitting blanks there would silently drop those ideas off the
+    // map, which is the opposite of what this export is for.
+    const place = proposalData.location
+      ? getPlaceCoordinates(proposalData.location)
+      : undefined;
+
     return {
       'Proposal ID': p.id,
       Title: p.profile?.name || '',
@@ -55,6 +65,9 @@ export async function generateProposalsCsv(
       Budget: proposalData.budget?.amount ?? '',
       Currency: proposalData.budget?.currency ?? '',
       Categories: formatProposalCategories(proposalData.category),
+      Address: proposalData.location?.address ?? '',
+      Latitude: place?.lat ?? '',
+      Longitude: place?.lng ?? '',
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',
       'Submitter Email': p.submittedBy?.email || '',

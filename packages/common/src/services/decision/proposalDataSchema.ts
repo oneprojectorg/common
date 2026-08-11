@@ -179,6 +179,27 @@ export function normalizeLocation(raw: unknown): LocationData | undefined {
 }
 
 /**
+ * The canonical point for a location: the geocoded place when one was
+ * resolved, falling back to the submitted pin.
+ *
+ * `placeLat`/`placeLng` are optional because the picker only sets them when
+ * the geocoder returns a match — a pin in open water, or anywhere the lookup
+ * misses, yields a perfectly valid location carrying nothing but `lat`/`lng`.
+ * Anything needing one authoritative coordinate per proposal (deduplicating
+ * co-located proposals, plotting on a map, exporting for GIS) wants this
+ * rather than the raw `place*` fields, which would drop those proposals.
+ */
+export function getPlaceCoordinates(location: LocationData): {
+  lat: number;
+  lng: number;
+} {
+  return {
+    lat: location.placeLat ?? location.lat,
+    lng: location.placeLng ?? location.lng,
+  };
+}
+
+/**
  * Extract the numeric value from any budget representation.
  * Handles `BudgetData`, legacy plain numbers, and numeric strings.
  * Returns 0 when the input can't be parsed.
