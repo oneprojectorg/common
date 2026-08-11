@@ -222,7 +222,11 @@ function RubricCriterionSection({
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
       {criterionType === 'yes_no' ? (
         <>
-          <FieldHeader title={field.schema.title} badge={badgeLabel} />
+          <FieldHeader
+            title={field.schema.title}
+            badge={badgeLabel}
+            required={field.required}
+          />
 
           <div className="flex items-start gap-3">
             {field.schema.description && (
@@ -240,6 +244,7 @@ function RubricCriterionSection({
             title={field.schema.title}
             description={field.schema.description}
             badge={badgeLabel}
+            required={field.required}
           />
 
           <RubricFieldInput field={field} value={value} onChange={onChange} />
