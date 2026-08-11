@@ -31,6 +31,7 @@ export function ProposalViewLayout({
   isLoading = false,
   editHref,
   canEdit = false,
+  canEngage = false,
   canJoin = false,
   reportProposalId,
   revisionToggle,
@@ -45,6 +46,8 @@ export function ProposalViewLayout({
   isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
+  /** Mirrors the server-side engagement gate — hides Like/Follow otherwise. */
+  canEngage?: boolean;
   /**
    * Public process (viewer can submit proposals without an account): the
    * header offers "Join" (account claim, see JoinAccountModal) instead of
@@ -104,8 +107,9 @@ export function ProposalViewLayout({
             <ReportProposalDialog proposalId={reportProposalId} />
           )}
           {/* Like/Follow are user-scoped writes gated at the API — only offer
-              them to a signed-in, non-anonymous member. */}
-          {userCanInteract(user) ? (
+              them to a signed-in, non-anonymous member with engagement
+              access. */}
+          {userCanInteract(user) && canEngage ? (
             <>
               <Button
                 surface="outline"

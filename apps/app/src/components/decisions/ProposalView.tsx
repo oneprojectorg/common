@@ -273,6 +273,7 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
+      canEngage={currentProposal.access?.submitProposals === true}
       revisionToggle={
         firstRevisionRequestId
           ? {
