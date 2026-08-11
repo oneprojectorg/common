@@ -65,9 +65,13 @@ export function ProposalBrowseCard({
   // Only pass `actions` when something will actually render — otherwise the
   // card draws a separator + empty row. Like/Follow aren't here: they are the
   // metric toggles, driven by `canEngage`.
+  //
+  // Edit/Delete are buttons only on a draft, where finishing the proposal is
+  // the card's purpose. Everywhere else they'd sit on every card an admin can
+  // touch — which is all of them — so they live in the `…` menu.
   const actions = hasRevisionRequest ? (
     <ProposalCardReviseAction editHref={reviseHref} />
-  ) : isDraft || isEditable ? (
+  ) : isDraft ? (
     <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
   ) : undefined;
 
@@ -79,6 +83,7 @@ export function ProposalBrowseCard({
         showMenu ? (
           <ProposalCardMenu
             proposal={proposal}
+            editHref={isDraft ? undefined : editHref}
             canManage={canManageProposals}
           />
         ) : undefined
@@ -86,10 +91,11 @@ export function ProposalBrowseCard({
       actions={actions}
       showMetrics={!isDraft}
       // Engagement replaced the old Like/Follow footer, and that footer shared
-      // one slot with the owner and revision actions — so an author never saw
-      // Like/Follow on their own card. Keep that: the toggles light up only
-      // where those buttons used to.
-      canEngage={canEngage && !actions}
+      // one slot with the owner and revision actions — so nobody saw
+      // Like/Follow on a proposal they could edit. Spelled out rather than
+      // derived from `actions`, which no longer tracks it now that Edit and
+      // Delete have moved into the menu.
+      canEngage={canEngage && !isDraft && !isEditable && !hasRevisionRequest}
       revisionRequested={hasRevisionRequest}
       className={cn(isDraft && 'bg-muted', className)}
     />

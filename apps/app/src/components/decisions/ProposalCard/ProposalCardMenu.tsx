@@ -3,7 +3,7 @@
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -16,9 +16,12 @@ import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 export function ProposalCardMenu({
   proposal,
+  editHref,
   canManage = false,
 }: {
   proposal: Proposal;
+  /** Enables the Edit item. Drafts keep their Edit/Delete buttons instead. */
+  editHref?: string;
   canManage?: boolean;
 }) {
   const t = useTranslations();
@@ -45,6 +48,18 @@ export function ProposalCardMenu({
         label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
         onAction: handleToggleVisibility,
         isDisabled: isLoading,
+      });
+    }
+
+    // Edit is a menu item everywhere except drafts, whose card keeps the
+    // Edit/Delete buttons — a draft is unfinished, so finishing it is the
+    // point of the card.
+    if (proposal.isEditable && editHref) {
+      items.push({
+        key: 'edit',
+        icon: <LuPencil className="size-5" />,
+        label: t('Edit'),
+        href: editHref,
       });
     }
 

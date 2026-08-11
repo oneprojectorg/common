@@ -16,14 +16,26 @@ import { screens } from '@op/styles/constants';
 import { Fragment, type ComponentProps, type ReactNode, useState } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
-export interface ProposalOptionsMenuItem {
+import { Link } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
+
+interface ProposalOptionsMenuItemBase {
   key: string;
   icon: ReactNode;
   label: string;
-  onAction: () => void;
   isDisabled?: boolean;
   isDestructive?: boolean;
 }
+
+/** An item either does something or goes somewhere — never both, never neither. */
+export type ProposalOptionsMenuItem =
+  | (ProposalOptionsMenuItemBase & { onAction: () => void; href?: never })
+  | (ProposalOptionsMenuItemBase & {
+      /** Renders the row as a link, so it keeps middle-click and open-in-new-tab. */
+      href: string;
+      onAction?: never;
+    });
 
 /**
  * The `…` overflow menu shared by the proposal card and the proposal page: a
@@ -80,25 +92,41 @@ export function ProposalOptionsMenu({
               <SheetTitle>{label}</SheetTitle>
             </SheetHeader>
             <div className="pb-safe flex min-w-full flex-col">
-              {items.map((item, index) => (
-                <Button
-                  key={item.key}
-                  variant="ghost"
-                  onClick={() => {
-                    setIsSheetOpen(false);
-                    item.onAction();
-                  }}
-                  disabled={item.isDisabled}
-                  className={cn(
+              {items.map((item, index) => {
+                const rowProps = {
+                  variant: 'ghost',
+                  disabled: item.isDisabled,
+                  className: cn(
                     'h-auto w-full justify-start gap-2 rounded-none px-6 py-4',
                     item.isDestructive && 'text-destructive',
                     index < items.length - 1 && 'border-b border-border',
-                  )}
-                >
-                  {item.icon}
-                  {item.label}
-                </Button>
-              ))}
+                  ),
+                  children: (
+                    <>
+                      {item.icon}
+                      {item.label}
+                    </>
+                  ),
+                } as const;
+
+                return item.href ? (
+                  <ButtonLink
+                    key={item.key}
+                    href={item.href}
+                    onClick={() => setIsSheetOpen(false)}
+                    {...rowProps}
+                  />
+                ) : (
+                  <Button
+                    key={item.key}
+                    onClick={() => {
+                      setIsSheetOpen(false);
+                      item.onAction?.();
+                    }}
+                    {...rowProps}
+                  />
+                );
+              })}
             </div>
           </SheetContent>
         </Sheet>
@@ -130,6 +158,7 @@ export function ProposalOptionsMenu({
                   <DropdownMenuItem
                     key={item.key}
                     onClick={item.onAction}
+                    render={item.href ? <Link href={item.href} /> : undefined}
                     disabled={item.isDisabled}
                     variant={item.isDestructive ? 'destructive' : 'default'}
                     className="min-w-48"
