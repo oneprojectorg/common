@@ -15,12 +15,15 @@ import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 /**
- * Like/Follow actions for viewing other users' proposals
+ * Like/Follow actions for viewing other users' proposals. `canEngage` mirrors
+ * the server-side engagement gate on the parent decision.
  */
 export function ProposalCardActions({
   proposal: initialProposal,
+  canEngage,
 }: {
   proposal: Proposal;
+  canEngage: boolean;
 }) {
   const t = useTranslations();
   const { user } = useUser();
@@ -52,7 +55,7 @@ export function ProposalCardActions({
 
   // Like/Follow are user-scoped writes gated at the API — anonymous visitors
   // can read the proposal but aren't offered these actions.
-  if (!userCanInteract(user)) {
+  if (!userCanInteract(user) || !canEngage) {
     return null;
   }
 

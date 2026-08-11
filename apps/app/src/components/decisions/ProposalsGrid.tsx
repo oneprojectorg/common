@@ -498,6 +498,10 @@ const ViewProposalsList = ({
   revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
   const canManageProposals = permissions?.admin ?? false;
+  // Like/Follow require SUBMIT_PROPOSALS (or admin) on the parent decision —
+  // don't offer buttons the API would reject (e.g. reviewer-only roles).
+  const canEngage =
+    (permissions?.submitProposals ?? false) || canManageProposals;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
@@ -577,7 +581,10 @@ const ViewProposalsList = ({
                 ) : (
                   <>
                     <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardActions proposal={proposal} />
+                    <ProposalCardActions
+                      proposal={proposal}
+                      canEngage={canEngage}
+                    />
                   </>
                 )}
               </ProposalCardFooter>
