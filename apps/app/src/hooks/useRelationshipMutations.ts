@@ -4,7 +4,7 @@ import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 import {
   type ProposalCountField,
@@ -320,83 +320,96 @@ export function useRelationshipMutations({
     removeRelationshipMutation.isPending ||
     isLoadingRelationships;
 
-  // Handler for like/unlike
-  const handleLike = useCallback(async () => {
-    if (!targetProfileId) {
-      logger.error('No targetProfileId provided for like action', {
-        context: 'useRelationshipMutations.like',
-      });
-      return;
-    }
+  /**
+   * Serialises the network writes. Two fast clicks send an add and a remove;
+   * fired concurrently they can reach the server in either order, and the one
+   * that lands last wins — which may be the one you clicked first.
+   */
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
 
-    try {
-      if (isLiked) {
-        // Unlike
-        await removeRelationshipMutation.mutateAsync({
-          targetProfileId,
-          relationshipType: ProfileRelationshipType.LIKES,
+  const hasRelationship = (
+    data: UserRelationships | undefined,
+    relationshipType: ProfileRelationshipType,
+  ) =>
+    Boolean(
+      data?.[relationshipType]?.some(
+        (rel) => rel.targetProfile?.id === targetProfileId,
+      ),
+    );
+
+  const toggleRelationship = useCallback(
+    async (relationshipType: ProfileRelationshipType, context: string) => {
+      if (!targetProfileId) {
+        logger.error('No targetProfileId provided for relationship action', {
+          context,
         });
-      } else {
-        // Like
-        await addRelationshipMutation.mutateAsync({
-          targetProfileId,
-          relationshipType: ProfileRelationshipType.LIKES,
+
+        return;
+      }
+
+      const run = async () => {
+        // Read the cache rather than the render-time `isLiked`: by the time a
+        // queued click runs, the one before it has already written its own
+        // optimistic state, and this click has to see it.
+        //
+        // `ensureData` covers the press that lands before the query does —
+        // guessing there is what silently inflates the count, since the server
+        // no-ops on an add that already exists but the client still counted it.
+        const data =
+          utils.profile.getRelationships.getData(relationshipQueryKey) ??
+          (await utils.profile.getRelationships.ensureData(
+            relationshipQueryKey,
+          ));
+
+        const mutation = hasRelationship(data, relationshipType)
+          ? removeRelationshipMutation
+          : addRelationshipMutation;
+
+        await mutation.mutateAsync({ targetProfileId, relationshipType });
+      };
+
+      // `.then(run, run)` so a failed click doesn't strand the queue.
+      const next = queue.current.then(run, run);
+
+      queue.current = next.catch(() => undefined);
+
+      try {
+        await next;
+      } catch (error) {
+        // Mutation errors are rolled back and toasted in onError; mutateAsync
+        // also rejects when onSuccess/onSettled throw (onError doesn't run for
+        // those), so log here instead of swallowing silently.
+        logger.error('Relationship mutation post-processing failed', {
+          error,
+          context,
         });
       }
-    } catch (error) {
-      // Mutation errors are rolled back and toasted in onError; mutateAsync
-      // also rejects when onSuccess/onSettled throw (onError doesn't run for
-      // those), so log here instead of swallowing silently.
-      logger.error('Like mutation post-processing failed', {
-        error,
-        context: 'useRelationshipMutations.like',
-      });
-    }
-  }, [
-    targetProfileId,
-    isLiked,
-    addRelationshipMutation,
-    removeRelationshipMutation,
-  ]);
+    },
+    [
+      targetProfileId,
+      utils,
+      addRelationshipMutation,
+      removeRelationshipMutation,
+    ],
+  );
 
-  // Handler for follow/unfollow
-  const handleFollow = useCallback(async () => {
-    if (!targetProfileId) {
-      logger.error('No targetProfileId provided for follow action', {
-        context: 'useRelationshipMutations.follow',
-      });
-      return;
-    }
+  const handleLike = useCallback(
+    () =>
+      toggleRelationship(
+        ProfileRelationshipType.LIKES,
+        'useRelationshipMutations.like',
+      ),
+    [toggleRelationship],
+  );
 
-    try {
-      if (isFollowed) {
-        // Unfollow
-        await removeRelationshipMutation.mutateAsync({
-          targetProfileId,
-          relationshipType: ProfileRelationshipType.FOLLOWING,
-        });
-      } else {
-        // Follow
-        await addRelationshipMutation.mutateAsync({
-          targetProfileId,
-          relationshipType: ProfileRelationshipType.FOLLOWING,
-        });
-      }
-    } catch (error) {
-      // Mutation errors are rolled back and toasted in onError; mutateAsync
-      // also rejects when onSuccess/onSettled throw (onError doesn't run for
-      // those), so log here instead of swallowing silently.
-      logger.error('Follow mutation post-processing failed', {
-        error,
-        context: 'useRelationshipMutations.follow',
-      });
-    }
-  }, [
-    targetProfileId,
-    isFollowed,
-    addRelationshipMutation,
-    removeRelationshipMutation,
-  ]);
+  const handleFollow = useCallback(
+    () =>
+      toggleRelationship(
+        ProfileRelationshipType.FOLLOWING,
+        'useRelationshipMutations.follow',
+      ),
+    [toggleRelationship],
+  );
 
   return {
     // State

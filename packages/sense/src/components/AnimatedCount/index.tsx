@@ -31,7 +31,9 @@ export function AnimatedCount({
     outgoing: null,
   });
 
-  if (seen.value !== value) {
+  // `Object.is`, not `!==`: `NaN !== NaN`, so a non-finite count would set
+  // state on every render until React gives up with "too many re-renders".
+  if (!Object.is(seen.value, value)) {
     // A render-phase update: React re-runs this component with the new state
     // before committing, so the stale `seen` below never reaches the DOM.
     setSeen({ value, outgoing: seen.value });
