@@ -7,7 +7,7 @@ import type { SortDir } from '@op/common';
 import { useDebounce, useInfiniteScroll, useMediaQuery } from '@op/hooks';
 import { Alert, AlertTitle, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
-import { Header2 } from '@op/sense/Header';
+import { Header1 } from '@op/sense/Header';
 import {
   InputGroup,
   InputGroupAddon,
@@ -106,7 +106,9 @@ export const ProfileUsersAccess = ({
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-10">
         <div className="flex items-center justify-between gap-4">
-          <Header2 className="text-label">{t('Manage Participants')}</Header2>
+          <Header1 className="text-headline">
+            {t('Manage Participants')}
+          </Header1>
           <Button onClick={() => setIsInviteModalOpen(true)}>
             <LuUserPlus className="size-4" />
             {t('Invite')}

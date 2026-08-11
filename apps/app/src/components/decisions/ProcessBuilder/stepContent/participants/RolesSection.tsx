@@ -31,7 +31,7 @@ import {
 } from '@op/sense/DropdownMenu';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
 import { Field, FieldLabel } from '@op/sense/Field';
-import { Header2, Header3 } from '@op/sense/Header';
+import { Header1, Header3 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import {
   Table,
@@ -431,9 +431,7 @@ function RolesSectionContent({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <Header2 className="text-label font-light">
-          {t('Roles & permissions')}
-        </Header2>
+        <Header1 className="text-headline">{t('Roles & permissions')}</Header1>
         <Button
           variant="ghost"
           className="text-primary hover:text-teal-600"
