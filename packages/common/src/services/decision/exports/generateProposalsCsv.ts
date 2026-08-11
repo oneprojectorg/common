@@ -1,5 +1,3 @@
-import { type JSONContent, generateText } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
 import { stringify } from 'csv-stringify/sync';
 
 import type { listProposals } from '../listProposals';
@@ -8,6 +6,8 @@ import {
   getPlaceCoordinates,
   parseProposalData,
 } from '../proposalDataSchema';
+import { collectProposalBodyDoc } from '../proposalListPreview';
+import { tiptapDocToPlainText } from '../tiptapDocToPlainText';
 
 // Infer the proposal type from the listProposals return value
 type ProposalFromList = Awaited<
@@ -15,21 +15,30 @@ type ProposalFromList = Awaited<
 >['proposals'][number];
 
 /**
- * Extract plain text description from a proposal's document content.
- * Uses TipTap generateText for collab docs, falls back to proposalData.description for legacy.
+ * Plain text of a proposal's body, for the Description column.
+ *
+ * Reads the same fragments the list preview and the proposal page render, via
+ * the shared walk. It previously read only `fragments.default` — the legacy
+ * single-fragment shape — so every proposal on a template exported an empty
+ * description while legacy proposals kept working, which is why it went
+ * unnoticed. Templated documents key their fragments by field name (`summary`
+ * for the current templates).
  */
 function getDocumentDescription(proposal: ProposalFromList): string {
   const documentContent = proposal.documentContent;
 
   if (documentContent?.type === 'json') {
+    const bodyDoc = collectProposalBodyDoc({
+      fragments: documentContent.fragments,
+      proposalTemplate: proposal.proposalTemplate ?? null,
+    });
+
+    if (!bodyDoc) {
+      return '';
+    }
+
     try {
-      const content = documentContent.fragments.default?.content;
-      if (!content) return '';
-      const doc: JSONContent = {
-        type: 'doc',
-        content: content as JSONContent[],
-      };
-      return generateText(doc, [StarterKit]).trim();
+      return tiptapDocToPlainText(bodyDoc).trim();
     } catch {
       return '';
     }

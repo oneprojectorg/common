@@ -1,3 +1,4 @@
+import type { TipTapFragmentResponse } from '@op/collab';
 import { getTextPreview } from '@op/core';
 import type { JSONContent } from '@tiptap/core';
 
@@ -45,6 +46,47 @@ export interface ProposalListPreview {
 }
 
 /**
+ * The proposal's document body as a single TipTap doc: every non-system
+ * fragment whose `x-format` is a text format, in fragment order, falling back
+ * to the legacy single `default` fragment. `null` when there is no body text.
+ *
+ * Fragments are keyed by template field name — `summary` for the current
+ * templates, `default` only for legacy untemplated documents — so a reader
+ * that hardcodes one key returns nothing for every proposal on a template
+ * while continuing to work for the legacy ones. Shared with the CSV export,
+ * which needs the same selection but the full text rather than a capped
+ * preview.
+ */
+export function collectProposalBodyDoc({
+  fragments,
+  proposalTemplate,
+}: {
+  fragments: TipTapFragmentResponse;
+  proposalTemplate: ProposalTemplateSchema | null;
+}): JSONContent | null {
+  const textContent: unknown[] = [];
+
+  for (const [key, fragment] of Object.entries(fragments)) {
+    if (SYSTEM_FIELD_KEYS.has(key) || !fragment?.content) {
+      continue;
+    }
+
+    const format = proposalTemplate?.properties?.[key]?.['x-format'];
+    if (format && !TEXT_FORMATS.has(format)) {
+      continue;
+    }
+
+    textContent.push(...fragment.content);
+  }
+
+  if (textContent.length === 0 && fragments.default?.content) {
+    textContent.push(...fragments.default.content);
+  }
+
+  return textContent.length > 0 ? toTipTapDoc(textContent) : null;
+}
+
+/**
  * Server-side equivalent of the client's `getProposalContentPreview` +
  * `resolveProposalSystemFields` fragment walks. List reads ship this
  * precomputed preview instead of the full document fragments.
@@ -73,37 +115,18 @@ export function buildProposalListPreview({
 
   const { fragments } = documentContent;
 
-  // Preview body: every non-system fragment whose `x-format` is a text
-  // format (fields without a template entry are included for legacy docs).
-  const textContent: unknown[] = [];
-  for (const [key, fragment] of Object.entries(fragments)) {
-    if (SYSTEM_FIELD_KEYS.has(key) || !fragment?.content) {
-      continue;
-    }
-
-    const format = proposalTemplate?.properties?.[key]?.['x-format'];
-    if (format && !TEXT_FORMATS.has(format)) {
-      continue;
-    }
-
-    textContent.push(...fragment.content);
-  }
-
-  // Fall back to the legacy single `default` fragment.
-  if (textContent.length === 0 && fragments.default?.content) {
-    textContent.push(...fragments.default.content);
-  }
+  const bodyDoc = collectProposalBodyDoc({ fragments, proposalTemplate });
 
   // Empty doc (e.g. unedited draft) — preview nothing, not an error. A
   // malformed fragment must not break the whole list (same try/catch parity
   // as the client walk this replaces, getProposalContentPreview).
   let previewText: string | null;
-  if (textContent.length === 0) {
+  if (!bodyDoc) {
     previewText = '';
   } else {
     try {
       previewText =
-        tiptapDocToPlainText(toTipTapDoc(textContent))
+        tiptapDocToPlainText(bodyDoc)
           .trim()
           .slice(0, PROPOSAL_PREVIEW_MAX_LENGTH) || null;
     } catch {
