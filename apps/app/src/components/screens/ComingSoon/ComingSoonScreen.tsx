@@ -29,7 +29,7 @@ export const ComingSoonScreen = () => {
           initial={{ y: '-100%', opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
-          className="relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-primary-tealWhite px-6 py-2.5 text-center"
+          className="relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-accent px-6 py-2.5 text-center"
         >
           <div className="pointer-events-none absolute inset-x-0 top-full h-30 bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
           <p>

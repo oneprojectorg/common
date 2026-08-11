@@ -261,7 +261,7 @@ export function ProposalCategoriesSectionContent({
           {!isFormVisible && (
             <Button
               variant="ghost"
-              className="mt-2 px-2 text-primary-tealBlack hover:text-primary"
+              className="mt-2 px-2 text-teal-600 hover:text-primary"
               onClick={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />

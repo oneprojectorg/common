@@ -42,7 +42,7 @@ export function ProposalMapHovercard({
       // short titles don't stretch and long titles wrap. The card chrome
       // (border/bg/padding) comes from the pin-variant ProposalCard; the
       // Link only carries the hit area, focus ring, and floating shadow.
-      className="block w-fit max-w-80 min-w-52 rounded-lg no-underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
+      className="block w-fit max-w-80 min-w-52 rounded-lg no-underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
     >
       <ProposalCard
         variant="pin"

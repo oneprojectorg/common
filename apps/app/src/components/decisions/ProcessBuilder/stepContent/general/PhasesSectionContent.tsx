@@ -170,7 +170,7 @@ export function PhasesSectionContent({
           </div>
           <Button
             variant="ghost"
-            className="text-primary hover:text-primary-tealBlack"
+            className="text-primary hover:text-teal-600"
             onClick={addPhase}
           >
             <LuPlus className="size-4" />
