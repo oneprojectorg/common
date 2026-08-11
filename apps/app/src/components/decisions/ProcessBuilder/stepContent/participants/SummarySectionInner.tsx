@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
-import { Header2 } from '@op/sense/Header';
+import { Header1 } from '@op/sense/Header';
 import { useQueryState } from 'nuqs';
 import React from 'react';
 
@@ -83,9 +83,9 @@ export function SummarySectionInner({
       <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">{t('Summary')}</p>
-          <Header2 className="text-title">
+          <Header1 className="text-headline">
             {t('Your process still needs more information')}
-          </Header2>
+          </Header1>
         </div>
         <p className="text-base">
           {t.rich(
@@ -130,7 +130,7 @@ export function SummarySectionInner({
     <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">{t('Summary')} 🚀</p>
-        <Header2 className="text-title">{t('Review your process')}</Header2>
+        <Header1 className="text-headline">{t('Review your process')}</Header1>
       </div>
       <p>
         {t.rich(
