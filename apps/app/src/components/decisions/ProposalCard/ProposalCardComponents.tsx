@@ -167,13 +167,13 @@ export function ProposalCardBudget({
   const { budget, budgetCurrency } = resolveProposalSystemFields(proposal);
 
   if (!isNullish(allocated)) {
-    const requestedText = formatBudget(budget);
+    const requestedText = formatBudget(budget, budgetCurrency);
 
     return (
       <div className={cn('flex flex-wrap items-end gap-2', className)}>
-        {/* `budgetCurrency`, not `budget?.currency`: an allocation on a
-            proposal that never recorded a requested budget would otherwise
-            fall through to `normalizeBudget`'s hardcoded USD. */}
+        {/* `budgetCurrency` on both: a budget that named no currency of its
+            own would otherwise fall through to the default instead of the one
+            the process is denominated in. */}
         <BudgetDisplay
           value={allocated}
           fallbackCurrency={budgetCurrency}

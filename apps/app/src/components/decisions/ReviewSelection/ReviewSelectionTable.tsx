@@ -95,9 +95,9 @@ export function ReviewSelectionTable({
           const advancing = advancingIds.has(item.proposal.id);
           const title = item.proposal.profile.name;
           const submitterName = item.proposal.submittedBy?.name ?? null;
-          // `item.budgetCurrency`, not `budget.currency`: the encoder stamps a
-          // fabricated USD onto legacy bare-number budgets, while this is
-          // resolved from the raw row against the process's template.
+          // Rendered with `item.budgetCurrency`: a budget that named no
+          // currency of its own is denominated in the process's, resolved
+          // against its template.
           const budget = item.proposal.proposalData.budget;
 
           return (

@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 
+import { pickProposalTemplate } from './pickProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -17,8 +18,10 @@ export async function resolveProposalTemplate(
   instanceData: DecisionInstanceData | Record<string, unknown> | null,
   processId: string,
 ): Promise<ProposalTemplateSchema | null> {
-  const fromInstance =
-    (instanceData?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  const fromInstance = pickProposalTemplate(
+    instanceData?.proposalTemplate,
+    null,
+  );
 
   if (fromInstance) {
     return fromInstance;
@@ -34,5 +37,5 @@ export async function resolveProposalTemplate(
     unknown
   > | null;
 
-  return (processSchema?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  return pickProposalTemplate(null, processSchema?.proposalTemplate);
 }

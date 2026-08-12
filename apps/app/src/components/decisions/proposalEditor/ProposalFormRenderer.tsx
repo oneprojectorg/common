@@ -155,9 +155,8 @@ function getPreviewBudgetValue({
   draftValue: ProposalDraftFields['budget'] | null | undefined;
   previewContent: JSONContent | null | undefined;
   /**
-   * Currency for a version fragment that names none, already resolved through
-   * `resolveBudgetFallbackCurrency`. Not re-derived from `draftValue`, which
-   * is schema-parsed and carries a fabricated USD for legacy budgets.
+   * Currency for a budget that names none of its own, already resolved through
+   * `resolveBudgetFallbackCurrency`.
    */
   fallbackCurrency: string;
 }): string | null {
@@ -169,7 +168,12 @@ function getPreviewBudgetValue({
     return null;
   }
 
-  return formatMoney(draftValue);
+  return formatMoney({
+    amount: draftValue.amount,
+    // `||` covers a stored blank code as well as an absent one — neither names
+    // a currency, and both must fall through to the process's.
+    currency: draftValue.currency || fallbackCurrency,
+  });
 }
 
 // ---------------------------------------------------------------------------

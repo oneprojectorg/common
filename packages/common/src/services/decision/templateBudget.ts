@@ -28,12 +28,17 @@ export function getBudgetCurrency(
   // database — the types don't stop a stored `currency: null` from reaching
   // here. Both callers run during render, so throwing would blank the process
   // builder and the proposal editor into an error boundary.
-  if (
-    typeof currency === 'object' &&
-    currency !== null &&
-    typeof currency.default === 'string'
-  ) {
-    return currency.default;
+  if (typeof currency === 'object' && currency !== null) {
+    // Trimmed and non-empty, not merely `typeof === 'string'`: a stored
+    // `default: ''` is as malformed as the `null` above, and returning it puts
+    // an empty code into every budget on the process — `Intl` throws on it, so
+    // cards, detail page and review table all render a bare amount with no
+    // currency marker at all.
+    const configured =
+      typeof currency.default === 'string' ? currency.default.trim() : '';
+    if (configured) {
+      return configured;
+    }
   }
 
   return DEFAULT_BUDGET_CURRENCY;
@@ -47,30 +52,33 @@ export function getTemplateBudgetCurrency(
 }
 
 /**
- * Matches raw stored proposalData whose budget names a currency of its own.
+ * Matches stored proposalData whose budget names a currency of its own.
  *
- * Reads the *raw* JSON deliberately, never a parsed `ProposalData`:
- * `budgetValueSchema` stamps `'USD'` onto legacy bare-number budgets, so once
- * proposalData is parsed there is no way left to tell a budget genuinely
- * submitted in dollars from one that never named a currency at all — and it is
- * exactly the latter that needs the template's.
+ * Deliberately structural rather than typed on `ProposalData`, so raw JSON
+ * straight off the column and parsed proposalData both work: `budgetValueSchema`
+ * leaves the currency absent when the stored value named none, so neither form
+ * can pass a fabricated code off as one the author chose.
+ *
+ * `trim().min(1)` because a blank or whitespace-only code names nothing — it
+ * still parses (dropping it would take the amount with it) but must not
+ * outrank the template's.
  */
 const storedBudgetCurrencySchema = z.object({
-  budget: z.object({ currency: z.string().min(1) }),
+  budget: z.object({ currency: z.string().trim().min(1) }),
 });
 
 /**
  * The ISO 4217 code a proposal's stored budget names, or `undefined` for a
  * budget that names none (legacy bare numbers, imports, cleared fields).
  *
- * Takes whole raw proposalData rather than a raw budget so callers can hand
- * over the untyped JSON column they already hold.
+ * Takes whole proposalData rather than a budget so callers can hand over the
+ * untyped JSON column they already hold; parsed `ProposalData` works too.
  */
 export function getStoredBudgetCurrency(
-  rawProposalData: unknown,
+  proposalData: unknown,
 ): string | undefined {
-  const result = storedBudgetCurrencySchema.safeParse(rawProposalData);
-  return result.success ? result.data.budget.currency : undefined;
+  const result = storedBudgetCurrencySchema.safeParse(proposalData);
+  return result.success ? result.data.budget.currency.trim() : undefined;
 }
 
 /**
@@ -87,11 +95,10 @@ export function getStoredBudgetCurrency(
  * about what an unlabeled amount is denominated in.
  */
 export function resolveBudgetFallbackCurrency(
-  rawProposalData: unknown,
+  proposalData: unknown,
   template: ProposalTemplateSchema | null | undefined,
 ): string {
   return (
-    getStoredBudgetCurrency(rawProposalData) ??
-    getTemplateBudgetCurrency(template)
+    getStoredBudgetCurrency(proposalData) ?? getTemplateBudgetCurrency(template)
   );
 }

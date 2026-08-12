@@ -1,11 +1,15 @@
 import { formatMoney } from '@/utils/formatting';
-import { type BudgetInput, normalizeBudget } from '@op/common/client';
+import {
+  type BudgetInput,
+  DEFAULT_BUDGET_CURRENCY,
+  normalizeBudget,
+} from '@op/common/client';
 
 export type BudgetDisplayProps = {
   value: BudgetInput;
   /**
    * Currency for a `value` that carries none — a bare number or numeric
-   * string, which `normalizeBudget` would otherwise stamp USD onto.
+   * string, which `normalizeBudget` leaves without one.
    *
    * Allocated amounts are stored as bare numbers, so without this an allocation
    * renders "$5,000" beside the "€5,000 requested" it was allocated against.
@@ -36,26 +40,18 @@ export function BudgetDisplay({
  */
 export function formatBudget(
   value: BudgetInput,
-  fallbackCurrency?: string,
+  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
 ): string | null {
   const budget = normalizeBudget(value);
   if (!budget) {
     return null;
   }
-  return formatMoney(
-    fallbackCurrency && !hasExplicitCurrency(value)
-      ? { ...budget, currency: fallbackCurrency }
-      : budget,
-  );
-}
-
-/** Whether the raw input named a currency, vs. having USD stamped on by `normalizeBudget`. */
-function hasExplicitCurrency(value: BudgetInput): boolean {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'currency' in value &&
-    typeof value.currency === 'string' &&
-    value.currency.length > 0
-  );
+  // No "did this name a currency?" predicate needed: `normalizeBudget` leaves
+  // the currency absent rather than defaulting it, so the value itself already
+  // says whether the fallback applies. `||` covers a stored blank code, which
+  // names a currency no more than an absent one does.
+  return formatMoney({
+    amount: budget.amount,
+    currency: budget.currency || fallbackCurrency,
+  });
 }

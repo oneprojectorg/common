@@ -209,6 +209,52 @@ describe('resolveSystemFieldOverrides', () => {
     });
   });
 
+  it('submits the same string-amount fragment it renders', () => {
+    // The display parser and the validator payload have to agree on what a
+    // fragment means. `normalizeBudget` alone rejects a string amount, which
+    // put the raw JSON string in front of AJV on an object template ("budget
+    // is invalid", with nothing on screen looking invalid) and silently
+    // reduced the budget to 0 on a legacy `{type: 'number'}` one.
+    const fragmentTexts = { budget: '{"amount":"5000","currency":"EUR"}' };
+
+    expect(assembleProposalData(legacyTemplate, fragmentTexts)).toEqual({
+      budget: 5000,
+    });
+    expect(
+      assembleProposalData(
+        {
+          type: 'object',
+          properties: {
+            budget: {
+              type: 'object',
+              'x-format': 'money',
+              properties: { currency: { type: 'string', default: 'GBP' } },
+            },
+          },
+        },
+        fragmentTexts,
+      ),
+    ).toEqual({ budget: { amount: 5000, currency: 'EUR' } });
+  });
+
+  it("assembles a currency-less fragment with the template's currency", () => {
+    expect(
+      assembleProposalData(
+        {
+          type: 'object',
+          properties: {
+            budget: {
+              type: 'object',
+              'x-format': 'money',
+              properties: { currency: { type: 'string', default: 'GBP' } },
+            },
+          },
+        },
+        { budget: '{"amount":5000}' },
+      ),
+    ).toEqual({ budget: { amount: 5000, currency: 'GBP' } });
+  });
+
   it('resolves a canonical object-shape fragment', () => {
     expect(
       resolveSystemFieldOverrides({
@@ -222,6 +268,33 @@ describe('resolveSystemFieldOverrides', () => {
       amount: 5000,
       currency: 'USD',
     });
+  });
+
+  it('leaves the currency absent on a stored budget that named none', () => {
+    // The invariant the whole fix rests on: a parsed budget must say honestly
+    // whether the author chose a currency. Defaulting here makes the
+    // fabrication indistinguishable from a real choice, so it outranks the
+    // process's setting and the editor re-persists it.
+    expect(parseProposalData({ budget: 5000 }).budget).toEqual({
+      amount: 5000,
+    });
+    expect(parseProposalData({ budget: '5000' }).budget).toEqual({
+      amount: 5000,
+    });
+    expect(parseProposalData({ budget: { amount: 5000 } }).budget).toEqual({
+      amount: 5000,
+    });
+    expect(
+      parseProposalData({ budget: { amount: 5000, currency: 'EUR' } }).budget,
+    ).toEqual({ amount: 5000, currency: 'EUR' });
+  });
+
+  it('keeps the amount of a budget stored with a blank currency', () => {
+    // A blank code must not take the amount down with it: the union would fall
+    // through to the numeric branch, fail there too, and drop the budget.
+    expect(
+      parseProposalData({ budget: { amount: 5000, currency: '' } }).budget,
+    ).toEqual({ amount: 5000, currency: '' });
   });
 
   it("gives a currency-less fragment the template's currency, not USD", () => {

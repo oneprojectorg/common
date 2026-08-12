@@ -45,11 +45,14 @@ function formatCurrency(amount: number, currency: string): string {
     }).format(amount);
   } catch {
     reportInvalidCurrency(currency);
-    // Without `style: 'currency'` there is no currency to take a decimal count
-    // from, so a fractional amount gets the plain-number default of 2.
-    return new Intl.NumberFormat(DEFAULT_LOCALE, wholeAmountDigits).format(
-      amount,
-    );
+    // `maximumFractionDigits` spelled out: without `style: 'currency'` there is
+    // no currency to take a decimal count from, and the plain-number default is
+    // 3 — so a fallback left to `Intl` renders 5000.567 as "5,000.567" rather
+    // than the money-shaped two places.
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
+      maximumFractionDigits: 2,
+      ...wholeAmountDigits,
+    }).format(amount);
   }
 }
 
@@ -70,26 +73,6 @@ export function formatMoney(budget: {
 }
 
 /**
- * Symbols `Intl` has no glyph for at {@link DEFAULT_LOCALE}, where it returns
- * the ISO code instead. Kept from the hand-written map this helper replaced so
- * the currency picker and the max-budget input don't regress to bare codes.
- *
- * Deliberately not a full map: every other supported code already resolves to
- * the same symbol the hand map carried, and CNY resolves to the better `CN¥`
- * (the old `¥` was indistinguishable from JPY).
- *
- * A `Map` rather than an object literal because `currency` is typed as a bare
- * string and arrives from stored data: `overrides['constructor']` on an object
- * hits `Object.prototype` and returns a function from a `: string` signature,
- * skipping the try/catch below and the invalid-code report with it.
- */
-const CURRENCY_SYMBOL_OVERRIDES = new Map<string, string>([
-  ['AED', 'د.إ'],
-  ['SAR', '﷼'],
-  ['SGD', 'S$'],
-]);
-
-/**
  * The currency symbol for a code (e.g. `"$"`, `"CA$"`). For prefixing an input
  * where the amount is rendered separately.
  *
@@ -101,19 +84,17 @@ const CURRENCY_SYMBOL_OVERRIDES = new Map<string, string>([
  * Takes the symbol from `formatToParts` rather than stripping digits out of a
  * formatted string: `\d` matches ASCII only, so a locale with non-ASCII digits
  * would leave its zero in the "symbol" and render it beside the amount.
- * Resolves at {@link DEFAULT_LOCALE}, the same locale {@link formatMoney}
- * renders with, so an input's prefix and the value beside it can't disagree.
+ * Resolves through the same `Intl` call at the same {@link DEFAULT_LOCALE} that
+ * {@link formatMoney} renders with, so an input's prefix and the value beside
+ * it can't disagree. That rules out a hand-written override map: prettier
+ * glyphs for the codes `Intl` spells out (`S$` for SGD, `د.إ` for AED) would
+ * put `S$` in front of the input and `SGD 5,000` in the pill that replaces it.
  *
  * Falls back to the code itself rather than `''` for a code `Intl` rejects: an
  * unlabeled amount reads as dollars to most users, and the input this prefixes
  * would otherwise render with no currency marker at all.
  */
 export function getCurrencySymbol(currency: string): string {
-  const override = CURRENCY_SYMBOL_OVERRIDES.get(currency);
-  if (override) {
-    return override;
-  }
-
   try {
     return (
       new Intl.NumberFormat(DEFAULT_LOCALE, { style: 'currency', currency })
@@ -128,29 +109,16 @@ export function getCurrencySymbol(currency: string): string {
 }
 
 /**
- * Bad currency codes already reported, so a list render logs each one once.
- * Bounded because `currency` is user-supplied (`budgetValueSchema` types it as
- * a bare string) and this module is reachable from long-lived server
- * processes.
- *
- * Past the cap the oldest key is evicted rather than the newest refused:
- * refusing to insert would stop deduping the very code being reported, so a
- * 51st bad code would fire a PostHog warning on every render of every row.
- * `Set` preserves insertion order, so its first key is the oldest.
+ * Bad currency codes already reported, so rendering a list logs each one once
+ * rather than once per row. Unbounded is fine: the keys are ISO 4217 codes off
+ * stored budgets, and a process that manages to store thousands of distinct
+ * malformed ones has a bigger problem than this Set.
  */
 const reportedInvalidCurrencies = new Set<string>();
-const MAX_REPORTED_CURRENCIES = 50;
 
 function reportInvalidCurrency(currency: string) {
   if (reportedInvalidCurrencies.has(currency)) {
     return;
-  }
-
-  if (reportedInvalidCurrencies.size >= MAX_REPORTED_CURRENCIES) {
-    const oldest = reportedInvalidCurrencies.values().next().value;
-    if (oldest !== undefined) {
-      reportedInvalidCurrencies.delete(oldest);
-    }
   }
   reportedInvalidCurrencies.add(currency);
   // Imported lazily: this module is reachable from server components, and the

@@ -14,10 +14,7 @@ import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
-import {
-  parseProposalData,
-  parseProposalDataWithBudgetCurrency,
-} from './proposalDataSchema';
+import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -312,14 +309,11 @@ export const listProposals = async ({
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
-    const storedProposalData = parseProposalDataWithBudgetCurrency(
-      proposal.proposalData,
-      proposalTemplate,
-    );
+    const storedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
-      storedProposalData: proposal.proposalData,
+      storedProposalData,
     });
 
     return {

@@ -1,11 +1,8 @@
 import { z } from 'zod';
 
-import { type MoneyAmount, moneyAmountSchema } from '../../money';
-import {
-  DEFAULT_BUDGET_CURRENCY,
-  resolveBudgetFallbackCurrency,
-} from './templateBudget';
-import type { ProposalTemplateSchema, XFormatPropertySchema } from './types';
+import type { MoneyAmount } from '../../money';
+import { DEFAULT_BUDGET_CURRENCY } from './templateBudget';
+import type { XFormatPropertySchema } from './types';
 
 const categoryValueSchema = z
   .union([z.string(), z.array(z.string()), z.null()])
@@ -13,21 +10,37 @@ const categoryValueSchema = z
   .transform((value) => normalizeProposalCategories(value));
 
 /**
- * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
+ * Budget stored in proposalData.
  *
- * Accepts two input shapes and normalizes to `MoneyAmount`:
- * - `{ amount, currency }` — canonical
- * - plain number or numeric string — legacy, defaults to USD
+ * Accepts the canonical `{ amount, currency }` and the legacy bare number or
+ * numeric string, and deliberately leaves `currency` **absent** when the stored
+ * value names none rather than defaulting it.
+ *
+ * Stamping a default here is what made the original bug unfixable: a fabricated
+ * `'USD'` is indistinguishable downstream from one the author actually chose,
+ * so it outranked the process's configured currency, and the editor — which
+ * saves back what it was handed — re-persisted the fabrication onto the row.
+ * The gap is filled at render time by `resolveBudgetFallbackCurrency`, which
+ * can then reach the template for exactly the budgets that named nothing.
  */
 export const budgetValueSchema = z
   .union([
-    // Canonical shape
-    moneyAmountSchema,
-    // Legacy: plain number → { amount, currency: 'USD' }
+    // Canonical shape, currency optional.
+    z.object({
+      amount: z.number(),
+      // Not `min(1)`: a blank code has to still parse, or the union falls
+      // through to the numeric branch, fails there too, and the amount
+      // disappears from the proposal entirely. Readers treat a blank code as
+      // naming none — see `getStoredBudgetCurrency`.
+      currency: z.string().optional(),
+    }),
+    // Legacy: plain number → { amount } with no currency. The return type is
+    // annotated so both branches produce one shape rather than a union TS
+    // makes callers narrow before they can read `currency` at all.
     z
       .union([z.string(), z.number()])
       .pipe(z.coerce.number())
-      .transform((n) => ({ amount: n, currency: 'USD' })),
+      .transform((n): { amount: number; currency?: string } => ({ amount: n })),
   ])
   .nullish();
 
@@ -57,10 +70,22 @@ export const locationValueSchema = z
 export type LocationData = NonNullable<z.infer<typeof locationValueSchema>>;
 
 /**
- * Canonical budget shape — an alias for `MoneyAmount`.
+ * A budget with its currency resolved — an alias for `MoneyAmount`.
+ *
+ * What renderers take: by the time a budget reaches a screen the currency has
+ * been resolved (fragment → stored → template), so it is never absent. Storage
+ * uses {@link StoredBudget}, where it may be.
+ *
  * @deprecated Prefer `MoneyAmount` for new code.
  */
 export type BudgetData = MoneyAmount;
+
+/**
+ * A budget as stored in proposalData, where `currency` is absent for legacy
+ * bare-number budgets and for rows written before the currency picker existed.
+ * Resolve it with `resolveBudgetFallbackCurrency` before rendering.
+ */
+export type StoredBudget = NonNullable<z.infer<typeof budgetValueSchema>>;
 
 /** Raw budget input accepted by `budgetValueSchema` (canonical or legacy). */
 export type BudgetInput = z.input<typeof budgetValueSchema>;
@@ -223,11 +248,11 @@ export function formatProposalCategories(
 }
 
 /**
- * Normalize a raw budget value into a `MoneyAmount` using `budgetValueSchema`.
- * Accepts `{ amount, currency }`, `{ value, currency }` (legacy), a plain
- * number, or a numeric string.
+ * Normalize a raw budget value into a `StoredBudget` using `budgetValueSchema`.
+ * Accepts `{ amount, currency }`, a plain number, or a numeric string. The
+ * currency stays absent when the raw value named none.
  */
-export function normalizeBudget(raw: unknown): BudgetData | undefined {
+export function normalizeBudget(raw: unknown): StoredBudget | undefined {
   const result = budgetValueSchema.safeParse(raw);
   return result.success ? (result.data ?? undefined) : undefined;
 }
@@ -280,38 +305,6 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
     collaborationDocVersionId:
       (raw.collaborationDocVersionId as number) ?? undefined,
-  };
-}
-
-/**
- * Parse stored proposalData and stamp the resolved currency onto its budget.
- *
- * The single place a server boundary should parse proposalData for a client.
- * `budgetValueSchema` fabricates `'USD'` for legacy bare-number budgets, so a
- * plain `parseProposalData` hands the client a budget that *claims* dollars —
- * and every downstream reader, having lost the raw value, has no way left to
- * tell that claim from a real one. Resolving here, where the raw value is
- * still in hand, is what makes `resolveBudgetFallbackCurrency` reach the
- * template at all for exactly the rows that need it.
- *
- * The stamp is per-request and never persisted, so it keeps following the
- * process's currency picker rather than freezing whatever it read today.
- */
-export function parseProposalDataWithBudgetCurrency(
-  rawProposalData: unknown,
-  template: ProposalTemplateSchema | null | undefined,
-): ProposalData {
-  const parsed = parseProposalData(rawProposalData);
-  if (!parsed.budget) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    budget: {
-      ...parsed.budget,
-      currency: resolveBudgetFallbackCurrency(rawProposalData, template),
-    },
   };
 }
 

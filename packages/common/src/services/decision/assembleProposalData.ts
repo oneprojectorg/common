@@ -1,11 +1,10 @@
 import {
   type BudgetData,
-  extractBudgetValue,
-  normalizeBudget,
   parseBudgetFragmentValue,
   parseCategoryFragmentValue,
   schemaAllowsMultipleSelection,
 } from './proposalDataSchema';
+import { getBudgetCurrency } from './templateBudget';
 import type { ProposalTemplateSchema } from './types';
 
 /** System field key holding the proposal's requested budget. */
@@ -77,18 +76,31 @@ export function assembleProposalData(
           data[key] = text;
         }
         break;
-      case 'money':
-        try {
-          const parsed = JSON.parse(text);
-          // Legacy schemas use type: 'number' for budget — extract just the amount
-          data[key] =
-            schema.type === 'number'
-              ? extractBudgetValue(parsed)
-              : (normalizeBudget(parsed) ?? text);
-        } catch {
-          data[key] = text;
-        }
+      case 'money': {
+        // The same parser display reads the fragment with, so a budget the
+        // editor renders can always be submitted. `normalizeBudget` alone
+        // rejects the string-amount shape (`{"amount":"5000"}`) that
+        // hand-written documents carry: on an object template that put the raw
+        // JSON *string* in front of AJV ("budget is invalid", with nothing on
+        // screen looking invalid), and on a legacy `{type:'number'}` one
+        // `extractBudgetValue` quietly returned 0 while the pill still read
+        // €5,000.
+        const budget = parseBudgetFragmentValue(
+          text,
+          getBudgetCurrency(schema),
+        );
+        // Unreadable: hand AJV the raw text so it fails cleanly rather than
+        // dropping the field and reporting a required budget as missing.
+        // Legacy schemas use `type: 'number'`, so give them the bare amount to
+        // range check against `maximum` — that is where the currency is lost,
+        // and why renderers read the fragment directly.
+        data[key] = !budget
+          ? text
+          : schema.type === 'number'
+            ? budget.amount
+            : budget;
         break;
+      }
       default:
         // Unknown format — try JSON parse, fall back to raw string
         try {

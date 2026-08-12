@@ -20,6 +20,7 @@ export const resolvePresentationFields = ({
   const {
     title: resolvedTitle,
     budget,
+    budgetCurrency,
     category: categories = [],
   } = resolveProposalSystemFields(proposal);
   const title = resolvedTitle || proposal.profile.name || defaultTitle;
@@ -27,7 +28,12 @@ export const resolvePresentationFields = ({
   // `budget`, not `budget?.amount` — a budget of 0 is a real answer (the input
   // allows it), and testing the amount for truthiness renders it as no budget
   // at all here while every other surface shows "$0".
-  const formattedBudget = budget ? formatMoney(budget) : null;
+  // `budgetCurrency`, not `budget.currency`: the stored budget leaves it absent
+  // when the author named none, and this is the resolved answer for the whole
+  // proposal — the same one the card beside this one renders with.
+  const formattedBudget = budget
+    ? formatMoney({ amount: budget.amount, currency: budgetCurrency })
+    : null;
 
   return {
     title,

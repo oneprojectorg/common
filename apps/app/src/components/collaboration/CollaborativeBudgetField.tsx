@@ -5,6 +5,7 @@ import { formatMoney, getCurrencySymbol } from '@/utils/formatting';
 import {
   type BudgetData,
   DEFAULT_BUDGET_CURRENCY,
+  type StoredBudget,
   parseBudgetFragmentValue,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
@@ -29,7 +30,7 @@ interface CollaborativeBudgetFieldProps {
    * bare-number budgets.
    */
   currency?: string;
-  initialValue?: BudgetData | null;
+  initialValue?: StoredBudget | null;
   onChange?: (budget: BudgetData | null) => void;
 }
 
@@ -53,9 +54,9 @@ export function CollaborativeBudgetField({
   const { ydoc } = useCollaborativeDoc();
   const budgetInputRef = useRef<HTMLInputElement>(null);
 
-  // `currency ||` rather than the stored value alone: a budget stored with a
-  // blank code would otherwise seed the shared fragment with one, and every
-  // renderer reads the currency back off that fragment.
+  // `||` rather than `??`: a budget stored with a blank code names no currency
+  // any more than an absent one does, and seeding the shared fragment with a
+  // blank would push it to every renderer that reads the currency back off it.
   const initialBudgetValue: BudgetData | null = useMemo(
     () =>
       initialValue !== null
@@ -161,11 +162,12 @@ export function CollaborativeBudgetField({
     // re-emit — letting the next save write the stale server budget over the
     // newer one the author can see in the fragment.
     //
-    // Against the *resolved* initial value, not the raw one: comparing against
-    // a blank stored currency would make the fallback we just filled in look
-    // like an author edit and autosave it merely because the editor was
-    // opened.
-    if (budgetKey(emitted) === budgetKey(initialBudgetValue)) {
+    // On the amount alone, because this field has no currency control: a
+    // currency difference is never an author edit, only the fragment and the
+    // resolved fallback disagreeing. Emitting on it would autosave whichever
+    // code an older editor happened to write into the fragment — pinning the
+    // proposal to a currency nobody chose, merely because it was opened.
+    if (emitted?.amount === initialBudgetValue?.amount) {
       return;
     }
 
@@ -218,9 +220,4 @@ export function CollaborativeBudgetField({
       )}
     </>
   );
-}
-
-/** Identity of a budget for change detection — `null` when there is none. */
-function budgetKey(budget: BudgetData | null | undefined): string | null {
-  return budget ? `${budget.amount}:${budget.currency}` : null;
 }

@@ -104,9 +104,9 @@ export function resolveProposalSystemFields(proposal: Proposal) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
-  // The server resolved this before parsing (`parseProposalDataWithBudgetCurrency`),
-  // so `proposalData.budget.currency` is already the process's where the row
-  // named none — this reads that answer back rather than re-deriving it.
+  // Resolvable client-side because `budgetValueSchema` leaves the currency
+  // absent rather than defaulting it, so a parsed budget still says truthfully
+  // whether the author named one.
   const fallbackCurrency = resolveBudgetFallbackCurrency(
     proposal.proposalData,
     template,

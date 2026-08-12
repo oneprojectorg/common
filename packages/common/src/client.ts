@@ -118,6 +118,7 @@ export {
   type ProposalTemplateFieldOrder,
 } from './services/decision/getProposalTemplateFieldOrder';
 export { getProposalFragmentNames } from './services/decision/getProposalFragmentNames';
+export { pickProposalTemplate } from './services/decision/pickProposalTemplate';
 export {
   templateCollectsLocation,
   getLocationFieldMapView,

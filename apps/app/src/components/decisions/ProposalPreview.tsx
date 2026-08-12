@@ -151,9 +151,9 @@ export function ProposalPreview({
           <div className="flex flex-col items-start gap-4">
             {selection?.allocated != null ? (
               <div className="flex flex-wrap items-end gap-2">
-                {/* `budgetCurrency`, not `budget?.currency`: an allocation on
-                    a proposal that never recorded a requested budget would
-                    otherwise fall through to the hardcoded USD default. */}
+                {/* `budgetCurrency` on both: a budget that named no currency
+                    of its own would otherwise fall through to the default
+                    instead of the one the process is denominated in. */}
                 <BudgetDisplay
                   value={selection.allocated}
                   fallbackCurrency={budgetCurrency}
@@ -162,7 +162,7 @@ export function ProposalPreview({
                 {budget && (
                   <span className="text-sm text-neutral-gray4">
                     {t('{amount} requested', {
-                      amount: formatBudget(budget) ?? '',
+                      amount: formatBudget(budget, budgetCurrency) ?? '',
                     })}
                   </span>
                 )}

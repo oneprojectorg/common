@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import {
-  type BudgetData,
+  type StoredBudget,
   type LocationData,
   type Proposal,
   type ProposalDataInput,
@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 export interface ProposalDraftFields extends Record<string, unknown> {
   title: string;
   category: string[];
-  budget: BudgetData | null;
+  budget: StoredBudget | null;
   location: LocationData | null;
 }
 
