@@ -248,6 +248,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             setShowResults(true);
           }}
           dir={firstStrongDirection(query) ?? undefined}
+          maxLength={100}
           placeholder={t('Search')}
           onFocus={() => {
             // Re-focusing (e.g. selecting a recent search) must cancel a

@@ -11,7 +11,9 @@ export const searchProfilesRouter = router({
   search: networkAuthenticatedProcedure()
     .input(
       dbFilter.extend({
-        q: z.string(),
+        // Bounds the tsquery and the cache key; well above the 100 the search
+        // input allows, so only a hand-written `?q=` can trip it.
+        q: z.string().max(200),
         types: z.array(z.enum(EntityType)).optional(),
       }),
     )
