@@ -32,6 +32,9 @@ export * from './onPhaseAdvanced';
 // Manual transition
 export * from './triggerPhaseAdvancement';
 
+// Platform-admin reversal of the most recent advancement
+export * from './revertPhase';
+
 // Transition management
 export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
