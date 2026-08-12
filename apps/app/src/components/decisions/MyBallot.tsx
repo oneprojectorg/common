@@ -118,14 +118,23 @@ const MyBallotProposals = ({
 
                 <ProposalCardPreview proposal={proposal} />
 
-                <div className="h-0 w-full border-b border-neutral-gray-2" />
+                {/*
+                  `voteCount` is null until results are published — showing a
+                  bare "0 Total Votes" then would misreport the tally, so the
+                  footer stays hidden (same rule as the funded-proposals tab).
+                */}
+                {proposal.voteCount != null ? (
+                  <>
+                    <div className="h-0 w-full border-b border-neutral-gray-2" />
 
-                <ProposalCardFooter>
-                  <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                    <span className="font-bold">{proposal.voteCount ?? 0}</span>
-                    <span>{t('Total Votes')}</span>
-                  </div>
-                </ProposalCardFooter>
+                    <ProposalCardFooter>
+                      <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                        <span className="font-bold">{proposal.voteCount}</span>
+                        <span>{t('Total Votes')}</span>
+                      </div>
+                    </ProposalCardFooter>
+                  </>
+                ) : null}
               </ProposalCardContent>
             </VotingProposalCard>
           );

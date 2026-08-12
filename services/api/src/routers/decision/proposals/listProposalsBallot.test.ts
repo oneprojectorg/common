@@ -1,6 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
+  decisionProcessResults,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   proposals,
@@ -123,7 +124,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     expect(result.total).toBe(2);
   });
 
-  it('rejects another member trying to view a voter’s ballot', async ({
+  it("rejects another member trying to view a voter's ballot", async ({
     task,
     onTestFinished,
   }) => {
@@ -170,7 +171,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     ).rejects.toThrowError(TRPCError);
   });
 
-  it('does not leak the voter’s own drafts into ballot results', async ({
+  it("does not leak the voter's own drafts into ballot results", async ({
     task,
     onTestFinished,
   }) => {
@@ -278,6 +279,102 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     expect(ids).toContain(keptProposal.id);
     expect(ids).not.toContain(deletedProposal.id);
     expect(result.total).toBe(1);
+  });
+
+  it('returns accurate voteCount per proposal on a ballot query', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [voter, otherVoter, submitter] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+
+    const proposalA = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Vote Count A ${task.id}` },
+    });
+    const proposalB = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Vote Count B ${task.id}` },
+    });
+
+    await Promise.all([
+      submitterCaller.decision.submitProposal({ proposalId: proposalA.id }),
+      submitterCaller.decision.submitProposal({ proposalId: proposalB.id }),
+    ]);
+
+    // Voter votes on both proposals; otherVoter votes only on proposalA.
+    await Promise.all([
+      seedBallot({
+        processInstanceId: instance.instance.id,
+        voterProfileId: voter.profileId,
+        proposalIds: [proposalA.id, proposalB.id],
+      }),
+      seedBallot({
+        processInstanceId: instance.instance.id,
+        voterProfileId: otherVoter.profileId,
+        proposalIds: [proposalA.id],
+      }),
+    ]);
+
+    const voterCaller = await createAuthenticatedCaller(voter.email);
+
+    // Without a published results record, voteCount must be null — prevents
+    // live tally exposure during voting.
+    const resultBeforePublish = await voterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+    });
+    const byIdBefore = Object.fromEntries(
+      resultBeforePublish.proposals.map((p) => [p.id, p]),
+    );
+    expect(byIdBefore[proposalA.id]?.voteCount).toBeNull();
+    expect(byIdBefore[proposalB.id]?.voteCount).toBeNull();
+
+    // Seed a published results record (simulates the pipeline completing).
+    await db.insert(decisionProcessResults).values({
+      processInstanceId: instance.instance.id,
+      success: true,
+      selectedCount: 2,
+      voterCount: 2,
+    });
+
+    // After publication, accurate counts are returned.
+    const resultAfterPublish = await voterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+    });
+    const byIdAfter = Object.fromEntries(
+      resultAfterPublish.proposals.map((p) => [p.id, p]),
+    );
+    // proposalA was voted on by both voters (count = 2)
+    expect(byIdAfter[proposalA.id]?.voteCount).toBe(2);
+    // proposalB was voted on by voter only (count = 1)
+    expect(byIdAfter[proposalB.id]?.voteCount).toBe(1);
   });
 
   it('rejects a decision admin trying to view another user’s ballot', async ({
