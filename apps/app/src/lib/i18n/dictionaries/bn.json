@@ -1433,5 +1433,11 @@
   "Reviewers can see each other's reviews on a proposal": "পর্যালোচকরা একটি প্রস্তাবে একে অপরের পর্যালোচনা দেখতে পারেন",
   "Turn on Open Reviews?": "উন্মুক্ত পর্যালোচনা চালু করবেন?",
   "This can lead reviewers to agree with each other more than they would independently.": "এটি পর্যালোচকদের স্বাধীনভাবে যতটা একমত হতেন তার চেয়ে বেশি একে অপরের সাথে একমত হতে পরিচালিত করতে পারে।",
-  "Enable": "চালু করুন"
+  "Enable": "চালু করুন",
+  "Total": "মোট",
+  "Amount": "পরিমাণ",
+  "Cost estimate": "ব্যয়ের প্রাক্কলন",
+  "Reviewers enter an amount": "পর্যালোচকরা একটি পরিমাণ লিখবেন",
+  "Set by the process template and cannot be edited here.": "প্রক্রিয়া টেমপ্লেট দ্বারা নির্ধারিত, এখানে সম্পাদনা করা যাবে না।",
+  "Currency: {code}": "মুদ্রা: {code}"
 }

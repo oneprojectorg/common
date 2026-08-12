@@ -1430,5 +1430,11 @@
   "Reviewers can see each other's reviews on a proposal": "Las personas revisoras pueden ver las revisiones de las demás en una propuesta",
   "Turn on Open Reviews?": "¿Activar las revisiones abiertas?",
   "This can lead reviewers to agree with each other more than they would independently.": "Esto puede llevar a que las personas revisoras estén de acuerdo entre sí más de lo que lo harían de forma independiente.",
-  "Enable": "Activar"
+  "Enable": "Activar",
+  "Total": "Total",
+  "Amount": "Importe",
+  "Cost estimate": "Estimación de costes",
+  "Reviewers enter an amount": "Las personas revisoras introducen un importe",
+  "Set by the process template and cannot be edited here.": "Definido por la plantilla del proceso; no se puede editar aquí.",
+  "Currency: {code}": "Moneda: {code}"
 }

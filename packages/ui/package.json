@@ -30,6 +30,7 @@
     "./EmptyState": "./src/components/EmptyState.tsx",
     "./Field": "./src/components/Field.tsx",
     "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard.tsx",
+    "./CurrencyField": "./src/components/CurrencyField.tsx",
     "./FileDropZone": "./src/components/FileDropZone.tsx",
     "./FooterBar": "./src/components/FooterBar.tsx",
     "./Form": "./src/components/Form.tsx",
