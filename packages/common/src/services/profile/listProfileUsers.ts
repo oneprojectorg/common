@@ -20,21 +20,13 @@ import type {
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
-/**
- * Cursors are client-supplied base64 that `decodeCursor` only JSON-parses, so
- * the shape is checked here before either half reaches the query: the value is
- * compared against a text sort key, and the tiebreaker is cast to uuid.
- */
+/** Both halves are client-supplied: `decodeCursor` only JSON-parses. */
 const cursorSchema = z.object({
   value: z.string(),
   tiebreaker: z.string().uuid(),
 });
 
-/**
- * Builds a subquery to get the first role name (alphabetically) for a profile user.
- * Used for both ORDER BY and cursor conditions to ensure consistency.
- * Returns empty string if user has no roles (via COALESCE) to match JS cursor encoding.
- */
+/** First role name alphabetically, or '' — matching what the cursor encodes. */
 const buildRoleNameSubquery = (
   profileUserIdColumn: AnyPgColumn,
 ) => sql`COALESCE((
@@ -46,30 +38,19 @@ const buildRoleNameSubquery = (
   LIMIT 1
 ), '')`;
 
-/**
- * The name the API returns for a profile user: the linked profile's name when
- * the user has a profile, otherwise the denormalized `profileUsers.name`.
- * Mirrors `buildDisplayNameSubquery` below, which sorts and paginates on the
- * SQL equivalent — the two have to stay in sync.
- */
+/** Must stay in sync with `buildDisplayNameSubquery`, the SQL equivalent. */
 const resolveDisplayName = (result: ProfileUserQueryResult): string | null =>
   result.serviceUser?.profile?.name || result.name;
 
 /**
- * Builds the sort key for the name column: the linked profile's name when the
- * user has a profile, otherwise the denormalized `profileUsers.name`. This has
- * to mirror `resolveDisplayName` — `profileUsers.name` is null or stale for
- * profile-linked users, so ordering on that column alone leaves the displayed
- * names looking unsorted. Coalesces to empty string (never null) so ORDER BY
- * and the cursor condition agree on where nameless rows sit, and orders the
- * inner select so the sort key can't shift between the two if an auth user
- * somehow has more than one `users` row.
+ * Mirrors `resolveDisplayName`. Never null, so the ORDER BY and the cursor
+ * agree on where nameless rows sit — a null sort key can't satisfy the cursor
+ * comparison, and the row would vanish after the first page.
  *
- * The `u` / `p` aliases and the raw column names are load-bearing: interpolating
- * `users.authUserId` / `profiles.name` instead makes drizzle rewrite them to the
- * aliases it gave the `serviceUser` / `profile` lateral joins in the enclosing
- * query, which silently turns the correlated subquery into a reference to those
- * outer laterals and mis-sorts the page.
+ * The `u` / `p` aliases and raw column names are load-bearing: interpolating
+ * `profiles.name` instead makes drizzle rewrite it to the alias it gave the
+ * `profile` lateral join in the enclosing query, silently turning this into a
+ * reference to that outer join. Renders fine in isolation; mis-sorts for real.
  */
 const buildDisplayNameSubquery = ({
   authUserIdColumn,
@@ -86,19 +67,13 @@ const buildDisplayNameSubquery = ({
   LIMIT 1
 ), ''), NULLIF(${nameColumn}, ''), '')`;
 
-/**
- * Sort key for the email column. `profileUsers.email` is nullable, and a null
- * sort key can never satisfy the cursor comparison, so a participant without an
- * email would drop off after the first page. Coalescing keeps them reachable —
- * they sort with the empty names rather than at the far end.
- */
+/** Coalesced for the same reason: `email` is nullable. */
 const buildEmailSortKey = (emailColumn: AnyPgColumn) =>
   sql`COALESCE(${emailColumn}, '')`;
 
 /**
- * The sort key each `orderBy` paginates on, alongside the row's id. `id` is the
- * primary key, so `(sortKey, id)` is a total order — `profileUsers.email` is
- * nullable and carries no unique constraint, so it can't tiebreak reliably.
+ * Paired with `id` for a total order — `email` is nullable and non-unique, so
+ * it can't tiebreak reliably.
  */
 const buildSortKey = ({
   orderBy,
@@ -177,25 +152,21 @@ export const listProfileUsers = async ({
         })()
       : undefined;
 
-  // Build cursor condition for pagination
-  // The cursor must match the ORDER BY columns for correct pagination
   type ProfileUserCursor = { value: string; tiebreaker?: string };
   const decodedCursor = cursor
     ? decodeCursor<ProfileUserCursor>(cursor)
     : undefined;
 
   const buildCursorCondition = () => {
-    // Anything that doesn't match falls back to the first page instead of
-    // erroring. That covers cursors issued before the tiebreaker moved off
-    // `email` — they carry an email address (or nothing at all, for the email
-    // sort), and Postgres rejects a non-uuid on the cast — so a client
-    // mid-scroll across the deploy repeats a page rather than seeing a 500.
+    // Falls back to the first page rather than erroring. Cursors issued before
+    // the tiebreaker moved off `email` carry one, and Postgres rejects a
+    // non-uuid on the cast — so a client mid-scroll across the deploy repeats a
+    // page instead of seeing a 500.
     const parsedCursor = cursorSchema.safeParse(decodedCursor);
 
     if (!parsedCursor.success) {
-      // Logged because the fallback is otherwise invisible: a client re-walking
-      // from page 1 looks identical to one that never paginated. Expect a burst
-      // while pre-`id` cursors drain after deploy, and roughly none after.
+      // The fallback is otherwise invisible: re-walking from page 1 looks
+      // identical to never having paginated.
       logger.warn('Discarded an unusable participants cursor', {
         orderBy,
         issues: parsedCursor.error.issues.map((issue) => ({
@@ -207,11 +178,8 @@ export const listProfileUsers = async ({
       return undefined;
     }
 
-    // Row-wise comparison against the same `(sortKey, id)` pair the rows are
-    // ordered by. Spelled as a row constructor rather than the equivalent
-    // `a > x OR (a = x AND b > y)` so the sort key — a correlated subquery for
-    // name and role — is inlined once instead of twice; Postgres does no
-    // common-subexpression elimination across separate subplans.
+    // A row constructor rather than the equivalent `a > x OR (a = x AND b > y)`
+    // so the sort key — a correlated subquery — is inlined once, not twice.
     const sortKey = buildSortKey({
       orderBy,
       idColumn: profileUsers.id,
@@ -239,9 +207,8 @@ export const listProfileUsers = async ({
 
   // Fetch profile users with their roles and user profiles
   // Request one extra to check if there are more results
-  // `db._query` is the legacy v1 relational API: it types nested relations as
-  // `{ [x: string]: any }` and doesn't narrow one-to-one relations, so the
-  // relation shape is asserted once here, at the boundary.
+  // `db._query` is the legacy v1 API and types relations loosely, so the shape
+  // is asserted once here, at the boundary.
   const profileUserResults = (await db._query.profileUsers.findMany({
     where: whereClause,
     with: {
@@ -301,7 +268,7 @@ export const listProfileUsers = async ({
       return null;
     }
 
-    // `id` is the tiebreaker for every sort, matching the ORDER BY above.
+    // Matches the ORDER BY tiebreaker for every sort.
     const tiebreaker = lastResult.id;
 
     if (orderBy === 'email') {

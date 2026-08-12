@@ -115,9 +115,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     const [primaryOrder] = captureOrderBy();
 
     // Pinned in full: a substring check would still pass against a sort on the
-    // bare `profile_users.name` column, and the exact COALESCE/NULLIF chain is
-    // what has to keep matching `resolveDisplayName` for the cursor to line up
-    // with the ORDER BY.
+    // bare `profile_users.name` column.
     expect(collapse(toSqlString(primaryOrder!))).toBe(
       collapse(`COALESCE(NULLIF((
         SELECT p.name
@@ -145,8 +143,8 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     const [primaryOrder, secondaryOrder] = captureOrderBy();
     const sortKey = collapse(toSqlString(primaryOrder!)).replace(/ asc$/, '');
 
-    // The cursor has to compare against the same expression the rows are
-    // ordered by, or pagination skips and repeats rows at the page boundary.
+    // Compare against the same expression the rows are ordered by, or
+    // pagination skips and repeats rows at the boundary…
     expect(whereText).toContain(sortKey);
     // …and tiebreak on the same column.
     expect(collapse(toSqlString(secondaryOrder!))).toBe(
@@ -170,9 +168,8 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     const [primaryOrder] = captureOrderBy();
     const sortKey = collapse(toSqlString(primaryOrder!)).replace(/ asc$/, '');
 
-    // The sort key is a correlated subquery and Postgres does no
-    // common-subexpression elimination, so the row-wise comparison exists to
-    // keep it from being evaluated twice per row on top of the ORDER BY.
+    // The row-wise comparison exists to keep the correlated subquery from
+    // being evaluated twice per row on top of the ORDER BY.
     expect(whereText.split(sortKey)).toHaveLength(2);
   });
 
@@ -186,8 +183,8 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
       { value: 'Beatrice' },
     ],
     [
-      // `decodeCursor` only JSON-parses, so a hand-crafted cursor can carry
-      // anything; a non-string value would be bound as a query parameter.
+      // `decodeCursor` only JSON-parses, so this reaches the query as a bound
+      // parameter unless it's rejected here.
       'a non-string value',
       { value: { nested: 'Beatrice' }, tiebreaker: TIEBREAKER },
     ],
@@ -201,8 +198,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     const [args] = mockFindMany.mock.calls[0] ?? [];
     const whereText = collapse(toSqlString(args!.where as SQL));
 
-    // Casting an email to uuid is a Postgres error, so a client still holding
-    // one of these mid-scroll has to repeat a page rather than get a 500.
+    // Casting an email to uuid is a Postgres error; repeat a page instead.
     expect(whereText).not.toContain('::uuid');
     expect(whereText).not.toContain('Beatrice');
   });
@@ -220,8 +216,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
 
     const [primaryOrder, secondaryOrder] = captureOrderBy();
 
-    // Coalesced, or a participant with no email could never satisfy the
-    // cursor comparison and would drop off after the first page.
+    // Coalesced, or a participant with no email drops off after page 1.
     expect(collapse(toSqlString(primaryOrder!))).toBe(
       `COALESCE("profile_users"."email", '') asc`,
     );
@@ -255,8 +250,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     expect(next).not.toBeNull();
     expect(decodeCursor(next!)).toEqual({
       value: 'Alice Alpha',
-      // `id`, not `email` — email is nullable and non-unique, so it can't
-      // break ties reliably.
+      // `id`, not `email` — email can't break ties reliably.
       tiebreaker: '1',
     });
   });
