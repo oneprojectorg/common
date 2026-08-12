@@ -2567,3 +2567,138 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
     expect(expectedIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
   });
 });
+
+describe.concurrent('listProposals: search', () => {
+  /** Two proposals with distinct titles, on their own instance. */
+  async function setupTitledProposals(
+    testData: TestDecisionsDataManager,
+    titles: [string, string],
+  ) {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [first, second, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: titles[0] },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: titles[1] },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    return { setup, instanceId, caller, first, second };
+  }
+
+  it('matches titles case-insensitively and reflects the filter in total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first, second } = await setupTitledProposals(
+      testData,
+      ['Bike Lanes on Fifth', 'Community Garden'],
+    );
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'bIkE',
+    });
+
+    expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
+    // `total` is the count for the active filter, not the pool — the grid's
+    // "N of M" header and keyset pagination both read it.
+    expect(result.total).toBe(1);
+    expect(result.proposals.map((p) => p.id)).not.toContain(second.id);
+  });
+
+  it('treats LIKE wildcards in the query as literal characters', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupTitledProposals(testData, [
+      'Alpha Project',
+      'Beta Project',
+    ]);
+
+    // Unescaped, `%` and `_` are both wildcards that match every title.
+    for (const search of ['%', '_', 'Alpha%Project']) {
+      const result = await caller.decision.listProposals({
+        processInstanceId: instanceId,
+        search,
+      });
+      expect(result.proposals).toHaveLength(0);
+      expect(result.total).toBe(0);
+    }
+  });
+
+  it('finds a proposal by its current title after a rename', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [proposal, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Placeholder Draft' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    // The editor's autosave sends `title` alongside `proposalData` and never
+    // rewrites `proposalData.title` — so the row's JSON keeps the creation-time
+    // value while the real title moves on.
+    await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Bicycle Parking Expansion' },
+    });
+
+    const byNewTitle = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Bicycle Parking',
+    });
+    expect(byNewTitle.proposals.map((p) => p.id)).toEqual([proposal.id]);
+
+    const byStaleTitle = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Placeholder',
+    });
+    expect(byStaleTitle.proposals).toHaveLength(0);
+  });
+
+  it('ignores an empty or whitespace-only query', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupTitledProposals(testData, [
+      'Alpha Project',
+      'Beta Project',
+    ]);
+
+    for (const search of ['', '   ']) {
+      const result = await caller.decision.listProposals({
+        processInstanceId: instanceId,
+        search,
+      });
+      expect(result.total).toBe(2);
+    }
+  });
+});

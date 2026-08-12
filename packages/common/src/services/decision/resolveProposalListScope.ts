@@ -3,6 +3,7 @@ import {
   and,
   db,
   eq,
+  exists,
   ilike,
   inArray,
   isNull,
@@ -18,6 +19,7 @@ import {
   decisionsVoteSubmissions,
   processInstances,
   profileUsers,
+  profiles,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
@@ -136,6 +138,11 @@ type ReviewAssignmentExclusion = {
   phaseId: string;
 };
 
+// Neutralize LIKE metacharacters so a user's query is matched literally —
+// otherwise `%` matches every title and `_` matches any single character.
+const escapeLikePattern = (value: string): string =>
+  value.replace(/[\\%_]/g, (char) => `\\${char}`);
+
 // Shared function to build WHERE conditions for both count and data queries.
 // Parameterized on the table reference so callers can pass either the schema
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
@@ -166,9 +173,32 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  if (search) {
-    // Search in proposal data (JSONB) - convert to text for searching
-    conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
+  const searchTerm = search?.trim();
+  if (searchTerm) {
+    // Title search. `profiles.name` on the proposal's own profile is the
+    // authoritative title — `proposalData.title` is frozen at creation, since
+    // for collab-doc proposals the title lives in a TipTap fragment and the
+    // editor's autosave only ever writes the profile row (see updateProposal).
+    //
+    // Correlated EXISTS, not a `profileId IN (SELECT ...)` semi-join: the
+    // semi-join scans every profile on the platform before the instance/phase
+    // predicates narrow anything (and the name trigram index can't help a query
+    // under 3 characters). Driving from the already-scoped proposal rows and
+    // probing profiles by primary key keeps the cost proportional to what's in
+    // scope at any query length.
+    conditions.push(
+      exists(
+        db
+          .select({ id: profiles.id })
+          .from(profiles)
+          .where(
+            and(
+              eq(profiles.id, t.profileId),
+              ilike(profiles.name, `%${escapeLikePattern(searchTerm)}%`),
+            ),
+          ),
+      ),
+    );
   }
 
   // "Other proposals" tab: exclude proposals the caller is assigned to review

@@ -673,10 +673,17 @@ export const instanceFilterSchema = z
   })
   .extend(paginationInputSchema.shape);
 
+/**
+ * Free-text proposal search. Matches the proposal title; capped so a query
+ * can't grow into an unbounded pattern scan.
+ */
+const proposalSearchSchema = z.string().max(200).optional();
+
 export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
+  search: proposalSearchSchema,
   dir: z.enum(['asc', 'desc']).optional(),
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
@@ -707,6 +714,7 @@ export const proposalLocationsFilterSchema =
     submittedByProfileId: z.uuid().optional(),
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
+    search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
     excludeAssignedForReview: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
