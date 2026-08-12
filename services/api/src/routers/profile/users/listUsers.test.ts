@@ -849,6 +849,69 @@ describe.concurrent('profile.users.listUsers', () => {
       ]);
     });
 
+    it('should page past a participant with no email address', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // The three members share a display name, so they land in one sort-key
+      // bucket where only the tiebreaker separates them.
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberUsers.map((user) => ({
+          user,
+          displayName: 'Sam Shared',
+          staleName: null,
+        })),
+      ]);
+
+      // `profile_users.email` is nullable, so it can't carry the cursor: a
+      // participant without one fails every `email > $tiebreaker` comparison
+      // and disappears once the bucket spans a page boundary.
+      const [firstMember] = memberUsers;
+      if (!firstMember) {
+        throw new Error('Expected a member user');
+      }
+
+      await db
+        .update(profileUsers)
+        .set({ email: null })
+        .where(eq(profileUsers.id, firstMember.profileUserId));
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedIds: string[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        pagedIds.push(...page.items.map((u) => u.id));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      expect(pagedIds).toHaveLength(4);
+      expect(new Set(pagedIds).size).toBe(4);
+      expect(pagedIds).toContain(firstMember.profileUserId);
+    });
+
     it('should page past participants who share a displayed name', async ({
       task,
       onTestFinished,
@@ -859,7 +922,7 @@ describe.concurrent('profile.users.listUsers', () => {
       });
 
       // Three participants collapse into one sort-key bucket, so only the
-      // email tiebreaker separates them across the page boundary.
+      // tiebreaker separates them across the page boundary.
       const sharedName = 'Sam Shared';
       const memberAssignments = memberUsers.map((user) => ({
         user,

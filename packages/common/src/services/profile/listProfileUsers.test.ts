@@ -132,7 +132,35 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     await listProfileUsers({
       profileId: PROFILE_ID,
       user: USER,
-      cursor: encodeCursor({ value: 'Beatrice', tiebreaker: 'b@example.test' }),
+      cursor: encodeCursor({
+        value: 'Beatrice',
+        tiebreaker: '00000000-0000-4000-8000-0000000000b0',
+      }),
+    });
+
+    const [args] = mockFindMany.mock.calls[0] ?? [];
+    const whereText = collapse(toSqlString(args!.where as SQL));
+    const [primaryOrder, secondaryOrder] = captureOrderBy();
+    const sortKey = collapse(toSqlString(primaryOrder!)).replace(/ asc$/, '');
+
+    // The cursor has to compare against the same expression the rows are
+    // ordered by, or pagination skips and repeats rows at the page boundary.
+    expect(whereText).toContain(sortKey);
+    // …and tiebreak on the same column.
+    expect(collapse(toSqlString(secondaryOrder!))).toBe(
+      '"profile_users"."id" asc',
+    );
+    expect(whereText).toContain('"profile_users"."id"');
+  });
+
+  it('inlines the name sort key once in the cursor condition', async () => {
+    await listProfileUsers({
+      profileId: PROFILE_ID,
+      user: USER,
+      cursor: encodeCursor({
+        value: 'Beatrice',
+        tiebreaker: '00000000-0000-4000-8000-0000000000b0',
+      }),
     });
 
     const [args] = mockFindMany.mock.calls[0] ?? [];
@@ -140,9 +168,33 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     const [primaryOrder] = captureOrderBy();
     const sortKey = collapse(toSqlString(primaryOrder!)).replace(/ asc$/, '');
 
-    // The cursor has to compare against the same expression the rows are
-    // ordered by, or pagination skips and repeats rows at the page boundary.
-    expect(whereText).toContain(sortKey);
+    // The sort key is a correlated subquery and Postgres does no
+    // common-subexpression elimination, so the row-wise comparison exists to
+    // keep it from being evaluated twice per row on top of the ORDER BY.
+    expect(whereText.split(sortKey)).toHaveLength(2);
+  });
+
+  it('tiebreaks the email sort on id and keeps null emails reachable', async () => {
+    await listProfileUsers({
+      profileId: PROFILE_ID,
+      user: USER,
+      orderBy: 'email',
+      cursor: encodeCursor({
+        value: 'b@example.test',
+        tiebreaker: '00000000-0000-4000-8000-0000000000b0',
+      }),
+    });
+
+    const [primaryOrder, secondaryOrder] = captureOrderBy();
+
+    // Coalesced, or a participant with no email could never satisfy the
+    // cursor comparison and would drop off after the first page.
+    expect(collapse(toSqlString(primaryOrder!))).toBe(
+      `COALESCE("profile_users"."email", '') asc`,
+    );
+    expect(collapse(toSqlString(secondaryOrder!))).toBe(
+      '"profile_users"."id" asc',
+    );
   });
 
   it('encodes the displayed name into the next cursor', async () => {
@@ -170,7 +222,9 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     expect(next).not.toBeNull();
     expect(decodeCursor(next!)).toEqual({
       value: 'Alice Alpha',
-      tiebreaker: 'alice@example.test',
+      // `id`, not `email` — email is nullable and non-unique, so it can't
+      // break ties reliably.
+      tiebreaker: '1',
     });
   });
 });
