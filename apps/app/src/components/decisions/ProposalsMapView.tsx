@@ -78,18 +78,7 @@ export function ProposalsMapView({
   const styleUrl = useMapStyleUrl();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
-  // Which proposal is highlighted, and whether the map did the highlighting.
-  // The list row tints its background only for a pin — hovering the row itself
-  // is a border change, so the pointer doesn't repaint what it's already on.
-  const [active, setActive] = useState<{
-    id: string;
-    fromPin: boolean;
-  } | null>(null);
-  const activeId = active?.id ?? null;
-  const activateFromPin = useCallback(
-    (id: string) => setActive({ id, fromPin: true }),
-    [],
-  );
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
@@ -127,7 +116,7 @@ export function ProposalsMapView({
   const handleMarkerClick = useCallback(
     (id: string) => {
       if (isMobile && activeId !== id) {
-        activateFromPin(id);
+        setActiveId(id);
         return;
       }
       const proposal = proposalsById.get(id);
@@ -135,18 +124,18 @@ export function ProposalsMapView({
         router.push(hrefFor(proposal));
       }
     },
-    [isMobile, activeId, activateFromPin, proposalsById, router, hrefFor],
+    [isMobile, activeId, proposalsById, router, hrefFor],
   );
 
   // Only clear when it's still our id — a leave's dismiss-delay timer can
   // land after another pin has become active and would otherwise flicker it.
   const handleMarkerLeave = useCallback((id: string) => {
-    setActive((prev) => (prev?.id === id ? null : prev));
+    setActiveId((prev) => (prev === id ? null : prev));
   }, []);
 
   // Mobile: tapping the map background dismisses the open preview.
   const handleMapClick = useCallback(() => {
-    setActive(null);
+    setActiveId(null);
   }, []);
 
   const renderHovercard = useCallback(
@@ -172,7 +161,7 @@ export function ProposalsMapView({
         onMapClick: handleMapClick,
       }
     : {
-        onMarkerEnter: activateFromPin,
+        onMarkerEnter: setActiveId,
         onMarkerLeave: handleMarkerLeave,
         controlledOpenId: undefined,
         onMapClick: undefined,
@@ -209,8 +198,8 @@ export function ProposalsMapView({
         {proposals.map((proposal) => (
           <li
             key={proposal.id}
-            onMouseEnter={() => setActive({ id: proposal.id, fromPin: false })}
-            onMouseLeave={() => setActive(null)}
+            onMouseEnter={() => setActiveId(proposal.id)}
+            onMouseLeave={() => setActiveId(null)}
           >
             <ProposalBrowseCard
               proposal={proposal}
@@ -224,12 +213,12 @@ export function ProposalsMapView({
               className={cn(
                 // `min-w-0` so a long title can't widen the list column.
                 'min-w-0 transition-colors',
-                activeId === proposal.id && 'border-input',
-                // Tinted only for a pin: hovering the row itself shouldn't
-                // repaint what the pointer is already on.
-                active?.fromPin === true &&
-                  active.id === proposal.id &&
-                  'bg-muted',
+                // Hovering a row highlights its pin, so `activeId` is set from
+                // either end. `not-[:hover]` is what keeps the two apart: the
+                // tint means "the map is pointing at this", and the pointer
+                // doesn't repaint the row it's already on.
+                activeId === proposal.id &&
+                  'border-input not-[:hover]:bg-muted',
               )}
             />
           </li>
