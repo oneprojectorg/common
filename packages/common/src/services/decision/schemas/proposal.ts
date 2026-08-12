@@ -139,7 +139,7 @@ export const proposalSchema = z.object({
   access: proposalAccessSchema.optional(),
   attachments: z.array(proposalAttachmentSchema).optional(),
   selectionRank: z.number().nullable().optional(),
-  voteCount: z.number().optional(),
+  voteCount: z.number().nullable().optional(),
   allocated: z.string().nullable().optional(),
   proposalTemplate: z.record(z.string(), z.unknown()).nullable().optional(),
   /**

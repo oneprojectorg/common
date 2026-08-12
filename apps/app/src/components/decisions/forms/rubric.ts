@@ -25,6 +25,7 @@ export function compileRubricSchema(
   }
 
   const fieldOrder = template['x-field-order'] ?? [];
+  const requiredSet = new Set(template.required ?? []);
   const seen = new Set<string>();
   const orderedKeys: string[] = [];
 
@@ -40,6 +41,7 @@ export function compileRubricSchema(
     format:
       (properties[key] as XFormatPropertySchema)['x-format'] ??
       DEFAULT_X_FORMAT,
+    required: requiredSet.has(key),
     schema: properties[key] as XFormatPropertySchema,
   }));
 }

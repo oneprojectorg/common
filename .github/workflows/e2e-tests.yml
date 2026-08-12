@@ -307,7 +307,10 @@ jobs:
   #    that file, so it doesn't run twice. ──
   a11y-baseline:
     name: A11y Baseline
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    # Moved off the 2vcpu pool for the same reason as the Tests job: the CLI
+    # download fails there and not on 4vcpu, independent of which version is
+    # pinned.
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     needs: build
     permissions:
@@ -410,7 +413,12 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: 2.84.2
+          # Matches the other CI jobs and the `supabase` catalog pin in
+          # pnpm-workspace.yaml. This job was left behind on 2.84.2 when the
+          # rest moved, so it has been booting a different Supabase — different
+          # default images, different config handling — from everything that
+          # runs beside it.
+          version: 2.95.4
 
       - name: Use E2E Supabase config
         run: cp supabase/supabase-e2e.toml supabase/config.toml

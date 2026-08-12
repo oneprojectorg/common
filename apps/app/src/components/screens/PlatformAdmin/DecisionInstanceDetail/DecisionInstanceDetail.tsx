@@ -24,6 +24,7 @@ import { LuArrowLeft, LuArrowUpRight } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
 
 const STATUS_DISPLAY: Record<string, string> = {
@@ -129,6 +130,7 @@ const DecisionInstanceDetailContent = ({
               key={phase.phaseId}
               instanceId={instanceId}
               phase={phase}
+              previousPhase={detail.phases[index - 1]}
               index={index}
               total={detail.phases.length}
               currentIndex={detail.phases.findIndex((p) => p.isCurrent)}
@@ -170,12 +172,15 @@ const MetaItem = ({ label, value }: { label: string; value: string }) => {
 const PhaseCard = ({
   instanceId,
   phase,
+  previousPhase,
   index,
   total,
   currentIndex,
 }: {
   instanceId: string;
   phase: AdminDecisionPhase;
+  /** The phase before this one, undefined for the first phase. */
+  previousPhase: AdminDecisionPhase | undefined;
   index: number;
   total: number;
   /** Index of the current phase, -1 when the process has no current phase. */
@@ -279,6 +284,19 @@ const PhaseCard = ({
           <p className="text-sm text-muted-foreground">
             {t('Nothing to manage in this phase.')}
           </p>
+        ) : null}
+        {phase.isCurrent && previousPhase ? (
+          <PhaseSection title={t('Danger zone')}>
+            <div className="w-fit">
+              <RevertPhaseButton
+                instanceId={instanceId}
+                phaseId={phase.phaseId}
+                previousPhaseName={
+                  previousPhase.name ?? t('Phase {number}', { number: index })
+                }
+              />
+            </div>
+          </PhaseSection>
         ) : null}
       </CardContent>
     </Card>

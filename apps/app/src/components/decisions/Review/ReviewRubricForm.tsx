@@ -21,6 +21,7 @@ import {
 import { Input } from '@op/sense/Input';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import {
   Select,
   SelectContent,
@@ -241,7 +242,10 @@ function RubricCriterionSection({
   // 5 pts".
   const label = (
     <>
-      <span id={labelId}>{field.schema.title}</span>
+      <span id={labelId}>
+        {field.schema.title}
+        {field.required ? <RequiredAsterisk /> : null}
+      </span>
       {badgeLabel ? <Badge variant="secondary">{badgeLabel}</Badge> : null}
     </>
   );

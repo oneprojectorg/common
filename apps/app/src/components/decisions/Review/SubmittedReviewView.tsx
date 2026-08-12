@@ -5,6 +5,7 @@ import {
   isOverallRecommendationField,
 } from '@op/common/client';
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Separator } from '@op/sense/Separator';
 import type { ReactNode } from 'react';
 
@@ -45,6 +46,7 @@ export function SubmittedReviewView({
           key={field.key}
           title={field.schema.title}
           description={field.schema.description}
+          required={field.required}
         >
           <RubricFieldResult
             field={field}
@@ -73,10 +75,12 @@ export function SubmittedReviewView({
 function ResultSection({
   title,
   description,
+  required,
   children,
 }: {
   title?: string;
   description?: string;
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -84,7 +88,12 @@ function ResultSection({
     // description can't resolve differently and disagree.
     <Field dir="auto">
       {/* `h4`, as in the editable form — a long review is navigated by heading. */}
-      {title ? <FieldTitle render={<h4 />}>{title}</FieldTitle> : null}
+      {title ? (
+        <FieldTitle render={<h4 />}>
+          {title}
+          {required ? <RequiredAsterisk /> : null}
+        </FieldTitle>
+      ) : null}
       {description ? <FieldDescription>{description}</FieldDescription> : null}
       {children}
     </Field>

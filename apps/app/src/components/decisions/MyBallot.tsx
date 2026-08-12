@@ -98,7 +98,10 @@ const MyBallotProposals = ({
               href={viewHref}
               selected
               showStatusBadge={false}
-              totalVotes={proposal.voteCount ?? 0}
+              // `voteCount` is null until results are published — a bare
+              // "0 Total Votes" then would misreport the tally, so the votes
+              // row stays hidden (same rule as the funded-proposals tab).
+              totalVotes={proposal.voteCount ?? undefined}
               aside={
                 // TODO(sense-migration): sense Checkbox has no shape="circle"/
                 // borderColor; approximated with rounded-full — revisit against

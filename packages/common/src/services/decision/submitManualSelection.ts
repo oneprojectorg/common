@@ -2,7 +2,6 @@ import { and, db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   decisionTransitionProposals,
-  processInstances,
   proposalHistory,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -21,6 +20,7 @@ import {
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
+import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
@@ -105,16 +105,10 @@ export async function submitManualSelection({
   await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
     // phase out from under us, then re-verify state inside the lock.
-    const [lockedInstance] = await tx
-      .select({
-        currentStateId: processInstances.currentStateId,
-        status: processInstances.status,
-        instanceData: processInstances.instanceData,
-      })
-      .from(processInstances)
-      .where(eq(processInstances.id, processInstanceId))
-      .limit(1)
-      .for('update');
+    const lockedInstance = await lockProcessInstance({
+      db: tx,
+      instanceId: processInstanceId,
+    });
 
     if (!lockedInstance) {
       throw new NotFoundError('Process instance', processInstanceId);
