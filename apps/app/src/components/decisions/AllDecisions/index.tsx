@@ -97,7 +97,9 @@ const DecisionsListSuspense = ({
       {paginatedItems.map((item, index) => (
         <Fragment key={item.id}>
           <DecisionListItem item={item} />
-          {index < paginatedItems.length - 1 && <hr />}
+          {index < paginatedItems.length - 1 && (
+            <hr className="hidden border-border sm:block" />
+          )}
         </Fragment>
       ))}
       {shouldShowTrigger && (
