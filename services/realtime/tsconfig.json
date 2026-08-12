@@ -1,5 +1,5 @@
 {
-  "extends": "@op/typescript-config/nextjs.json",
+  "extends": "@op/typescript-config/base.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",

@@ -23,6 +23,26 @@ const dedupeChannels = (channels: ReadonlyArray<ChannelName>): ChannelName[] =>
   Array.from(new Set(channels));
 
 /**
+ * Fan-out size is data-driven and unbounded, so it can never be a raw metric
+ * attribute — that is one time series per distinct channel count. Bucket it.
+ */
+const bucketTopicCount = (count: number): string => {
+  if (count === 1) {
+    return '1';
+  }
+  if (count <= 10) {
+    return '2-10';
+  }
+  if (count <= 100) {
+    return '11-100';
+  }
+  return '100+';
+};
+
+/** Cap on channel names in a failure log line, so a wide fan-out can't flood. */
+const LOGGED_CHANNELS = 10;
+
+/**
  * Service for communicating with the real-time messaging backend
  */
 class RealtimeService {
@@ -89,10 +109,14 @@ class RealtimeService {
         messages: unique.map((channel) => ({ channel, data: message })),
       });
     } catch (error) {
-      getFailureCounter().add(1, { topics: unique.length });
+      getFailureCounter().add(1, { topics: bucketTopicCount(unique.length) });
+      // Keep channel names: without them a silent invalidation outage gives no
+      // clue which surfaces went stale. Pass the Error itself so the stack
+      // survives.
       logger.error('[Realtime] publishMany failed', {
         topics: unique.length,
-        error: error instanceof Error ? error.message : String(error),
+        channels: unique.slice(0, LOGGED_CHANNELS),
+        error,
       });
     }
   }
