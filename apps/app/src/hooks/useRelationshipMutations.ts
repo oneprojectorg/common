@@ -3,15 +3,9 @@ import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
-
-import {
-  type ProposalCountField,
-  bumpProposalCount,
-} from './optimisticProposalCounts';
 
 interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
@@ -102,120 +96,9 @@ export function useRelationshipMutations({
   // it isn't invalidated here; the proposal list deliberately isn't
   // channel-invalidated, so callers pass processInstanceId to refresh their
   // own list counts.
-  const queryClient = useQueryClient();
-
-  /**
-   * Move the proposal's like/follow count everywhere it is cached.
-   *
-   * Matched with a predicate on the tRPC path rather than a built query key:
-   * the same proposal sits in several caches at once — any number of
-   * `listProposals` / `listAllProposals` results (different filters or sorts,
-   * plus the ballot's non-infinite query) and the `getProposal` entry — and
-   * a predicate matches all of them without depending on how tRPC happens to
-   * encode inputs in the key.
-   *
-   * Rolling back applies the opposite delta rather than restoring a snapshot.
-   * Every card on the page writes to these same caches, so a snapshot taken
-   * before this mutation would also undo whatever another card did in the
-   * meantime.
-   */
-  const countQueryFilter = {
-    predicate: (query: { queryKey: readonly unknown[] }) => {
-      const [path] = query.queryKey;
-
-      return (
-        Array.isArray(path) &&
-        path[0] === 'decision' &&
-        (path[1] === 'listProposals' ||
-          path[1] === 'listAllProposals' ||
-          path[1] === 'getProposal')
-      );
-    },
-  };
-
-  const patchCachedCounts = (relationshipType: string, delta: number) => {
-    if (!targetProfileId) {
-      return;
-    }
-
-    const field: ProposalCountField =
-      relationshipType === ProfileRelationshipType.LIKES
-        ? 'likesCount'
-        : 'followersCount';
-
-    queryClient.setQueriesData(
-      {
-        predicate: (query: { queryKey: readonly unknown[] }) => {
-          const [path] = query.queryKey;
-
-          return (
-            Array.isArray(path) &&
-            path[0] === 'decision' &&
-            (path[1] === 'listProposals' ||
-              path[1] === 'listAllProposals' ||
-              path[1] === 'getProposal')
-          );
-        },
-      },
-      (old: unknown) => bumpProposalCount(old, targetProfileId, field, delta),
-    );
-  };
-
-  /**
-   * Add or drop this proposal in the viewer's relationship list.
-   *
-   * Same reasoning as the counts: one cache entry (`{ types: [...] }`) is
-   * shared by every card on the page, so rollback removes exactly what this
-   * mutation added rather than reinstating a stale copy of the whole list.
-   */
-  const patchCachedRelationship = (
-    relationshipType: ProfileRelationshipType,
-    present: boolean,
-  ) => {
-    if (!targetProfileId) {
-      return;
-    }
-
-    utils.profile.getRelationships.setData(relationshipQueryKey, (old) => {
-      const base = old ?? {};
-      const without = (base[relationshipType] ?? []).filter(
-        (rel) => rel.targetProfile?.id !== targetProfileId,
-      );
-
-      return {
-        ...base,
-        [relationshipType]: present
-          ? [
-              ...without,
-              {
-                relationshipType,
-                pending: false,
-                createdAt: new Date().toISOString(),
-                targetProfile: {
-                  id: targetProfileId,
-                  name: '',
-                  slug: '',
-                  bio: null,
-                  avatarImage: null,
-                  type: 'proposal',
-                },
-              },
-            ]
-          : without,
-      };
-    });
-  };
-
-  /**
-   * Pull the truth back in once the writes stop. Invalidates everything the
-   * optimistic patches touched — including `listAllProposals` and
-   * `getProposal`, which the counts are written to but nothing else refetches,
-   * so a count that drifted had no way back.
-   */
-  const reconcile = async () => {
+  const invalidateAfterMutation = async () => {
     await Promise.all([
       utils.profile.getRelationships.invalidate(relationshipQueryKey),
-      queryClient.invalidateQueries(countQueryFilter),
       ...invalidateQueries.flatMap((query) =>
         query.processInstanceId
           ? [
@@ -228,13 +111,69 @@ export function useRelationshipMutations({
     ]);
   };
 
-  // The cache writes live in `toggleRelationship`, not in `onMutate`: a burst
-  // of clicks has to move the UI on every press, while sending far fewer
-  // requests than there were presses.
+  // Add relationship mutation with optimistic updates
   const addRelationshipMutation =
     trpc.decision.addProposalRelationship.useMutation({
-      onSuccess: () => onSuccess?.(),
-      onError: (error, variables) => {
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches for the relationship queries
+        await utils.profile.getRelationships.cancel(relationshipQueryKey);
+
+        // Snapshot the previous value
+        const previousData =
+          utils.profile.getRelationships.getData(relationshipQueryKey);
+
+        // Optimistically update the cache
+        if (
+          previousData &&
+          variables.targetProfileId &&
+          typeof previousData === 'object' &&
+          !Array.isArray(previousData)
+        ) {
+          // Create a minimal relationship object for optimistic update
+          const optimisticRelationship = {
+            relationshipType: variables.relationshipType,
+            pending: false,
+            createdAt: new Date().toISOString(),
+            targetProfile: {
+              id: variables.targetProfileId,
+              name: '',
+              slug: '',
+              bio: null,
+              avatarImage: null,
+              type: 'proposal',
+            },
+          };
+
+          const optimisticData = { ...previousData };
+          const existingRelationships =
+            optimisticData[variables.relationshipType] || [];
+          optimisticData[variables.relationshipType] = [
+            ...existingRelationships,
+            optimisticRelationship,
+          ];
+
+          utils.profile.getRelationships.setData(
+            relationshipQueryKey,
+            optimisticData,
+          );
+        }
+
+        return { previousData };
+      },
+      onSuccess: () => {
+        // Call user-provided onSuccess callback
+        if (onSuccess) {
+          onSuccess();
+        }
+      },
+      onError: (error, variables, context) => {
+        // Rollback on error
+        if (context?.previousData) {
+          utils.profile.getRelationships.setData(
+            relationshipQueryKey,
+            context.previousData,
+          );
+        }
         logger.error('Failed to add relationship', {
           error,
           context: 'useRelationshipMutations.add',
@@ -248,12 +187,57 @@ export function useRelationshipMutations({
             : t("Couldn't follow this proposal. Please try again."),
         );
       },
+      onSettled: invalidateAfterMutation,
     });
 
+  // Remove relationship mutation with optimistic updates
   const removeRelationshipMutation =
     trpc.decision.removeProposalRelationship.useMutation({
-      onSuccess: () => onSuccess?.(),
-      onError: (error, variables) => {
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches for the relationship queries
+        await utils.profile.getRelationships.cancel(relationshipQueryKey);
+
+        // Snapshot the previous value
+        const previousData =
+          utils.profile.getRelationships.getData(relationshipQueryKey);
+
+        // Optimistically update the cache
+        if (
+          previousData &&
+          variables.targetProfileId &&
+          typeof previousData === 'object' &&
+          !Array.isArray(previousData)
+        ) {
+          const optimisticData = { ...previousData };
+          const existingRelationships =
+            optimisticData[variables.relationshipType] || [];
+          optimisticData[variables.relationshipType] =
+            existingRelationships.filter(
+              (rel) => rel.targetProfile?.id !== variables.targetProfileId,
+            );
+
+          utils.profile.getRelationships.setData(
+            relationshipQueryKey,
+            optimisticData,
+          );
+        }
+
+        return { previousData };
+      },
+      onSuccess: () => {
+        // Call user-provided onSuccess callback
+        if (onSuccess) {
+          onSuccess();
+        }
+      },
+      onError: (error, variables, context) => {
+        // Rollback on error
+        if (context?.previousData) {
+          utils.profile.getRelationships.setData(
+            relationshipQueryKey,
+            context.previousData,
+          );
+        }
         logger.error('Failed to remove relationship', {
           error,
           context: 'useRelationshipMutations.remove',
@@ -265,6 +249,7 @@ export function useRelationshipMutations({
             : t("Couldn't unfollow this proposal. Please try again."),
         );
       },
+      onSettled: invalidateAfterMutation,
     });
 
   // Combined loading state (includes initial query loading)
@@ -273,129 +258,83 @@ export function useRelationshipMutations({
     removeRelationshipMutation.isPending ||
     isLoadingRelationships;
 
-  /** What the user wants, and what we last managed to send, per type. */
-  const desired = useRef<Partial<Record<ProfileRelationshipType, boolean>>>({});
-  const sent = useRef<Partial<Record<ProfileRelationshipType, boolean>>>({});
-  const draining = useRef<Partial<Record<ProfileRelationshipType, boolean>>>(
-    {},
-  );
-
-  const isLikedInCache = (relationshipType: ProfileRelationshipType) =>
-    Boolean(
-      utils.profile.getRelationships
-        .getData(relationshipQueryKey)
-        ?.[relationshipType]?.some(
-          (rel) => rel.targetProfile?.id === targetProfileId,
-        ),
-    );
-
-  /**
-   * Send whatever the user has settled on, one request at a time, re-reading
-   * their intent after each one. Clicks that arrive mid-flight change the
-   * target rather than queueing behind it, so ten taps are at most two
-   * requests: the one already going, and one to correct it.
-   */
-  const drain = async (relationshipType: ProfileRelationshipType) => {
-    if (!targetProfileId || draining.current[relationshipType]) {
+  // Handler for like/unlike
+  const handleLike = useCallback(async () => {
+    if (!targetProfileId) {
+      logger.error('No targetProfileId provided for like action', {
+        context: 'useRelationshipMutations.like',
+      });
       return;
     }
 
-    draining.current[relationshipType] = true;
+    try {
+      if (isLiked) {
+        // Unlike
+        await removeRelationshipMutation.mutateAsync({
+          targetProfileId,
+          relationshipType: ProfileRelationshipType.LIKES,
+        });
+      } else {
+        // Like
+        await addRelationshipMutation.mutateAsync({
+          targetProfileId,
+          relationshipType: ProfileRelationshipType.LIKES,
+        });
+      }
+    } catch (error) {
+      // Mutation errors are rolled back and toasted in onError; mutateAsync
+      // also rejects when onSuccess/onSettled throw (onError doesn't run for
+      // those), so log here instead of swallowing silently.
+      logger.error('Like mutation post-processing failed', {
+        error,
+        context: 'useRelationshipMutations.like',
+      });
+    }
+  }, [
+    targetProfileId,
+    isLiked,
+    addRelationshipMutation,
+    removeRelationshipMutation,
+  ]);
 
-    // Forget this burst and pull the truth back in. Stays inside the loop so a
-    // click that lands during the refetch is picked up here rather than by a
-    // second drain racing the queries this one just kicked off.
-    const settle = async () => {
-      delete desired.current[relationshipType];
-      delete sent.current[relationshipType];
-      await reconcile();
-    };
+  // Handler for follow/unfollow
+  const handleFollow = useCallback(async () => {
+    if (!targetProfileId) {
+      logger.error('No targetProfileId provided for follow action', {
+        context: 'useRelationshipMutations.follow',
+      });
+      return;
+    }
 
     try {
-      while (desired.current[relationshipType] !== undefined) {
-        const target = desired.current[relationshipType];
-
-        if (target === sent.current[relationshipType]) {
-          await settle();
-          continue;
-        }
-
-        const mutation = target
-          ? addRelationshipMutation
-          : removeRelationshipMutation;
-
-        try {
-          await mutation.mutateAsync({ targetProfileId, relationshipType });
-          sent.current[relationshipType] = target;
-        } catch (error) {
-          // Logged and toasted in onError; the reconcile puts the cache back to
-          // whatever the server actually has.
-          logger.error('Relationship write failed', {
-            error,
-            context: `useRelationshipMutations.${relationshipType}`,
-          });
-          await settle();
-          break;
-        }
-      }
-    } finally {
-      draining.current[relationshipType] = false;
-    }
-  };
-
-  const toggleRelationship = useCallback(
-    (relationshipType: ProfileRelationshipType, context: string) => {
-      if (!targetProfileId) {
-        logger.error('No targetProfileId provided for relationship action', {
-          context,
+      if (isFollowed) {
+        // Unfollow
+        await removeRelationshipMutation.mutateAsync({
+          targetProfileId,
+          relationshipType: ProfileRelationshipType.FOLLOWING,
         });
-
-        return;
+      } else {
+        // Follow
+        await addRelationshipMutation.mutateAsync({
+          targetProfileId,
+          relationshipType: ProfileRelationshipType.FOLLOWING,
+        });
       }
-
-      // Anything in flight would land on top of the writes below and undo the
-      // press — including the refetches `reconcile` kicks off. Both caches, not
-      // just the relationship one: a stale list result resets the count while
-      // the button stays pressed, and the next click then counts the same like
-      // twice.
-      void utils.profile.getRelationships.cancel(relationshipQueryKey);
-      void queryClient.cancelQueries(countQueryFilter);
-
-      // Flip the cache first, every time: the press has to register even while
-      // an earlier one is still in the air.
-      const next = !isLikedInCache(relationshipType);
-
-      desired.current[relationshipType] = next;
-      patchCachedRelationship(relationshipType, next);
-      patchCachedCounts(relationshipType, next ? 1 : -1);
-
-      void drain(relationshipType);
-    },
-    [
-      targetProfileId,
-      utils,
-      addRelationshipMutation,
-      removeRelationshipMutation,
-    ],
-  );
-
-  const handleLike = useCallback(
-    () =>
-      toggleRelationship(
-        ProfileRelationshipType.LIKES,
-        'useRelationshipMutations.like',
-      ),
-    [toggleRelationship],
-  );
-
-  const handleFollow = useCallback(
-    () =>
-      toggleRelationship(
-        ProfileRelationshipType.FOLLOWING,
-        'useRelationshipMutations.follow',
-      ),
-    [toggleRelationship],
-  );
+    } catch (error) {
+      // Mutation errors are rolled back and toasted in onError; mutateAsync
+      // also rejects when onSuccess/onSettled throw (onError doesn't run for
+      // those), so log here instead of swallowing silently.
+      logger.error('Follow mutation post-processing failed', {
+        error,
+        context: 'useRelationshipMutations.follow',
+      });
+    }
+  }, [
+    targetProfileId,
+    isFollowed,
+    addRelationshipMutation,
+    removeRelationshipMutation,
+  ]);
 
   return {
     // State

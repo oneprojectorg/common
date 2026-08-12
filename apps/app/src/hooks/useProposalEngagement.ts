@@ -9,6 +9,7 @@ import type { Proposal } from '@op/common/client';
 export interface ProposalEngagement {
   isLiked: boolean;
   isFollowed: boolean;
+  isPending: boolean;
   onLike: () => void;
   onFollow: () => void;
 }
@@ -38,7 +39,7 @@ export function useProposalEngagement({
   const { user } = useUser();
   const canToggle = userCanInteract(user) && canEngage;
 
-  const { isLiked, isFollowed, handleLike, handleFollow } =
+  const { isLiked, isFollowed, isLoading, handleLike, handleFollow } =
     useRelationshipMutations({
       targetProfileId: proposal.profileId,
       enabled: canToggle,
@@ -52,6 +53,7 @@ export function useProposalEngagement({
   return {
     isLiked,
     isFollowed,
+    isPending: isLoading,
     onLike: handleLike,
     onFollow: handleFollow,
   };

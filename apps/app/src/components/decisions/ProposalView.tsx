@@ -242,6 +242,7 @@ export function ProposalView({
                 isFollowing: engagement.isFollowed,
                 onLike: engagement.onLike,
                 onFollow: engagement.onFollow,
+                isPending: engagement.isPending,
               }
             : undefined
         }
