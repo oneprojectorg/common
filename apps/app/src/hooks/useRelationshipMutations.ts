@@ -302,35 +302,44 @@ export function useRelationshipMutations({
 
     draining.current[relationshipType] = true;
 
+    // Forget this burst and pull the truth back in. Stays inside the loop so a
+    // click that lands during the refetch is picked up here rather than by a
+    // second drain racing the queries this one just kicked off.
+    const settle = async () => {
+      delete desired.current[relationshipType];
+      delete sent.current[relationshipType];
+      await reconcile();
+    };
+
     try {
-      while (
-        desired.current[relationshipType] !== sent.current[relationshipType]
-      ) {
+      while (desired.current[relationshipType] !== undefined) {
         const target = desired.current[relationshipType];
 
-        if (target === undefined) {
-          break;
+        if (target === sent.current[relationshipType]) {
+          await settle();
+          continue;
         }
 
         const mutation = target
           ? addRelationshipMutation
           : removeRelationshipMutation;
 
-        await mutation.mutateAsync({ targetProfileId, relationshipType });
-        sent.current[relationshipType] = target;
+        try {
+          await mutation.mutateAsync({ targetProfileId, relationshipType });
+          sent.current[relationshipType] = target;
+        } catch (error) {
+          // Logged and toasted in onError; the reconcile puts the cache back to
+          // whatever the server actually has.
+          logger.error('Relationship write failed', {
+            error,
+            context: `useRelationshipMutations.${relationshipType}`,
+          });
+          await settle();
+          break;
+        }
       }
-    } catch (error) {
-      // Logged and toasted in onError; the reconcile below puts the cache back
-      // to whatever the server actually has.
-      logger.error('Relationship write failed', {
-        error,
-        context: `useRelationshipMutations.${relationshipType}`,
-      });
     } finally {
       draining.current[relationshipType] = false;
-      delete desired.current[relationshipType];
-      delete sent.current[relationshipType];
-      await reconcile();
     }
   };
 
@@ -344,9 +353,13 @@ export function useRelationshipMutations({
         return;
       }
 
-      // A relationship fetch in flight — including the one `reconcile` just
-      // kicked off — would land on top of the write below and undo the press.
+      // Anything in flight would land on top of the writes below and undo the
+      // press — including the refetches `reconcile` kicks off. Both caches, not
+      // just the relationship one: a stale list result resets the count while
+      // the button stays pressed, and the next click then counts the same like
+      // twice.
       void utils.profile.getRelationships.cancel(relationshipQueryKey);
+      void queryClient.cancelQueries(countQueryFilter);
 
       // Flip the cache first, every time: the press has to register even while
       // an earlier one is still in the air.
