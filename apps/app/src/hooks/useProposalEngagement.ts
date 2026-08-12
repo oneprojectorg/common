@@ -3,7 +3,21 @@
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
+import type { DecisionAccess } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+
+/**
+ * Whether the viewer's access on a decision admits Like/Follow.
+ *
+ * Mirrors the server's OR: `assertPostWriteAccess` admits `{ profile: ADMIN }`
+ * or `{ decisions: SUBMIT_PROPOSALS }`, so an admin without an explicit
+ * submitter role can still engage. Both the browse card and the proposal page
+ * read this — the two gates drifted before, and the page hid controls the API
+ * would have accepted.
+ */
+export const canEngageWithProposals = (
+  access?: Pick<DecisionAccess, 'admin' | 'submitProposals'> | null,
+) => access?.submitProposals === true || access?.admin === true;
 
 /** Like/follow state and handlers for a proposal's engagement controls. */
 export interface ProposalEngagement {

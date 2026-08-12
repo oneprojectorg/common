@@ -1,5 +1,6 @@
 'use client';
 
+import { canEngageWithProposals } from '@/hooks/useProposalEngagement';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
@@ -42,10 +43,7 @@ export function ProposalBrowseCard({
   className,
 }: ProposalBrowseCardProps) {
   const canManageProposals = permissions?.admin ?? false;
-  // Like/Follow require SUBMIT_PROPOSALS (or admin) on the parent decision —
-  // don't offer buttons the API would reject (e.g. reviewer-only roles).
-  const canEngage =
-    (permissions?.submitProposals ?? false) || canManageProposals;
+  const canEngage = canEngageWithProposals(permissions);
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   const isEditable = Boolean(proposal.isEditable);

@@ -1,7 +1,10 @@
 'use client';
 
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
-import { useProposalEngagement } from '@/hooks/useProposalEngagement';
+import {
+  canEngageWithProposals,
+  useProposalEngagement,
+} from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
@@ -117,7 +120,7 @@ export function ProposalView({
   // can't drift. Returns undefined when the viewer can't act.
   const engagement = useProposalEngagement({
     proposal: currentProposal,
-    canEngage: currentProposal.access?.submitProposals === true,
+    canEngage: canEngageWithProposals(currentProposal.access),
   });
 
   // Check if current user can edit (submitter or org admin)
