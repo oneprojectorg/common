@@ -2,6 +2,7 @@ import { and, db, eq, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { z } from 'zod';
 
 import {
   type PaginatedResult,
@@ -17,6 +18,9 @@ import type {
 } from './getProfileUserWithRelations';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
+
+/** Cursor tiebreakers are `profileUsers.id` values. */
+const cursorTiebreakerSchema = z.string().uuid();
 
 /**
  * Builds a subquery to get the first role name (alphabetically) for a profile user.
@@ -173,7 +177,16 @@ export const listProfileUsers = async ({
     : undefined;
 
   const buildCursorCondition = () => {
-    if (!decodedCursor?.tiebreaker) {
+    // The tiebreaker is a `profileUsers.id`, and Postgres rejects anything that
+    // isn't uuid-shaped. Cursors issued before the tiebreaker moved off `email`
+    // carry an email address (or nothing at all, for the email sort), so drop
+    // them instead of erroring — a client mid-scroll across the deploy repeats
+    // a page rather than seeing a 500.
+    const tiebreaker = cursorTiebreakerSchema.safeParse(
+      decodedCursor?.tiebreaker,
+    );
+
+    if (!decodedCursor || !tiebreaker.success) {
       return undefined;
     }
 
@@ -191,7 +204,7 @@ export const listProfileUsers = async ({
     });
     const compareOp = dir === 'asc' ? sql`>` : sql`<`;
 
-    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${decodedCursor.value}, ${decodedCursor.tiebreaker}::uuid)`;
+    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${decodedCursor.value}, ${tiebreaker.data}::uuid)`;
   };
 
   const cursorCondition = buildCursorCondition();

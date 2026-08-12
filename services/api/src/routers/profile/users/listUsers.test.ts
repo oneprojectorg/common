@@ -849,6 +849,39 @@ describe.concurrent('profile.users.listUsers', () => {
       ]);
     });
 
+    it('should fall back to the first page for a cursor issued before the id tiebreaker', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // The shape this endpoint handed out before the tiebreaker moved to
+      // profile_users.id. Casting an email to uuid is a Postgres error, so a
+      // client still holding one mid-scroll must not get a 500.
+      const staleCursor = Buffer.from(
+        JSON.stringify({
+          value: 'Test Admin User',
+          tiebreaker: adminUser.email,
+        }),
+      ).toString('base64');
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        limit: 2,
+        cursor: staleCursor,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      expect(result.items).toHaveLength(2);
+    });
+
     it('should page past a participant with no email address', async ({
       task,
       onTestFinished,

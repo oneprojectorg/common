@@ -174,6 +174,25 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     expect(whereText.split(sortKey)).toHaveLength(2);
   });
 
+  it.each([
+    ['an email tiebreaker, as issued before the id switch', 'b@example.test'],
+    ['no tiebreaker at all, as the email sort used to issue', undefined],
+  ])('ignores a stale cursor carrying %s', async (_label, tiebreaker) => {
+    await listProfileUsers({
+      profileId: PROFILE_ID,
+      user: USER,
+      cursor: encodeCursor({ value: 'Beatrice', tiebreaker }),
+    });
+
+    const [args] = mockFindMany.mock.calls[0] ?? [];
+    const whereText = collapse(toSqlString(args!.where as SQL));
+
+    // Casting an email to uuid is a Postgres error, so a client still holding
+    // one of these mid-scroll has to repeat a page rather than get a 500.
+    expect(whereText).not.toContain('::uuid');
+    expect(whereText).not.toContain('Beatrice');
+  });
+
   it('tiebreaks the email sort on id and keeps null emails reachable', async () => {
     await listProfileUsers({
       profileId: PROFILE_ID,
