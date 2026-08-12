@@ -2,12 +2,17 @@
 
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
-import { getRubricScoringInfo } from '@op/common/client';
+import {
+  PROPOSAL_AGGREGATE_SORTS,
+  type ProposalsWithReviewAggregatesList,
+  getRubricScoringInfo,
+} from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import type { SortDescriptor } from 'react-aria-components';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,13 +34,81 @@ export function ReviewSelectionList({
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
 }) {
-  const t = useTranslations();
-  const processInstanceId = instance.id;
   const decisionSlug = instance.slug;
+
+  // No column is sorted initially: `createdAt` isn't a table column, so the
+  // list opens in the server's newest-first order with no header indicator.
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: 'createdAt',
+    direction: 'descending',
+  });
+  const orderBy =
+    PROPOSAL_AGGREGATE_SORTS.find(
+      (column) => column === sortDescriptor.column,
+    ) ?? 'createdAt';
+
+  // Non-suspense + placeholderData so a header click re-sorts without blanking
+  // the table while the server re-fetches (same pattern as ManualSelectionList).
+  // `throwOnError` keeps failures going to the page's APIErrorBoundary, which is
+  // where they landed while this was a suspense query.
+  const proposalsQuery = trpc.decision.listWithReviewAggregates.useQuery(
+    {
+      processInstanceId: instance.id,
+      phaseId: previousPhaseId,
+      orderBy,
+      dir: sortDescriptor.direction === 'ascending' ? 'asc' : 'desc',
+    },
+    { placeholderData: (prev) => prev, throwOnError: true },
+  );
 
   if (!decisionSlug) {
     notFound();
   }
+
+  if (!proposalsQuery.data) {
+    return <ReviewSelectionListSkeleton />;
+  }
+
+  return (
+    <LoadedReviewSelectionList
+      instance={instance}
+      previousPhaseId={previousPhaseId}
+      decisionSlug={decisionSlug}
+      proposals={proposalsQuery.data}
+      sortDescriptor={sortDescriptor}
+      onSortChange={setSortDescriptor}
+    />
+  );
+}
+
+export function ReviewSelectionListSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="h-8 w-32 animate-pulse rounded bg-neutral-gray1" />
+      <ReviewSelectionTableSkeleton />
+    </div>
+  );
+}
+
+/** The shortlisting UI itself, once the proposals for the phase are in. */
+function LoadedReviewSelectionList({
+  instance,
+  previousPhaseId,
+  decisionSlug,
+  proposals,
+  sortDescriptor,
+  onSortChange,
+}: {
+  instance: ProcessInstance;
+  previousPhaseId: string;
+  decisionSlug: string;
+  proposals: ProposalsWithReviewAggregatesList;
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
+}) {
+  const t = useTranslations();
+  const processInstanceId = instance.id;
+  const { items, total, rubricTemplate } = proposals;
 
   // Persisted in localStorage so selection survives navigation to the
   // per-proposal review summary and back.
@@ -45,12 +118,6 @@ export function ReviewSelectionList({
   );
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  const [{ items, total, rubricTemplate }] =
-    trpc.decision.listWithReviewAggregates.useSuspenseQuery({
-      processInstanceId,
-      phaseId: previousPhaseId,
-    });
   const utils = trpc.useUtils();
 
   const totalPoints = useMemo(
@@ -122,6 +189,8 @@ export function ReviewSelectionList({
           onAdvance={handleAdvanceToggle}
           advancingIds={advancing}
           decisionSlug={decisionSlug}
+          sortDescriptor={sortDescriptor}
+          onSortChange={onSortChange}
         />
       )}
 
@@ -139,15 +208,6 @@ export function ReviewSelectionList({
         }
         isSubmitting={submitMutation.isPending}
       />
-    </div>
-  );
-}
-
-export function ReviewSelectionListSkeleton() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="h-8 w-32 animate-pulse rounded bg-neutral-gray1" />
-      <ReviewSelectionTableSkeleton />
     </div>
   );
 }

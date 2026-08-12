@@ -10,6 +10,7 @@ import { count as countFn } from 'drizzle-orm';
 import { z } from 'zod';
 
 import {
+  type SortDir,
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
@@ -23,7 +24,10 @@ import {
 } from './getRubricScoringInfo';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
+  PROPOSAL_AGGREGATE_SORTS,
+  type ProposalAggregateSort,
   type ProposalCategoryItem,
+  type ProposalWithAggregates,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
@@ -33,13 +37,21 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 // ── Input schema ───────────────────────────────────────────────────────
 
 /**
- * Single union schema for both dispatch modes:
+ * Single union schema for the three dispatch modes:
  *   - filtered: caller passes `proposalIds`, no pagination.
+ *   - sorted: caller passes `orderBy`, whole phase set in one page.
  *   - paginated: phase-scoped, cursor-paginated.
+ *
+ * Union order matters — the paginated member's fields are all optional, so it
+ * would otherwise swallow a sorted request.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
+  }),
+  instanceOptionalPhaseRefSchema.extend({
+    orderBy: z.enum(PROPOSAL_AGGREGATE_SORTS),
+    dir: z.enum(['asc', 'desc']).default('desc'),
   }),
   instanceOptionalPhaseRefSchema.extend({
     limit: z.number().int().min(1).max(100).default(50),
@@ -54,13 +66,15 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
 // ── Public entry ───────────────────────────────────────────────────────
 
 /**
- * Admin-only proposal list with per-proposal review aggregates. Two dispatch
+ * Admin-only proposal list with per-proposal review aggregates. Three dispatch
  * modes determined by input shape:
  *
  *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
+ *   - sorted (`orderBy` present): whole phase set ordered by a derived value,
+ *     returned as a single page.
  *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated.
  *
- * Both modes share the auth + instance + rubric setup; the split happens
+ * All modes share the auth + instance + rubric setup; the split happens
  * after the admin check.
  */
 export async function listProposalsWithReviewAggregates(
@@ -97,6 +111,18 @@ export async function listProposalsWithReviewAggregates(
       phaseProposalIds,
       processInstanceId,
       phaseId,
+      scoredCriterionKeys,
+      rubricTemplate,
+    });
+  }
+
+  if ('orderBy' in input) {
+    return listProposalsSorted({
+      processInstanceId,
+      phaseId,
+      phaseProposalIds,
+      orderBy: input.orderBy,
+      dir: input.dir,
       scoredCriterionKeys,
       rubricTemplate,
     });
@@ -139,6 +165,8 @@ async function listProposalsFiltered({
     return { items: [], total: 0, next: null, rubricTemplate };
   }
 
+  // The IDs are known up front here, so the categories read runs alongside the
+  // proposal query instead of after it (unlike the paginated / sorted modes).
   const [proposalsFull, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findMany({
       // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
@@ -156,14 +184,9 @@ async function listProposalsFiltered({
     getCategoriesByProposalIds(filteredProposalIds),
   ]);
 
-  const items = proposalsFull.map((proposal) => ({
-    proposal,
-    aggregates: getComputedReviewAggregates(
-      proposal.reviewAssignments,
-      scoredCriterionKeys,
-    ),
-    categories: categoriesByProposalId.get(proposal.id) ?? [],
-  }));
+  const items = proposalsFull.map((proposal) =>
+    toItem({ proposal, categoriesByProposalId, scoredCriterionKeys }),
+  );
 
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
@@ -243,17 +266,7 @@ async function listProposalsPaginated({
     return { items: [], total, next: null, rubricTemplate };
   }
 
-  const pageIds = pageRows.map((p) => p.id);
-  const categoriesByProposalId = await getCategoriesByProposalIds(pageIds);
-
-  const items = pageRows.map((proposal) => ({
-    proposal,
-    aggregates: getComputedReviewAggregates(
-      proposal.reviewAssignments,
-      scoredCriterionKeys,
-    ),
-    categories: categoriesByProposalId.get(proposal.id) ?? [],
-  }));
+  const items = await buildItems({ rows: pageRows, scoredCriterionKeys });
 
   let next: string | null = null;
   if (hasMore) {
@@ -272,7 +285,179 @@ async function listProposalsPaginated({
   });
 }
 
+// ── Sorted mode (whole phase set, one page) ────────────────────────────
+
+/**
+ * Phase-scoped list ordered by one of the review-selection table's columns.
+ *
+ * Ordering happens in memory over the *complete* phase set rather than in SQL:
+ * `score` is derived from rubric answers stored as JSON, so ordering it in the
+ * database would mean re-implementing `getComputedReviewAggregates` in SQL and
+ * risking a sort key that disagrees with the score rendered in the cell. The
+ * whole set is loaded and returned as a single page (`next: null`) so the
+ * order covers every proposal instead of just the rows on one keyset page —
+ * the same trade-off `listProposals` makes for its computed `votes` sort.
+ */
+async function listProposalsSorted({
+  processInstanceId,
+  phaseId,
+  phaseProposalIds,
+  orderBy,
+  dir,
+  scoredCriterionKeys,
+  rubricTemplate,
+}: {
+  processInstanceId: string;
+  phaseId: string | undefined;
+  phaseProposalIds: string[];
+  orderBy: ProposalAggregateSort;
+  dir: SortDir;
+  scoredCriterionKeys: string[];
+  rubricTemplate: RubricTemplateSchema | null;
+}): Promise<ProposalsWithReviewAggregatesList> {
+  if (phaseProposalIds.length === 0) {
+    return { items: [], total: 0, next: null, rubricTemplate };
+  }
+
+  const rows = await db.query.proposals.findMany({
+    // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
+    // getProposalsForPhase (see the paginated mode for the same guard).
+    where: {
+      RAW: (table) =>
+        and(
+          inArray(table.id, phaseProposalIds),
+          isNull(table.moderationDetachedAt),
+        )!,
+    },
+    with: proposalRelations({ processInstanceId, phaseId }),
+  });
+
+  const items = await buildItems({ rows, scoredCriterionKeys });
+
+  // Parse before sorting so the comparators read the encoded shape — notably
+  // `proposalData.budget` normalized to `{ amount, currency }`.
+  const parsed = proposalsWithReviewAggregatesListSchema.parse({
+    items,
+    total: items.length,
+    next: null,
+    rubricTemplate,
+  });
+
+  return { ...parsed, items: sortItems(parsed.items, orderBy, dir) };
+}
+
+/** Sort key per column; `null` for rows the column has no value for. */
+const SORT_VALUES: Record<
+  ProposalAggregateSort,
+  (item: ProposalWithAggregates) => string | number | null
+> = {
+  createdAt: (item) => item.proposal.createdAt ?? null,
+  title: (item) => item.proposal.profile.name,
+  budget: (item) => item.proposal.proposalData.budget?.amount ?? null,
+  score: (item) => item.aggregates.averageScore,
+};
+
+function sortItems(
+  items: Array<ProposalWithAggregates>,
+  orderBy: ProposalAggregateSort,
+  dir: SortDir,
+): Array<ProposalWithAggregates> {
+  const sortValue = SORT_VALUES[orderBy];
+  const direction = dir === 'asc' ? 1 : -1;
+
+  return [...items].sort((left, right) => {
+    const leftValue = sortValue(left);
+    const rightValue = sortValue(right);
+
+    // Rows without a value (no budget, no timestamp) sort last in both
+    // directions — flipping the header reorders the real values instead of
+    // paging the blanks to the top.
+    if (leftValue === null || rightValue === null) {
+      if (leftValue === rightValue) {
+        return compareTieBreak(left, right);
+      }
+      return leftValue === null ? 1 : -1;
+    }
+
+    const delta =
+      typeof leftValue === 'string' || typeof rightValue === 'string'
+        ? String(leftValue).localeCompare(String(rightValue))
+        : leftValue - rightValue;
+
+    return delta === 0
+      ? compareTieBreak(left, right)
+      : direction * Math.sign(delta);
+  });
+}
+
+/**
+ * Newest first, then id — direction-independent so equal sort keys keep a
+ * stable order when the admin toggles a column.
+ */
+function compareTieBreak(
+  left: ProposalWithAggregates,
+  right: ProposalWithAggregates,
+): number {
+  const byCreatedAt = (right.proposal.createdAt ?? '').localeCompare(
+    left.proposal.createdAt ?? '',
+  );
+  return byCreatedAt !== 0
+    ? byCreatedAt
+    : left.proposal.id.localeCompare(right.proposal.id);
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Decorates loaded proposal rows with their review aggregates + categories.
+ * The categories read only knows which IDs to fetch once the rows are in, so
+ * callers that know their IDs up front should parallelize it themselves (see
+ * the filtered mode) and map with `toItem`.
+ */
+async function buildItems<Row extends ProposalRowForItem>({
+  rows,
+  scoredCriterionKeys,
+}: {
+  rows: Array<Row>;
+  scoredCriterionKeys: string[];
+}) {
+  const categoriesByProposalId = await getCategoriesByProposalIds(
+    rows.map((row) => row.id),
+  );
+
+  return rows.map((proposal) =>
+    toItem({ proposal, categoriesByProposalId, scoredCriterionKeys }),
+  );
+}
+
+/** Only the fields the aggregates + categories decoration reads. */
+type ProposalRowForItem = {
+  id: string;
+  reviewAssignments: Array<{
+    status: string;
+    reviewer: unknown;
+    reviews: Array<{ state: string; reviewData: unknown }>;
+  }>;
+};
+
+function toItem<Row extends ProposalRowForItem>({
+  proposal,
+  categoriesByProposalId,
+  scoredCriterionKeys,
+}: {
+  proposal: Row;
+  categoriesByProposalId: Map<string, ProposalCategoryItem[]>;
+  scoredCriterionKeys: string[];
+}) {
+  return {
+    proposal,
+    aggregates: getComputedReviewAggregates(
+      proposal.reviewAssignments,
+      scoredCriterionKeys,
+    ),
+    categories: categoriesByProposalId.get(proposal.id) ?? [],
+  };
+}
 
 /**
  * `with` block for the proposal relational query — shared by filtered and
