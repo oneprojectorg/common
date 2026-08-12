@@ -10,6 +10,22 @@ const categoryValueSchema = z
   .transform((value) => normalizeProposalCategories(value));
 
 /**
+ * A money amount as it is actually written down — a number, or the string a
+ * hand-written or imported document carries.
+ *
+ * Shared by the stored budget and the document fragment: a shape one reader
+ * accepts and the other drops is how a budget renders on a card and reads
+ * "Add budget" in the editor.
+ *
+ * `min(1)` after trimming because `Number('')` and `Number('  ')` are both `0`,
+ * so a cleared-but-not-deleted `{"amount":""}` would otherwise read as a real
+ * zero budget and get autosaved over the stored amount.
+ */
+const budgetAmountSchema = z
+  .union([z.string().trim().min(1), z.number()])
+  .pipe(z.coerce.number());
+
+/**
  * Budget stored in proposalData.
  *
  * Accepts the canonical `{ amount, currency }` and the legacy bare number or
@@ -25,15 +41,26 @@ const categoryValueSchema = z
  */
 export const budgetValueSchema = z
   .union([
-    // Canonical shape, with the currency made optional. Extended from
+    // Canonical shape, with the currency made optional and the amount read as
+    // loosely as `budgetFragmentObjectSchema` reads it. Extended from
     // `moneyAmountSchema` rather than restated, so a field added to the
     // canonical money shape reaches stored budgets too.
+    //
+    // The string amount matters as much as the currency: `{"amount":"5000",
+    // "currency":"EUR"}` turns up on imported and hand-written rows, and
+    // rejecting it here dropped the whole budget — the amount vanished from
+    // every surface, and the stored EUR went with it, so the template's
+    // currency then won a budget that had named its own. Readers can only
+    // resolve from a parsed row if parsing reads every shape storage holds.
     //
     // Not `min(1)` on the currency: a blank code has to still parse, or the
     // union falls through to the numeric branch, fails there too, and the
     // amount disappears from the proposal entirely. Readers treat a blank code
     // as naming none — see `getStoredBudgetCurrency`.
-    moneyAmountSchema.extend({ currency: z.string().optional() }),
+    moneyAmountSchema.extend({
+      amount: budgetAmountSchema,
+      currency: z.string().optional(),
+    }),
     // Legacy: plain number → { amount } with no currency. The return type is
     // annotated so both branches produce one shape rather than a union TS
     // makes callers narrow before they can read `currency` at all.
@@ -177,36 +204,31 @@ export function parseCategoryFragmentValue(value: string): string[] {
  * currency has a fallback to fill it, so both shapes are readable.
  */
 const budgetFragmentObjectSchema = z.object({
-  // `min(1)` after trimming for the same reason the whitespace guard below
-  // exists: `Number('')` and `Number('  ')` are both `0`, so a cleared-but-not
-  // -deleted `{"amount":""}` would otherwise read as a real zero budget and
-  // get autosaved over the stored amount.
-  amount: z
-    .union([z.string().trim().min(1), z.number()])
-    .pipe(z.coerce.number()),
-  // Trimmed before `min(1)`, matching `getStoredBudgetCurrency`: a
-  // whitespace-only code names a currency no more than an absent one does, and
-  // passing it through makes `Intl` throw, dropping the currency marker
-  // entirely rather than falling back to the process's.
-  currency: z.string().trim().min(1).optional(),
+  amount: budgetAmountSchema,
+  // Accepted as written and trimmed by the reader below rather than rejected
+  // here: a blank code makes the whole object fail to parse, and the fragment
+  // would then fall through to the bare-number reader, which drops the
+  // currency key the author may well have filled in.
+  currency: z.string().optional(),
 });
 
 /**
- * Normalize the raw text of a `budget` document fragment.
+ * Read a `budget` document fragment as it is written, leaving `currency`
+ * absent when the fragment names none.
  *
  * The fragment is written as `{"amount":N,"currency":"..."}`, but legacy and
  * imported documents hold a bare number or free text, so fall back to
  * normalizing the raw string. Returns `undefined` when the text carries no
  * usable amount.
  *
- * `fallbackCurrency` is the currency already stored on the proposal, or the
- * template's where there is none (see `resolveBudgetFallbackCurrency`), and is
- * used only for fragments that name no currency of their own.
+ * What the editor persists: writing back a currency the fragment never named
+ * pins the proposal to whatever code happened to be resolved when someone
+ * opened it. Use {@link parseBudgetFragmentValue} to *render* the fragment,
+ * where the gap does have to be filled.
  */
-export function parseBudgetFragmentValue(
+export function parseStoredBudgetFragmentValue(
   text: string,
-  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
-): BudgetData | undefined {
+): StoredBudget | undefined {
   // Whitespace-only is unusable, not zero: `Number('  ')` is `0`, so without
   // this the fragment normalizes to a real `{amount: 0}` that the editor
   // autosaves over the stored budget.
@@ -221,24 +243,45 @@ export function parseBudgetFragmentValue(
     parsed = text;
   }
 
-  // Object form first — it is the only shape that can name a currency, and the
-  // only one `budgetValueSchema` would reject for naming none.
+  // Object form first — it is the only shape that can name a currency.
   const object = budgetFragmentObjectSchema.safeParse(parsed);
   if (object.success) {
-    return {
-      amount: object.data.amount,
-      currency: object.data.currency || fallbackCurrency,
-    };
+    const { amount } = object.data;
+    // Trimmed, matching `getStoredBudgetCurrency`: a whitespace-only code
+    // names a currency no more than an absent one does, and passing it through
+    // makes `Intl` throw, dropping the currency marker entirely rather than
+    // falling back to the process's.
+    const currency = object.data.currency?.trim();
+    return currency ? { amount, currency } : { amount };
   }
 
-  // Bare number or numeric string — no currency to read, so the fallback
-  // always applies.
-  const budget = normalizeBudget(parsed);
+  // Bare number or numeric string — no currency to read.
+  return normalizeBudget(parsed);
+}
+
+/**
+ * Normalize the raw text of a `budget` document fragment for display, with its
+ * currency resolved.
+ *
+ * `fallbackCurrency` is the currency already stored on the proposal, or the
+ * template's where there is none (see `resolveBudgetFallbackCurrency`), and is
+ * used only for fragments that name no currency of their own.
+ */
+export function parseBudgetFragmentValue(
+  text: string,
+  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
+): BudgetData | undefined {
+  const budget = parseStoredBudgetFragmentValue(text);
   if (!budget) {
     return undefined;
   }
 
-  return { ...budget, currency: fallbackCurrency };
+  // `||` covers a stored blank code as well as an absent one — neither names a
+  // currency.
+  return {
+    amount: budget.amount,
+    currency: budget.currency || fallbackCurrency,
+  };
 }
 
 export function formatProposalCategories(

@@ -251,10 +251,10 @@ function ProposalEditorInner({
 
   const proposalFields = compileProposalSchema(proposalTemplate);
 
-  // Resolved once here, from the *raw* stored data, and handed to every budget
-  // surface below. Parsing drops a budget whose shape `budgetValueSchema` can't
-  // read, so deriving this from `draft.budget` downstream would lose a stored
-  // currency and fall back to the template's.
+  // Resolved once here, from the proposal's own stored data, and handed to
+  // every budget surface below. From `proposal.proposalData` rather than
+  // `draft.budget`: the draft is the author's in-flight edit, which reflects
+  // the fragment rather than what the row is denominated in.
   const budgetFallbackCurrency = resolveBudgetFallbackCurrency(
     proposal.proposalData,
     proposalTemplate,

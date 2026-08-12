@@ -1,7 +1,10 @@
 import { getTipTapClient } from '@op/collab';
 import type { JSONContent } from '@tiptap/core';
 
-import { assembleProposalData } from './assembleProposalData';
+import {
+  assembleProposalData,
+  toValidationBudget,
+} from './assembleProposalData';
 import { fillCategoryFromBoundary } from './boundaryCategory';
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -65,8 +68,21 @@ export async function validateProposalAgainstTemplate(
       ...(storedProposalData.category !== undefined
         ? { category: storedProposalData.category }
         : {}),
+      // Shaped for the template, not handed over as parsed: legacy templates
+      // declare the budget as `{type: 'number'}`, and AJV runs with
+      // `coerceTypes: false`, so injecting the parsed `{amount, currency}`
+      // object failed validation outright — the author saw "Budget is invalid"
+      // and could not submit at all. An unreadable stored budget goes through
+      // raw so it fails on its own merits rather than reading as absent.
       ...(storedProposalData.budget !== undefined
-        ? { budget: parsed.budget }
+        ? {
+            budget: parsed.budget
+              ? toValidationBudget(
+                  proposalTemplate.properties?.budget,
+                  parsed.budget,
+                )
+              : storedProposalData.budget,
+          }
         : {}),
       ...(shouldInjectTitle ? { title } : {}),
     };

@@ -88,6 +88,20 @@ export function formatMoney(budget: {
 }
 
 /**
+ * Render a bare money amount with no currency marker, at the same
+ * {@link DEFAULT_LOCALE} {@link formatMoney} uses.
+ *
+ * For the places that show a number beside a formatted budget — a max-budget
+ * placeholder, say. `toLocaleString()` there groups by the *viewer's* locale,
+ * so a de-DE reader gets "Max 1.000.000" above a field whose value renders as
+ * "$1,000,000": two separators for the same number, and no way to tell whether
+ * "1.000" means a thousand or one.
+ */
+export function formatAmount(amount: number): string {
+  return getMoneyFormatter(null, Number.isInteger(amount)).format(amount);
+}
+
+/**
  * The currency symbol for a code (e.g. `"$"`, `"CA$"`). For prefixing an input
  * where the amount is rendered separately.
  *

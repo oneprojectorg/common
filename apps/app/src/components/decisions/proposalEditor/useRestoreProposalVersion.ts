@@ -72,9 +72,11 @@ export function useRestoreProposalVersion({
     const nextCategory = normalizeProposalCategories(
       getFragmentText(fragmentContents.category),
     );
-    // Raw `proposalData`, not `currentProposalData.budget`: parsing drops a
-    // budget whose shape `budgetValueSchema` can't read, and restore would
-    // then persist the template default over the currency stored on the row.
+    // Whole `proposalData`, not `currentProposalData.budget`: the currency to
+    // fall back to is the row's, and reading it off the budget alone would
+    // miss it whenever the amount is the part that's unreadable. Restore
+    // persists what this produces, so getting it wrong writes the template
+    // default over the currency stored on the row.
     const nextBudget = parseBudgetFragmentValue(
       getFragmentText(fragmentContents.budget),
       resolveBudgetFallbackCurrency(proposalData, proposalTemplate),

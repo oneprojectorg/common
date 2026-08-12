@@ -1,11 +1,12 @@
 import {
   type BudgetData,
+  type StoredBudget,
   parseBudgetFragmentValue,
   parseCategoryFragmentValue,
   schemaAllowsMultipleSelection,
 } from './proposalDataSchema';
 import { getBudgetCurrency } from './templateBudget';
-import type { ProposalTemplateSchema } from './types';
+import type { ProposalTemplateSchema, XFormatPropertySchema } from './types';
 
 /**
  * Builds the flat data object that the JSON Schema validator expects from
@@ -71,6 +72,13 @@ export function assembleProposalData(
         }
         break;
       case 'money': {
+        // Whitespace-only is nothing at all, same as the text formats above:
+        // handing AJV `'   '` fails a required budget as "invalid" when it is
+        // simply absent, and a template that leaves the budget optional would
+        // block submission over a fragment holding a stray space.
+        if (!text.trim()) {
+          continue;
+        }
         // The same parser display reads the fragment with, so a budget the
         // editor renders can always be submitted. `normalizeBudget` alone
         // rejects the string-amount shape (`{"amount":"5000"}`) that
@@ -85,14 +93,7 @@ export function assembleProposalData(
         );
         // Unreadable: hand AJV the raw text so it fails cleanly rather than
         // dropping the field and reporting a required budget as missing.
-        // Legacy schemas use `type: 'number'`, so give them the bare amount to
-        // range check against `maximum` — that is where the currency is lost,
-        // and why renderers read the fragment directly.
-        data[key] = !budget
-          ? text
-          : schema.type === 'number'
-            ? budget.amount
-            : budget;
+        data[key] = budget ? toValidationBudget(schema, budget) : text;
         break;
       }
       default:
@@ -106,6 +107,27 @@ export function assembleProposalData(
   }
 
   return data;
+}
+
+/**
+ * Shape a budget the way the template's own JSON Schema expects it.
+ *
+ * Legacy templates declare the budget as `{type: 'number'}`, so they get the
+ * bare amount to range check against `maximum`; canonical `{type: 'object'}`
+ * ones get `{amount, currency}`. That is where the currency is lost, and why
+ * renderers read the fragment or the row rather than validation data.
+ *
+ * Exported because `validateProposalAgainstTemplate` re-injects the stored
+ * budget over this function's output: shaping it there by hand let an object
+ * reach a `type: 'number'` schema, which AJV rejects with `coerceTypes: false`
+ * — the author could not submit at all, and the legacy branch here never took
+ * effect.
+ */
+export function toValidationBudget(
+  schema: XFormatPropertySchema | undefined,
+  budget: StoredBudget,
+): number | StoredBudget {
+  return schema?.type === 'number' ? budget.amount : budget;
 }
 
 /**

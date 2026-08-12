@@ -94,9 +94,13 @@ export function getStoredBudgetCurrency(
  * the editor pill, list cards, detail page and review table can't disagree
  * about what an unlabeled amount is denominated in.
  *
- * Hand this the **raw** `proposalData` off the column wherever you have it:
- * `budgetValueSchema` drops a budget whose shape it can't read, and the
- * currency stored beside the amount goes with it.
+ * Takes raw `proposalData` off the column or the parsed form, whichever the
+ * caller holds: `budgetValueSchema` reads every shape storage actually carries
+ * (including the string amounts imports write), so parsing no longer drops a
+ * budget and takes its currency with it. That equivalence is what lets the
+ * client — which only ever sees parsed data — resolve the same currency the
+ * server's list path does; a shape added to storage but not to that schema
+ * would break it again.
  */
 export function resolveBudgetFallbackCurrency(
   proposalData: unknown,

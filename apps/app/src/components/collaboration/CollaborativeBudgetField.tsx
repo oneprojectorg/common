@@ -1,12 +1,16 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import { formatMoney, getCurrencySymbol } from '@/utils/formatting';
 import {
-  type BudgetData,
+  formatAmount,
+  formatMoney,
+  getCurrencySymbol,
+} from '@/utils/formatting';
+import {
   DEFAULT_BUDGET_CURRENCY,
   type StoredBudget,
   parseBudgetFragmentValue,
+  parseStoredBudgetFragmentValue,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
@@ -20,9 +24,10 @@ interface CollaborativeBudgetFieldProps {
   minAmount?: number;
   maxAmount?: number;
   /**
-   * ISO 4217 code for a fragment that names none of its own, stamped onto what
-   * the author enters. Every renderer reads the currency back off the
-   * fragment, so getting this wrong makes a whole process render the wrong one.
+   * ISO 4217 code to *display* a fragment that names none of its own with.
+   * Display only: it is never written into the fragment or emitted through
+   * `onChange`, so a budget that named no currency keeps naming none and
+   * follows the process's if that later changes.
    *
    * Already resolved by the caller through `resolveBudgetFallbackCurrency` —
    * this component must not re-derive it from `initialValue`, whose currency is
@@ -31,7 +36,7 @@ interface CollaborativeBudgetFieldProps {
    */
   currency?: string;
   initialValue?: StoredBudget | null;
-  onChange?: (budget: BudgetData | null) => void;
+  onChange?: (budget: StoredBudget | null) => void;
 }
 
 /**
@@ -54,17 +59,21 @@ export function CollaborativeBudgetField({
   const { ydoc } = useCollaborativeDoc();
   const budgetInputRef = useRef<HTMLInputElement>(null);
 
-  // `||` rather than `??`: a budget stored with a blank code names no currency
-  // any more than an absent one does, and seeding the shared fragment with a
-  // blank would push it to every renderer that reads the currency back off it.
+  // Seeded with the stored currency or with none at all — never with the
+  // resolved fallback. Every renderer reads the currency back off this
+  // fragment, so seeding a resolved code would pin the proposal to whatever
+  // was resolved the first time somebody opened the editor, and a later change
+  // to the process's currency would silently skip this proposal. `||` rather
+  // than `??` because a blank stored code names no currency either.
   const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
     'budget',
     initialValue !== null
-      ? JSON.stringify({
-          currency: initialValue.currency || fallbackCurrency,
-          amount: initialValue.amount,
-        })
+      ? JSON.stringify(
+          initialValue.currency
+            ? { currency: initialValue.currency, amount: initialValue.amount }
+            : { amount: initialValue.amount },
+        )
       : '',
   );
 
@@ -79,7 +88,13 @@ export function CollaborativeBudgetField({
     () => parseBudgetFragmentValue(budgetText, fallbackCurrency),
     [budgetText, fallbackCurrency],
   );
-  const setBudget = (newBudget: BudgetData | null) =>
+  // What the fragment itself names, which is what gets written back: the
+  // resolved `budget` above is for display only.
+  const storedBudget = useMemo(
+    () => parseStoredBudgetFragmentValue(budgetText),
+    [budgetText],
+  );
+  const setBudget = (newBudget: StoredBudget | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
   const onChangeRef = useRef(onChange);
@@ -94,7 +109,7 @@ export function CollaborativeBudgetField({
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
-    ? t('Max {amount}', { amount: maxAmount.toLocaleString() })
+    ? t('Max {amount}', { amount: formatAmount(maxAmount) })
     : t('Enter amount');
 
   // Size the input to its placeholder text instead of the default size=20
@@ -133,12 +148,16 @@ export function CollaborativeBudgetField({
   const handleChange = (value: number | null) => {
     if (value === null) {
       setBudget(null);
-    } else {
-      setBudget({
-        currency,
-        amount: value,
-      });
+      return;
     }
+    // Keeps the fragment's own currency when it has one and writes none when
+    // it doesn't — this field has no currency control, so typing an amount is
+    // not a choice of currency and must not record one.
+    setBudget(
+      storedBudget?.currency
+        ? { currency: storedBudget.currency, amount: value }
+        : { amount: value },
+    );
   };
 
   useEffect(() => {
@@ -167,8 +186,12 @@ export function CollaborativeBudgetField({
       return;
     }
 
-    onChangeRef.current?.(budget ?? null);
-  }, [budgetText, budget, initialValue?.amount]);
+    // The fragment's own value, not the resolved one: emitting the resolved
+    // currency would autosave it onto the row, and this effect fires on mount
+    // whenever the fragment and the row disagree on the amount — so merely
+    // opening a proposal would pin it to a currency nobody chose.
+    onChangeRef.current?.(storedBudget ?? null);
+  }, [budgetText, budget, storedBudget, initialValue?.amount]);
 
   const handleStartEditing = () => {
     setIsEditing(true);

@@ -3,13 +3,16 @@ import { describe, expect, it } from 'vitest';
 import {
   assembleProposalData,
   resolveSystemFieldOverrides,
+  toValidationBudget,
 } from './assembleProposalData';
 import {
   isDistrictCategoryLabel,
+  normalizeBudget,
   normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
   parseSchemaOptions,
+  parseStoredBudgetFragmentValue,
 } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
@@ -384,5 +387,91 @@ describe('resolveSystemFieldOverrides', () => {
     expect(resolveSystemFieldOverrides({ title: '   ' })).not.toHaveProperty(
       'title',
     );
+  });
+});
+
+describe('stored budget parsing', () => {
+  it('keeps a string amount and the currency stored beside it', () => {
+    // Imported and hand-written rows carry `{"amount":"5000"}`. Rejecting the
+    // shape dropped the whole budget: the amount vanished from every surface,
+    // and the currency went with it, so the template's won a budget that had
+    // named its own.
+    expect(normalizeBudget({ amount: '5000', currency: 'EUR' })).toEqual({
+      amount: 5000,
+      currency: 'EUR',
+    });
+  });
+
+  it('leaves the currency absent when the stored budget names none', () => {
+    expect(normalizeBudget({ amount: 5000 })).toEqual({ amount: 5000 });
+    expect(normalizeBudget(5000)).toEqual({ amount: 5000 });
+  });
+});
+
+describe('parseStoredBudgetFragmentValue', () => {
+  it('leaves the currency absent for a fragment that names none', () => {
+    // What the editor writes back. Resolving the fallback in here would
+    // autosave it onto the row, pinning the proposal to whichever currency
+    // happened to be resolved the first time someone opened it.
+    expect(parseStoredBudgetFragmentValue('{"amount":5000}')).toEqual({
+      amount: 5000,
+    });
+    expect(parseStoredBudgetFragmentValue('5000')).toEqual({ amount: 5000 });
+    expect(
+      parseStoredBudgetFragmentValue('{"amount":5000,"currency":"  "}'),
+    ).toEqual({ amount: 5000 });
+  });
+
+  it('keeps a currency the fragment does name', () => {
+    expect(
+      parseStoredBudgetFragmentValue('{"amount":5000,"currency":"EUR"}'),
+    ).toEqual({ amount: 5000, currency: 'EUR' });
+  });
+
+  it('reads nothing usable as undefined', () => {
+    for (const text of ['', '   ', '{"amount":""}', 'no budget here']) {
+      expect(parseStoredBudgetFragmentValue(text)).toBeUndefined();
+    }
+  });
+});
+
+describe('toValidationBudget', () => {
+  // AJV runs with `coerceTypes: false`, so a legacy template that declares
+  // `{type: 'number'}` rejects the canonical object outright — the author saw
+  // "Budget is invalid" and could not submit at all.
+  it('hands a legacy number template the bare amount', () => {
+    expect(
+      toValidationBudget(
+        { type: 'number', 'x-format': 'money', maximum: 10000 },
+        { amount: 5000, currency: 'EUR' },
+      ),
+    ).toBe(5000);
+  });
+
+  it('hands a canonical object template the whole budget', () => {
+    expect(
+      toValidationBudget(
+        { type: 'object', 'x-format': 'money' },
+        { amount: 5000, currency: 'EUR' },
+      ),
+    ).toEqual({ amount: 5000, currency: 'EUR' });
+  });
+});
+
+describe('assembleProposalData money fields', () => {
+  const legacyMoneyTemplate: ProposalTemplateSchema = {
+    type: 'object',
+    properties: {
+      budget: { type: 'number', 'x-format': 'money', maximum: 10000 },
+    },
+  };
+
+  it('drops a whitespace-only budget fragment rather than failing on it', () => {
+    // Absent, not invalid: handing AJV `'   '` blocks submission on a template
+    // that leaves the budget optional, and reports "invalid" rather than
+    // "required" on one that doesn't.
+    expect(
+      assembleProposalData(legacyMoneyTemplate, { budget: '   ' }),
+    ).toEqual({});
   });
 });
