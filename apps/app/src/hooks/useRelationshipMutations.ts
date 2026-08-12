@@ -93,6 +93,19 @@ export function useRelationshipMutations({
     ),
   );
 
+  /**
+   * There is no answer to `isLiked` / `isFollowed`, as opposed to the answer
+   * being no.
+   *
+   * Deliberately not `Boolean(error)`. A failed *refetch* keeps the cached list
+   * and still answers correctly, and `reconcile` invalidates this query after
+   * every burst — so with `retry` and `refetchOnWindowFocus` both off app-wide,
+   * treating any error as fatal would let one dropped response strip the
+   * controls from every proposal on the page with nothing left to restore them.
+   */
+  const stateUnknown =
+    Boolean(relationshipsError) && userRelationships === undefined;
+
   // The raw client rather than `utils`: the count caches are matched by a
   // predicate on the tRPC path, which the typed helpers can't express.
   const queryClient = useQueryClient();
@@ -170,13 +183,13 @@ export function useRelationshipMutations({
   const reconcile = async () => {
     await Promise.all([
       utils.profile.getRelationships.invalidate(relationshipQueryKey),
-      // `refetchType: 'all'`, not the default 'active': `setQueriesData` wrote
-      // every matching entry, so an unmounted `getProposal` or an off-screen
-      // filter would otherwise keep the optimistic delta and serve it on mount.
-      queryClient.invalidateQueries({
-        ...countQueryFilter,
-        refetchType: 'all',
-      }),
+      // Default `refetchType`, deliberately. `setQueriesData` wrote every
+      // matching entry including inactive ones, but invalidation marks all of
+      // them stale whatever gets refetched now, and there's no app-wide
+      // `staleTime`, so an off-screen filter refetches when it next mounts.
+      // `'all'` would instead fan out over every persisted proposal query —
+      // hydrated entries carry no queryFn and fail — on every single press.
+      queryClient.invalidateQueries(countQueryFilter),
       ...invalidateQueries.flatMap((query) =>
         query.processInstanceId
           ? [
@@ -283,12 +296,11 @@ export function useRelationshipMutations({
     isLiked,
     isFollowed,
     /**
-     * The relationship list failed to load, so `isLiked` / `isFollowed` are
-     * both reading false for want of data rather than because they're false.
-     * Callers should fall back to read-only counts instead of offering a
-     * toggle that would send a redundant write.
+     * `isLiked` / `isFollowed` are reading false for want of data rather than
+     * because they're false. Callers should fall back to read-only counts
+     * instead of offering a toggle that would send a redundant write.
      */
-    error: relationshipsError,
+    stateUnknown,
 
     handleLike: () =>
       toggleRelationship(

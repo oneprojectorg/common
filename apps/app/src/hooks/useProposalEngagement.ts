@@ -34,7 +34,7 @@ export interface ProposalEngagement {
  *
  * Returns `undefined` when the viewer can't act — anonymous visitors, roles
  * without engagement access on the parent decision, and a relationship list
- * that failed to load. Callers render the counts as plain numbers in that case
+ * that never loaded. Callers render the counts as plain numbers in that case
  * rather than dead controls.
  *
  * An author gets no `onFollow`: they're the proposal's audience by definition.
@@ -58,16 +58,16 @@ export function useProposalEngagement({
   const { user } = useUser();
   const canToggle = userCanInteract(user) && canEngage;
 
-  const { isLiked, isFollowed, error, handleLike, handleFollow } =
+  const { isLiked, isFollowed, stateUnknown, handleLike, handleFollow } =
     useRelationshipMutations({
       targetProfileId: proposal.profileId,
       enabled: canToggle,
       invalidateQueries: [{ processInstanceId: proposal.processInstanceId }],
     });
 
-  // A failed load leaves both flags false for want of data, which would render
-  // every toggle unpressed and turn the next click into a redundant add.
-  if (!canToggle || error) {
+  // With nothing loaded both flags read false for want of data, which would
+  // render every toggle unpressed and turn the next click into a redundant add.
+  if (!canToggle || stateUnknown) {
     return undefined;
   }
 
