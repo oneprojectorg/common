@@ -23,7 +23,6 @@ export const canEngageWithProposals = (
 export interface ProposalEngagement {
   isLiked: boolean;
   isFollowed: boolean;
-  isPending: boolean;
   onLike: () => void;
   /** Absent for a proposal's own author — see {@link useProposalEngagement}. */
   onFollow?: () => void;
@@ -58,7 +57,7 @@ export function useProposalEngagement({
   const { user } = useUser();
   const canToggle = userCanInteract(user) && canEngage;
 
-  const { isLiked, isFollowed, isLoading, handleLike, handleFollow } =
+  const { isLiked, isFollowed, handleLike, handleFollow } =
     useRelationshipMutations({
       targetProfileId: proposal.profileId,
       enabled: canToggle,
@@ -79,7 +78,6 @@ export function useProposalEngagement({
   return {
     isLiked,
     isFollowed,
-    isPending: isLoading,
     onLike: handleLike,
     // Keep the toggle for an author who already follows, or they'd be stuck
     // following with no way to undo it.

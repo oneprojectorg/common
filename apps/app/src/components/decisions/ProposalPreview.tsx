@@ -325,7 +325,6 @@ function EngagementRow({
         noun={likesNoun}
         pressed={engagement?.isLiked}
         onPressedChange={engagement?.onLike}
-        isPending={engagement?.isPending}
       />
       <EngagementToggle
         icon={LuBookmark}
@@ -333,7 +332,6 @@ function EngagementRow({
         noun={followersNoun}
         pressed={engagement?.isFollowing}
         onPressedChange={engagement?.onFollow}
-        isPending={engagement?.isPending}
       />
       {/* A link, not a toggle: jumping to the comments works for any viewer,
           signed in or not. `px-2` matches the ghost toggles' inset. */}
@@ -366,14 +364,12 @@ function EngagementToggle({
   noun,
   pressed,
   onPressedChange,
-  isPending,
 }: {
   icon: IconType;
   count: number;
   noun: string;
   pressed?: boolean;
   onPressedChange?: () => void;
-  isPending?: boolean;
 }) {
   const isInteractive = Boolean(onPressedChange);
   const iconClassName = cn(pressed && 'fill-current');
@@ -391,12 +387,15 @@ function EngagementToggle({
   return (
     // The visible count is the accessible name; on/off comes from aria-pressed,
     // which base-ui sets from `pressed`.
+    //
+    // Not disabled while the mutation runs: the count and the pressed state are
+    // already optimistic, and disabling the button you just pressed drops focus
+    // to the body — mid-interaction, for a keyboard or screen reader user.
     <Toggle
       size="sm"
       variant="ghost"
       pressed={pressed ?? false}
       onPressedChange={onPressedChange}
-      disabled={isPending}
     >
       <Icon className={iconClassName} aria-hidden />
       <AnimatedCount value={count} /> {noun}
