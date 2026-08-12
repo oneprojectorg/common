@@ -155,6 +155,17 @@ export {
   isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
 export {
+  MONEY_GROUP_CURRENCY_KEY,
+  DEFAULT_MONEY_GROUP_CURRENCY,
+  isMoneyGroupSchema,
+  getMoneyGroupLineItems,
+  getMoneyGroupCurrency,
+  getMoneyLineItemAmount,
+  setMoneyLineItemAmount,
+  sumMoneyGroupTotal,
+  type MoneyLineItem,
+} from './services/decision/moneyGroup';
+export {
   REVIEWS_POLICIES,
   REVIEWS_SCOPES,
   phaseReviewSettingsSchema,

@@ -41,6 +41,30 @@ const rubricTemplate: RubricTemplateSchema = {
   required: ['impact'],
 };
 
+/** Budget add-up criterion: money line items plus the group currency. */
+const budgetAddUpRubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['b7e41c93'],
+  properties: {
+    b7e41c93: {
+      type: 'object',
+      title: 'Total Estimated Cost',
+      'x-format': 'money-group',
+      properties: {
+        a1b2c3d4: { type: 'number', title: 'Design & Engineering', minimum: 0 },
+        e5f6a7b8: { type: 'number', title: 'Construction', minimum: 0 },
+        currency: { type: 'string', const: 'USD', default: 'USD' },
+      },
+      // Nothing beyond the line items and the currency may be stored — this
+      // is what keeps the derived total from ever being persisted.
+      additionalProperties: false,
+      required: ['a1b2c3d4', 'e5f6a7b8', 'currency'],
+      'x-field-order': ['a1b2c3d4', 'e5f6a7b8'],
+    },
+  },
+  required: ['b7e41c93'],
+};
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
@@ -84,6 +108,36 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.completedAt).toBeNull();
     expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.DRAFT);
     expect(assignment?.reviews[0]?.submittedAt).toBeNull();
+  });
+
+  it('saves a budget add-up draft with only some line items filled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Drafts are unvalidated, so a partially filled add-up — one line item
+    // plus the materialized currency — persists as-is.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(
+      created.context,
+      budgetAddUpRubricTemplate,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { b7e41c93: { a1b2c3d4: 500, currency: 'USD' } },
+        rationales: {},
+      },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.DRAFT);
+    expect(result.reviewData.answers).toEqual({
+      b7e41c93: { a1b2c3d4: 500, currency: 'USD' },
+    });
   });
 
   it('upserts a single draft row per assignment — last write wins', async ({

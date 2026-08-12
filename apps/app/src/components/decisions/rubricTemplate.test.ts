@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type {
-  RubricCriterionType,
+  EditableRubricCriterionType,
   RubricTemplateSchema,
 } from './rubricTemplate';
 import {
@@ -14,27 +14,50 @@ import {
   getCriterionOptions,
   getCriterionType,
   inferCriterionType,
+  reorderCriteria,
   setCriterionRequired,
   setSelectOptions,
   updateCriterionDescription,
 } from './rubricTemplate';
 
-const ALL_TYPES: RubricCriterionType[] = [
+const EDITABLE_TYPES: EditableRubricCriterionType[] = [
   'scored',
   'yes_no',
   'single_select',
   'long_text',
 ];
 
+/** Seeded budget add-up — the builder cannot create one. */
+const budgetAddUpTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['b7e41c93'],
+  properties: {
+    b7e41c93: {
+      type: 'object',
+      title: 'Total Estimated Cost',
+      'x-format': 'money-group',
+      properties: {
+        a1b2c3d4: { type: 'number', title: 'Design', minimum: 0 },
+        e5f6a7b8: { type: 'number', title: 'Build', minimum: 0 },
+        currency: { type: 'string', const: 'USD', default: 'USD' },
+      },
+      additionalProperties: false,
+      required: ['a1b2c3d4', 'e5f6a7b8', 'currency'],
+      'x-field-order': ['a1b2c3d4', 'e5f6a7b8'],
+    },
+  },
+  required: ['b7e41c93'],
+};
+
 function templateWithCriterion(
-  type: RubricCriterionType,
+  type: EditableRubricCriterionType,
   criterionId = 'crit1',
 ): RubricTemplateSchema {
   return addCriterion(createEmptyRubricTemplate(), criterionId, type, 'Label');
 }
 
 describe('createCriterionJsonSchema / inferCriterionType round-trip', () => {
-  it.each(ALL_TYPES)('round-trips %s', (type) => {
+  it.each(EDITABLE_TYPES)('round-trips %s', (type) => {
     const schema = createCriterionJsonSchema(type);
     expect(inferCriterionType(schema)).toBe(type);
   });
@@ -274,5 +297,34 @@ describe('getCriteria', () => {
     expect(single?.criterionType).toBe('single_select');
     expect(single?.options).toHaveLength(2);
     expect(single?.options[0]?.title).toBe('Parks');
+  });
+});
+
+describe('budget add-up criteria', () => {
+  it('reads a seeded budget add-up with its line items, excluding currency', () => {
+    const criteria = getCriteria(budgetAddUpTemplate);
+
+    expect(criteria).toHaveLength(1);
+    expect(criteria[0]?.criterionType).toBe('budget_addup');
+    expect(criteria[0]?.label).toBe('Total Estimated Cost');
+    expect(criteria[0]?.lineItems).toEqual([
+      { id: 'a1b2c3d4', title: 'Design', required: true },
+      { id: 'e5f6a7b8', title: 'Build', required: true },
+    ]);
+  });
+
+  it('keeps the add-up when other criteria are reordered', () => {
+    let template = addCriterion(
+      budgetAddUpTemplate,
+      'notes',
+      'long_text',
+      'Notes',
+    );
+    template = reorderCriteria(template, ['notes', 'b7e41c93']);
+
+    expect(getCriteria(template).map((c) => c.id)).toEqual([
+      'notes',
+      'b7e41c93',
+    ]);
   });
 });

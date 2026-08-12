@@ -21,6 +21,7 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
+  EditableRubricCriterionType,
   RubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
@@ -44,7 +45,10 @@ interface RubricCriterionCardProps {
   onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
-  onChangeType?: (criterionId: string, newType: RubricCriterionType) => void;
+  onChangeType?: (
+    criterionId: string,
+    newType: EditableRubricCriterionType,
+  ) => void;
   onUpdateMaxPoints?: (criterionId: string, maxPoints: number) => void;
   onUpdateScoreLabel?: (
     criterionId: string,
@@ -129,107 +133,152 @@ export function RubricCriterionCard({
           errors.length > 0 && 'border-functional-red',
         )}
       >
-        <div className="space-y-2.5 px-8">
-          {/* Field name */}
-          <TextField
-            label={t('Field name')}
-            isRequired
-            value={criterion.label}
-            onChange={(value) => onUpdateLabel?.(criterion.id, value)}
-            maxLength={50}
-            inputProps={{
-              className: 'bg-white',
-            }}
-            className="min-w-0 flex-1"
-          />
+        {criterion.criterionType === 'budget_addup' ? (
+          <BudgetAddUpCriterionSummary criterion={criterion} />
+        ) : (
+          <div className="space-y-2.5 px-8">
+            {/* Field name */}
+            <TextField
+              label={t('Field name')}
+              isRequired
+              value={criterion.label}
+              onChange={(value) => onUpdateLabel?.(criterion.id, value)}
+              maxLength={50}
+              inputProps={{
+                className: 'bg-white',
+              }}
+              className="min-w-0 flex-1"
+            />
 
-          {/* Description */}
-          <TextField
-            label={t('Description')}
-            useTextArea
-            value={criterion.description ?? ''}
-            onChange={(value) => onUpdateDescription?.(criterion.id, value)}
-            textareaProps={{
-              placeholder: t('Provide additional guidance for participants...'),
-              className: 'min-h-24 resize-none bg-white',
-            }}
-          />
+            {/* Description */}
+            <TextField
+              label={t('Description')}
+              useTextArea
+              value={criterion.description ?? ''}
+              onChange={(value) => onUpdateDescription?.(criterion.id, value)}
+              textareaProps={{
+                placeholder: t(
+                  'Provide additional guidance for participants...',
+                ),
+                className: 'min-h-24 resize-none bg-white',
+              }}
+            />
 
-          <hr />
+            <hr />
 
-          {/* Criterion type radio selector */}
-          <CriterionTypeSelector
-            value={criterion.criterionType}
-            onChange={(newType) => onChangeType?.(criterion.id, newType)}
-          />
+            {/* Criterion type radio selector */}
+            <CriterionTypeSelector
+              value={criterion.criterionType}
+              onChange={(newType) => onChangeType?.(criterion.id, newType)}
+            />
 
-          {/* Type-specific configuration */}
-          {criterion.criterionType === 'scored' && (
-            <>
-              <hr />
-              <ScoredCriterionConfig
-                criterion={criterion}
-                onUpdateMaxPoints={(max) =>
-                  onUpdateMaxPoints?.(criterion.id, max)
-                }
-                onUpdateScoreLabel={(scoreValue, label) =>
-                  onUpdateScoreLabel?.(criterion.id, scoreValue, label)
-                }
-              />
-            </>
-          )}
-
-          {criterion.criterionType === 'single_select' && (
-            <>
-              <hr />
-              <SingleSelectCriterionConfig
-                criterion={criterion}
-                onUpdateOptions={(options) =>
-                  onUpdateOptions?.(criterion.id, options)
-                }
-              />
-            </>
-          )}
-
-          {/* Validation errors */}
-          {errors.length > 0 && (
-            <div className="space-y-1">
-              {errors.map((error) => (
-                <p key={error} className="text-sm text-functional-red">
-                  {t(error)}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* Footer: Required toggle + Delete button */}
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={criterion.required}
-                onChange={(isSelected) =>
-                  onUpdateRequired(criterion.id, isSelected)
-                }
-                aria-label={t('Required')}
-              />
-            </div>
-            {onRemove && (
-              <Button
-                color="ghost"
-                size="small"
-                onPress={() => onRemove(criterion.id)}
-                aria-label={t('Delete')}
-                className="text-neutral-charcoal hover:text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </Button>
+            {/* Type-specific configuration */}
+            {criterion.criterionType === 'scored' && (
+              <>
+                <hr />
+                <ScoredCriterionConfig
+                  criterion={criterion}
+                  onUpdateMaxPoints={(max) =>
+                    onUpdateMaxPoints?.(criterion.id, max)
+                  }
+                  onUpdateScoreLabel={(scoreValue, label) =>
+                    onUpdateScoreLabel?.(criterion.id, scoreValue, label)
+                  }
+                />
+              </>
             )}
+
+            {criterion.criterionType === 'single_select' && (
+              <>
+                <hr />
+                <SingleSelectCriterionConfig
+                  criterion={criterion}
+                  onUpdateOptions={(options) =>
+                    onUpdateOptions?.(criterion.id, options)
+                  }
+                />
+              </>
+            )}
+
+            {/* Validation errors */}
+            {errors.length > 0 && (
+              <div className="space-y-1">
+                {errors.map((error) => (
+                  <p key={error} className="text-sm text-functional-red">
+                    {t(error)}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Footer: Required toggle + Delete button */}
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-neutral-charcoal">{t('Required?')}</span>
+                <ToggleButton
+                  size="small"
+                  isSelected={criterion.required}
+                  onChange={(isSelected) =>
+                    onUpdateRequired(criterion.id, isSelected)
+                  }
+                  aria-label={t('Required')}
+                />
+              </div>
+              {onRemove && (
+                <Button
+                  color="ghost"
+                  size="small"
+                  onPress={() => onRemove(criterion.id)}
+                  aria-label={t('Delete')}
+                  className="text-neutral-charcoal hover:text-functional-red"
+                >
+                  <LuTrash2 className="size-4" />
+                  {t('Delete')}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </CollapsibleConfigCard>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Budget add-up (read-only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Read-only body for a budget add-up criterion. The builder cannot yet create
+ * or edit one — templates seed them — but the card must exist so the criterion
+ * stays visible and keeps its place when other criteria are reordered.
+ */
+function BudgetAddUpCriterionSummary({
+  criterion,
+}: {
+  criterion: CriterionView;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="space-y-2.5 px-8">
+      <p className="text-sm text-neutral-charcoal">
+        {t(
+          'This criterion is set up in the template and cannot be edited here.',
+        )}
+      </p>
+
+      {criterion.description && (
+        <p className="text-sm text-neutral-gray4">{criterion.description}</p>
+      )}
+
+      <ul className="space-y-1">
+        {criterion.lineItems.map((lineItem) => (
+          <li key={lineItem.id} className="text-base text-neutral-black">
+            {lineItem.title}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -243,7 +292,7 @@ function CriterionTypeSelector({
   onChange,
 }: {
   value: RubricCriterionType;
-  onChange: (type: RubricCriterionType) => void;
+  onChange: (type: EditableRubricCriterionType) => void;
 }) {
   const t = useTranslations();
 
@@ -251,7 +300,7 @@ function CriterionTypeSelector({
     <RadioGroup
       label={t('How should reviewers score this?')}
       value={value}
-      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
+      onChange={(newValue) => onChange(newValue as EditableRubricCriterionType)}
       orientation="vertical"
       labelClassName="text-base"
     >

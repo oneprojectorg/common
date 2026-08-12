@@ -1,8 +1,13 @@
+import { formatCurrency } from '@/utils/formatting';
 import {
   type ProposalReview,
   type RubricTemplateSchema,
   findSchemaOption,
+  getMoneyGroupCurrency,
+  getMoneyGroupLineItems,
+  getMoneyLineItemAmount,
   isOverallRecommendationField,
+  sumMoneyGroupTotal,
 } from '@op/common/client';
 import type { ReactNode } from 'react';
 
@@ -12,6 +17,7 @@ import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { inferCriterionType } from '../rubricTemplate';
+import { MoneyTotalRow } from './MoneyTotalRow';
 
 export function SubmittedReviewView({
   rubricTemplate,
@@ -163,10 +169,64 @@ function RubricFieldResult({
     );
   }
 
+  if (field.format === 'money-group') {
+    return (
+      <BudgetAddUpResult field={field} value={value} rationale={rationale} />
+    );
+  }
+
   if (field.format === 'long-text' || field.format === 'short-text') {
     const text = typeof value === 'string' ? value.trim() : '';
     return <ResultCard description={text || '—'} />;
   }
 
   return null;
+}
+
+/**
+ * Submitted budget add-up: each line item's amount plus the total, re-summed
+ * here rather than read from the answer (totals are never stored).
+ */
+function BudgetAddUpResult({
+  field,
+  value,
+  rationale,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+  rationale?: string;
+}) {
+  const currency = getMoneyGroupCurrency(field.schema, value);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {getMoneyGroupLineItems(field.schema).map((lineItem) => {
+        const amount = getMoneyLineItemAmount(value, lineItem.id);
+        return (
+          <div
+            key={lineItem.id}
+            className="flex items-baseline justify-between gap-4"
+          >
+            <span className="text-base font-bold text-neutral-black">
+              {lineItem.title}
+            </span>
+            <span className="text-base text-neutral-charcoal">
+              {amount === null
+                ? '—'
+                : formatCurrency(amount, undefined, currency, {
+                    minimumFractionDigits: 2,
+                  })}
+            </span>
+          </div>
+        );
+      })}
+
+      <MoneyTotalRow
+        total={sumMoneyGroupTotal(field.schema, value)}
+        currency={currency}
+      />
+
+      {rationale && <ResultCard rationale={rationale} />}
+    </div>
+  );
 }

@@ -1432,5 +1432,9 @@
   "Reviewers can see each other's reviews on a proposal": "Dib-u-eegayaashu waxay ku arki karaan dib-u-eegisyada midba midka kale ee soo jeedin",
   "Turn on Open Reviews?": "Shid dib-u-eegisyada furan?",
   "This can lead reviewers to agree with each other more than they would independently.": "Tani waxay u horseedi kartaa in dib-u-eegayaashu isku raacaan midba midka kale in ka badan intii ay si madax-bannaan u samayn lahaayeen.",
-  "Enable": "Shid"
+  "Enable": "Shid",
+  "Total": "Wadarta",
+  "Budget add-up": "Isku-darka miisaaniyadda",
+  "Reviewers enter amounts that add up to a total": "Dib-u-eegayaashu waxay geliyaan qaddaro isku darsama wadar",
+  "This criterion is set up in the template and cannot be edited here.": "Shuruudkan waxaa lagu dejiyaa qaabka, halkanna lagama beddeli karo."
 }

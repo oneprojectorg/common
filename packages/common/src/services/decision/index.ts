@@ -116,6 +116,7 @@ export * from './extractProposalText';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './getRubricScoringInfo';
+export * from './moneyGroup';
 export * from './tiptapExtensions';
 
 // Proposal attachments

@@ -1430,5 +1430,9 @@
   "Reviewers can see each other's reviews on a proposal": "يمكن للمراجعين رؤية مراجعات بعضهم البعض على المقترح",
   "Turn on Open Reviews?": "تفعيل المراجعات المفتوحة؟",
   "This can lead reviewers to agree with each other more than they would independently.": "قد يؤدي ذلك إلى اتفاق المراجعين مع بعضهم البعض أكثر مما لو كانوا مستقلين.",
-  "Enable": "تفعيل"
+  "Enable": "تفعيل",
+  "Total": "الإجمالي",
+  "Budget add-up": "مجموع الميزانية",
+  "Reviewers enter amounts that add up to a total": "يُدخل المراجعون مبالغ تُجمع في إجمالي",
+  "This criterion is set up in the template and cannot be edited here.": "يُضبط هذا المعيار في القالب ولا يمكن تعديله هنا."
 }
