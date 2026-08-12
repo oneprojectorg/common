@@ -1,6 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
-import { profileUsers, profiles } from '@op/db/schema';
+import { profileUsers, profiles, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -179,6 +179,55 @@ describe.concurrent('profile.users.listUsers', () => {
         dir: 'asc',
       });
 
+      expect(result.items.map((u) => u.name)).toEqual([
+        'Aaron Ascender',
+        'Mika Middle',
+        'Zoe Zenith',
+      ]);
+    });
+
+    it('should interleave participants with no linked profile by their denormalized name', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+      const [firstMember, secondMember] = memberUsers;
+      if (!firstMember || !secondMember) {
+        throw new Error('Expected two member users');
+      }
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Ascender', staleName: null },
+        { user: firstMember, displayName: 'Zoe Zenith', staleName: null },
+        {
+          user: secondMember,
+          displayName: 'ignored',
+          staleName: 'Mika Middle',
+        },
+      ]);
+
+      // Unlink the second member's profile so only the denormalized
+      // profile_users.name is left to sort on — the fallback arm of the
+      // display-name expression.
+      await db
+        .update(users)
+        .set({ profileId: null })
+        .where(eq(users.authUserId, secondMember.authUserId));
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      // The profile-less participant sorts between the two profile-linked
+      // ones rather than clustering at either end.
       expect(result.items.map((u) => u.name)).toEqual([
         'Aaron Ascender',
         'Mika Middle',
@@ -721,6 +770,7 @@ describe.concurrent('profile.users.listUsers', () => {
 
       const pagedNames: (string | null)[] = [];
       let cursor: string | null | undefined;
+      let pageCount = 0;
 
       do {
         const page = await caller.listUsers({
@@ -733,9 +783,124 @@ describe.concurrent('profile.users.listUsers', () => {
 
         pagedNames.push(...page.items.map((u) => u.name));
         cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
       } while (cursor);
 
       expect(pagedNames).toEqual(['Aaron Alpha', ...memberDisplayNames]);
+    });
+
+    it('should paginate the displayed name in descending order', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      const memberDisplayNames = ['Bella Beta', 'Cleo Gamma', 'Dara Delta'];
+      const memberAssignments = memberDisplayNames.map((displayName, index) => {
+        const user = memberUsers[index];
+        if (!user) {
+          throw new Error(`Expected a member user at index ${index}`);
+        }
+
+        // Stale names ascend while the display names descend.
+        return { user, displayName, staleName: `stale-${index}` };
+      });
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberAssignments,
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedNames: (string | null)[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'desc',
+        });
+
+        pagedNames.push(...page.items.map((u) => u.name));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      expect(pagedNames).toEqual([
+        ...[...memberDisplayNames].reverse(),
+        'Aaron Alpha',
+      ]);
+    });
+
+    it('should page past participants who share a displayed name', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // Three participants collapse into one sort-key bucket, so only the
+      // email tiebreaker separates them across the page boundary.
+      const sharedName = 'Sam Shared';
+      const memberAssignments = memberUsers.map((user) => ({
+        user,
+        displayName: sharedName,
+        staleName: null,
+      }));
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberAssignments,
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedEmails: string[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        pagedEmails.push(...page.items.map((u) => u.email!));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      // Every participant appears exactly once, tie bucket included.
+      expect(pagedEmails).toHaveLength(4);
+      expect(new Set(pagedEmails).size).toBe(4);
+      expect(pagedEmails[0]).toBe(adminUser.email);
     });
 
     it('should paginate correctly when ordering by role', async ({

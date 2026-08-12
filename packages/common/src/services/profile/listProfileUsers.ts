@@ -23,7 +23,9 @@ export type ProfileUserOrderBy = 'name' | 'email' | 'role';
  * Used for both ORDER BY and cursor conditions to ensure consistency.
  * Returns empty string if user has no roles (via COALESCE) to match JS cursor encoding.
  */
-const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
+const buildRoleNameSubquery = (
+  profileUserIdColumn: AnyPgColumn,
+) => sql`COALESCE((
   SELECT ar.name
   FROM "profileUser_to_access_roles" pur
   INNER JOIN "access_roles" ar ON ar.id = pur.access_role_id
@@ -134,7 +136,10 @@ export const listProfileUsers = async ({
     }
 
     if (orderBy === 'email') {
-      // Email is unique, no tiebreaker needed
+      // Email is the only ORDER BY column here, so it is its own tiebreaker.
+      // (`profileUsers.email` carries an index but no unique constraint, so
+      // duplicate emails within a profile would still page imprecisely — a
+      // pre-existing gap this sort change doesn't touch.)
       return compareFn(profileUsers.email, decodedCursor.value);
     }
 

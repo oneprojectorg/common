@@ -44,6 +44,10 @@ const dialect = new PgDialect({ casing: 'snake_case' });
 
 const toSqlString = (query: SQL): string => dialect.sqlToQuery(query).sql;
 
+/** Normalizes the indentation the `sql` templates carry into their output. */
+const collapse = (sqlText: string): string =>
+  sqlText.replace(/\s+/g, ' ').trim();
+
 /**
  * A profile user whose denormalized `profile_users.name` disagrees with the
  * name the API actually returns — the shape that made the Name column look
@@ -108,7 +112,20 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
 
     const [primaryOrder] = captureOrderBy();
 
-    expect(toSqlString(primaryOrder!)).toContain('"profile_users"."name"');
+    // Pinned in full: a substring check would still pass against a sort on the
+    // bare `profile_users.name` column, and the exact COALESCE/NULLIF chain is
+    // what has to keep matching `resolveDisplayName` for the cursor to line up
+    // with the ORDER BY.
+    expect(collapse(toSqlString(primaryOrder!))).toBe(
+      collapse(`COALESCE(NULLIF((
+        SELECT p.name
+        FROM "users" u
+        INNER JOIN "profiles" p ON p.id = u.profile_id
+        WHERE u.auth_user_id = "profile_users"."auth_user_id"
+        ORDER BY p.name
+        LIMIT 1
+      ), ''), NULLIF("profile_users"."name", ''), '') asc`),
+    );
   });
 
   it('paginates the name sort on the same expression it orders by', async () => {
@@ -119,9 +136,13 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
     });
 
     const [args] = mockFindMany.mock.calls[0] ?? [];
-    const whereText = toSqlString(args!.where as SQL);
+    const whereText = collapse(toSqlString(args!.where as SQL));
+    const [primaryOrder] = captureOrderBy();
+    const sortKey = collapse(toSqlString(primaryOrder!)).replace(/ asc$/, '');
 
-    expect(whereText).toContain('"profiles"');
+    // The cursor has to compare against the same expression the rows are
+    // ordered by, or pagination skips and repeats rows at the page boundary.
+    expect(whereText).toContain(sortKey);
   });
 
   it('encodes the displayed name into the next cursor', async () => {
