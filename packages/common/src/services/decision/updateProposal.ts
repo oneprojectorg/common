@@ -17,7 +17,11 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getProfileAccessRoles,
+  hasInstanceProfileAccess,
+} from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -31,7 +35,18 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
+
+/**
+ * "Manages this decision", as the UI reads it: profile admin on the decision
+ * profile, or the decision zone's own admin bit. Matches the access
+ * `getInstance` reports, so the client's admin affordances and this gate agree.
+ */
+const INSTANCE_ADMIN_PERMISSIONS = [
+  { profile: permission.ADMIN },
+  { decisions: permission.ADMIN },
+];
 
 export interface UpdateProposalInput {
   title?: string;
@@ -112,6 +127,31 @@ export const updateProposal = async ({
         profilePermissions: { decisions: permission.UPDATE },
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
+    }
+
+    // Post-submission editing is a per-phase setting ("Proposal editing" in the
+    // Process Builder). With it off, an author can no longer change a proposal
+    // they already submitted — a draft is pre-submission, so it stays editable.
+    // Instance admins manage proposals throughout and keep the ability.
+    if (
+      existingProposal.status !== ProposalStatus.DRAFT &&
+      !isPostSubmissionEditingAllowed({
+        phases: instancePhases,
+        currentPhaseId: processInstance.currentStateId,
+      })
+    ) {
+      const isInstanceAdmin = await hasInstanceProfileAccess({
+        user: { id: user.id },
+        instance: processInstance,
+        profilePermissions: INSTANCE_ADMIN_PERMISSIONS,
+        orgFallbackPermissions: INSTANCE_ADMIN_PERMISSIONS,
+      });
+
+      if (!isInstanceAdmin) {
+        throw new UnauthorizedError(
+          'Editing proposals is closed for this phase',
+        );
+      }
     }
   }
 

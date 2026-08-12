@@ -18,6 +18,8 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -277,6 +279,14 @@ export const listProposals = async ({
     profileRoles,
   );
 
+  // Mirrors the `updateProposal` gate so the Edit affordance only shows where
+  // the write would actually be accepted.
+  const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
+    phases:
+      (instance.instanceData as DecisionInstanceData | null)?.phases ?? [],
+    currentPhaseId: instance.currentStateId,
+  });
+
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
@@ -300,10 +310,18 @@ export const listProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
-    // In results phase, proposals are never editable.
+    // In results phase, proposals are never editable. An author keeps their
+    // draft editable throughout, but only edits what they already submitted
+    // while the current phase's "Proposal editing" rule allows it.
     const isOwner = proposal.submittedByProfileId === currentProfileId;
+    const isEditableByOwner =
+      isOwner &&
+      (proposal.status === ProposalStatus.DRAFT ||
+        postSubmissionEditingAllowed);
     const isEditable =
-      input.phase === 'results' ? false : isOwner || hasAdminPermission;
+      input.phase === 'results'
+        ? false
+        : isEditableByOwner || hasAdminPermission;
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments
