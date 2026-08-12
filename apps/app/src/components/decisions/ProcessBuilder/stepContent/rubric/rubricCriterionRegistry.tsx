@@ -1,6 +1,9 @@
 import type { TranslationKey } from '@/lib/i18n/routing';
 
-import type { RubricCriterionType } from '@/components/decisions/rubricTemplate';
+import type {
+  EditableRubricCriterionType,
+  RubricCriterionType,
+} from '@/components/decisions/rubricTemplate';
 
 /**
  * Display metadata for each rubric criterion type.
@@ -33,12 +36,18 @@ export const CRITERION_TYPE_REGISTRY: Record<
     labelKey: 'Text response only',
     descriptionKey: 'No score, just written feedback',
   },
+  budget_addup: {
+    labelKey: 'Budget add-up',
+    descriptionKey: 'Reviewers enter amounts that add up to a total',
+  },
 };
 
 /**
- * Ordered list of criterion types for the radio selector.
+ * Ordered list of criterion types for the radio selector. Budget add-ups are
+ * omitted: they are seeded through the template, not built here, and the card
+ * renders them read-only.
  */
-export const CRITERION_TYPES: RubricCriterionType[] = [
+export const CRITERION_TYPES: EditableRubricCriterionType[] = [
   'scored',
   'yes_no',
   'single_select',

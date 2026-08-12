@@ -7,17 +7,21 @@ import {
 } from '@op/ui/utils/formatting';
 
 /**
- * Format currency amount using locale-aware formatting
+ * Format currency amount using locale-aware formatting.
+ *
+ * Whole amounts by default; pass `minimumFractionDigits: 2` where cents
+ * matter (e.g. rubric budget add-up totals).
  */
 export function formatCurrency(
   amount: number,
   locale: string = 'en-US',
   currency: string = 'USD',
+  options: { minimumFractionDigits?: number } = {},
 ): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
+    minimumFractionDigits: options.minimumFractionDigits ?? 0,
   }).format(amount);
 }
 

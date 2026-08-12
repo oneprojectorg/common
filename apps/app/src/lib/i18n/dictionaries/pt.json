@@ -1430,5 +1430,9 @@
   "Reviewers can see each other's reviews on a proposal": "Os avaliadores podem ver as avaliações uns dos outros em uma proposta",
   "Turn on Open Reviews?": "Ativar avaliações abertas?",
   "This can lead reviewers to agree with each other more than they would independently.": "Isso pode levar os avaliadores a concordarem mais uns com os outros do que fariam de forma independente.",
-  "Enable": "Ativar"
+  "Enable": "Ativar",
+  "Total": "Total",
+  "Budget add-up": "Soma do orçamento",
+  "Reviewers enter amounts that add up to a total": "Os revisores inserem valores que somam um total",
+  "This criterion is set up in the template and cannot be edited here.": "Este critério é definido no modelo e não pode ser editado aqui."
 }

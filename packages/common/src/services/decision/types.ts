@@ -18,11 +18,17 @@ export type JsonSchema = JSONSchema7;
  *
  * `radio` renders an enum as a horizontal radio row (the NPS-style control)
  * instead of a dropdown; used by custom form scale questions.
+ *
+ * `money-group` marks a **budget add-up**: one composite rubric criterion whose
+ * nested `properties` are money line items plus a group-level `currency`. Its
+ * total is always derived at render/read time, never stored (see
+ * `kb/adr/0003-budget-addup-derived-totals`).
  */
 export type XFormat =
   | 'short-text'
   | 'long-text'
   | 'money'
+  | 'money-group'
   | 'dropdown'
   | 'radio'
   | 'location';
@@ -42,6 +48,11 @@ export interface XFormatPropertySchema extends JSONSchema7 {
   'x-format'?: XFormat;
   /** Default map camera for `location` fields (see {@link MapDefaultView}). */
   'x-map-default'?: MapDefaultView;
+  /**
+   * Ordering of a composite property's own sub-properties. Used by
+   * `money-group` criteria to order their money line items.
+   */
+  'x-field-order'?: string[];
 }
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */

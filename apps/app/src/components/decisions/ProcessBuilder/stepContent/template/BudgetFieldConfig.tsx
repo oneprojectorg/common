@@ -1,5 +1,6 @@
 'use client';
 
+import { CURRENCIES, getCurrencySymbol } from '@/utils/currency';
 import { ProposalTemplateSchema } from '@op/common';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { NumberField } from '@op/ui/NumberField';
@@ -17,28 +18,6 @@ import {
   setFieldRequired,
 } from '../../../proposalTemplate';
 
-const CURRENCIES = [
-  { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'JPY', symbol: '¥' },
-  { code: 'CAD', symbol: 'CA$' },
-  { code: 'AUD', symbol: 'A$' },
-  { code: 'CHF', symbol: 'CHF' },
-  { code: 'CNY', symbol: '¥' },
-  { code: 'INR', symbol: '₹' },
-  { code: 'BRL', symbol: 'R$' },
-  { code: 'KRW', symbol: '₩' },
-  { code: 'SGD', symbol: 'S$' },
-  { code: 'MXN', symbol: 'MX$' },
-  { code: 'AED', symbol: 'د.إ' },
-  { code: 'SAR', symbol: '﷼' },
-] as const;
-
-const CURRENCY_SYMBOL_MAP = new Map<string, string>(
-  CURRENCIES.map((c) => [c.code, c.symbol]),
-);
-
 export function BudgetFieldConfig({
   template,
   onTemplateChange,
@@ -55,7 +34,7 @@ export function BudgetFieldConfig({
   const budgetCurrency =
     (budgetSchema?.properties?.currency as { default?: string } | undefined)
       ?.default ?? 'USD';
-  const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
+  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 

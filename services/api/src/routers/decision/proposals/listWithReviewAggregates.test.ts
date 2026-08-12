@@ -372,6 +372,68 @@ describe.concurrent('listWithReviewAggregates', () => {
     });
     expect(result.items[0]?.aggregates.reviewers.length).toBeGreaterThan(0);
   });
+
+  it('leaves the score untouched by budget add-up amounts', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The add-up is score-less: only `impact` (7) counts, never the dollar
+    // line items or their derived total.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, {
+      type: 'object',
+      required: ['impact'],
+      'x-field-order': ['impact', 'b7e41c93'],
+      properties: {
+        impact: { type: 'integer', title: 'Impact', minimum: 0, maximum: 10 },
+        b7e41c93: {
+          type: 'object',
+          title: 'Total Estimated Cost',
+          'x-format': 'money-group',
+          properties: {
+            a1b2c3d4: { type: 'number', title: 'Design', minimum: 0 },
+            currency: { type: 'string', const: 'USD', default: 'USD' },
+          },
+          additionalProperties: false,
+          required: ['a1b2c3d4', 'currency'],
+          'x-field-order': ['a1b2c3d4'],
+        },
+      },
+    });
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const created = await testData.createReviewAssignment({
+      context,
+      title: 'Proposal With Cost Estimate',
+    });
+
+    await createProposalReview({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: {
+          impact: 7,
+          b7e41c93: { a1b2c3d4: 250000, currency: 'USD' },
+        },
+        rationales: {},
+      },
+      submittedAt: new Date().toISOString(),
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalIds: [created.proposal.id],
+    });
+
+    expect(result.items[0]?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      averageScore: 7,
+    });
+  });
 });
 
 describeDecisionAccessTierGating('listWithReviewAggregates', {

@@ -32,6 +32,12 @@ export function TotalScoreCard({
   const { totalPoints } = getRubricScoringInfo(rubricTemplate);
 
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
+    // Only scored criteria contribute; a numeric answer of any other type
+    // (e.g. a budget add-up amount) must never reach the displayed score.
+    if (criterion.criterionType !== 'scored') {
+      return total;
+    }
+
     const value = values[criterion.id];
 
     if (typeof value !== 'number') {

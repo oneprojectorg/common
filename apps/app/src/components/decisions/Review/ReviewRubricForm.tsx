@@ -1,14 +1,21 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { getCurrencySymbol } from '@/utils/currency';
 import {
   ProposalReviewState,
   type XFormatPropertySchema,
+  getMoneyGroupCurrency,
+  getMoneyGroupLineItems,
+  getMoneyLineItemAmount,
   isOverallRecommendationField,
   parseSchemaOptions,
+  setMoneyLineItemAmount,
+  sumMoneyGroupTotal,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
+import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
@@ -23,6 +30,7 @@ import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
+import { MoneyTotalRow } from './MoneyTotalRow';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
@@ -465,9 +473,60 @@ function RubricFieldInput({
         />
       );
 
+    case 'money-group':
+      return (
+        <BudgetAddUpField field={field} value={value} onChange={onChange} />
+      );
+
     default:
       return null;
   }
+}
+
+/**
+ * Budget add-up: one money input per line item plus the derived total. The
+ * total is never stored — it is summed from the line items on every render.
+ * The group's currency is materialized into the stored answer on each edit,
+ * so reviewers never pick one.
+ */
+function BudgetAddUpField({
+  field,
+  value,
+  onChange,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const lineItems = getMoneyGroupLineItems(field.schema);
+  const currency = getMoneyGroupCurrency(field.schema, value);
+  const currencySymbol = getCurrencySymbol(currency);
+  const total = sumMoneyGroupTotal(field.schema, value);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {lineItems.map((lineItem) => (
+        <NumberField
+          key={lineItem.id}
+          label={lineItem.title}
+          isRequired={lineItem.required}
+          labelClassName="text-base font-bold text-neutral-black"
+          value={getMoneyLineItemAmount(value, lineItem.id)}
+          onChange={(amount) =>
+            onChange(
+              setMoneyLineItemAmount(field.schema, value, lineItem.id, amount),
+            )
+          }
+          prefixText={currencySymbol}
+          minValue={0}
+          inputProps={{ placeholder: '0.00' }}
+          className="w-full"
+        />
+      ))}
+
+      <MoneyTotalRow total={total} currency={currency} />
+    </div>
+  );
 }
 
 /**

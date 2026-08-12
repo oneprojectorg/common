@@ -10,12 +10,15 @@
  * type inference from schema shape.
  */
 import type {
+  MoneyLineItem,
   RubricTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
 import {
   OVERALL_RECOMMENDATION_KEY,
   RECOMMENDATION_OPTION,
+  getMoneyGroupLineItems,
+  isMoneyGroupSchema,
   isOverallRecommendationField,
 } from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
@@ -48,7 +51,23 @@ export type RubricCriterionType =
   | 'scored'
   | 'yes_no'
   | 'single_select'
-  | 'long_text';
+  | 'long_text'
+  /**
+   * Budget add-up: one composite criterion holding money line items whose
+   * total is derived at render time, never stored. Read-only here — templates
+   * seed it (see `kb/adr/0003-budget-addup-derived-totals`), so it is excluded
+   * from {@link EditableRubricCriterionType}.
+   */
+  | 'budget_addup';
+
+/**
+ * The criterion types the builder can create or switch between. Budget add-ups
+ * are rendered and inferred but never authored here.
+ */
+export type EditableRubricCriterionType = Exclude<
+  RubricCriterionType,
+  'budget_addup'
+>;
 
 /** A single admin-defined option on a single-select criterion. */
 export interface SelectOption {
@@ -80,6 +99,8 @@ export interface CriterionView {
   scoreLabels: string[];
   /** Admin-defined options. Single-select criteria only (empty for other types). */
   options: SelectOption[];
+  /** Money line items. Budget add-ups only (empty for other types). */
+  lineItems: MoneyLineItem[];
 }
 
 // ---------------------------------------------------------------------------
@@ -130,7 +151,7 @@ function getSelectOptionEntries(schema: XFormatPropertySchema): SelectOption[] {
  * Callers with i18n access pass translated labels (e.g. Yes/Maybe/No).
  */
 export function createCriterionJsonSchema(
-  type: RubricCriterionType,
+  type: EditableRubricCriterionType,
   selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
@@ -187,6 +208,10 @@ export function inferCriterionType(
   schema: XFormatPropertySchema,
 ): RubricCriterionType | undefined {
   const xFormat = schema['x-format'];
+
+  if (isMoneyGroupSchema(schema)) {
+    return 'budget_addup';
+  }
 
   if (xFormat === 'long-text') {
     return 'long_text';
@@ -310,6 +335,21 @@ export function getCriterionOptions(
   return getSelectOptionEntries(schema);
 }
 
+/**
+ * Money line items of a budget add-up, in stored order.
+ * Empty for other criterion types.
+ */
+export function getCriterionLineItems(
+  template: RubricTemplateSchema,
+  criterionId: string,
+): MoneyLineItem[] {
+  const schema = getCriterionSchema(template, criterionId);
+  if (!schema || !isMoneyGroupSchema(schema)) {
+    return [];
+  }
+  return getMoneyGroupLineItems(schema);
+}
+
 // ---------------------------------------------------------------------------
 // Composite readers
 // ---------------------------------------------------------------------------
@@ -332,6 +372,7 @@ export function getCriterion(
     maxPoints: getCriterionMaxPoints(template, criterionId),
     scoreLabels: getCriterionScoreLabels(template, criterionId),
     options: getCriterionOptions(template, criterionId),
+    lineItems: getCriterionLineItems(template, criterionId),
   };
 }
 
@@ -382,7 +423,7 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
 export function addCriterion(
   template: RubricTemplateSchema,
   criterionId: string,
-  type: RubricCriterionType,
+  type: EditableRubricCriterionType,
   label: string,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
@@ -438,7 +479,7 @@ export function setCriterionRequired(
 export function changeCriterionType(
   template: RubricTemplateSchema,
   criterionId: string,
-  newType: RubricCriterionType,
+  newType: EditableRubricCriterionType,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
   return updateProperty(template, criterionId, (existing) => {

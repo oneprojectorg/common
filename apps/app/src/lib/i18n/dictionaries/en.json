@@ -1496,5 +1496,9 @@
   "Voting (max {count} per member)": "Voting (max {count} per member)",
   "Vote editing": "Vote editing",
   "Advances manually": "Advances manually",
-  "Advances by date": "Advances by date"
+  "Advances by date": "Advances by date",
+  "Total": "Total",
+  "Budget add-up": "Budget add-up",
+  "Reviewers enter amounts that add up to a total": "Reviewers enter amounts that add up to a total",
+  "This criterion is set up in the template and cannot be edited here.": "This criterion is set up in the template and cannot be edited here."
 }
