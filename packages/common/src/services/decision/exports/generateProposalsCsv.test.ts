@@ -1,3 +1,4 @@
+import { parse } from 'csv-parse/sync';
 import { describe, expect, it } from 'vitest';
 
 import type { listProposals } from '../listProposals';
@@ -67,56 +68,17 @@ const makeProposal = (
 ): ProposalFromList => ({ ...baseProposal, ...overrides });
 
 /**
- * Minimal reader for the fully-quoted CSV `csv-stringify` emits under
- * `{ quoted: true }`. Hand-rolled because the repo has no CSV *parser*
- * dependency, and splitting on a delimiter mis-aligns columns the moment a
- * value contains a comma or newline — which proposal text routinely does.
+ * Reads the fully-quoted CSV `csv-stringify` emits under `{ quoted: true }`.
+ *
+ * Uses `csv-parse` — the sibling of the `csv-stringify` the exporter writes
+ * with — rather than splitting on delimiters, which mis-aligns columns the
+ * moment a value contains a comma or newline. Proposal text routinely does.
+ *
+ * Left strict on purpose: a row whose width disagrees with the header is a bug
+ * in the generator, and it should fail here rather than quietly shift every
+ * column after it and be asserted against as though it were correct.
  */
-const parseCsv = (csv: string): string[][] => {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < csv.length; i++) {
-    const char = csv[i];
-
-    if (inQuotes) {
-      if (char === '"') {
-        if (csv[i + 1] === '"') {
-          cell += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        cell += char;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = true;
-    } else if (char === ',') {
-      row.push(cell);
-      cell = '';
-    } else if (char === '\n') {
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = '';
-    } else if (char !== '\r') {
-      cell += char;
-    }
-  }
-
-  if (cell || row.length > 0) {
-    row.push(cell);
-    rows.push(row);
-  }
-
-  return rows;
-};
+const parseCsv = (csv: string): string[][] => parse(csv);
 
 /** Parse the single data row out of a generated CSV into a header→value map. */
 const parseSingleRow = (csv: string): Record<string, string> => {
