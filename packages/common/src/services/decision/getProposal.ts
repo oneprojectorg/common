@@ -32,7 +32,9 @@ import {
 } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -308,7 +310,7 @@ export const getPermissionsOnProposal = async ({
 }: {
   user: User | undefined;
   proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<{ access: DecisionRolePermissions }> => {
+}): Promise<{ access: DecisionRolePermissions; isEditable: boolean }> => {
   const roles = await getProfileAccessRoles({
     user,
     profileId: proposal.profileId,
@@ -354,5 +356,21 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  return { access };
+  // `access.update` says the caller may write this proposal at all (the author
+  // and their invited collaborators). Editing what they already submitted is
+  // additionally governed by the phase's "Proposal editing" rule, so the Edit
+  // affordance disappears with the setting. The revision-response flow reaches
+  // the editor through its own "Revise" affordance, not this flag.
+  const instancePhases =
+    (proposal.processInstance.instanceData as DecisionInstanceData | null)
+      ?.phases ?? [];
+  const isEditable =
+    access.update &&
+    (proposal.status === ProposalStatus.DRAFT ||
+      isPostSubmissionEditingAllowed({
+        phases: instancePhases,
+        currentPhaseId: proposal.processInstance.currentStateId,
+      }));
+
+  return { access, isEditable };
 };

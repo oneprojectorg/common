@@ -18,6 +18,8 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -277,6 +279,15 @@ export const listProposals = async ({
     profileRoles,
   );
 
+  // The participant-facing half of the `updateProposal` gate, so the Edit
+  // affordance disappears with the setting. Its other exemptions (instance
+  // admin, an open revision request) have their own affordances.
+  const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
+    phases:
+      (instance.instanceData as DecisionInstanceData | null)?.phases ?? [],
+    currentPhaseId: instance.currentStateId,
+  });
+
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
@@ -300,10 +311,13 @@ export const listProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
-    // In results phase, proposals are never editable.
-    const isOwner = proposal.submittedByProfileId === currentProfileId;
-    const isEditable =
-      input.phase === 'results' ? false : isOwner || hasAdminPermission;
+    const isEditable = resolveProposalEditability({
+      proposal,
+      currentProfileId,
+      hasAdminPermission,
+      postSubmissionEditingAllowed,
+      isResultsView: input.phase === 'results',
+    });
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments
@@ -372,4 +386,41 @@ export const listProposals = async ({
     canManageProposals,
     next,
   };
+};
+
+/**
+ * Who gets the Edit affordance on a list row: an instance admin on any row, or
+ * the author on their own — always while it's a draft, and after submission
+ * only while the current phase's "Proposal editing" rule allows it. Results
+ * rows are read-only for everyone.
+ */
+const resolveProposalEditability = ({
+  proposal,
+  currentProfileId,
+  hasAdminPermission,
+  postSubmissionEditingAllowed,
+  isResultsView,
+}: {
+  // `status` arrives as the raw pg-enum string on these rows, compared against
+  // the `ProposalStatus` string enum below.
+  proposal: { status: string | null; submittedByProfileId: string | null };
+  currentProfileId: string | undefined;
+  hasAdminPermission: boolean;
+  postSubmissionEditingAllowed: boolean;
+  isResultsView: boolean;
+}): boolean => {
+  if (isResultsView) {
+    return false;
+  }
+
+  if (hasAdminPermission) {
+    return true;
+  }
+
+  const isOwner = proposal.submittedByProfileId === currentProfileId;
+
+  return (
+    isOwner &&
+    (proposal.status === ProposalStatus.DRAFT || postSubmissionEditingAllowed)
+  );
 };

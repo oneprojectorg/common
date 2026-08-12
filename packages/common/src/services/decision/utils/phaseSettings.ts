@@ -32,6 +32,45 @@ export function isVotingPhase(phase: {
 }
 
 /**
+ * Authors may edit proposals they already submitted while this phase is
+ * current — the "Proposal editing" toggle in the Process Builder. Absent means
+ * off, matching how that toggle and the platform-admin phase summary both
+ * render an unset rule.
+ */
+export function isProposalEditingPhase(phase: {
+  rules?: { proposals?: { edit?: boolean } };
+}): boolean {
+  return phase.rules?.proposals?.edit ?? false;
+}
+
+/**
+ * Resolves {@link isProposalEditingPhase} against an instance's current phase.
+ * Drafts are pre-submission, so callers must admit them separately — this only
+ * answers whether an *already submitted* proposal may still be changed.
+ *
+ * Legacy instances carry no phase rules (`isLastPhase` treats them the same
+ * way); they predate the setting and keep editing open.
+ */
+export function isPostSubmissionEditingAllowed({
+  phases,
+  currentPhaseId,
+}: {
+  phases: readonly {
+    phaseId: string;
+    rules?: { proposals?: { edit?: boolean } };
+  }[];
+  currentPhaseId: string | null | undefined;
+}): boolean {
+  if (!currentPhaseId || phases.length === 0) {
+    return true;
+  }
+
+  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
+
+  return currentPhase ? isProposalEditingPhase(currentPhase) : false;
+}
+
+/**
  * True when any phase enables voting — i.e. the process has (or had) a voting
  * phase. Used to gate voting-only surfaces such as the "My Ballot" results tab.
  */

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   getPhaseReviewSettings,
   hasVotingPhase,
+  isPostSubmissionEditingAllowed,
+  isProposalEditingPhase,
   isReviewPhase,
   isVotingPhase,
 } from './phaseSettings';
@@ -37,6 +39,66 @@ describe('isVotingPhase', () => {
     expect(isVotingPhase({ rules: { voting: { submit: true } } })).toBe(true);
     expect(isVotingPhase({ rules: { voting: { submit: false } } })).toBe(false);
     expect(isVotingPhase({})).toBe(false);
+  });
+});
+
+describe('isProposalEditingPhase', () => {
+  it('reads proposals.edit, defaulting to false', () => {
+    expect(
+      isProposalEditingPhase({ rules: { proposals: { edit: true } } }),
+    ).toBe(true);
+    expect(
+      isProposalEditingPhase({ rules: { proposals: { edit: false } } }),
+    ).toBe(false);
+    expect(isProposalEditingPhase({ rules: { proposals: {} } })).toBe(false);
+    expect(isProposalEditingPhase({})).toBe(false);
+  });
+
+  it('is independent of the submission rule', () => {
+    expect(
+      isProposalEditingPhase({ rules: { proposals: { submit: true } } }),
+    ).toBe(false);
+  });
+});
+
+describe('isPostSubmissionEditingAllowed', () => {
+  const phases = [
+    {
+      phaseId: 'submission',
+      rules: { proposals: { submit: true, edit: true } },
+    },
+    { phaseId: 'review', rules: { proposals: { edit: false } } },
+    { phaseId: 'results', rules: {} },
+  ];
+
+  it('follows the current phase rule', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'submission' }),
+    ).toBe(true);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'review' }),
+    ).toBe(false);
+  });
+
+  it('denies when the current phase leaves the rule unset', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'results' }),
+    ).toBe(false);
+  });
+
+  it('denies when the current phase is not configured on the instance', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'unknown' }),
+    ).toBe(false);
+  });
+
+  it('leaves editing open for instances without resolvable phase rules', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases: [], currentPhaseId: 'review' }),
+    ).toBe(true);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: null }),
+    ).toBe(true);
   });
 });
 

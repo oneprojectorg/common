@@ -250,26 +250,34 @@ export const getProfileAccessRolesWithOrgFallback = async ({
   return orgUser?.roles ?? [];
 };
 
-/**
- * Asserts profile-level access, falling back to org-level access if the user
- * doesn't have a profileUser role on the given profile.
- *
- * Uses `instance.profileId` for the profile-level check and
- * `instance.ownerProfileId` for the org-level fallback lookup.
- */
-export const assertInstanceProfileAccess = async ({
-  user,
-  instance,
-  profilePermissions,
-  orgFallbackPermissions,
-}: {
+interface InstanceProfileAccessInput {
   user?: AccessUser;
   instance: { profileId: string | null; ownerProfileId: string | null };
   profilePermissions: AccessZonePermissionInput;
   orgFallbackPermissions: AccessZonePermissionInput;
-}): Promise<NormalizedRole[]> => {
+}
+
+/**
+ * Resolves profile-level access, falling back to org-level access if the user
+ * doesn't have a profileUser role on the given profile.
+ *
+ * Uses `instance.profileId` for the profile-level check and
+ * `instance.ownerProfileId` for the org-level fallback lookup.
+ *
+ * `profileRoles` carries profile-level roles only — empty both when the caller
+ * has none and when they were admitted through the org fallback.
+ */
+const resolveInstanceProfileAccess = async ({
+  user,
+  instance,
+  profilePermissions,
+  orgFallbackPermissions,
+}: InstanceProfileAccessInput): Promise<{
+  granted: boolean;
+  profileRoles: NormalizedRole[];
+}> => {
   if (!instance.profileId) {
-    throw new UnauthorizedError("You don't have access to do this");
+    return { granted: false, profileRoles: [] };
   }
 
   const profileRoles = await getProfileAccessRoles({
@@ -277,30 +285,57 @@ export const assertInstanceProfileAccess = async ({
     profileId: instance.profileId,
   });
 
-  const hasProfileAccess = checkPermission(profilePermissions, profileRoles);
+  if (checkPermission(profilePermissions, profileRoles)) {
+    return { granted: true, profileRoles };
+  }
 
-  if (!hasProfileAccess) {
-    if (!instance.ownerProfileId) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
+  if (!instance.ownerProfileId) {
+    return { granted: false, profileRoles };
+  }
 
-    const org = await db
-      .select({ id: organizations.id })
-      .from(organizations)
-      .where(eq(organizations.profileId, instance.ownerProfileId));
+  const org = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.profileId, instance.ownerProfileId));
 
-    if (!org[0]?.id) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
+  if (!org[0]?.id) {
+    return { granted: false, profileRoles };
+  }
 
-    const orgUser = await getOrgAccessUser({
-      user,
-      organizationId: org[0].id,
-    });
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: org[0].id,
+  });
 
-    if (!checkPermission(orgFallbackPermissions, orgUser?.roles ?? [])) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
+  return {
+    granted: checkPermission(orgFallbackPermissions, orgUser?.roles ?? []),
+    profileRoles,
+  };
+};
+
+/**
+ * Non-throwing counterpart of {@link assertInstanceProfileAccess}, for gates
+ * that admit a caller on one of several independent grounds and so can't let
+ * the first failed check throw.
+ */
+export const hasInstanceProfileAccess = async (
+  input: InstanceProfileAccessInput,
+): Promise<boolean> => (await resolveInstanceProfileAccess(input)).granted;
+
+/**
+ * Asserts profile-level access, falling back to org-level access if the user
+ * doesn't have a profileUser role on the given profile.
+ *
+ * Uses `instance.profileId` for the profile-level check and
+ * `instance.ownerProfileId` for the org-level fallback lookup.
+ */
+export const assertInstanceProfileAccess = async (
+  input: InstanceProfileAccessInput,
+): Promise<NormalizedRole[]> => {
+  const { granted, profileRoles } = await resolveInstanceProfileAccess(input);
+
+  if (!granted) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
 
   // Profile-level roles only (empty when admitted via the org fallback).
