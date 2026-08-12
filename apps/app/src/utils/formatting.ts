@@ -24,14 +24,11 @@ const DEFAULT_LOCALE = 'en-US';
  * the amount unlabeled beats fabricating the wrong symbol, and the bad code is
  * logged once so the record can be repaired.
  *
- * Every currency-styled `Intl` call on proposal data should go through this
- * (or {@link getCurrencySymbol}) rather than calling `Intl` directly.
+ * Deliberately module-private: {@link formatMoney} is the only entry point, so
+ * a new caller can't reintroduce the per-site option bags (or a per-site
+ * locale) that made the same budget render differently on two surfaces.
  */
-export function formatCurrency(
-  amount: number,
-  locale: string = DEFAULT_LOCALE,
-  currency: string = 'USD',
-): string {
+function formatCurrency(amount: number, currency: string): string {
   // Whole amounts render without decimals ("$5,000", not "$5,000.00"). Only
   // that case needs an override: for a fractional amount `Intl` already
   // defaults both bounds to the number of decimals the currency actually has,
@@ -41,18 +38,15 @@ export function formatCurrency(
     : {};
 
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
       style: 'currency',
       currency,
       ...wholeAmountDigits,
     }).format(amount);
   } catch {
     reportInvalidCurrency(currency);
-    // Deliberately drops the caller's locale. This branch exists to absorb a
-    // throw, so it must not be able to throw itself, and a malformed `locale`
-    // is one of the two things that can throw above. Without `style:
-    // 'currency'` there is no currency to take a decimal count from, so a
-    // fractional amount gets the plain-number default of 2.
+    // Without `style: 'currency'` there is no currency to take a decimal count
+    // from, so a fractional amount gets the plain-number default of 2.
     return new Intl.NumberFormat(DEFAULT_LOCALE, wholeAmountDigits).format(
       amount,
     );
@@ -72,7 +66,7 @@ export function formatMoney(budget: {
   amount: number;
   currency: string;
 }): string {
-  return formatCurrency(budget.amount, DEFAULT_LOCALE, budget.currency);
+  return formatCurrency(budget.amount, budget.currency);
 }
 
 /**
@@ -105,27 +99,24 @@ const CURRENCY_SYMBOL_OVERRIDES = new Map<string, string>([
  * a CAD process sees the same `$` prefix a USD one shows.
  *
  * Takes the symbol from `formatToParts` rather than stripping digits out of a
- * formatted string: `\d` matches ASCII only, so an Arabic or Bengali locale
+ * formatted string: `\d` matches ASCII only, so a locale with non-ASCII digits
  * would leave its zero in the "symbol" and render it beside the amount.
- * Defaults to the same locale as {@link formatCurrency} so an input's prefix
- * and the value rendered next to it can't disagree.
+ * Resolves at {@link DEFAULT_LOCALE}, the same locale {@link formatMoney}
+ * renders with, so an input's prefix and the value beside it can't disagree.
  *
  * Falls back to the code itself rather than `''` for a code `Intl` rejects: an
  * unlabeled amount reads as dollars to most users, and the input this prefixes
  * would otherwise render with no currency marker at all.
  */
-export function getCurrencySymbol(
-  currency: string,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function getCurrencySymbol(currency: string): string {
   const override = CURRENCY_SYMBOL_OVERRIDES.get(currency);
-  if (override && locale === DEFAULT_LOCALE) {
+  if (override) {
     return override;
   }
 
   try {
     return (
-      new Intl.NumberFormat(locale, { style: 'currency', currency })
+      new Intl.NumberFormat(DEFAULT_LOCALE, { style: 'currency', currency })
         .formatToParts(0)
         .find((part) => part.type === 'currency')
         ?.value.trim() || currency

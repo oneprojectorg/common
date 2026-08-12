@@ -104,15 +104,16 @@ export function resolveProposalSystemFields(proposal: Proposal) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
-  // Raw, not `fallback.budget`: `budgetValueSchema` stamps USD onto legacy
-  // bare-number budgets, which would then outrank the process's own currency.
-  const budgetCurrency = resolveBudgetFallbackCurrency(
+  // The server resolved this before parsing (`parseProposalDataWithBudgetCurrency`),
+  // so `proposalData.budget.currency` is already the process's where the row
+  // named none — this reads that answer back rather than re-deriving it.
+  const fallbackCurrency = resolveBudgetFallbackCurrency(
     proposal.proposalData,
     template,
   );
 
   if (proposal.documentContent?.type !== 'json' || !template) {
-    return { ...fallback, budgetCurrency };
+    return { ...fallback, budgetCurrency: fallbackCurrency };
   }
 
   const { fragments } = proposal.documentContent;
@@ -137,9 +138,17 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     }
   }
 
+  const overrides = resolveSystemFieldOverrides(
+    fragmentTexts,
+    fallbackCurrency,
+  );
+
   return {
     ...fallback,
-    ...resolveSystemFieldOverrides(fragmentTexts, budgetCurrency),
-    budgetCurrency,
+    ...overrides,
+    // Take the currency off the budget actually being rendered, so an
+    // allocated amount can never carry a different symbol than the requested
+    // one beside it when the fragment names a currency of its own.
+    budgetCurrency: overrides.budget?.currency ?? fallbackCurrency,
   };
 }

@@ -11,12 +11,14 @@ import {
   getSubmittedReviewScore,
   proposalRelations,
 } from './listProposalsWithReviewAggregates';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
+import { resolveBudgetFallbackCurrency } from './templateBudget';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 export const getProposalWithReviewAggregatesInputSchema =
@@ -59,18 +61,20 @@ export async function getProposalWithReviewAggregates(
         .map((c) => c.key)
     : [];
 
-  const [proposal, categoriesByProposalId] = await Promise.all([
-    db.query.proposals.findFirst({
-      // Moderation-detached (CSAM) proposals are treated as not-found even
-      // for admins — same 404 the endpoint returns for a plain missing row.
-      where: {
-        RAW: (table) =>
-          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
-      },
-      with: proposalRelations({ processInstanceId, phaseId }),
-    }),
-    getCategoriesByProposalIds([proposalId]),
-  ]);
+  const [proposal, categoriesByProposalId, proposalTemplate] =
+    await Promise.all([
+      db.query.proposals.findFirst({
+        // Moderation-detached (CSAM) proposals are treated as not-found even
+        // for admins — same 404 the endpoint returns for a plain missing row.
+        where: {
+          RAW: (table) =>
+            and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+        },
+        with: proposalRelations({ processInstanceId, phaseId }),
+      }),
+      getCategoriesByProposalIds([proposalId]),
+      resolveProposalTemplate(instance.instanceData, instance.processId),
+    ]);
 
   if (!proposal || proposal.processInstanceId !== processInstanceId) {
     throw new NotFoundError('Proposal', proposalId);
@@ -100,6 +104,12 @@ export async function getProposalWithReviewAggregates(
 
   return proposalWithSubmittedReviewsSchema.parse({
     proposal,
+    // Resolved from the raw row, before `proposalSchema` parses `proposalData`
+    // and stamps a fabricated USD onto a legacy bare-number budget.
+    budgetCurrency: resolveBudgetFallbackCurrency(
+      proposal.proposalData,
+      proposalTemplate,
+    ),
     aggregates,
     categories: categoriesByProposalId.get(proposal.id) ?? [],
     reviews,

@@ -30,7 +30,10 @@ import {
   decisionPermission,
   fromDecisionBitField,
 } from './permissions';
-import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import {
+  type ProposalData,
+  parseProposalDataWithBudgetCurrency,
+} from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { ProposalTemplateSchema } from './types';
 
@@ -169,7 +172,10 @@ export const getProposal = async ({
     proposal.processInstance.instanceData as Record<string, unknown> | null,
     proposal.processInstance.processId,
   );
-  const parsedProposalData = parseProposalData(proposal.proposalData);
+  const parsedProposalData = parseProposalDataWithBudgetCurrency(
+    proposal.proposalData,
+    proposalTemplate,
+  );
   const collaborationDocVersionId =
     proposal.status === ProposalStatus.DRAFT
       ? undefined

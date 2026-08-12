@@ -42,6 +42,12 @@ interface ResultsPageInstance {
   description: string | null;
   process?: {
     description: string | null;
+    /** Where the legacy route's template lives — `legacyInstanceDataEncoder`
+     * drops `instanceData.proposalTemplate`, so this is the only copy that
+     * survives the wire there. */
+    processSchema?: {
+      proposalTemplate?: ProposalTemplateSchema | null;
+    } | null;
   } | null;
   instanceData?: {
     // Legacy instances omit `rules` on phases; the ballot tab is gated by
@@ -175,7 +181,8 @@ function ResultsPageContent({
             <ResultsStats
               instanceId={instanceId}
               currency={getTemplateBudgetCurrency(
-                instance.instanceData?.proposalTemplate,
+                instance.instanceData?.proposalTemplate ??
+                  instance.process?.processSchema?.proposalTemplate,
               )}
             />
           </Suspense>

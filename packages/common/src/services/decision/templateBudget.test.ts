@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseProposalData } from './proposalDataSchema';
+import {
+  parseProposalData,
+  parseProposalDataWithBudgetCurrency,
+} from './proposalDataSchema';
 import {
   DEFAULT_BUDGET_CURRENCY,
   getBudgetCurrency,
@@ -166,5 +169,43 @@ describe('resolveBudgetFallbackCurrency', () => {
     expect(resolveBudgetFallbackCurrency({ budget: 5000 }, null)).toBe(
       DEFAULT_BUDGET_CURRENCY,
     );
+  });
+});
+
+describe('parseProposalDataWithBudgetCurrency', () => {
+  const eurTemplate: ProposalTemplateSchema = {
+    type: 'object',
+    properties: {
+      budget: {
+        type: 'object',
+        'x-format': 'money',
+        properties: { currency: { type: 'string', default: 'EUR' } },
+      },
+    },
+  };
+
+  it('replaces the fabricated USD with the process currency', () => {
+    // What every server boundary must do before handing proposalData to a
+    // client: once parsed, the fabricated USD is indistinguishable from a real
+    // one, so no downstream reader can recover the process's currency.
+    expect(
+      parseProposalDataWithBudgetCurrency({ budget: 5000 }, eurTemplate),
+    ).toMatchObject({ budget: { amount: 5000, currency: 'EUR' } });
+  });
+
+  it('leaves a genuinely stored currency alone', () => {
+    expect(
+      parseProposalDataWithBudgetCurrency(
+        { budget: { amount: 5000, currency: 'USD' } },
+        eurTemplate,
+      ),
+    ).toMatchObject({ budget: { amount: 5000, currency: 'USD' } });
+  });
+
+  it('adds no budget where there is none', () => {
+    expect(
+      parseProposalDataWithBudgetCurrency({ title: 'No budget' }, eurTemplate)
+        .budget,
+    ).toBeUndefined();
   });
 });

@@ -255,6 +255,10 @@ describe('resolveSystemFieldOverrides', () => {
       { budget: '5,000' },
       { budget: 'not a budget' },
       { budget: '{"currency":"EUR"}' },
+      // A cleared-but-not-deleted amount is unknown, not zero — `Number('')`
+      // and `Number('  ')` are both `0`.
+      { budget: '{"amount":""}' },
+      { budget: '{"amount":"  "}' },
     ]) {
       expect(resolveSystemFieldOverrides(fragmentTexts)).not.toHaveProperty(
         'budget',

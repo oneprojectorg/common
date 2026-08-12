@@ -42,7 +42,10 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { proposalProfileColumns } from './listProposals';
-import { parseProposalData } from './proposalDataSchema';
+import {
+  parseProposalData,
+  parseProposalDataWithBudgetCurrency,
+} from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
@@ -302,7 +305,10 @@ export const listAllProposals = async ({
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments.
-    const storedProposalData = parseProposalData(proposal.proposalData);
+    const storedProposalData = parseProposalDataWithBudgetCurrency(
+      proposal.proposalData,
+      proposalTemplate,
+    );
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,

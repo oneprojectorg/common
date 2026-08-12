@@ -53,10 +53,19 @@ export function CollaborativeBudgetField({
   const { ydoc } = useCollaborativeDoc();
   const budgetInputRef = useRef<HTMLInputElement>(null);
 
-  const initialBudgetValue =
-    initialValue !== null
-      ? { currency: initialValue.currency, amount: initialValue.amount }
-      : null;
+  // `currency ||` rather than the stored value alone: a budget stored with a
+  // blank code would otherwise seed the shared fragment with one, and every
+  // renderer reads the currency back off that fragment.
+  const initialBudgetValue: BudgetData | null = useMemo(
+    () =>
+      initialValue !== null
+        ? {
+            currency: initialValue.currency || fallbackCurrency,
+            amount: initialValue.amount,
+          }
+        : null,
+    [initialValue, fallbackCurrency],
+  );
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
@@ -151,12 +160,17 @@ export function CollaborativeBudgetField({
     // proposal, and a ref would still hold the pre-reset key and suppress the
     // re-emit — letting the next save write the stale server budget over the
     // newer one the author can see in the fragment.
-    if (budgetKey(emitted) === budgetKey(initialValue)) {
+    //
+    // Against the *resolved* initial value, not the raw one: comparing against
+    // a blank stored currency would make the fallback we just filled in look
+    // like an author edit and autosave it merely because the editor was
+    // opened.
+    if (budgetKey(emitted) === budgetKey(initialBudgetValue)) {
       return;
     }
 
     onChangeRef.current?.(emitted ?? null);
-  }, [budgetText, fallbackCurrency, initialValue]);
+  }, [budgetText, fallbackCurrency, initialBudgetValue]);
 
   const handleStartEditing = () => {
     setIsEditing(true);

@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
-import { DEFAULT_BUDGET_CURRENCY } from './templateBudget';
-import type { XFormatPropertySchema } from './types';
+import {
+  DEFAULT_BUDGET_CURRENCY,
+  resolveBudgetFallbackCurrency,
+} from './templateBudget';
+import type { ProposalTemplateSchema, XFormatPropertySchema } from './types';
 
 const categoryValueSchema = z
   .union([z.string(), z.array(z.string()), z.null()])
@@ -149,7 +152,13 @@ export function parseCategoryFragmentValue(value: string): string[] {
  * currency has a fallback to fill it, so both shapes are readable.
  */
 const budgetFragmentObjectSchema = z.object({
-  amount: z.union([z.string(), z.number()]).pipe(z.coerce.number()),
+  // `min(1)` after trimming for the same reason the whitespace guard below
+  // exists: `Number('')` and `Number('  ')` are both `0`, so a cleared-but-not
+  // -deleted `{"amount":""}` would otherwise read as a real zero budget and
+  // get autosaved over the stored amount.
+  amount: z
+    .union([z.string().trim().min(1), z.number()])
+    .pipe(z.coerce.number()),
   currency: z.string().min(1).optional(),
 });
 
@@ -271,6 +280,38 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
     collaborationDocVersionId:
       (raw.collaborationDocVersionId as number) ?? undefined,
+  };
+}
+
+/**
+ * Parse stored proposalData and stamp the resolved currency onto its budget.
+ *
+ * The single place a server boundary should parse proposalData for a client.
+ * `budgetValueSchema` fabricates `'USD'` for legacy bare-number budgets, so a
+ * plain `parseProposalData` hands the client a budget that *claims* dollars —
+ * and every downstream reader, having lost the raw value, has no way left to
+ * tell that claim from a real one. Resolving here, where the raw value is
+ * still in hand, is what makes `resolveBudgetFallbackCurrency` reach the
+ * template at all for exactly the rows that need it.
+ *
+ * The stamp is per-request and never persisted, so it keeps following the
+ * process's currency picker rather than freezing whatever it read today.
+ */
+export function parseProposalDataWithBudgetCurrency(
+  rawProposalData: unknown,
+  template: ProposalTemplateSchema | null | undefined,
+): ProposalData {
+  const parsed = parseProposalData(rawProposalData);
+  if (!parsed.budget) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    budget: {
+      ...parsed.budget,
+      currency: resolveBudgetFallbackCurrency(rawProposalData, template),
+    },
   };
 }
 
