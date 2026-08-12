@@ -13,6 +13,7 @@ import {
   parseProposalData,
   parseSchemaOptions,
   parseStoredBudgetFragmentValue,
+  withStoredBudgetCurrency,
 } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
@@ -432,6 +433,40 @@ describe('parseStoredBudgetFragmentValue', () => {
     for (const text of ['', '   ', '{"amount":""}', 'no budget here']) {
       expect(parseStoredBudgetFragmentValue(text)).toBeUndefined();
     }
+  });
+});
+
+describe('withStoredBudgetCurrency', () => {
+  it('carries a stored currency onto a budget that names none', () => {
+    // The fragment names a currency only when whoever wrote it filled one in,
+    // so an amount edit on a legacy fragment would otherwise persist
+    // `{amount}` over a row that had named EUR — deleting the code, and
+    // dropping the proposal to the process's currency on every surface.
+    expect(withStoredBudgetCurrency({ amount: 6000 }, 'EUR')).toEqual({
+      amount: 6000,
+      currency: 'EUR',
+    });
+  });
+
+  it('keeps the currency the new budget names', () => {
+    expect(
+      withStoredBudgetCurrency({ amount: 6000, currency: 'GBP' }, 'EUR'),
+    ).toEqual({ amount: 6000, currency: 'GBP' });
+  });
+
+  it('names none when nothing is stored to carry', () => {
+    // Not stamping: only a currency already chosen and stored travels, never
+    // one resolved from the template or the default.
+    expect(withStoredBudgetCurrency({ amount: 6000 }, undefined)).toEqual({
+      amount: 6000,
+    });
+    expect(withStoredBudgetCurrency({ amount: 6000 }, '  ')).toEqual({
+      amount: 6000,
+    });
+  });
+
+  it('leaves an absent budget absent', () => {
+    expect(withStoredBudgetCurrency(undefined, 'EUR')).toBeUndefined();
   });
 });
 

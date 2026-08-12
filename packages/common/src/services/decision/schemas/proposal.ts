@@ -143,6 +143,17 @@ export const proposalSchema = z.object({
   allocated: z.string().nullable().optional(),
   proposalTemplate: z.record(z.string(), z.unknown()).nullable().optional(),
   /**
+   * The ISO 4217 code this proposal's unlabeled money is denominated in,
+   * resolved server-side from the raw row and the process template (see
+   * `resolveBudgetFallbackCurrency`).
+   *
+   * Shipped as a code rather than leaving every consumer to derive it: the
+   * legacy results payload would otherwise have to carry the whole multi-KB
+   * template on every row just to name one currency, and rows that never ship
+   * the template could not resolve it at all.
+   */
+  budgetCurrency: z.string().optional(),
+  /**
    * Server-computed plain-text preview of the document body. List reads ship
    * this instead of the full `documentContent` fragments — the card's 3-line
    * excerpt and the language-detection sample both read from it.

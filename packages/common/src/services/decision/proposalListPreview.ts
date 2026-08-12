@@ -45,6 +45,13 @@ export interface ProposalListPreview {
    * consumers don't need the fragments.
    */
   systemFieldOverrides: ProposalSystemFieldOverrides;
+  /**
+   * The currency this row's unlabeled money is denominated in, resolved once
+   * here and shipped with the row. List payloads carry neither the document
+   * fragments nor (on the legacy route) the template, so a client handed only
+   * the amount has nothing left to resolve it from.
+   */
+  budgetCurrency: string;
 }
 
 /**
@@ -68,8 +75,13 @@ export function buildProposalListPreview({
    */
   storedProposalData?: unknown;
 }): ProposalListPreview {
+  const budgetCurrency = resolveBudgetFallbackCurrency(
+    storedProposalData,
+    proposalTemplate,
+  );
+
   if (!documentContent || documentContent.type === 'unavailable') {
-    return { previewText: null, systemFieldOverrides: {} };
+    return { previewText: null, systemFieldOverrides: {}, budgetCurrency };
   }
 
   if (documentContent.type === 'html') {
@@ -80,6 +92,7 @@ export function buildProposalListPreview({
         maxLength: PROPOSAL_PREVIEW_MAX_LENGTH,
       }),
       systemFieldOverrides: {},
+      budgetCurrency,
     };
   }
 
@@ -146,12 +159,15 @@ export function buildProposalListPreview({
     // never renders one budget on a list card and another on its detail page.
     Object.assign(
       systemFieldOverrides,
-      resolveSystemFieldOverrides(
-        fragmentTexts,
-        resolveBudgetFallbackCurrency(storedProposalData, proposalTemplate),
-      ),
+      resolveSystemFieldOverrides(fragmentTexts, budgetCurrency),
     );
   }
 
-  return { previewText, systemFieldOverrides };
+  return {
+    previewText,
+    systemFieldOverrides,
+    // The fragment's own currency wins where it names one, matching the
+    // precedence every renderer applies.
+    budgetCurrency: systemFieldOverrides.budget?.currency ?? budgetCurrency,
+  };
 }

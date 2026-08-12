@@ -309,12 +309,13 @@ export const listProposals = async ({
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
-    const { previewText, systemFieldOverrides } = buildProposalListPreview({
-      documentContent,
-      proposalTemplate,
-      // Raw row — see `resolveBudgetFallbackCurrency`.
-      storedProposalData: proposal.proposalData,
-    });
+    const { previewText, systemFieldOverrides, budgetCurrency } =
+      buildProposalListPreview({
+        documentContent,
+        proposalTemplate,
+        // Raw row — see `resolveBudgetFallbackCurrency`.
+        storedProposalData: proposal.proposalData,
+      });
 
     return {
       id: proposal.id,
@@ -339,6 +340,7 @@ export const listProposals = async ({
       isSelected: selectedIds.has(proposal.id),
       isFlagged: flaggedIds.has(proposal.id),
       previewText: previewText ?? undefined,
+      budgetCurrency,
       documentContent: input.includeDocumentContent
         ? documentContent
         : undefined,

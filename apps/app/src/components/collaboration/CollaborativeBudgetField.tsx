@@ -11,6 +11,7 @@ import {
   type StoredBudget,
   parseBudgetFragmentValue,
   parseStoredBudgetFragmentValue,
+  withStoredBudgetCurrency,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
@@ -88,11 +89,20 @@ export function CollaborativeBudgetField({
     () => parseBudgetFragmentValue(budgetText, fallbackCurrency),
     [budgetText, fallbackCurrency],
   );
-  // What the fragment itself names, which is what gets written back: the
+  // What the fragment itself names, which is what gets written back to it: the
   // resolved `budget` above is for display only.
-  const storedBudget = useMemo(
+  const fragmentBudget = useMemo(
     () => parseStoredBudgetFragmentValue(budgetText),
     [budgetText],
+  );
+  // What a save would write to the proposal row. The fragment is the amount's
+  // source of truth but not the currency's — it names one only when whoever
+  // wrote it filled one in — so a currency already stored on the proposal
+  // carries across rather than being deleted by an amount edit.
+  const storedCurrency = initialValue?.currency;
+  const budgetToPersist = useMemo(
+    () => withStoredBudgetCurrency(fragmentBudget, storedCurrency) ?? null,
+    [fragmentBudget, storedCurrency],
   );
   const setBudget = (newBudget: StoredBudget | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
@@ -154,8 +164,8 @@ export function CollaborativeBudgetField({
     // it doesn't — this field has no currency control, so typing an amount is
     // not a choice of currency and must not record one.
     setBudget(
-      storedBudget?.currency
-        ? { currency: storedBudget.currency, amount: value }
+      fragmentBudget?.currency
+        ? { currency: fragmentBudget.currency, amount: value }
         : { amount: value },
     );
   };
@@ -177,21 +187,28 @@ export function CollaborativeBudgetField({
     // re-emit — letting the next save write the stale server budget over the
     // newer one the author can see in the fragment.
     //
-    // On the amount alone, because this field has no currency control: a
-    // currency difference is never an author edit, only the fragment and the
-    // resolved fallback disagreeing. Emitting on it would autosave whichever
-    // code an older editor happened to write into the fragment — pinning the
-    // proposal to a currency nobody chose, merely because it was opened.
-    if (budget?.amount === initialValue?.amount) {
+    // Against what a save would actually write, so the two can't drift: an
+    // amount edit emits, and so does a fragment that names a *different*
+    // currency than the row (the editor pill would otherwise read €5,000
+    // forever while every other surface kept reading $5,000). Comparing the
+    // resolved `budget` instead would emit whenever the fragment merely names
+    // none — pinning the proposal to a fallback nobody chose, merely because
+    // it was opened.
+    if (
+      budgetToPersist?.amount === initialValue?.amount &&
+      budgetToPersist?.currency === storedCurrency
+    ) {
       return;
     }
 
-    // The fragment's own value, not the resolved one: emitting the resolved
-    // currency would autosave it onto the row, and this effect fires on mount
-    // whenever the fragment and the row disagree on the amount — so merely
-    // opening a proposal would pin it to a currency nobody chose.
-    onChangeRef.current?.(storedBudget ?? null);
-  }, [budgetText, budget, storedBudget, initialValue?.amount]);
+    onChangeRef.current?.(budgetToPersist);
+  }, [
+    budgetText,
+    budget,
+    budgetToPersist,
+    initialValue?.amount,
+    storedCurrency,
+  ]);
 
   const handleStartEditing = () => {
     setIsEditing(true);

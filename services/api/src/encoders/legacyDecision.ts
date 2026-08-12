@@ -231,11 +231,12 @@ const legacyProposalEncoder = createSelectSchema(proposals)
     // Server-computed plain-text preview — list-shaped reads (getInstanceResults
     // flows through listProposals) ship this instead of documentContent.
     previewText: z.string().optional(),
-    // The process's proposal template, attached per row by `listProposals`.
-    // Carried on the wire because the results cards resolve their budget
-    // currency from it: without it a EUR process renders '$7,500 requested'
-    // under a results banner that correctly reads euros.
-    proposalTemplate: jsonSchemaEncoder.nullish(),
+    // Resolved per row by `listProposals`. Carried on the wire because the
+    // results cards have nothing else to render their budget with: without it a
+    // EUR process shows '$7,500 requested' under a results banner that
+    // correctly reads euros. The code alone, not the template it comes from —
+    // this response repeats every field on every row.
+    budgetCurrency: z.string().optional(),
     // Document content (TipTap JSON or legacy HTML)
     documentContent: documentContentSchema.optional(),
   });

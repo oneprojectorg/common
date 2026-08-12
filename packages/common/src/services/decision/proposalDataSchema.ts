@@ -284,6 +284,35 @@ export function parseBudgetFragmentValue(
   };
 }
 
+/**
+ * The budget a writer should persist, given the one already stored.
+ *
+ * Writers build the next budget from the document fragment, which names a
+ * currency only when whoever wrote it filled one in. Persisting that verbatim
+ * *deletes* a currency the proposal already stored — the amount survives, but
+ * every surface drops to the process's currency (or USD) for a proposal that
+ * had named its own.
+ *
+ * Not the stamping the design forbids: only a currency already chosen and
+ * stored is carried across, never one resolved from the template or the
+ * default. A budget that names its own currency keeps it; one written where
+ * nothing was stored still names none.
+ */
+export function withStoredBudgetCurrency(
+  budget: StoredBudget | undefined,
+  /** The code the proposal's stored budget names, if any. */
+  storedCurrency: string | undefined,
+): StoredBudget | undefined {
+  // `trim()` on both sides, matching `getStoredBudgetCurrency`: a blank code
+  // names no currency, so it neither counts as one to keep nor as one to carry.
+  if (!budget || budget.currency?.trim()) {
+    return budget;
+  }
+
+  const currency = storedCurrency?.trim();
+  return currency ? { ...budget, currency } : budget;
+}
+
 export function formatProposalCategories(
   categories: string[],
   separator = ', ',

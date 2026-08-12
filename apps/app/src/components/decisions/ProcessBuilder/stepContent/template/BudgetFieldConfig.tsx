@@ -50,19 +50,26 @@ const CURRENCY_CODES = [
   'SAR',
 ] as const;
 
+let currencyOptions: { code: string; label: string }[] | undefined;
+
 /**
- * Picker entries, built once. Each is the code plus its symbol when there is
- * one to add — `Intl` returns the code itself for currencies it has no glyph
- * for, which would otherwise render as "CHF CHF".
+ * Picker entries, built on first use and kept. Each is the code plus its symbol
+ * when there is one to add — `Intl` returns the code itself for currencies it
+ * has no glyph for, which would otherwise render as "CHF CHF".
  *
- * Precomputed at module scope rather than in render: the list is constant, and
- * `getCurrencySymbol` constructs an `Intl.NumberFormat` per code, which this
- * card would otherwise redo on every keystroke in the max-budget field.
+ * Cached rather than rebuilt in render: this card re-renders on every keystroke
+ * in the max-budget field. Lazy rather than computed at module scope: resolving
+ * a symbol per code is `Intl` work, and every page that pulls in this module
+ * would pay for the whole list before first paint — including the ones where
+ * the budget field is switched off and the picker never renders.
  */
-const CURRENCY_OPTIONS = CURRENCY_CODES.map((code) => {
-  const symbol = getCurrencySymbol(code);
-  return { code, label: symbol === code ? code : `${code} ${symbol}` };
-});
+function getCurrencyOptions() {
+  currencyOptions ??= CURRENCY_CODES.map((code) => {
+    const symbol = getCurrencySymbol(code);
+    return { code, label: symbol === code ? code : `${code} ${symbol}` };
+  });
+  return currencyOptions;
+}
 
 export function BudgetFieldConfig({
   template,
@@ -209,7 +216,7 @@ export function BudgetFieldConfig({
               onSelectionChange={handleBudgetCurrencyChange}
               buttonClassName="bg-white"
             >
-              {CURRENCY_OPTIONS.map(({ code, label }) => (
+              {getCurrencyOptions().map(({ code, label }) => (
                 <SelectItem key={code} id={code}>
                   {label}
                 </SelectItem>

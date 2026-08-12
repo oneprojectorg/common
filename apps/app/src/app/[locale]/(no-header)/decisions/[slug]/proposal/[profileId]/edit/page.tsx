@@ -281,7 +281,6 @@ function ProposalEditorContent({
     proposalId: proposal.id,
     proposalData: proposal.proposalData,
     fragmentNames,
-    proposalTemplate: instance.instanceData.proposalTemplate,
   });
 
   const asideSlot =

@@ -302,12 +302,13 @@ export const listAllProposals = async ({
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments.
-    const { previewText, systemFieldOverrides } = buildProposalListPreview({
-      documentContent: documentContentMap.get(proposal.id),
-      proposalTemplate,
-      // Raw row — see `resolveBudgetFallbackCurrency`.
-      storedProposalData: proposal.proposalData,
-    });
+    const { previewText, systemFieldOverrides, budgetCurrency } =
+      buildProposalListPreview({
+        documentContent: documentContentMap.get(proposal.id),
+        proposalTemplate,
+        // Raw row — see `resolveBudgetFallbackCurrency`.
+        storedProposalData: proposal.proposalData,
+      });
 
     return {
       id: proposal.id,
@@ -331,6 +332,7 @@ export const listAllProposals = async ({
       isSelected: selectedIds.has(proposal.id),
       isFlagged: flaggedIds.has(proposal.id),
       previewText: previewText ?? undefined,
+      budgetCurrency,
       proposalTemplate,
     };
   });

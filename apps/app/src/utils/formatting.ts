@@ -113,9 +113,10 @@ export function formatAmount(amount: number): string {
  * Takes the symbol from `formatToParts` rather than stripping digits out of a
  * formatted string: `\d` matches ASCII only, so a locale with non-ASCII digits
  * would leave its zero in the "symbol" and render it beside the amount.
- * Resolves through the same `Intl` call at the same {@link DEFAULT_LOCALE} that
- * {@link formatMoney} renders with, so an input's prefix and the value beside
- * it can't disagree. That rules out a hand-written override map: prettier
+ * Resolves through the very same cached formatter {@link formatMoney} renders
+ * with, so an input's prefix and the value beside it can't disagree — and a
+ * picker listing every supported code costs one construction per currency for
+ * the whole session rather than one per call. That rules out a hand-written override map: prettier
  * glyphs for the codes `Intl` spells out (`S$` for SGD, `د.إ` for AED) would
  * put `S$` in front of the input and `SGD 5,000` in the pill that replaces it.
  *
@@ -126,7 +127,7 @@ export function formatAmount(amount: number): string {
 export function getCurrencySymbol(currency: string): string {
   try {
     return (
-      new Intl.NumberFormat(DEFAULT_LOCALE, { style: 'currency', currency })
+      getMoneyFormatter(currency, true)
         .formatToParts(0)
         .find((part) => part.type === 'currency')
         ?.value.trim() || currency

@@ -63,18 +63,27 @@ export async function validateProposalAgainstTemplate(
         getFragmentTextFromTipTapDoc(fragmentDocs[name] as JSONContent),
       ]),
     );
+    const assembledData = assembleProposalData(proposalTemplate, fragmentTexts);
     const validationData = {
-      ...assembleProposalData(proposalTemplate, fragmentTexts),
+      ...assembledData,
       ...(storedProposalData.category !== undefined
         ? { category: storedProposalData.category }
         : {}),
+      // Backfill only — the fragment outranks the row wherever it holds a
+      // budget, because that is what the author sees and what the client's
+      // `useProposalValidation` checks. Overriding it with the row instead
+      // rejected on submit a budget the form had just called valid (the row can
+      // still hold a creation-time amount the author has since edited down),
+      // leaving no edit that clears the error.
+      //
       // Shaped for the template, not handed over as parsed: legacy templates
       // declare the budget as `{type: 'number'}`, and AJV runs with
       // `coerceTypes: false`, so injecting the parsed `{amount, currency}`
       // object failed validation outright — the author saw "Budget is invalid"
       // and could not submit at all. An unreadable stored budget goes through
       // raw so it fails on its own merits rather than reading as absent.
-      ...(storedProposalData.budget !== undefined
+      ...(assembledData.budget === undefined &&
+      storedProposalData.budget !== undefined
         ? {
             budget: parsed.budget
               ? toValidationBudget(

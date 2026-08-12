@@ -104,15 +104,16 @@ export function resolveProposalSystemFields(proposal: Proposal) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
-  // Resolvable from the parsed data the client is served: `budgetValueSchema`
-  // reads every shape storage carries and leaves the currency absent rather
-  // than defaulting it, so a parsed budget still says truthfully whether the
-  // author named one and which. Matches what the server's list path resolves
-  // from the raw row, so a card and its detail page agree.
-  const fallbackCurrency = resolveBudgetFallbackCurrency(
-    proposal.proposalData,
-    template,
-  );
+  // Server-resolved where the row carries it — list payloads ship the code
+  // instead of the template it was resolved from, and the legacy results route
+  // ships no template at all. Otherwise resolved here, from the parsed data the
+  // client is served: `budgetValueSchema` reads every shape storage carries and
+  // leaves the currency absent rather than defaulting it, so a parsed budget
+  // still says truthfully whether the author named one and which. Either way
+  // the answer is the same, so a card and its detail page agree.
+  const fallbackCurrency =
+    proposal.budgetCurrency ??
+    resolveBudgetFallbackCurrency(proposal.proposalData, template);
 
   if (proposal.documentContent?.type !== 'json' || !template) {
     return { ...fallback, budgetCurrency: fallbackCurrency };

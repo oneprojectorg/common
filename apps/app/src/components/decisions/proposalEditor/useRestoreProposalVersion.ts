@@ -3,11 +3,11 @@
 import { trpc } from '@op/api/client';
 import {
   normalizeProposalCategories,
-  parseBudgetFragmentValue,
   parseProposalData,
-  resolveBudgetFallbackCurrency,
+  parseStoredBudgetFragmentValue,
+  withStoredBudgetCurrency,
 } from '@op/common/client';
-import type { ProposalData, ProposalTemplateSchema } from '@op/common/client';
+import type { ProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { JSONContent } from '@tiptap/react';
 
@@ -20,15 +20,6 @@ interface UseRestoreProposalVersionOptions {
   proposalId: string;
   proposalData: unknown;
   fragmentNames: string[];
-  /**
-   * The proposal's template. Restoring writes the extracted budget straight to
-   * `proposalData`, so a version fragment that names no currency of its own
-   * needs one: the currency already stored on the proposal, or this template's
-   * where there is none (see `resolveBudgetFallbackCurrency`). Without it a
-   * legacy fragment is persisted as USD on a process denominated in something
-   * else.
-   */
-  proposalTemplate: ProposalTemplateSchema | null | undefined;
 }
 
 /**
@@ -42,7 +33,6 @@ export function useRestoreProposalVersion({
   proposalId,
   proposalData,
   fragmentNames,
-  proposalTemplate,
 }: UseRestoreProposalVersionOptions) {
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
@@ -72,14 +62,15 @@ export function useRestoreProposalVersion({
     const nextCategory = normalizeProposalCategories(
       getFragmentText(fragmentContents.category),
     );
-    // Whole `proposalData`, not `currentProposalData.budget`: the currency to
-    // fall back to is the row's, and reading it off the budget alone would
-    // miss it whenever the amount is the part that's unreadable. Restore
-    // persists what this produces, so getting it wrong writes the template
-    // default over the currency stored on the row.
-    const nextBudget = parseBudgetFragmentValue(
-      getFragmentText(fragmentContents.budget),
-      resolveBudgetFallbackCurrency(proposalData, proposalTemplate),
+    // Restore *persists* this, so it reads the version's fragment as written
+    // and never resolves a currency: filling the gap with the template's would
+    // stamp a code nobody chose onto the row, pinning the proposal to it if the
+    // process's currency is corrected later. A currency the row already stores
+    // carries across, because the fragment names one only when whoever wrote it
+    // filled one in — restoring an amount must not delete it.
+    const nextBudget = withStoredBudgetCurrency(
+      parseStoredBudgetFragmentValue(getFragmentText(fragmentContents.budget)),
+      currentProposalData.budget?.currency,
     );
 
     return {
