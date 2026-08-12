@@ -175,10 +175,12 @@ const buildBaseConditions = (
 
   const searchTerm = search?.trim();
   if (searchTerm) {
-    // Title search. `profiles.name` on the proposal's own profile is the
-    // authoritative title — `proposalData.title` is frozen at creation, since
-    // for collab-doc proposals the title lives in a TipTap fragment and the
-    // editor's autosave only ever writes the profile row (see updateProposal).
+    // Title search against `profiles.name` on the proposal's own profile — the
+    // database mirror of the title, rewritten by the editor's autosave on every
+    // change (see updateProposal). It's the only current copy SQL can filter on:
+    // a collab-doc proposal's displayed title is resolved from a TipTap
+    // fragment, and `proposalData.title` is never rewritten after creation, so
+    // matching the JSON would match titles that no longer exist.
     //
     // Correlated EXISTS, not a `profileId IN (SELECT ...)` semi-join: the
     // semi-join scans every profile on the platform before the instance/phase
