@@ -1432,7 +1432,7 @@
   "Moving…": "جارٍ النقل…",
   "Move back to {phase}?": "العودة إلى {phase}؟",
   "Moved back to {phase}": "تمت العودة إلى {phase}",
-  "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments and results it created are deleted. Notification emails that were already sent cannot be recalled.": "يؤدي هذا إلى التراجع عن آخر انتقال. لن تعود المقترحات التي انتقلت إلى هذه المرحلة تابعة لها، وسيتم حذف أي تعيينات مراجعة أو نتائج أنشأها الانتقال. لا يمكن سحب رسائل الإشعارات التي أُرسلت بالفعل.",
+  "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.": "يؤدي هذا إلى التراجع عن آخر انتقال. لن تعود المقترحات التي انتقلت إلى هذه المرحلة تابعة لها، وسيتم حذف أي تعيينات مراجعة أنشأها الانتقال. يتم الاحتفاظ بالأصوات والنتائج المسجَّلة. لا يمكن سحب رسائل الإشعارات التي أُرسلت بالفعل.",
   "Open reviews": "المراجعات المفتوحة",
   "Reviewers can see each other's reviews on a proposal": "يمكن للمراجعين رؤية مراجعات بعضهم البعض على المقترح",
   "Turn on Open Reviews?": "تفعيل المراجعات المفتوحة؟",

@@ -1432,7 +1432,7 @@
   "Moving…": "Retour en cours…",
   "Move back to {phase}?": "Revenir à {phase} ?",
   "Moved back to {phase}": "Retour à {phase} effectué",
-  "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments and results it created are deleted. Notification emails that were already sent cannot be recalled.": "Cette action annule la dernière avancée. Les propositions transférées vers cette phase cessent d'en faire partie, et les attributions de relecture et les résultats qu'elle a créés sont supprimés. Les e-mails de notification déjà envoyés ne peuvent pas être rappelés.",
+  "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.": "Cette action annule la dernière avancée. Les propositions transférées vers cette phase cessent d'en faire partie, et les attributions de relecture qu'elle a créées sont supprimées. Les votes et les résultats enregistrés sont conservés. Les e-mails de notification déjà envoyés ne peuvent pas être rappelés.",
   "Open reviews": "Évaluations ouvertes",
   "Reviewers can see each other's reviews on a proposal": "Les évaluateurs peuvent voir les évaluations des autres sur une proposition",
   "Turn on Open Reviews?": "Activer les évaluations ouvertes ?",

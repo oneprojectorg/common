@@ -1440,7 +1440,7 @@
   "Moving…": "Moving…",
   "Move back to {phase}?": "Move back to {phase}?",
   "Moved back to {phase}": "Moved back to {phase}",
-  "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments and results it created are deleted. Notification emails that were already sent cannot be recalled.": "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments and results it created are deleted. Notification emails that were already sent cannot be recalled.",
+  "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.": "This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.",
   "Open reviews": "Open reviews",
   "Reviewers can see each other's reviews on a proposal": "Reviewers can see each other's reviews on a proposal",
   "Turn on Open Reviews?": "Turn on Open Reviews?",

@@ -66,7 +66,7 @@ export const RevertPhaseButton = ({
           </AlertDialogTitle>
           <AlertDialogDescription>
             {t(
-              'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments and results it created are deleted. Notification emails that were already sent cannot be recalled.',
+              'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.',
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>

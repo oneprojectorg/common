@@ -3,6 +3,8 @@ import {
   ProcessStatus,
   ProposalReviewAssignmentStatus,
   ProposalStatus,
+  decisionsVoteProposals,
+  decisionsVoteSubmissions,
   proposalReviewAssignments,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -143,7 +145,7 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
     expect(attachedAfter).toHaveLength(0);
   });
 
-  it('deletes the results the final-phase advance recorded', async ({
+  it('keeps the results the final-phase advance recorded', async ({
     task,
     onTestFinished,
   }) => {
@@ -159,10 +161,55 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
 
     await caller.platform.admin.revertDecisionPhase({ instanceId });
 
+    // The result record is an append-only audit of what the process decided;
+    // a later re-advance appends a fresh row that supersedes this one.
     const resultsAfter = await db.query.decisionProcessResults.findMany({
       where: { processInstanceId: instanceId },
     });
-    expect(resultsAfter).toHaveLength(0);
+    expect(resultsAfter.map((row) => row.id).sort()).toEqual(
+      resultsBefore.map((row) => row.id).sort(),
+    );
+  });
+
+  it('keeps votes cast before the reversal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, proposal, setup, caller } =
+      await createAdvancedInstance(task.id, onTestFinished);
+
+    const [submission] = await db
+      .insert(decisionsVoteSubmissions)
+      .values({
+        processInstanceId: instanceId,
+        submittedByProfileId: setup.instance.profileId,
+        voteData: {
+          schemaVersion: '1.0.0',
+          schemaType: 'test',
+          submissionMetadata: { timestamp: new Date().toISOString() },
+          validationSignature: `test-${task.id}`,
+        },
+      })
+      .returning({ id: decisionsVoteSubmissions.id });
+
+    await db.insert(decisionsVoteProposals).values({
+      voteSubmissionId: submission!.id,
+      proposalId: proposal.id,
+    });
+
+    await caller.platform.admin.revertDecisionPhase({ instanceId });
+
+    const submissions = await db
+      .select({ id: decisionsVoteSubmissions.id })
+      .from(decisionsVoteSubmissions)
+      .where(eq(decisionsVoteSubmissions.processInstanceId, instanceId));
+    expect(submissions.map((row) => row.id)).toEqual([submission!.id]);
+
+    const ballots = await db
+      .select({ proposalId: decisionsVoteProposals.proposalId })
+      .from(decisionsVoteProposals)
+      .where(eq(decisionsVoteProposals.voteSubmissionId, submission!.id));
+    expect(ballots.map((row) => row.proposalId)).toEqual([proposal.id]);
   });
 
   it('deletes review assignments that no reviewer has started', async ({
