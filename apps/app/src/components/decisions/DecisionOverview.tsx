@@ -335,7 +335,7 @@ const OverviewHero = ({
           heroImagePath={heroImagePath}
         />
       ) : null}
-      <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
+      <div className="relative z-10 mx-auto flex flex-col items-center gap-8 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex flex-col items-center gap-3">
           {/* Brand teal→green gradient clipped to the title text. This hero is
               the page's <h1>; the sticky DecisionInstanceHeader carries a

@@ -87,19 +87,23 @@ export function StandardDecisionPage({
   return (
     <div className="min-h-full bg-muted">
       <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
-          <DecisionHero
-            title={heroTitle}
-            description={heroDescription ? <p>{heroDescription}</p> : undefined}
-            variant="standard"
-            hasImage={hasHeroImage}
-          />
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-8 px-4 pt-16 pb-8 md:pb-16">
+          <div className="flex flex-col items-center gap-4">
+            <DecisionHero
+              title={heroTitle}
+              description={
+                heroDescription ? <p>{heroDescription}</p> : undefined
+              }
+              variant="standard"
+              hasImage={hasHeroImage}
+            />
 
-          <MemberParticipationFacePile
-            submitters={submitters}
-            total={total}
-            hasImage={hasHeroImage}
-          />
+            <MemberParticipationFacePile
+              submitters={submitters}
+              total={total}
+              hasImage={hasHeroImage}
+            />
+          </div>
 
           <DecisionActionBar
             instanceId={instanceId}
