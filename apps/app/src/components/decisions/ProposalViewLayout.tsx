@@ -58,7 +58,7 @@ export function ProposalViewLayout({
     isActive: boolean;
   };
   /**
-   * Admin overflow menu (shortlist / reject / hide). Gates itself on
+   * Admin overflow menu (hide / delete). Gates itself on
    * `proposal.access.admin`, so it's safe to pass for any viewer.
    */
   moderationProposal?: Proposal;
@@ -143,7 +143,10 @@ export function ProposalViewLayout({
               </Tooltip>
             )}
             {moderationProposal ? (
-              <ProposalAdminMenu proposal={moderationProposal} />
+              <ProposalAdminMenu
+                proposal={moderationProposal}
+                backHref={backHref}
+              />
             ) : null}
             <div className="hidden sm:block">
               <LocaleChooser />

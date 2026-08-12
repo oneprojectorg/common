@@ -5,8 +5,16 @@ import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useCallback } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
+  /**
+   * Skip the relationship lookup entirely. For surfaces that render the
+   * like/follow state but can't act on it — a reviewer-only role, say — so they
+   * don't subscribe to a list they'll never use.
+   */
+  enabled?: boolean;
   onSuccess?: () => void;
   invalidateQueries?: Array<{
     processInstanceId?: string;
@@ -49,9 +57,11 @@ type UserRelationships = Partial<
  */
 export function useRelationshipMutations({
   targetProfileId,
+  enabled = true,
   onSuccess,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
 
   const { user } = useUser();
@@ -64,7 +74,7 @@ export function useRelationshipMutations({
   // Get user's likes and follows
   const { data: userRelationships, isLoading: isLoadingRelationships } =
     trpc.profile.getRelationships.useQuery(relationshipQueryKey, {
-      enabled: !!user,
+      enabled: !!user && enabled,
     });
 
   // Check if current user has liked/followed this profile
@@ -169,12 +179,13 @@ export function useRelationshipMutations({
           context: 'useRelationshipMutations.add',
         });
 
-        // Show user-facing error notification
-        const action =
+        // Four whole sentences rather than a verb slotted into one template:
+        // the pieces don't reassemble into a sentence in every language.
+        toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
-            ? 'like'
-            : 'follow';
-        toast.error(`Failed to ${action}. Please try again.`);
+            ? t("Couldn't like this proposal. Please try again.")
+            : t("Couldn't follow this proposal. Please try again."),
+        );
       },
       onSettled: invalidateAfterMutation,
     });
@@ -232,12 +243,11 @@ export function useRelationshipMutations({
           context: 'useRelationshipMutations.remove',
         });
 
-        // Show user-facing error notification
-        const action =
+        toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
-            ? 'unlike'
-            : 'unfollow';
-        toast.error(`Failed to ${action}. Please try again.`);
+            ? t("Couldn't remove your like. Please try again.")
+            : t("Couldn't unfollow this proposal. Please try again."),
+        );
       },
       onSettled: invalidateAfterMutation,
     });

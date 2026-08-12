@@ -17,6 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 import { formatBudget } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
+import { proposalHref } from './proposalHrefs';
 
 export const ResultsList = ({
   slug,
@@ -55,9 +56,12 @@ export const ResultsList = ({
 
       <ProposalMasonry>
         {proposals.map((proposal) => {
-          const viewHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const viewHref = proposalHref({
+            profileId: proposal.profileId,
+            decisionSlug,
+            slug,
+            instanceId,
+          });
 
           const awardedText =
             proposal.allocated != null

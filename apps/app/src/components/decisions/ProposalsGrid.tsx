@@ -1,9 +1,8 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
-import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
+import type { DecisionAccess } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -30,13 +29,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
-import {
-  ProposalCardActions,
-  ProposalCardMenu,
-  ProposalCardOwnerActions,
-  ProposalCardReviseAction,
-  ProposalCardView,
-} from './ProposalCard';
+import { ProposalBrowseCard } from './ProposalBrowseCard';
+import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
@@ -44,6 +38,7 @@ import {
   CustomFormModal,
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
+import { proposalHref } from './proposalHrefs';
 
 export interface ProposalsProps {
   proposals?: Proposal[];
@@ -308,9 +303,12 @@ const VotingProposalsList = ({
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          const proposalHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const href = proposalHref({
+            profileId: proposal.profileId,
+            decisionSlug,
+            slug,
+            instanceId,
+          });
 
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
@@ -318,7 +316,7 @@ const VotingProposalsList = ({
               <ProposalCardView
                 key={proposal.id}
                 proposal={proposal}
-                href={proposalHref}
+                href={href}
                 selected={isVotedFor}
                 showStatusBadge={false}
                 aside={
@@ -387,11 +385,7 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink
-                    href={proposalHref}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <ButtonLink href={href} variant="outline" className="w-full">
                     {t('Read full proposal')}
                   </ButtonLink>
                 }
@@ -411,11 +405,7 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink
-                    href={proposalHref}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <ButtonLink href={href} variant="outline" className="w-full">
                     {t('Read full proposal')}
                   </ButtonLink>
                 }
@@ -506,12 +496,6 @@ const ViewProposalsList = ({
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
-  const { user } = useUser();
-  const canManageProposals = permissions?.admin ?? false;
-  // Like/Follow require SUBMIT_PROPOSALS (or admin) on the parent decision —
-  // don't offer buttons the API would reject (e.g. reviewer-only roles).
-  const canEngage =
-    (permissions?.submitProposals ?? false) || canManageProposals;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
@@ -526,56 +510,17 @@ const ViewProposalsList = ({
 
   return (
     <ProposalMasonry loadingMore={isFetchingNextPage}>
-      {proposals.map((proposal) => {
-        const isDraft = proposal.status === ProposalStatus.DRAFT;
-        const isEditable = Boolean(proposal.isEditable);
-        const showMenu = canManageProposals || isEditable;
-        const revisionRequestId = revisionRequestIdByProposalId?.get(
-          proposal.id,
-        );
-        const hasRevisionRequest = revisionRequestId !== undefined;
-        // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
-        const editHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
-        const reviseHref = revisionRequestId
-          ? `${editHref}?reviewRevision=${revisionRequestId}`
-          : editHref;
-        const viewHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
-
-        const aside = showMenu ? (
-          <ProposalCardMenu
-            proposal={proposal}
-            canManage={canManageProposals}
-          />
-        ) : undefined;
-
-        // Only pass `actions` when something will actually render — otherwise
-        // the card draws a separator + empty row. Like/Follow render nothing
-        // for non-interacting (anonymous) users, so gate that branch.
-        const actions = hasRevisionRequest ? (
-          <ProposalCardReviseAction editHref={reviseHref} />
-        ) : isDraft || isEditable ? (
-          <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
-        ) : userCanInteract(user) && canEngage ? (
-          <ProposalCardActions proposal={proposal} canEngage={canEngage} />
-        ) : undefined;
-
-        return (
-          <ProposalCardView
-            key={proposal.id}
-            proposal={proposal}
-            href={viewHref}
-            aside={aside}
-            actions={actions}
-            showMetrics={!isDraft}
-            revisionRequested={hasRevisionRequest}
-            className={isDraft ? 'bg-muted' : undefined}
-          />
-        );
-      })}
+      {proposals.map((proposal) => (
+        <ProposalBrowseCard
+          key={proposal.id}
+          proposal={proposal}
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          permissions={permissions}
+          revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
+        />
+      ))}
     </ProposalMasonry>
   );
 };

@@ -5,15 +5,17 @@ import type { DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
+import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalMapHovercard } from './ProposalMapHovercard';
-import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
+import { proposalHref } from './proposalHrefs';
 
 /** Filter for the all-locations pin query — shared with the list, minus the
  * list-only pagination fields (the map returns every located proposal). */
@@ -37,6 +39,8 @@ interface ProposalsMapViewProps {
   slug: string;
   /** Decision profile slug for building proposal links. */
   decisionSlug?: string;
+  /** Open revision requests, keyed by proposal id — drives the revise action. */
+  revisionRequestIdByProposalId?: Map<string, string>;
   /** Role-based capabilities for the current user — drives the admin
    * proposal menu on each list-column card (same logic as the grid view). */
   permissions?: DecisionAccess | null;
@@ -65,10 +69,10 @@ export function ProposalsMapView({
   slug,
   decisionSlug,
   permissions,
+  revisionRequestIdByProposalId,
   mapView,
   listFooter,
 }: ProposalsMapViewProps) {
-  const canManageProposals = permissions?.admin ?? false;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
@@ -78,9 +82,12 @@ export function ProposalsMapView({
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
-      decisionSlug
-        ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-        : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`,
+      proposalHref({
+        profileId: proposal.profileId,
+        decisionSlug,
+        slug,
+        instanceId,
+      }),
     [decisionSlug, slug, instanceId],
   );
 
@@ -189,15 +196,32 @@ export function ProposalsMapView({
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(320px,720px)_minmax(60%,1fr)]">
       <ul className="flex min-w-0 flex-col gap-6">
         {proposals.map((proposal) => (
-          <ProposalMapListItem
+          <li
             key={proposal.id}
-            proposal={proposal}
-            href={hrefFor(proposal)}
-            isActive={activeId === proposal.id}
-            canManage={canManageProposals || Boolean(proposal.isEditable)}
-            onActivate={() => setActiveId(proposal.id)}
-            onDeactivate={() => setActiveId(null)}
-          />
+            onMouseEnter={() => setActiveId(proposal.id)}
+            onMouseLeave={() => setActiveId(null)}
+          >
+            <ProposalBrowseCard
+              proposal={proposal}
+              instanceId={instanceId}
+              slug={slug}
+              decisionSlug={decisionSlug}
+              permissions={permissions}
+              revisionRequestId={revisionRequestIdByProposalId?.get(
+                proposal.id,
+              )}
+              className={cn(
+                // `min-w-0` so a long title can't widen the list column.
+                'min-w-0 transition-colors',
+                // Hovering a row highlights its pin, so `activeId` is set from
+                // either end. `not-[:hover]` is what keeps the two apart: the
+                // tint means "the map is pointing at this", and the pointer
+                // doesn't repaint the row it's already on.
+                activeId === proposal.id &&
+                  'border-input not-[:hover]:bg-muted',
+              )}
+            />
+          </li>
         ))}
         {listFooter && <li>{listFooter}</li>}
       </ul>

@@ -79,6 +79,15 @@
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  /* A count ticking over: the old number slides out as the new one slides in,
+   * both moving the same way. Tune the pair here — the four animations share
+   * them. (Tailwind also mints `duration-count` / `ease-count` from these.) */
+  --duration-count: 0.3s;
+  --ease-count: cubic-bezier(0.08,0.82,0.17,1);
+  --distance-count: 0.75em;
+  --animate-count-in: count-in var(--duration-count) var(--ease-count);
+  --animate-count-out: count-out var(--duration-count) var(--ease-count)
+    forwards;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
@@ -171,6 +180,43 @@
     --text-headline--line-height: 2.25rem;
     --text-display: 3rem;
     --text-display--line-height: 3.625rem;
+  }
+}
+
+/* One pair of keyframes for both directions: `--count-travel` decides which
+ * way, so a decrement is the increment's mirror rather than its own copy.
+ * Offsets are in em, so the slide tracks the text size it inherits. No
+ * clipping: the travel is small enough to read as a tick without a
+ * fixed-height, overflow-hidden box that could misalign against the line. */
+@utility count-rising {
+  --count-travel: var(--distance-count);
+}
+
+@utility count-falling {
+  --count-travel: calc(var(--distance-count) * -1);
+}
+
+@keyframes count-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--count-travel));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The outgoing half travels the way the incoming one came from, so the pair
+ * reads as one movement rather than two. */
+@keyframes count-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--count-travel) * -1));
   }
 }
 
