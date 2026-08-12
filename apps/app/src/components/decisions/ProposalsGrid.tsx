@@ -303,7 +303,8 @@ const VotingProposalsList = ({
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          const href = proposalHref(proposal.profileId, {
+          const href = proposalHref({
+            profileId: proposal.profileId,
             decisionSlug,
             slug,
             instanceId,

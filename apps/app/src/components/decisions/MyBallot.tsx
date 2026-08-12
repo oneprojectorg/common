@@ -85,7 +85,8 @@ const MyBallotProposals = ({
 
       <ProposalMasonry>
         {proposalsData.proposals.map((proposal) => {
-          const viewHref = proposalHref(proposal.profileId, {
+          const viewHref = proposalHref({
+            profileId: proposal.profileId,
             decisionSlug,
             slug,
             instanceId,

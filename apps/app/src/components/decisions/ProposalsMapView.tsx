@@ -93,7 +93,12 @@ export function ProposalsMapView({
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
-      proposalHref(proposal.profileId, { decisionSlug, slug, instanceId }),
+      proposalHref({
+        profileId: proposal.profileId,
+        decisionSlug,
+        slug,
+        instanceId,
+      }),
     [decisionSlug, slug, instanceId],
   );
 

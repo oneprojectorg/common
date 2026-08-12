@@ -52,12 +52,17 @@ export function ProposalBrowseCard({
   const showMenu = canManageProposals || isEditable;
   const hasRevisionRequest = revisionRequestId !== undefined;
 
-  const route = { decisionSlug, slug, instanceId };
-  const editHref = proposalEditHref(proposal.profileId, route);
+  const route = {
+    profileId: proposal.profileId,
+    decisionSlug,
+    slug,
+    instanceId,
+  };
+  const editHref = proposalEditHref(route);
   const reviseHref = revisionRequestId
     ? `${editHref}?reviewRevision=${revisionRequestId}`
     : editHref;
-  const viewHref = proposalHref(proposal.profileId, route);
+  const viewHref = proposalHref(route);
 
   // Only pass `actions` when something will actually render — otherwise the
   // card draws a separator + empty row. Like/Follow aren't here: they are the

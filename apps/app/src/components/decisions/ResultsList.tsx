@@ -56,7 +56,8 @@ export const ResultsList = ({
 
       <ProposalMasonry>
         {proposals.map((proposal) => {
-          const viewHref = proposalHref(proposal.profileId, {
+          const viewHref = proposalHref({
+            profileId: proposal.profileId,
             decisionSlug,
             slug,
             instanceId,
