@@ -15,6 +15,7 @@ import {
   parseStoredBudgetFragmentValue,
   withStoredBudgetCurrency,
 } from './proposalDataSchema';
+import { DEFAULT_BUDGET_CURRENCY } from './templateBudget';
 import type { ProposalTemplateSchema } from './types';
 
 describe('proposalDataSchema category normalization', () => {
@@ -207,7 +208,10 @@ describe('resolveSystemFieldOverrides', () => {
     expect(assembleProposalData(legacyTemplate, fragmentTexts)).toEqual({
       budget: 5000,
     });
-    expect(resolveSystemFieldOverrides(fragmentTexts).budget).toEqual({
+    expect(
+      resolveSystemFieldOverrides(fragmentTexts, DEFAULT_BUDGET_CURRENCY)
+        .budget,
+    ).toEqual({
       amount: 5000,
       currency: 'EUR',
     });
@@ -261,14 +265,18 @@ describe('resolveSystemFieldOverrides', () => {
 
   it('resolves a canonical object-shape fragment', () => {
     expect(
-      resolveSystemFieldOverrides({
-        budget: '{"amount":250,"currency":"GBP"}',
-      }).budget,
+      resolveSystemFieldOverrides(
+        { budget: '{"amount":250,"currency":"GBP"}' },
+        DEFAULT_BUDGET_CURRENCY,
+      ).budget,
     ).toEqual({ amount: 250, currency: 'GBP' });
   });
 
-  it('defaults a bare numeric fragment to USD', () => {
-    expect(resolveSystemFieldOverrides({ budget: '5000' }).budget).toEqual({
+  it('gives a bare numeric fragment the currency it was called with', () => {
+    expect(
+      resolveSystemFieldOverrides({ budget: '5000' }, DEFAULT_BUDGET_CURRENCY)
+        .budget,
+    ).toEqual({
       amount: 5000,
       currency: 'USD',
     });
@@ -349,9 +357,9 @@ describe('resolveSystemFieldOverrides', () => {
       { budget: '{"amount":""}' },
       { budget: '{"amount":"  "}' },
     ]) {
-      expect(resolveSystemFieldOverrides(fragmentTexts)).not.toHaveProperty(
-        'budget',
-      );
+      expect(
+        resolveSystemFieldOverrides(fragmentTexts, DEFAULT_BUDGET_CURRENCY),
+      ).not.toHaveProperty('budget');
     }
   });
 
@@ -379,15 +387,19 @@ describe('resolveSystemFieldOverrides', () => {
     });
 
     for (const title of ['2024.10', '1e3', '12345678901234567890']) {
-      expect(resolveSystemFieldOverrides({ title }).title).toBe(title);
+      expect(
+        resolveSystemFieldOverrides({ title }, DEFAULT_BUDGET_CURRENCY).title,
+      ).toBe(title);
     }
   });
 
   it('omits an empty or whitespace-only title', () => {
-    expect(resolveSystemFieldOverrides({})).not.toHaveProperty('title');
-    expect(resolveSystemFieldOverrides({ title: '   ' })).not.toHaveProperty(
-      'title',
-    );
+    expect(
+      resolveSystemFieldOverrides({}, DEFAULT_BUDGET_CURRENCY),
+    ).not.toHaveProperty('title');
+    expect(
+      resolveSystemFieldOverrides({ title: '   ' }, DEFAULT_BUDGET_CURRENCY),
+    ).not.toHaveProperty('title');
   });
 });
 

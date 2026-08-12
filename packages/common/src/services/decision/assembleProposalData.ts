@@ -91,9 +91,19 @@ export function assembleProposalData(
           text,
           getBudgetCurrency(schema),
         );
-        // Unreadable: hand AJV the raw text so it fails cleanly rather than
-        // dropping the field and reporting a required budget as missing.
-        data[key] = budget ? toValidationBudget(schema, budget) : text;
+        // Text no reader can make a budget out of ("TBD", `{"amount":""}`) is
+        // *unknown*, the same as it is for display (`resolveSystemFieldOverrides`)
+        // and for the backfill in `validateProposalAgainstTemplate` — so leave
+        // the key absent and let the template decide. A required budget then
+        // fails as missing, which is the error the editor's own "Add budget"
+        // pill describes; handing AJV the raw string instead failed an
+        // object-typed schema with "must be object" on a proposal where nothing
+        // on screen looked wrong, and on an optional budget blocked submission
+        // outright over a field the author was entitled to leave empty.
+        if (!budget) {
+          continue;
+        }
+        data[key] = toValidationBudget(schema, budget);
         break;
       }
       default:
@@ -164,7 +174,9 @@ export interface ProposalSystemFieldOverrides {
  * configured currency, which fragments that name no currency of their own fall
  * back to (see {@link parseBudgetFragmentValue}); the fragment set itself is
  * already gated on the template (see `getProposalFragmentNames`), so no other
- * template lookup is needed here.
+ * template lookup is needed here. The currency is required for the same reason
+ * it is on `parseBudgetFragmentValue` and on `BudgetDisplay`: a default would
+ * let a new surface render dollars on a EUR process without a type error.
  *
  * Shared by the client's `resolveProposalSystemFields` and the server's
  * `buildProposalListPreview` so a proposal cannot render one budget on a list
@@ -172,7 +184,7 @@ export interface ProposalSystemFieldOverrides {
  */
 export function resolveSystemFieldOverrides(
   fragmentTexts: Record<string, string>,
-  budgetCurrency?: string,
+  budgetCurrency: string,
 ): ProposalSystemFieldOverrides {
   const overrides: ProposalSystemFieldOverrides = {};
 

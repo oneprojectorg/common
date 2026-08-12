@@ -10,7 +10,6 @@ import {
   DEFAULT_BUDGET_CURRENCY,
   type StoredBudget,
   parseStoredBudgetFragmentValue,
-  withResolvedBudgetCurrency,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
@@ -85,19 +84,23 @@ export function CollaborativeBudgetField({
     () => parseStoredBudgetFragmentValue(budgetText),
     [budgetText],
   );
-  // The same budget with its currency filled in, for display only. Derived
-  // from the parse above rather than re-parsing the text: one parse makes
-  // "what the pill shows and what a save writes agree" structural rather than
-  // something the next reader has to keep true by hand.
-  const budget = useMemo(
-    () =>
-      fragmentBudget &&
-      withResolvedBudgetCurrency(fragmentBudget, fallbackCurrency),
-    [fragmentBudget, fallbackCurrency],
-  );
   // The code the proposal row itself stores, if any. Blank counts as none,
   // matching every other reader.
-  const storedCurrency = initialValue?.currency?.trim() || undefined;
+  //
+  // Latched rather than read straight off the prop, because `initialValue` is
+  // the live *draft*, not the row: clearing the field emits `null`, which sets
+  // `draft.budget` to `null`, so re-reading the prop after a clear says the
+  // proposal names no currency. Clearing and retyping an amount then saved
+  // `{amount}` alone and deleted a stored "EUR" — an author with no currency
+  // control changing the proposal's currency, which is exactly what this field
+  // must never do. Nothing clears the latch: the only way a proposal stops
+  // naming a currency is a writer that has one to offer.
+  const storedCurrencyRef = useRef<string | undefined>(undefined);
+  const rowCurrency = initialValue?.currency?.trim();
+  if (rowCurrency) {
+    storedCurrencyRef.current = rowCurrency;
+  }
+  const storedCurrency = storedCurrencyRef.current;
   // What a save would write to the proposal row: the fragment's amount, under
   // the currency the row already stores.
   //
@@ -129,8 +132,9 @@ export function CollaborativeBudgetField({
   }, [onChange]);
 
   const [isEditing, setIsEditing] = useState(false);
-  const budgetAmount = budget?.amount ?? null;
-  const currency = budget?.currency ?? fallbackCurrency;
+  const budgetAmount = fragmentBudget?.amount ?? null;
+  // `||`, not `??`: a blank stored code names no currency either.
+  const currency = fragmentBudget?.currency || fallbackCurrency;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount

@@ -118,12 +118,42 @@ describe('validateProposalAgainstTemplate budget', () => {
     ).resolves.toMatchObject({ budget: { amount: 5000, currency: 'USD' } });
   });
 
-  it('rejects an unreadable fragment when the row holds no budget either', async () => {
+  it('treats an unreadable fragment with nothing stored as no budget at all', async () => {
+    // Same rule with nothing to fall back to: unknown is not a value. Handing
+    // AJV the raw text instead failed "must be object" on a budget the template
+    // left optional, so a proposal could not be submitted over a field its
+    // author was entitled to leave empty — and the pill read "Add budget".
     fragments.current = { budget: textFragment('TBD') };
 
     await expect(
       validateWith(objectTemplate, { collaborationDocId: 'doc-1' }),
-    ).rejects.toThrow();
+    ).resolves.not.toHaveProperty('budget');
+  });
+
+  it('reports an unreadable fragment as a missing required budget', async () => {
+    fragments.current = { budget: textFragment('TBD') };
+
+    await expect(
+      validateWith(
+        { ...objectTemplate, required: ['budget'] },
+        { collaborationDocId: 'doc-1' },
+      ),
+    ).rejects.toThrow(/required/i);
+  });
+
+  it('ignores a budget the row stores as null', async () => {
+    // `budgetValueSchema` is `.nullish()`, so clearing the budget writes a
+    // literal `null` into the column. Backfilling it put `null` in front of the
+    // budget schema, which AJV rejects with `coerceTypes: false` — an author
+    // with a deliberately empty optional budget could not submit at all.
+    fragments.current = {};
+
+    await expect(
+      validateWith(objectTemplate, {
+        collaborationDocId: 'doc-1',
+        budget: null,
+      }),
+    ).resolves.not.toHaveProperty('budget');
   });
 
   it('rejects a fragment budget over the template maximum', async () => {

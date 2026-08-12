@@ -100,8 +100,14 @@ export async function validateProposalAgainstTemplate(
       // object failed validation outright — the author saw "Budget is invalid"
       // and could not submit at all. An unreadable stored budget goes through
       // raw so it fails on its own merits rather than reading as absent.
-      ...(fragmentBudget === undefined &&
-      storedProposalData.budget !== undefined
+      //
+      // `!= null` rather than `!== undefined`: `budgetValueSchema` is
+      // `.nullish()`, so `updateProposal` writes a literal `budget: null` into
+      // the column for a proposal whose budget was cleared. That is not a
+      // budget to backfill — injecting it put `null` in front of both budget
+      // schemas, and an author with an optional, deliberately empty budget
+      // could not submit at all.
+      ...(fragmentBudget === undefined && storedProposalData.budget != null
         ? {
             budget: parsed.budget
               ? toValidationBudget(

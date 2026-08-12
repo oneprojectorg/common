@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
-import { DEFAULT_BUDGET_CURRENCY } from './templateBudget';
 import type { XFormatPropertySchema } from './types';
 
 const categoryValueSchema = z
@@ -266,10 +265,18 @@ export function parseStoredBudgetFragmentValue(
  * `fallbackCurrency` is the currency already stored on the proposal, or the
  * template's where there is none (see `resolveBudgetFallbackCurrency`), and is
  * used only for fragments that name no currency of their own.
+ *
+ * Required rather than defaulted to `DEFAULT_BUDGET_CURRENCY`: two review
+ * rounds each found a display surface that had simply forgotten to resolve one
+ * and silently rendered dollars on a EUR process, which is why
+ * `BudgetDisplay.fallbackCurrency` is a required prop. A default here puts that
+ * footgun back one layer down, where it compiles clean and nothing on screen
+ * looks wrong. Callers with genuinely nothing to resolve from pass the constant
+ * themselves, and say so.
  */
 export function parseBudgetFragmentValue(
   text: string,
-  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
+  fallbackCurrency: string,
 ): BudgetData | undefined {
   const budget = parseStoredBudgetFragmentValue(text);
   return budget && withResolvedBudgetCurrency(budget, fallbackCurrency);
@@ -280,13 +287,11 @@ export function parseBudgetFragmentValue(
  * renderable.
  *
  * The display counterpart of {@link withStoredBudgetCurrency}: this one may
- * fill the gap from anywhere, because nothing here is written back. Callers
- * that hold a parsed budget already use it instead of re-parsing the fragment
- * a second time to get the resolved form.
+ * fill the gap from anywhere, because nothing here is written back.
  */
-export function withResolvedBudgetCurrency(
+function withResolvedBudgetCurrency(
   budget: StoredBudget,
-  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
+  fallbackCurrency: string,
 ): BudgetData {
   // `||` covers a stored blank code as well as an absent one — neither names a
   // currency.

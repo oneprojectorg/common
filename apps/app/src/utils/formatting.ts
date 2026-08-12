@@ -57,9 +57,11 @@ function getMoneyFormatter(
     formatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
       ...(currency === null
         ? // No currency to take a decimal count from, and the plain-number
-          // default is 3 — so a fallback left to `Intl` renders 5000.567 as
-          // "5,000.567" rather than the money-shaped two places.
-          { maximumFractionDigits: 2 }
+          // defaults are 0–3 — so a fallback left to `Intl` renders 5000.567 as
+          // "5,000.567" and 1000.5 as "1,000.5". Both bounds are pinned to the
+          // money-shaped two places, or a max-budget placeholder reads
+          // "Max 1,000.5" directly beside a pill showing "$1,000.50".
+          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
         : { style: 'currency' as const, currency }),
       ...wholeAmountDigits,
     });
