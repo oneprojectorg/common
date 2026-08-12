@@ -1550,7 +1550,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/logging
       '@op/realtime':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../realtime
       '@op/supabase':
         specifier: workspace:*
