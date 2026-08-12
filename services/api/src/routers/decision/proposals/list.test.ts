@@ -2621,6 +2621,33 @@ describe.concurrent('listProposals: search', () => {
     expect(result.proposals.map((p) => p.id)).not.toContain(second.id);
   });
 
+  it('matches words in any order, and requires all of them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      'Riverside Bike Path',
+      'Downtown Mural',
+    ]);
+
+    // Reversed word order still finds it — a single substring match would not,
+    // since "path riverside" never appears in the title.
+    const reversed = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'path riverside',
+    });
+    expect(reversed.proposals.map((p) => p.id)).toEqual([first.id]);
+
+    // Words are ANDed, so a term drawn from two different titles matches neither.
+    const mixed = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'bike mural',
+    });
+    expect(mixed.proposals).toHaveLength(0);
+    expect(mixed.total).toBe(0);
+  });
+
   it('treats LIKE wildcards in the query as literal characters', async ({
     task,
     onTestFinished,

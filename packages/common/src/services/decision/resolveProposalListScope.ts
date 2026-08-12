@@ -142,6 +142,13 @@ type ReviewAssignmentExclusion = {
 const escapeLikePattern = (value: string): string =>
   value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
+// One predicate per word, so the cap bounds the work a single query can ask for.
+// Past it the extra words are dropped, which only widens an already-narrow match.
+const MAX_SEARCH_WORDS = 10;
+
+const splitSearchWords = (search: string | undefined): string[] =>
+  (search ?? '').split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_WORDS);
+
 // Shared function to build WHERE conditions for both count and data queries.
 // Parameterized on the table reference so callers can pass either the schema
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
@@ -172,11 +179,15 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  const searchTerm = search?.trim();
-  if (searchTerm) {
+  const searchWords = splitSearchWords(search);
+  if (searchWords.length > 0) {
     // Title lives in `profiles.name` (kept current by updateProposal's autosave).
     // `proposalData.title` is frozen at creation — collab-doc titles resolve from
     // a TipTap fragment — so matching the JSON would match dead titles.
+    //
+    // One substring match per word, ANDed: keeps `ike` finding "Bike" (which
+    // full-text search can't, matching only from word starts) while making word
+    // order irrelevant, which a single `%a b%` match can't.
     //
     // Correlated EXISTS, not `profileId IN (SELECT ...)`: the semi-join scans
     // every profile on the platform before the phase predicates narrow anything,
@@ -189,7 +200,9 @@ const buildBaseConditions = (
           .where(
             and(
               eq(profiles.id, t.profileId),
-              ilike(profiles.name, `%${escapeLikePattern(searchTerm)}%`),
+              ...searchWords.map((word) =>
+                ilike(profiles.name, `%${escapeLikePattern(word)}%`),
+              ),
             ),
           ),
       ),
