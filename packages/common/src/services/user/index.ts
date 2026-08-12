@@ -443,3 +443,5 @@ export const completeOnboarding = async ({
     })
     .where(eq(users.authUserId, authUserId));
 };
+
+export { deleteAccount } from './deleteAccount';
