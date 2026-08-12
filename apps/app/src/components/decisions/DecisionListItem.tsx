@@ -98,7 +98,7 @@ export const DecisionListItem = ({
 
   return (
     <>
-      <div className="flex items-start rounded-lg border hover:bg-muted sm:items-center sm:rounded-none sm:border-0 sm:border-b">
+      <div className="flex items-start rounded-lg border hover:bg-muted sm:items-center sm:rounded-none sm:border-0">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
           className={cn(

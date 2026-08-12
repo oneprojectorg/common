@@ -8,7 +8,7 @@ import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { useQueryState } from 'nuqs';
-import { Suspense } from 'react';
+import { Fragment, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,7 +18,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionListItem } from '../DecisionListItem';
 
 const DecisionListItemSkeleton = () => (
-  <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-border">
+  <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0">
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Skeleton className="h-5 w-48" />
@@ -43,7 +43,7 @@ const DecisionListItemSkeleton = () => (
 );
 
 const DecisionsListSkeleton = () => (
-  <div className="flex flex-col gap-4 sm:gap-0">
+  <div className="flex flex-col gap-4">
     {Array.from({ length: 3 }).map((_, i) => (
       <DecisionListItemSkeleton key={i} />
     ))}
@@ -93,9 +93,12 @@ const DecisionsListSuspense = ({
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-0">
-      {paginatedItems.map((item) => (
-        <DecisionListItem key={item.id} item={item} />
+    <div className="flex flex-col gap-4">
+      {paginatedItems.map((item, index) => (
+        <Fragment key={item.id}>
+          <DecisionListItem item={item} />
+          {index < paginatedItems.length - 1 && <hr />}
+        </Fragment>
       ))}
       {shouldShowTrigger && (
         <div ref={ref} className="flex justify-center py-4">
@@ -121,7 +124,7 @@ const AllDecisionsTabs = () => {
   const hasDrafts = draftsCheck.items.length > 0;
   const selectedTab = match(tab, {
     drafts: () => (hasDrafts ? 'drafts' : 'active'),
-    other: 'other',
+    completed: 'completed',
     _: 'active',
   });
 
@@ -131,17 +134,23 @@ const AllDecisionsTabs = () => {
       onValueChange={(value) => {
         setTab(value === 'active' ? null : value);
       }}
+      className="gap-4"
     >
-      <TabsList>
-        <TabsTrigger value="active">{t('Your active processes')}</TabsTrigger>
-        {hasDrafts && (
-          <TabsTrigger value="drafts">{t('Your drafts')}</TabsTrigger>
-        )}
-        <TabsTrigger value="other">{t('Other processes')}</TabsTrigger>
-      </TabsList>
+      <div className="border-b">
+        <TabsList variant="line">
+          <TabsTrigger value="active">{t('Active')}</TabsTrigger>
+          <TabsTrigger value="completed">{t('Completed')}</TabsTrigger>
+          {hasDrafts && <TabsTrigger value="drafts">{t('Drafts')}</TabsTrigger>}
+        </TabsList>
+      </div>
       <TabsContent value="active">
         <Suspense fallback={<DecisionsListSkeleton />}>
           <DecisionsListSuspense status={[ProcessStatus.PUBLISHED]} />
+        </Suspense>
+      </TabsContent>
+      <TabsContent value="completed">
+        <Suspense fallback={<DecisionsListSkeleton />}>
+          <DecisionsListSuspense status={[ProcessStatus.COMPLETED]} />
         </Suspense>
       </TabsContent>
       {hasDrafts && (
@@ -154,11 +163,6 @@ const AllDecisionsTabs = () => {
           </Suspense>
         </TabsContent>
       )}
-      <TabsContent value="other">
-        <Suspense fallback={<DecisionsListSkeleton />}>
-          <DecisionsListSuspense status={[ProcessStatus.COMPLETED]} />
-        </Suspense>
-      </TabsContent>
     </Tabs>
   );
 };
