@@ -716,7 +716,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
 // delegates reading feasibility reviews) without exposing any closed phase.
 
 describe.concurrent('getProposalWithReviewAggregates phase scoping', () => {
-  it('admin without phaseId reads submitted reviews across all phases', async ({
+  it('admin without phaseId defaults to the current phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -727,18 +727,17 @@ describe.concurrent('getProposalWithReviewAggregates phase scoping', () => {
       seeded.context.defaultReviewer.email,
     );
 
+    // The instance sits on the community phase, so the earlier feasibility
+    // review must not appear.
     const result = await adminCaller.decision.getProposalWithReviewAggregates({
       processInstanceId: seeded.context.instance.instance.id,
       proposalId: seeded.proposal.id,
     });
 
-    expect(result.aggregates.assignmentsCount).toBe(2);
-    expect(result.reviews).toHaveLength(2);
-    expect(result.reviews.map((r) => r.reviewer.id).sort()).toEqual(
-      [
-        seeded.feasibilityReviewerProfileId,
-        seeded.communityReviewerProfileId,
-      ].sort(),
+    expect(result.aggregates.assignmentsCount).toBe(1);
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0]!.reviewer.id).toBe(
+      seeded.communityReviewerProfileId,
     );
   });
 
@@ -879,8 +878,9 @@ describe.concurrent('getProposalWithReviewAggregates phase scoping', () => {
     );
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
 
-    // No phaseId would blend reviews across ALL phases — reviewer-tier callers
-    // are rejected outright.
+    // The read gate uses the caller's raw phaseId, so reviewer-tier callers
+    // must always name a phase — omitting it is rejected outright even
+    // though admins get the current-phase default.
     await expect(
       reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: seeded.context.instance.instance.id,

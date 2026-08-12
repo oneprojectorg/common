@@ -133,11 +133,11 @@ export interface PhaseReviewsReadContext {
 
 /**
  * Whether the caller may read a phase's submitted review set on this
- * instance. Admins always can — any phase, or all phases when `phaseId` is
- * omitted — and return before any phase-settings resolution (which throws
- * NotFound on a phase the instance doesn't have). Reviewers (`access.review`)
- * must name a phase — without one the caller would read reviews blended
- * across ALL phases — and that phase's resolved `openReviews` must be on. An
+ * instance. Admins always can — any phase, or the caller's default when
+ * `phaseId` is omitted — and return before any phase-settings resolution
+ * (which throws NotFound on a phase the instance doesn't have). Reviewers
+ * (`access.review`) must name a phase, and that phase's resolved
+ * `openReviews` must be on. An
  * open phase stays readable after it ends (later-phase reviewers read the
  * earlier phase's reviews), but phases after the current one are never
  * readable. The reviewer grant is deliberately process-wide: ANY reviewer of

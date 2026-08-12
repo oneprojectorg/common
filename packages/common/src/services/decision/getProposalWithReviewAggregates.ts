@@ -33,25 +33,29 @@ export type GetProposalWithReviewAggregatesInput = z.infer<
  * `aggregates.assignmentsCount` but are not surfaced in `reviews[]`.
  *
  * `phaseId` scopes the review set to assignments pinned to that phase, so all
- * derived values (reviews[], aggregates) are per-source-phase. Omitted means
- * all phases — admin-only; reviewers must always name a phase.
+ * derived values (reviews[], aggregates) are per-source-phase. Omitted
+ * defaults to the instance's current phase — admin-only; reviewers must
+ * always name a phase.
  */
 export async function getProposalWithReviewAggregates(
   input: GetProposalWithReviewAggregatesInput & { user: User },
 ): Promise<ProposalWithSubmittedReviews> {
-  const { user, processInstanceId, proposalId, phaseId } = input;
+  const { user, processInstanceId, proposalId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
   // Read gate: admin, or the process-wide reviewer grant on an open phase at
   // or before the current one — see `canReadPhaseReviews` for the semantics.
-  assertCanReadPhaseReviews(instance, phaseId);
+  // Gated on the caller's raw phaseId so reviewers must always name a phase.
+  assertCanReadPhaseReviews(instance, input.phaseId);
 
-  // Resolved by the requested phase so each phase's reviews are scored (and
-  // rendered by clients) against that phase's rubric. When an admin omits
-  // `phaseId` (all phases) this falls back to the instance-level rubric —
-  // aggregates blended across phases with different rubrics are inherently
-  // approximate.
+  // Effective phase: explicit `phaseId`, else the instance's current phase —
+  // mirrors `listProposalsWithReviewAggregates`, so there is no cross-phase
+  // blended mode.
+  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+
+  // Resolved by the effective phase so each phase's reviews are scored (and
+  // rendered by clients) against that phase's rubric.
   const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
