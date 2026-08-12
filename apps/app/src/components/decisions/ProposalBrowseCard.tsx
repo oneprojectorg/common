@@ -90,12 +90,13 @@ export function ProposalBrowseCard({
       }
       actions={actions}
       showMetrics={!isDraft}
-      // Engagement replaced the old Like/Follow footer, and that footer shared
-      // one slot with the owner and revision actions — so nobody saw
-      // Like/Follow on a proposal they could edit. Spelled out rather than
-      // derived from `actions`, which no longer tracks it now that Edit and
-      // Delete have moved into the menu.
-      canEngage={canEngage && !isDraft && !isEditable && !hasRevisionRequest}
+      // Access is the only gate, same as the proposal page. It used to also
+      // exclude editable and revision-requested proposals, back when
+      // Like/Follow shared the footer slot with the owner and revise actions —
+      // but `isEditable` is true of every proposal for an admin, so that took
+      // engagement away from the people who most often browse. Drafts are
+      // excluded because they carry no metrics at all.
+      canEngage={canEngage && !isDraft}
       revisionRequested={hasRevisionRequest}
       className={cn(isDraft && 'bg-muted', className)}
     />
