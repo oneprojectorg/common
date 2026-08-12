@@ -673,10 +673,7 @@ export const instanceFilterSchema = z
   })
   .extend(paginationInputSchema.shape);
 
-/**
- * Free-text proposal search. Matches the proposal title; capped so a query
- * can't grow into an unbounded pattern scan.
- */
+/** Free-text proposal title search. Capped to bound the LIKE pattern. */
 const proposalSearchSchema = z.string().max(200).optional();
 
 export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({

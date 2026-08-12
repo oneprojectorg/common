@@ -138,8 +138,7 @@ type ReviewAssignmentExclusion = {
   phaseId: string;
 };
 
-// Neutralize LIKE metacharacters so a user's query is matched literally —
-// otherwise `%` matches every title and `_` matches any single character.
+// Match the query literally — unescaped, `%` matches every title.
 const escapeLikePattern = (value: string): string =>
   value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
@@ -175,19 +174,13 @@ const buildBaseConditions = (
 
   const searchTerm = search?.trim();
   if (searchTerm) {
-    // Title search against `profiles.name` on the proposal's own profile — the
-    // database mirror of the title, rewritten by the editor's autosave on every
-    // change (see updateProposal). It's the only current copy SQL can filter on:
-    // a collab-doc proposal's displayed title is resolved from a TipTap
-    // fragment, and `proposalData.title` is never rewritten after creation, so
-    // matching the JSON would match titles that no longer exist.
+    // Title lives in `profiles.name` (kept current by updateProposal's autosave).
+    // `proposalData.title` is frozen at creation — collab-doc titles resolve from
+    // a TipTap fragment — so matching the JSON would match dead titles.
     //
-    // Correlated EXISTS, not a `profileId IN (SELECT ...)` semi-join: the
-    // semi-join scans every profile on the platform before the instance/phase
-    // predicates narrow anything (and the name trigram index can't help a query
-    // under 3 characters). Driving from the already-scoped proposal rows and
-    // probing profiles by primary key keeps the cost proportional to what's in
-    // scope at any query length.
+    // Correlated EXISTS, not `profileId IN (SELECT ...)`: the semi-join scans
+    // every profile on the platform before the phase predicates narrow anything,
+    // and the name trigram index can't help a query under 3 characters.
     conditions.push(
       exists(
         db
