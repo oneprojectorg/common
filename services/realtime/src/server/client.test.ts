@@ -185,25 +185,37 @@ describe('RealtimeClient.publishMany', () => {
     expect(firstSignal).not.toBe(secondSignal);
   });
 
-  it('splits a wide fan-out into chunks of 100', async () => {
+  it('splits a wide fan-out into chunks of 50', async () => {
     const fetchMock = vi.fn().mockResolvedValue(res(200));
     vi.stubGlobal('fetch', fetchMock);
 
-    await newClient().publishMany({ messages: manyMessages(250) });
+    await newClient().publishMany({ messages: manyMessages(125) });
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(topicCountOf(fetchMock, 0)).toBe(100);
-    expect(topicCountOf(fetchMock, 1)).toBe(100);
-    expect(topicCountOf(fetchMock, 2)).toBe(50);
+    expect(topicCountOf(fetchMock, 0)).toBe(50);
+    expect(topicCountOf(fetchMock, 1)).toBe(50);
+    expect(topicCountOf(fetchMock, 2)).toBe(25);
   });
 
   it('sends a single request when the fan-out fits in one chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue(res(200));
     vi.stubGlobal('fetch', fetchMock);
 
-    await newClient().publishMany({ messages: manyMessages(100) });
+    await newClient().publishMany({ messages: manyMessages(50) });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('never exceeds the batch size Supabase accepts', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(res(200));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await newClient().publishMany({ messages: manyMessages(1_000) });
+
+    // Supabase 429s a batch of 92+; every request must stay under that.
+    for (let i = 0; i < fetchMock.mock.calls.length; i++) {
+      expect(topicCountOf(fetchMock, i)).toBeLessThanOrEqual(50);
+    }
   });
 
   it('still delivers the surviving chunks when one chunk fails', async () => {
@@ -215,7 +227,7 @@ describe('RealtimeClient.publishMany', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const error = await newClient()
-      .publishMany({ messages: manyMessages(250) })
+      .publishMany({ messages: manyMessages(125) })
       .catch((e) => e);
 
     // All three chunks were attempted, not short-circuited by the first.

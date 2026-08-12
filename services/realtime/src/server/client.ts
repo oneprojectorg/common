@@ -9,8 +9,16 @@ const PUBLISH_RETRIES = 1;
  * unbounded (the SELECTs feeding it have no LIMIT), so without a cap one
  * oversized POST would fail as a unit and take every invalidation with it.
  * Chunking keeps the blast radius of a failure to a single chunk.
+ *
+ * Supabase enforces its own per-request ceiling tied to `max_events_per_second`
+ * (default 100) and rejects anything over it with a 429 whose body reads
+ * "Too many messages to broadcast, please reduce the batch size". Measured
+ * against the local stack, 91 messages is accepted and 92 is not. 50 leaves
+ * deliberate headroom, since a hosted project can be configured lower. The
+ * ceiling is per *request*, not aggregate — 10 concurrent chunks of 50 all
+ * succeed — so chunks are still sent in parallel.
  */
-const MAX_MESSAGES_PER_REQUEST = 100;
+const MAX_MESSAGES_PER_REQUEST = 50;
 
 /** Cap on echoed server error text, so an error page can't flood the logs. */
 const ERROR_DETAIL_MAX_CHARS = 200;
@@ -21,6 +29,10 @@ const ERROR_DETAIL_MAX_CHARS = 200;
  * backoff (0–200ms) lands inside the same rate-limit window, so retrying just
  * doubles load on a tenant that already asked us to slow down. Clients recover
  * on their next full fetch.
+ *
+ * Note that Supabase also returns 429 for an oversized batch, which no amount
+ * of retrying would fix; `MAX_MESSAGES_PER_REQUEST` prevents that case by
+ * construction rather than by retry.
  */
 const isRetryableStatus = (status: number): boolean =>
   status >= 500 && status !== 501 && status !== 505;
