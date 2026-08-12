@@ -26,8 +26,8 @@ import { get, set } from '@op/cache';
 import { db } from '@op/db/client';
 import { createSBServerClient } from '@op/supabase/server';
 
+import { ASSETS_BUCKET } from '../../utils/storage';
 import {
-  EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
   exportFilePath,
@@ -101,9 +101,15 @@ describe('getExportStatus', () => {
     });
   });
 
-  // The security fix: exports must be signed out of their own private bucket,
-  // never the world-readable `assets` bucket.
-  it('signs against the private exports bucket, at the instance-scoped path', async () => {
+  // Pinned against the shared bucket by name rather than against the export
+  // constant, which would compare it to itself and hold whatever it was
+  // changed to. Repointing exports at a bucket of their own is what this has
+  // to catch: it reads as a security improvement, but nothing in the
+  // repository provisions such a bucket, so every hosted environment silently
+  // loses the feature until someone creates it by hand. That is why exports
+  // share the public bucket, and why the unguessable file name — not the
+  // signature — is what limits access to them.
+  it('signs against the shared public bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
     vi.mocked(createSBServerClient).mockResolvedValue({
@@ -112,7 +118,7 @@ describe('getExportStatus', () => {
 
     await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(storageFrom).toHaveBeenCalledWith(EXPORTS_BUCKET);
+    expect(storageFrom).toHaveBeenCalledWith(ASSETS_BUCKET);
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
