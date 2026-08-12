@@ -23,7 +23,6 @@ export const canEngageWithProposals = (
 export interface ProposalEngagement {
   isLiked: boolean;
   isFollowed: boolean;
-  isPending: boolean;
   onLike: () => void;
   /** Absent for a proposal's own author — see {@link useProposalEngagement}. */
   onFollow?: () => void;
@@ -33,9 +32,10 @@ export interface ProposalEngagement {
  * Like/follow for a proposal, shared by the card's metric toggles and the
  * detail view's engagement row so the two can't drift.
  *
- * Returns `undefined` when the viewer can't act — anonymous visitors, and roles
- * without engagement access on the parent decision. Callers render the counts
- * as plain numbers in that case rather than dead controls.
+ * Returns `undefined` when the viewer can't act — anonymous visitors, roles
+ * without engagement access on the parent decision, and a relationship list
+ * that never loaded. Callers render the counts as plain numbers in that case
+ * rather than dead controls.
  *
  * An author gets no `onFollow`: they're the proposal's audience by definition.
  * Nothing writes that follow for them, so their own follower count doesn't
@@ -58,14 +58,16 @@ export function useProposalEngagement({
   const { user } = useUser();
   const canToggle = userCanInteract(user) && canEngage;
 
-  const { isLiked, isFollowed, isLoading, handleLike, handleFollow } =
+  const { isLiked, isFollowed, stateUnknown, handleLike, handleFollow } =
     useRelationshipMutations({
       targetProfileId: proposal.profileId,
       enabled: canToggle,
       invalidateQueries: [{ processInstanceId: proposal.processInstanceId }],
     });
 
-  if (!canToggle) {
+  // With nothing loaded both flags read false for want of data, which would
+  // render every toggle unpressed and turn the next click into a redundant add.
+  if (!canToggle || stateUnknown) {
     return undefined;
   }
 
@@ -79,7 +81,6 @@ export function useProposalEngagement({
   return {
     isLiked,
     isFollowed,
-    isPending: isLoading,
     onLike: handleLike,
     // Keep the toggle for an author who already follows, or they'd be stuck
     // following with no way to undo it.
