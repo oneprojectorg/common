@@ -4,7 +4,6 @@ import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -12,6 +11,7 @@ import {
   type ProposalCountField,
   bumpProposalCount,
 } from './optimisticProposalCounts';
+import { requestRelationship } from './relationshipDrain';
 
 interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
@@ -218,13 +218,6 @@ export function useRelationshipMutations({
       },
     });
 
-  /** What the user wants, and what we last managed to send, per type. */
-  const desired = useRef<Partial<Record<ProfileRelationshipType, boolean>>>({});
-  const sent = useRef<Partial<Record<ProfileRelationshipType, boolean>>>({});
-  const draining = useRef<Partial<Record<ProfileRelationshipType, boolean>>>(
-    {},
-  );
-
   const isLikedInCache = (relationshipType: ProfileRelationshipType) =>
     Boolean(
       utils.profile.getRelationships
@@ -233,66 +226,6 @@ export function useRelationshipMutations({
           (rel) => rel.targetProfile?.id === targetProfileId,
         ),
     );
-
-  /**
-   * Send whatever the user has settled on, one request at a time, re-reading
-   * their intent after each one. Clicks that arrive mid-flight change the
-   * target rather than queueing behind it, so ten taps are at most two
-   * requests: the one already going, and one to correct it.
-   */
-  const drain = async (relationshipType: ProfileRelationshipType) => {
-    if (!targetProfileId || draining.current[relationshipType]) {
-      return;
-    }
-
-    draining.current[relationshipType] = true;
-
-    // Forget this burst and pull the truth back in. Stays inside the loop so a
-    // click that lands during the refetch is picked up here rather than by a
-    // second drain racing the queries this one just kicked off.
-    const settle = async () => {
-      delete desired.current[relationshipType];
-      delete sent.current[relationshipType];
-      await reconcile();
-    };
-
-    try {
-      while (desired.current[relationshipType] !== undefined) {
-        const target = desired.current[relationshipType];
-
-        if (target === sent.current[relationshipType]) {
-          await settle();
-          continue;
-        }
-
-        const mutation = target
-          ? addRelationshipMutation
-          : removeRelationshipMutation;
-
-        try {
-          await mutation.mutateAsync({ targetProfileId, relationshipType });
-          sent.current[relationshipType] = target;
-        } catch (error) {
-          // Toasted in onError; the reconcile puts the cache back to whatever
-          // the server actually has.
-          logger.error('Relationship write failed', {
-            error,
-            context: `useRelationshipMutations.${relationshipType}`,
-          });
-
-          // `continue`, not `break`: settle() cleared the burst, so with no
-          // further press the loop condition ends it here anyway. A click that
-          // landed during the reconcile is the one case `break` got wrong — it
-          // couldn't start its own drain (lease still held) and was dropped
-          // silently, leaving the cache flipped against the server.
-          await settle();
-          continue;
-        }
-      }
-    } finally {
-      draining.current[relationshipType] = false;
-    }
-  };
 
   // Not wrapped in useCallback: it closes over every helper above, all of them
   // rebuilt each render, so an honest dependency array would invalidate on
@@ -321,11 +254,29 @@ export function useRelationshipMutations({
     // an earlier one is still in the air.
     const next = !isLikedInCache(relationshipType);
 
-    desired.current[relationshipType] = next;
     patchCachedRelationship(relationshipType, next);
     patchCachedCounts(relationshipType, next ? 1 : -1);
 
-    void drain(relationshipType);
+    // Keyed by proposal and type rather than held per instance: the same
+    // proposal can be mounted twice at once, and both toggles must feed the
+    // one drain.
+    void requestRelationship(`${targetProfileId}:${relationshipType}`, next, {
+      send: async (target) => {
+        const mutation = target
+          ? addRelationshipMutation
+          : removeRelationshipMutation;
+
+        await mutation.mutateAsync({ targetProfileId, relationshipType });
+      },
+      reconcile,
+      // Toasted in the mutation's onError; the reconcile puts the cache back to
+      // whatever the server actually has.
+      onError: (error) =>
+        logger.error('Relationship write failed', {
+          error,
+          context: `useRelationshipMutations.${relationshipType}`,
+        }),
+    });
   };
 
   return {
