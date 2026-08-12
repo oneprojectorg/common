@@ -22,6 +22,10 @@ interface CollaborativeBudgetFieldProps {
    * ISO 4217 code the template is configured with, stamped onto what the
    * author enters. Every renderer reads the currency back off the fragment,
    * so getting this wrong makes a whole process render the wrong currency.
+   *
+   * Only a default for budgets that carry no currency of their own — it never
+   * overrides one already stored, since the template's is editable after
+   * proposals are submitted and relabelling an amount is not converting it.
    */
   currency?: string;
   initialValue?: BudgetData | null;
@@ -59,15 +63,27 @@ export function CollaborativeBudgetField({
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
+  /**
+   * Currency for a fragment that names none of its own.
+   *
+   * The *stored* currency outranks the template's: it is what the amount was
+   * actually submitted in, while a template currency is only a display default
+   * we inferred — and the template's is editable long after proposals land.
+   * Display and emit must share this one value. When they didn't, the pill
+   * rendered €5,000 for a budget stored as $5,000, and since `handleChange`
+   * stamps the *displayed* currency onto the fragment, retyping the same
+   * number silently re-denominated the request with no conversion.
+   */
+  const fallbackCurrency = initialValue?.currency ?? templateCurrency;
+
   // Same parser the cards and detail page read the fragment with, so the
   // editor can't show "Add budget" for a legacy fragment they render a value
   // for. `undefined` means present-but-unreadable as well as absent.
-  const budget = parseBudgetFragmentValue(budgetText, templateCurrency);
+  const budget = parseBudgetFragmentValue(budgetText, fallbackCurrency);
   const setBudget = (newBudget: BudgetData | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
   const onChangeRef = useRef(onChange);
-  const lastEmittedRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -75,7 +91,7 @@ export function CollaborativeBudgetField({
 
   const [isEditing, setIsEditing] = useState(false);
   const budgetAmount = budget?.amount ?? null;
-  const currency = budget?.currency ?? templateCurrency;
+  const currency = budget?.currency ?? fallbackCurrency;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
@@ -127,18 +143,10 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    // Note the fallback: the *stored* currency, not the template's. A currency
-    // taken from the template is a display default we inferred, not something
-    // the author chose. Emitting it would make `useProposalDraft` see a change
-    // and autosave a new currency onto the proposal just because someone
-    // opened the editor — on a EUR process, every legacy USD budget would
-    // silently become EUR on open. Once the author actually edits the amount,
-    // `handleChange` writes the display currency into the fragment explicitly,
-    // and that emits normally.
-    const emitted = parseBudgetFragmentValue(
-      budgetText,
-      initialValue?.currency ?? templateCurrency,
-    );
+    // Re-parsed rather than closing over `budget` so the deps stay primitive —
+    // `budget` is a fresh object every render. Same arguments, so display and
+    // emit can't disagree.
+    const emitted = parseBudgetFragmentValue(budgetText, fallbackCurrency);
 
     // A fragment we can't read means "unknown", not "cleared". This effect
     // fires on mount, and `useProposalDraft` treats a `null` budget as the
@@ -150,15 +158,17 @@ export function CollaborativeBudgetField({
       return;
     }
 
-    const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
-
-    if (lastEmittedRef.current === key) {
+    // Compared against the parent's *current* value rather than a ref of what
+    // we last sent. `useProposalDraft` resets `draft` to the refetched server
+    // proposal, and a ref would still hold the pre-reset key and suppress the
+    // re-emit — letting the next save write the stale server budget over the
+    // newer one the author can see in the fragment.
+    if (budgetKey(emitted) === budgetKey(initialValue)) {
       return;
     }
 
-    lastEmittedRef.current = key ?? undefined;
     onChangeRef.current?.(emitted ?? null);
-  }, [budgetText, templateCurrency, initialValue?.currency]);
+  }, [budgetText, fallbackCurrency, initialValue]);
 
   const handleStartEditing = () => {
     setIsEditing(true);
@@ -206,4 +216,9 @@ export function CollaborativeBudgetField({
       )}
     </>
   );
+}
+
+/** Identity of a budget for change detection — `null` when there is none. */
+function budgetKey(budget: BudgetData | null | undefined): string | null {
+  return budget ? `${budget.amount}:${budget.currency}` : null;
 }

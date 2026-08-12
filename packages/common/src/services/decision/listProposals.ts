@@ -309,16 +309,18 @@ export const listProposals = async ({
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
+    const storedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
+      storedBudget: storedProposalData.budget,
     });
 
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parseProposalData(proposal.proposalData),
+        ...storedProposalData,
         ...systemFieldOverrides,
       },
       status: proposal.status,

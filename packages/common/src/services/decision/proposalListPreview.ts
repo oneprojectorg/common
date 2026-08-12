@@ -8,7 +8,7 @@ import {
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
 import type { ProposalDocumentContent } from './getProposalDocumentsContent';
 import { SYSTEM_FIELD_KEYS } from './getProposalTemplateFieldOrder';
-import { getTemplateBudgetCurrency } from './templateBudget';
+import { resolveBudgetFallbackCurrency } from './templateBudget';
 import { tiptapDocToPlainText } from './tiptapDocToPlainText';
 import type { ProposalTemplateSchema, XFormat } from './types';
 
@@ -55,9 +55,16 @@ export interface ProposalListPreview {
 export function buildProposalListPreview({
   documentContent,
   proposalTemplate,
+  storedBudget,
 }: {
   documentContent: ProposalDocumentContent | undefined;
   proposalTemplate: ProposalTemplateSchema | null;
+  /**
+   * The row's own `proposalData.budget`, if any. Only its currency is read, and
+   * only for a fragment that names none — see
+   * {@link resolveBudgetFallbackCurrency}.
+   */
+  storedBudget?: { currency?: string } | null;
 }): ProposalListPreview {
   if (!documentContent || documentContent.type === 'unavailable') {
     return { previewText: null, systemFieldOverrides: {} };
@@ -139,7 +146,7 @@ export function buildProposalListPreview({
       systemFieldOverrides,
       resolveSystemFieldOverrides(
         fragmentTexts,
-        getTemplateBudgetCurrency(proposalTemplate),
+        resolveBudgetFallbackCurrency(storedBudget, proposalTemplate),
       ),
     );
   }

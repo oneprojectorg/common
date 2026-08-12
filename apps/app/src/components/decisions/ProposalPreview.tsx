@@ -152,6 +152,7 @@ export function ProposalPreview({
               <div className="flex flex-wrap items-end gap-2">
                 <BudgetDisplay
                   value={selection.allocated}
+                  fallbackCurrency={budget?.currency}
                   className="font-serif text-title-base text-neutral-black"
                 />
                 {budget && (

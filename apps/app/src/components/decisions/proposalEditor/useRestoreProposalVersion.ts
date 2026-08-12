@@ -4,8 +4,9 @@ import { trpc } from '@op/api/client';
 import {
   normalizeProposalCategories,
   parseProposalData,
+  resolveBudgetFallbackCurrency,
 } from '@op/common/client';
-import type { ProposalData } from '@op/common/client';
+import type { ProposalData, ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { JSONContent } from '@tiptap/react';
 
@@ -19,11 +20,14 @@ interface UseRestoreProposalVersionOptions {
   proposalData: unknown;
   fragmentNames: string[];
   /**
-   * The process's configured budget currency. Restoring writes the extracted
-   * budget straight to `proposalData`, so without it a legacy currency-less
-   * fragment is persisted as USD on a process denominated in something else.
+   * The proposal's template. Restoring writes the extracted budget straight to
+   * `proposalData`, so a version fragment that names no currency of its own
+   * needs one: the currency already stored on the proposal, or this template's
+   * where there is none (see `resolveBudgetFallbackCurrency`). Without it a
+   * legacy fragment is persisted as USD on a process denominated in something
+   * else.
    */
-  budgetCurrency: string;
+  proposalTemplate: ProposalTemplateSchema | null | undefined;
 }
 
 /**
@@ -37,7 +41,7 @@ export function useRestoreProposalVersion({
   proposalId,
   proposalData,
   fragmentNames,
-  budgetCurrency,
+  proposalTemplate,
 }: UseRestoreProposalVersionOptions) {
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
@@ -69,7 +73,10 @@ export function useRestoreProposalVersion({
     );
     const nextBudget = parsePreviewBudget(
       fragmentContents.budget,
-      budgetCurrency,
+      resolveBudgetFallbackCurrency(
+        currentProposalData.budget,
+        proposalTemplate,
+      ),
     );
 
     return {

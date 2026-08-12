@@ -43,3 +43,23 @@ export function getTemplateBudgetCurrency(
 ): string {
   return getBudgetCurrency(template?.properties?.budget);
 }
+
+/**
+ * The currency to assume for a budget fragment that names none of its own.
+ *
+ * Precedence is stored-then-template, and the order matters: the template's
+ * currency is editable long after proposals are submitted, so letting it
+ * outrank a stored one relabels historical amounts without converting them —
+ * a $5,000 request silently reads as €5,000 the moment an admin switches the
+ * picker. The template only fills in where there is nothing stored to trust.
+ *
+ * Every surface that renders a budget resolves its fallback through here, so
+ * the editor pill, list cards, detail page and review table can't disagree
+ * about what an unlabeled amount is denominated in.
+ */
+export function resolveBudgetFallbackCurrency(
+  storedBudget: { currency?: string } | null | undefined,
+  template: ProposalTemplateSchema | null | undefined,
+): string {
+  return storedBudget?.currency || getTemplateBudgetCurrency(template);
+}

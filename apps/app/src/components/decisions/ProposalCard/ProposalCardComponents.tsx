@@ -173,6 +173,7 @@ export function ProposalCardBudget({
       <div className={cn('flex flex-wrap items-end gap-2', className)}>
         <BudgetDisplay
           value={allocated}
+          fallbackCurrency={budget?.currency}
           className="font-serif text-title-base text-neutral-charcoal"
         />
         {requestedText && (

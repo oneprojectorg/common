@@ -32,7 +32,7 @@ export function formatCurrency(
   locale: string = DEFAULT_LOCALE,
   currency: string = 'USD',
 ): string {
-  const fractionDigits = currencyFractionDigits(amount);
+  const fractionDigits = currencyFractionDigits(amount, locale, currency);
 
   try {
     return new Intl.NumberFormat(locale, {
@@ -54,16 +54,43 @@ export function formatCurrency(
 }
 
 /**
- * Whole amounts render without decimals, fractional ones with exactly two.
+ * Whole amounts render without decimals, fractional ones with the number of
+ * decimals the currency actually has.
  *
  * `Intl`'s own default (min 0, max 2) renders 5000.5 as the malformed "$5,000.5"
  * — one decimal place, which no currency uses. Pinning min = max gives "$5,000"
- * and "$5,000.50" instead. Zero-decimal currencies (JPY, KRW) still round to
- * whole units because a fractional yen amount can't be entered in the first
- * place; the budget input is the only writer.
+ * and "$5,000.50" instead.
+ *
+ * The fractional count comes from `Intl` rather than a literal 2 because
+ * zero-decimal currencies exist and two of them (JPY, KRW) are in the picker:
+ * hardcoding 2 renders a stray 1000.5 as "¥1,000.50", a denomination that
+ * doesn't exist. `Intl`'s own `maximumFractionDigits` is currency-aware and
+ * gives "¥1,001".
  */
-function currencyFractionDigits(amount: number): 0 | 2 {
-  return Number.isInteger(amount) ? 0 : 2;
+function currencyFractionDigits(
+  amount: number,
+  locale: string,
+  currency: string,
+): number {
+  if (Number.isInteger(amount)) {
+    return 0;
+  }
+
+  try {
+    // Optional in the TS lib types (it is absent for some notation options),
+    // though always set for a currency format — 2 is the right count if it
+    // ever is not.
+    return (
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+      }).resolvedOptions().maximumFractionDigits ?? 2
+    );
+  } catch {
+    // A code/locale `Intl` rejects — the caller's own try/catch reports it and
+    // falls back to a plain number, where 2 is the right count.
+    return 2;
+  }
 }
 
 /**
@@ -90,12 +117,17 @@ export function formatMoney(budget: {
  * Deliberately not a full map: every other supported code already resolves to
  * the same symbol the hand map carried, and CNY resolves to the better `CN¥`
  * (the old `¥` was indistinguishable from JPY).
+ *
+ * A `Map` rather than an object literal because `currency` is typed as a bare
+ * string and arrives from stored data: `overrides['constructor']` on an object
+ * hits `Object.prototype` and returns a function from a `: string` signature,
+ * skipping the try/catch below and the invalid-code report with it.
  */
-const CURRENCY_SYMBOL_OVERRIDES: Record<string, string> = {
-  AED: 'د.إ',
-  SAR: '﷼',
-  SGD: 'S$',
-};
+const CURRENCY_SYMBOL_OVERRIDES = new Map<string, string>([
+  ['AED', 'د.إ'],
+  ['SAR', '﷼'],
+  ['SGD', 'S$'],
+]);
 
 /**
  * The currency symbol for a code (e.g. `"$"`, `"CA$"`). For prefixing an input
@@ -120,7 +152,7 @@ export function getCurrencySymbol(
   currency: string,
   locale: string = DEFAULT_LOCALE,
 ): string {
-  const override = CURRENCY_SYMBOL_OVERRIDES[currency];
+  const override = CURRENCY_SYMBOL_OVERRIDES.get(currency);
   if (override && locale === DEFAULT_LOCALE) {
     return override;
   }

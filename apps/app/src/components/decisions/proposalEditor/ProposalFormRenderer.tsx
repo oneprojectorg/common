@@ -142,15 +142,22 @@ function getPreviewBudgetValue({
   mode,
   draftValue,
   previewContent,
-  currency,
+  templateCurrency,
 }: {
   mode: 'preview-version' | 'preview-template';
   draftValue: ProposalDraftFields['budget'] | null | undefined;
   previewContent: JSONContent | null | undefined;
-  currency: string;
+  /**
+   * Fallback for a version fragment that names no currency. Outranked by the
+   * currency stored on the proposal — see `resolveBudgetFallbackCurrency`.
+   */
+  templateCurrency: string;
 }): string | null {
   if (mode === 'preview-version') {
-    return formatPreviewBudget(previewContent, currency);
+    return formatPreviewBudget(
+      previewContent,
+      draftValue?.currency ?? templateCurrency,
+    );
   }
 
   if (!draftValue) {
@@ -277,7 +284,7 @@ function renderField(
             mode,
             draftValue: draft.budget,
             previewContent,
-            currency: getBudgetCurrency(schema),
+            templateCurrency: getBudgetCurrency(schema),
           })}
           placeholder={t('Add budget')}
         />
@@ -341,7 +348,7 @@ function renderField(
               mode,
               draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
               previewContent,
-              currency: getBudgetCurrency(schema),
+              templateCurrency: getBudgetCurrency(schema),
             })}
             title={schema.title}
             description={schema.description}

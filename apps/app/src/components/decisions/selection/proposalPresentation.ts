@@ -24,7 +24,10 @@ export const resolvePresentationFields = ({
   } = resolveProposalSystemFields(proposal);
   const title = resolvedTitle || proposal.profile.name || defaultTitle;
   const submitterName = proposal.submittedBy?.name;
-  const formattedBudget = budget?.amount ? formatMoney(budget) : null;
+  // `budget`, not `budget?.amount` — a budget of 0 is a real answer (the input
+  // allows it), and testing the amount for truthiness renders it as no budget
+  // at all here while every other surface shows "$0".
+  const formattedBudget = budget ? formatMoney(budget) : null;
 
   return {
     title,

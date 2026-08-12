@@ -3,8 +3,8 @@ import {
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   type XFormat,
-  getTemplateBudgetCurrency,
   parseProposalData,
+  resolveBudgetFallbackCurrency,
   resolveSystemFieldOverrides,
   serverExtensions,
 } from '@op/common/client';
@@ -129,7 +129,7 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     ...fallback,
     ...resolveSystemFieldOverrides(
       fragmentTexts,
-      getTemplateBudgetCurrency(template),
+      resolveBudgetFallbackCurrency(fallback.budget, template),
     ),
   };
 }

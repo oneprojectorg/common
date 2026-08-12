@@ -38,7 +38,6 @@ export function ReviewSelectionTable({
   onAdvance,
   advancingIds,
   decisionSlug,
-  budgetCurrency,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
@@ -47,15 +46,6 @@ export function ReviewSelectionTable({
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
-  /**
-   * The process's configured currency. This list is fed by
-   * `listProposalsWithReviewAggregates`, which returns raw rows with no
-   * fragment-derived system-field overrides, so `proposalData.budget.currency`
-   * is still the schema's USD default for any legacy currency-less budget.
-   * Rendering with the process currency — the same value the list resolvers
-   * fall back to — keeps this table and the proposal cards in agreement.
-   */
-  budgetCurrency: string;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -72,7 +62,6 @@ export function ReviewSelectionTable({
                 advancing={advancing}
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
-                budgetCurrency={budgetCurrency}
               />
             </li>
           );
@@ -128,12 +117,7 @@ export function ReviewSelectionTable({
               </TableCell>
               <TableCell>
                 <span className="text-base text-neutral-black">
-                  {budget
-                    ? formatMoney({
-                        amount: budget.amount,
-                        currency: budgetCurrency,
-                      })
-                    : '—'}
+                  {budget ? formatMoney(budget) : '—'}
                 </span>
               </TableCell>
               <TableCell>
@@ -205,13 +189,11 @@ function ProposalCard({
   advancing,
   onAdvance,
   decisionSlug,
-  budgetCurrency,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
   onAdvance: () => void;
   decisionSlug: string;
-  budgetCurrency: string;
 }) {
   const t = useTranslations();
   const title = item.proposal.profile.name || t('Untitled Proposal');
@@ -236,7 +218,7 @@ function ProposalCard({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {budget && (
           <span className="text-base text-neutral-black">
-            {formatMoney({ amount: budget.amount, currency: budgetCurrency })}
+            {formatMoney(budget)}
           </span>
         )}
         <SelectionCategoryChips labels={item.categories.map((c) => c.label)} />
