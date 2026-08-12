@@ -190,10 +190,9 @@ export const proposalWithAggregatesSchema = z.object({
    * genuinely stored on the row, or the process template's where it names
    * none (see `resolveBudgetFallbackCurrency`).
    *
-   * Shipped per row because it can only be resolved from the *raw*
-   * `proposalData`: `proposalSchema` parses a legacy bare-number budget into
-   * `{amount, currency:'USD'}`, so by the time the client sees `proposal` the
-   * distinction is gone and the table would render dollars on a EUR process.
+   * Shipped per row because the client on this route holds no proposal
+   * template to resolve it against, and would render the default currency on a
+   * EUR process.
    */
   budgetCurrency: z.string(),
 });

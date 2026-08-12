@@ -60,9 +60,11 @@ export function buildProposalListPreview({
   documentContent: ProposalDocumentContent | undefined;
   proposalTemplate: ProposalTemplateSchema | null;
   /**
-   * The row's `proposalData`, raw JSON or parsed. Only its budget's currency is
-   * read, and only for a fragment that names none — see
-   * {@link resolveBudgetFallbackCurrency}.
+   * The row's raw `proposalData` JSON. Only its budget's currency is read, and
+   * only for a fragment that names none — see
+   * {@link resolveBudgetFallbackCurrency}. Pass the raw row rather than a
+   * parsed one: parsing drops a budget whose shape `budgetValueSchema` can't
+   * read, and the stored currency goes with it.
    */
   storedProposalData?: unknown;
 }): ProposalListPreview {

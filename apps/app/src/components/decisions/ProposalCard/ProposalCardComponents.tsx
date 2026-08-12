@@ -191,6 +191,7 @@ export function ProposalCardBudget({
   return (
     <BudgetDisplay
       value={budget}
+      fallbackCurrency={budgetCurrency}
       className={cn(
         'font-serif text-title-base text-neutral-charcoal',
         className,

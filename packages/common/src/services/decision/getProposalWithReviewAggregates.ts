@@ -104,8 +104,8 @@ export async function getProposalWithReviewAggregates(
 
   return proposalWithSubmittedReviewsSchema.parse({
     proposal,
-    // Resolved from the raw row, before `proposalSchema` parses `proposalData`
-    // and stamps a fabricated USD onto a legacy bare-number budget.
+    // Resolved from the raw row: parsing drops a budget whose shape
+    // `budgetValueSchema` can't read, and the stored currency goes with it.
     budgetCurrency: resolveBudgetFallbackCurrency(
       proposal.proposalData,
       proposalTemplate,

@@ -989,13 +989,15 @@ describe.concurrent('listProposals', () => {
     const foundA = result.proposals.find((p) => p.id === proposalA.id);
     const foundB = result.proposals.find((p) => p.id === proposalB.id);
 
-    // Plain number → { amount, currency: 'USD' }
+    // Plain number → `{ amount }`, currency left ABSENT because the value
+    // names none; renderers resolve it from the process's template.
     expect(foundA?.proposalData).toMatchObject({
       title: 'Legacy A',
       description: '<p>body from content field</p>',
-      budget: { amount: 7500, currency: 'USD' },
+      budget: { amount: 7500 },
       category: ['Infrastructure'],
     });
+    expect(foundA?.proposalData.budget).not.toHaveProperty('currency');
     // content→description backward compat
     expect(foundA?.previewText).toBe('body from content field');
 
@@ -1087,9 +1089,10 @@ describe.concurrent('listProposals', () => {
     expect(foundLegacy?.proposalData).toMatchObject({
       title: 'Legacy',
       description: '<p>old content field</p>',
-      budget: { amount: 9999, currency: 'USD' },
+      budget: { amount: 9999 },
       customField: 'should survive',
     });
+    expect(foundLegacy?.proposalData.budget).not.toHaveProperty('currency');
     expect(foundLegacy?.previewText).toBe('old content field');
   });
 

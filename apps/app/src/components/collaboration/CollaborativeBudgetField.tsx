@@ -25,9 +25,9 @@ interface CollaborativeBudgetFieldProps {
    * fragment, so getting this wrong makes a whole process render the wrong one.
    *
    * Already resolved by the caller through `resolveBudgetFallbackCurrency` —
-   * this component must not re-derive it from `initialValue`, which is
-   * schema-parsed and therefore carries a fabricated USD for legacy
-   * bare-number budgets.
+   * this component must not re-derive it from `initialValue`, whose currency is
+   * absent for a budget that named none and so says nothing about which one the
+   * process is denominated in.
    */
   currency?: string;
   initialValue?: StoredBudget | null;

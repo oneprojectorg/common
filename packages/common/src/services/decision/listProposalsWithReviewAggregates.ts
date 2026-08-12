@@ -172,8 +172,8 @@ async function listProposalsFiltered({
       scoredCriterionKeys,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
-    // Resolved from the raw row, before `proposalSchema` normalizes a legacy
-    // bare-number budget into a fabricated USD.
+    // Resolved from the raw row: parsing drops a budget whose shape
+    // `budgetValueSchema` can't read, and the stored currency goes with it.
     budgetCurrency: resolveBudgetFallbackCurrency(
       proposal.proposalData,
       proposalTemplate,
@@ -270,8 +270,8 @@ async function listProposalsPaginated({
       scoredCriterionKeys,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
-    // Resolved from the raw row, before `proposalSchema` normalizes a legacy
-    // bare-number budget into a fabricated USD.
+    // Resolved from the raw row: parsing drops a budget whose shape
+    // `budgetValueSchema` can't read, and the stored currency goes with it.
     budgetCurrency: resolveBudgetFallbackCurrency(
       proposal.proposalData,
       proposalTemplate,

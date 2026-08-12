@@ -18,24 +18,25 @@ export async function resolveProposalTemplate(
   instanceData: DecisionInstanceData | Record<string, unknown> | null,
   processId: string,
 ): Promise<ProposalTemplateSchema | null> {
-  const fromInstance = pickProposalTemplate(
-    instanceData?.proposalTemplate,
-    null,
-  );
+  const fromInstance = instanceData?.proposalTemplate;
 
-  if (fromInstance) {
-    return fromInstance;
+  // Read the process row only when the instance carries no template of its
+  // own. The precedence itself stays in `pickProposalTemplate` — encoding it a
+  // second time in this function's control flow is what would let the two
+  // drift.
+  let fromProcess: unknown = null;
+  if (!fromInstance) {
+    const process = await db.query.decisionProcesses.findFirst({
+      where: { id: processId },
+      columns: { processSchema: true },
+    });
+
+    const processSchema = process?.processSchema as Record<
+      string,
+      unknown
+    > | null;
+    fromProcess = processSchema?.proposalTemplate;
   }
 
-  const process = await db.query.decisionProcesses.findFirst({
-    where: { id: processId },
-    columns: { processSchema: true },
-  });
-
-  const processSchema = process?.processSchema as Record<
-    string,
-    unknown
-  > | null;
-
-  return pickProposalTemplate(null, processSchema?.proposalTemplate);
+  return pickProposalTemplate(fromInstance, fromProcess);
 }

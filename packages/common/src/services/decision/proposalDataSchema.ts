@@ -184,7 +184,11 @@ const budgetFragmentObjectSchema = z.object({
   amount: z
     .union([z.string().trim().min(1), z.number()])
     .pipe(z.coerce.number()),
-  currency: z.string().min(1).optional(),
+  // Trimmed before `min(1)`, matching `getStoredBudgetCurrency`: a
+  // whitespace-only code names a currency no more than an absent one does, and
+  // passing it through makes `Intl` throw, dropping the currency marker
+  // entirely rather than falling back to the process's.
+  currency: z.string().trim().min(1).optional(),
 });
 
 /**
@@ -228,10 +232,7 @@ export function parseBudgetFragmentValue(
   }
 
   // Bare number or numeric string — no currency to read, so the fallback
-  // always applies. `budgetValueSchema` would stamp USD here, and that default
-  // must not outrank the process's own setting: a EUR process holding a legacy
-  // bare-number fragment would otherwise render as USD and — because the
-  // editor emits what it parsed — re-persist as USD too.
+  // always applies.
   const budget = normalizeBudget(parsed);
   if (!budget) {
     return undefined;

@@ -1250,11 +1250,14 @@ describe.concurrent('getProposal', () => {
     });
 
     expect(result.id).toBe(proposal.id);
-    // Plain number should be normalized to { amount, currency: 'USD' }
+    // Plain number normalizes to `{ amount }` with the currency left ABSENT —
+    // it names none, and inventing one here would outrank the process's own
+    // setting downstream. Renderers fill it via `resolveBudgetFallbackCurrency`.
     expect(result.proposalData).toMatchObject({
       title: 'Plain Number Budget',
-      budget: { amount: 3000, currency: 'USD' },
+      budget: { amount: 3000 },
     });
+    expect(result.proposalData.budget).not.toHaveProperty('currency');
   });
 
   it('should allow org admin without profile access via org-level fallback', async ({

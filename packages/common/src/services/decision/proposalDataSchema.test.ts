@@ -298,11 +298,23 @@ describe('resolveSystemFieldOverrides', () => {
   });
 
   it("gives a currency-less fragment the template's currency, not USD", () => {
-    // `budgetValueSchema` stamps USD onto legacy shapes. That default must lose
-    // to the process's configured currency, or a EUR process renders — and the
-    // editor re-persists — its legacy fragments as dollars.
+    // A fragment that names no currency is denominated in the process's, not
+    // the default, or a EUR process renders — and the editor re-persists — its
+    // legacy fragments as dollars.
     expect(
       resolveSystemFieldOverrides({ budget: '5000' }, 'EUR').budget,
+    ).toEqual({ amount: 5000, currency: 'EUR' });
+  });
+
+  it('treats a whitespace-only fragment currency as naming none', () => {
+    // Parity with `getStoredBudgetCurrency`, which trims before deciding.
+    // Passing '  ' through makes `Intl` throw, so the amount renders with no
+    // currency marker at all rather than the process's.
+    expect(
+      resolveSystemFieldOverrides(
+        { budget: '{"amount":5000,"currency":"  "}' },
+        'EUR',
+      ).budget,
     ).toEqual({ amount: 5000, currency: 'EUR' });
   });
 

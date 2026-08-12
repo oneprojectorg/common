@@ -7,6 +7,7 @@ import {
   formatProposalCategories,
   parseProposalData,
 } from '../proposalDataSchema';
+import { resolveBudgetFallbackCurrency } from '../templateBudget';
 
 // Infer the proposal type from the listProposals return value
 type ProposalFromList = Awaited<
@@ -49,7 +50,12 @@ export async function generateProposalsCsv(
       Title: p.profile?.name || '',
       Description: getDocumentDescription(p),
       Budget: proposalData.budget?.amount ?? '',
-      Currency: proposalData.budget?.currency ?? '',
+      // Resolved, not read straight off the budget: a budget that named no
+      // currency is denominated in the process's, and a spreadsheet of bare
+      // amounts with an empty Currency column can't be reconstructed at all.
+      Currency: proposalData.budget
+        ? resolveBudgetFallbackCurrency(p.proposalData, p.proposalTemplate)
+        : '',
       Categories: formatProposalCategories(proposalData.category),
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',

@@ -170,6 +170,7 @@ export function ProposalPreview({
             ) : (
               <BudgetDisplay
                 value={budget}
+                fallbackCurrency={budgetCurrency}
                 className="font-serif text-title-base text-neutral-black"
               />
             )}

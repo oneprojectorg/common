@@ -252,9 +252,9 @@ function ProposalEditorInner({
   const proposalFields = compileProposalSchema(proposalTemplate);
 
   // Resolved once here, from the *raw* stored data, and handed to every budget
-  // surface below. `draft.budget` is schema-parsed and carries a fabricated USD
-  // for legacy bare-number budgets, so deriving it downstream would let that
-  // default outrank a EUR process's own currency.
+  // surface below. Parsing drops a budget whose shape `budgetValueSchema` can't
+  // read, so deriving this from `draft.budget` downstream would lose a stored
+  // currency and fall back to the template's.
   const budgetFallbackCurrency = resolveBudgetFallbackCurrency(
     proposal.proposalData,
     proposalTemplate,
