@@ -27,7 +27,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
 
 import { ProfileAvatar } from '../ProfileAvatar';
-import { BudgetDisplay, formatBudget } from './BudgetDisplay';
+import { AllocatedBudgetDisplay, BudgetDisplay } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
@@ -150,23 +150,12 @@ export function ProposalPreview({
           {/* Budget + Categories — stacked, matching the proposal editor layout */}
           <div className="flex flex-col items-start gap-4">
             {selection?.allocated != null ? (
-              <div className="flex flex-wrap items-end gap-2">
-                {/* `budgetCurrency` on both: a budget that named no currency
-                    of its own would otherwise fall through to the default
-                    instead of the one the process is denominated in. */}
-                <BudgetDisplay
-                  value={selection.allocated}
-                  fallbackCurrency={budgetCurrency}
-                  className="font-serif text-title-base text-neutral-black"
-                />
-                {budget && (
-                  <span className="text-sm text-neutral-gray4">
-                    {t('{amount} requested', {
-                      amount: formatBudget(budget, budgetCurrency) ?? '',
-                    })}
-                  </span>
-                )}
-              </div>
+              <AllocatedBudgetDisplay
+                allocated={selection.allocated}
+                requested={budget}
+                fallbackCurrency={budgetCurrency}
+                amountClassName="font-serif text-title-base text-neutral-black"
+              />
             ) : (
               <BudgetDisplay
                 value={budget}

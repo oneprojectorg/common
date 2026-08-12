@@ -309,13 +309,10 @@ export const listProposals = async ({
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
-    const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
-      // The raw row, not the parsed value: `budgetValueSchema` drops a
-      // budget whose shape it can't read, taking the currency stored beside
-      // the amount with it, and the review paths resolve from the raw row too.
+      // Raw row — see `resolveBudgetFallbackCurrency`.
       storedProposalData: proposal.proposalData,
     });
 
@@ -323,7 +320,7 @@ export const listProposals = async ({
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parsedProposalData,
+        ...parseProposalData(proposal.proposalData),
         ...systemFieldOverrides,
       },
       status: proposal.status,

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { MoneyAmount } from '../../money';
+import { type MoneyAmount, moneyAmountSchema } from '../../money';
 import { DEFAULT_BUDGET_CURRENCY } from './templateBudget';
 import type { XFormatPropertySchema } from './types';
 
@@ -25,15 +25,15 @@ const categoryValueSchema = z
  */
 export const budgetValueSchema = z
   .union([
-    // Canonical shape, currency optional.
-    z.object({
-      amount: z.number(),
-      // Not `min(1)`: a blank code has to still parse, or the union falls
-      // through to the numeric branch, fails there too, and the amount
-      // disappears from the proposal entirely. Readers treat a blank code as
-      // naming none — see `getStoredBudgetCurrency`.
-      currency: z.string().optional(),
-    }),
+    // Canonical shape, with the currency made optional. Extended from
+    // `moneyAmountSchema` rather than restated, so a field added to the
+    // canonical money shape reaches stored budgets too.
+    //
+    // Not `min(1)` on the currency: a blank code has to still parse, or the
+    // union falls through to the numeric branch, fails there too, and the
+    // amount disappears from the proposal entirely. Readers treat a blank code
+    // as naming none — see `getStoredBudgetCurrency`.
+    moneyAmountSchema.extend({ currency: z.string().optional() }),
     // Legacy: plain number → { amount } with no currency. The return type is
     // annotated so both branches produce one shape rather than a union TS
     // makes callers narrow before they can read `currency` at all.

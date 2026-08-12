@@ -15,45 +15,45 @@ import {
 const DEFAULT_LOCALE = 'en-US';
 
 /**
- * Format a currency amount, tolerating a malformed currency code.
+ * `Intl.NumberFormat` instances, keyed by the options that distinguish them.
  *
- * `currency` reaches us from stored proposal data, where it is only typed as a
- * string — a bad code (from an import or an older writer) makes
- * `Intl.NumberFormat` throw `RangeError` and blanks the surrounding page into
- * an error boundary. Fall back to a plain localized number instead: showing
- * the amount unlabeled beats fabricating the wrong symbol, and the bad code is
- * logged once so the record can be repaired.
- *
- * Deliberately module-private: {@link formatMoney} is the only entry point, so
- * a new caller can't reintroduce the per-site option bags (or a per-site
- * locale) that made the same budget render differently on two surfaces.
+ * Construction costs orders of magnitude more than `.format()`, and money is
+ * formatted per row on every render of a list — a scrolled page of proposals
+ * rebuilds dozens of identical formatters per pass. The key space is tiny: one
+ * currency per process, times whole-vs-fractional.
  */
-function formatCurrency(amount: number, currency: string): string {
+const moneyFormatters = new Map<string, Intl.NumberFormat>();
+
+function getMoneyFormatter(
+  currency: string | null,
+  isWholeAmount: boolean,
+): Intl.NumberFormat {
+  const key = `${currency ?? ''}|${isWholeAmount}`;
+  const cached = moneyFormatters.get(key);
+  if (cached) {
+    return cached;
+  }
+
   // Whole amounts render without decimals ("$5,000", not "$5,000.00"). Only
   // that case needs an override: for a fractional amount `Intl` already
   // defaults both bounds to the number of decimals the currency actually has,
   // so JPY 1000.5 gives "¥1,001" and USD 5000.5 gives "$5,000.50" on its own.
-  const wholeAmountDigits = Number.isInteger(amount)
+  const wholeAmountDigits = isWholeAmount
     ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
     : {};
 
-  try {
-    return new Intl.NumberFormat(DEFAULT_LOCALE, {
-      style: 'currency',
-      currency,
-      ...wholeAmountDigits,
-    }).format(amount);
-  } catch {
-    reportInvalidCurrency(currency);
-    // `maximumFractionDigits` spelled out: without `style: 'currency'` there is
-    // no currency to take a decimal count from, and the plain-number default is
-    // 3 — so a fallback left to `Intl` renders 5000.567 as "5,000.567" rather
-    // than the money-shaped two places.
-    return new Intl.NumberFormat(DEFAULT_LOCALE, {
-      maximumFractionDigits: 2,
-      ...wholeAmountDigits,
-    }).format(amount);
-  }
+  const formatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
+    ...(currency === null
+      ? // No currency to take a decimal count from, and the plain-number
+        // default is 3 — so a fallback left to `Intl` renders 5000.567 as
+        // "5,000.567" rather than the money-shaped two places.
+        { maximumFractionDigits: 2 }
+      : { style: 'currency' as const, currency }),
+    ...wholeAmountDigits,
+  });
+
+  moneyFormatters.set(key, formatter);
+  return formatter;
 }
 
 /**
@@ -64,12 +64,27 @@ function formatCurrency(amount: number, currency: string): string {
  * through this so the same budget can't render as "$5,000" in the editor and
  * "CA$5,000.50" on the card. Options live here rather than at the call sites
  * precisely because per-site option bags are what let them drift.
+ *
+ * Tolerates a malformed currency code: `currency` reaches us from stored
+ * proposal data, where it is only typed as a string, and a bad code (from an
+ * import or an older writer) makes `Intl.NumberFormat` throw `RangeError` and
+ * blanks the surrounding page into an error boundary. Falls back to a plain
+ * localized number instead — showing the amount unlabeled beats fabricating
+ * the wrong symbol — and logs the bad code once so the record can be repaired.
  */
 export function formatMoney(budget: {
   amount: number;
   currency: string;
 }): string {
-  return formatCurrency(budget.amount, budget.currency);
+  const { amount, currency } = budget;
+  const isWholeAmount = Number.isInteger(amount);
+
+  try {
+    return getMoneyFormatter(currency, isWholeAmount).format(amount);
+  } catch {
+    reportInvalidCurrency(currency);
+    return getMoneyFormatter(null, isWholeAmount).format(amount);
+  }
 }
 
 /**

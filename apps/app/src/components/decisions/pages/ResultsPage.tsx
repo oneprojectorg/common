@@ -4,11 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import type { ProposalTemplateSchema } from '@op/common/client';
-import {
-  getTemplateBudgetCurrency,
-  hasVotingPhase,
-  pickProposalTemplate,
-} from '@op/common/client';
+import { getTemplateBudgetCurrency, hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -48,8 +44,8 @@ interface ResultsPageInstance {
     description: string | null;
     /** Where the legacy route's template lives — `legacyInstanceDataEncoder`
      * drops `instanceData.proposalTemplate`, so this is the only copy that
-     * survives the wire there. Read through `pickProposalTemplate`, the same
-     * precedence the server's `resolveProposalTemplate` applies. */
+     * survives the wire there. Falls back to it below, matching the precedence
+     * the server's `resolveProposalTemplate` applies. */
     processSchema?: {
       proposalTemplate?: ProposalTemplateSchema | null;
     } | null;
@@ -186,10 +182,8 @@ function ResultsPageContent({
             <ResultsStats
               instanceId={instanceId}
               currency={getTemplateBudgetCurrency(
-                pickProposalTemplate(
-                  instance.instanceData?.proposalTemplate,
+                instance.instanceData?.proposalTemplate ??
                   instance.process?.processSchema?.proposalTemplate,
-                ),
               )}
             />
           </Suspense>

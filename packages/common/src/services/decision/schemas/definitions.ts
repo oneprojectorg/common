@@ -1,3 +1,4 @@
+import { DEFAULT_BUDGET_CURRENCY } from '../templateBudget';
 /**
  * Decision schema definitions.
  * Each schema can be used directly with RJSF.
@@ -34,7 +35,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
         'x-format': 'money',
         properties: {
           amount: { type: 'number' },
-          currency: { type: 'string', default: 'USD' },
+          currency: { type: 'string', default: DEFAULT_BUDGET_CURRENCY },
         },
       },
     },

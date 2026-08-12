@@ -93,6 +93,10 @@ export function getStoredBudgetCurrency(
  * Every surface that renders a budget resolves its fallback through here, so
  * the editor pill, list cards, detail page and review table can't disagree
  * about what an unlabeled amount is denominated in.
+ *
+ * Hand this the **raw** `proposalData` off the column wherever you have it:
+ * `budgetValueSchema` drops a budget whose shape it can't read, and the
+ * currency stored beside the amount goes with it.
  */
 export function resolveBudgetFallbackCurrency(
   proposalData: unknown,

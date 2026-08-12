@@ -172,8 +172,7 @@ async function listProposalsFiltered({
       scoredCriterionKeys,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
-    // Resolved from the raw row: parsing drops a budget whose shape
-    // `budgetValueSchema` can't read, and the stored currency goes with it.
+    // Resolved from the raw row — see `resolveBudgetFallbackCurrency`.
     budgetCurrency: resolveBudgetFallbackCurrency(
       proposal.proposalData,
       proposalTemplate,
@@ -270,8 +269,7 @@ async function listProposalsPaginated({
       scoredCriterionKeys,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
-    // Resolved from the raw row: parsing drops a budget whose shape
-    // `budgetValueSchema` can't read, and the stored currency goes with it.
+    // Resolved from the raw row — see `resolveBudgetFallbackCurrency`.
     budgetCurrency: resolveBudgetFallbackCurrency(
       proposal.proposalData,
       proposalTemplate,

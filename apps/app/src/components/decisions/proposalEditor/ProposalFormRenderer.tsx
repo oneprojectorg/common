@@ -6,6 +6,7 @@ import {
   formatProposalCategories,
   getBudgetCurrency,
   isDistrictCategoryLabel,
+  parseBudgetFragmentValue,
   parseCategoryFragmentValue,
   parseSchemaOptions,
   schemaAllowsMultipleSelection,
@@ -24,6 +25,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
+import { formatBudget } from '../BudgetDisplay';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
@@ -35,7 +37,6 @@ import {
 } from './ReadonlyProposalFields';
 import {
   getFragmentText,
-  parsePreviewBudget,
   parsePreviewLocation,
 } from './proposalPreviewContent';
 import type { ProposalDraftFields } from './useProposalDraft';
@@ -103,7 +104,9 @@ function formatPreviewBudget(
     return null;
   }
 
-  const budget = parsePreviewBudget(content, currency);
+  // Reuses `text` rather than re-extracting: `getFragmentText` runs a TipTap
+  // `generateText` pass, which is not free on a render path.
+  const budget = parseBudgetFragmentValue(text, currency);
 
   if (!budget) {
     return text;
@@ -168,12 +171,10 @@ function getPreviewBudgetValue({
     return null;
   }
 
-  return formatMoney({
-    amount: draftValue.amount,
-    // `||` covers a stored blank code as well as an absent one — neither names
-    // a currency, and both must fall through to the process's.
-    currency: draftValue.currency || fallbackCurrency,
-  });
+  // Through `formatBudget`, not `formatMoney` directly: it already owns the
+  // "a stored blank code names no currency either" rule, and a second entry
+  // point here is exactly how the editor pill drifts from the cards.
+  return formatBudget(draftValue, fallbackCurrency);
 }
 
 // ---------------------------------------------------------------------------

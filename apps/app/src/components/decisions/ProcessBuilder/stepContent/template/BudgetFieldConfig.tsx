@@ -6,6 +6,7 @@ import { getCurrencySymbol } from '@/utils/formatting';
 // server service layer (and its `server-only` deps) into this 'use client'
 // component's bundle.
 import {
+  DEFAULT_BUDGET_CURRENCY,
   type ProposalTemplateSchema,
   getBudgetCurrency,
 } from '@op/common/client';
@@ -14,7 +15,7 @@ import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -77,7 +78,12 @@ export function BudgetFieldConfig({
   const budgetSchema = getFieldSchema(template, 'budget');
   const showBudget = !!budgetSchema;
   const budgetCurrency = getBudgetCurrency(budgetSchema);
-  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
+  // Memoized: this card re-renders on every keystroke in the max-budget field
+  // that consumes the symbol, and resolving it runs an `Intl` format pass.
+  const budgetCurrencySymbol = useMemo(
+    () => getCurrencySymbol(budgetCurrency),
+    [budgetCurrency],
+  );
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 
@@ -100,7 +106,7 @@ export function BudgetFieldConfig({
               'x-format': 'money',
               properties: {
                 amount: { type: 'number' },
-                currency: { type: 'string', default: 'USD' },
+                currency: { type: 'string', default: DEFAULT_BUDGET_CURRENCY },
               },
             },
           },

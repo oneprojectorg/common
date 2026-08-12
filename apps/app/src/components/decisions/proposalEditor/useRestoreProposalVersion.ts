@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import {
   normalizeProposalCategories,
+  parseBudgetFragmentValue,
   parseProposalData,
   resolveBudgetFallbackCurrency,
 } from '@op/common/client';
@@ -13,7 +14,7 @@ import type { JSONContent } from '@tiptap/react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../collaboration';
-import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
+import { getFragmentText } from './proposalPreviewContent';
 
 interface UseRestoreProposalVersionOptions {
   proposalId: string;
@@ -74,8 +75,8 @@ export function useRestoreProposalVersion({
     // Raw `proposalData`, not `currentProposalData.budget`: parsing drops a
     // budget whose shape `budgetValueSchema` can't read, and restore would
     // then persist the template default over the currency stored on the row.
-    const nextBudget = parsePreviewBudget(
-      fragmentContents.budget,
+    const nextBudget = parseBudgetFragmentValue(
+      getFragmentText(fragmentContents.budget),
       resolveBudgetFallbackCurrency(proposalData, proposalTemplate),
     );
 

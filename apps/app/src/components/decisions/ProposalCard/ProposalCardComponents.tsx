@@ -28,7 +28,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
-import { BudgetDisplay, formatBudget } from '../BudgetDisplay';
+import { AllocatedBudgetDisplay, BudgetDisplay } from '../BudgetDisplay';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { RevisionRequestChip } from '../RevisionRequestChip';
 import {
@@ -163,28 +163,17 @@ export function ProposalCardBudget({
   allocated?: string | number | null;
   className?: string;
 }) {
-  const t = useTranslations();
   const { budget, budgetCurrency } = resolveProposalSystemFields(proposal);
 
   if (!isNullish(allocated)) {
-    const requestedText = formatBudget(budget, budgetCurrency);
-
     return (
-      <div className={cn('flex flex-wrap items-end gap-2', className)}>
-        {/* `budgetCurrency` on both: a budget that named no currency of its
-            own would otherwise fall through to the default instead of the one
-            the process is denominated in. */}
-        <BudgetDisplay
-          value={allocated}
-          fallbackCurrency={budgetCurrency}
-          className="font-serif text-title-base text-neutral-charcoal"
-        />
-        {requestedText && (
-          <span className="text-sm text-neutral-gray4">
-            {t('{amount} requested', { amount: requestedText })}
-          </span>
-        )}
-      </div>
+      <AllocatedBudgetDisplay
+        allocated={allocated}
+        requested={budget}
+        fallbackCurrency={budgetCurrency}
+        className={className}
+        amountClassName="font-serif text-title-base text-neutral-charcoal"
+      />
     );
   }
 

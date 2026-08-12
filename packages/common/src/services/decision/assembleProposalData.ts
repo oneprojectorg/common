@@ -7,12 +7,6 @@ import {
 import { getBudgetCurrency } from './templateBudget';
 import type { ProposalTemplateSchema } from './types';
 
-/** System field key holding the proposal's requested budget. */
-const BUDGET_FIELD_KEY = 'budget';
-
-/** System field key holding the proposal's title. */
-const TITLE_FIELD_KEY = 'title';
-
 /**
  * Builds the flat data object that the JSON Schema validator expects from
  * raw TipTap fragment text values.
@@ -165,13 +159,13 @@ export function resolveSystemFieldOverrides(
   // an all-digits title becomes a number and re-stringifying it rewrites what
   // the author typed ("2024.10" → "2024.1", "1e3" → "1000"). The trimmed
   // fragment text is the exact submitted title for every template shape.
-  const title = (fragmentTexts[TITLE_FIELD_KEY] ?? '').trim();
+  const title = (fragmentTexts.title ?? '').trim();
   if (title) {
     overrides.title = title;
   }
 
   const budget = parseBudgetFragmentValue(
-    fragmentTexts[BUDGET_FIELD_KEY] ?? '',
+    fragmentTexts.budget ?? '',
     budgetCurrency,
   );
   if (budget) {

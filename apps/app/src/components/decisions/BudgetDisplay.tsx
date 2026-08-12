@@ -1,9 +1,10 @@
+'use client';
+
 import { formatMoney } from '@/utils/formatting';
-import {
-  type BudgetInput,
-  DEFAULT_BUDGET_CURRENCY,
-  normalizeBudget,
-} from '@op/common/client';
+import { type BudgetInput, normalizeBudget } from '@op/common/client';
+import { cn } from '@op/ui/utils';
+
+import { useTranslations } from '@/lib/i18n';
 
 export type BudgetDisplayProps = {
   value: BudgetInput;
@@ -11,11 +12,14 @@ export type BudgetDisplayProps = {
    * Currency for a `value` that carries none — a bare number or numeric
    * string, which `normalizeBudget` leaves without one.
    *
-   * Allocated amounts are stored as bare numbers, so without this an allocation
-   * renders "$5,000" beside the "€5,000 requested" it was allocated against.
-   * Pass the currency of the budget it sits next to.
+   * Required, not optional with a default: two review rounds each found a
+   * surface that had simply forgotten to pass it and silently rendered dollars
+   * on a EUR process. A required prop turns the next omission into a type
+   * error. Resolve it with `resolveBudgetFallbackCurrency`; allocated amounts
+   * are stored as bare numbers, so pass the currency of the budget they sit
+   * beside.
    */
-  fallbackCurrency?: string;
+  fallbackCurrency: string;
   className?: string;
 };
 
@@ -40,7 +44,7 @@ export function BudgetDisplay({
  */
 export function formatBudget(
   value: BudgetInput,
-  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
+  fallbackCurrency: string,
 ): string | null {
   const budget = normalizeBudget(value);
   if (!budget) {
@@ -54,4 +58,50 @@ export function formatBudget(
     amount: budget.amount,
     currency: budget.currency || fallbackCurrency,
   });
+}
+
+/**
+ * An allocated amount rendered as the primary value, with the originally
+ * requested budget beside it as a secondary label ("$3,500 requested").
+ *
+ * Shared by the card and the detail preview, which differ only in the type
+ * colour they render the amount in — keeping two copies is how one of them
+ * ends up passing the wrong `fallbackCurrency` to only one of its two
+ * `BudgetDisplay`s.
+ */
+export function AllocatedBudgetDisplay({
+  allocated,
+  requested,
+  fallbackCurrency,
+  className,
+  amountClassName,
+}: {
+  allocated: BudgetInput;
+  requested: BudgetInput;
+  /**
+   * Applies to both amounts: an allocation is stored as a bare number, and a
+   * requested budget that named no currency of its own is denominated in the
+   * process's just the same. See {@link BudgetDisplayProps.fallbackCurrency}.
+   */
+  fallbackCurrency: string;
+  className?: string;
+  amountClassName?: string;
+}) {
+  const t = useTranslations();
+  const requestedText = formatBudget(requested, fallbackCurrency);
+
+  return (
+    <div className={cn('flex flex-wrap items-end gap-2', className)}>
+      <BudgetDisplay
+        value={allocated}
+        fallbackCurrency={fallbackCurrency}
+        className={amountClassName}
+      />
+      {requestedText && (
+        <span className="text-sm text-neutral-gray4">
+          {t('{amount} requested', { amount: requestedText })}
+        </span>
+      )}
+    </div>
+  );
 }

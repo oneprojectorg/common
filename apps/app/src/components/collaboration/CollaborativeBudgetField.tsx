@@ -57,27 +57,28 @@ export function CollaborativeBudgetField({
   // `||` rather than `??`: a budget stored with a blank code names no currency
   // any more than an absent one does, and seeding the shared fragment with a
   // blank would push it to every renderer that reads the currency back off it.
-  const initialBudgetValue: BudgetData | null = useMemo(
-    () =>
-      initialValue !== null
-        ? {
-            currency: initialValue.currency || fallbackCurrency,
-            amount: initialValue.amount,
-          }
-        : null,
-    [initialValue, fallbackCurrency],
-  );
-
   const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
     'budget',
-    initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
+    initialValue !== null
+      ? JSON.stringify({
+          currency: initialValue.currency || fallbackCurrency,
+          amount: initialValue.amount,
+        })
+      : '',
   );
 
   // Same parser the cards and detail page read the fragment with, so the
   // editor can't show "Add budget" for a legacy fragment they render a value
   // for. `undefined` means present-but-unreadable as well as absent.
-  const budget = parseBudgetFragmentValue(budgetText, fallbackCurrency);
+  //
+  // Memoized so the emit effect below can depend on it directly: one parse
+  // makes "display and emit agree" structural rather than something the next
+  // reader has to keep true by hand.
+  const budget = useMemo(
+    () => parseBudgetFragmentValue(budgetText, fallbackCurrency),
+    [budgetText, fallbackCurrency],
+  );
   const setBudget = (newBudget: BudgetData | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
@@ -141,18 +142,13 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    // Re-parsed rather than closing over `budget` so the deps stay primitive —
-    // `budget` is a fresh object every render. Same arguments, so display and
-    // emit can't disagree.
-    const emitted = parseBudgetFragmentValue(budgetText, fallbackCurrency);
-
     // A fragment we can't read means "unknown", not "cleared". This effect
     // fires on mount, and `useProposalDraft` treats a `null` budget as the
     // author emptying the field — so emitting here would autosave the stored
     // budget away just because someone opened the proposal. Clearing the
     // field deletes the fragment, which arrives as empty text, not as
     // unreadable text.
-    if (budgetText && !emitted) {
+    if (budgetText && !budget) {
       return;
     }
 
@@ -167,12 +163,12 @@ export function CollaborativeBudgetField({
     // resolved fallback disagreeing. Emitting on it would autosave whichever
     // code an older editor happened to write into the fragment — pinning the
     // proposal to a currency nobody chose, merely because it was opened.
-    if (emitted?.amount === initialBudgetValue?.amount) {
+    if (budget?.amount === initialValue?.amount) {
       return;
     }
 
-    onChangeRef.current?.(emitted ?? null);
-  }, [budgetText, fallbackCurrency, initialBudgetValue]);
+    onChangeRef.current?.(budget ?? null);
+  }, [budgetText, budget, initialValue?.amount]);
 
   const handleStartEditing = () => {
     setIsEditing(true);
