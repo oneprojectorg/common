@@ -58,7 +58,8 @@ export type ProposalEngagement = {
   isLiked: boolean;
   isFollowing: boolean;
   onLike: () => void;
-  onFollow: () => void;
+  /** Absent for the proposal's own author — the follower count stays static. */
+  onFollow?: () => void;
   /** Disables both toggles while a like/follow write is in flight. */
   isPending?: boolean;
 };

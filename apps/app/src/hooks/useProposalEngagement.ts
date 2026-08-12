@@ -25,7 +25,8 @@ export interface ProposalEngagement {
   isFollowed: boolean;
   isPending: boolean;
   onLike: () => void;
-  onFollow: () => void;
+  /** Absent for a proposal's own author — see {@link useProposalEngagement}. */
+  onFollow?: () => void;
 }
 
 /**
@@ -35,6 +36,11 @@ export interface ProposalEngagement {
  * Returns `undefined` when the viewer can't act — anonymous visitors, and roles
  * without engagement access on the parent decision. Callers render the counts
  * as plain numbers in that case rather than dead controls.
+ *
+ * An author gets no `onFollow`: they're the proposal's audience by definition.
+ * Nothing writes that follow for them, so their own follower count doesn't
+ * include them — this hides a control product doesn't want, it doesn't model a
+ * relationship. Like is unaffected.
  *
  * Counts are NOT read here. They live on the proposal row the caller already
  * has, which the mutation refetches via `listProposals`. Don't source a count
@@ -63,11 +69,20 @@ export function useProposalEngagement({
     return undefined;
   }
 
+  // `submittedByProfileId` is the author's current profile at submit time, the
+  // same id `useUser` exposes. Anonymous submissions keep it — `isAnonymous`
+  // only hides the name.
+  const isAuthor =
+    proposal.submittedBy?.id !== undefined &&
+    proposal.submittedBy.id === user?.currentProfile?.id;
+
   return {
     isLiked,
     isFollowed,
     isPending: isLoading,
     onLike: handleLike,
-    onFollow: handleFollow,
+    // Keep the toggle for an author who already follows, or they'd be stuck
+    // following with no way to undo it.
+    onFollow: isAuthor && !isFollowed ? undefined : handleFollow,
   };
 }

@@ -195,7 +195,8 @@ export const ProposalCardView = ({
         bookmarks: {
           count: proposal.followersCount || 0,
           label: t('Followers'),
-          ...(engagement && {
+          // No `onFollow` for an author — the count stays, the press goes.
+          ...(engagement?.onFollow && {
             active: engagement.isFollowed,
             onClick: engagement.onFollow,
           }),
