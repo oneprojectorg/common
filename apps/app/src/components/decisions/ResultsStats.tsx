@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency } from '@/utils/formatting';
+import { formatMoney } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
@@ -42,9 +42,16 @@ const Stat = ({ children }: { children?: ReactNode }) => {
 
 interface ResultsStatsProps {
   instanceId: string;
+  /**
+   * The process's budget currency. `totalAllocated` is a bare sum with no
+   * currency of its own, and this banner sits directly above proposal cards
+   * that render theirs — without this the same money is labelled two ways on
+   * one page.
+   */
+  currency: string;
 }
 
-export function ResultsStats({ instanceId }: ResultsStatsProps) {
+export function ResultsStats({ instanceId, currency }: ResultsStatsProps) {
   const t = useTranslations();
 
   const [stats] = trpc.decision.getResultsStats.useSuspenseQuery({
@@ -73,7 +80,9 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
         </Stat>
         <hr className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block" />
         <Stat>
-          <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
+          <StatNumber>
+            {formatMoney({ amount: stats.totalAllocated, currency })}
+          </StatNumber>
           <StatLabel>{t('Total Allocated')}</StatLabel>
         </Stat>
       </div>

@@ -71,12 +71,12 @@ export function useRestoreProposalVersion({
     const nextCategory = normalizeProposalCategories(
       getFragmentText(fragmentContents.category),
     );
+    // Raw `proposalData`, not `currentProposalData.budget`: parsing stamps a
+    // fabricated USD onto a legacy bare-number budget, which restore would
+    // then persist over the process's own currency.
     const nextBudget = parsePreviewBudget(
       fragmentContents.budget,
-      resolveBudgetFallbackCurrency(
-        currentProposalData.budget,
-        proposalTemplate,
-      ),
+      resolveBudgetFallbackCurrency(proposalData, proposalTemplate),
     );
 
     return {

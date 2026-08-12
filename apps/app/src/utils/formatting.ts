@@ -32,64 +32,30 @@ export function formatCurrency(
   locale: string = DEFAULT_LOCALE,
   currency: string = 'USD',
 ): string {
-  const fractionDigits = currencyFractionDigits(amount, locale, currency);
+  // Whole amounts render without decimals ("$5,000", not "$5,000.00"). Only
+  // that case needs an override: for a fractional amount `Intl` already
+  // defaults both bounds to the number of decimals the currency actually has,
+  // so JPY 1000.5 gives "¥1,001" and USD 5000.5 gives "$5,000.50" on its own.
+  const wholeAmountDigits = Number.isInteger(amount)
+    ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+    : {};
 
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
+      ...wholeAmountDigits,
     }).format(amount);
   } catch {
     reportInvalidCurrency(currency);
     // Deliberately drops the caller's locale. This branch exists to absorb a
     // throw, so it must not be able to throw itself, and a malformed `locale`
-    // is one of the two things that can throw above.
-    return new Intl.NumberFormat(DEFAULT_LOCALE, {
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(amount);
-  }
-}
-
-/**
- * Whole amounts render without decimals, fractional ones with the number of
- * decimals the currency actually has.
- *
- * `Intl`'s own default (min 0, max 2) renders 5000.5 as the malformed "$5,000.5"
- * — one decimal place, which no currency uses. Pinning min = max gives "$5,000"
- * and "$5,000.50" instead.
- *
- * The fractional count comes from `Intl` rather than a literal 2 because
- * zero-decimal currencies exist and two of them (JPY, KRW) are in the picker:
- * hardcoding 2 renders a stray 1000.5 as "¥1,000.50", a denomination that
- * doesn't exist. `Intl`'s own `maximumFractionDigits` is currency-aware and
- * gives "¥1,001".
- */
-function currencyFractionDigits(
-  amount: number,
-  locale: string,
-  currency: string,
-): number {
-  if (Number.isInteger(amount)) {
-    return 0;
-  }
-
-  try {
-    // Optional in the TS lib types (it is absent for some notation options),
-    // though always set for a currency format — 2 is the right count if it
-    // ever is not.
-    return (
-      new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-      }).resolvedOptions().maximumFractionDigits ?? 2
+    // is one of the two things that can throw above. Without `style:
+    // 'currency'` there is no currency to take a decimal count from, so a
+    // fractional amount gets the plain-number default of 2.
+    return new Intl.NumberFormat(DEFAULT_LOCALE, wholeAmountDigits).format(
+      amount,
     );
-  } catch {
-    // A code/locale `Intl` rejects — the caller's own try/catch reports it and
-    // falls back to a plain number, where 2 is the right count.
-    return 2;
   }
 }
 

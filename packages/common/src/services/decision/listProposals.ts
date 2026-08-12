@@ -313,7 +313,7 @@ export const listProposals = async ({
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
-      storedBudget: storedProposalData.budget,
+      storedProposalData: proposal.proposalData,
     });
 
     return {

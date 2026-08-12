@@ -19,13 +19,14 @@ interface CollaborativeBudgetFieldProps {
   minAmount?: number;
   maxAmount?: number;
   /**
-   * ISO 4217 code the template is configured with, stamped onto what the
-   * author enters. Every renderer reads the currency back off the fragment,
-   * so getting this wrong makes a whole process render the wrong currency.
+   * ISO 4217 code for a fragment that names none of its own, stamped onto what
+   * the author enters. Every renderer reads the currency back off the
+   * fragment, so getting this wrong makes a whole process render the wrong one.
    *
-   * Only a default for budgets that carry no currency of their own — it never
-   * overrides one already stored, since the template's is editable after
-   * proposals are submitted and relabelling an amount is not converting it.
+   * Already resolved by the caller through `resolveBudgetFallbackCurrency` —
+   * this component must not re-derive it from `initialValue`, which is
+   * schema-parsed and therefore carries a fabricated USD for legacy
+   * bare-number budgets.
    */
   currency?: string;
   initialValue?: BudgetData | null;
@@ -44,7 +45,7 @@ interface CollaborativeBudgetFieldProps {
 export function CollaborativeBudgetField({
   minAmount,
   maxAmount,
-  currency: templateCurrency = DEFAULT_BUDGET_CURRENCY,
+  currency: fallbackCurrency = DEFAULT_BUDGET_CURRENCY,
   initialValue = null,
   onChange,
 }: CollaborativeBudgetFieldProps) {
@@ -62,19 +63,6 @@ export function CollaborativeBudgetField({
     'budget',
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
-
-  /**
-   * Currency for a fragment that names none of its own.
-   *
-   * The *stored* currency outranks the template's: it is what the amount was
-   * actually submitted in, while a template currency is only a display default
-   * we inferred — and the template's is editable long after proposals land.
-   * Display and emit must share this one value. When they didn't, the pill
-   * rendered €5,000 for a budget stored as $5,000, and since `handleChange`
-   * stamps the *displayed* currency onto the fragment, retyping the same
-   * number silently re-denominated the request with no conversion.
-   */
-  const fallbackCurrency = initialValue?.currency ?? templateCurrency;
 
   // Same parser the cards and detail page read the fragment with, so the
   // editor can't show "Add budget" for a legacy fragment they render a value

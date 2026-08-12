@@ -254,12 +254,28 @@ describe('resolveSystemFieldOverrides', () => {
       { budget: '\n\t' },
       { budget: '5,000' },
       { budget: 'not a budget' },
-      { budget: '{"amount":"5000","currency":"EUR"}' },
+      { budget: '{"currency":"EUR"}' },
     ]) {
       expect(resolveSystemFieldOverrides(fragmentTexts)).not.toHaveProperty(
         'budget',
       );
     }
+  });
+
+  it('reads object fragments that `moneyAmountSchema` would reject', () => {
+    // Fragments are hand-written JSON in a collaborative document, so a string
+    // amount and a missing currency both turn up. Rejecting them left the
+    // editor pill showing "Add budget" for a budget the cards still rendered.
+    expect(
+      resolveSystemFieldOverrides(
+        { budget: '{"amount":"5000","currency":"EUR"}' },
+        'GBP',
+      ).budget,
+    ).toEqual({ amount: 5000, currency: 'EUR' });
+
+    expect(
+      resolveSystemFieldOverrides({ budget: '{"amount":5000}' }, 'GBP').budget,
+    ).toEqual({ amount: 5000, currency: 'GBP' });
   });
 
   it('preserves a numeric-looking title exactly as the author typed it', () => {

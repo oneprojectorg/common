@@ -164,16 +164,19 @@ export function ProposalCardBudget({
   className?: string;
 }) {
   const t = useTranslations();
-  const { budget } = resolveProposalSystemFields(proposal);
+  const { budget, budgetCurrency } = resolveProposalSystemFields(proposal);
 
   if (!isNullish(allocated)) {
     const requestedText = formatBudget(budget);
 
     return (
       <div className={cn('flex flex-wrap items-end gap-2', className)}>
+        {/* `budgetCurrency`, not `budget?.currency`: an allocation on a
+            proposal that never recorded a requested budget would otherwise
+            fall through to `normalizeBudget`'s hardcoded USD. */}
         <BudgetDisplay
           value={allocated}
-          fallbackCurrency={budget?.currency}
+          fallbackCurrency={budgetCurrency}
           className="font-serif text-title-base text-neutral-charcoal"
         />
         {requestedText && (

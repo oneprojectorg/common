@@ -138,8 +138,20 @@ export function parseCategoryFragmentValue(value: string): string[] {
   }
 }
 
-/** Matches a parsed fragment that names its own currency. */
-const explicitCurrencySchema = z.object({ currency: z.string().min(1) });
+/**
+ * A parsed budget fragment in object form, currency optional.
+ *
+ * Looser than `moneyAmountSchema` on purpose: the fragment is hand-written
+ * JSON from a collaborative document, so `{"amount":5000}` and
+ * `{"amount":"5000","currency":"EUR"}` both turn up in real documents.
+ * `moneyAmountSchema` rejects them outright, which would leave the editor pill
+ * showing "Add budget" for a budget the cards still render. Here a missing
+ * currency has a fallback to fill it, so both shapes are readable.
+ */
+const budgetFragmentObjectSchema = z.object({
+  amount: z.union([z.string(), z.number()]).pipe(z.coerce.number()),
+  currency: z.string().min(1).optional(),
+});
 
 /**
  * Normalize the raw text of a `budget` document fragment.
@@ -149,11 +161,9 @@ const explicitCurrencySchema = z.object({ currency: z.string().min(1) });
  * normalizing the raw string. Returns `undefined` when the text carries no
  * usable amount.
  *
- * `fallbackCurrency` is the template's configured currency, used only for
- * fragments that name no currency of their own. `budgetValueSchema` stamps USD
- * onto those, and that default must not outrank the process's own setting: a
- * EUR process holding a legacy bare-number fragment would otherwise render as
- * USD and — because the editor emits what it parsed — re-persist as USD too.
+ * `fallbackCurrency` is the currency already stored on the proposal, or the
+ * template's where there is none (see `resolveBudgetFallbackCurrency`), and is
+ * used only for fragments that name no currency of their own.
  */
 export function parseBudgetFragmentValue(
   text: string,
@@ -173,14 +183,27 @@ export function parseBudgetFragmentValue(
     parsed = text;
   }
 
+  // Object form first — it is the only shape that can name a currency, and the
+  // only one `budgetValueSchema` would reject for naming none.
+  const object = budgetFragmentObjectSchema.safeParse(parsed);
+  if (object.success) {
+    return {
+      amount: object.data.amount,
+      currency: object.data.currency || fallbackCurrency,
+    };
+  }
+
+  // Bare number or numeric string — no currency to read, so the fallback
+  // always applies. `budgetValueSchema` would stamp USD here, and that default
+  // must not outrank the process's own setting: a EUR process holding a legacy
+  // bare-number fragment would otherwise render as USD and — because the
+  // editor emits what it parsed — re-persist as USD too.
   const budget = normalizeBudget(parsed);
   if (!budget) {
     return undefined;
   }
 
-  return explicitCurrencySchema.safeParse(parsed).success
-    ? budget
-    : { ...budget, currency: fallbackCurrency };
+  return { ...budget, currency: fallbackCurrency };
 }
 
 export function formatProposalCategories(

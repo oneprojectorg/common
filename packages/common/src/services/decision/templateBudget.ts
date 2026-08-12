@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import type { ProposalTemplateSchema, XFormatPropertySchema } from './types';
 
 /** Currency assumed when a template's budget field configures none. */
@@ -45,7 +47,34 @@ export function getTemplateBudgetCurrency(
 }
 
 /**
- * The currency to assume for a budget fragment that names none of its own.
+ * Matches raw stored proposalData whose budget names a currency of its own.
+ *
+ * Reads the *raw* JSON deliberately, never a parsed `ProposalData`:
+ * `budgetValueSchema` stamps `'USD'` onto legacy bare-number budgets, so once
+ * proposalData is parsed there is no way left to tell a budget genuinely
+ * submitted in dollars from one that never named a currency at all — and it is
+ * exactly the latter that needs the template's.
+ */
+const storedBudgetCurrencySchema = z.object({
+  budget: z.object({ currency: z.string().min(1) }),
+});
+
+/**
+ * The ISO 4217 code a proposal's stored budget names, or `undefined` for a
+ * budget that names none (legacy bare numbers, imports, cleared fields).
+ *
+ * Takes whole raw proposalData rather than a raw budget so callers can hand
+ * over the untyped JSON column they already hold.
+ */
+export function getStoredBudgetCurrency(
+  rawProposalData: unknown,
+): string | undefined {
+  const result = storedBudgetCurrencySchema.safeParse(rawProposalData);
+  return result.success ? result.data.budget.currency : undefined;
+}
+
+/**
+ * The currency to assume for a budget that names none of its own.
  *
  * Precedence is stored-then-template, and the order matters: the template's
  * currency is editable long after proposals are submitted, so letting it
@@ -58,8 +87,11 @@ export function getTemplateBudgetCurrency(
  * about what an unlabeled amount is denominated in.
  */
 export function resolveBudgetFallbackCurrency(
-  storedBudget: { currency?: string } | null | undefined,
+  rawProposalData: unknown,
   template: ProposalTemplateSchema | null | undefined,
 ): string {
-  return storedBudget?.currency || getTemplateBudgetCurrency(template);
+  return (
+    getStoredBudgetCurrency(rawProposalData) ??
+    getTemplateBudgetCurrency(template)
+  );
 }

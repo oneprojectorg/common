@@ -55,16 +55,17 @@ export interface ProposalListPreview {
 export function buildProposalListPreview({
   documentContent,
   proposalTemplate,
-  storedBudget,
+  storedProposalData,
 }: {
   documentContent: ProposalDocumentContent | undefined;
   proposalTemplate: ProposalTemplateSchema | null;
   /**
-   * The row's own `proposalData.budget`, if any. Only its currency is read, and
+   * The row's raw `proposalData` JSON. Only its budget's currency is read, and
    * only for a fragment that names none — see
-   * {@link resolveBudgetFallbackCurrency}.
+   * {@link resolveBudgetFallbackCurrency}, which needs the raw value to tell a
+   * genuinely stored currency from the one `budgetValueSchema` fabricates.
    */
-  storedBudget?: { currency?: string } | null;
+  storedProposalData?: unknown;
 }): ProposalListPreview {
   if (!documentContent || documentContent.type === 'unavailable') {
     return { previewText: null, systemFieldOverrides: {} };
@@ -146,7 +147,7 @@ export function buildProposalListPreview({
       systemFieldOverrides,
       resolveSystemFieldOverrides(
         fragmentTexts,
-        resolveBudgetFallbackCurrency(storedBudget, proposalTemplate),
+        resolveBudgetFallbackCurrency(storedProposalData, proposalTemplate),
       ),
     );
   }

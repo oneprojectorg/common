@@ -3,7 +3,8 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import { hasVotingPhase } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
+import { getTemplateBudgetCurrency, hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -49,6 +50,9 @@ interface ResultsPageInstance {
       phaseId?: string;
       rules?: { voting?: { submit?: boolean } };
     }[];
+    /** Read only for its budget currency, which the results banner labels
+     * `totalAllocated` with. Absent on legacy instances. */
+    proposalTemplate?: ProposalTemplateSchema | null;
   } | null;
 }
 
@@ -168,7 +172,12 @@ function ResultsPageContent({
           />
 
           <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-            <ResultsStats instanceId={instanceId} />
+            <ResultsStats
+              instanceId={instanceId}
+              currency={getTemplateBudgetCurrency(
+                instance.instanceData?.proposalTemplate,
+              )}
+            />
           </Suspense>
 
           {['cowop', 'one-project'].includes(profileSlug) ? (

@@ -10,6 +10,7 @@ import {
   type ProposalReviewRequest,
   type ProposalTemplateSchema,
   parseProposalData,
+  resolveBudgetFallbackCurrency,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { SplitPane } from '@op/ui/SplitPane';
@@ -249,6 +250,15 @@ function ProposalEditorInner({
   templateRef.current = proposalTemplate;
 
   const proposalFields = compileProposalSchema(proposalTemplate);
+
+  // Resolved once here, from the *raw* stored data, and handed to every budget
+  // surface below. `draft.budget` is schema-parsed and carries a fabricated USD
+  // for legacy bare-number budgets, so deriving it downstream would let that
+  // default outrank a EUR process's own currency.
+  const budgetFallbackCurrency = resolveBudgetFallbackCurrency(
+    proposal.proposalData,
+    proposalTemplate,
+  );
   const previewTitle = getFragmentText(versionPreview?.fragmentContents.title);
   const viewingLabel = versionPreview?.tiptapVersion
     ? t('Viewing {date}', {
@@ -485,6 +495,7 @@ function ProposalEditorInner({
         onFieldChange={handleFieldChange}
         onEditorFocus={onEditorFocus}
         onEditorBlur={onEditorBlur}
+        budgetFallbackCurrency={budgetFallbackCurrency}
         mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />

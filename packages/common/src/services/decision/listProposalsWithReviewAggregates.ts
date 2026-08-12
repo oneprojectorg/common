@@ -21,13 +21,15 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
-import type { RubricTemplateSchema } from './types';
+import { resolveBudgetFallbackCurrency } from './templateBudget';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from './types';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 // ── Input schema ───────────────────────────────────────────────────────
@@ -86,10 +88,13 @@ export async function listProposalsWithReviewAggregates(
         .criteria.filter((c) => c.scored)
         .map((c) => c.key)
     : [];
-  const phaseProposalIds = await getProposalIdsForPhase({
-    instance,
-    phaseId,
-  });
+  // Needed only for its budget currency, which each row falls back to when it
+  // names none of its own — the table renders money and has no other source
+  // for it (this list ships no document fragments).
+  const [phaseProposalIds, proposalTemplate] = await Promise.all([
+    getProposalIdsForPhase({ instance, phaseId }),
+    resolveProposalTemplate(instance.instanceData, instance.processId),
+  ]);
 
   if ('proposalIds' in input) {
     return listProposalsFiltered({
@@ -99,6 +104,7 @@ export async function listProposalsWithReviewAggregates(
       phaseId,
       scoredCriterionKeys,
       rubricTemplate,
+      proposalTemplate,
     });
   }
 
@@ -110,6 +116,7 @@ export async function listProposalsWithReviewAggregates(
     cursor: input.cursor,
     scoredCriterionKeys,
     rubricTemplate,
+    proposalTemplate,
   });
 }
 
@@ -122,6 +129,7 @@ async function listProposalsFiltered({
   phaseId,
   scoredCriterionKeys,
   rubricTemplate,
+  proposalTemplate,
 }: {
   proposalIds: string[];
   phaseProposalIds: string[];
@@ -129,6 +137,7 @@ async function listProposalsFiltered({
   phaseId: string | undefined;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
+  proposalTemplate: ProposalTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   const phaseProposalIdSet = new Set(phaseProposalIds);
   const filteredProposalIds = proposalIds.filter((id) =>
@@ -163,6 +172,12 @@ async function listProposalsFiltered({
       scoredCriterionKeys,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
+    // Resolved from the raw row, before `proposalSchema` normalizes a legacy
+    // bare-number budget into a fabricated USD.
+    budgetCurrency: resolveBudgetFallbackCurrency(
+      proposal.proposalData,
+      proposalTemplate,
+    ),
   }));
 
   return proposalsWithReviewAggregatesListSchema.parse({
@@ -183,6 +198,7 @@ async function listProposalsPaginated({
   cursor,
   scoredCriterionKeys,
   rubricTemplate,
+  proposalTemplate,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
@@ -191,6 +207,7 @@ async function listProposalsPaginated({
   cursor: string | undefined;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
+  proposalTemplate: ProposalTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   if (phaseProposalIds.length === 0) {
     return { items: [], total: 0, next: null, rubricTemplate };
@@ -253,6 +270,12 @@ async function listProposalsPaginated({
       scoredCriterionKeys,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
+    // Resolved from the raw row, before `proposalSchema` normalizes a legacy
+    // bare-number budget into a fabricated USD.
+    budgetCurrency: resolveBudgetFallbackCurrency(
+      proposal.proposalData,
+      proposalTemplate,
+    ),
   }));
 
   let next: string | null = null;

@@ -95,6 +95,9 @@ export function ReviewSelectionTable({
           const advancing = advancingIds.has(item.proposal.id);
           const title = item.proposal.profile.name;
           const submitterName = item.proposal.submittedBy?.name ?? null;
+          // `item.budgetCurrency`, not `budget.currency`: the encoder stamps a
+          // fabricated USD onto legacy bare-number budgets, while this is
+          // resolved from the raw row against the process's template.
           const budget = item.proposal.proposalData.budget;
 
           return (
@@ -117,7 +120,12 @@ export function ReviewSelectionTable({
               </TableCell>
               <TableCell>
                 <span className="text-base text-neutral-black">
-                  {budget ? formatMoney(budget) : '—'}
+                  {budget
+                    ? formatMoney({
+                        amount: budget.amount,
+                        currency: item.budgetCurrency,
+                      })
+                    : '—'}
                 </span>
               </TableCell>
               <TableCell>
@@ -218,7 +226,10 @@ function ProposalCard({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {budget && (
           <span className="text-base text-neutral-black">
-            {formatMoney(budget)}
+            {formatMoney({
+              amount: budget.amount,
+              currency: item.budgetCurrency,
+            })}
           </span>
         )}
         <SelectionCategoryChips labels={item.categories.map((c) => c.label)} />

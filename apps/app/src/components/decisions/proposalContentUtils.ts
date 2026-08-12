@@ -94,13 +94,25 @@ export function getProposalContentPreview(
  * `proposalData` in the DB may reflect creation-time values rather than
  * the version that was actually submitted; the document fragments are
  * the source of truth for submitted proposals.
+ *
+ * Also returns `budgetCurrency` — the currency this proposal's unlabeled money
+ * is denominated in. Callers rendering money that is *not* the requested
+ * budget (an allocated amount, say) should use it rather than reading
+ * `budget.currency`, which is absent for a proposal that never named one.
  */
 export function resolveProposalSystemFields(proposal: Proposal) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
+  // Raw, not `fallback.budget`: `budgetValueSchema` stamps USD onto legacy
+  // bare-number budgets, which would then outrank the process's own currency.
+  const budgetCurrency = resolveBudgetFallbackCurrency(
+    proposal.proposalData,
+    template,
+  );
+
   if (proposal.documentContent?.type !== 'json' || !template) {
-    return fallback;
+    return { ...fallback, budgetCurrency };
   }
 
   const { fragments } = proposal.documentContent;
@@ -127,9 +139,7 @@ export function resolveProposalSystemFields(proposal: Proposal) {
 
   return {
     ...fallback,
-    ...resolveSystemFieldOverrides(
-      fragmentTexts,
-      resolveBudgetFallbackCurrency(fallback.budget, template),
-    ),
+    ...resolveSystemFieldOverrides(fragmentTexts, budgetCurrency),
+    budgetCurrency,
   };
 }

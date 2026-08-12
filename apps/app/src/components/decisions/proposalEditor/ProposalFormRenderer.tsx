@@ -62,6 +62,13 @@ interface ProposalFormRendererProps {
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
+  /**
+   * Currency for a system budget that names none of its own, already resolved
+   * through `resolveBudgetFallbackCurrency` against the proposal's *raw*
+   * stored data. Omitted in template-preview mode, where there is no proposal
+   * and the template's own currency is the whole answer.
+   */
+  budgetFallbackCurrency?: string;
   /** Rendering mode for collaborative editing or readonly previews. */
   mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
   /** Version preview content keyed by fragment name. */
@@ -142,22 +149,20 @@ function getPreviewBudgetValue({
   mode,
   draftValue,
   previewContent,
-  templateCurrency,
+  fallbackCurrency,
 }: {
   mode: 'preview-version' | 'preview-template';
   draftValue: ProposalDraftFields['budget'] | null | undefined;
   previewContent: JSONContent | null | undefined;
   /**
-   * Fallback for a version fragment that names no currency. Outranked by the
-   * currency stored on the proposal — see `resolveBudgetFallbackCurrency`.
+   * Currency for a version fragment that names none, already resolved through
+   * `resolveBudgetFallbackCurrency`. Not re-derived from `draftValue`, which
+   * is schema-parsed and carries a fabricated USD for legacy budgets.
    */
-  templateCurrency: string;
+  fallbackCurrency: string;
 }): string | null {
   if (mode === 'preview-version') {
-    return formatPreviewBudget(
-      previewContent,
-      draftValue?.currency ?? templateCurrency,
-    );
+    return formatPreviewBudget(previewContent, fallbackCurrency);
   }
 
   if (!draftValue) {
@@ -183,6 +188,7 @@ function renderField(
   t: TranslateFn,
   mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
   previewVersionFragmentContents: Record<string, JSONContent | null>,
+  budgetFallbackCurrency: string | undefined,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
@@ -277,6 +283,11 @@ function renderField(
   // -- Budget (system) --------------------------------------------------------
 
   if (key === 'budget') {
+    // The proposal's own resolved fallback where we have one (the editor);
+    // the template's alone in template-preview mode, where no proposal exists.
+    const fallbackCurrency =
+      budgetFallbackCurrency ?? getBudgetCurrency(schema);
+
     if (isReadonlyMode) {
       return (
         <ReadonlyBudgetField
@@ -284,7 +295,7 @@ function renderField(
             mode,
             draftValue: draft.budget,
             previewContent,
-            templateCurrency: getBudgetCurrency(schema),
+            fallbackCurrency,
           })}
           placeholder={t('Add budget')}
         />
@@ -295,7 +306,7 @@ function renderField(
       <CollaborativeBudgetField
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
-        currency={getBudgetCurrency(schema)}
+        currency={fallbackCurrency}
         initialValue={draft.budget}
         onChange={(value) => onFieldChange('budget', value)}
       />
@@ -348,7 +359,9 @@ function renderField(
               mode,
               draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
               previewContent,
-              templateCurrency: getBudgetCurrency(schema),
+              // A dynamic money field, not the system budget — it has no
+              // stored counterpart, so its own schema is the whole answer.
+              fallbackCurrency: getBudgetCurrency(schema),
             })}
             title={schema.title}
             description={schema.description}
@@ -479,6 +492,7 @@ export function ProposalFormRenderer({
   onFieldChange,
   onEditorFocus,
   onEditorBlur,
+  budgetFallbackCurrency,
   mode = 'edit-collaborative',
   previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
@@ -503,6 +517,7 @@ export function ProposalFormRenderer({
       t,
       mode,
       previewVersionFragmentContents,
+      budgetFallbackCurrency,
       onEditorFocus,
       onEditorBlur,
     );

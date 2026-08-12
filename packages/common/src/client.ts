@@ -126,6 +126,7 @@ export {
   DEFAULT_BUDGET_CURRENCY,
   getBudgetCurrency,
   getTemplateBudgetCurrency,
+  getStoredBudgetCurrency,
   resolveBudgetFallbackCurrency,
 } from './services/decision/templateBudget';
 export {

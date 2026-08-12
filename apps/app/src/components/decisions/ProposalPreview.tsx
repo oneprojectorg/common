@@ -80,6 +80,7 @@ export function ProposalPreview({
   const {
     title: originalTitle,
     budget,
+    budgetCurrency,
     category: originalCategory,
   } = resolveProposalSystemFields(proposal);
 
@@ -150,9 +151,12 @@ export function ProposalPreview({
           <div className="flex flex-col items-start gap-4">
             {selection?.allocated != null ? (
               <div className="flex flex-wrap items-end gap-2">
+                {/* `budgetCurrency`, not `budget?.currency`: an allocation on
+                    a proposal that never recorded a requested budget would
+                    otherwise fall through to the hardcoded USD default. */}
                 <BudgetDisplay
                   value={selection.allocated}
-                  fallbackCurrency={budget?.currency}
+                  fallbackCurrency={budgetCurrency}
                   className="font-serif text-title-base text-neutral-black"
                 />
                 {budget && (
