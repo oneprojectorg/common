@@ -52,11 +52,12 @@ describeAccessTierGating('platform.admin.revertDecisionPhase', {
     'rejects user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expect(
+      // Out-of-network callers are turned away by the network gate, before
+      // the platform-admin allow list is ever consulted.
+      await expectFailsAccessTierGate(
         caller.platform.admin.revertDecisionPhase(gatingInput),
-      ).rejects.toMatchObject({
-        cause: { name: 'UnauthorizedError' },
-      });
+        'user',
+      );
     },
   ),
 

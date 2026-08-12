@@ -2,12 +2,12 @@ import { Channels, invalidateDecisionInstance, revertPhase } from '@op/common';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const revertDecisionPhaseRouter = router({
-  revertDecisionPhase: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+  // Platform admins are all in-network, so the network gate rejects everyone
+  // else with an AccessTierError before the admin allow-list is consulted.
+  revertDecisionPhase: networkAuthenticatedProcedure()
     .use(withAuthenticatedPlatformAdmin)
     .input(
       z.object({
