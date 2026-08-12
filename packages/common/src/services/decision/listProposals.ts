@@ -56,6 +56,8 @@ export interface ListProposalsInput {
    * When true, each returned proposal carries a `voteCount` aggregated from
    * vote submissions on `processInstanceId`. Pair with `orderBy: 'votes'` to
    * have the database drive the sort (descending count, createdAt tiebreak).
+   * When used with `votedByProfileId`, counts are only returned after results
+   * are formally published (gate prevents live-tally exposure during voting).
    */
   includeVoteCounts?: boolean;
   /**
@@ -148,6 +150,26 @@ export const listProposals = async ({
 
   const { includeVoteCounts = false } = input;
 
+  // Voter-filtered queries (votedByProfileId) always return a voteCount field,
+  // but the count is gated on a successful results record so live tallies are
+  // never exposed during voting: null until results are published, after which
+  // 0 always means zero recorded votes.
+  let resultsPublished = false;
+  if (input.votedByProfileId) {
+    const publishedResult = await db.query.decisionProcessResults.findFirst({
+      where: {
+        processInstanceId,
+        success: true,
+      },
+      columns: { id: true },
+    });
+    resultsPublished = !!publishedResult;
+  }
+
+  const effectiveIncludeVoteCounts = input.votedByProfileId
+    ? resultsPublished
+    : includeVoteCounts;
+
   // Vote-count correlated subquery factory. Called by both the `extras`
   // callback and the `orderBy` callback so each receives the v2-aliased
   // `table` and embeds the correct outer-column reference.
@@ -196,7 +218,7 @@ export const listProposals = async ({
       },
       // Fetch one extra to detect whether a next page exists.
       limit: limit + 1,
-      ...(includeVoteCounts && {
+      ...(effectiveIncludeVoteCounts && {
         extras: {
           voteCount: (table, { sql: sqlOp }) =>
             sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
@@ -314,6 +336,11 @@ export const listProposals = async ({
       proposalTemplate,
     });
 
+    // `voteCount` only rides along as an extra when the count was requested.
+    const voteCount = effectiveIncludeVoteCounts
+      ? Number('voteCount' in proposal ? (proposal.voteCount ?? 0) : 0)
+      : null;
+
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
@@ -341,12 +368,12 @@ export const listProposals = async ({
         ? documentContent
         : undefined,
       proposalTemplate,
-      ...(includeVoteCounts && {
-        voteCount: Number(
-          (proposal as ProposalListItem & { voteCount?: number | string })
-            .voteCount ?? 0,
-        ),
-      }),
+      // Ballot reads always carry the field: `null` until results are
+      // published (so no live tally leaks), a real count afterwards — where
+      // `0` unambiguously means zero recorded votes.
+      ...(input.votedByProfileId
+        ? { voteCount }
+        : effectiveIncludeVoteCounts && { voteCount }),
     };
   });
 
