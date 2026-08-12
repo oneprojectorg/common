@@ -31,87 +31,62 @@ const proposalsShape = (likes: number) => ({
 });
 
 describe('bumpProposalCount', () => {
+  // Asserted against the whole returned shape rather than a drilled-in
+  // property: the function's return is `unknown` by design, and matching
+  // structurally keeps that honest instead of asserting a type back onto it.
   it('moves the matching row in a flat list and leaves the others alone', () => {
-    const next = bumpProposalCount(
-      flat(4),
-      'p1',
-      'likesCount',
-      1,
-    ) as ReturnType<typeof flat>;
-
-    expect(next.items[0]).toMatchObject({ likesCount: 5, followersCount: 3 });
-    expect(next.items[1]).toMatchObject({ likesCount: 99 });
+    expect(bumpProposalCount(flat(4), 'p1', 'likesCount', 1)).toMatchObject({
+      items: [{ likesCount: 5, followersCount: 3 }, { likesCount: 99 }],
+    });
   });
 
   it('walks the pages of an infinite list', () => {
-    const next = bumpProposalCount(
-      infinite(4),
-      'p1',
-      'likesCount',
-      -1,
-    ) as ReturnType<typeof infinite>;
-
-    expect(next.pages[0]!.items[0]).toMatchObject({ likesCount: 3 });
+    expect(
+      bumpProposalCount(infinite(4), 'p1', 'likesCount', -1),
+    ).toMatchObject({
+      pages: [{ items: [{ likesCount: 3 }, { likesCount: 99 }] }],
+    });
   });
 
   it('moves followersCount independently of likesCount', () => {
-    const next = bumpProposalCount(
-      flat(4),
-      'p1',
-      'followersCount',
-      1,
-    ) as ReturnType<typeof flat>;
-
-    expect(next.items[0]).toMatchObject({ likesCount: 4, followersCount: 4 });
+    expect(bumpProposalCount(flat(4), 'p1', 'followersCount', 1)).toMatchObject(
+      {
+        items: [{ likesCount: 4, followersCount: 4 }, { followersCount: 0 }],
+      },
+    );
   });
 
   it('never renders a negative count', () => {
-    const next = bumpProposalCount(
-      flat(0),
-      'p1',
-      'likesCount',
-      -1,
-    ) as ReturnType<typeof flat>;
-
-    expect(next.items[0]!.likesCount).toBe(0);
+    expect(bumpProposalCount(flat(0), 'p1', 'likesCount', -1)).toMatchObject({
+      items: [{ likesCount: 0 }, { likesCount: 99 }],
+    });
   });
 
   it('walks pages that name the array `proposals` (listProposals)', () => {
-    const next = bumpProposalCount(
-      proposalsShape(4),
-      'p1',
-      'likesCount',
-      1,
-    ) as ReturnType<typeof proposalsShape>;
-
-    expect(next.pages[0]!.proposals[0]).toMatchObject({ likesCount: 5 });
-    expect(next.pages[0]!.proposals[1]).toMatchObject({ likesCount: 99 });
+    expect(
+      bumpProposalCount(proposalsShape(4), 'p1', 'likesCount', 1),
+    ).toMatchObject({
+      pages: [{ proposals: [{ likesCount: 5 }, { likesCount: 99 }] }],
+    });
   });
 
   it('walks a flat `proposals` result (the ballot)', () => {
     const ballot = {
       proposals: [{ profileId: 'p1', likesCount: 4, followersCount: 3 }],
     };
-    const next = bumpProposalCount(
-      ballot,
-      'p1',
-      'followersCount',
-      1,
-    ) as typeof ballot;
 
-    expect(next.proposals[0]).toMatchObject({ followersCount: 4 });
+    expect(bumpProposalCount(ballot, 'p1', 'followersCount', 1)).toMatchObject({
+      proposals: [{ followersCount: 4 }],
+    });
   });
 
   it('moves a bare proposal, the shape getProposal caches', () => {
     const single = { profileId: 'p1', likesCount: 4, followersCount: 3 };
-    const next = bumpProposalCount(
-      single,
-      'p1',
-      'likesCount',
-      1,
-    ) as typeof single;
 
-    expect(next).toMatchObject({ likesCount: 5, followersCount: 3 });
+    expect(bumpProposalCount(single, 'p1', 'likesCount', 1)).toMatchObject({
+      likesCount: 5,
+      followersCount: 3,
+    });
     expect(single.likesCount).toBe(4);
   });
 

@@ -24,6 +24,13 @@ export type ProposalCountField = 'likesCount' | 'followersCount';
 
 type ProposalRow = Record<string, unknown> & { profileId?: unknown };
 
+/**
+ * Narrows cache data structurally instead of asserting: `typeof x === 'object'`
+ * alone leaves TypeScript with `object`, which can't be indexed.
+ */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 function bumpRow(
   row: ProposalRow,
   profileId: string,
@@ -34,7 +41,8 @@ function bumpRow(
     return row;
   }
 
-  const current = typeof row[field] === 'number' ? (row[field] as number) : 0;
+  const value = row[field];
+  const current = typeof value === 'number' ? value : 0;
 
   // Clamp at zero: a stale row can already read 0 while the viewer's
   // relationship cache still says "liked", and a negative count would render.
@@ -52,9 +60,7 @@ function bumpItems(
   }
 
   return items.map((item) =>
-    item && typeof item === 'object'
-      ? bumpRow(item as ProposalRow, profileId, field, delta)
-      : item,
+    isRecord(item) ? bumpRow(item, profileId, field, delta) : item,
   );
 }
 
@@ -88,35 +94,26 @@ export function bumpProposalCount(
   field: ProposalCountField,
   delta: number,
 ): unknown {
-  if (!data || typeof data !== 'object') {
+  if (!isRecord(data)) {
     return data;
   }
 
-  const record = data as Record<string, unknown>;
-
-  if (Array.isArray(record.pages)) {
+  if (Array.isArray(data.pages)) {
     return {
-      ...record,
-      pages: record.pages.map((page) =>
-        page && typeof page === 'object'
-          ? bumpRowArrays(
-              page as Record<string, unknown>,
-              profileId,
-              field,
-              delta,
-            )
-          : page,
+      ...data,
+      pages: data.pages.map((page) =>
+        isRecord(page) ? bumpRowArrays(page, profileId, field, delta) : page,
       ),
     };
   }
 
-  if (ROW_ARRAY_KEYS.some((key) => Array.isArray(record[key]))) {
-    return bumpRowArrays(record, profileId, field, delta);
+  if (ROW_ARRAY_KEYS.some((key) => Array.isArray(data[key]))) {
+    return bumpRowArrays(data, profileId, field, delta);
   }
 
   // A bare proposal — what `decision.getProposal` caches for the detail view.
-  if ('profileId' in record) {
-    return bumpRow(record as ProposalRow, profileId, field, delta);
+  if ('profileId' in data) {
+    return bumpRow(data, profileId, field, delta);
   }
 
   return data;

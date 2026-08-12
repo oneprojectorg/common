@@ -75,10 +75,12 @@ export function useRelationshipMutations({
   };
 
   // Get user's likes and follows
-  const { data: userRelationships, error: relationshipsError } =
-    trpc.profile.getRelationships.useQuery(relationshipQueryKey, {
+  const { data: userRelationships } = trpc.profile.getRelationships.useQuery(
+    relationshipQueryKey,
+    {
       enabled: !!user && enabled,
-    });
+    },
+  );
 
   // Check if current user has liked/followed this profile
   const isLiked = Boolean(
@@ -95,16 +97,17 @@ export function useRelationshipMutations({
 
   /**
    * There is no answer to `isLiked` / `isFollowed`, as opposed to the answer
-   * being no.
+   * being no. Covers both the first fetch still being in flight and one that
+   * failed outright — either way the flags below read false for want of data,
+   * and a press decided on that would bump a count the server won't move.
    *
-   * Deliberately not `Boolean(error)`. A failed *refetch* keeps the cached list
-   * and still answers correctly, and `reconcile` invalidates this query after
-   * every burst — so with `retry` and `refetchOnWindowFocus` both off app-wide,
-   * treating any error as fatal would let one dropped response strip the
-   * controls from every proposal on the page with nothing left to restore them.
+   * A failed *refetch* is deliberately not unknown: it keeps the cached list, so
+   * the flags still answer correctly. `reconcile` invalidates this query after
+   * every burst and `retry` is off app-wide, so treating any error as fatal
+   * would let one dropped response strip the controls from every proposal on the
+   * page with nothing left to restore them.
    */
-  const stateUnknown =
-    Boolean(relationshipsError) && userRelationships === undefined;
+  const stateUnknown = userRelationships === undefined;
 
   // The raw client rather than `utils`: the count caches are matched by a
   // predicate on the tRPC path, which the typed helpers can't express.
