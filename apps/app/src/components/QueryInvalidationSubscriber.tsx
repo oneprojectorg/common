@@ -189,6 +189,10 @@ function useInvalidateQueries(enabled: boolean): void {
                 channels: [channel],
                 mutationId: data.mutationId,
               }),
+            // Anything published before this point never arrives. Reporting the
+            // join lets a query that cannot afford that gap re-read once the
+            // channel is live; no query does so by default.
+            () => queryChannelRegistry.notifyChannelSubscribed(channel),
           );
           unsubscribersRef.current.set(channel, unsubscribe);
         }

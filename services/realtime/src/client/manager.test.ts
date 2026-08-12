@@ -140,4 +140,97 @@ describe('RealtimeManager', () => {
       expect(msg).toEqual(testMessage);
     });
   });
+
+  // Broadcasts are not replayed, so anything published before the socket join
+  // completes is lost. Callers waiting on a background job that can finish first
+  // rely on this callback to know when it is finally safe to stop guessing and
+  // re-read. Firing it early — or not at all — reintroduces the very gap it
+  // exists to close.
+  it('reports a channel as subscribed only once its join has completed', async () => {
+    const TEST_CHANNEL = Channels.org('test-on-subscribed');
+
+    RealtimeManager.initialize({
+      supabaseUrl: TEST_SUPABASE_URL,
+      supabaseAnonKey: TEST_SUPABASE_ANON_KEY,
+    });
+
+    const manager = RealtimeManager.getInstance();
+
+    let subscribedAt: number | null = null;
+    const subscribedPromise = new Promise<void>((resolve) => {
+      manager.subscribe(
+        TEST_CHANNEL,
+        () => {},
+        () => {
+          subscribedAt = Date.now();
+          resolve();
+        },
+      );
+    });
+
+    // Not synchronous with subscribe(): the join is a round trip.
+    expect(subscribedAt).toBeNull();
+
+    await Promise.race([
+      subscribedPromise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Subscribe timeout')), 5000),
+      ),
+    ]);
+
+    expect(subscribedAt).not.toBeNull();
+
+    // A message published after the callback must actually arrive — that is the
+    // guarantee the callback is standing in for.
+    const messagePromise = new Promise<RealtimeMessage>((resolve) => {
+      manager.subscribe(TEST_CHANNEL, ({ data }) => resolve(data));
+    });
+
+    const testMessage: RealtimeMessage = { mutationId: 'test-after-subscribe' };
+    await realtimeClient.publish({ channel: TEST_CHANNEL, data: testMessage });
+
+    await expect(
+      Promise.race([
+        messagePromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Message timeout')), 5000),
+        ),
+      ]),
+    ).resolves.toEqual(testMessage);
+  });
+
+  // A second caller joins a channel whose socket is already open, so the status
+  // callback driving the first notification has already fired and will not fire
+  // again. Without the immediate call it would wait for an event that can never
+  // come.
+  it('reports an already-joined channel as subscribed immediately', async () => {
+    const TEST_CHANNEL = Channels.org('test-already-subscribed');
+
+    RealtimeManager.initialize({
+      supabaseUrl: TEST_SUPABASE_URL,
+      supabaseAnonKey: TEST_SUPABASE_ANON_KEY,
+    });
+
+    const manager = RealtimeManager.getInstance();
+
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        manager.subscribe(TEST_CHANNEL, () => {}, resolve);
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Subscribe timeout')), 5000),
+      ),
+    ]);
+
+    let secondCallbackFired = false;
+    manager.subscribe(
+      TEST_CHANNEL,
+      () => {},
+      () => {
+        secondCallbackFired = true;
+      },
+    );
+
+    expect(secondCallbackFired).toBe(true);
+  });
 });

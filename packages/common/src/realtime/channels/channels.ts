@@ -77,6 +77,24 @@ export const Channels = {
    */
   profileCollections: (profileId: string) =>
     `profileCollections:${profileId}` as const,
+
+  /**
+   * Channel for a single proposals-export run. Subscribed to by
+   * decision.getExportStatus, broadcast to by the `exportProposals` workflow
+   * when the run reaches `completed` or `failed`.
+   *
+   * Unlike the channels above, the broadcaster is a background job rather than
+   * a mutation: the request that starts an export returns an id and finishes
+   * long before the file exists, so the only place that knows the run is over
+   * is the workflow itself.
+   *
+   * Scoped per run rather than per instance so an admin's export cannot
+   * invalidate another admin's. That makes these short-lived and numerous
+   * where other channels are long-lived and shared — acceptable only because
+   * each has exactly one subscriber and the client registry drops the
+   * subscription when that query unmounts.
+   */
+  proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -114,6 +132,7 @@ export type CollectionResourcesChannel = ReturnType<
 export type ProfileCollectionsChannel = ReturnType<
   typeof Channels.profileCollections
 >;
+export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
 
 /**
  * Union of all valid channel types
@@ -133,4 +152,5 @@ export type ChannelName =
   | PostCommentsChannel
   | ProfileResourcesChannel
   | CollectionResourcesChannel
-  | ProfileCollectionsChannel;
+  | ProfileCollectionsChannel
+  | ProposalExportChannel;

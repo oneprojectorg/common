@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { ProposalExportFilters } from '@op/api/encoders';
+import { Channels, queryChannelRegistry } from '@op/common/realtime';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
@@ -10,10 +11,7 @@ import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  EXPORT_POLL_TIMEOUT_MS,
-  nextExportPollInterval,
-} from './exportPolling';
+import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
@@ -36,11 +34,14 @@ export interface ExportProposalsButtonProps {
 /**
  * Admin-only CSV export for the proposals list.
  *
- * Kick off → poll → hand back a download link. The finished file is exposed as
- * an explicit link rather than an automatic download: the browser would
- * otherwise fire a save dialog at whatever moment the poll happens to resolve,
- * which is easy to miss and impossible to retry without re-running the whole
- * export.
+ * Kick off → wait to be told it finished → hand back a download link. The wait
+ * is driven by a broadcast on the run's own channel rather than by polling, so
+ * the file appears as soon as it exists instead of on the next tick.
+ *
+ * It is offered as an explicit link rather than an automatic download: the file
+ * is built in the background, so downloading it the instant it arrives would
+ * fire a save dialog at an arbitrary moment — easy to miss entirely, and
+ * impossible to retry without re-running the whole export.
  */
 export const ExportProposalsButton = ({
   processInstanceId,
@@ -69,13 +70,31 @@ export const ExportProposalsButton = ({
     },
   });
 
-  const { data: status } = trpc.decision.getExportStatus.useQuery(
-    { exportId: exportId ?? '' },
-    {
-      enabled: Boolean(exportId) && !hasTimedOut,
-      refetchInterval: (query) => nextExportPollInterval(query.state.data),
-    },
-  );
+  const { data: status, refetch: refetchStatus } =
+    trpc.decision.getExportStatus.useQuery(
+      { exportId: exportId ?? '' },
+      { enabled: Boolean(exportId) && !hasTimedOut },
+    );
+
+  // The export finishing is announced on its own channel, so there is no poll.
+  // The one moment that announcement can be missed is before the channel's
+  // socket join completes — a small export can finish inside that window, and
+  // a broadcast published into it is gone for good. Re-reading once the join is
+  // confirmed covers exactly that gap: anything that settled earlier is visible
+  // in this read, and anything later arrives as a broadcast.
+  useEffect(() => {
+    if (!exportId) {
+      return;
+    }
+
+    const channel = Channels.proposalExport(exportId);
+
+    return queryChannelRegistry.on('channel:subscribed', (event) => {
+      if (event.channel === channel) {
+        void refetchStatus();
+      }
+    });
+  }, [exportId, refetchStatus]);
 
   // `not_found` is not a member of ExportStatusData['status'], so matching a
   // terminal state narrows away the not-found branch on its own.
@@ -115,7 +134,7 @@ export const ExportProposalsButton = ({
       setHasTimedOut(true);
       toast.error(t('Export timed out. Please try again.'));
       setExportId(null);
-    }, EXPORT_POLL_TIMEOUT_MS);
+    }, EXPORT_WAIT_TIMEOUT_MS);
 
     return () => clearTimeout(timer);
   }, [isRunning, t]);

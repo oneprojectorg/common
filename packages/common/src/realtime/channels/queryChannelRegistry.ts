@@ -20,10 +20,15 @@ export type ChannelRemovedEvent = {
   channel: ChannelName;
 };
 
+export type ChannelSubscribedEvent = {
+  channel: ChannelName;
+};
+
 export type RegistryEvents = {
   'query:added': QueryAddedEvent;
   'mutation:added': MutationAddedEvent;
   'channel:removed': ChannelRemovedEvent;
+  'channel:subscribed': ChannelSubscribedEvent;
 };
 
 /**
@@ -123,7 +128,23 @@ class QueryChannelRegistry {
   }
 
   /**
-   * Subscribe to registry events (query:added, mutation:added, channel:removed).
+   * Report that a channel's socket join is confirmed.
+   *
+   * Emits 'channel:subscribed'. Nothing invalidates on this by default —
+   * broadcasts published before the join are lost, but for most queries the
+   * data was fetched at about the same moment the channel was registered, so
+   * the window holds nothing worth re-reading. It is opt-in for the callers
+   * where it does: those waiting on a background job that can settle before
+   * the join lands, and which would otherwise wait for a broadcast that has
+   * already been and gone.
+   */
+  notifyChannelSubscribed(channel: ChannelName): void {
+    this.emitter.emit('channel:subscribed', { channel });
+  }
+
+  /**
+   * Subscribe to registry events (query:added, mutation:added, channel:removed,
+   * channel:subscribed).
    */
   on<K extends keyof RegistryEvents>(
     event: K,

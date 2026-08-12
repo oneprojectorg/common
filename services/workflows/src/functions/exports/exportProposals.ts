@@ -11,7 +11,9 @@ import {
   generateProposalsCsv,
   listProposals,
 } from '@op/common';
+import { Channels } from '@op/common/realtime';
 import { Events, inngest } from '@op/events';
+import { realtime } from '@op/realtime/server';
 import { createSBServiceClient } from '@op/supabase/server';
 
 type ProposalFromList = Awaited<
@@ -30,6 +32,27 @@ const updateExportStatus = async (
   const updated = { ...(existing ?? {}), ...updates };
   await set(key, updated, EXPORT_CACHE_TTL_SECONDS);
 };
+
+/**
+ * Tell any admin waiting on this export that it has reached a terminal state.
+ *
+ * Broadcast-only: the cached record written just before this is the source of
+ * truth, and the message carries no payload — subscribers re-read
+ * `getExportStatus` on receipt. So a dropped broadcast costs latency, not
+ * correctness, and the client's poll still resolves the run on its own. That is
+ * the reason polling stays in place rather than being replaced: a broadcast
+ * published before the client has finished subscribing is simply lost, and an
+ * export that finishes in under a second can easily beat it.
+ *
+ * `realtime.publish` logs and swallows its own failures, so this cannot fail
+ * the run or trigger a retry that would rewrite a settled status.
+ */
+const notifyExportFinished = (exportId: string) =>
+  realtime.publish(Channels.proposalExport(exportId), {
+    // Identifies the broadcast for client-side dedup; the export id is stable
+    // across this run's terminal write, which is the only thing published here.
+    mutationId: `export:${exportId}`,
+  });
 
 const { proposalExportRequested } = Events;
 
@@ -157,6 +180,10 @@ export const exportProposals = inngest.createFunction(
         });
       });
 
+      await step.run('notify-export-finished', () =>
+        notifyExportFinished(exportId),
+      );
+
       return { exportId, status: 'completed' };
     } catch (error) {
       // Update status to failed
@@ -168,6 +195,10 @@ export const exportProposals = inngest.createFunction(
           completedAt: new Date().toISOString(),
         });
       });
+
+      await step.run('notify-export-failed', () =>
+        notifyExportFinished(exportId),
+      );
 
       throw error;
     }

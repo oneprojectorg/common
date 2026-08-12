@@ -1,4 +1,5 @@
 import { getExportStatus } from '@op/common';
+import { Channels } from '@op/common/realtime';
 import { proposalExportFiltersSchema } from '@op/events';
 import { z } from 'zod';
 
@@ -34,6 +35,13 @@ export const getExportStatusRouter = router({
     .output(exportStatusOutputSchema)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
+
+      // The export workflow broadcasts here when the run finishes, so a
+      // completed file surfaces without waiting for the next poll. Registered
+      // before the read: the run can finish while this request is in flight,
+      // and a channel attached to the response the client is already waiting
+      // on is one it will subscribe to either way.
+      ctx.registerQueryChannels([Channels.proposalExport(input.exportId)]);
 
       return await getExportStatus({
         exportId: input.exportId,
