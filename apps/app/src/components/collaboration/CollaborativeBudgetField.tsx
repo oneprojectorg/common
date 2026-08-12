@@ -9,9 +9,8 @@ import {
 import {
   DEFAULT_BUDGET_CURRENCY,
   type StoredBudget,
-  parseBudgetFragmentValue,
   parseStoredBudgetFragmentValue,
-  withStoredBudgetCurrency,
+  withResolvedBudgetCurrency,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
@@ -78,30 +77,46 @@ export function CollaborativeBudgetField({
       : '',
   );
 
-  // Same parser the cards and detail page read the fragment with, so the
-  // editor can't show "Add budget" for a legacy fragment they render a value
-  // for. `undefined` means present-but-unreadable as well as absent.
-  //
-  // Memoized so the emit effect below can depend on it directly: one parse
-  // makes "display and emit agree" structural rather than something the next
-  // reader has to keep true by hand.
-  const budget = useMemo(
-    () => parseBudgetFragmentValue(budgetText, fallbackCurrency),
-    [budgetText, fallbackCurrency],
-  );
-  // What the fragment itself names, which is what gets written back to it: the
-  // resolved `budget` above is for display only.
+  // What the fragment itself names, read with the same parser the cards and
+  // detail page use, so the editor can't show "Add budget" for a legacy
+  // fragment they render a value for. `undefined` means present-but-unreadable
+  // as well as absent.
   const fragmentBudget = useMemo(
     () => parseStoredBudgetFragmentValue(budgetText),
     [budgetText],
   );
-  // What a save would write to the proposal row. The fragment is the amount's
-  // source of truth but not the currency's — it names one only when whoever
-  // wrote it filled one in — so a currency already stored on the proposal
-  // carries across rather than being deleted by an amount edit.
-  const storedCurrency = initialValue?.currency;
+  // The same budget with its currency filled in, for display only. Derived
+  // from the parse above rather than re-parsing the text: one parse makes
+  // "what the pill shows and what a save writes agree" structural rather than
+  // something the next reader has to keep true by hand.
+  const budget = useMemo(
+    () =>
+      fragmentBudget &&
+      withResolvedBudgetCurrency(fragmentBudget, fallbackCurrency),
+    [fragmentBudget, fallbackCurrency],
+  );
+  // The code the proposal row itself stores, if any. Blank counts as none,
+  // matching every other reader.
+  const storedCurrency = initialValue?.currency?.trim() || undefined;
+  // What a save would write to the proposal row: the fragment's amount, under
+  // the currency the row already stores.
+  //
+  // This field has no currency control, so it must never *change* the row's
+  // currency — not to the fragment's, and not to a resolved one. Pre-branch
+  // editors stamped `"currency":"USD"` into every fragment they wrote, so
+  // adopting the fragment's would re-persist a fabricated code onto a process
+  // denominated in something else, on mount, without the author touching
+  // anything — the exact bug this branch set out to fix, baked into the row.
+  // Carrying the stored code across is the other half: an amount edit must not
+  // delete a currency the proposal had named.
   const budgetToPersist = useMemo(
-    () => withStoredBudgetCurrency(fragmentBudget, storedCurrency) ?? null,
+    () =>
+      fragmentBudget
+        ? {
+            amount: fragmentBudget.amount,
+            ...(storedCurrency ? { currency: storedCurrency } : {}),
+          }
+        : null,
     [fragmentBudget, storedCurrency],
   );
   const setBudget = (newBudget: StoredBudget | null) =>
@@ -158,6 +173,11 @@ export function CollaborativeBudgetField({
   const handleChange = (value: number | null) => {
     if (value === null) {
       setBudget(null);
+      // Emitted from here rather than from the sync effect below, because only
+      // this path knows the author *cleared* the field: an empty fragment on
+      // its own is ambiguous, and a document that simply never carried a
+      // budget looks exactly the same.
+      onChangeRef.current?.(null);
       return;
     }
     // Keeps the fragment's own currency when it has one and writes none when
@@ -170,45 +190,35 @@ export function CollaborativeBudgetField({
     );
   };
 
+  // Keeps the row's amount in step with the fragment, which is the amount's
+  // source of truth — including on mount, where it repairs a row still holding
+  // a creation-time figure the author has since edited.
   useEffect(() => {
-    // A fragment we can't read means "unknown", not "cleared". This effect
-    // fires on mount, and `useProposalDraft` treats a `null` budget as the
-    // author emptying the field — so emitting here would autosave the stored
-    // budget away just because someone opened the proposal. Clearing the
-    // field deletes the fragment, which arrives as empty text, not as
-    // unreadable text.
-    if (budgetText && !budget) {
+    // The fragment carries no budget we can read: either empty, or text no
+    // reader can make a budget out of. Neither is "the author cleared it", so
+    // leave the row's budget standing — this effect fires on mount, and
+    // `useProposalDraft` treats a `null` budget as the author emptying the
+    // field, so emitting here would autosave the stored budget away just
+    // because someone opened a proposal whose document never carried one.
+    // Clearing is a local action and emits from `handleChange`.
+    if (!budgetToPersist) {
       return;
     }
 
     // Compared against the parent's *current* value rather than a ref of what
     // we last sent. `useProposalDraft` resets `draft` to the refetched server
-    // proposal, and a ref would still hold the pre-reset key and suppress the
+    // proposal, and a ref would still hold the pre-reset value and suppress the
     // re-emit — letting the next save write the stale server budget over the
     // newer one the author can see in the fragment.
     //
-    // Against what a save would actually write, so the two can't drift: an
-    // amount edit emits, and so does a fragment that names a *different*
-    // currency than the row (the editor pill would otherwise read €5,000
-    // forever while every other surface kept reading $5,000). Comparing the
-    // resolved `budget` instead would emit whenever the fragment merely names
-    // none — pinning the proposal to a fallback nobody chose, merely because
-    // it was opened.
-    if (
-      budgetToPersist?.amount === initialValue?.amount &&
-      budgetToPersist?.currency === storedCurrency
-    ) {
+    // Amount only: `budgetToPersist` carries the row's own currency by
+    // construction, so there is never a currency difference to emit for.
+    if (budgetToPersist.amount === initialValue?.amount) {
       return;
     }
 
     onChangeRef.current?.(budgetToPersist);
-  }, [
-    budgetText,
-    budget,
-    budgetToPersist,
-    initialValue?.amount,
-    storedCurrency,
-  ]);
+  }, [budgetToPersist, initialValue?.amount]);
 
   const handleStartEditing = () => {
     setIsEditing(true);

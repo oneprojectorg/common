@@ -272,10 +272,22 @@ export function parseBudgetFragmentValue(
   fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
 ): BudgetData | undefined {
   const budget = parseStoredBudgetFragmentValue(text);
-  if (!budget) {
-    return undefined;
-  }
+  return budget && withResolvedBudgetCurrency(budget, fallbackCurrency);
+}
 
+/**
+ * Fill in the currency a budget names none of its own with, making it
+ * renderable.
+ *
+ * The display counterpart of {@link withStoredBudgetCurrency}: this one may
+ * fill the gap from anywhere, because nothing here is written back. Callers
+ * that hold a parsed budget already use it instead of re-parsing the fragment
+ * a second time to get the resolved form.
+ */
+export function withResolvedBudgetCurrency(
+  budget: StoredBudget,
+  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
+): BudgetData {
   // `||` covers a stored blank code as well as an absent one — neither names a
   // currency.
   return {

@@ -24,6 +24,16 @@ const DEFAULT_LOCALE = 'en-US';
  */
 const moneyFormatters = new Map<string, Intl.NumberFormat>();
 
+/**
+ * The formatter for a currency, or the unlabeled-number one for a code `Intl`
+ * rejects.
+ *
+ * The fallback is cached under the bad code too. `Intl.NumberFormat` throws at
+ * *construction*, so leaving the failure uncached re-ran the constructor — and
+ * re-threw — on every call: one `RangeError` per row of a results table, on
+ * every render and every scroll repaint, forever. The bad code is reported once
+ * and then costs no more than a good one.
+ */
 function getMoneyFormatter(
   currency: string | null,
   isWholeAmount: boolean,
@@ -42,15 +52,22 @@ function getMoneyFormatter(
     ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
     : {};
 
-  const formatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
-    ...(currency === null
-      ? // No currency to take a decimal count from, and the plain-number
-        // default is 3 — so a fallback left to `Intl` renders 5000.567 as
-        // "5,000.567" rather than the money-shaped two places.
-        { maximumFractionDigits: 2 }
-      : { style: 'currency' as const, currency }),
-    ...wholeAmountDigits,
-  });
+  let formatter: Intl.NumberFormat;
+  try {
+    formatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
+      ...(currency === null
+        ? // No currency to take a decimal count from, and the plain-number
+          // default is 3 — so a fallback left to `Intl` renders 5000.567 as
+          // "5,000.567" rather than the money-shaped two places.
+          { maximumFractionDigits: 2 }
+        : { style: 'currency' as const, currency }),
+      ...wholeAmountDigits,
+    });
+  } catch {
+    // Only the currency branch can throw, so the recursion terminates.
+    reportInvalidCurrency(currency ?? '');
+    formatter = getMoneyFormatter(null, isWholeAmount);
+  }
 
   moneyFormatters.set(key, formatter);
   return formatter;
@@ -77,14 +94,7 @@ export function formatMoney(budget: {
   currency: string;
 }): string {
   const { amount, currency } = budget;
-  const isWholeAmount = Number.isInteger(amount);
-
-  try {
-    return getMoneyFormatter(currency, isWholeAmount).format(amount);
-  } catch {
-    reportInvalidCurrency(currency);
-    return getMoneyFormatter(null, isWholeAmount).format(amount);
-  }
+  return getMoneyFormatter(currency, Number.isInteger(amount)).format(amount);
 }
 
 /**
@@ -120,22 +130,18 @@ export function formatAmount(amount: number): string {
  * glyphs for the codes `Intl` spells out (`S$` for SGD, `د.إ` for AED) would
  * put `S$` in front of the input and `SGD 5,000` in the pill that replaces it.
  *
- * Falls back to the code itself rather than `''` for a code `Intl` rejects: an
+ * Falls back to the code itself rather than `''` for a code `Intl` rejects —
+ * that one formats unlabeled, so there is no currency part to find: an
  * unlabeled amount reads as dollars to most users, and the input this prefixes
  * would otherwise render with no currency marker at all.
  */
 export function getCurrencySymbol(currency: string): string {
-  try {
-    return (
-      getMoneyFormatter(currency, true)
-        .formatToParts(0)
-        .find((part) => part.type === 'currency')
-        ?.value.trim() || currency
-    );
-  } catch {
-    reportInvalidCurrency(currency);
-    return currency;
-  }
+  return (
+    getMoneyFormatter(currency, true)
+      .formatToParts(0)
+      .find((part) => part.type === 'currency')
+      ?.value.trim() || currency
+  );
 }
 
 /**

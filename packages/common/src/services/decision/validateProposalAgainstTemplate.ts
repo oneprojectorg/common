@@ -8,7 +8,10 @@ import {
 import { fillCategoryFromBoundary } from './boundaryCategory';
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
-import { parseProposalData } from './proposalDataSchema';
+import {
+  parseProposalData,
+  parseStoredBudgetFragmentValue,
+} from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalTemplateSchema } from './types';
 
@@ -64,6 +67,13 @@ export async function validateProposalAgainstTemplate(
       ]),
     );
     const assembledData = assembleProposalData(proposalTemplate, fragmentTexts);
+    // Whether the document holds a budget at all, read with the same parser
+    // `assembleProposalData` used. Not `assembledData.budget === undefined`:
+    // an unreadable fragment lands there as its raw *text*, so that test read
+    // "the document has a budget" for text no reader can make a budget out of.
+    const fragmentBudget = parseStoredBudgetFragmentValue(
+      fragmentTexts.budget ?? '',
+    );
     const validationData = {
       ...assembledData,
       ...(storedProposalData.category !== undefined
@@ -76,13 +86,21 @@ export async function validateProposalAgainstTemplate(
       // still hold a creation-time amount the author has since edited down),
       // leaving no edit that clears the error.
       //
+      // An unreadable fragment means "unknown", not "the author cleared it",
+      // exactly as it does for display (`resolveSystemFieldOverrides`) and for
+      // the editor's autosave — so the row still backfills. Gating this on the
+      // *assembled* value instead left the raw fragment text in front of an
+      // object-typed budget schema, and a proposal whose row held a perfectly
+      // good budget could not be submitted at all while the editor showed the
+      // same fragment as "Add budget".
+      //
       // Shaped for the template, not handed over as parsed: legacy templates
       // declare the budget as `{type: 'number'}`, and AJV runs with
       // `coerceTypes: false`, so injecting the parsed `{amount, currency}`
       // object failed validation outright — the author saw "Budget is invalid"
       // and could not submit at all. An unreadable stored budget goes through
       // raw so it fails on its own merits rather than reading as absent.
-      ...(assembledData.budget === undefined &&
+      ...(fragmentBudget === undefined &&
       storedProposalData.budget !== undefined
         ? {
             budget: parsed.budget
