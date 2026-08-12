@@ -96,77 +96,35 @@ export function useRelationshipMutations({
     ),
   );
 
-  // Shared by both mutations' onSettled: always refetch relationship data
-  // after error or success. The proposal detail view refreshes via the
-  // realtime channel the mutation registers (Channels.decisionProposal), so
-  // it isn't invalidated here; the proposal list deliberately isn't
-  // channel-invalidated, so callers pass processInstanceId to refresh their
-  // own list counts.
+  // The raw client rather than `utils`: the count caches are matched by a
+  // predicate on the tRPC path, which the typed helpers can't express.
   const queryClient = useQueryClient();
 
-  /**
-   * Move the proposal's like/follow count everywhere it is cached.
-   *
-   * Matched with a predicate on the tRPC path rather than a built query key:
-   * the same proposal sits in several caches at once — any number of
-   * `listProposals` / `listAllProposals` results (different filters or sorts,
-   * plus the ballot's non-infinite query) and the `getProposal` entry — and
-   * a predicate matches all of them without depending on how tRPC happens to
-   * encode inputs in the key.
-   *
-   * Rolling back applies the opposite delta rather than restoring a snapshot.
-   * Every card on the page writes to these same caches, so a snapshot taken
-   * before this mutation would also undo whatever another card did in the
-   * meantime.
-   */
-  const countQueryFilter = {
-    predicate: (query: { queryKey: readonly unknown[] }) => {
-      const [path] = query.queryKey;
-
-      return (
-        Array.isArray(path) &&
-        path[0] === 'decision' &&
-        (path[1] === 'listProposals' ||
-          path[1] === 'listAllProposals' ||
-          path[1] === 'getProposal')
-      );
-    },
-  };
-
-  const patchCachedCounts = (relationshipType: string, delta: number) => {
+  /** Move the proposal's like/follow count everywhere it is cached. */
+  const patchCachedCounts = (
+    relationshipType: ProfileRelationshipType,
+    delta: number,
+  ) => {
     if (!targetProfileId) {
       return;
     }
 
-    const field: ProposalCountField =
-      relationshipType === ProfileRelationshipType.LIKES
-        ? 'likesCount'
-        : 'followersCount';
-
-    queryClient.setQueriesData(
-      {
-        predicate: (query: { queryKey: readonly unknown[] }) => {
-          const [path] = query.queryKey;
-
-          return (
-            Array.isArray(path) &&
-            path[0] === 'decision' &&
-            (path[1] === 'listProposals' ||
-              path[1] === 'listAllProposals' ||
-              path[1] === 'getProposal')
-          );
-        },
-      },
-      (old: unknown) => bumpProposalCount(old, targetProfileId, field, delta),
+    queryClient.setQueriesData(countQueryFilter, (old: unknown) =>
+      bumpProposalCount(
+        old,
+        targetProfileId,
+        COUNT_FIELD[relationshipType],
+        delta,
+      ),
     );
   };
 
   /**
-   * Add or drop this proposal in the viewer's relationship list.
+   * Add or drop this proposal in the viewer's relationship list — the cache the
+   * pressed state is read from.
    *
-   * Same reasoning as the counts: one cache entry (`{ types: [...] }`) is
-   * shared by every card on the page, so rollback removes exactly what this
-   * mutation added rather than reinstating a stale copy of the whole list.
+   * The row written is a stub with an empty name and slug, safe only because
+   * this key has exactly one reader and it touches `targetProfile.id` alone.
    */
   const patchCachedRelationship = (
     relationshipType: ProfileRelationshipType,
@@ -215,7 +173,13 @@ export function useRelationshipMutations({
   const reconcile = async () => {
     await Promise.all([
       utils.profile.getRelationships.invalidate(relationshipQueryKey),
-      queryClient.invalidateQueries(countQueryFilter),
+      // `refetchType: 'all'`, not the default 'active': `setQueriesData` wrote
+      // every matching entry, so an unmounted `getProposal` or an off-screen
+      // filter would otherwise keep the optimistic delta and serve it on mount.
+      queryClient.invalidateQueries({
+        ...countQueryFilter,
+        refetchType: 'all',
+      }),
       ...invalidateQueries.flatMap((query) =>
         query.processInstanceId
           ? [
@@ -234,12 +198,9 @@ export function useRelationshipMutations({
   const addRelationshipMutation =
     trpc.decision.addProposalRelationship.useMutation({
       onSuccess: () => onSuccess?.(),
-      onError: (error, variables) => {
-        logger.error('Failed to add relationship', {
-          error,
-          context: 'useRelationshipMutations.add',
-        });
-
+      // Failures are logged once, in the drain's catch — it has the burst
+      // context, and logging here too splits the PostHog issue group.
+      onError: (_error, variables) => {
         // Four whole sentences rather than a verb slotted into one template:
         // the pieces don't reassemble into a sentence in every language.
         toast.error(
@@ -253,12 +214,7 @@ export function useRelationshipMutations({
   const removeRelationshipMutation =
     trpc.decision.removeProposalRelationship.useMutation({
       onSuccess: () => onSuccess?.(),
-      onError: (error, variables) => {
-        logger.error('Failed to remove relationship', {
-          error,
-          context: 'useRelationshipMutations.remove',
-        });
-
+      onError: (_error, variables) => {
         toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
             ? t("Couldn't remove your like. Please try again.")
@@ -328,14 +284,20 @@ export function useRelationshipMutations({
           await mutation.mutateAsync({ targetProfileId, relationshipType });
           sent.current[relationshipType] = target;
         } catch (error) {
-          // Logged and toasted in onError; the reconcile puts the cache back to
-          // whatever the server actually has.
+          // Toasted in onError; the reconcile puts the cache back to whatever
+          // the server actually has.
           logger.error('Relationship write failed', {
             error,
             context: `useRelationshipMutations.${relationshipType}`,
           });
+
+          // `continue`, not `break`: settle() cleared the burst, so with no
+          // further press the loop condition ends it here anyway. A click that
+          // landed during the reconcile is the one case `break` got wrong — it
+          // couldn't start its own drain (lease still held) and was dropped
+          // silently, leaving the cache flipped against the server.
           await settle();
-          break;
+          continue;
         }
       }
     } finally {
@@ -412,3 +374,34 @@ export function useRelationshipMutations({
     removeRelationshipMutation,
   };
 }
+
+/** Which proposal count each relationship type moves. */
+const COUNT_FIELD: Record<ProfileRelationshipType, ProposalCountField> = {
+  [ProfileRelationshipType.LIKES]: 'likesCount',
+  [ProfileRelationshipType.FOLLOWING]: 'followersCount',
+};
+
+/**
+ * Every cache an optimistic count is written to.
+ *
+ * A predicate on the tRPC path rather than a built query key: the same proposal
+ * sits in several caches at once — any number of `listProposals` /
+ * `listAllProposals` results (different filters or sorts, plus the ballot's
+ * non-infinite query) and the `getProposal` entry. One definition, used for the
+ * cancel, the write and the invalidate alike; drift between them means writing
+ * to a cache nothing invalidates, which is the frozen-count bug this file
+ * already fixed once.
+ */
+const countQueryFilter = {
+  predicate: (query: { queryKey: readonly unknown[] }) => {
+    const [path] = query.queryKey;
+
+    return (
+      Array.isArray(path) &&
+      path[0] === 'decision' &&
+      (path[1] === 'listProposals' ||
+        path[1] === 'listAllProposals' ||
+        path[1] === 'getProposal')
+    );
+  },
+};
