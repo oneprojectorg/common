@@ -1,5 +1,6 @@
 import { and, db, eq, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
@@ -192,6 +193,17 @@ export const listProfileUsers = async ({
     const parsedCursor = cursorSchema.safeParse(decodedCursor);
 
     if (!parsedCursor.success) {
+      // Logged because the fallback is otherwise invisible: a client re-walking
+      // from page 1 looks identical to one that never paginated. Expect a burst
+      // while pre-`id` cursors drain after deploy, and roughly none after.
+      logger.warn('Discarded an unusable participants cursor', {
+        orderBy,
+        issues: parsedCursor.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+        })),
+      });
+
       return undefined;
     }
 
