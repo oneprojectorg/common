@@ -19,8 +19,15 @@ import type {
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
-/** Cursor tiebreakers are `profileUsers.id` values. */
-const cursorTiebreakerSchema = z.string().uuid();
+/**
+ * Cursors are client-supplied base64 that `decodeCursor` only JSON-parses, so
+ * the shape is checked here before either half reaches the query: the value is
+ * compared against a text sort key, and the tiebreaker is cast to uuid.
+ */
+const cursorSchema = z.object({
+  value: z.string(),
+  tiebreaker: z.string().uuid(),
+});
 
 /**
  * Builds a subquery to get the first role name (alphabetically) for a profile user.
@@ -177,16 +184,14 @@ export const listProfileUsers = async ({
     : undefined;
 
   const buildCursorCondition = () => {
-    // The tiebreaker is a `profileUsers.id`, and Postgres rejects anything that
-    // isn't uuid-shaped. Cursors issued before the tiebreaker moved off `email`
-    // carry an email address (or nothing at all, for the email sort), so drop
-    // them instead of erroring — a client mid-scroll across the deploy repeats
-    // a page rather than seeing a 500.
-    const tiebreaker = cursorTiebreakerSchema.safeParse(
-      decodedCursor?.tiebreaker,
-    );
+    // Anything that doesn't match falls back to the first page instead of
+    // erroring. That covers cursors issued before the tiebreaker moved off
+    // `email` — they carry an email address (or nothing at all, for the email
+    // sort), and Postgres rejects a non-uuid on the cast — so a client
+    // mid-scroll across the deploy repeats a page rather than seeing a 500.
+    const parsedCursor = cursorSchema.safeParse(decodedCursor);
 
-    if (!decodedCursor || !tiebreaker.success) {
+    if (!parsedCursor.success) {
       return undefined;
     }
 
@@ -204,7 +209,7 @@ export const listProfileUsers = async ({
     });
     const compareOp = dir === 'asc' ? sql`>` : sql`<`;
 
-    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${decodedCursor.value}, ${tiebreaker.data}::uuid)`;
+    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${parsedCursor.data.value}, ${parsedCursor.data.tiebreaker}::uuid)`;
   };
 
   const cursorCondition = buildCursorCondition();

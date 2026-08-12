@@ -33,6 +33,8 @@ vi.mock('../assert', () => ({
 }));
 
 const PROFILE_ID = '00000000-0000-4000-8000-000000000001';
+/** A `profileUsers.id`, the shape the cursor tiebreaker has to be. */
+const TIEBREAKER = '00000000-0000-4000-8000-0000000000b0';
 const USER = {
   id: 'auth-user-1',
   email: 'admin@example.test',
@@ -134,7 +136,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
       user: USER,
       cursor: encodeCursor({
         value: 'Beatrice',
-        tiebreaker: '00000000-0000-4000-8000-0000000000b0',
+        tiebreaker: TIEBREAKER,
       }),
     });
 
@@ -159,7 +161,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
       user: USER,
       cursor: encodeCursor({
         value: 'Beatrice',
-        tiebreaker: '00000000-0000-4000-8000-0000000000b0',
+        tiebreaker: TIEBREAKER,
       }),
     });
 
@@ -175,13 +177,25 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
   });
 
   it.each([
-    ['an email tiebreaker, as issued before the id switch', 'b@example.test'],
-    ['no tiebreaker at all, as the email sort used to issue', undefined],
-  ])('ignores a stale cursor carrying %s', async (_label, tiebreaker) => {
+    [
+      'an email tiebreaker, as issued before the id switch',
+      { value: 'Beatrice', tiebreaker: 'b@example.test' },
+    ],
+    [
+      'no tiebreaker at all, as the email sort used to issue',
+      { value: 'Beatrice' },
+    ],
+    [
+      // `decodeCursor` only JSON-parses, so a hand-crafted cursor can carry
+      // anything; a non-string value would be bound as a query parameter.
+      'a non-string value',
+      { value: { nested: 'Beatrice' }, tiebreaker: TIEBREAKER },
+    ],
+  ])('ignores a malformed cursor carrying %s', async (_label, payload) => {
     await listProfileUsers({
       profileId: PROFILE_ID,
       user: USER,
-      cursor: encodeCursor({ value: 'Beatrice', tiebreaker }),
+      cursor: encodeCursor(payload),
     });
 
     const [args] = mockFindMany.mock.calls[0] ?? [];
@@ -200,7 +214,7 @@ describe('listProfileUsers — name sort matches the displayed name', () => {
       orderBy: 'email',
       cursor: encodeCursor({
         value: 'b@example.test',
-        tiebreaker: '00000000-0000-4000-8000-0000000000b0',
+        tiebreaker: TIEBREAKER,
       }),
     });
 
