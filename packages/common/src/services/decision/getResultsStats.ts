@@ -1,4 +1,4 @@
-import { db, desc, eq } from '@op/db/client';
+import { and, db, desc, eq, isNull } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -48,8 +48,12 @@ export const getResultsStats = async ({
     orgFallbackPermissions: [{ decisions: permission.READ }],
   });
 
+  // Reverted runs stay as audit records; they are not the current results.
   const result = await db._query.decisionProcessResults.findFirst({
-    where: eq(decisionProcessResults.processInstanceId, instanceId),
+    where: and(
+      eq(decisionProcessResults.processInstanceId, instanceId),
+      isNull(decisionProcessResults.revertedAt),
+    ),
     orderBy: [desc(decisionProcessResults.executedAt)],
   });
 

@@ -35,6 +35,15 @@ export const decisionProcessResults = pgTable(
     success: boolean('success').notNull(),
     errorMessage: text('error_message'),
 
+    // Set when an admin reverts the phase that produced this run. The row is
+    // kept as an audit record that a result once occurred, but every "are
+    // results published?" read must skip it — the process is no longer in its
+    // results state.
+    revertedAt: timestamp('reverted_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
+
     // Denormalized count for quick queries
     selectedCount: integer('selected_count').notNull().default(0),
 

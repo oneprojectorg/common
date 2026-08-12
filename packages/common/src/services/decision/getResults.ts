@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, gt, inArray, or } from '@op/db/client';
+import { and, asc, db, desc, eq, gt, inArray, isNull, or } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -62,9 +62,13 @@ export const getLatestResultWithProposals = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  // Get the latest result (without loading all selections)
+  // Get the latest result (without loading all selections). Reverted runs are
+  // kept as audit records and never describe the instance's current results.
   const result = await db._query.decisionProcessResults.findFirst({
-    where: eq(decisionProcessResults.processInstanceId, processInstanceId),
+    where: and(
+      eq(decisionProcessResults.processInstanceId, processInstanceId),
+      isNull(decisionProcessResults.revertedAt),
+    ),
     orderBy: [desc(decisionProcessResults.executedAt)],
   });
 

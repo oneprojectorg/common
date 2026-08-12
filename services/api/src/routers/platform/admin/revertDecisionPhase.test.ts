@@ -161,14 +161,17 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
 
     await caller.platform.admin.revertDecisionPhase({ instanceId });
 
-    // The result record is an append-only audit of what the process decided;
-    // a later re-advance appends a fresh row that supersedes this one.
+    // The rows survive as the audit trail that a result once occurred...
     const resultsAfter = await db.query.decisionProcessResults.findMany({
       where: { processInstanceId: instanceId },
     });
     expect(resultsAfter.map((row) => row.id).sort()).toEqual(
       resultsBefore.map((row) => row.id).sort(),
     );
+
+    // ...but every one of them is stamped, so no reader treats them as the
+    // instance's live published result.
+    expect(resultsAfter.every((row) => row.revertedAt !== null)).toBe(true);
   });
 
   it('keeps votes cast before the reversal', async ({
@@ -210,6 +213,59 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       .from(decisionsVoteProposals)
       .where(eq(decisionsVoteProposals.voteSubmissionId, submission!.id));
     expect(ballots.map((row) => row.proposalId)).toEqual([proposal.id]);
+  });
+
+  it('stops republishing vote tallies once the results phase is reverted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, proposal, setup, testData, caller } =
+      await createAdvancedInstance(task.id, onTestFinished);
+
+    const voter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+
+    const [submission] = await db
+      .insert(decisionsVoteSubmissions)
+      .values({
+        processInstanceId: instanceId,
+        submittedByProfileId: voter.profileId,
+        voteData: {
+          schemaVersion: '1.0.0',
+          schemaType: 'test',
+          submissionMetadata: { timestamp: new Date().toISOString() },
+          validationSignature: `test-${task.id}`,
+        },
+      })
+      .returning({ id: decisionsVoteSubmissions.id });
+
+    await db.insert(decisionsVoteProposals).values({
+      voteSubmissionId: submission!.id,
+      proposalId: proposal.id,
+    });
+
+    const { session } = await createIsolatedSession(voter.email);
+    const voterCaller = createCaller(
+      await createTestContextWithSession(session),
+    );
+    const readBallot = async () => {
+      const { proposals: rows } = await voterCaller.decision.listProposals({
+        processInstanceId: instanceId,
+        votedByProfileId: voter.profileId,
+      });
+      return rows.find((row) => row.id === proposal.id)?.voteCount;
+    };
+
+    // The advance published a results record, so tallies are visible.
+    expect(await readBallot()).toBe(1);
+
+    await caller.platform.admin.revertDecisionPhase({ instanceId });
+
+    // Reverting re-opens the process, so the tally must go back to being
+    // withheld rather than leaking a live count into the re-opened phase.
+    expect(await readBallot()).toBeNull();
   });
 
   it('deletes review assignments that no reviewer has started', async ({

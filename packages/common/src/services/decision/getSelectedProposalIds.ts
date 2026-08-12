@@ -13,7 +13,9 @@ export const getSelectedProposalIds = async (
   processInstanceId: string,
 ): Promise<Set<string>> => {
   const latest = await db.query.decisionProcessResults.findFirst({
-    where: { processInstanceId },
+    // Reverted runs stay in the table as an audit record but no longer
+    // describe the instance's current selection.
+    where: { processInstanceId, revertedAt: { isNull: true } },
     orderBy: (table, { desc }) => desc(table.executedAt),
   });
 

@@ -5,12 +5,15 @@ import {
   desc,
   eq,
   gt,
+  gte,
   isNotNull,
+  isNull,
   ne,
 } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalReviewAssignmentStatus,
+  decisionProcessResults,
   decisionProcessTransitions,
   processInstances,
   proposalReviewAssignments,
@@ -50,6 +53,7 @@ export interface RevertPhaseResult {
 /** The transition to undo, resolved under the instance lock. */
 interface RevertTarget {
   transitionHistoryId: string;
+  transitionedAt: Date;
   /** The phase we return to — the transition's origin. */
   targetPhaseId: string;
   /** The phase we leave — the instance's current phase. */
@@ -67,25 +71,22 @@ interface RevertTarget {
  * 1. Deletes the review assignments generated on entry to the phase being
  *    reverted. Fails closed if a reviewer already touched one (any status past
  *    `PENDING`) rather than cascade-deleting their reviews.
- * 2. Deletes the `stateTransitionHistory` row, which cascades to
+ * 2. Stamps `revertedAt` on the results the advance recorded. The rows stay as
+ *    an audit trail that a result once occurred; the stamp is what stops every
+ *    "are results published?" read from treating them as live.
+ * 3. Deletes the `stateTransitionHistory` row, which cascades to
  *    `decisionTransitionProposals` — the proposals that were attached as
  *    belonging to the phase we're leaving stop being members of it.
- * 3. Re-opens the scheduled transition the advance stamped complete, but only
+ * 4. Re-opens the scheduled transition the advance stamped complete, but only
  *    while it is still future-dated (see `undoAdvanceWrites`).
- * 4. Moves `currentStateId` back, under the same optimistic lock
+ * 5. Moves `currentStateId` back, under the same optimistic lock
  *    `advancePhase` uses.
  *
- * Deliberately kept:
- *
- * - **Votes.** `decisionsVoteSubmissions` is scoped to the instance, not a
- *   phase, and nothing here touches it. Its unique `(instance, voter)`
- *   constraint means a re-advance reuses the same ballots rather than
- *   double-counting them.
- * - **Result records.** `decisionProcessResults` is an append-only audit of
- *   what the process decided; readers take the latest row by `executedAt`, and
- *   a re-advance appends a fresh one that supersedes it. The results screen is
- *   gated on the instance being on its last phase, so a kept row stops being
- *   user-visible the moment the reversal lands.
+ * Votes are deliberately untouched: `decisionsVoteSubmissions` is scoped to
+ * the instance rather than a phase, and its unique `(instance, voter)`
+ * constraint means a re-advance reuses the same ballots rather than
+ * double-counting them. Leaving a result row unstamped would republish those
+ * tallies mid-vote, which is why step 2 is not optional.
  *
  * Deleting the history row is the undo, rather than appending a compensating
  * `B → A` row: phase membership is derived from transitions, and the most
@@ -225,6 +226,7 @@ async function resolveTransitionToUndo({
       id: stateTransitionHistory.id,
       fromStateId: stateTransitionHistory.fromStateId,
       toStateId: stateTransitionHistory.toStateId,
+      transitionedAt: stateTransitionHistory.transitionedAt,
     })
     .from(stateTransitionHistory)
     .where(eq(stateTransitionHistory.processInstanceId, instanceId))
@@ -262,6 +264,7 @@ async function resolveTransitionToUndo({
 
   return {
     transitionHistoryId: latestTransition.id,
+    transitionedAt: latestTransition.transitionedAt,
     targetPhaseId,
     revertedPhaseId,
   };
@@ -279,6 +282,25 @@ async function undoAdvanceWrites({
   target: RevertTarget;
   now: string;
 }): Promise<void> {
+  // Keep the results the advance recorded — they are the audit trail that a
+  // result once occurred — but stamp them so no reader treats them as the
+  // instance's live published result while it sits back in an earlier phase.
+  // Without this, `listProposals` would republish real vote tallies into a
+  // re-opened voting phase.
+  await tx
+    .update(decisionProcessResults)
+    .set({ revertedAt: now })
+    .where(
+      and(
+        eq(decisionProcessResults.processInstanceId, instanceId),
+        gte(
+          decisionProcessResults.executedAt,
+          target.transitionedAt.toISOString(),
+        ),
+        isNull(decisionProcessResults.revertedAt),
+      ),
+    );
+
   // Cascades to decisionTransitionProposals via dtp_transition_history_fkey.
   await tx
     .delete(stateTransitionHistory)
