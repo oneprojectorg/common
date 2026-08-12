@@ -358,15 +358,17 @@ export const getPermissionsOnProposal = async ({
 
   // `access.update` says the caller may write this proposal at all (the author
   // and their invited collaborators). Editing what they already submitted is
-  // additionally governed by the phase's "Proposal editing" rule — the same
-  // gate `updateProposal` enforces, so the Edit affordance matches the write.
+  // additionally governed by the phase's "Proposal editing" rule, so the Edit
+  // affordance disappears with the setting. The revision-response flow reaches
+  // the editor through its own "Revise" affordance, not this flag.
+  const instancePhases =
+    (proposal.processInstance.instanceData as DecisionInstanceData | null)
+      ?.phases ?? [];
   const isEditable =
     access.update &&
     (proposal.status === ProposalStatus.DRAFT ||
       isPostSubmissionEditingAllowed({
-        phases:
-          (proposal.processInstance.instanceData as DecisionInstanceData | null)
-            ?.phases ?? [],
+        phases: instancePhases,
         currentPhaseId: proposal.processInstance.currentStateId,
       }));
 

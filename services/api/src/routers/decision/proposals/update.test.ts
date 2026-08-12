@@ -1,11 +1,19 @@
 import { mockCollab } from '@op/collab/testing';
 import type { DecisionInstanceData } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, Visibility, processInstances } from '@op/db/schema';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalStatus,
+  Visibility,
+  processInstances,
+} from '@op/db/schema';
+import { createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -25,10 +33,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Sets the "Proposal editing" rule on the instance's initial phase — the phase
- * `testMinimalSchema` instances start in.
- */
+/** Sets the "Proposal editing" rule on the instance's current phase. */
 async function setProposalEditingRule(
   processInstanceId: string,
   edit: boolean,
@@ -43,7 +48,7 @@ async function setProposalEditingRule(
 
   const instanceData = instanceRecord.instanceData as DecisionInstanceData;
   const phases = instanceData.phases.map((phase) =>
-    phase.phaseId === 'initial'
+    phase.phaseId === instanceRecord.currentStateId
       ? {
           ...phase,
           rules: {
@@ -632,6 +637,35 @@ describe.concurrent('updateProposal post-submission editing rule', () => {
     });
 
     expect(result.profile.name).toBe('Admin Edit');
+  });
+
+  it('should allow an author with an open revision request to edit while editing is disabled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+
+    const created = await testData.createReviewAssignment({
+      title: 'Needs Budget Detail',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewRequestState.REQUESTED,
+      requestComment: 'Please add a detailed budget breakdown.',
+    });
+
+    await setProposalEditingRule(created.instance.instance.id, false);
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+
+    const result = await authorCaller.decision.updateProposal({
+      proposalId: created.proposal.id,
+      data: { title: 'Revised After Feedback' },
+    });
+
+    expect(result.profile.name).toBe('Revised After Feedback');
   });
 
   it('should report isEditable false to the author while editing is disabled', async ({
