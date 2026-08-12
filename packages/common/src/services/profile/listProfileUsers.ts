@@ -11,10 +11,9 @@ import {
   excludeGlobalUsers,
 } from '../../utils/db';
 import { assertProfile, assertProfileAdmin } from '../assert';
-import {
-  type ProfileUserQueryResult,
-  type ProfileUserWithRelations,
-  resolveDisplayName,
+import type {
+  ProfileUserQueryResult,
+  ProfileUserWithRelations,
 } from './getProfileUserWithRelations';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
@@ -32,6 +31,15 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
   ORDER BY ar.name
   LIMIT 1
 ), '')`;
+
+/**
+ * The name the API returns for a profile user: the linked profile's name when
+ * the user has a profile, otherwise the denormalized `profileUsers.name`.
+ * Mirrors `buildDisplayNameSubquery` below, which sorts and paginates on the
+ * SQL equivalent — the two have to stay in sync.
+ */
+const resolveDisplayName = (result: ProfileUserQueryResult): string | null =>
+  result.serviceUser?.profile?.name || result.name;
 
 /**
  * Builds the sort key for the name column: the linked profile's name when the
@@ -162,7 +170,10 @@ export const listProfileUsers = async ({
 
   // Fetch profile users with their roles and user profiles
   // Request one extra to check if there are more results
-  const profileUserResults = await db._query.profileUsers.findMany({
+  // `db._query` is the legacy v1 relational API: it types nested relations as
+  // `{ [x: string]: any }` and doesn't narrow one-to-one relations, so the
+  // relation shape is asserted once here, at the boundary.
+  const profileUserResults = (await db._query.profileUsers.findMany({
     where: whereClause,
     with: {
       roles: {
@@ -202,14 +213,11 @@ export const listProfileUsers = async ({
       return [orderFn(displayNameSubquery), orderFn(table.email)];
     },
     limit: limit + 1,
-  });
+  })) as ProfileUserQueryResult[];
 
   // Check if there are more results
   const hasMore = profileUserResults.length > limit;
-  const resultItems = profileUserResults.slice(
-    0,
-    limit,
-  ) as ProfileUserQueryResult[];
+  const resultItems = profileUserResults.slice(0, limit);
 
   // Transform results
   const items: ProfileUserWithRelations[] = resultItems.map((result) => {
