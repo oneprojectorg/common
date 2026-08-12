@@ -52,6 +52,12 @@ const resolveDisplayName = (result: ProfileUserQueryResult): string | null =>
  * and the cursor condition agree on where nameless rows sit, and orders the
  * inner select so the sort key can't shift between the two if an auth user
  * somehow has more than one `users` row.
+ *
+ * The `u` / `p` aliases and the raw column names are load-bearing: interpolating
+ * `users.authUserId` / `profiles.name` instead makes drizzle rewrite them to the
+ * aliases it gave the `serviceUser` / `profile` lateral joins in the enclosing
+ * query, which silently turns the correlated subquery into a reference to those
+ * outer laterals and mis-sorts the page.
  */
 const buildDisplayNameSubquery = ({
   authUserIdColumn,
