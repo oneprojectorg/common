@@ -1,19 +1,19 @@
 import { Channels, listVoters, votersListSchema } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const listVotersInputSchema = z.object({
   processInstanceId: z.uuid(),
 });
 
 export const listVotersRouter = router({
-  listVoters: commonAuthedProcedure()
+  listVoters: networkAuthenticatedProcedure()
     .input(listVotersInputSchema)
     .output(votersListSchema)
     .query(({ ctx, input }) => {
       ctx.registerQueryChannels([
-        Channels.decisionInstance(input.processInstanceId),
+        Channels.decisionVoters(input.processInstanceId),
       ]);
 
       return listVoters({

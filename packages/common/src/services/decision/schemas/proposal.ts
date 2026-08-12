@@ -2,7 +2,10 @@ import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { proposalDataSchema } from '../proposalDataSchema';
-import { participantProfileSchema } from './participantProfile';
+import {
+  PARTICIPANT_FACE_PILE_MAX,
+  participantProfileSchema,
+} from './participantProfile';
 
 export const storageItemSchema = z.object({
   id: z.string(),
@@ -228,12 +231,8 @@ export const proposalSubmitterSchema = participantProfileSchema;
 
 export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
 
-// Anonymous-visible `decision.listProposalSubmitters` powers a 20-avatar
-// face-pile, so the sample never needs to exceed that. Cap on the server
-// (SQL `.limit()`) and re-assert in the wire schema so a regression in either
-// place fails loudly instead of streaming thousands of rows to public
-// callers (ONE-40 audit #23).
-export const PROPOSAL_SUBMITTER_FACE_PILE_MAX = 20;
+/** @see PARTICIPANT_FACE_PILE_MAX — shared with the other face-pile endpoints. */
+export const PROPOSAL_SUBMITTER_FACE_PILE_MAX = PARTICIPANT_FACE_PILE_MAX;
 
 export const proposalSubmittersListSchema = z.object({
   submitters: z

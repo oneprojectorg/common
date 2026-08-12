@@ -171,30 +171,6 @@ describe.concurrent('getCategories permissions', () => {
     expect(result.categories).toEqual([]);
   });
 
-  it('should allow access via org-level fallback when user lacks profile access', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false,
-    });
-
-    const instance = setup.instance;
-
-    // The admin user has org-level access (created the org) but no profile-level
-    // access on the instance (grantAccess: false). The org fallback should allow access.
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const result = await caller.decision.getCategories({
-      processInstanceId: instance.instance.id,
-    });
-
-    expect(result.categories).toEqual([]);
-  });
-
   it('should deny access for a user with no profile or org access', async ({
     task,
     onTestFinished,
