@@ -98,7 +98,7 @@ const DecisionsListSuspense = ({
         <Fragment key={item.id}>
           <DecisionListItem item={item} />
           {index < paginatedItems.length - 1 && (
-            <hr className="hidden border-border sm:block" />
+            <hr className="hidden sm:block" />
           )}
         </Fragment>
       ))}
