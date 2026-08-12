@@ -4,7 +4,7 @@ import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,7 +21,6 @@ interface UseRelationshipMutationsOptions {
    * don't subscribe to a list they'll never use.
    */
   enabled?: boolean;
-  onSuccess?: () => void;
   invalidateQueries?: Array<{
     processInstanceId?: string;
   }>;
@@ -53,18 +52,16 @@ type UserRelationships = Partial<
 >;
 
 /**
- * Hook to manage profile relationship mutations (likes and follows) with optimistic updates
+ * Like/follow a proposal's profile, with optimistic cache updates and one
+ * request per burst of clicks rather than one per click.
  *
  * @param targetProfileId - The profile ID to create relationships with
- * @param onSuccess - Optional callback to run on successful mutations
- * @param invalidateQueries - Optional array of additional queries to invalidate (e.g., proposal or list queries)
- *
- * @returns Object containing handlers, state, and mutation utilities
+ * @param enabled - Whether to subscribe to the viewer's relationship list
+ * @param invalidateQueries - Extra proposal lists to refresh once the writes settle
  */
 export function useRelationshipMutations({
   targetProfileId,
   enabled = true,
-  onSuccess,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
   const t = useTranslations();
@@ -78,7 +75,7 @@ export function useRelationshipMutations({
   };
 
   // Get user's likes and follows
-  const { data: userRelationships, isLoading: isLoadingRelationships } =
+  const { data: userRelationships, error: relationshipsError } =
     trpc.profile.getRelationships.useQuery(relationshipQueryKey, {
       enabled: !!user && enabled,
     });
@@ -197,7 +194,6 @@ export function useRelationshipMutations({
   // requests than there were presses.
   const addRelationshipMutation =
     trpc.decision.addProposalRelationship.useMutation({
-      onSuccess: () => onSuccess?.(),
       // Failures are logged once, in the drain's catch — it has the burst
       // context, and logging here too splits the PostHog issue group.
       onError: (_error, variables) => {
@@ -213,7 +209,6 @@ export function useRelationshipMutations({
 
   const removeRelationshipMutation =
     trpc.decision.removeProposalRelationship.useMutation({
-      onSuccess: () => onSuccess?.(),
       onError: (_error, variables) => {
         toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
@@ -222,12 +217,6 @@ export function useRelationshipMutations({
         );
       },
     });
-
-  // Combined loading state (includes initial query loading)
-  const isLoading =
-    addRelationshipMutation.isPending ||
-    removeRelationshipMutation.isPending ||
-    isLoadingRelationships;
 
   /** What the user wants, and what we last managed to send, per type. */
   const desired = useRef<Partial<Record<ProfileRelationshipType, boolean>>>({});
@@ -305,73 +294,61 @@ export function useRelationshipMutations({
     }
   };
 
-  const toggleRelationship = useCallback(
-    (relationshipType: ProfileRelationshipType, context: string) => {
-      if (!targetProfileId) {
-        logger.error('No targetProfileId provided for relationship action', {
-          context,
-        });
+  // Not wrapped in useCallback: it closes over every helper above, all of them
+  // rebuilt each render, so an honest dependency array would invalidate on
+  // every render anyway. Nothing downstream is memoised.
+  const toggleRelationship = (
+    relationshipType: ProfileRelationshipType,
+    context: string,
+  ) => {
+    if (!targetProfileId) {
+      logger.error('No targetProfileId provided for relationship action', {
+        context,
+      });
 
-        return;
-      }
+      return;
+    }
 
-      // Anything in flight would land on top of the writes below and undo the
-      // press — including the refetches `reconcile` kicks off. Both caches, not
-      // just the relationship one: a stale list result resets the count while
-      // the button stays pressed, and the next click then counts the same like
-      // twice.
-      void utils.profile.getRelationships.cancel(relationshipQueryKey);
-      void queryClient.cancelQueries(countQueryFilter);
+    // Anything in flight would land on top of the writes below and undo the
+    // press — including the refetches `reconcile` kicks off. Both caches, not
+    // just the relationship one: a stale list result resets the count while
+    // the button stays pressed, and the next click then counts the same like
+    // twice.
+    void utils.profile.getRelationships.cancel(relationshipQueryKey);
+    void queryClient.cancelQueries(countQueryFilter);
 
-      // Flip the cache first, every time: the press has to register even while
-      // an earlier one is still in the air.
-      const next = !isLikedInCache(relationshipType);
+    // Flip the cache first, every time: the press has to register even while
+    // an earlier one is still in the air.
+    const next = !isLikedInCache(relationshipType);
 
-      desired.current[relationshipType] = next;
-      patchCachedRelationship(relationshipType, next);
-      patchCachedCounts(relationshipType, next ? 1 : -1);
+    desired.current[relationshipType] = next;
+    patchCachedRelationship(relationshipType, next);
+    patchCachedCounts(relationshipType, next ? 1 : -1);
 
-      void drain(relationshipType);
-    },
-    [
-      targetProfileId,
-      utils,
-      addRelationshipMutation,
-      removeRelationshipMutation,
-    ],
-  );
+    void drain(relationshipType);
+  };
 
-  const handleLike = useCallback(
-    () =>
+  return {
+    isLiked,
+    isFollowed,
+    /**
+     * The relationship list failed to load, so `isLiked` / `isFollowed` are
+     * both reading false for want of data rather than because they're false.
+     * Callers should fall back to read-only counts instead of offering a
+     * toggle that would send a redundant write.
+     */
+    error: relationshipsError,
+
+    handleLike: () =>
       toggleRelationship(
         ProfileRelationshipType.LIKES,
         'useRelationshipMutations.like',
       ),
-    [toggleRelationship],
-  );
-
-  const handleFollow = useCallback(
-    () =>
+    handleFollow: () =>
       toggleRelationship(
         ProfileRelationshipType.FOLLOWING,
         'useRelationshipMutations.follow',
       ),
-    [toggleRelationship],
-  );
-
-  return {
-    // State
-    isLiked,
-    isFollowed,
-    isLoading,
-
-    // Handlers
-    handleLike,
-    handleFollow,
-
-    // Raw mutations (for advanced use cases)
-    addRelationshipMutation,
-    removeRelationshipMutation,
   };
 }
 
