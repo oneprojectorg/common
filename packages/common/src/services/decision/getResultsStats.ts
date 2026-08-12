@@ -1,4 +1,4 @@
-import { and, db, desc, eq, isNull } from '@op/db/client';
+import { and, db, desc, eq } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -48,11 +48,12 @@ export const getResultsStats = async ({
     orgFallbackPermissions: [{ decisions: permission.READ }],
   });
 
-  // Reverted runs stay as audit records; they are not the current results.
+  // Failed and reverted runs stay as audit records; they are not the current
+  // results, so they resolve to "no results" rather than an error.
   const result = await db._query.decisionProcessResults.findFirst({
     where: and(
       eq(decisionProcessResults.processInstanceId, instanceId),
-      isNull(decisionProcessResults.revertedAt),
+      eq(decisionProcessResults.success, true),
     ),
     orderBy: [desc(decisionProcessResults.executedAt)],
   });
@@ -62,10 +63,6 @@ export const getResultsStats = async ({
   }
 
   const membersVoted = result.voterCount;
-
-  if (!result.success) {
-    throw new Error('The latest result execution was not successful');
-  }
 
   const selectedProposalsWithData = await db
     .select({

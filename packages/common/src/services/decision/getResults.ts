@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, gt, inArray, isNull, or } from '@op/db/client';
+import { and, asc, db, desc, eq, gt, inArray, or } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -62,22 +62,19 @@ export const getLatestResultWithProposals = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  // Get the latest result (without loading all selections). Reverted runs are
-  // kept as audit records and never describe the instance's current results.
+  // Get the latest result (without loading all selections). Failed and
+  // reverted runs are kept as audit records but never describe the instance's
+  // current results, so they resolve to "no results" rather than an error.
   const result = await db._query.decisionProcessResults.findFirst({
     where: and(
       eq(decisionProcessResults.processInstanceId, processInstanceId),
-      isNull(decisionProcessResults.revertedAt),
+      eq(decisionProcessResults.success, true),
     ),
     orderBy: [desc(decisionProcessResults.executedAt)],
   });
 
   if (!result) {
     return null;
-  }
-
-  if (!result.success) {
-    throw new Error('The latest result execution was not successful');
   }
 
   // Decode cursor to get the last selectionRank and id from previous page

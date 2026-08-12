@@ -45,11 +45,7 @@ export const getLatestSelectionForProposal = async ({
   });
 
   const latestResult = await db.query.decisionProcessResults.findFirst({
-    where: {
-      processInstanceId: proposal.processInstanceId,
-      // Reverted runs are audit records, not the live selection.
-      revertedAt: { isNull: true },
-    },
+    where: { processInstanceId: proposal.processInstanceId },
     orderBy: (table, { desc }) => [desc(table.executedAt)],
     columns: { id: true, success: true },
   });

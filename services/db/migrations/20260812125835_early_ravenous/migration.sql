@@ -1,1 +1,0 @@
-ALTER TABLE "decision_process_results" ADD COLUMN "reverted_at" timestamp with time zone;

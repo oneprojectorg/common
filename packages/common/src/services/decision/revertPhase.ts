@@ -7,7 +7,6 @@ import {
   gt,
   gte,
   isNotNull,
-  isNull,
   ne,
 } from '@op/db/client';
 import {
@@ -50,6 +49,12 @@ export interface RevertPhaseResult {
   revertedPhaseId: string;
 }
 
+/**
+ * Stamped on a results run the reversal retires, so an operator reading the
+ * audit trail can tell it apart from a run that genuinely failed.
+ */
+export const REVERTED_RESULT_MESSAGE = 'Superseded by an admin phase reversal';
+
 /** The transition to undo, resolved under the instance lock. */
 interface RevertTarget {
   transitionHistoryId: string;
@@ -71,9 +76,10 @@ interface RevertTarget {
  * 1. Deletes the review assignments generated on entry to the phase being
  *    reverted. Fails closed if a reviewer already touched one (any status past
  *    `PENDING`) rather than cascade-deleting their reviews.
- * 2. Stamps `revertedAt` on the results the advance recorded. The rows stay as
- *    an audit trail that a result once occurred; the stamp is what stops every
- *    "are results published?" read from treating them as live.
+ * 2. Retires the results the advance recorded — `success` goes false with an
+ *    explanatory `errorMessage`. The rows stay as an audit trail that a result
+ *    once occurred, counts and selections intact, but every "are results
+ *    published?" read already keys on `success`, so they stop being live.
  * 3. Deletes the `stateTransitionHistory` row, which cascades to
  *    `decisionTransitionProposals` — the proposals that were attached as
  *    belonging to the phase we're leaving stop being members of it.
@@ -85,8 +91,8 @@ interface RevertTarget {
  * Votes are deliberately untouched: `decisionsVoteSubmissions` is scoped to
  * the instance rather than a phase, and its unique `(instance, voter)`
  * constraint means a re-advance reuses the same ballots rather than
- * double-counting them. Leaving a result row unstamped would republish those
- * tallies mid-vote, which is why step 2 is not optional.
+ * double-counting them. Leaving a result run marked successful would republish
+ * those tallies mid-vote, which is why step 2 is not optional.
  *
  * Deleting the history row is the undo, rather than appending a compensating
  * `B → A` row: phase membership is derived from transitions, and the most
@@ -283,13 +289,13 @@ async function undoAdvanceWrites({
   now: string;
 }): Promise<void> {
   // Keep the results the advance recorded — they are the audit trail that a
-  // result once occurred — but stamp them so no reader treats them as the
-  // instance's live published result while it sits back in an earlier phase.
-  // Without this, `listProposals` would republish real vote tallies into a
-  // re-opened voting phase.
+  // result once occurred, counts and selections intact — but retire them.
+  // Every "are results published?" read already keys on `success`, so this is
+  // what stops `listProposals` republishing real vote tallies into a re-opened
+  // voting phase.
   await tx
     .update(decisionProcessResults)
-    .set({ revertedAt: now })
+    .set({ success: false, errorMessage: REVERTED_RESULT_MESSAGE })
     .where(
       and(
         eq(decisionProcessResults.processInstanceId, instanceId),
@@ -297,7 +303,7 @@ async function undoAdvanceWrites({
           decisionProcessResults.executedAt,
           target.transitionedAt.toISOString(),
         ),
-        isNull(decisionProcessResults.revertedAt),
+        eq(decisionProcessResults.success, true),
       ),
     );
 

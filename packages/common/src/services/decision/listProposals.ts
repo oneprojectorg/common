@@ -160,10 +160,6 @@ export const listProposals = async ({
       where: {
         processInstanceId,
         success: true,
-        // A phase reversal stamps `revertedAt` and leaves the row as an audit
-        // record. Such a run is no longer the instance's published result, so
-        // counting it here would republish tallies into a re-opened vote.
-        revertedAt: { isNull: true },
       },
       columns: { id: true },
     });

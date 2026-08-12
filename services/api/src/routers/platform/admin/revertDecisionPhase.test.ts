@@ -1,3 +1,4 @@
+import { REVERTED_RESULT_MESSAGE } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -169,9 +170,17 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       resultsBefore.map((row) => row.id).sort(),
     );
 
-    // ...but every one of them is stamped, so no reader treats them as the
+    // ...but every one of them is retired, so no reader treats them as the
     // instance's live published result.
-    expect(resultsAfter.every((row) => row.revertedAt !== null)).toBe(true);
+    expect(
+      resultsAfter.every(
+        (row) =>
+          row.success === false &&
+          row.errorMessage === REVERTED_RESULT_MESSAGE &&
+          // The audit detail survives: counts and selections are untouched.
+          row.voterCount !== null,
+      ),
+    ).toBe(true);
   });
 
   it('keeps votes cast before the reversal', async ({
