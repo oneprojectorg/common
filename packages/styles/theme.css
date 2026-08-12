@@ -848,7 +848,7 @@
   }
 
   100% {
-    border-color: var(--color-neutral-gray-1);
+    border-color: var(--border);
   }
 }
 
