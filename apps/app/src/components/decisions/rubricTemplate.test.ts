@@ -1,7 +1,8 @@
+import type { XFormatPropertySchema } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import type {
-  RubricCriterionType,
+  EditableRubricCriterionType,
   RubricTemplateSchema,
 } from './rubricTemplate';
 import {
@@ -11,15 +12,18 @@ import {
   createEmptyRubricTemplate,
   getCriteria,
   getCriterion,
+  getCriterionErrors,
   getCriterionOptions,
   getCriterionType,
   inferCriterionType,
+  reorderCriteria,
   setCriterionRequired,
+  updateCriterionJsonSchema,
   setSelectOptions,
   updateCriterionDescription,
 } from './rubricTemplate';
 
-const ALL_TYPES: RubricCriterionType[] = [
+const ALL_TYPES: EditableRubricCriterionType[] = [
   'scored',
   'yes_no',
   'single_select',
@@ -27,7 +31,7 @@ const ALL_TYPES: RubricCriterionType[] = [
 ];
 
 function templateWithCriterion(
-  type: RubricCriterionType,
+  type: EditableRubricCriterionType,
   criterionId = 'crit1',
 ): RubricTemplateSchema {
   return addCriterion(createEmptyRubricTemplate(), criterionId, type, 'Label');
@@ -274,5 +278,113 @@ describe('getCriteria', () => {
     expect(single?.criterionType).toBe('single_select');
     expect(single?.options).toHaveLength(2);
     expect(single?.options[0]?.title).toBe('Parks');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Money criteria (template-authored, not creatable in the builder)
+// ---------------------------------------------------------------------------
+
+const MONEY_SCHEMA: XFormatPropertySchema = {
+  type: 'object',
+  title: 'Design & Engineering Cost',
+  'x-format': 'money',
+  properties: {
+    amount: { type: 'number', minimum: 0 },
+    currency: { type: 'string', const: 'USD', default: 'USD' },
+  },
+  required: ['amount', 'currency'],
+  additionalProperties: false,
+};
+
+function templateWithMoneyCriterion(): RubricTemplateSchema {
+  let template = createEmptyRubricTemplate();
+  template = addCriterion(template, 'scored1', 'scored', 'Impact');
+  template = {
+    ...template,
+    properties: { ...template.properties, cost1: { ...MONEY_SCHEMA } },
+    'x-field-order': [...(template['x-field-order'] ?? []), 'cost1'],
+  };
+  return setCriterionRequired(template, 'cost1', true);
+}
+
+describe('money criteria', () => {
+  it('infers the money type from the declared x-format', () => {
+    expect(inferCriterionType({ ...MONEY_SCHEMA })).toBe('money');
+  });
+
+  it('does not reclassify an object criterion without the declaration', () => {
+    expect(
+      inferCriterionType({
+        type: 'object',
+        properties: { amount: { type: 'number' } },
+      }),
+    ).toBeUndefined();
+  });
+
+  it('surfaces money criteria in getCriteria with their pinned currency', () => {
+    const criteria = getCriteria(templateWithMoneyCriterion());
+    const money = criteria.find((c) => c.id === 'cost1');
+
+    expect(criteria.map((c) => c.id)).toEqual(['scored1', 'cost1']);
+    expect(money?.criterionType).toBe('money');
+    expect(money?.label).toBe('Design & Engineering Cost');
+    expect(money?.required).toBe(true);
+    expect(money?.currency).toBe('USD');
+    expect(money?.maxPoints).toBeUndefined();
+    expect(money?.options).toEqual([]);
+  });
+
+  it('reports no builder validation errors for a money criterion', () => {
+    const money = getCriteria(templateWithMoneyCriterion()).find(
+      (c) => c.id === 'cost1',
+    );
+
+    expect(money && getCriterionErrors(money)).toEqual([]);
+  });
+
+  it('refuses to change a money criterion into an editable type', () => {
+    const template = templateWithMoneyCriterion();
+
+    expect(changeCriterionType(template, 'cost1', 'scored')).toBe(template);
+    expect(getCriterionType(template, 'cost1')).toBe('money');
+  });
+
+  it('keeps money criteria in x-field-order when other criteria are reordered', () => {
+    const template = templateWithMoneyCriterion();
+    const reordered = reorderCriteria(
+      template,
+      getCriteria(template)
+        .map((c) => c.id)
+        .reverse(),
+    );
+
+    expect(reordered['x-field-order']).toEqual(['cost1', 'scored1']);
+  });
+});
+
+describe('section membership under type changes', () => {
+  it('keeps x-section when an editable criterion changes type', () => {
+    let template = createEmptyRubricTemplate();
+    template = addCriterion(template, 'crit1', 'scored', 'Impact');
+    template = updateCriterionJsonSchema(template, 'crit1', {
+      'x-section': 'cost',
+    });
+
+    const updated = changeCriterionType(template, 'crit1', 'long_text');
+
+    expect(getCriterionType(updated, 'crit1')).toBe('long_text');
+    // Sections are presentation only: any type can live in any section, so
+    // switching the type must not silently regroup the criterion.
+    expect(updated.properties?.crit1).toMatchObject({ 'x-section': 'cost' });
+  });
+
+  it('leaves an unsectioned criterion unsectioned', () => {
+    let template = createEmptyRubricTemplate();
+    template = addCriterion(template, 'crit1', 'scored', 'Impact');
+
+    const updated = changeCriterionType(template, 'crit1', 'yes_no');
+
+    expect(updated.properties?.crit1).not.toHaveProperty('x-section');
   });
 });

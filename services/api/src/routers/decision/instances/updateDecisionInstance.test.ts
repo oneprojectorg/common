@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   type RubricTemplateSchema,
+  type XFormatPropertySchema,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
@@ -25,6 +26,65 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** The canonical money-criterion schema, optionally in a section. */
+function moneyCriterion(
+  title: string,
+  currency = 'USD',
+  sectionId?: string,
+): XFormatPropertySchema {
+  return {
+    type: 'object',
+    title,
+    'x-format': 'money',
+    ...(sectionId ? { 'x-section': sectionId } : {}),
+    properties: {
+      amount: { type: 'number', minimum: 0 },
+      currency: { type: 'string', const: currency, default: currency },
+    },
+    required: ['amount', 'currency'],
+    additionalProperties: false,
+  };
+}
+
+/**
+ * Rubric with one presentational section that shows a derived total, and two
+ * money criteria in it — one currency per criterion, so the pair can be made
+ * to agree or disagree.
+ */
+function sectionedMoneyRubric(
+  firstCurrency: string,
+  secondCurrency: string,
+): RubricTemplateSchema {
+  return {
+    type: 'object',
+    'x-sections': [
+      { id: 'cost', title: 'Total Estimated Cost', showTotal: true },
+    ],
+    'x-field-order': ['design', 'construction'],
+    properties: {
+      design: moneyCriterion(
+        'Design & Engineering Cost',
+        firstCurrency,
+        'cost',
+      ),
+      construction: moneyCriterion('Construction', secondCurrency, 'cost'),
+    },
+    required: ['design', 'construction'],
+  };
+}
+
+/** A single money criterion, so one shape requirement can be broken at a time. */
+function moneyRubric(
+  overrides: Partial<XFormatPropertySchema>,
+): RubricTemplateSchema {
+  return {
+    type: 'object',
+    'x-field-order': ['design'],
+    properties: { design: { ...moneyCriterion('Design'), ...overrides } },
+    required: ['design'],
+  };
 }
 
 describe.concurrent('updateDecisionInstance', () => {
@@ -898,6 +958,225 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     const afterData = afterInstance!.instanceData as DecisionInstanceData;
     expect(afterData.rubricTemplate).toEqual(beforeData.rubricTemplate);
+  });
+
+  it('accepts a sectioned rubric with one currency across a summed section', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: sectionedMoneyRubric('USD', 'USD'),
+      }),
+    ).resolves.toBeDefined();
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+    expect(instanceData.rubricTemplate?.['x-sections']).toEqual([
+      { id: 'cost', title: 'Total Estimated Cost', showTotal: true },
+    ]);
+  });
+
+  it('rejects a summed section whose money criteria mix currencies', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const before = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: sectionedMoneyRubric('USD', 'EUR'),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const after = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    expect(
+      (after!.instanceData as DecisionInstanceData).rubricTemplate,
+    ).toEqual((before!.instanceData as DecisionInstanceData).rubricTemplate);
+  });
+
+  const unsafeMoneyOverrides: Array<[string, Partial<XFormatPropertySchema>]> =
+    [
+      [
+        'a money criterion without additionalProperties:false',
+        { additionalProperties: undefined },
+      ],
+      [
+        'a money criterion with additionalProperties:true',
+        {
+          additionalProperties: true,
+        },
+      ],
+      [
+        'a money criterion that does not require amount',
+        { required: ['currency'] },
+      ],
+      [
+        'a money criterion that does not require currency',
+        { required: ['amount'] },
+      ],
+      ['a non-object money criterion', { type: 'number' as const }],
+      [
+        'a money criterion with no currency pin',
+        {
+          properties: {
+            amount: { type: 'number' as const, minimum: 0 },
+          },
+        },
+      ],
+      [
+        'a money criterion whose currency const is not an ISO code',
+        {
+          properties: {
+            amount: { type: 'number' as const, minimum: 0 },
+            currency: { type: 'string' as const, const: 'US$', default: 'US$' },
+          },
+        },
+      ],
+      [
+        'a money criterion whose currency default disagrees with its const',
+        {
+          properties: {
+            amount: { type: 'number' as const, minimum: 0 },
+            currency: { type: 'string' as const, const: 'USD', default: 'EUR' },
+          },
+        },
+      ],
+      [
+        'a money criterion with an integer amount',
+        {
+          properties: {
+            amount: { type: 'integer' as const, minimum: 0 },
+            currency: { type: 'string' as const, const: 'USD', default: 'USD' },
+          },
+        },
+      ],
+      [
+        'a money criterion whose amount has no minimum',
+        {
+          properties: {
+            amount: { type: 'number' as const },
+            currency: { type: 'string' as const, const: 'USD', default: 'USD' },
+          },
+        },
+      ],
+    ];
+
+  // `x-format: 'money'` alone selects the money renderer, so a template that
+  // declares it without the exact storage shape would persist a form that
+  // either cannot be submitted or can store a value the model forbids.
+  for (const [label, overrides] of unsafeMoneyOverrides) {
+    it(`rejects ${label}`, async ({ task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const before = await db.query.processInstances.findFirst({
+        where: { id: setup.instance.instance.id },
+      });
+
+      await expect(
+        caller.decision.updateDecisionInstance({
+          instanceId: setup.instance.instance.id,
+          rubricTemplate: moneyRubric(overrides),
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+      const after = await db.query.processInstances.findFirst({
+        where: { id: setup.instance.instance.id },
+      });
+      expect(
+        (after!.instanceData as DecisionInstanceData).rubricTemplate,
+      ).toEqual((before!.instanceData as DecisionInstanceData).rubricTemplate);
+    });
+  }
+
+  it('rejects a section split by another criterion', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: {
+          type: 'object',
+          'x-sections': [{ id: 'cost', title: 'Total Estimated Cost' }],
+          'x-field-order': ['design', 'impact', 'construction'],
+          properties: {
+            design: moneyCriterion('Design', 'USD', 'cost'),
+            impact: {
+              type: 'string',
+              title: 'Impact',
+              'x-format': 'long-text',
+            },
+            construction: moneyCriterion('Construction', 'USD', 'cost'),
+          },
+        },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('applies the same money guards to a per-phase rubric template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const phases = (
+      (setup.instance.instance.instanceData as DecisionInstanceData).phases ??
+      []
+    ).map((phase) => ({ phaseId: phase.phaseId }));
+    const targetPhaseId = phases[0]?.phaseId;
+    expect(targetPhaseId).toBeDefined();
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        phases: [
+          {
+            phaseId: targetPhaseId!,
+            rubricTemplate: moneyRubric({ additionalProperties: undefined }),
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should update phases on a published instance when some phases have no dates', async ({

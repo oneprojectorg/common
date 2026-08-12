@@ -1503,5 +1503,11 @@
   "Voting (max {count} per member)": "Voting (max {count} per member)",
   "Vote editing": "Vote editing",
   "Advances manually": "Advances manually",
-  "Advances by date": "Advances by date"
+  "Advances by date": "Advances by date",
+  "Total": "Total",
+  "Amount": "Amount",
+  "Cost estimate": "Cost estimate",
+  "Reviewers enter an amount": "Reviewers enter an amount",
+  "Set by the process template and cannot be edited here.": "Set by the process template and cannot be edited here.",
+  "Currency: {code}": "Currency: {code}"
 }

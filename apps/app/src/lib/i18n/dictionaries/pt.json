@@ -1437,5 +1437,11 @@
   "Reviewers can see each other's reviews on a proposal": "Os avaliadores podem ver as avaliações uns dos outros em uma proposta",
   "Turn on Open Reviews?": "Ativar avaliações abertas?",
   "This can lead reviewers to agree with each other more than they would independently.": "Isso pode levar os avaliadores a concordarem mais uns com os outros do que fariam de forma independente.",
-  "Enable": "Ativar"
+  "Enable": "Ativar",
+  "Total": "Total",
+  "Amount": "Valor",
+  "Cost estimate": "Estimativa de custo",
+  "Reviewers enter an amount": "Os avaliadores inserem um valor",
+  "Set by the process template and cannot be edited here.": "Definido pelo modelo do processo e não editável aqui.",
+  "Currency: {code}": "Moeda: {code}"
 }

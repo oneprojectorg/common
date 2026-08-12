@@ -3,6 +3,7 @@ import type { JSONSchema7 } from 'json-schema';
 
 import type { PhaseDefinition } from './schemas/types';
 import type { SelectionPipeline } from './selectionPipeline/types';
+import type { TemplateSection } from './templateSections';
 
 // Base JSON Schema type (more specific than any)
 export type JsonSchema = JSONSchema7;
@@ -42,6 +43,18 @@ export interface XFormatPropertySchema extends JSONSchema7 {
   'x-format'?: XFormat;
   /** Default map camera for `location` fields (see {@link MapDefaultView}). */
   'x-map-default'?: MapDefaultView;
+  /**
+   * Id of the `x-sections` entry this field is displayed under. Purely
+   * presentational — see `templateSections.ts`.
+   */
+  'x-section'?: string;
+  /**
+   * Nested subschemas. Keeps JSON Schema 7's definition union — a boolean
+   * subschema (`{ blocked: false }`) stays legal — while letting nested
+   * properties carry the same vendor extensions. Readers must narrow with
+   * `isSchemaObjectDefinition` before touching keywords.
+   */
+  properties?: Record<string, XFormatPropertySchema | boolean>;
 }
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */
@@ -49,6 +62,8 @@ export interface ProposalTemplateSchema extends JSONSchema7 {
   [key: string]: unknown;
   properties?: Record<string, XFormatPropertySchema>;
   'x-field-order'?: string[];
+  /** Presentational field groups (see `templateSections.ts`). */
+  'x-sections'?: TemplateSection[];
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +75,8 @@ export interface RubricTemplateSchema extends JSONSchema7 {
   [key: string]: unknown;
   properties?: Record<string, XFormatPropertySchema>;
   'x-field-order'?: string[];
+  /** Presentational criterion groups (see `templateSections.ts`). */
+  'x-sections'?: TemplateSection[];
 }
 
 // Process Schema Structure
