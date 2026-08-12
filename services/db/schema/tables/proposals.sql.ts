@@ -29,6 +29,21 @@ export enum ProposalStatus {
   REJECTED = 'rejected',
   DUPLICATE = 'duplicate',
   SELECTED = 'selected',
+  /**
+   * Superseded by another proposal that this one was merged into. The edge
+   * itself lives in `decision_proposal_relationships`; this status is the cheap
+   * filter so list queries don't have to join to hide merged-away proposals.
+   *
+   * That makes it a denormalization of "has an outgoing merged edge", and no
+   * constraint enforces the pairing — whichever service writes the merge owns
+   * setting both in one transaction.
+   *
+   * Read by `enumToPgEnum` below to build the Postgres type, which static
+   * analysis can't see. No TypeScript caller yet — the services that set this
+   * status land with the merge flow in a follow-up.
+   */
+  // fallow-ignore-next-line unused-enum-member
+  MERGED = 'merged',
 }
 
 export const proposalStatusEnum = pgEnum(

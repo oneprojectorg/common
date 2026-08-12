@@ -151,6 +151,13 @@ export {
 } from './tables/proposals.sql';
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 
+export {
+  proposalRelationships,
+  ProposalRelationshipType,
+  proposalRelationshipTypeEnum,
+} from './tables/proposalRelationships.sql';
+export type { ProposalRelationship } from './tables/proposalRelationships.sql';
+
 export { decisionBoundaries } from './tables/decisionBoundaries.sql';
 export type { DecisionBoundary } from './tables/decisionBoundaries.sql';
 
