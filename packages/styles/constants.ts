@@ -54,9 +54,23 @@ export const getGradientForString = (name: string) => {
   return getAvatarColorForString(name).gradient;
 };
 
+/**
+ * Sizes match the `Header1`–`Header4` components in `@op/sense/Header`, which
+ * is the whole point of this object: the editor, the static renderer and the
+ * components have to agree.
+ *
+ * Every entry carries an explicit weight, because the sense type steps bake
+ * none (the pre-sense `text-title-*` steps carried 300) and this content always
+ * renders inside a `prose` container — `viewerProseStyles` opens with `prose`,
+ * and @tailwindcss/typography sets h1 800 / h2 700 / h3 600 / h4 600. Without
+ * an override the tag wins and the heading renders bold. That is why h3/h4 say
+ * `font-normal` where the components, which never sit in prose, say nothing.
+ *
+ * No colour class — the base layer already sets `color: var(--foreground)`.
+ */
 export const headingClasses = {
-  h1: 'font-serif text-title-lg',
-  h2: 'font-serif text-title-lg text-neutral-black',
-  h3: 'font-serif text-title-base text-neutral-black',
-  h4: 'font-serif text-title-sm14 text-neutral-black',
+  h1: 'font-serif text-display font-light',
+  h2: 'font-serif text-headline font-light',
+  h3: 'font-serif text-title font-normal',
+  h4: 'font-serif text-label font-normal',
 } as const;
