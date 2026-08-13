@@ -137,7 +137,7 @@ const ProfileAbout = ({
             <Header3 className="font-sans text-base font-strong">
               {t('Contact')}
             </Header3>
-            <div className="flex flex-col gap-2 text-teal">
+            <div className="flex flex-col gap-2 text-primary">
               {website ? (
                 <ContactLink>
                   <LuGlobe />
