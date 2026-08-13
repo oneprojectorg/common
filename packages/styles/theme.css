@@ -338,8 +338,8 @@
 /* Tell Tailwind where to scan for classes in the UI package */
 @source '../ui/src/**/*.{js,ts,jsx,tsx}';
 @source '../ui/stories/**/*.{js,ts,jsx,tsx}';
-@source '../ui/stories-sense/**/*.{js,ts,jsx,tsx}';
 @source '../sense/src/**/*.{js,ts,jsx,tsx}';
+@source '../sense/.storybook/**/*.{js,ts,jsx,tsx}';
 @source '../../apps/app/src/**/*.{js,ts,jsx,tsx}';
 @source './constants.ts';
 

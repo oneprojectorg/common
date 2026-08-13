@@ -18,10 +18,19 @@ const socialLinks = [
 ];
 
 interface SocialLinksProps extends React.ComponentProps<'ul'> {
+  /** Applied to each `<a>`, e.g. to change the hover colour on a dark surface. */
   linkClassName?: string;
+  /** Applied to each icon, e.g. to resize them. */
   iconClassName?: string;
 }
 
+/**
+ * One Project's own social accounts — X, LinkedIn, GitHub. The list is fixed;
+ * this is site chrome, not a generic link list.
+ *
+ * Each link carries an `aria-label` (the icons are decorative and would
+ * otherwise be nameless links) and opens in a new tab with `rel="noopener"`.
+ */
 function SocialLinks({
   className,
   linkClassName,

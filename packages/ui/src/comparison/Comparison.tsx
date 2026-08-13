@@ -1,4 +1,4 @@
-// Side-by-side comparison of @op/sense (shadcn base-vega primitives) against
+// Side-by-side comparison of @op/sense (shadcn Base UI primitives) against
 // the @op/ui (React Aria Components) equivalents. Storybook-only surface;
 // see packages/ui/stories/Comparison.stories.tsx.
 //

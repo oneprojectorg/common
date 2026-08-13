@@ -18,7 +18,8 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 5.  **Run Applications** (using your `w:` shorthand):
     - **Frontend App (`apps/app`)**: `pnpm w:app dev` (Usually runs on [http://localhost:3100](http://localhost:3100))
     - **API Server (`apps/api`)**: `pnpm w:api dev` (Usually runs on [http://localhost:3300](http://localhost:3300))
-    - **UI Storybook (`packages/ui`)**: `pnpm w:ui dev` (Usually runs on [http://localhost:3600](http://localhost:3600))
+    - **Design System Storybook (`packages/sense`)**: `pnpm w:sense dev` (Usually runs on [http://localhost:3600](http://localhost:3600))
+    - **Legacy UI Storybook (`packages/ui`)**: `pnpm w:ui dev` (Usually runs on [http://localhost:3601](http://localhost:3601))
     - **Email Previews (`services/emails`)**: `pnpm w:emails dev` (Usually runs on [http://localhost:3883](http://localhost:3883))
 
 ## Docker Dev Environment
