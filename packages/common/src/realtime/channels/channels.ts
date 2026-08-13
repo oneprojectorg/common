@@ -32,6 +32,15 @@ export const Channels = {
   decisionProposals: (instanceId: string) =>
     `decisionProposals:${instanceId}` as const,
 
+  /**
+   * Channel for the set of people who have voted in an instance. Subscribed to
+   * by the voter roster, broadcast to by vote submission. Kept separate from
+   * `decisionInstance` so a vote doesn't invalidate the instance snapshot,
+   * categories, and selection candidates for every viewer.
+   */
+  decisionVoters: (instanceId: string) =>
+    `decisionVoters:${instanceId}` as const,
+
   decisionProposal: (instanceId: string, proposalId: string) =>
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
@@ -94,6 +103,7 @@ export type DecisionInstanceChannel = ReturnType<
 export type DecisionProposalsChannel = ReturnType<
   typeof Channels.decisionProposals
 >;
+export type DecisionVotersChannel = ReturnType<typeof Channels.decisionVoters>;
 export type DecisionProposalChannel = ReturnType<
   typeof Channels.decisionProposal
 >;
@@ -126,6 +136,7 @@ export type ChannelName =
   | OrgRelationshipRequestChannel
   | DecisionInstanceChannel
   | DecisionProposalsChannel
+  | DecisionVotersChannel
   | DecisionProposalChannel
   | ReviewAssignmentChannel
   | ReviewAssignmentsChannel

@@ -1,4 +1,4 @@
-import { getVotingStatus, submitVote } from '@op/common';
+import { Channels, getVotingStatus, submitVote } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -36,6 +36,12 @@ export const votingRouter = router({
         },
         authUserId: ctx.user.id,
       });
+
+      // The roster of who has voted just changed. Scoped to its own channel so
+      // a vote doesn't invalidate every other decisionInstance query.
+      ctx.registerMutationChannels([
+        Channels.decisionVoters(input.processInstanceId),
+      ]);
 
       // Send vote submitted event for notification workflow
       waitUntil(

@@ -10,6 +10,7 @@ import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
 import { listProposalSubmittersRouter } from './listProposalSubmitters';
 import { listSelectionCandidatesRouter } from './listSelectionCandidates';
+import { listVotersRouter } from './listVoters';
 import { removeOverviewHeroImageRouter } from './removeOverviewHeroImage';
 import { signOverviewHeroImageUploadUrlRouter } from './signOverviewHeroImageUploadUrl';
 import { submitManualSelectionRouter } from './submitManualSelection';
@@ -36,4 +37,5 @@ export const instancesRouter = mergeRouters(
   listDecisionProfilesRouter,
   getDecisionBySlugRouter,
   listProposalSubmittersRouter,
+  listVotersRouter,
 );
