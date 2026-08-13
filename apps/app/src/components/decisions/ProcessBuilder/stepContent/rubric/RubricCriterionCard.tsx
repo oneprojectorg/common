@@ -21,13 +21,14 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
-  RubricCriterionType,
+  EditableRubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
 
 import {
   CRITERION_TYPES,
   CRITERION_TYPE_REGISTRY,
+  isEditableRubricCriterionType,
 } from './rubricCriterionRegistry';
 
 // ---------------------------------------------------------------------------
@@ -44,7 +45,10 @@ interface RubricCriterionCardProps {
   onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
-  onChangeType?: (criterionId: string, newType: RubricCriterionType) => void;
+  onChangeType?: (
+    criterionId: string,
+    newType: EditableRubricCriterionType,
+  ) => void;
   onUpdateMaxPoints?: (criterionId: string, maxPoints: number) => void;
   onUpdateScoreLabel?: (
     criterionId: string,
@@ -90,6 +94,14 @@ export function RubricCriterionCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   const displayLabel = criterion.label || t('Untitled field');
+
+  // Money criteria come from the process template, not this editor. Show them
+  // as an inert card so they stay visible (and keep their slot in
+  // `x-field-order` when other criteria are reordered) without pretending to
+  // be editable.
+  if (criterion.criterionType === 'money') {
+    return <MoneyCriterionCard criterion={criterion} label={displayLabel} />;
+  }
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
@@ -235,6 +247,40 @@ export function RubricCriterionCard({
 }
 
 // ---------------------------------------------------------------------------
+// Money criterion (read-only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Inert card for a template-authored money criterion: label, currency, and a
+ * note that it is set by the process template. No type selector, no delete,
+ * no required toggle — editing money criteria is not supported in the builder.
+ */
+function MoneyCriterionCard({
+  criterion,
+  label,
+}: {
+  criterion: CriterionView;
+  label: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <CollapsibleConfigCard
+      label={label}
+      badgeLabel={t(CRITERION_TYPE_REGISTRY.money.labelKey)}
+      locked
+    >
+      <div className="space-y-1 px-8 text-sm text-neutral-gray4">
+        <p>{t('Set by the process template and cannot be edited here.')}</p>
+        {criterion.currency && (
+          <p>{t('Currency: {code}', { code: criterion.currency })}</p>
+        )}
+      </div>
+    </CollapsibleConfigCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Criterion type radio selector
 // ---------------------------------------------------------------------------
 
@@ -242,8 +288,8 @@ function CriterionTypeSelector({
   value,
   onChange,
 }: {
-  value: RubricCriterionType;
-  onChange: (type: RubricCriterionType) => void;
+  value: string;
+  onChange: (type: EditableRubricCriterionType) => void;
 }) {
   const t = useTranslations();
 
@@ -251,7 +297,12 @@ function CriterionTypeSelector({
     <RadioGroup
       label={t('How should reviewers score this?')}
       value={value}
-      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
+      onChange={(newValue) => {
+        // The radio's value is a string; only forward one the model accepts.
+        if (isEditableRubricCriterionType(newValue)) {
+          onChange(newValue);
+        }
+      }}
       orientation="vertical"
       labelClassName="text-base"
     >

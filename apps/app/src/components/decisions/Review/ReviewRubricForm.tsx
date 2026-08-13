@@ -2,21 +2,27 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
+  DEFAULT_MONEY_CURRENCY,
   ProposalReviewState,
   type TemplateSectionBlock,
   type XFormatPropertySchema,
+  buildMoneyFieldAnswer,
+  getMoneyAnswerAmount,
+  getMoneyFieldCurrency,
   groupFieldsBySection,
   isOverallRecommendationField,
+  isSchemaObjectDefinition,
   parseSchemaOptions,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
+import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key, ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -262,7 +268,16 @@ function RubricCriterionSection({
 
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      {criterionType === 'yes_no' ? (
+      {criterionType === 'money' ? (
+        // The money label carries its own required marker, so it uses the
+        // input's label slot instead of the serif FieldHeader.
+        <MoneyFieldInput
+          field={field}
+          value={value}
+          onChange={onChange}
+          isRequired={field.required ?? false}
+        />
+      ) : criterionType === 'yes_no' ? (
         <>
           <FieldHeader
             title={field.schema.title}
@@ -345,6 +360,52 @@ function RubricRationaleField({
         textareaProps={{ placeholder, rows: 3, className: 'min-h-20' }}
       />
     </div>
+  );
+}
+
+/**
+ * Amount input for a money criterion. The currency comes from the template
+ * (never from the reviewer) and is materialized into the stored answer at fill
+ * time, so a submitted review stays self-describing. Clearing the input drops
+ * the answer key entirely rather than storing a currency-only object.
+ *
+ * The input is `@op/ui` NumberField with the currency symbol as a decorative
+ * prefix — the same pattern as proposal budget entry
+ * (`CollaborativeBudgetField`), including its ASCII-only parsing.
+ */
+function MoneyFieldInput({
+  field,
+  value,
+  onChange,
+  isRequired,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  isRequired: boolean;
+}) {
+  // The field shows the currency that *will be stored*, i.e. the template's,
+  // not whatever a stale draft happens to carry.
+  const currency =
+    getMoneyFieldCurrency(field.schema) ?? DEFAULT_MONEY_CURRENCY;
+  const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
+
+  return (
+    <NumberField
+      label={field.schema.title}
+      description={field.schema.description}
+      isRequired={isRequired}
+      prefixText={currencySymbol}
+      value={getMoneyAnswerAmount(value)}
+      minValue={getMoneyFieldMinimum(field.schema)}
+      onChange={(next) =>
+        onChange(
+          next === null ? undefined : buildMoneyFieldAnswer(next, field.schema),
+        )
+      }
+      labelClassName="font-semibold text-neutral-black"
+      className="w-full"
+    />
   );
 }
 
@@ -530,4 +591,29 @@ function parseSelectedValue(
   }
 
   return value;
+}
+
+/**
+ * Currency symbol for the input prefix, derived through Intl (never a
+ * hand-rolled symbol map) — the same derivation as `CollaborativeBudgetField`.
+ */
+function getCurrencySymbol(currency: string): string {
+  return (0)
+    .toLocaleString(undefined, {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+    .replace(/\d/g, '')
+    .trim();
+}
+
+/** Declared `amount.minimum`, when the money schema is well-formed. */
+function getMoneyFieldMinimum(
+  schema: XFormatPropertySchema,
+): number | undefined {
+  const amount = schema.properties?.amount;
+  return isSchemaObjectDefinition(amount) ? amount.minimum : undefined;
 }

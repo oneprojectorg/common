@@ -98,8 +98,8 @@ export const updateDecisionInstance = async ({
   }> = [];
 
   // Validate rubricTemplate is a structurally valid JSON Schema before
-  // persisting, plus the semantic checks AJV can't express (contiguous
-  // sections).
+  // persisting, plus the semantic checks AJV can't express (money field shape,
+  // contiguous sections).
   if (rubricTemplate !== undefined) {
     schemaValidator.validateJsonSchema(rubricTemplate);
     assertRubricTemplateAuthoring(rubricTemplate);

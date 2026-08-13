@@ -31,7 +31,15 @@ export function TotalScoreCard({
   const criteria = getCriteria(rubricTemplate);
   const { totalPoints } = getRubricScoringInfo(rubricTemplate);
 
+  // Only scored criteria contribute points. Gating on `criterionType` rather
+  // than "is the answer a number" keeps non-scored numeric answers (money
+  // amounts) out of the displayed score, matching the backend, which sums
+  // over `scoredCriterionKeys`.
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
+    if (criterion.criterionType !== 'scored') {
+      return total;
+    }
+
     const value = values[criterion.id];
 
     if (typeof value !== 'number') {

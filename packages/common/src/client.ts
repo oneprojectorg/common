@@ -122,8 +122,8 @@ export {
   templateCollectsLocation,
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
-// Presentational field grouping. Template-level concepts (not rubric-specific)
-// so proposal templates can adopt them later.
+// Presentational field grouping + money fields. Template-level concepts (not
+// rubric-specific) so proposal templates can adopt them later.
 export {
   TEMPLATE_SECTIONS_KEY,
   TEMPLATE_SECTION_KEY,
@@ -137,6 +137,19 @@ export {
   type SectionableField,
 } from './services/decision/templateSections';
 export { assertRubricTemplateAuthoring } from './services/decision/templateAuthoring';
+export {
+  DEFAULT_MONEY_CURRENCY,
+  assertMoneyFieldSchemas,
+  isSchemaObjectDefinition,
+  buildMoneyFieldAnswer,
+  getMoneyAnswerAmount,
+  getMoneyAnswerCurrency,
+  getMoneyFieldCurrency,
+  isMoneyFieldSchema,
+  isValidCurrencyCode,
+  resolveMoneyDisplayCurrency,
+  type MoneyFieldAnswer,
+} from './services/decision/templateMoney';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {
