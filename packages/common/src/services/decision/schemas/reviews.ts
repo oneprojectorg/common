@@ -31,6 +31,21 @@ export const REVIEW_ASSIGNMENT_SORTS = [
 
 export type ReviewAssignmentSort = (typeof REVIEW_ASSIGNMENT_SORTS)[number];
 
+/**
+ * Sortable columns on the admin review-selection table. `title`, `budget` and
+ * `score` are derived values (related profile, proposalData JSON, rubric
+ * answers), so `listProposalsWithReviewAggregates` orders the whole phase set
+ * in memory for these instead of keyset-paginating it.
+ */
+export const PROPOSAL_AGGREGATE_SORTS = [
+  'createdAt',
+  'title',
+  'budget',
+  'score',
+] as const;
+
+export type ProposalAggregateSort = (typeof PROPOSAL_AGGREGATE_SORTS)[number];
+
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 /**

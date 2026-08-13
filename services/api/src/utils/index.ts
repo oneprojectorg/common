@@ -1,10 +1,10 @@
-import type { SortDir } from '@op/common';
+import { sortDirSchema } from '@op/common';
 import crypto from 'crypto';
 import sanitizeForS3 from 'sanitize-s3-objectkey';
 import { z } from 'zod';
 
-/** Standard sort direction schema */
-export const sortDir = z.enum(['asc', 'desc']) satisfies z.ZodType<SortDir>;
+/** Standard sort direction schema — canonical definition lives in `@op/common`. */
+export const sortDir = sortDirSchema;
 
 /**
  * Creates a type-safe sortable schema for a given set of columns

@@ -1,11 +1,18 @@
 import { GLOBAL_USER_IDS } from '@op/core';
 import { SQL, and, eq, gt, lt, notInArray, or, sql } from 'drizzle-orm';
 import { AnyPgColumn, PgColumn } from 'drizzle-orm/pg-core';
+import { z } from 'zod';
 
 import { CommonError } from './error';
 
-/** Standard sort direction type for database queries */
-export type SortDir = 'asc' | 'desc';
+/**
+ * Standard sort direction for database queries. `@op/api` re-exports the schema
+ * as `sortDir` for endpoint inputs — it lives here so services that own their
+ * own input schemas don't have to reach up into the API layer for it.
+ */
+export const sortDirSchema = z.enum(['asc', 'desc']);
+
+export type SortDir = z.infer<typeof sortDirSchema>;
 
 /**
  * Excludes the global access-control sentinel users (e.g. GLOBAL_USER_PUBLIC)

@@ -9,6 +9,7 @@ import {
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Link } from '@op/ui/Link';
+import type { SortDescriptor } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import { StatusDot, type StatusDotIntent } from '@op/ui/StatusDot';
 import {
@@ -38,6 +39,8 @@ export function ReviewSelectionTable({
   onAdvance,
   advancingIds,
   decisionSlug,
+  sortDescriptor,
+  onSortChange,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
@@ -46,6 +49,12 @@ export function ReviewSelectionTable({
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
+  /**
+   * Column ids match the server's sort keys (`title` / `budget` / `score`), so
+   * the descriptor can be handed to the query untranslated.
+   */
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -71,17 +80,24 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')} bleed>
+    <Table
+      aria-label={t('All proposals')}
+      bleed
+      sortDescriptor={sortDescriptor}
+      onSortChange={onSortChange}
+    >
       <TableHeader>
-        <TableColumn id="proposal" isRowHeader className="w-56">
+        <TableColumn id="title" isRowHeader allowsSorting className="w-56">
           {t('Proposal')}
         </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
+        <TableColumn id="budget" allowsSorting>
+          {t('Budget')}
+        </TableColumn>
         <TableColumn id="category">{t('Category')}</TableColumn>
         <TableColumn id="recommendation">
           {t('Overall recommendation')}
         </TableColumn>
-        <TableColumn id="score">
+        <TableColumn id="score" allowsSorting>
           <span className="underline decoration-dotted">
             {t('Score ({pts}pts)', { pts: totalPoints })}
           </span>

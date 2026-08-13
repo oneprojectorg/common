@@ -302,6 +302,197 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
   });
 
+  it('orders by average score, computed in SQL', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // impact + feasibility → 11 / 3 / no submitted review (0).
+    const scoresByTitle = { High: 11, Low: 3, Unscored: null };
+    const created: Record<string, string> = {};
+    for (const [title, score] of Object.entries(scoresByTitle)) {
+      const proposal = await testData.createReviewAssignment({
+        context,
+        title,
+      });
+      created[title] = proposal.proposal.id;
+      if (score !== null) {
+        await createProposalReview({
+          assignmentId: proposal.assignment.id,
+          state: ProposalReviewState.SUBMITTED,
+          reviewData: {
+            answers: { impact: score - 1, feasibility: 1 },
+            rationales: {},
+          },
+          submittedAt: new Date().toISOString(),
+        });
+      }
+    }
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const descending = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      orderBy: 'score',
+      dir: 'desc',
+    });
+
+    expect(descending.next).toBeNull();
+    expect(descending.total).toBe(3);
+    expect(descending.items.map((i) => i.proposal.profile.name)).toEqual([
+      'High',
+      'Low',
+      'Unscored',
+    ]);
+
+    const ascending = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      orderBy: 'score',
+      dir: 'asc',
+    });
+
+    expect(ascending.items.map((i) => i.proposal.profile.name)).toEqual([
+      'Unscored',
+      'Low',
+      'High',
+    ]);
+  });
+
+  it('orders by proposal title', async ({ task, onTestFinished }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    for (const title of ['Bike Lanes', 'Community Garden', 'Art Mural']) {
+      await testData.createReviewAssignment({ context, title });
+    }
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      orderBy: 'title',
+      dir: 'asc',
+    });
+
+    expect(result.items.map((i) => i.proposal.profile.name)).toEqual([
+      'Art Mural',
+      'Bike Lanes',
+      'Community Garden',
+    ]);
+  });
+
+  it('orders by budget, treating a missing budget as zero', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const budgetsByTitle = { Cheap: 1_000, Pricey: 50_000, Unbudgeted: null };
+    for (const [title, amount] of Object.entries(budgetsByTitle)) {
+      const created = await testData.createReviewAssignment({
+        context,
+        title,
+      });
+      if (amount !== null) {
+        await db
+          .update(proposalsTable)
+          .set({ proposalData: { title, budget: { amount, currency: 'USD' } } })
+          .where(eq(proposalsTable.id, created.proposal.id));
+      }
+    }
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const descending = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      orderBy: 'budget',
+      dir: 'desc',
+    });
+
+    expect(descending.items.map((i) => i.proposal.profile.name)).toEqual([
+      'Pricey',
+      'Cheap',
+      'Unbudgeted',
+    ]);
+
+    // A proposal with no budget sorts as 0 rather than as NULL: the sort key
+    // has to be non-null for the keyset cursor to compare against it.
+    const ascending = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      orderBy: 'budget',
+      dir: 'asc',
+    });
+
+    expect(ascending.items.map((i) => i.proposal.profile.name)).toEqual([
+      'Unbudgeted',
+      'Cheap',
+      'Pricey',
+    ]);
+  });
+
+  it('keeps a score sort in order across cursor pages', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Created lowest-score first, so a page that fell back to `createdAt`
+    // ordering would return the exact reverse of the expected order.
+    const scoresByTitle = { Fourth: 2, Third: 5, Second: 8, First: 11 };
+    for (const [title, score] of Object.entries(scoresByTitle)) {
+      const proposal = await testData.createReviewAssignment({
+        context,
+        title,
+      });
+      await createProposalReview({
+        assignmentId: proposal.assignment.id,
+        state: ProposalReviewState.SUBMITTED,
+        reviewData: {
+          answers: { impact: score - 1, feasibility: 1 },
+          rationales: {},
+        },
+        submittedAt: new Date().toISOString(),
+      });
+    }
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        orderBy: 'score',
+        dir: 'desc',
+        limit: 2,
+        ...(cursor ? { cursor } : {}),
+      });
+      expect(page.total).toBe(4);
+      seen.push(...page.items.map((item) => item.proposal.profile.name));
+      cursor = page.next ?? undefined;
+    } while (cursor);
+
+    expect(seen).toEqual(['First', 'Second', 'Third', 'Fourth']);
+  });
+
   it('attaches categories to response items', async ({
     task,
     onTestFinished,
