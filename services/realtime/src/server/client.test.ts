@@ -1,4 +1,3 @@
-import { Channels } from '@op/common/realtime';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { RealtimeClient } from './client';
@@ -18,37 +17,17 @@ const newClient = () =>
     serviceRoleKey: 'service-role-key',
   });
 
-const manyMessages = (count: number) =>
-  Array.from({ length: count }, (_, i) => ({
-    channel: Channels.org(`${i}`),
-    data: { mutationId: 'm1' },
-  }));
-
-/** How many topics the nth request carried. */
-const topicCountOf = (
-  fetchMock: ReturnType<typeof vi.fn>,
-  index: number,
-): number => {
-  const call = fetchMock.mock.calls[index];
-  if (!call) {
-    throw new Error(`fetch was not called ${index + 1} time(s)`);
-  }
-  return JSON.parse(call[1].body).messages.length;
-};
+const publish = () =>
+  newClient().publish({ channel: 'org:1', data: { mutationId: 'm1' } });
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('RealtimeClient.publishMany', () => {
-  it('posts one request with all topics in a single messages array', async () => {
+describe('RealtimeClient.publish', () => {
+  it('posts a single-topic messages array to the broadcast endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue(res(200));
     vi.stubGlobal('fetch', fetchMock);
 
-    await newClient().publishMany({
-      messages: [
-        { channel: 'org:1', data: { mutationId: 'm1' } },
-        { channel: 'user:42', data: { mutationId: 'm1' } },
-      ],
-    });
+    await publish();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0]![0];
@@ -62,33 +41,24 @@ describe('RealtimeClient.publishMany', () => {
           event: 'invalidation',
           payload: { mutationId: 'm1' },
         },
-        {
-          topic: 'user:42',
-          event: 'invalidation',
-          payload: { mutationId: 'm1' },
-        },
       ],
     });
   });
 
-  it('is a no-op for an empty messages array', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(res(200));
-    vi.stubGlobal('fetch', fetchMock);
+  it('releases the response body instead of pinning the socket', async () => {
+    const response = res(200);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
 
-    await newClient().publishMany({ messages: [] });
+    await publish();
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.body.cancel).toHaveBeenCalled();
   });
 
   it('does not retry a 429 — the backoff lands inside the same window', async () => {
     const fetchMock = vi.fn().mockResolvedValue(res(429));
     vi.stubGlobal('fetch', fetchMock);
 
-    const error = await newClient()
-      .publishMany({
-        messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-      })
-      .catch((e) => e);
+    const error = await publish().catch((e) => e);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(error).toBeInstanceOf(Error);
@@ -99,11 +69,7 @@ describe('RealtimeClient.publishMany', () => {
       const fetchMock = vi.fn().mockResolvedValue(res(status));
       vi.stubGlobal('fetch', fetchMock);
 
-      await newClient()
-        .publishMany({
-          messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-        })
-        .catch(() => {});
+      await publish().catch(() => {});
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
     }
@@ -115,11 +81,7 @@ describe('RealtimeClient.publishMany', () => {
       vi.fn().mockResolvedValue(res(400, 'invalid topic name')),
     );
 
-    const error = await newClient()
-      .publishMany({
-        messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-      })
-      .catch((e) => e);
+    const error = await publish().catch((e) => e);
 
     expect(error.message).toContain('400');
     expect(error.message).toContain('invalid topic name');
@@ -132,9 +94,7 @@ describe('RealtimeClient.publishMany', () => {
       .mockResolvedValueOnce(res(200));
     vi.stubGlobal('fetch', fetchMock);
 
-    await newClient().publishMany({
-      messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-    });
+    await publish();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -143,11 +103,7 @@ describe('RealtimeClient.publishMany', () => {
     const fetchMock = vi.fn().mockResolvedValue(res(403));
     vi.stubGlobal('fetch', fetchMock);
 
-    const error = await newClient()
-      .publishMany({
-        messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-      })
-      .catch((e) => e);
+    const error = await publish().catch((e) => e);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(error).toBeInstanceOf(Error);
@@ -157,14 +113,22 @@ describe('RealtimeClient.publishMany', () => {
     const fetchMock = vi.fn().mockResolvedValue(res(503));
     vi.stubGlobal('fetch', fetchMock);
 
-    const error = await newClient()
-      .publishMany({
-        messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-      })
-      .catch((e) => e);
+    const error = await publish().catch((e) => e);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(error).toBeInstanceOf(Error);
+  });
+
+  it('retries a network-level failure, not just a bad status', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('socket hang up'))
+      .mockResolvedValueOnce(res(200));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await publish();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('uses a fresh AbortSignal per attempt', async () => {
@@ -174,88 +138,14 @@ describe('RealtimeClient.publishMany', () => {
       .mockResolvedValueOnce(res(200));
     vi.stubGlobal('fetch', fetchMock);
 
-    await newClient().publishMany({
-      messages: [{ channel: 'org:1', data: { mutationId: 'm1' } }],
-    });
+    await publish();
 
     const firstSignal = fetchMock.mock.calls[0]![1].signal;
     const secondSignal = fetchMock.mock.calls[1]![1].signal;
     expect(firstSignal).toBeInstanceOf(AbortSignal);
     expect(secondSignal).toBeInstanceOf(AbortSignal);
+    // A signal reused across attempts would already be aborted by the time the
+    // retry fires, so the retry could never succeed.
     expect(firstSignal).not.toBe(secondSignal);
-  });
-
-  it('splits a wide fan-out into chunks of 50', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(res(200));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await newClient().publishMany({ messages: manyMessages(125) });
-
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(topicCountOf(fetchMock, 0)).toBe(50);
-    expect(topicCountOf(fetchMock, 1)).toBe(50);
-    expect(topicCountOf(fetchMock, 2)).toBe(25);
-  });
-
-  it('sends a single request when the fan-out fits in one chunk', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(res(200));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await newClient().publishMany({ messages: manyMessages(50) });
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('never exceeds the batch size Supabase accepts', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(res(200));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await newClient().publishMany({ messages: manyMessages(1_000) });
-
-    // Supabase 429s a batch of 92+; every request must stay under that.
-    for (let i = 0; i < fetchMock.mock.calls.length; i++) {
-      expect(topicCountOf(fetchMock, i)).toBeLessThanOrEqual(50);
-    }
-  });
-
-  it('still delivers the surviving chunks when one chunk fails', async () => {
-    // First chunk is rejected outright (non-retryable); the rest must go out.
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(res(400))
-      .mockResolvedValue(res(200));
-    vi.stubGlobal('fetch', fetchMock);
-
-    const error = await newClient()
-      .publishMany({ messages: manyMessages(125) })
-      .catch((e) => e);
-
-    // All three chunks were attempted, not short-circuited by the first.
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(error).toBeInstanceOf(Error);
-    expect(error.message).toContain('1 of 3 chunk(s)');
-  });
-});
-
-describe('RealtimeClient.publish (single)', () => {
-  it('routes through publishMany with the same body shape', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(res(200));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await newClient().publish({
-      channel: 'org:1',
-      data: { mutationId: 'm1' },
-    });
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
-      messages: [
-        {
-          topic: 'org:1',
-          event: 'invalidation',
-          payload: { mutationId: 'm1' },
-        },
-      ],
-    });
   });
 });

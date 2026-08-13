@@ -27,13 +27,25 @@ await realtime.publish(Channels.user(userId), {
   mutationId: 'mutation-id',
 });
 
-// Or publish to many channels in one batched broadcast (deduped, retried
-// once on 429 / 5xx with a 3-second per-attempt timeout).
+// Or fan out to many channels at once. Channels are deduped and published
+// concurrently, one request each, and settled independently so one failing
+// channel doesn't discard the rest.
 await realtime.publishMany(
   [Channels.user(userId), Channels.org(orgId)],
   { mutationId: 'mutation-id' },
 );
 ```
+
+Publishing is **best-effort**: each request has a 3-second per-attempt timeout
+and is retried once on a transient failure (5xx, network error, timeout).
+Failures are swallowed rather than thrown — by the time we publish, the
+mutation has already committed, and clients recover on their next full fetch.
+Failed channels are logged and counted on the `realtime.publish.failures`
+OpenTelemetry counter, so a silent invalidation outage is still visible.
+
+`429` is deliberately not retried: the backoff lands inside the same rate-limit
+window, so retrying only adds load to a backend that just asked us to slow
+down.
 
 ### Client-side Subscription
 

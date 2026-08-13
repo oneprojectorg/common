@@ -46,8 +46,8 @@ export const handleModerationWebhookRequest = (
       // invalidation while the flag is correct in the DB.
       //
       // The whole block is wrapped in try/catch (not just `publishMany`, which
-      // guards itself) so a throw from the channel lookup can't reject the
-      // backgrounded promise.
+      // swallows its own failures) so a throw from the channel lookup can't
+      // reject the backgrounded promise.
       //
       // Detach on a `flagged`-already row lands as `action: 'noop'`, but the
       // proposal did change (moderation_detached_at just flipped). Invalidate
