@@ -448,4 +448,199 @@ test.describe('Proposal Listing', () => {
       ),
     ).toBeVisible();
   });
+
+  /** A two-proposal instance in a proposal-submission phase, for search tests. */
+  async function createSearchListing(org: {
+    organizationProfile: { id: string };
+    adminUser: { authUserId: string; email: string };
+  }) {
+    const searchProcessSchema = {
+      id: 'search-listing',
+      version: '1.0.0',
+      name: 'Search Listing Test',
+      description: 'Process for exercising proposal search',
+      // Two phases: a single-phase instance is its own last phase, and
+      // instanceData carries no `rules`, so the router lands on the results view.
+      phases: [
+        {
+          id: 'proposalSubmission',
+          name: 'Proposal Submission',
+          description: 'Submit proposals',
+          rules: {
+            proposals: { submit: true },
+            voting: { submit: false },
+            advancement: { method: 'manual' as const },
+          },
+        },
+        {
+          id: 'review',
+          name: 'Review',
+          description: 'Review proposals',
+          rules: {
+            proposals: { submit: false },
+            voting: { submit: false },
+            advancement: { method: 'manual' as const },
+          },
+        },
+      ],
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+        },
+      },
+    };
+
+    const { instance, slug, name } = await createProcessAndInstance({
+      org,
+      processSchema: searchProcessSchema,
+      instanceData: {
+        proposalTemplate: searchProcessSchema.proposalTemplate,
+        phases: [
+          {
+            phaseId: 'proposalSubmission',
+            startDate: '2025-09-20',
+            endDate: '2025-10-01',
+          },
+          {
+            phaseId: 'review',
+            startDate: '2025-10-02',
+            endDate: '2025-10-20',
+          },
+        ],
+      },
+      processName: 'Search Listing',
+    });
+
+    for (const title of ['Riverside Bike Path', 'Downtown Mural']) {
+      await createProposal({
+        processInstanceId: instance.id,
+        submittedByProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+        // Not a collab doc: the mock docs' own title fragment overrides the card title.
+        proposalData: { title, description: `<p>${title} details.</p>` },
+      });
+    }
+
+    return { slug, name };
+  }
+
+  /**
+   * Search filters behind a suspense query. The field must keep focus across the
+   * refetch — a remounted subtree would blur it, capping input at one word.
+   */
+  test('filters the grid by title search without dropping input focus', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { slug, name } = await createSearchListing(org);
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const bikePath = authenticatedPage.getByRole('link', {
+      name: 'Riverside Bike Path',
+    });
+    const mural = authenticatedPage.getByRole('link', {
+      name: 'Downtown Mural',
+    });
+
+    await expect(bikePath).toBeVisible({ timeout: 15_000 });
+    await expect(mural).toBeVisible();
+
+    const searchField = authenticatedPage.getByRole('searchbox', {
+      name: 'Search proposals',
+    });
+
+    // Nine characters inside the debounce window must produce one fetch, not nine.
+    let listRequestCount = 0;
+    const countListRequests = (request: { url: () => string }) => {
+      if (request.url().includes('listProposals')) {
+        listRequestCount += 1;
+      }
+    };
+    authenticatedPage.on('request', countListRequests);
+
+    await searchField.click();
+    // 9 chars at 20ms lands inside the 300ms debounce.
+    await searchField.pressSequentially('bike path', { delay: 20 });
+
+    await expect(mural).toBeHidden({ timeout: 15_000 });
+    await expect(bikePath).toBeVisible();
+
+    authenticatedPage.off('request', countListRequests);
+    // Batching can fold the list read and the count query together, so allow two.
+    expect(listRequestCount).toBeGreaterThan(0);
+    expect(listRequestCount).toBeLessThanOrEqual(2);
+
+    // Inline at md:w-52 (208px group) rather than spanning the row — the mobile
+    // test asserts the full-width counterpart.
+    const desktopBox = await searchField.boundingBox();
+    expect(desktopBox?.width).toBeLessThan(230);
+
+    // Still focused, so the bar was never swapped for the loading skeleton.
+    await expect(searchField).toBeFocused();
+    await expect(searchField).toHaveValue('bike path');
+    expect(new URL(authenticatedPage.url()).searchParams.get('q')).toBe(
+      'bike path',
+    );
+
+    // Clearing restores the full set.
+    await authenticatedPage
+      .getByRole('button', { name: 'Clear search' })
+      .click();
+    await expect(mural).toBeVisible({ timeout: 15_000 });
+    await expect(bikePath).toBeVisible();
+  });
+
+  /** Mobile puts search on its own full-width row above the filters. */
+  test('stacks search above the filters on mobile', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    await authenticatedPage.setViewportSize({ width: 360, height: 800 });
+    const { slug, name } = await createSearchListing(org);
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const searchField = authenticatedPage.getByRole('searchbox', {
+      name: 'Search proposals',
+    });
+    // The trigger's accessible name is its current value on mobile and
+    // "<value> Filter proposals" on desktop — substring matches both.
+    const filterSelect = authenticatedPage.getByRole('button', {
+      name: 'All proposals',
+    });
+    await expect(searchField).toBeVisible({ timeout: 15_000 });
+
+    const search = await searchField.boundingBox();
+    const filter = await filterSelect.boundingBox();
+    if (!search || !filter) {
+      throw new Error(
+        'Expected both the search field and filter select to lay out',
+      );
+    }
+
+    // Fully above the filter row, not beside it.
+    expect(search.y + search.height).toBeLessThanOrEqual(filter.y);
+    // Spans the row, rather than sitting inline in the scrollable filter strip.
+    // Short of the 328px content width because the icon addon takes the inset.
+    expect(search.width).toBeGreaterThan(270);
+    // Same height as the selects it sits above — compared rather than hardcoded,
+    // so it tracks whatever the shared control height becomes.
+    expect(Math.abs(search.height - filter.height)).toBeLessThanOrEqual(2);
+  });
 });

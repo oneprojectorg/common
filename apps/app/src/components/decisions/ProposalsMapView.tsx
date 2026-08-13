@@ -19,6 +19,7 @@ import { useMapStyleUrl } from './location/mapConfig';
 interface ProposalLocationFilter {
   processInstanceId: string;
   categoryId?: string;
+  search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;

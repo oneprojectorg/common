@@ -2,6 +2,7 @@
 
 import type { ProposalFilter } from '@op/api/encoders';
 
+import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ProposalsFilterBar, ProposalsListHeader } from './ProposalsFilterBar';
 import { StickyFilterBar } from './StickyFilterBar';
@@ -24,6 +25,12 @@ export interface ProposalsStickyFilterBarProps {
   setSelectedCategory: (value: string) => void;
   sortOrder: string;
   setSortOrder: (value: string) => void;
+  search: string;
+  setSearch: (value: string) => void;
+  /** False on the results tab, whose endpoint can't filter on a search term. */
+  showSearch: boolean;
+  /** Results on screen are for an earlier term — the query is still settling. */
+  isSearchPending: boolean;
   hasLocationField: boolean;
   effectiveView: ProposalView;
   onViewChange: (next: ProposalView) => void;
@@ -42,6 +49,11 @@ export interface ProposalsStickyFilterBarProps {
 // content area via the shared `StickyFilterBar` shell. The bar pins just below
 // the floating Overview/Current toggle; content above it (the phase header)
 // scrolls up behind the toggle.
+//
+// Search tipped this past fallow's cognitive ceiling; it was already near it.
+// The real fix is grouping the filter props into one object, which changes the
+// whole component API — its own change, not this one.
+// fallow-ignore-next-line complexity
 export const ProposalsStickyFilterBar = ({
   hideFilters,
   header,
@@ -57,6 +69,10 @@ export const ProposalsStickyFilterBar = ({
   setSelectedCategory,
   sortOrder,
   setSortOrder,
+  search,
+  setSearch,
+  showSearch,
+  isSearchPending,
   hasLocationField,
   effectiveView,
   onViewChange,
@@ -75,34 +91,45 @@ export const ProposalsStickyFilterBar = ({
         />
       )}
       {!hideFilters && (
-        <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
-          <ProposalsFilterBar
-            hasVoted={hasVoted}
-            currentProfileId={currentProfileId}
-            proposalFilter={proposalFilter}
-            setProposalFilter={setProposalFilter}
-            decisionSlug={decisionSlug}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            sortOrder={sortOrder}
-            onSelectSort={setSortOrder}
-          />
-          {hasLocationField && (
-            <div className="hidden items-center gap-4 sm:flex">
-              <span aria-hidden className="h-6 w-px bg-border" />
-              <ProposalViewToggle
-                value={effectiveView}
-                onChange={onViewChange}
-              />
-            </div>
+        // Search stacks above the filters on mobile and sits beside them from md
+        // up — one instance either way, so focus survives the breakpoint.
+        <div className="flex flex-col gap-4 max-md:w-full md:flex-row md:items-center">
+          {showSearch && (
+            <ProposalSearchField
+              value={search}
+              onChange={setSearch}
+              isPending={isSearchPending}
+            />
           )}
-          {exportControl && (
-            <div className="flex items-center gap-4">
-              <span aria-hidden className="h-6 w-px bg-border" />
-              {exportControl}
-            </div>
-          )}
+          <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
+            <ProposalsFilterBar
+              hasVoted={hasVoted}
+              currentProfileId={currentProfileId}
+              proposalFilter={proposalFilter}
+              setProposalFilter={setProposalFilter}
+              decisionSlug={decisionSlug}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              sortOrder={sortOrder}
+              onSelectSort={setSortOrder}
+            />
+            {hasLocationField && (
+              <div className="hidden items-center gap-4 sm:flex">
+                <span aria-hidden className="h-6 w-px bg-border" />
+                <ProposalViewToggle
+                  value={effectiveView}
+                  onChange={onViewChange}
+                />
+              </div>
+            )}
+            {exportControl && (
+              <div className="flex items-center gap-4">
+                <span aria-hidden className="h-6 w-px bg-border" />
+                {exportControl}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </StickyFilterBar>
