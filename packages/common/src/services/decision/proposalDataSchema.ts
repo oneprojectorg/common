@@ -288,17 +288,36 @@ export function parseBudgetFragmentValue(
  *
  * The display counterpart of {@link withStoredBudgetCurrency}: this one may
  * fill the gap from anywhere, because nothing here is written back.
+ *
+ * The one place the "does this budget name a currency?" rule lives on the
+ * display side. Open-coding it as `budget.currency || fallback` is what the
+ * renderers used to do, and the copies drifted: they skipped the `trim()` that
+ * every other reader here applies, so a row storing `"  "` — which
+ * `budgetValueSchema` accepts verbatim — reached `Intl` as a currency code,
+ * threw, and rendered the amount with no marker at all instead of the
+ * process's.
  */
-function withResolvedBudgetCurrency(
+export function withResolvedBudgetCurrency(
   budget: StoredBudget,
   fallbackCurrency: string,
 ): BudgetData {
-  // `||` covers a stored blank code as well as an absent one — neither names a
-  // currency.
   return {
     amount: budget.amount,
-    currency: budget.currency || fallbackCurrency,
+    currency: resolveBudgetCurrencyCode(budget.currency, fallbackCurrency),
   };
+}
+
+/**
+ * {@link withResolvedBudgetCurrency} for callers that need the code alone —
+ * an input prefix, say, where the amount is rendered separately.
+ */
+export function resolveBudgetCurrencyCode(
+  currency: string | undefined,
+  fallbackCurrency: string,
+): string {
+  // Trimmed, matching every other reader: a whitespace-only code names a
+  // currency no more than an absent one does.
+  return currency?.trim() || fallbackCurrency;
 }
 
 /**
@@ -315,6 +334,14 @@ function withResolvedBudgetCurrency(
  * default. A budget that names its own currency keeps it; one written where
  * nothing was stored still names none.
  */
+export function withStoredBudgetCurrency(
+  budget: StoredBudget,
+  storedCurrency: string | undefined,
+): StoredBudget;
+export function withStoredBudgetCurrency(
+  budget: StoredBudget | undefined,
+  storedCurrency: string | undefined,
+): StoredBudget | undefined;
 export function withStoredBudgetCurrency(
   budget: StoredBudget | undefined,
   /** The code the proposal's stored budget names, if any. */

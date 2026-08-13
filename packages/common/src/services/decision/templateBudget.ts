@@ -61,7 +61,8 @@ export function getTemplateBudgetCurrency(
  *
  * `trim().min(1)` because a blank or whitespace-only code names nothing — it
  * still parses (dropping it would take the amount with it) but must not
- * outrank the template's.
+ * outrank the template's. `.trim()` normalizes the output too, so what comes
+ * out of a successful parse is already the trimmed code.
  */
 const storedBudgetCurrencySchema = z.object({
   budget: z.object({ currency: z.string().trim().min(1) }),
@@ -78,7 +79,7 @@ export function getStoredBudgetCurrency(
   proposalData: unknown,
 ): string | undefined {
   const result = storedBudgetCurrencySchema.safeParse(proposalData);
-  return result.success ? result.data.budget.currency.trim() : undefined;
+  return result.success ? result.data.budget.currency : undefined;
 }
 
 /**

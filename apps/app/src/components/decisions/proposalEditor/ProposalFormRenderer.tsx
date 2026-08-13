@@ -45,6 +45,12 @@ import type { ProposalDraftFields } from './useProposalDraft';
 // Types
 // ---------------------------------------------------------------------------
 
+/** Rendering mode for collaborative editing or readonly previews. */
+type ProposalFormMode =
+  | 'edit-collaborative'
+  | 'preview-version'
+  | 'preview-template';
+
 interface ProposalFormRendererProps {
   /** Compiled field descriptors from `compileProposalSchema`. */
   fields: FieldDescriptor[];
@@ -71,7 +77,7 @@ interface ProposalFormRendererProps {
    */
   budgetFallbackCurrency?: string;
   /** Rendering mode for collaborative editing or readonly previews. */
-  mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  mode?: ProposalFormMode;
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
 }
@@ -182,21 +188,41 @@ function getPreviewBudgetValue({
 // ---------------------------------------------------------------------------
 
 /**
+ * Everything {@link renderField} needs. An options object rather than
+ * positional parameters: field-scoped inputs keep being added (the budget's
+ * fallback currency was the eighth), and ten unlabeled values at the call site
+ * are read in the wrong order sooner or later.
+ */
+interface RenderFieldOptions {
+  field: FieldDescriptor;
+  draft: ProposalDraftFields;
+  decisionProfileId: string | null;
+  onFieldChange: (key: string, value: unknown) => void;
+  t: TranslateFn;
+  mode: ProposalFormMode;
+  previewVersionFragmentContents: Record<string, JSONContent | null>;
+  /** See {@link ProposalFormRendererProps.budgetFallbackCurrency}. */
+  budgetFallbackCurrency: string | undefined;
+  onEditorFocus?: (editor: Editor) => void;
+  onEditorBlur?: (editor: Editor) => void;
+}
+
+/**
  * Renders a single field descriptor for collaborative editing or readonly
  * proposal preview modes.
  */
-function renderField(
-  field: FieldDescriptor,
-  draft: ProposalDraftFields,
-  decisionProfileId: string | null,
-  onFieldChange: (key: string, value: unknown) => void,
-  t: TranslateFn,
-  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
-  previewVersionFragmentContents: Record<string, JSONContent | null>,
-  budgetFallbackCurrency: string | undefined,
-  onEditorFocus?: (editor: Editor) => void,
-  onEditorBlur?: (editor: Editor) => void,
-): React.ReactNode {
+function renderField({
+  field,
+  draft,
+  decisionProfileId,
+  onFieldChange,
+  t,
+  mode,
+  previewVersionFragmentContents,
+  budgetFallbackCurrency,
+  onEditorFocus,
+  onEditorBlur,
+}: RenderFieldOptions): React.ReactNode {
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
@@ -288,34 +314,24 @@ function renderField(
   // -- Budget (system) --------------------------------------------------------
 
   if (key === 'budget') {
-    // The proposal's own resolved fallback where we have one (the editor);
-    // the template's alone in template-preview mode, where no proposal exists.
-    const fallbackCurrency =
-      budgetFallbackCurrency ?? getBudgetCurrency(schema);
-
-    if (isReadonlyMode) {
-      return (
-        <ReadonlyBudgetField
-          value={getPreviewBudgetValue({
-            mode,
-            draftValue: draft.budget,
-            previewContent,
-            fallbackCurrency,
-          })}
-          placeholder={t('Add budget')}
-        />
-      );
-    }
-
-    return (
-      <CollaborativeBudgetField
-        minAmount={schema.minimum}
-        maxAmount={schema.maximum}
-        currency={fallbackCurrency}
-        initialValue={draft.budget}
-        onChange={(value) => onFieldChange('budget', value)}
-      />
-    );
+    return renderMoneyField({
+      schema,
+      mode,
+      previewContent,
+      t,
+      // The proposal's own resolved fallback where we have one (the editor);
+      // the template's alone in template-preview mode, where no proposal
+      // exists.
+      fallbackCurrency: budgetFallbackCurrency ?? getBudgetCurrency(schema),
+      // The system budget is a stored column, so the draft both previews the
+      // readonly value and seeds the fragment.
+      previewValue: draft.budget,
+      initialValue: draft.budget,
+      // No header: the system budget renders inline beside the category rather
+      // than as a titled form row.
+      showHeader: false,
+      onChange: (value) => onFieldChange('budget', value),
+    });
   }
 
   // -- Dynamic fields resolved by x-format ------------------------------------
@@ -356,35 +372,21 @@ function renderField(
       );
     }
 
-    case 'money': {
-      if (isReadonlyMode) {
-        return (
-          <ReadonlyBudgetField
-            value={getPreviewBudgetValue({
-              mode,
-              draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
-              previewContent,
-              // A dynamic money field, not the system budget — it has no
-              // stored counterpart, so its own schema is the whole answer.
-              fallbackCurrency: getBudgetCurrency(schema),
-            })}
-            title={schema.title}
-            description={schema.description}
-            placeholder={t('Add budget')}
-          />
-        );
-      }
-
-      return (
-        <CollaborativeBudgetField
-          minAmount={schema.minimum}
-          maxAmount={schema.maximum}
-          currency={getBudgetCurrency(schema)}
-          initialValue={null}
-          onChange={(value) => onFieldChange(key, value)}
-        />
-      );
-    }
+    case 'money':
+      return renderMoneyField({
+        schema,
+        mode,
+        previewContent,
+        t,
+        // A dynamic money field, not the system budget — it has no stored
+        // counterpart, so its own schema is the whole answer for the currency
+        // and there is nothing to seed the fragment from.
+        fallbackCurrency: getBudgetCurrency(schema),
+        previewValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
+        initialValue: null,
+        showHeader: true,
+        onChange: (value) => onFieldChange(key, value),
+      });
 
     case 'location': {
       if (isReadonlyMode) {
@@ -474,6 +476,67 @@ function renderField(
   }
 }
 
+/**
+ * The one money renderer, for the system budget and for `x-format: 'money'`
+ * template fields alike.
+ *
+ * `key === 'budget'` is a name-based special case older than the x-format
+ * switch, and the two bodies had become near-copies of each other — so every
+ * prop the budget field gains has to be added twice, and the generic path is
+ * the one nobody exercises. What actually differs is parameters: where the
+ * fallback currency comes from, whether there is a stored value to seed from,
+ * and whether the field carries its own header.
+ */
+function renderMoneyField({
+  schema,
+  mode,
+  previewContent,
+  t,
+  fallbackCurrency,
+  previewValue,
+  initialValue,
+  showHeader,
+  onChange,
+}: {
+  schema: FieldDescriptor['schema'];
+  mode: ProposalFormMode;
+  previewContent: JSONContent | null | undefined;
+  t: TranslateFn;
+  /** Already resolved — see `resolveBudgetFallbackCurrency`. */
+  fallbackCurrency: string;
+  previewValue: ProposalDraftFields['budget'] | null;
+  /** Seeds the collaborative fragment; `null` where nothing is stored. */
+  initialValue: ProposalDraftFields['budget'] | null;
+  showHeader: boolean;
+  onChange: (value: ProposalDraftFields['budget']) => void;
+}): React.ReactNode {
+  if (mode !== 'edit-collaborative') {
+    return (
+      <ReadonlyBudgetField
+        value={getPreviewBudgetValue({
+          mode,
+          draftValue: previewValue,
+          previewContent,
+          fallbackCurrency,
+        })}
+        title={showHeader ? schema.title : undefined}
+        description={showHeader ? schema.description : undefined}
+        placeholder={t('Add budget')}
+      />
+    );
+  }
+
+  return (
+    <CollaborativeBudgetField
+      minAmount={schema.minimum}
+      maxAmount={schema.maximum}
+      currency={fallbackCurrency}
+      initialValue={initialValue}
+      onChange={onChange}
+    />
+  );
+}
+
 // ---------------------------------------------------------------------------
 // ProposalFormRenderer
 // ---------------------------------------------------------------------------
@@ -514,7 +577,7 @@ export function ProposalFormRenderer({
   );
 
   const render = (field: FieldDescriptor) =>
-    renderField(
+    renderField({
       field,
       draft,
       decisionProfileId,
@@ -525,7 +588,7 @@ export function ProposalFormRenderer({
       budgetFallbackCurrency,
       onEditorFocus,
       onEditorBlur,
-    );
+    });
 
   return (
     <div className={cn('flex flex-col', formGapClass)}>

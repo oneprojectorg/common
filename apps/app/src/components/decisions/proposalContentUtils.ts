@@ -141,17 +141,10 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     }
   }
 
-  const overrides = resolveSystemFieldOverrides(
+  const { overrides, budgetCurrency } = resolveSystemFieldOverrides(
     fragmentTexts,
     fallbackCurrency,
   );
 
-  return {
-    ...fallback,
-    ...overrides,
-    // Take the currency off the budget actually being rendered, so an
-    // allocated amount can never carry a different symbol than the requested
-    // one beside it when the fragment names a currency of its own.
-    budgetCurrency: overrides.budget?.currency ?? fallbackCurrency,
-  };
+  return { ...fallback, ...overrides, budgetCurrency };
 }

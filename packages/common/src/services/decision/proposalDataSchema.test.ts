@@ -189,6 +189,12 @@ describe('assembleProposalData location fields', () => {
 });
 
 describe('resolveSystemFieldOverrides', () => {
+  /** The overrides alone — the resolved currency has its own test below. */
+  const resolveOverrides = (
+    fragmentTexts: Record<string, string>,
+    budgetCurrency: string = DEFAULT_BUDGET_CURRENCY,
+  ) => resolveSystemFieldOverrides(fragmentTexts, budgetCurrency).overrides;
+
   // The budget fragment carries `{amount, currency}` for every template shape.
   // `assembleProposalData` drops the currency on legacy `{type: 'number'}`
   // budgets (it hands AJV a bare number to range check), so renderers resolve
@@ -209,8 +215,7 @@ describe('resolveSystemFieldOverrides', () => {
       budget: 5000,
     });
     expect(
-      resolveSystemFieldOverrides(fragmentTexts, DEFAULT_BUDGET_CURRENCY)
-        .budget,
+      resolveOverrides(fragmentTexts, DEFAULT_BUDGET_CURRENCY).budget,
     ).toEqual({
       amount: 5000,
       currency: 'EUR',
@@ -265,7 +270,7 @@ describe('resolveSystemFieldOverrides', () => {
 
   it('resolves a canonical object-shape fragment', () => {
     expect(
-      resolveSystemFieldOverrides(
+      resolveOverrides(
         { budget: '{"amount":250,"currency":"GBP"}' },
         DEFAULT_BUDGET_CURRENCY,
       ).budget,
@@ -274,8 +279,7 @@ describe('resolveSystemFieldOverrides', () => {
 
   it('gives a bare numeric fragment the currency it was called with', () => {
     expect(
-      resolveSystemFieldOverrides({ budget: '5000' }, DEFAULT_BUDGET_CURRENCY)
-        .budget,
+      resolveOverrides({ budget: '5000' }, DEFAULT_BUDGET_CURRENCY).budget,
     ).toEqual({
       amount: 5000,
       currency: 'USD',
@@ -313,9 +317,10 @@ describe('resolveSystemFieldOverrides', () => {
     // A fragment that names no currency is denominated in the process's, not
     // the default, or a EUR process renders — and the editor re-persists — its
     // legacy fragments as dollars.
-    expect(
-      resolveSystemFieldOverrides({ budget: '5000' }, 'EUR').budget,
-    ).toEqual({ amount: 5000, currency: 'EUR' });
+    expect(resolveOverrides({ budget: '5000' }, 'EUR').budget).toEqual({
+      amount: 5000,
+      currency: 'EUR',
+    });
   });
 
   it('treats a whitespace-only fragment currency as naming none', () => {
@@ -323,19 +328,15 @@ describe('resolveSystemFieldOverrides', () => {
     // Passing '  ' through makes `Intl` throw, so the amount renders with no
     // currency marker at all rather than the process's.
     expect(
-      resolveSystemFieldOverrides(
-        { budget: '{"amount":5000,"currency":"  "}' },
-        'EUR',
-      ).budget,
+      resolveOverrides({ budget: '{"amount":5000,"currency":"  "}' }, 'EUR')
+        .budget,
     ).toEqual({ amount: 5000, currency: 'EUR' });
   });
 
   it('lets an explicit fragment currency win over the template default', () => {
     expect(
-      resolveSystemFieldOverrides(
-        { budget: '{"amount":5000,"currency":"GBP"}' },
-        'EUR',
-      ).budget,
+      resolveOverrides({ budget: '{"amount":5000,"currency":"GBP"}' }, 'EUR')
+        .budget,
     ).toEqual({ amount: 5000, currency: 'GBP' });
   });
 
@@ -358,7 +359,7 @@ describe('resolveSystemFieldOverrides', () => {
       { budget: '{"amount":"  "}' },
     ]) {
       expect(
-        resolveSystemFieldOverrides(fragmentTexts, DEFAULT_BUDGET_CURRENCY),
+        resolveOverrides(fragmentTexts, DEFAULT_BUDGET_CURRENCY),
       ).not.toHaveProperty('budget');
     }
   });
@@ -368,14 +369,12 @@ describe('resolveSystemFieldOverrides', () => {
     // amount and a missing currency both turn up. Rejecting them left the
     // editor pill showing "Add budget" for a budget the cards still rendered.
     expect(
-      resolveSystemFieldOverrides(
-        { budget: '{"amount":"5000","currency":"EUR"}' },
-        'GBP',
-      ).budget,
+      resolveOverrides({ budget: '{"amount":"5000","currency":"EUR"}' }, 'GBP')
+        .budget,
     ).toEqual({ amount: 5000, currency: 'EUR' });
 
     expect(
-      resolveSystemFieldOverrides({ budget: '{"amount":5000}' }, 'GBP').budget,
+      resolveOverrides({ budget: '{"amount":5000}' }, 'GBP').budget,
     ).toEqual({ amount: 5000, currency: 'GBP' });
   });
 
@@ -387,18 +386,37 @@ describe('resolveSystemFieldOverrides', () => {
     });
 
     for (const title of ['2024.10', '1e3', '12345678901234567890']) {
+      expect(resolveOverrides({ title }, DEFAULT_BUDGET_CURRENCY).title).toBe(
+        title,
+      );
+    }
+  });
+
+  it('returns the currency the resolved budget renders in', () => {
+    // Returned rather than left to each caller to re-derive: a card renders an
+    // allocated amount (a bare number) beside the requested budget, and the two
+    // must not carry different symbols.
+    expect(
+      resolveSystemFieldOverrides(
+        { budget: '{"amount":5000,"currency":"GBP"}' },
+        'EUR',
+      ).budgetCurrency,
+    ).toBe('GBP');
+    // Nothing the fragment names — a currency-less budget, an unreadable one,
+    // and no budget at all all render in the caller's.
+    for (const fragmentTexts of [{ budget: '5000' }, { budget: 'TBD' }, {}]) {
       expect(
-        resolveSystemFieldOverrides({ title }, DEFAULT_BUDGET_CURRENCY).title,
-      ).toBe(title);
+        resolveSystemFieldOverrides(fragmentTexts, 'EUR').budgetCurrency,
+      ).toBe('EUR');
     }
   });
 
   it('omits an empty or whitespace-only title', () => {
+    expect(resolveOverrides({}, DEFAULT_BUDGET_CURRENCY)).not.toHaveProperty(
+      'title',
+    );
     expect(
-      resolveSystemFieldOverrides({}, DEFAULT_BUDGET_CURRENCY),
-    ).not.toHaveProperty('title');
-    expect(
-      resolveSystemFieldOverrides({ title: '   ' }, DEFAULT_BUDGET_CURRENCY),
+      resolveOverrides({ title: '   ' }, DEFAULT_BUDGET_CURRENCY),
     ).not.toHaveProperty('title');
   });
 });

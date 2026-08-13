@@ -3,6 +3,7 @@ import type { JSONContent } from '@tiptap/core';
 
 import {
   type ProposalSystemFieldOverrides,
+  type ResolvedSystemFields,
   resolveSystemFieldOverrides,
 } from './assembleProposalData';
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
@@ -136,7 +137,7 @@ export function buildProposalListPreview({
     }
   }
 
-  const systemFieldOverrides: ProposalListPreview['systemFieldOverrides'] = {};
+  let resolved: ResolvedSystemFields = { overrides: {}, budgetCurrency };
   if (proposalTemplate) {
     const fragmentTexts: Record<string, string> = {};
     for (const key of SYSTEM_FIELD_KEYS) {
@@ -156,18 +157,14 @@ export function buildProposalListPreview({
     }
 
     // Shared with the client's `resolveProposalSystemFields`, so a proposal
-    // never renders one budget on a list card and another on its detail page.
-    Object.assign(
-      systemFieldOverrides,
-      resolveSystemFieldOverrides(fragmentTexts, budgetCurrency),
-    );
+    // never renders one budget on a list card and another on its detail page —
+    // including the currency it renders in, which comes back resolved.
+    resolved = resolveSystemFieldOverrides(fragmentTexts, budgetCurrency);
   }
 
   return {
     previewText,
-    systemFieldOverrides,
-    // The fragment's own currency wins where it names one, matching the
-    // precedence every renderer applies.
-    budgetCurrency: systemFieldOverrides.budget?.currency ?? budgetCurrency,
+    systemFieldOverrides: resolved.overrides,
+    budgetCurrency: resolved.budgetCurrency,
   };
 }

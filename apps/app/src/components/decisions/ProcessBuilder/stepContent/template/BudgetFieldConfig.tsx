@@ -15,7 +15,7 @@ import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -57,11 +57,9 @@ let currencyOptions: { code: string; label: string }[] | undefined;
  * when there is one to add — `Intl` returns the code itself for currencies it
  * has no glyph for, which would otherwise render as "CHF CHF".
  *
- * Cached rather than rebuilt in render: this card re-renders on every keystroke
- * in the max-budget field. Lazy rather than computed at module scope: resolving
- * a symbol per code is `Intl` work, and every page that pulls in this module
- * would pay for the whole list before first paint — including the ones where
- * the budget field is switched off and the picker never renders.
+ * Cached for a stable array identity across the re-render this card takes on
+ * every keystroke in the max-budget field. Lazy rather than computed at module
+ * scope so pages that never open the picker don't build the list at import.
  */
 function getCurrencyOptions() {
   currencyOptions ??= CURRENCY_CODES.map((code) => {
@@ -85,12 +83,7 @@ export function BudgetFieldConfig({
   const budgetSchema = getFieldSchema(template, 'budget');
   const showBudget = !!budgetSchema;
   const budgetCurrency = getBudgetCurrency(budgetSchema);
-  // Memoized: this card re-renders on every keystroke in the max-budget field
-  // that consumes the symbol, and resolving it runs an `Intl` format pass.
-  const budgetCurrencySymbol = useMemo(
-    () => getCurrencySymbol(budgetCurrency),
-    [budgetCurrency],
-  );
+  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 

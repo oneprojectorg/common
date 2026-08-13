@@ -4,24 +4,15 @@ import { generateProposalsCsv } from './generateProposalsCsv';
 
 type ProposalArg = Parameters<typeof generateProposalsCsv>[0][number];
 
-const eurTemplate = {
-  type: 'object',
-  properties: {
-    budget: {
-      type: 'object',
-      'x-format': 'money',
-      properties: { currency: { type: 'string', default: 'EUR' } },
-    },
-  },
-};
-
 function proposalRow(overrides: Record<string, unknown>): ProposalArg {
   return {
     id: 'proposal-1',
     profileId: 'profile-1',
     status: 'submitted',
     profile: { name: 'A proposal' },
-    proposalTemplate: eurTemplate,
+    // Every `listProposals` row carries this, already resolved through the
+    // full precedence — the export reads it rather than resolving again.
+    budgetCurrency: 'EUR',
     ...overrides,
   } as unknown as ProposalArg;
 }
@@ -48,10 +39,16 @@ describe('generateProposalsCsv budget columns', () => {
     expect(firstRow(csv)).toMatchObject({ Budget: '5000', Currency: 'EUR' });
   });
 
-  it('keeps a currency the budget names over the template default', async () => {
+  it("exports the row's resolved currency, not one re-derived here", async () => {
+    // The author's document names GBP; the stored column still holds the
+    // creation-time amount under no currency at all. `listProposals` resolves
+    // the fragment tier, which this row's `proposalData` can't see — so the
+    // export has to take its answer from the row or ship a currency that
+    // contradicts every other surface.
     const csv = await generateProposalsCsv([
       proposalRow({
-        proposalData: { budget: { amount: 5000, currency: 'GBP' } },
+        budgetCurrency: 'GBP',
+        proposalData: { budget: { amount: 5000 } },
       }),
     ]);
 
@@ -64,6 +61,7 @@ describe('generateProposalsCsv budget columns', () => {
     // Currency for a proposal that plainly has both.
     const csv = await generateProposalsCsv([
       proposalRow({
+        budgetCurrency: 'GBP',
         proposalData: { budget: { amount: '5000', currency: 'GBP' } },
       }),
     ]);

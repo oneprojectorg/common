@@ -72,13 +72,6 @@ export function assembleProposalData(
         }
         break;
       case 'money': {
-        // Whitespace-only is nothing at all, same as the text formats above:
-        // handing AJV `'   '` fails a required budget as "invalid" when it is
-        // simply absent, and a template that leaves the budget optional would
-        // block submission over a fragment holding a stray space.
-        if (!text.trim()) {
-          continue;
-        }
         // The same parser display reads the fragment with, so a budget the
         // editor renders can always be submitted. `normalizeBudget` alone
         // rejects the string-amount shape (`{"amount":"5000"}`) that
@@ -91,7 +84,8 @@ export function assembleProposalData(
           text,
           getBudgetCurrency(schema),
         );
-        // Text no reader can make a budget out of ("TBD", `{"amount":""}`) is
+        // Text no reader can make a budget out of — "TBD", `{"amount":""}`, or
+        // just whitespace, all of which the parser turns down — is
         // *unknown*, the same as it is for display (`resolveSystemFieldOverrides`)
         // and for the backfill in `validateProposalAgainstTemplate` — so leave
         // the key absent and let the template decide. A required budget then
@@ -150,6 +144,18 @@ export interface ProposalSystemFieldOverrides {
   budget?: BudgetData;
 }
 
+/** What {@link resolveSystemFieldOverrides} returns. */
+export interface ResolvedSystemFields {
+  overrides: ProposalSystemFieldOverrides;
+  /**
+   * The currency the resolved budget renders in: the fragment's own where it
+   * named one, the caller's fallback otherwise. Also the currency for amounts
+   * rendered beside that budget — an allocation, say, which is stored as a bare
+   * number and so names none of its own.
+   */
+  budgetCurrency: string;
+}
+
 /**
  * Resolves the system fields (`title`, `budget`) carried by a proposal's
  * document fragments — the source of truth for submitted proposals, where
@@ -185,7 +191,7 @@ export interface ProposalSystemFieldOverrides {
 export function resolveSystemFieldOverrides(
   fragmentTexts: Record<string, string>,
   budgetCurrency: string,
-): ProposalSystemFieldOverrides {
+): ResolvedSystemFields {
   const overrides: ProposalSystemFieldOverrides = {};
 
   // Straight from the fragment text, not via `assembleProposalData`: a title
@@ -206,5 +212,10 @@ export function resolveSystemFieldOverrides(
     overrides.budget = budget;
   }
 
-  return overrides;
+  // The currency comes back alongside the overrides rather than being left to
+  // each caller to take off `overrides.budget`: both of them need it, an
+  // allocated amount renders beside the requested one and must not carry a
+  // different symbol, and the precedence is this function's to know — it is the
+  // one that resolved the budget in the first place.
+  return { overrides, budgetCurrency: budget?.currency ?? budgetCurrency };
 }

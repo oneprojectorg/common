@@ -132,6 +132,7 @@ export {
   assembleProposalData,
   resolveSystemFieldOverrides,
   type ProposalSystemFieldOverrides,
+  type ResolvedSystemFields,
 } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

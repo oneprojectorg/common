@@ -7,7 +7,6 @@ import {
   formatProposalCategories,
   parseProposalData,
 } from '../proposalDataSchema';
-import { resolveBudgetFallbackCurrency } from '../templateBudget';
 
 // Infer the proposal type from the listProposals return value
 type ProposalFromList = Awaited<
@@ -50,12 +49,13 @@ export async function generateProposalsCsv(
       Title: p.profile?.name || '',
       Description: getDocumentDescription(p),
       Budget: proposalData.budget?.amount ?? '',
-      // Resolved, not read straight off the budget: a budget that named no
-      // currency is denominated in the process's, and a spreadsheet of bare
-      // amounts with an empty Currency column can't be reconstructed at all.
-      Currency: proposalData.budget
-        ? resolveBudgetFallbackCurrency(p.proposalData, p.proposalTemplate)
-        : '',
+      // The row's own resolved currency, not a second resolve here: a budget
+      // that named none is denominated in the process's, and a spreadsheet of
+      // bare amounts with an empty Currency column can't be reconstructed at
+      // all. `listProposals` already applied the full precedence — including
+      // the fragment tier, which this row's `proposalData` alone can't see —
+      // so re-deriving it would export a currency the UI doesn't show.
+      Currency: proposalData.budget ? p.budgetCurrency : '',
       Categories: formatProposalCategories(proposalData.category),
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',

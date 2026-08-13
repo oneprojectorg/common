@@ -74,40 +74,38 @@ export async function validateProposalAgainstTemplate(
     const fragmentBudget = parseStoredBudgetFragmentValue(
       fragmentTexts.budget ?? '',
     );
-    const validationData = {
-      ...assembledData,
-      ...(storedProposalData.category !== undefined
-        ? { category: storedProposalData.category }
-        : {}),
-      // Backfill only — the fragment outranks the row wherever it holds a
-      // budget, because that is what the author sees and what the client's
-      // `useProposalValidation` checks. Overriding it with the row instead
-      // rejected on submit a budget the form had just called valid (the row can
-      // still hold a creation-time amount the author has since edited down),
-      // leaving no edit that clears the error.
-      //
-      // An unreadable fragment means "unknown", not "the author cleared it",
-      // exactly as it does for display (`resolveSystemFieldOverrides`) and for
-      // the editor's autosave — so the row still backfills. Gating this on the
-      // *assembled* value instead left the raw fragment text in front of an
-      // object-typed budget schema, and a proposal whose row held a perfectly
-      // good budget could not be submitted at all while the editor showed the
-      // same fragment as "Add budget".
-      //
-      // Shaped for the template, not handed over as parsed: legacy templates
-      // declare the budget as `{type: 'number'}`, and AJV runs with
-      // `coerceTypes: false`, so injecting the parsed `{amount, currency}`
-      // object failed validation outright — the author saw "Budget is invalid"
-      // and could not submit at all. An unreadable stored budget goes through
-      // raw so it fails on its own merits rather than reading as absent.
-      //
-      // `!= null` rather than `!== undefined`: `budgetValueSchema` is
-      // `.nullish()`, so `updateProposal` writes a literal `budget: null` into
-      // the column for a proposal whose budget was cleared. That is not a
-      // budget to backfill — injecting it put `null` in front of both budget
-      // schemas, and an author with an optional, deliberately empty budget
-      // could not submit at all.
-      ...(fragmentBudget === undefined && storedProposalData.budget != null
+    // The row's budget, injected only where the document has none to offer.
+    //
+    // Backfill only — the fragment outranks the row wherever it holds a
+    // budget, because that is what the author sees and what the client's
+    // `useProposalValidation` checks. Overriding it with the row instead
+    // rejected on submit a budget the form had just called valid (the row can
+    // still hold a creation-time amount the author has since edited down),
+    // leaving no edit that clears the error.
+    //
+    // An unreadable fragment means "unknown", not "the author cleared it",
+    // exactly as it does for display (`resolveSystemFieldOverrides`) and for
+    // the editor's autosave — so the row still backfills. Gating this on the
+    // *assembled* value instead left the raw fragment text in front of an
+    // object-typed budget schema, and a proposal whose row held a perfectly
+    // good budget could not be submitted at all while the editor showed the
+    // same fragment as "Add budget".
+    //
+    // Shaped for the template, not handed over as parsed: legacy templates
+    // declare the budget as `{type: 'number'}`, and AJV runs with
+    // `coerceTypes: false`, so injecting the parsed `{amount, currency}`
+    // object failed validation outright — the author saw "Budget is invalid"
+    // and could not submit at all. An unreadable stored budget goes through
+    // raw so it fails on its own merits rather than reading as absent.
+    //
+    // `!= null` rather than `!== undefined`: `budgetValueSchema` is
+    // `.nullish()`, so `updateProposal` writes a literal `budget: null` into
+    // the column for a proposal whose budget was cleared. That is not a
+    // budget to backfill — injecting it put `null` in front of both budget
+    // schemas, and an author with an optional, deliberately empty budget
+    // could not submit at all.
+    const budgetBackfill =
+      fragmentBudget === undefined && storedProposalData.budget != null
         ? {
             budget: parsed.budget
               ? toValidationBudget(
@@ -116,7 +114,14 @@ export async function validateProposalAgainstTemplate(
                 )
               : storedProposalData.budget,
           }
+        : {};
+
+    const validationData = {
+      ...assembledData,
+      ...(storedProposalData.category !== undefined
+        ? { category: storedProposalData.category }
         : {}),
+      ...budgetBackfill,
       ...(shouldInjectTitle ? { title } : {}),
     };
 

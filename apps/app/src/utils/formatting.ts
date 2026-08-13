@@ -1,6 +1,7 @@
 /**
  * Shared formatting utilities for consistent display across the application
  */
+import type { MoneyAmount } from '@op/common/client';
 import {
   formatDate as formatDateCore,
   formatDateRange as formatDateRangeCore,
@@ -31,8 +32,9 @@ const moneyFormatters = new Map<string, Intl.NumberFormat>();
  * The fallback is cached under the bad code too. `Intl.NumberFormat` throws at
  * *construction*, so leaving the failure uncached re-ran the constructor — and
  * re-threw — on every call: one `RangeError` per row of a results table, on
- * every render and every scroll repaint, forever. The bad code is reported once
- * and then costs no more than a good one.
+ * every render and every scroll repaint, forever. That cache is also what keeps
+ * the warning below from repeating: a bad code reaches the `catch` at most once
+ * per whole/fractional pair, not once per row.
  */
 function getMoneyFormatter(
   currency: string | null,
@@ -91,11 +93,7 @@ function getMoneyFormatter(
  * localized number instead — showing the amount unlabeled beats fabricating
  * the wrong symbol — and logs the bad code once so the record can be repaired.
  */
-export function formatMoney(budget: {
-  amount: number;
-  currency: string;
-}): string {
-  const { amount, currency } = budget;
+export function formatMoney({ amount, currency }: MoneyAmount): string {
   return getMoneyFormatter(currency, Number.isInteger(amount)).format(amount);
 }
 
@@ -136,29 +134,30 @@ export function formatAmount(amount: number): string {
  * that one formats unlabeled, so there is no currency part to find: an
  * unlabeled amount reads as dollars to most users, and the input this prefixes
  * would otherwise render with no currency marker at all.
+ *
+ * Memoized here rather than at each call site: the symbol is a pure function of
+ * the code, and the callers are inputs that re-render on every keystroke. One
+ * cache in the module means none of them needs its own.
  */
 export function getCurrencySymbol(currency: string): string {
-  return (
+  const cached = currencySymbols.get(currency);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const symbol =
     getMoneyFormatter(currency, true)
       .formatToParts(0)
       .find((part) => part.type === 'currency')
-      ?.value.trim() || currency
-  );
+      ?.value.trim() || currency;
+  currencySymbols.set(currency, symbol);
+  return symbol;
 }
 
-/**
- * Bad currency codes already reported, so rendering a list logs each one once
- * rather than once per row. Unbounded is fine: the keys are ISO 4217 codes off
- * stored budgets, and a process that manages to store thousands of distinct
- * malformed ones has a bigger problem than this Set.
- */
-const reportedInvalidCurrencies = new Set<string>();
+/** Resolved symbols by code — see {@link getCurrencySymbol}. */
+const currencySymbols = new Map<string, string>();
 
 function reportInvalidCurrency(currency: string) {
-  if (reportedInvalidCurrencies.has(currency)) {
-    return;
-  }
-  reportedInvalidCurrencies.add(currency);
   // Imported lazily: this module is reachable from server components, and the
   // client logger pulls in `posthog-js` at module scope.
   void import('@op/logging/client')

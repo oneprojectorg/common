@@ -35,8 +35,5 @@ export async function resolveProposalTemplate(
     unknown
   > | null;
 
-  return (
-    (processSchema?.proposalTemplate as ProposalTemplateSchema | undefined) ??
-    null
-  );
+  return (processSchema?.proposalTemplate as ProposalTemplateSchema) ?? null;
 }

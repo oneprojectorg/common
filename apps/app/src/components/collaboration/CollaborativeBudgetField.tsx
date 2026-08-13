@@ -10,6 +10,8 @@ import {
   DEFAULT_BUDGET_CURRENCY,
   type StoredBudget,
   parseStoredBudgetFragmentValue,
+  resolveBudgetCurrencyCode,
+  withStoredBudgetCurrency,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
@@ -62,18 +64,17 @@ export function CollaborativeBudgetField({
   // resolved fallback. Every renderer reads the currency back off this
   // fragment, so seeding a resolved code would pin the proposal to whatever
   // was resolved the first time somebody opened the editor, and a later change
-  // to the process's currency would silently skip this proposal. `||` rather
-  // than `??` because a blank stored code names no currency either.
+  // to the process's currency would silently skip this proposal.
   const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
     'budget',
-    initialValue !== null
-      ? JSON.stringify(
-          initialValue.currency
-            ? { currency: initialValue.currency, amount: initialValue.amount }
-            : { amount: initialValue.amount },
-        )
-      : '',
+    budgetFragmentText(
+      initialValue &&
+        withStoredBudgetCurrency(
+          { amount: initialValue.amount },
+          initialValue.currency,
+        ),
+    ),
   );
 
   // What the fragment itself names, read with the same parser the cards and
@@ -115,15 +116,15 @@ export function CollaborativeBudgetField({
   const budgetToPersist = useMemo(
     () =>
       fragmentBudget
-        ? {
-            amount: fragmentBudget.amount,
-            ...(storedCurrency ? { currency: storedCurrency } : {}),
-          }
+        ? withStoredBudgetCurrency(
+            { amount: fragmentBudget.amount },
+            storedCurrency,
+          )
         : null,
     [fragmentBudget, storedCurrency],
   );
   const setBudget = (newBudget: StoredBudget | null) =>
-    setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
+    setBudgetText(budgetFragmentText(newBudget));
 
   const onChangeRef = useRef(onChange);
 
@@ -133,9 +134,11 @@ export function CollaborativeBudgetField({
 
   const [isEditing, setIsEditing] = useState(false);
   const budgetAmount = fragmentBudget?.amount ?? null;
-  // `||`, not `??`: a blank stored code names no currency either.
-  const currency = fragmentBudget?.currency || fallbackCurrency;
-  const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
+  const currency = resolveBudgetCurrencyCode(
+    fragmentBudget?.currency,
+    fallbackCurrency,
+  );
+  const currencySymbol = getCurrencySymbol(currency);
 
   const placeholderText = maxAmount
     ? t('Max {amount}', { amount: formatAmount(maxAmount) })
@@ -188,9 +191,7 @@ export function CollaborativeBudgetField({
     // it doesn't — this field has no currency control, so typing an amount is
     // not a choice of currency and must not record one.
     setBudget(
-      fragmentBudget?.currency
-        ? { currency: fragmentBudget.currency, amount: value }
-        : { amount: value },
+      withStoredBudgetCurrency({ amount: value }, fragmentBudget?.currency),
     );
   };
 
@@ -270,4 +271,14 @@ export function CollaborativeBudgetField({
       )}
     </>
   );
+}
+
+/**
+ * The single place the fragment's serialized form is decided, so the seed and
+ * every later write can't drift apart — the parser on the other side has to
+ * read both. No budget is the empty string: an absent fragment and a cleared
+ * one look the same to every reader.
+ */
+function budgetFragmentText(budget: StoredBudget | null | undefined): string {
+  return budget ? JSON.stringify(budget) : '';
 }

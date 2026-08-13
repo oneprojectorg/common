@@ -1,7 +1,11 @@
 'use client';
 
 import { formatMoney } from '@/utils/formatting';
-import { type BudgetInput, normalizeBudget } from '@op/common/client';
+import {
+  type BudgetInput,
+  normalizeBudget,
+  withResolvedBudgetCurrency,
+} from '@op/common/client';
 import { cn } from '@op/ui/utils';
 
 import { useTranslations } from '@/lib/i18n';
@@ -52,12 +56,8 @@ export function formatBudget(
   }
   // No "did this name a currency?" predicate needed: `normalizeBudget` leaves
   // the currency absent rather than defaulting it, so the value itself already
-  // says whether the fallback applies. `||` covers a stored blank code, which
-  // names a currency no more than an absent one does.
-  return formatMoney({
-    amount: budget.amount,
-    currency: budget.currency || fallbackCurrency,
-  });
+  // says whether the fallback applies.
+  return formatMoney(withResolvedBudgetCurrency(budget, fallbackCurrency));
 }
 
 /**
