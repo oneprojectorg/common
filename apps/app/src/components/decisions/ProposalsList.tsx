@@ -498,6 +498,22 @@ const ProposalsListContent = ({
   // Empty + unfiltered falls through to the grid's empty state instead of a blank map.
   const isEmptyUnfiltered = allProposals.length === 0 && !hasActiveFilter;
 
+  // Everything this list queries with, minus its own identity and its paging,
+  // is by definition what the export has to run under — so the remainder is
+  // forwarded whole rather than restated field by field. Restating it is how
+  // three filters went missing before: each was added to the list and never
+  // added here, and an export covering more than the screen does looks exactly
+  // like one that covers the right rows.
+  //
+  // `limit` is excluded rather than forwarded: it pages this view, while the
+  // job pages independently, and a page size arriving as a filter would cap
+  // the file. `processInstanceId` goes over as its own prop.
+  const {
+    processInstanceId: _processInstanceId,
+    limit: _limit,
+    ...exportFilters
+  } = queryParams;
+
   return (
     <div
       className={cn(
@@ -530,19 +546,7 @@ const ProposalsListContent = ({
               <ExportProposalsButton
                 processInstanceId={queryParams.processInstanceId}
                 isEmpty={total === 0}
-                // Forwarded straight from the list's own query params (minus
-                // pagination) so the export can't scope differently from the
-                // list it was launched off.
-                filters={{
-                  categoryId: queryParams.categoryId,
-                  submittedByProfileId: queryParams.submittedByProfileId,
-                  votedByProfileId: queryParams.votedByProfileId,
-                  status: queryParams.status,
-                  dir: queryParams.dir,
-                  phase: queryParams.phase,
-                  excludeAssignedForReview:
-                    queryParams.excludeAssignedForReview,
-                }}
+                filters={exportFilters}
               />
             ) : null
           }
