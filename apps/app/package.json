@@ -19,7 +19,6 @@
   "dependencies": {
     "@formity/react": "^1.0.0",
     "@hocuspocus/transformer": "^3.4.3",
-    "@internationalized/date": "catalog:",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@next/bundle-analyzer": "^16.0.0",
     "@op/analytics": "workspace:^",
@@ -88,7 +87,6 @@
     "posthog-js": "^1.236.4",
     "posthog-node": "^4.13.0",
     "react": "^19.2.0",
-    "react-aria-carousel": "^0.2.0",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.0.0",
     "react-icons": "^5.5.0",

@@ -29,8 +29,7 @@ export const RichTextEditor = forwardRef<
     summaryPlaceholder?: string;
     /**
      * Emits the editor HTML on every update. `onUpdate` and `onChange` are
-     * intentional aliases (same value, same timing) kept for @op/ui migration
-     * — wire only one.
+     * intentional aliases (same value, same timing) — wire only one.
      */
     onUpdate?: (content: string) => void;
     onChange?: (content: string) => void;

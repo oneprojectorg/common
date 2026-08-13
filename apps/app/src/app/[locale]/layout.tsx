@@ -6,7 +6,6 @@ import { I18nProvider } from '@/lib/i18n';
 import { getLocaleDirection } from '@/lib/i18n/config';
 
 import { LocaleDirSync } from '@/components/LocaleDirSync';
-import { ReactAriaRouterProvider } from '@/components/ReactAriaRouterProvider';
 
 const AppLayout = async ({
   children,
@@ -34,7 +33,7 @@ const AppLayout = async ({
           Re-provide it here, where params.locale is authoritative. */}
       <DirectionProvider direction={getLocaleDirection(locale)}>
         <LocaleDirSync />
-        <ReactAriaRouterProvider>{children}</ReactAriaRouterProvider>
+        {children}
       </DirectionProvider>
     </I18nProvider>
   );

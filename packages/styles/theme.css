@@ -119,9 +119,9 @@
 }
 
 /* Bare `border` (no color utility) defaults to the sense border token,
- * mirroring the app-wide rule below (which hardcodes the @op/ui
- * neutral and dies with it). Explicit utilities like border-input still win —
- * they live in the utilities layer. */
+ * mirroring the app-wide rule below (which hardcodes the legacy neutral and is
+ * retired with it). Explicit utilities like border-input still win — they live
+ * in the utilities layer. */
 @layer base {
   *,
   ::before,
@@ -273,8 +273,8 @@
 
   /* Secondary (neutral). `--secondary` is defined here rather than inherited:
    * `--color-secondary` upstream resolves through intent-ui-theme.css (the
-   * legacy @op/ui theme), so `bg-secondary` would lose its background when that
-   * package is removed. Same value as the Figma spec's gray-100. */
+   * pre-sense theme), so `bg-secondary` would lose its background when that
+   * file is retired. Same value as the Figma spec's gray-100. */
   --secondary: var(--color-gray-100);
   --secondary-foreground: var(--color-gray-900);
 
@@ -313,8 +313,7 @@
   --ring-offset: var(--color-white);
 
   /* `--radius` is the base radius shadcn primitives derive their scale from
-   * (and consume directly, e.g. `rounded-[var(--radius)]`). Safe to declare
-   * on :root because @op/ui doesn't reference --radius. */
+   * (and consume directly, e.g. `rounded-[var(--radius)]`). */
   --radius: 0.5rem;
 
   /* Sidebar */
@@ -335,34 +334,21 @@
   --chart-5: var(--color-purple-500);
 }
 
-/* Tell Tailwind where to scan for classes in the UI package */
-@source '../ui/src/**/*.{js,ts,jsx,tsx}';
-@source '../ui/stories/**/*.{js,ts,jsx,tsx}';
+/* Tell Tailwind where to scan for classes */
 @source '../sense/src/**/*.{js,ts,jsx,tsx}';
 @source '../sense/.storybook/**/*.{js,ts,jsx,tsx}';
 @source '../../apps/app/src/**/*.{js,ts,jsx,tsx}';
 @source './constants.ts';
 
-/* React Aria Components data attribute variants */
-@plugin 'tailwindcss-react-aria-components';
 @plugin '@tailwindcss/typography';
 
 /*
- * Shared Tailwind v4 theme configuration
- * Migrated from packages/ui/tailwind.shared.ts
+ * Shared Tailwind v4 theme configuration. Animation utilities come from
+ * tw-animate.css (vendored).
  *
- * Plugins (install separately):
- * - @tailwindcss/container-queries
- * - @tailwindcss/typography
- * - tailwind-scrollbar
- * - tailwindcss-react-aria-components
- *
- * Animation utilities from tw-animate.css (vendored)
- *
- * Safelist (for dynamic classes):
- * - [&_.scroller]:!overflow-hidden (ScreenCapturer.tsx)
- * - [&_textarea]:!overflow-hidden (ScreenCapturer.tsx)
- * - bg-gradient, bg-tealGreen, bg-redTeal, bg-blueGreen, bg-orangePurple, bg-yellowOrange (Avatar gradients)
+ * Safelist (composed dynamically, so no @source can see them):
+ * - bg-gradient, bg-tealGreen, bg-redTeal, bg-blueGreen, bg-orangePurple,
+ *   bg-yellowOrange (avatar gradients, built in ./constants.ts)
  */
 
 /* Default border color - in Tailwind v4, `border` no longer defaults to currentColor */
@@ -393,12 +379,24 @@
 
 
 /* ============================================================================
- * LEGACY @op/ui LAYER — delete with the package
+ * LEGACY PRE-SENSE LAYER — being retired, but NOT deletable wholesale
  *
- * The pre-sense type scale and colour aliases. Still load-bearing: packages/ui
- * has ~365 uses across 105 files. Declared after the sense layer so the cascade
- * matches what shared-styles.css produced before the split. Nothing new
- * should reference these names.
+ * The pre-sense type scale and colour aliases. Nothing new should reference
+ * these names. Declared after the sense layer so the cascade matches what
+ * shared-styles.css produced before the split.
+ *
+ * Do not delete this block in one go. It still hosts definitions that live app
+ * and sense code depends on, and Tailwind emits NO error for an unknown colour
+ * token — it silently stops generating the utility. Known tenants:
+ *   - `--color-border` (the only definition in the repo; ~75 uses)
+ *   - `--color-teal`, `--color-offWhite`, `--color-primary-orange2`,
+ *     `--color-darkGray`, `--color-primary-100`
+ *   - the brand/avatar gradient utilities below
+ *   - the four `--text-title-*` steps still pinned by ./constants.ts
+ * Relocate what survives into the sense layer above, sweep the call sites, and
+ * delete tokens and call sites in the SAME commit — oxfmt derives its Tailwind
+ * class order from this file, so a token removed on its own fails format:check
+ * and then reorders every affected className.
  * ========================================================================= */
 @theme {
 
@@ -455,8 +453,8 @@
 
   /* Body sizes (--text-xs … --text-2xl): the Common Sense scale is identical
    * to Tailwind v4's rem defaults, so we no longer override them here — the
-   * @op/ui overrides that used to shrink them (0.875rem base etc.) are gone and
-   * Tailwind's defaults apply. The custom serif heading scale (--text-label /
+   * pre-sense overrides that used to shrink them (0.875rem base etc.) are gone
+   * and Tailwind's defaults apply. The custom serif heading scale (--text-label /
    * title / headline / display) lives in the sense layer above. */
 
   /* ============================================

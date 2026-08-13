@@ -377,7 +377,7 @@ function CategoryForm({
 
 // Labelled text/textarea field with an optional live character counter —
 // composes the sense Field + Input/Textarea primitives to reproduce the
-// batteries-included @op/ui TextField this screen previously used.
+// one batteries-included labelled field.
 function CategoryField({
   id,
   label,

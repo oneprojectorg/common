@@ -7,7 +7,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
- * Server-side mirror of the `StyledHeading` extension in `@op/ui`. Bakes the
+ * Server-side mirror of the `StyledHeading` extension in `@op/sense`. Bakes the
  * shared `headingClasses` onto each rendered heading tag so `generateHTML()`
  * output matches the live editor and the `Header1/2/3` design-system
  * components exactly.
@@ -153,7 +153,7 @@ const DetailsContentServerNode = Node.create({
  * to ensure all node types are recognized during HTML generation. Any node type
  * present in the ProseMirror JSON that isn't registered here will be silently dropped.
  *
- * @see packages/ui/src/components/RichTextEditor/editorConfig.ts (base extensions)
+ * @see packages/sense/src/components/RichTextEditor/editorConfig.ts (base extensions)
  * @see apps/app/src/components/decisions/IframelyExtension.tsx (client version)
  */
 export const serverExtensions = [
@@ -163,7 +163,7 @@ export const serverExtensions = [
     heading: false,
     link: false,
   }),
-  // Must match the editor (@op/ui editorConfig allows 1-4). TipTap's
+  // Must match the editor (@op/sense editorConfig allows 1-4). TipTap's
   // Heading.renderHTML falls back to levels[0] for any out-of-range level, so a
   // narrower list here silently renders a stored H4 as H1.
   StyledHeading.configure({

@@ -23,7 +23,7 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 
 ### UI Component System
 
-`@op/sense` (`packages/sense`) is the design system — shadcn/ui in its Base UI style, themed by `@op/styles`. It replaces `@op/ui` (React Aria / Intent UI), which is in wind-down: **never add to `@op/ui` or import it in new code.**
+`@op/sense` (`packages/sense`) is the design system — shadcn/ui in its Base UI style, themed by `@op/styles`.
 
 - **Read [`packages/sense/CLAUDE.md`](packages/sense/CLAUDE.md) before building UI.** It covers the accessibility obligations, how to add a primitive or composite, and the Base UI behaviours that bite.
 - **Always prefer an existing `@op/sense` component over a vanilla html element** such as `<button>` or `<h2>`. Browse them with `pnpm w:sense dev` (Storybook, http://localhost:3600).
@@ -88,6 +88,6 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 ## Workflow Notes
 
 - If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server
-- **Storybook**: `pnpm w:sense dev` serves the `@op/sense` design system on http://localhost:3600. (`pnpm w:ui dev` serves the legacy `@op/ui` Storybook plus the `@op/ui` ↔ `@op/sense` comparison on :3601; both go away with `@op/ui`.)
+- **Storybook**: `pnpm w:sense dev` serves the `@op/sense` design system on http://localhost:3600.
 - **Never start or kill the dev server on :3100** — it is shared with other agents and managed externally; verify changes statically or in the browser against the already-running server
 - Authorization checks are achieved by our access-zones library. We usually get the profileUser and pass the user's roles to `assertAccess`

@@ -15,7 +15,7 @@ import { ToggleRow } from '../../layout/split/form/ToggleRow';
 import { createOrganizationFormValidator } from './organizationValidation';
 
 // `TermsMultiSelect` / `GeoNamesMultiSelect` still own the option shape; derive
-// it from their props rather than importing the retired @op/ui type.
+// it from their props rather than redeclaring it.
 type Option = NonNullable<
   ComponentProps<typeof TermsMultiSelect>['value']
 >[number];

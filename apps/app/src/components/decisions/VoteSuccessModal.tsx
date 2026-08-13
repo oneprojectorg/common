@@ -43,7 +43,7 @@ const VoteSuccessModalSuspense = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      {/* 32rem keeps the width the @op/ui Modal had before the swap. */}
+      {/* 32rem — the sense default (sm:max-w-sm) is narrower than this needs. */}
       <DialogContent confetti className="sm:max-w-lg">
         <div className="z-10 p-12 text-center">
           <div className="flex flex-col gap-6">

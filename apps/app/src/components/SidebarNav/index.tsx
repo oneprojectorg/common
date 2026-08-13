@@ -10,7 +10,6 @@ import {
   useSidebar,
 } from '@op/sense/Sidebar';
 import { ReactNode } from 'react';
-import { usePress } from 'react-aria';
 import { LuHouse, LuMessageCircle, LuUsers } from 'react-icons/lu';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';
@@ -30,11 +29,10 @@ export const SidebarNav = () => {
   const isRtl = useDirection() === 'rtl';
 
   return (
-    // Mirrors the old op/ui behavior on the new shadcn Sidebar: offcanvas (nav
-    // hidden until the header trigger opens it, pushing content), overlay Sheet
-    // on mobile. Per shadcn's "sticky site header" (sidebar-16) pattern, the
-    // desktop fixed panel is offset below the full-width header via
-    // --header-height (set on the content row in the (main) layout).
+    // Offcanvas: nav hidden until the header trigger opens it, pushing content;
+    // overlay Sheet on mobile. Per shadcn's "sticky site header" (sidebar-16)
+    // pattern, the desktop fixed panel is offset below the full-width header
+    // via --header-height (set on the content row in the (main) layout).
     <Sidebar
       side={isRtl ? 'right' : 'left'}
       collapsible="offcanvas"
@@ -59,15 +57,14 @@ export const SidebarNav = () => {
 
 const NavLink = ({ href, active, children }: NavLinkProps) => {
   const { toggleSidebar, isMobile } = useSidebar();
-  const { pressProps } = usePress({
-    onPress: isMobile ? toggleSidebar : undefined,
-  });
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={active}
         className="no-underline hover:no-underline"
-        render={<Link href={href} {...pressProps} />}
+        render={
+          <Link href={href} onClick={isMobile ? toggleSidebar : undefined} />
+        }
       >
         {children}
       </SidebarMenuButton>

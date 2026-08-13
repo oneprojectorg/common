@@ -37,7 +37,7 @@ export const Fallback: Story = {
 };
 
 // The app renders letter fallbacks on a deterministic gradient hashed from
-// the display name (see @op/ui getGradientForString). The gradient utilities
+// the display name (see getGradientForString). The gradient utilities
 // live in @op/styles, so the sense primitive stays unopinionated and the app
 // composes them onto AvatarFallback — mirrored here.
 export const GradientFallbacks: Story = {

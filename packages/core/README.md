@@ -32,7 +32,6 @@ The main exports are defined in the `exports` field of `package.json`.
 - **`@op/hooks`**
 - **`@op/supabase`**
 - **`@op/trpc`**
-- **`@op/ui`**
 - **`apps/api`**
 - **`apps/app`**
 

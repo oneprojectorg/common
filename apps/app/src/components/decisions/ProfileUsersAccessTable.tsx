@@ -43,7 +43,6 @@ import {
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import type { SortDescriptor } from 'react-aria-components';
 import {
   LuArrowDown,
   LuArrowUp,
@@ -58,6 +57,11 @@ import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 // Sort columns supported by the profile.listUsers endpoint
 type SortColumn = 'name' | 'email' | 'role';
+
+export type SortDescriptor = {
+  column: SortColumn;
+  direction: 'ascending' | 'descending';
+};
 
 // Exported component with loading and error states
 export const ProfileUsersAccessTable = ({
@@ -600,7 +604,7 @@ const MobileProfileUsersContent = ({
 };
 
 // Clickable, sortable column header. sense Table has no built-in sort, so the
-// sort state (a react-aria SortDescriptor) is driven manually here.
+// sort state is driven manually here.
 const SortableHead = ({
   column,
   label,

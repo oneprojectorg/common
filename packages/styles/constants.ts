@@ -10,7 +10,7 @@ export const screens = {
 
 /**
  * Canonical heading class strings shared between the `Header1/2/3/4` components
- * in `@op/ui` and the TipTap rich text editor's `StyledHeading` extension.
+ * in `@op/sense` and the TipTap rich text editor's `StyledHeading` extension.
  * Keeping these as literal Tailwind class strings ensures the build-time
  * scanner picks them up.
  */

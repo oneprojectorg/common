@@ -74,7 +74,7 @@ export function calculateDaysRemaining(endDate?: string): number | null {
  * Format a byte count as a human-readable file size (e.g. `4.8 MB`).
  *
  * Lives here rather than in a design-system package so app surfaces don't have
- * to import from `@op/ui` just for a number formatter.
+ * to pull in the design system just for a number formatter.
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) {

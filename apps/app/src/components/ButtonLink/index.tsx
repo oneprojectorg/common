@@ -12,7 +12,7 @@ type ButtonLinkProps = Omit<
 
 /**
  * A sense `Button` that renders as a locale-aware `Link` — the button-styled
- * anchor (replaces `@op/ui`'s `ButtonLink`). Inherits every `Button` prop
+ * anchor. Inherits every `Button` prop
  * (`variant`, `size`, `loading`, …); `href` plus the anchor props `target`,
  * `rel`, and `download` are forwarded to the i18n `Link`.
  *

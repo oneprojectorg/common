@@ -16,16 +16,15 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { screens } from '@op/styles/constants';
 import { useState } from 'react';
-import type { SortDescriptor } from 'react-aria-components';
 import { LuSearch, LuCircleAlert, LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileInviteModal } from './ProfileInviteModal';
-import { ProfileUsersAccessTable } from './ProfileUsersAccessTable';
-
-// Sort columns supported by profile.listUsers endpoint
-type SortColumn = 'name' | 'email' | 'role';
+import {
+  ProfileUsersAccessTable,
+  type SortDescriptor,
+} from './ProfileUsersAccessTable';
 
 const ITEMS_PER_PAGE = 25;
 
@@ -49,7 +48,7 @@ export const ProfileUsersAccess = ({
     direction: 'ascending',
   });
 
-  const orderBy = sortDescriptor.column as SortColumn;
+  const orderBy = sortDescriptor.column;
   const dir: SortDir =
     sortDescriptor.direction === 'ascending' ? 'asc' : 'desc';
   const searchFilter = debouncedQuery.length >= 2 ? debouncedQuery : undefined;

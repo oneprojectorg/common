@@ -13,7 +13,7 @@ import { useAdvancePhase } from './useAdvancePhase';
 
 /**
  * Vertical phase timeline for the decision Overview sidebar. App-side
- * composition over the presentational @op/ui PhaseCard (cf. DecisionProcessStepper
+ * composition over the presentational PhaseCard (cf. DecisionProcessStepper
  * → PhaseStepper): owns the <ol> and the completed/current/upcoming derivation,
  * resolves translated phase names, flags the "Now open!" and admin-advanceable
  * phases, links the current card to its phase view, and reuses useAdvancePhase

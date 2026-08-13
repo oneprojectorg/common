@@ -29,16 +29,11 @@
     "attributes": [
       "badgeClassName",
       "bodyClassName",
-      "buttonClassName",
-      "chipClassName",
       "descriptionClassName",
       "editorClassName",
-      "fieldClassName",
       "iconClassName",
       "itemClassName",
-      "labelClassName",
-      "overlayClassName",
-      "selectValueClassName"
+      "labelClassName"
     ],
     "functions": ["twMerge", "clsx", "cn", "tv"],
     "stylesheet": "./packages/styles/theme.css"

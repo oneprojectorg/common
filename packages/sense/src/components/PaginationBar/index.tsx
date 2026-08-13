@@ -38,8 +38,8 @@ export interface PaginationBarProps {
 
 /**
  * Driven Previous/Next pager with an optional range readout. A callback left
- * `undefined` disables its control. Ported from the former `@op/ui` Pagination
- * so list/table views share one pagination component. Copy is passed in (the
+ * `undefined` disables its control. List and table views share this one
+ * pagination component. Copy is passed in (the
  * package is i18n-agnostic); English defaults keep it usable standalone.
  */
 export function PaginationBar({
