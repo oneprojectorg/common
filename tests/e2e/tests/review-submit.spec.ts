@@ -183,6 +183,14 @@ const RUBRIC_TEMPLATE = {
  */
 const PROPOSAL_TITLE = 'Community Solar Initiative';
 
+/**
+ * Queue cards open the proposal-keyed review URL, which resolves per viewer —
+ * the assignee's own review screen here, the review-progress screen for an
+ * instance admin. (The assignment-keyed `/reviews/[assignmentId]` URL still
+ * exists for email links; it is just no longer what a card links to.)
+ */
+const PROPOSAL_REVIEWS_URL = /\/proposal\/[^/]+\/reviews$/;
+
 test.describe('Review Submit', () => {
   test('full review journey: request revision → cancel → submit review → edit review', async ({
     authenticatedPage: page,
@@ -229,6 +237,20 @@ test.describe('Review Submit', () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     const decisionUrl = `/en/decisions/${instance.slug}/current`;
+    // The fixture's reviewer is also the instance admin, so the proposal-keyed
+    // URL a queue card links to resolves to Review Progress for them (asserted
+    // in step 2). The assignment-keyed URL is the reviewer surface, so the
+    // review-form steps below enter through it.
+    const reviewUrl = `/en/decisions/${instance.slug}/reviews/${assignment.id}`;
+    // Each entry is a cold load, so drop the persisted React Query cache first —
+    // otherwise the form can initialise from the pre-mutation snapshot written
+    // earlier in this session (an empty rubric after the review was submitted).
+    const openReview = async () => {
+      await page.evaluate(() =>
+        window.localStorage.removeItem('REACT_QUERY_OFFLINE_CACHE'),
+      );
+      await page.goto(reviewUrl, { waitUntil: 'domcontentloaded' });
+    };
 
     /** Locate the status badge <span> on the assignments list. */
     const statusBadge = page.locator('span').filter({
@@ -249,11 +271,17 @@ test.describe('Review Submit', () => {
     await expect(statusBadge).toHaveText('Not Started');
 
     // ========================================================================
-    // Step 2: Click into review and request a revision
+    // Step 2: Card opens the proposal-keyed URL; request a revision
     // ========================================================================
 
     await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(page).toHaveURL(PROPOSAL_REVIEWS_URL, { timeout: 10_000 });
+    // Admin resolution of that URL.
+    await expect(
+      page.getByRole('heading', { name: 'Review Progress' }),
+    ).toBeVisible({ timeout: 36_000 });
+
+    await openReview();
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -292,11 +320,10 @@ test.describe('Review Submit', () => {
     await expect(statusBadge).toHaveText('Revision Requested');
 
     // ========================================================================
-    // Step 4: Click back into review and cancel the revision
+    // Step 4: Back into the review and cancel the revision
     // ========================================================================
 
-    await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await openReview();
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -337,11 +364,10 @@ test.describe('Review Submit', () => {
     await expect(statusBadge).toHaveText('In Progress');
 
     // ========================================================================
-    // Step 6: Click back into review, fill rubric, and submit
+    // Step 6: Back into the review, fill rubric, and submit
     // ========================================================================
 
-    await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await openReview();
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -452,8 +478,7 @@ test.describe('Review Submit', () => {
     // Step 8: Re-open the completed review, edit it, and update in place
     // ========================================================================
 
-    await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await openReview();
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -524,7 +549,7 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    await createReviewScenario({
+    const { assignment } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author: {
         profileId: org.organizationProfile.id,
@@ -540,14 +565,11 @@ test.describe('Review Submit', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    await page.goto(`/en/decisions/${instance.slug}/current`, {
+    // Straight to the reviewer surface — the queue card's link target is
+    // covered by the full-journey test above.
+    await page.goto(`/en/decisions/${instance.slug}/reviews/${assignment.id}`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page.getByText('Proposals to review').first()).toBeVisible({
-      timeout: 36_000,
-    });
-    await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -558,7 +580,11 @@ test.describe('Review Submit', () => {
     await expect(
       page.getByRole('heading', { name: /^Comments \(\d+\)$/ }),
     ).toBeVisible();
-    await expect(page.getByText('No comments yet.')).toBeVisible();
+    // A cold page load leaves the streamed server copy of the proposal pane in
+    // the DOM (hidden) alongside the hydrated one, so target the visible copy.
+    await expect(
+      page.getByText('No comments yet.').filter({ visible: true }),
+    ).toBeVisible();
     await expect(page.getByText('Be the first to comment')).toHaveCount(0);
     await expect(page.getByPlaceholder(/^Comment( as |\.\.\.)/)).toHaveCount(0);
   });
@@ -591,7 +617,7 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    await createReviewScenario({
+    const { assignment } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author: {
         profileId: org.organizationProfile.id,
@@ -607,15 +633,11 @@ test.describe('Review Submit', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const decisionUrl = `/en/decisions/${instance.slug}/current`;
-
-    await page.goto(decisionUrl, { waitUntil: 'domcontentloaded' });
-
-    await expect(page.getByText('Proposals to review').first()).toBeVisible({
-      timeout: 36_000,
+    // Straight to the reviewer surface — the queue card's link target is
+    // covered by the full-journey test above.
+    await page.goto(`/en/decisions/${instance.slug}/reviews/${assignment.id}`, {
+      waitUntil: 'domcontentloaded',
     });
-    await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -655,7 +677,7 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    await createReviewScenario({
+    const { assignment } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author: {
         profileId: org.organizationProfile.id,
@@ -673,14 +695,11 @@ test.describe('Review Submit', () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
 
-    await page.goto(`/en/decisions/${instance.slug}/current`, {
+    // Straight to the reviewer surface — the queue card's link target is
+    // covered by the full-journey test above.
+    await page.goto(`/en/decisions/${instance.slug}/reviews/${assignment.id}`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page.getByText('Proposals to review').first()).toBeVisible({
-      timeout: 36_000,
-    });
-    await page.getByText(PROPOSAL_TITLE).first().click();
-    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
     await expect(
       page.getByRole('button', { name: 'Submit review' }),
     ).toBeVisible({ timeout: 36_000 });

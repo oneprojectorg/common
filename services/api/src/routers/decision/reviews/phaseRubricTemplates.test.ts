@@ -231,9 +231,9 @@ describe.concurrent('per-phase rubric templates', () => {
       properties: { viability: { title: 'Viability' } },
     });
 
-    // Community is current, so the default scope lands there.
     const communityList = await reviewerCaller.decision.listReviewAssignments({
       processInstanceId: context.instance.instance.id,
+      phaseId: COMMUNITY_PHASE,
     });
     expect(communityList.assignments.map((a) => a.assignment.id)).toEqual([
       communityAssignment.id,
