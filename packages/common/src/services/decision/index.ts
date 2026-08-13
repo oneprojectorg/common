@@ -116,6 +116,7 @@ export * from './listBoundaryShapes';
 export * from './reverseGeocode';
 export * from './templateLocation';
 export * from './templateSections';
+export * from './templateMoney';
 export * from './templateAuthoring';
 export * from './extractProposalText';
 export * from './resolveProposalTemplate';

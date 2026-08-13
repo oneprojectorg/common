@@ -131,6 +131,22 @@ function RubricField({ field }: { field: FieldDescriptor }) {
       );
     }
 
+    case 'money': {
+      // Template-authored (not editable in the builder); shown so the criterion
+      // never silently vanishes from the participant preview.
+      return (
+        <div className="flex flex-col gap-3">
+          <FieldHeader
+            title={schema.title}
+            description={schema.description}
+            required={field.required}
+            className="gap-1"
+          />
+          <div className="min-h-8 text-neutral-gray3">{t('Amount')}</div>
+        </div>
+      );
+    }
+
     case 'short-text':
     case 'long-text': {
       return (

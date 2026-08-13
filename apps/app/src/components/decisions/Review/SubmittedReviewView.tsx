@@ -3,9 +3,12 @@ import {
   type RubricTemplateSchema,
   type TemplateSectionBlock,
   findSchemaOption,
+  getMoneyAnswerAmount,
   groupFieldsBySection,
   isOverallRecommendationField,
+  resolveMoneyDisplayCurrency,
 } from '@op/common/client';
+import { useFormatter } from 'next-intl';
 import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -167,6 +170,26 @@ function RubricFieldResult({
   rationale?: string;
 }) {
   const t = useTranslations();
+  const format = useFormatter();
+
+  if (inferCriterionType(field.schema) === 'money') {
+    const amount = getMoneyAnswerAmount(value);
+    return (
+      <ResultCard
+        value={
+          amount === null
+            ? '—'
+            : // Currency formatting goes through the i18n stack — never a
+              // hand-rolled symbol map.
+              format.number(amount, {
+                style: 'currency',
+                currency: resolveMoneyDisplayCurrency(value, field.schema),
+              })
+        }
+        description={rationale}
+      />
+    );
+  }
 
   if (field.format === 'dropdown') {
     if (inferCriterionType(field.schema) === 'yes_no') {
