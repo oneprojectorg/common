@@ -9,10 +9,10 @@ import {
 } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import type { SortDescriptor } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import type { SortDescriptor } from 'react-aria-components';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

@@ -9,6 +9,7 @@ import {
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Link } from '@op/ui/Link';
+import type { SortDescriptor } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import { StatusDot, type StatusDotIntent } from '@op/ui/StatusDot';
 import {
@@ -19,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import type { SortDescriptor } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 

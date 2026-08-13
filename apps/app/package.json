@@ -91,7 +91,6 @@
     "posthog-node": "^4.13.0",
     "react": "^19.2.0",
     "react-aria-carousel": "^0.2.0",
-    "react-aria-components": "catalog:",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.0.0",
     "react-icons": "^5.5.0",
