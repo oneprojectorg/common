@@ -217,28 +217,6 @@ export class SchemaValidator {
   }
 
   /**
-   * The property an error belongs to, ignoring array indices.
-   *
-   * AJV reports a failing array element at `/category/0`, so taking the last
-   * path segment yields `0` — an index, not a field. That has no entry in
-   * `properties`, so the display name fell through to the index itself and the
-   * message read "0 is invalid", naming neither the field nor the problem.
-   * Walking back to the last non-numeric segment recovers the owning property.
-   */
-  private getOwningFieldName(instancePath: string): string {
-    const segments = instancePath.split('/').filter(Boolean);
-
-    for (let i = segments.length - 1; i >= 0; i--) {
-      const segment = segments[i];
-      if (segment && !/^\d+$/.test(segment)) {
-        return segment;
-      }
-    }
-
-    return '';
-  }
-
-  /**
    * Get user-friendly display name for a field by looking up the `title`
    * property from the schema definition. Falls back to capitalizing the key.
    */
@@ -262,10 +240,7 @@ export class SchemaValidator {
     schema?: JSONSchema7,
   ): string {
     const fieldPath = this.getFieldPath(error.instancePath, error.keyword);
-    const fieldName =
-      this.getOwningFieldName(error.instancePath) ||
-      fieldPath.split('.').pop() ||
-      '';
+    const fieldName = fieldPath.split('.').pop() || '';
     const friendlyName = this.getFieldDisplayName(fieldName, schema);
 
     switch (error.keyword) {
@@ -294,29 +269,6 @@ export class SchemaValidator {
       }
       case 'format':
         return `${friendlyName} has an invalid ${error.params?.format} format`;
-      case 'oneOf':
-      case 'const': {
-        // A selection is matched against one `oneOf` branch per configured
-        // option. AJV reports which branches matched in `passingSchemas`:
-        // absent means none did (the ordinary invalid-selection case), while
-        // two or more means the value was ambiguous — the options themselves
-        // carry duplicate values, so `oneOf`'s "exactly one" cannot hold.
-        //
-        // That distinction matters because the second case is not the
-        // submitter's mistake and they cannot resolve it by choosing again:
-        // every proposal picking that option fails until the duplicate is
-        // removed. Saying "invalid" there sends them to re-pick a value that
-        // can never validate.
-        const passingSchemas = error.params?.passingSchemas;
-
-        if (Array.isArray(passingSchemas) && passingSchemas.length > 1) {
-          return `${friendlyName} has duplicate options configured, so this selection is ambiguous — an administrator needs to remove the duplicate`;
-        }
-
-        return `${friendlyName} has an invalid selection`;
-      }
-      case 'uniqueItems':
-        return `${friendlyName} cannot contain the same selection twice`;
       default:
         return `${friendlyName} is invalid`;
     }
