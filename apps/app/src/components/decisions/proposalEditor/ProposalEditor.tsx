@@ -251,14 +251,20 @@ function ProposalEditorInner({
 
   const proposalFields = compileProposalSchema(proposalTemplate);
 
-  // Resolved once here, from the proposal's own stored data, and handed to
-  // every budget surface below. From `proposal.proposalData` rather than
-  // `draft.budget`: the draft is the author's in-flight edit, which reflects
-  // the fragment rather than what the row is denominated in.
-  const budgetFallbackCurrency = resolveBudgetFallbackCurrency(
-    proposal.proposalData,
-    proposalTemplate,
-  );
+  // Resolved once here and handed to every budget surface below. The server's
+  // answer first: `getProposal` resolves this from the **raw** row, and a
+  // budget whose amount `budgetValueSchema` can't read is dropped by the parse
+  // that produces the `proposalData` we hold — taking the stored currency with
+  // it. Re-deriving locally would then miss that tier and render this editor in
+  // a currency the proposal's own list card disagrees with.
+  //
+  // The local resolve stays as the floor for callers that ship no code, and
+  // reads stored data rather than `draft.budget`: the draft is the author's
+  // in-flight edit, which reflects the fragment rather than what the row is
+  // denominated in.
+  const budgetFallbackCurrency =
+    proposal.budgetCurrency ??
+    resolveBudgetFallbackCurrency(proposal.proposalData, proposalTemplate);
   const previewTitle = getFragmentText(versionPreview?.fragmentContents.title);
   const viewingLabel = versionPreview?.tiptapVersion
     ? t('Viewing {date}', {

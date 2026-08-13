@@ -433,6 +433,13 @@ const instanceDataEncoder = z.preprocess(
     budget: z.number().optional(),
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
+    // Carried for the same reason `instanceDataWithSchemaEncoder` carries it:
+    // the instance's own template outranks the process-level one, and a closed
+    // object that omits it deletes that tier silently rather than failing. The
+    // legacy encoder had exactly this hole, and it cost the results banner its
+    // currency. Nothing wires this encoder into a router output today — which
+    // is the only reason it isn't a live bug.
+    proposalTemplate: jsonSchemaEncoder.optional(),
     phases: z.array(instancePhaseDataEncoder).optional(),
   }),
 );
