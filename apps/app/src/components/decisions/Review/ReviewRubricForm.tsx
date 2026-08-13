@@ -1,10 +1,15 @@
 'use client';
 
 import {
+  DEFAULT_MONEY_CURRENCY,
   ProposalReviewState,
   type SchemaOption,
   type XFormatPropertySchema,
+  buildMoneyFieldAnswer,
+  getMoneyAnswerAmount,
+  getMoneyFieldCurrency,
   isOverallRecommendationField,
+  isSchemaObjectDefinition,
   parseSchemaOptions,
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
@@ -17,6 +22,7 @@ import {
   FieldTitle,
 } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import { NumberField } from '@op/sense/NumberField';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
@@ -281,7 +287,15 @@ function RubricCriterionSection({
     <section className="border-b pb-6">
       {/* Yes/no reads as a setting: badge top-right in the header row, then
           the switch beside the description, top-aligned. */}
-      {criterionType === 'yes_no' ? (
+      {criterionType === 'money' ? (
+        // Money uses the input's own label slot instead of the h4 field title.
+        <MoneyFieldInput
+          field={field}
+          value={value}
+          onChange={onChange}
+          required={field.required ?? false}
+        />
+      ) : criterionType === 'yes_no' ? (
         // One `dir="auto"` for the whole field rather than one per part:
         // resolved separately, each element reads from its own text, so the
         // title (which also carries the points badge) can land on the opposite
@@ -407,6 +421,48 @@ function FeedbackToAuthorField({
         rows={3}
       />
     </Field>
+  );
+}
+
+/**
+ * Amount input for a money criterion. The currency is template-pinned and
+ * stamped into the stored answer at fill time; clearing the input drops the
+ * answer key entirely rather than storing a currency-only object.
+ */
+function MoneyFieldInput({
+  field,
+  value,
+  onChange,
+  required,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  required: boolean;
+}) {
+  const t = useTranslations();
+
+  // Show the currency that will be stored (the template's), not a stale draft's.
+  const currency =
+    getMoneyFieldCurrency(field.schema) ?? DEFAULT_MONEY_CURRENCY;
+  const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
+
+  return (
+    <NumberField
+      // An untitled money field still needs a real label.
+      label={field.schema.title || t('Amount')}
+      description={field.schema.description}
+      required={required}
+      prefixText={currencySymbol}
+      value={getMoneyAnswerAmount(value)}
+      minValue={getMoneyFieldMinimum(field.schema)}
+      onChange={(next) =>
+        onChange(
+          next === null ? undefined : buildMoneyFieldAnswer(next, field.schema),
+        )
+      }
+      className="w-full"
+    />
   );
 }
 
@@ -627,4 +683,26 @@ function parseSelectedValue(
   }
 
   return selected;
+}
+
+/** Currency symbol via Intl, never a hand-rolled map. */
+function getCurrencySymbol(currency: string): string {
+  // formatToParts, not string-stripping: locales with non-ASCII numerals
+  // (e.g. Eastern Arabic) would leave digits behind in the prefix.
+  const part = new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+  })
+    .formatToParts(0)
+    .find(({ type }) => type === 'currency');
+  return part?.value ?? currency;
+}
+
+/** Declared `amount.minimum`, when the money schema is well-formed. */
+function getMoneyFieldMinimum(
+  schema: XFormatPropertySchema,
+): number | undefined {
+  const amount = schema.properties?.amount;
+  return isSchemaObjectDefinition(amount) ? amount.minimum : undefined;
 }

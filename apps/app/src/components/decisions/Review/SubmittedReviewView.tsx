@@ -2,11 +2,14 @@ import {
   type ProposalReview,
   type RubricTemplateSchema,
   findSchemaOption,
+  getMoneyAnswerAmount,
   isOverallRecommendationField,
+  resolveMoneyDisplayCurrency,
 } from '@op/common/client';
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Separator } from '@op/sense/Separator';
+import { useFormatter } from 'next-intl';
 import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -148,6 +151,24 @@ function RubricFieldResult({
   rationale?: string;
 }) {
   const t = useTranslations();
+  const format = useFormatter();
+
+  if (inferCriterionType(field.schema) === 'money') {
+    const amount = getMoneyAnswerAmount(value);
+    return (
+      <ResultCard
+        value={
+          amount === null
+            ? '—'
+            : format.number(amount, {
+                style: 'currency',
+                currency: resolveMoneyDisplayCurrency(value, field.schema),
+              })
+        }
+        rationale={rationale}
+      />
+    );
+  }
 
   if (field.format === 'dropdown') {
     if (inferCriterionType(field.schema) === 'yes_no') {

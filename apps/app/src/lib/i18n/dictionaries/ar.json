@@ -1689,5 +1689,10 @@
   "No reviewers yet": "لا يوجد مراجعون بعد",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "امنح الأشخاص دور المراجع وسيظهرون هنا جاهزين لاستلام المقترحات.",
   "Reviewers": "المراجعون",
-  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# مراجع} other {# مراجعين}} · {unassigned, plural, one {# مقترح غير معيَّن} other {# مقترحات غير معيَّنة}}"
+  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# مراجع} other {# مراجعين}} · {unassigned, plural, one {# مقترح غير معيَّن} other {# مقترحات غير معيَّنة}}",
+  "Amount": "المبلغ",
+  "Cost estimate": "تقدير التكلفة",
+  "Reviewers enter an amount": "يُدخل المراجعون مبلغًا",
+  "Set by the process template and cannot be edited here.": "مُحدَّد من قالب العملية ولا يمكن تعديله هنا.",
+  "Currency: {code}": "العملة: {code}"
 }

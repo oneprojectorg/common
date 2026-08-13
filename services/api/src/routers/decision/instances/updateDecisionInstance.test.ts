@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   type RubricTemplateSchema,
+  type XFormatPropertySchema,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
@@ -39,6 +40,36 @@ async function getFirstPhaseId(instanceId: string) {
   }
 
   return phaseId;
+}
+
+/** The canonical money-criterion schema. */
+function moneyCriterion(
+  title: string,
+  currency = 'USD',
+): XFormatPropertySchema {
+  return {
+    type: 'object',
+    title,
+    'x-format': 'money',
+    properties: {
+      amount: { type: 'number', minimum: 0 },
+      currency: { type: 'string', const: currency, default: currency },
+    },
+    required: ['amount', 'currency'],
+    additionalProperties: false,
+  };
+}
+
+/** A single money criterion, so one shape requirement can be broken at a time. */
+function moneyRubric(
+  overrides: Partial<XFormatPropertySchema>,
+): RubricTemplateSchema {
+  return {
+    type: 'object',
+    'x-field-order': ['design'],
+    properties: { design: { ...moneyCriterion('Design'), ...overrides } },
+    required: ['design'],
+  };
 }
 
 describe.concurrent('updateDecisionInstance', () => {
@@ -1091,6 +1122,162 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     const afterData = afterInstance!.instanceData as DecisionInstanceData;
     expect(afterData.rubricTemplate).toEqual(beforeData.rubricTemplate);
+  });
+
+  // The only test where a money template travels the real authoring path —
+  // the review-side tests seed templates with a direct DB write.
+  it('accepts and persists a canonical money rubric', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const canonical = moneyRubric({});
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: canonical,
+      }),
+    ).resolves.toBeDefined();
+
+    const after = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    expect(
+      (after!.instanceData as DecisionInstanceData).rubricTemplate,
+    ).toEqual(canonical);
+  });
+
+  const unsafeMoneyOverrides: Array<[string, Partial<XFormatPropertySchema>]> =
+    [
+      [
+        'a money criterion without additionalProperties:false',
+        { additionalProperties: undefined },
+      ],
+      [
+        'a money criterion with additionalProperties:true',
+        {
+          additionalProperties: true,
+        },
+      ],
+      [
+        'a money criterion that does not require amount',
+        { required: ['currency'] },
+      ],
+      [
+        'a money criterion that does not require currency',
+        { required: ['amount'] },
+      ],
+      ['a non-object money criterion', { type: 'number' as const }],
+      [
+        'a money criterion with no currency pin',
+        {
+          properties: {
+            amount: { type: 'number' as const, minimum: 0 },
+          },
+        },
+      ],
+      [
+        'a money criterion whose currency const is not an ISO code',
+        {
+          properties: {
+            amount: { type: 'number' as const, minimum: 0 },
+            currency: { type: 'string' as const, const: 'US$', default: 'US$' },
+          },
+        },
+      ],
+      [
+        'a money criterion whose currency default disagrees with its const',
+        {
+          properties: {
+            amount: { type: 'number' as const, minimum: 0 },
+            currency: { type: 'string' as const, const: 'USD', default: 'EUR' },
+          },
+        },
+      ],
+      [
+        'a money criterion with an integer amount',
+        {
+          properties: {
+            amount: { type: 'integer' as const, minimum: 0 },
+            currency: { type: 'string' as const, const: 'USD', default: 'USD' },
+          },
+        },
+      ],
+      [
+        'a money criterion whose amount has no minimum',
+        {
+          properties: {
+            amount: { type: 'number' as const },
+            currency: { type: 'string' as const, const: 'USD', default: 'USD' },
+          },
+        },
+      ],
+    ];
+
+  for (const [label, overrides] of unsafeMoneyOverrides) {
+    it(`rejects ${label}`, async ({ task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const before = await db.query.processInstances.findFirst({
+        where: { id: setup.instance.instance.id },
+      });
+
+      await expect(
+        caller.decision.updateDecisionInstance({
+          instanceId: setup.instance.instance.id,
+          rubricTemplate: moneyRubric(overrides),
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+      const after = await db.query.processInstances.findFirst({
+        where: { id: setup.instance.instance.id },
+      });
+      expect(
+        (after!.instanceData as DecisionInstanceData).rubricTemplate,
+      ).toEqual((before!.instanceData as DecisionInstanceData).rubricTemplate);
+    });
+  }
+
+  it('applies the same money guard to a per-phase rubric template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const phases = (
+      (setup.instance.instance.instanceData as DecisionInstanceData).phases ??
+      []
+    ).map((phase) => ({ phaseId: phase.phaseId }));
+    const targetPhaseId = phases[0]?.phaseId;
+    expect(targetPhaseId).toBeDefined();
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        phases: [
+          {
+            phaseId: targetPhaseId!,
+            rubricTemplate: moneyRubric({ additionalProperties: undefined }),
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should update phases on a published instance when some phases have no dates', async ({

@@ -35,7 +35,12 @@ export function TotalScoreCard({
     return null;
   }
 
+  // Only scored criteria count — matches the backend's scoredCriterionKeys sum.
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
+    if (criterion.criterionType !== 'scored') {
+      return total;
+    }
+
     const value = values[criterion.id];
 
     if (typeof value !== 'number') {

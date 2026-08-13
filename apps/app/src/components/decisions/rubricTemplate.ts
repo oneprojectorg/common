@@ -16,6 +16,8 @@ import type {
 import {
   OVERALL_RECOMMENDATION_KEY,
   RECOMMENDATION_OPTION,
+  getMoneyFieldCurrency,
+  isMoneyFieldSchema,
   isOverallRecommendationField,
 } from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
@@ -44,7 +46,10 @@ export type { RubricTemplateSchema };
 // Criterion types
 // ---------------------------------------------------------------------------
 
-export type RubricCriterionType =
+/**
+ * Criterion types the rubric builder can create and switch between.
+ */
+export type EditableRubricCriterionType =
   | 'scored'
   | 'yes_no'
   | 'single_select'
@@ -56,6 +61,12 @@ export type RubricCriterionType =
  * review form reads and writes — stored answers go stale if they change.
  */
 export const YES_NO_VALUES = { yes: 'yes', no: 'no' } as const;
+
+/**
+ * Every criterion type the renderer understands. `money` is template-authored
+ * only, hence outside {@link EditableRubricCriterionType}.
+ */
+export type RubricCriterionType = EditableRubricCriterionType | 'money';
 
 /** A single admin-defined option on a single-select criterion. */
 export interface SelectOption {
@@ -87,6 +98,8 @@ export interface CriterionView {
   scoreLabels: string[];
   /** Admin-defined options. Single-select criteria only (empty for other types). */
   options: SelectOption[];
+  /** Template-pinned currency. Money criteria only. */
+  currency?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +150,7 @@ function getSelectOptionEntries(schema: XFormatPropertySchema): SelectOption[] {
  * Callers with i18n access pass translated labels (e.g. Yes/Maybe/No).
  */
 export function createCriterionJsonSchema(
-  type: RubricCriterionType,
+  type: EditableRubricCriterionType,
   selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
@@ -194,6 +207,11 @@ export function inferCriterionType(
   schema: XFormatPropertySchema,
 ): RubricCriterionType | undefined {
   const xFormat = schema['x-format'];
+
+  // Money is declared, never inferred from shape.
+  if (isMoneyFieldSchema(schema)) {
+    return 'money';
+  }
 
   if (xFormat === 'long-text') {
     return 'long_text';
@@ -352,6 +370,9 @@ export function getCriterion(
     return undefined;
   }
 
+  const schema = getCriterionSchema(template, criterionId);
+  const currency = schema ? getMoneyFieldCurrency(schema) : undefined;
+
   return {
     id: criterionId,
     criterionType,
@@ -361,6 +382,7 @@ export function getCriterion(
     maxPoints: getCriterionMaxPoints(template, criterionId),
     scoreLabels: getCriterionScoreLabels(template, criterionId),
     options: getCriterionOptions(template, criterionId),
+    ...(currency !== undefined ? { currency } : {}),
   };
 }
 
@@ -388,6 +410,11 @@ export function getCriteria(template: RubricTemplateSchema): CriterionView[] {
 export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
   const errors: TranslationKey[] = [];
 
+  // Money criteria are inert in the builder — an error here would be unfixable.
+  if (criterion.criterionType === 'money') {
+    return errors;
+  }
+
   if (!criterion.label.trim()) {
     errors.push('Criterion label is required');
   }
@@ -411,7 +438,7 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
 export function addCriterion(
   template: RubricTemplateSchema,
   criterionId: string,
-  type: RubricCriterionType,
+  type: EditableRubricCriterionType,
   label: string,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
@@ -463,13 +490,18 @@ export function setCriterionRequired(
 /**
  * Change a criterion's type while preserving its label, description, and
  * required status. The schema is rebuilt from scratch for the new type.
+ * No-op for money criteria (template-authored).
  */
 export function changeCriterionType(
   template: RubricTemplateSchema,
   criterionId: string,
-  newType: RubricCriterionType,
+  newType: EditableRubricCriterionType,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
+  if (getCriterionType(template, criterionId) === 'money') {
+    return template;
+  }
+
   return updateProperty(template, criterionId, (existing) => {
     const newSchema: XFormatPropertySchema = {
       ...createCriterionJsonSchema(newType, selectOptionLabels),

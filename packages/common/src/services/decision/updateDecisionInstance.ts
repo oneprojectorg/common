@@ -25,6 +25,7 @@ import type {
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
+import { assertRubricTemplateAuthoring } from './templateAuthoring';
 import type { RubricTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -100,12 +101,14 @@ export const updateDecisionInstance = async ({
   // Validate rubricTemplate is a structurally valid JSON Schema before persisting
   if (rubricTemplate !== undefined) {
     schemaValidator.validateJsonSchema(rubricTemplate);
+    assertRubricTemplateAuthoring(rubricTemplate);
   }
 
   // Same validation for phase-level rubric templates (null = clear, skipped)
   for (const phase of phases ?? []) {
     if (phase.rubricTemplate != null) {
       schemaValidator.validateJsonSchema(phase.rubricTemplate);
+      assertRubricTemplateAuthoring(phase.rubricTemplate);
     }
   }
 

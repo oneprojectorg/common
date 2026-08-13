@@ -131,6 +131,8 @@ export * from './resolveBoundary';
 export * from './listBoundaryShapes';
 export * from './reverseGeocode';
 export * from './templateLocation';
+export * from './templateMoney';
+export * from './templateAuthoring';
 export * from './extractProposalText';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';

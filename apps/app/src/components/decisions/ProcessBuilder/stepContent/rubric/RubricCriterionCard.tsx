@@ -33,13 +33,14 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
-  RubricCriterionType,
+  EditableRubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
 
 import {
   CRITERION_TYPES,
   CRITERION_TYPE_REGISTRY,
+  isEditableRubricCriterionType,
 } from './rubricCriterionRegistry';
 
 const MAX_LABEL_LENGTH = 50;
@@ -61,7 +62,10 @@ interface RubricCriterionCardProps {
   onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
-  onChangeType?: (criterionId: string, newType: RubricCriterionType) => void;
+  onChangeType?: (
+    criterionId: string,
+    newType: EditableRubricCriterionType,
+  ) => void;
   onUpdateMaxPoints?: (criterionId: string, maxPoints: number) => void;
   onUpdateScoreLabel?: (
     criterionId: string,
@@ -108,6 +112,12 @@ export function RubricCriterionCard({
   const requiredToggleId = useId();
 
   const displayLabel = criterion.label || t('Untitled');
+
+  // Money criteria are template-authored: an inert card keeps them visible
+  // (and in `x-field-order`) without pretending to be editable.
+  if (criterion.criterionType === 'money') {
+    return <MoneyCriterionCard criterion={criterion} label={displayLabel} />;
+  }
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
@@ -273,6 +283,36 @@ export function RubricCriterionCard({
 }
 
 // ---------------------------------------------------------------------------
+// Money criterion (read-only)
+// ---------------------------------------------------------------------------
+
+/** Inert card for a template-authored money criterion. */
+function MoneyCriterionCard({
+  criterion,
+  label,
+}: {
+  criterion: CriterionView;
+  label: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <CollapsibleConfigCard
+      label={label}
+      badgeLabel={t(CRITERION_TYPE_REGISTRY.money.labelKey)}
+      locked
+    >
+      <div className="space-y-1 px-8 text-sm text-muted-foreground">
+        <p>{t('Set by the process template and cannot be edited here.')}</p>
+        {criterion.currency && (
+          <p>{t('Currency: {code}', { code: criterion.currency })}</p>
+        )}
+      </div>
+    </CollapsibleConfigCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Criterion type radio selector
 // ---------------------------------------------------------------------------
 
@@ -280,8 +320,8 @@ function CriterionTypeSelector({
   value,
   onChange,
 }: {
-  value: RubricCriterionType;
-  onChange: (type: RubricCriterionType) => void;
+  value: string;
+  onChange: (type: EditableRubricCriterionType) => void;
 }) {
   const t = useTranslations();
   const groupId = useId();
@@ -293,7 +333,11 @@ function CriterionTypeSelector({
       </FieldLegend>
       <RadioGroup
         value={value}
-        onValueChange={(newValue) => onChange(newValue as RubricCriterionType)}
+        onValueChange={(newValue) => {
+          if (isEditableRubricCriterionType(newValue)) {
+            onChange(newValue);
+          }
+        }}
       >
         {CRITERION_TYPES.map((type) => {
           const entry = CRITERION_TYPE_REGISTRY[type];

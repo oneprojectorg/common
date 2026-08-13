@@ -1689,5 +1689,10 @@
   "No reviewers yet": "Weli ma jiraan dib-u-eegayaal",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Dadka sii doorka dib-u-eegaha, halkan ayay ka soo muuqan doonaan, diyaar u ah inay qaataan soo jeedimo.",
   "Reviewers": "Dib-u-eegayaal",
-  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# dib-u-eege} other {# dib-u-eegayaal}} · {unassigned, plural, one {# soo jeedin aan la qoondayn} other {# soo jeedimo aan la qoondayn}}"
+  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# dib-u-eege} other {# dib-u-eegayaal}} · {unassigned, plural, one {# soo jeedin aan la qoondayn} other {# soo jeedimo aan la qoondayn}}",
+  "Amount": "Qaddarka",
+  "Cost estimate": "Qiyaasta qiimaha",
+  "Reviewers enter an amount": "Dib-u-eegayaashu waxay gelinayaan qadar",
+  "Set by the process template and cannot be edited here.": "Waxaa lagu dejiyay qaabka habraaca, halkan lagama beddeli karo.",
+  "Currency: {code}": "Lacagta: {code}"
 }
