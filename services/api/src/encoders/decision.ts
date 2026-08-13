@@ -399,49 +399,74 @@ const processSchemaEncoder = z
   })
   .passthrough();
 
-// Instance Data Encoder that supports both new and legacy field names
+/**
+ * Maps legacy instance-data field names to current ones:
+ *   - phases[].stateId → phases[].phaseId
+ *   - phases[].plannedStartDate → phases[].startDate
+ *   - phases[].plannedEndDate → phases[].endDate
+ */
+const withCurrentPhaseFieldNames = (data: unknown) => {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+  const obj = data as Record<string, unknown>;
+  const phases = Array.isArray(obj.phases)
+    ? obj.phases.map((phase) => {
+        if (typeof phase !== 'object' || phase === null) {
+          return phase;
+        }
+        const p = phase as Record<string, unknown>;
+        return {
+          ...p,
+          phaseId: p.phaseId ?? p.stateId,
+          startDate: p.startDate ?? p.plannedStartDate,
+          endDate: p.endDate ?? p.plannedEndDate,
+        };
+      })
+    : obj.phases;
+  return {
+    ...obj,
+    phases,
+  };
+};
+
+const instanceDataShapeEncoder = z.object({
+  budget: z.number().optional(),
+  hideBudget: z.boolean().optional(),
+  fieldValues: z.record(z.string(), z.unknown()).optional(),
+  phases: z.array(instancePhaseDataEncoder).optional(),
+});
+
+/**
+ * Instance data on the way **out**, supporting both new and legacy field names.
+ *
+ * Carries `proposalTemplate` for the same reason `instanceDataWithSchemaEncoder`
+ * does: the instance's own template outranks the process-level one, and a closed
+ * object that omits it deletes that tier silently rather than failing. The legacy
+ * encoder had exactly this hole and it cost the results banner its currency.
+ *
+ * `.catch` because reading the key is not worth failing the response over — the
+ * closed object used to strip a non-record here, and going from "strip" to
+ * "reject" would turn a junk row into a 500. Same precedent as `overview` above.
+ */
 const instanceDataEncoder = z.preprocess(
-  (data) => {
-    if (typeof data !== 'object' || data === null) {
-      return data;
-    }
-    const obj = data as Record<string, unknown>;
-    // Map legacy field names to new names:
-    // - phases[].stateId → phases[].phaseId
-    // - phases[].plannedStartDate → phases[].startDate
-    // - phases[].plannedEndDate → phases[].endDate
-    const phases = Array.isArray(obj.phases)
-      ? obj.phases.map((phase) => {
-          if (typeof phase !== 'object' || phase === null) {
-            return phase;
-          }
-          const p = phase as Record<string, unknown>;
-          return {
-            ...p,
-            phaseId: p.phaseId ?? p.stateId,
-            startDate: p.startDate ?? p.plannedStartDate,
-            endDate: p.endDate ?? p.plannedEndDate,
-          };
-        })
-      : obj.phases;
-    return {
-      ...obj,
-      phases,
-    };
-  },
-  z.object({
-    budget: z.number().optional(),
-    hideBudget: z.boolean().optional(),
-    fieldValues: z.record(z.string(), z.unknown()).optional(),
-    // Carried for the same reason `instanceDataWithSchemaEncoder` carries it:
-    // the instance's own template outranks the process-level one, and a closed
-    // object that omits it deletes that tier silently rather than failing. The
-    // legacy encoder had exactly this hole, and it cost the results banner its
-    // currency. Nothing wires this encoder into a router output today — which
-    // is the only reason it isn't a live bug.
-    proposalTemplate: jsonSchemaEncoder.optional(),
-    phases: z.array(instancePhaseDataEncoder).optional(),
+  withCurrentPhaseFieldNames,
+  instanceDataShapeEncoder.extend({
+    proposalTemplate: jsonSchemaEncoder.optional().catch(undefined),
   }),
+);
+
+/**
+ * Instance data on the way **in**. Deliberately without `proposalTemplate`: on an
+ * input schema a permissive `jsonSchemaEncoder` is a hole, not a tier — it would
+ * let a client persist arbitrary JSON as the instance's template, skipping the
+ * `validateJsonSchema()` gate `updateDecisionInstance` applies on the equivalent
+ * path. Stripping the key is the safe default. Anything that needs to accept a
+ * template here must validate it first.
+ */
+const instanceDataInputEncoder = z.preprocess(
+  withCurrentPhaseFieldNames,
+  instanceDataShapeEncoder,
 );
 
 // Decision Process Encoder
@@ -524,7 +549,7 @@ export const createInstanceInputSchema = z.object({
   processId: z.uuid(),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
-  instanceData: instanceDataEncoder,
+  instanceData: instanceDataInputEncoder,
 });
 
 export const createInstanceFromTemplateInputSchema = z.object({

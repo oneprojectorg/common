@@ -76,9 +76,16 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Community Garden Project',
       description: 'A proposal to create a community garden in the park',
-      budget: { amount: 5000, currency: 'USD' },
       timeline: '3 months',
     });
+    // `toEqual`, not `toMatchObject`: the point is the absent key. A bare-number
+    // budget names no currency, and parsing must say so rather than stamping a
+    // default — a fabricated code outranks the process template and renders
+    // dollars on a process denominated in something else.
+    expect(result.proposalData.budget).toEqual({ amount: 5000 });
+    // The resolved answer rides on the row instead, so every surface labels
+    // this amount the same way.
+    expect(result.budgetCurrency).toBe('USD');
   });
 
   it('should include isEditable for admin users', async ({
@@ -1014,9 +1021,13 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Cowop Legacy Proposal',
       description: 'A community garden project',
-      budget: { amount: 7500, currency: 'USD' },
       category: ['Infrastructure'],
     });
+    // No currency in the parse (the stored budget is a bare number), and the
+    // legacy `{type: 'number'}` template names none either — so the row falls
+    // all the way through to the default.
+    expect(result.proposalData.budget).toEqual({ amount: 7500 });
+    expect(result.budgetCurrency).toBe('USD');
 
     // Verify the proposalTemplate was resolved from process_schema.
     // Legacy templates retain their enum format in the schema.
@@ -1105,8 +1116,9 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Horizon Legacy Proposal',
       description: 'A horizon scanning project',
-      budget: { amount: 25000, currency: 'USD' },
     });
+    expect(result.proposalData.budget).toEqual({ amount: 25000 });
+    expect(result.budgetCurrency).toBe('USD');
 
     // Verify the proposalTemplate was resolved from process_schema
     expect(result.proposalTemplate).toMatchObject({
@@ -1191,9 +1203,10 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Simple Legacy Proposal',
       description: 'A simple voting proposal',
-      budget: { amount: 12000, currency: 'USD' },
       category: ['Community'],
     });
+    expect(result.proposalData.budget).toEqual({ amount: 12000 });
+    expect(result.budgetCurrency).toBe('USD');
 
     // Verify the proposalTemplate was resolved from process_schema.
     // Legacy templates retain their enum format in the schema.

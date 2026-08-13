@@ -135,7 +135,12 @@ const legacyInstanceDataEncoder = z.preprocess(
     // it from this closed object silently deleted the tier on the legacy route:
     // the results banner fell through to a possibly stale process template and
     // labelled its total in a currency the cards right below it disagreed with.
-    proposalTemplate: jsonSchemaEncoder.optional(),
+    //
+    // `.catch` so reading the key can't cost more than not reading it: the
+    // closed object used to strip whatever sat here, and a stored non-record
+    // would otherwise go from silently ignored to a 500 on `getLegacyInstance`
+    // and a row silently missing from `listLegacyInstances`.
+    proposalTemplate: jsonSchemaEncoder.optional().catch(undefined),
     phases: z
       .array(
         z.object({
