@@ -42,6 +42,7 @@ export {
   allProposalsFilterSchema,
   allProposalsListItemSchema,
   allProposalsListSchema,
+  PROPOSAL_SEARCH_MAX_LENGTH,
   type Proposal,
   type ProposalList,
   type ProposalLocations,

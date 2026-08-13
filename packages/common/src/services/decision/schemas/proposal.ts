@@ -1,7 +1,10 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { proposalDataSchema } from '../proposalDataSchema';
+import {
+  PROPOSAL_TITLE_MAX_LENGTH,
+  proposalDataSchema,
+} from '../proposalDataSchema';
 
 export const storageItemSchema = z.object({
   id: z.string(),
@@ -165,6 +168,16 @@ export const proposalListSchema = z.object({
 });
 
 export type ProposalList = z.infer<typeof proposalListSchema>;
+
+/**
+ * Cap on a proposal title search, in characters.
+ *
+ * Bounds the LIKE pattern the query builds. Matches the title cap it searches
+ * against — a term longer than any title it could match is only cost. The
+ * search field enforces the same limit, so a paste past it is trimmed rather
+ * than rejected by the endpoint.
+ */
+export const PROPOSAL_SEARCH_MAX_LENGTH = PROPOSAL_TITLE_MAX_LENGTH;
 
 /**
  * Response from `decision.listProposalLocations`. Every located proposal in the

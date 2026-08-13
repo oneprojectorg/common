@@ -1,4 +1,5 @@
 import {
+  PROPOSAL_SEARCH_MAX_LENGTH,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
   checkpointVersionSchema,
@@ -673,8 +674,11 @@ export const instanceFilterSchema = z
   })
   .extend(paginationInputSchema.shape);
 
-/** Free-text proposal title search. Capped to bound the LIKE pattern. */
-const proposalSearchSchema = z.string().max(200).optional();
+/** Free-text proposal title search. */
+const proposalSearchSchema = z
+  .string()
+  .max(PROPOSAL_SEARCH_MAX_LENGTH)
+  .optional();
 
 export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),
