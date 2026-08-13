@@ -53,6 +53,27 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Proposal relationship relations
+   *
+   * Directed edges between two proposals, keyed on the profile each proposal
+   * owns. Both profile ids are NOT NULL, so we mark them as optional: false.
+   */
+  proposalRelationships: {
+    sourceProfile: r.one.profiles({
+      from: r.proposalRelationships.sourceProfileId,
+      to: r.profiles.id,
+      alias: 'proposalRelationship_sourceProfile',
+      optional: false,
+    }),
+    targetProfile: r.one.profiles({
+      from: r.proposalRelationships.targetProfileId,
+      to: r.profiles.id,
+      alias: 'proposalRelationship_targetProfile',
+      optional: false,
+    }),
+  },
+
+  /**
    * Proposal Categories relations (junction table)
    *
    * proposalId is NOT NULL, so we mark the relation as optional: false.

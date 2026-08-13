@@ -27,14 +27,12 @@ const withChannelMeta: MiddlewareBuilderBase = async ({ ctx, next }) => {
           registerMutationChannels: (channels: ChannelName[]) => {
             procedureChannels.push(...channels);
 
-            // Publish mutation events to realtime channels
-            for (const channel of channels) {
-              waitUntil(
-                realtime.publish(channel, {
-                  mutationId: ctx.requestId,
-                }),
-              );
-            }
+            // The service dedupes channels, publishes them concurrently, and
+            // settles each independently, so one failing channel doesn't take
+            // the rest of the registration's invalidations with it.
+            waitUntil(
+              realtime.publishMany(channels, { mutationId: ctx.requestId }),
+            );
           },
         },
       });

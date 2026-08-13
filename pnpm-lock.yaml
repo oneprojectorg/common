@@ -1450,6 +1450,9 @@ importers:
       '@op/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@op/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@op/logging':
         specifier: workspace:*
         version: link:../../packages/logging
