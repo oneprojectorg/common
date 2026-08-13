@@ -184,8 +184,14 @@ per-story `parameters.a11y.test` opt-out standing in for the JSON list.
 
 ```bash
 pnpm w:sense dev      # http://localhost:3600
-pnpm w:sense build    # static build — CI runs this on every PR
+pnpm w:sense build    # static build
 ```
+
+On a fresh clone, run `pnpm build` once first. `@op/styles` resolves to a
+generated `dist/styles.css`, and these scripts call Storybook directly rather
+than through turbo, so without it you get
+`Failed to resolve entry for package "@op/styles"`. CI builds via
+`turbo build --filter=@op/sense`, which compiles the dependency first.
 
 Every story has to compile and bundle, so the build is the current CI check.
 Stories are meant to become the test suite too — rendered headless with axe on

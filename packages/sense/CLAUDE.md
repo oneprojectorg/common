@@ -235,9 +235,15 @@ Hard-won; each of these cost real debugging time.
 
 ```bash
 pnpm typecheck        # whole repo, not just this package
-pnpm w:sense build    # every story has to compile and bundle — CI runs this
+pnpm w:sense build    # every story has to compile and bundle
 pnpm format
 ```
+
+`pnpm w:sense build` and `dev` call Storybook directly, so on a fresh clone run
+`pnpm build` once first — `@op/styles` resolves to a generated
+`dist/styles.css`, and without it you get
+`Failed to resolve entry for package "@op/styles"`. CI runs
+`turbo build --filter=@op/sense`, which compiles the dependency first.
 
 Then open the component's story in `pnpm w:sense dev` and read the **A11y**
 panel. Axe runs against whatever is on screen, so a violation there is a real
