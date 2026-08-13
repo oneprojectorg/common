@@ -2,6 +2,10 @@ name: Checks
 
 on:
   pull_request_target:
+  # TEMPORARY (CI probe): pull_request_target reads the workflow from the base
+  # branch, so a new job cannot run until it is merged. pull_request reads the
+  # head, which lets us exercise the design-system job before landing it.
+  pull_request:
 
 permissions:
   contents: read
