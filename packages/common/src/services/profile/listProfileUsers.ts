@@ -8,7 +8,7 @@ import { z } from 'zod';
 import {
   type PaginatedResult,
   type SortDir,
-  decodeCursor,
+  decodeCursorIfValid,
   encodeCursor,
   excludeGlobalUsers,
 } from '../../utils/db';
@@ -20,11 +20,13 @@ import type {
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
-/** Both halves are client-supplied: `decodeCursor` only JSON-parses. */
+/** The tiebreaker is a `profileUsers.id`, cast to uuid in the comparison. */
 const cursorSchema = z.object({
   value: z.string(),
   tiebreaker: z.string().uuid(),
 });
+
+type ProfileUserCursor = z.infer<typeof cursorSchema>;
 
 /** First role name alphabetically, or '' — matching what the cursor encodes. */
 const buildRoleNameSubquery = (
@@ -152,29 +154,21 @@ export const listProfileUsers = async ({
         })()
       : undefined;
 
-  type ProfileUserCursor = { value: string; tiebreaker?: string };
+  // Cursors issued before the tiebreaker moved off `email` carry an address,
+  // and Postgres rejects a non-uuid on the cast — so a client mid-scroll across
+  // the deploy repeats a page instead of seeing a 500.
   const decodedCursor = cursor
-    ? decodeCursor<ProfileUserCursor>(cursor)
+    ? decodeCursorIfValid(cursor, cursorSchema)
     : undefined;
 
+  if (cursor && !decodedCursor) {
+    // Otherwise invisible: re-walking from page 1 looks identical to never
+    // having paginated.
+    logger.warn('Discarded an unusable participants cursor', { orderBy });
+  }
+
   const buildCursorCondition = () => {
-    // Falls back to the first page rather than erroring. Cursors issued before
-    // the tiebreaker moved off `email` carry one, and Postgres rejects a
-    // non-uuid on the cast — so a client mid-scroll across the deploy repeats a
-    // page instead of seeing a 500.
-    const parsedCursor = cursorSchema.safeParse(decodedCursor);
-
-    if (!parsedCursor.success) {
-      // The fallback is otherwise invisible: re-walking from page 1 looks
-      // identical to never having paginated.
-      logger.warn('Discarded an unusable participants cursor', {
-        orderBy,
-        issues: parsedCursor.error.issues.map((issue) => ({
-          path: issue.path.join('.'),
-          code: issue.code,
-        })),
-      });
-
+    if (!decodedCursor) {
       return undefined;
     }
 
@@ -189,7 +183,7 @@ export const listProfileUsers = async ({
     });
     const compareOp = dir === 'asc' ? sql`>` : sql`<`;
 
-    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${parsedCursor.data.value}, ${parsedCursor.data.tiebreaker}::uuid)`;
+    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${decodedCursor.value}, ${decodedCursor.tiebreaker}::uuid)`;
   };
 
   const cursorCondition = buildCursorCondition();

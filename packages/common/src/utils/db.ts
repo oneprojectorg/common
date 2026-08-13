@@ -1,6 +1,7 @@
 import { GLOBAL_USER_IDS } from '@op/core';
 import { SQL, and, eq, gt, lt, notInArray, or, sql } from 'drizzle-orm';
 import { AnyPgColumn, PgColumn } from 'drizzle-orm/pg-core';
+import { z } from 'zod';
 
 import { CommonError } from './error';
 
@@ -29,12 +30,28 @@ type GenericCursor = {
   id: string;
 };
 
+/** The return type is an unchecked assertion — see `decodeCursorIfValid`. */
 export const decodeCursor = <T = GenericCursor>(cursor: string): T => {
   try {
     return JSON.parse(Buffer.from(cursor, 'base64').toString()) as T;
   } catch {
     throw new CommonError('Invalid cursor');
   }
+};
+
+/**
+ * Decodes a cursor and discards it when it doesn't match `schema`, so a caller
+ * whose cursor shape has changed rewinds to the first page instead of failing
+ * the request on a cursor issued by an older deploy. Input that isn't a cursor
+ * at all still throws — that's a client bug, not our migration.
+ */
+export const decodeCursorIfValid = <T>(
+  cursor: string,
+  schema: z.ZodType<T>,
+): T | undefined => {
+  const parsed = schema.safeParse(decodeCursor(cursor));
+
+  return parsed.success ? parsed.data : undefined;
 };
 
 export const encodeCursor = <T = GenericCursor>(cursor: NoInfer<T>): string => {
