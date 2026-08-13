@@ -114,5 +114,10 @@ jobs:
       # a generated ./dist/styles.css, so the storybook build needs turbo's
       # `^build` to compile it first. Calling storybook directly works locally
       # only because dist/ is already lying around from an earlier build.
+      # The `test -s` is load-bearing: turbo exits 0 for a package with no
+      # `build` script, so without it a renamed script would leave this job
+      # permanently green while compiling nothing.
       - name: Build Storybook
-        run: pnpm exec turbo build --filter=@op/sense
+        run: |
+          pnpm exec turbo build --filter=@op/sense
+          test -s packages/sense/storybook-static/index.html

@@ -43,7 +43,7 @@ Components and utilities are exported via the `exports` map in `package.json`.
 
 ## Development
 
-- Run `pnpm dev` to start the Storybook server (usually on port 3600).
+- Run `pnpm dev` to start the Storybook server (usually on port 3601 — port 3600 now serves the `@op/sense` Storybook).
 - Run `pnpm typecheck` to type-check the code.
 - Run `pnpm build` to create a production build of Storybook.
 

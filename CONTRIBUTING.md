@@ -109,7 +109,8 @@ Use these shortcuts for common operations:
 pnpm w:app      # Work with apps/app
 pnpm w:api      # Work with apps/api
 pnpm w:db       # Work with services/db
-pnpm w:ui       # Work with packages/ui (usually Storybook)
+pnpm w:sense    # Work with packages/sense (the design system + its Storybook)
+pnpm w:ui       # Work with packages/ui (legacy, in wind-down)
 pnpm w:emails   # Work with services/emails
 ```
 

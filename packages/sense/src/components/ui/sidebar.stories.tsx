@@ -187,7 +187,6 @@ export const CollapsibleIcons: Story = {
                   <SidebarMenuItem key={label}>
                     <SidebarMenuButton
                       isActive={label === 'Decisions'}
-                      // so it re-scopes itself like other portaled content.
                       tooltip={{ children: label }}
                     >
                       <Icon />

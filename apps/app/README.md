@@ -13,7 +13,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 - **`app/`**: Contains the application routes, pages, layouts, and components.
   - Utilizes Server Components and Client Components.
 - **`app/api/`**: Contains Next.js API Route Handlers specific to this frontend application.
-- **`components/`**: Shared components specific to this application (complementing `@op/ui`).
+- **`components/`**: Shared components specific to this application (complementing `@op/sense`).
 - **`lib/` or `utils/`**: Utility functions specific to this application.
 - **`hooks/`**: Custom hooks specific to this application (complementing `@op/hooks`).
 - **`store/`**: Contains state management logic, using Zustand.
@@ -27,14 +27,13 @@ As a Next.js application using the App Router, it follows standard conventions:
 - **Next.js**: React framework for building the frontend (App Router or Pages Router).
 - **React**: UI library.
 - **TypeScript**: For static typing.
-- **`@op/ui`**: Consumes the shared UI component library.
+- **`@op/sense`**: Consumes the shared design system.
 - **`@op/hooks`**: Uses shared React hooks for logic and data fetching.
 - **`@op/trpc`**: Integrates the tRPC client (`TRPCProvider.tsx`) to communicate with the backend API hosted by `apps/api`.
 - **`@op/supabase`**: Uses the client-side Supabase client for authentication and potentially other direct Supabase interactions.
 - **Tailwind CSS**: Utility-first CSS framework for styling.
 - **Zustand**: Client-side state management library.
 - **@op/sense Toast**: Toast/notification primitive (built on Base UI).
-- **Immer**: Utility for working with immutable state (often used with Zustand).
 - **`babel-plugin-react-compiler`**: Experimental React compiler (Memoization).
 - **`@next/bundle-analyzer`**: Tool for analyzing the webpack bundle size.
 
@@ -48,7 +47,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 - **`@op/supabase`**: Uses Supabase client utilities.
 - **`@op/trpc`**: Imports the tRPC provider/client.
 - **`@op/typescript-config` (Dev)**: For TypeScript configuration.
-- **`@op/ui`**: Renders UI components provided by this package.
+- **`@op/sense`**: Renders UI components provided by this package.
 - **`@op/styles`**: For tailwindcss config and base styles.
 
 **Depended On By:**

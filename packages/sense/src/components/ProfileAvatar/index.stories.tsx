@@ -33,6 +33,8 @@ export const Sizes: Story = {
 
 // With no `src` the fallback derives an initial and a stable gradient from
 // `name`, so the same person keeps the same colour everywhere in the app.
+// Visually these are single letters, but each still announces its full `alt` —
+// otherwise Katherine and Karen would both read as "K".
 export const FallbackGradients: Story = {
   render: () => (
     <div className="flex items-center gap-3">
@@ -55,9 +57,10 @@ export const WithImage: Story = {
   },
 };
 
-// `alt` is required, and it is the avatar's accessible name. Pass the person's
-// name — never "avatar" or "profile picture", which tell a screen reader
-// nothing the surrounding markup didn't already say.
+// `alt` is required, and it names the avatar in both paths — it sits on the
+// root as `aria-label`, so a missing or broken image still announces the
+// person. Pass the person's name, never "avatar" or "profile picture", which
+// tell a screen reader nothing the surrounding markup didn't already say.
 export const AccessibleName: Story = {
   args: {
     src: 'https://i.pravatar.cc/128?img=12',

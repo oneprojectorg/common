@@ -99,12 +99,18 @@ components that look right until someone passes a `className`.
 
 ## Styling
 
-All design values live in `@op/styles`, in **two files**:
+All design values live in `@op/styles`, in **two files**. (The package ships two
+others: `intent-ui-theme.css` belongs to `@op/ui` and dies with it, and
+`tw-animate.css` is vendored. Neither is a place to put a token.)
 
 | File | Holds | Rule |
 |---|---|---|
-| `tokens.css` | Raw values — the colour ramps, type scale, radii, shadows, breakpoints straight out of Figma | Values only. A token here has no opinion about where it's used. |
+| `tokens.css` | Raw values — the colour ramps, radii, shadows, spacing, breakpoints straight out of Figma | Values only. A token here has no opinion about where it's used. |
 | `theme.css` | Semantic names — `--primary`, `--background`, `--muted-foreground`, `--border`… mapped onto those raw values | Meaning only. This is the package entry point. |
+
+The type scale is the one exception: `--text-label` through `--text-display` and
+`--font-weight-strong` live in `theme.css`, not `tokens.css`, because their
+responsive step-up is defined alongside them.
 
 Components reference **semantic** classes — `bg-primary`, `text-muted-foreground`,
 `border-input` — never raw tokens and never literal values. That indirection is
