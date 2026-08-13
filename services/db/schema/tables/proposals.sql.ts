@@ -37,12 +37,7 @@ export enum ProposalStatus {
    * That makes it a denormalization of "has an outgoing merged edge", and no
    * constraint enforces the pairing — whichever service writes the merge owns
    * setting both in one transaction.
-   *
-   * Read by `enumToPgEnum` below to build the Postgres type, which static
-   * analysis can't see. No TypeScript caller yet — the services that set this
-   * status land with the merge flow in a follow-up.
    */
-  // fallow-ignore-next-line unused-enum-member
   MERGED = 'merged',
 }
 

@@ -17,10 +17,6 @@ import {
 import { profiles } from './profiles.sql';
 
 export enum ProposalRelationshipType {
-  // Read by `enumToPgEnum` below to build the Postgres type, which static
-  // analysis can't see. No TypeScript caller yet — the services that write
-  // merges land in a follow-up.
-  // fallow-ignore-next-line unused-enum-member
   MERGED = 'merged',
 }
 
