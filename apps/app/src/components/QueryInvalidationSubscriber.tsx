@@ -114,6 +114,32 @@ function useInvalidateQueries(enabled: boolean): void {
   );
 
   /**
+   * Re-read a channel's queries once its socket join is confirmed.
+   *
+   * Broadcasts are not replayed, so anything published before the join landed
+   * is gone: on a first subscribe that is the gap between a query answering and
+   * its channel going live, and after a dropped connection it is everything
+   * that happened while the socket was down. Nothing else recovers either —
+   * without this, a reconnected tab keeps showing whatever it held when the
+   * connection died until something unrelated invalidates it.
+   *
+   * No mutation id to deduplicate against here, and none wanted: two joins are
+   * two separate gaps to close, not a message delivered twice.
+   */
+  const handleChannelSubscribed = useCallback(
+    async ({ channel }: RegistryEvents['channel:subscribed']) => {
+      const queryKeys = queryChannelRegistry.getQueryKeysForChannels([channel]);
+
+      await Promise.allSettled(
+        queryKeys.map((queryKey) =>
+          queryClientRef.current.invalidateQueries({ queryKey }),
+        ),
+      );
+    },
+    [],
+  );
+
+  /**
    * Handle local mutation events - invalidate queries subscribed to affected channels
    */
   useEffect(() => {
@@ -121,11 +147,16 @@ function useInvalidateQueries(enabled: boolean): void {
       'mutation:added',
       handleInvalidation,
     );
+    const unsubscribeChannelSubscribed = queryChannelRegistry.on(
+      'channel:subscribed',
+      handleChannelSubscribed,
+    );
 
     return () => {
       unsubscribeMutationAdded();
+      unsubscribeChannelSubscribed();
     };
-  }, [handleInvalidation]);
+  }, [handleInvalidation, handleChannelSubscribed]);
 
   /**
    * Forward QueryCache 'removed' events to the registry so per-channel
@@ -189,9 +220,10 @@ function useInvalidateQueries(enabled: boolean): void {
                 channels: [channel],
                 mutationId: data.mutationId,
               }),
-            // Anything published before this point never arrives. Reporting the
-            // join lets a query that cannot afford that gap re-read once the
-            // channel is live; no query does so by default.
+            // Reported so every query on this channel re-reads once it is
+            // genuinely live — see `handleChannelSubscribed`. Fires again on a
+            // rejoin after the connection drops, which is the only thing that
+            // recovers what was broadcast while the socket was down.
             () => queryChannelRegistry.notifyChannelSubscribed(channel),
           );
           unsubscribersRef.current.set(channel, unsubscribe);

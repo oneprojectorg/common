@@ -2,7 +2,6 @@
 
 import { trpc } from '@op/api/client';
 import type { ProposalExportFilters } from '@op/api/encoders';
-import { Channels, queryChannelRegistry } from '@op/common/realtime';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
@@ -70,31 +69,13 @@ export const ExportProposalsButton = ({
     },
   });
 
-  const { data: status, refetch: refetchStatus } =
-    trpc.decision.getExportStatus.useQuery(
-      { exportId: exportId ?? '' },
-      { enabled: Boolean(exportId) && !hasTimedOut },
-    );
-
-  // The export finishing is announced on its own channel, so there is no poll.
-  // The one moment that announcement can be missed is before the channel's
-  // socket join completes — a small export can finish inside that window, and
-  // a broadcast published into it is gone for good. Re-reading once the join is
-  // confirmed covers exactly that gap: anything that settled earlier is visible
-  // in this read, and anything later arrives as a broadcast.
-  useEffect(() => {
-    if (!exportId) {
-      return;
-    }
-
-    const channel = Channels.proposalExport(exportId);
-
-    return queryChannelRegistry.on('channel:subscribed', (event) => {
-      if (event.channel === channel) {
-        void refetchStatus();
-      }
-    });
-  }, [exportId, refetchStatus]);
+  // No polling: the workflow broadcasts on this export's channel when the run
+  // settles, and the subscriber re-reads on its own once the channel is live —
+  // which is what covers an export finishing before the socket join lands.
+  const { data: status } = trpc.decision.getExportStatus.useQuery(
+    { exportId: exportId ?? '' },
+    { enabled: Boolean(exportId) && !hasTimedOut },
+  );
 
   // `not_found` is not a member of ExportStatusData['status'], so matching a
   // terminal state narrows away the not-found branch on its own.

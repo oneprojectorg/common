@@ -130,13 +130,15 @@ class QueryChannelRegistry {
   /**
    * Report that a channel's socket join is confirmed.
    *
-   * Emits 'channel:subscribed'. Nothing invalidates on this by default —
-   * broadcasts published before the join are lost, but for most queries the
-   * data was fetched at about the same moment the channel was registered, so
-   * the window holds nothing worth re-reading. It is opt-in for the callers
-   * where it does: those waiting on a background job that can settle before
-   * the join lands, and which would otherwise wait for a broadcast that has
-   * already been and gone.
+   * Emits 'channel:subscribed', which the realtime subscriber treats as a cue
+   * to re-read every query on that channel. Broadcasts are not replayed, so
+   * whatever was published before the join is unrecoverable otherwise: on a
+   * first subscribe that is the gap between a query answering and its channel
+   * going live, and on a rejoin it is everything that happened while the
+   * connection was down.
+   *
+   * Fires per join rather than per channel, so a reconnect re-reads rather
+   * than leaving a tab showing what it held when the socket died.
    */
   notifyChannelSubscribed(channel: ChannelName): void {
     this.emitter.emit('channel:subscribed', { channel });
