@@ -91,7 +91,9 @@ function getMoneyFormatter(
  * import or an older writer) makes `Intl.NumberFormat` throw `RangeError` and
  * blanks the surrounding page into an error boundary. Falls back to a plain
  * localized number instead — showing the amount unlabeled beats fabricating
- * the wrong symbol — and logs the bad code once so the record can be repaired.
+ * the wrong symbol — and logs the bad code so the record can be repaired. Once
+ * per whole/fractional pair, not once per row: the formatter cache is what
+ * bounds it, so the ceiling is two warnings per bad code per session.
  */
 export function formatMoney({ amount, currency }: MoneyAmount): string {
   return getMoneyFormatter(currency, Number.isInteger(amount)).format(amount);

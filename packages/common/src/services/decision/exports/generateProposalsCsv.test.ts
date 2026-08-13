@@ -40,11 +40,9 @@ describe('generateProposalsCsv budget columns', () => {
   });
 
   it("exports the row's resolved currency, not one re-derived here", async () => {
-    // The author's document names GBP; the stored column still holds the
-    // creation-time amount under no currency at all. `listProposals` resolves
-    // the fragment tier, which this row's `proposalData` can't see — so the
-    // export has to take its answer from the row or ship a currency that
-    // contradicts every other surface.
+    // The stored budget names no currency; the row resolved GBP. The export
+    // has to ship the answer the card shipped, not re-derive one — two copies
+    // of the precedence rule are two things to keep in step.
     const csv = await generateProposalsCsv([
       proposalRow({
         budgetCurrency: 'GBP',

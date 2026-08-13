@@ -52,9 +52,9 @@ export async function generateProposalsCsv(
       // The row's own resolved currency, not a second resolve here: a budget
       // that named none is denominated in the process's, and a spreadsheet of
       // bare amounts with an empty Currency column can't be reconstructed at
-      // all. `listProposals` already applied the full precedence — including
-      // the fragment tier, which this row's `proposalData` alone can't see —
-      // so re-deriving it would export a currency the UI doesn't show.
+      // all. `listProposals` already applied the full precedence to build the
+      // card this row exports; resolving it again would be a second copy of
+      // the rule, free to drift from the one the reader saw on screen.
       Currency: proposalData.budget ? p.budgetCurrency : '',
       Categories: formatProposalCategories(proposalData.category),
       Status: p.status,
