@@ -132,8 +132,8 @@ export function CustomFormModal({
             {definition.title ?? t('Additional details')}
           </DialogTitle>
         </DialogHeader>
-        {/* `noValidate`, as @op/ui's `<Form validationBehavior="aria">` was:
-            validation is AJV's (`schemaValidator`), and its messages are
+        {/* `noValidate`: validation is AJV's (`schemaValidator`), and its
+            messages are
             translated. Without it the browser validates first and `handleSubmit`
             never runs — and for a checkbox or radio base-ui puts `required` on a
             visually hidden input, so the native bubble is anchored to something

@@ -267,7 +267,8 @@ function RoleRow({
 
   return (
     <TableRow>
-      {/* TODO(sense-migration): @op/ui EditableCell has no @op/sense equivalent;
+      {/* TODO(sense-migration): the retired EditableCell has no @op/sense
+          equivalent;
           its popover-overlay editor is replaced with an inline conditional (the
           edit input renders in-cell). Verify the edit UX. */}
       <TableCell className="w-48 p-2 text-base">

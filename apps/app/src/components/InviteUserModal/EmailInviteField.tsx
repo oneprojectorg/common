@@ -122,8 +122,8 @@ export const EmailInviteField = ({
           id={id}
           // Addresses are always latin, and separating them by comma leaves
           // trailing neutrals that an RTL paragraph reorders — on an Arabic page
-          // the placeholder rendered as "... ,name1@x.org". Same rule @op/ui
-          // applied to email/url/tel inputs.
+          // the placeholder rendered as "... ,name1@x.org". Same rule we apply
+          // to email/url/tel inputs.
           dir="ltr"
           value={emails}
           onChange={(e) => setEmails(e.target.value)}

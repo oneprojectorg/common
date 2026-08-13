@@ -159,8 +159,7 @@ const PromoteAccountModalContent = ({
 };
 
 // Opens a policy page in a new tab without toggling the consent checkbox it
-// sits inside (stop the press from reaching the surrounding React Aria
-// Checkbox).
+// sits inside (stop the click from reaching the surrounding Checkbox).
 const PolicyLink = ({
   href,
   children,

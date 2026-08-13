@@ -49,8 +49,8 @@ export const SelectionConfirmShell = ({
         render={<Button disabled={triggerDisabled}>{triggerLabel}</Button>}
       />
 
-      {/* 32rem matches the width the @op/ui Modal used before the swap; the
-          sense default (sm:max-w-sm) is narrower than these lists need. */}
+      {/* 32rem — the sense default (sm:max-w-sm) is narrower than these
+          lists need. */}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{headerLabel}</DialogTitle>

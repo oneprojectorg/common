@@ -16,7 +16,7 @@ import { multiSelectOptionValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 // `TermsMultiSelect` still owns the option shape; derive it from that
-// component's props rather than importing the retired @op/ui type.
+// component's props rather than redeclaring it.
 type Option = NonNullable<
   ComponentProps<typeof TermsMultiSelect>['value']
 >[number];

@@ -1,6 +1,6 @@
 // NYC borough outlines (largest ring each, Douglas-Peucker simplified from
 // public data) — a stand-in for a process's district boundaries in the
-// location-picker story. Typed inline so the @op/ui Storybook doesn't need
+// location-picker story. Typed inline so the Storybook doesn't need
 // @types/geojson; structurally compatible with the MapLibre Source `data`.
 type BoundaryCollection = {
   type: 'FeatureCollection';

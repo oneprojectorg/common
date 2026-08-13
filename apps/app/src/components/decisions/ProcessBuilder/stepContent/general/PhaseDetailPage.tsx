@@ -587,7 +587,7 @@ function VoteLimitSelect({
 
 // Labelled text/textarea field with error, description, and a live character
 // counter — composes the sense Field + Input/Textarea primitives to reproduce
-// the batteries-included @op/ui TextField this form previously used.
+// one batteries-included labelled field.
 function PhaseField({
   id,
   label,

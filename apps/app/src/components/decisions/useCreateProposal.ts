@@ -31,7 +31,9 @@ export function useCreateProposal({
   const t = useTranslations();
   const router = useRouter();
   const { user } = useUser();
-  // Gate the CTA until mount so React Aria's onPress handler is bound.
+  // Gate the CTA until mount: creating a proposal is entirely client-side, and
+  // React does not replay a click that lands before hydration, so an enabled
+  // button would be a silent no-op.
   const { mounted } = useMount();
   const [isCreating, startCreating] = useTransition();
   const supabase = createSBBrowserClient();

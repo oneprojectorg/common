@@ -9,11 +9,8 @@ components are generated from shadcn's registry, and underneath them sits
 from `@op/styles`, so a component looks like One Project without any component
 file knowing what "One Project" looks like.
 
-It replaces `@op/ui` (our fork of Intent UI, built on React Aria). **`apps/app`
-no longer imports `@op/ui` at all**, and the dependency has been dropped from
-both apps — an accidental `@op/ui` import is now a typecheck failure, not a
-review comment. The package survives only to serve its own Storybook and the
-side-by-side comparison surface, and is deleted once those go.
+It replaced `@op/ui`, our fork of Intent UI built on React Aria, which was
+deleted from the repo in August 2026.
 
 **Storybook is the component reference.** `pnpm w:sense dev` → http://localhost:3600.
 Every component has stories, each one has an **A11y** panel running axe against
@@ -85,7 +82,7 @@ The subpath is decoupled from the on-disk filename, and every public component
 has an explicit entry in `package.json#exports`. There is no barrel import —
 `import { Button } from '@op/sense'` does not work, by design.
 
-### `cn` comes from sense, not `@op/ui`
+### Always import `cn` from sense
 
 ```ts
 import { cn } from '@op/sense/lib/utils';
@@ -100,8 +97,9 @@ components that look right until someone passes a `className`.
 ## Styling
 
 All design values live in `@op/styles`, in **two files**. (The package ships two
-others: `intent-ui-theme.css` belongs to `@op/ui` and dies with it, and
-`tw-animate.css` is vendored. Neither is a place to put a token.)
+others: `intent-ui-theme.css`, a leftover of the pre-sense theme that is being
+retired, and `tw-animate.css`, which is vendored. Neither is a place to put a
+token.)
 
 | File | Holds | Rule |
 |---|---|---|
@@ -202,9 +200,6 @@ than through turbo, so without it you get
 Every story has to compile and bundle, so the build is the current CI check.
 Stories are meant to become the test suite too — rendered headless with axe on
 each — which is what the blocked `@storybook/addon-vitest` gate above will add.
-
-`@op/ui`'s Storybook still exists on port 3601 (`pnpm w:ui dev`) and carries the
-side-by-side `@op/ui` ↔ `@op/sense` comparison. It goes away with `@op/ui`.
 
 ## Adding a component
 

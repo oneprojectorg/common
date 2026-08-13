@@ -3,7 +3,7 @@
 import { cn } from '@op/sense/lib/utils';
 
 // Borderless, document-style text inputs for the Overview page (headline +
-// short description). Not @op/ui TextField — those are labeled/bordered; these
+// short description). Deliberately not a labelled, bordered Field; these
 // are chromeless to read as page content, per the Figma design.
 interface OverviewTextFieldProps {
   variant: 'headline' | 'description';

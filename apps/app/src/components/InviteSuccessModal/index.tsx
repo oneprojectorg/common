@@ -36,8 +36,7 @@ export const InviteSuccessModal = ({
       <DialogContent showCloseButton={false} className="shadow-green">
         <div className="flex flex-col items-center justify-center gap-6 p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
-            {/* Was an @op/ui SVG with baked-in hex; same mark, on the success
-                tokens. */}
+            {/* Same mark as before, now on the success tokens. */}
             <div
               aria-hidden
               className="flex size-16 items-center justify-center rounded-full bg-success-muted"

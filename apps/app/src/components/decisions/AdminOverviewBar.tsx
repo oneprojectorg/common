@@ -47,7 +47,7 @@ export function AdminOverviewBar({
   return (
     <>
       {/* Bespoke full-width tinted admin bar — no @op/sense Button variant
-          matches this shape (sense Button dropped @op/ui's `unstyled`), so
+          matches this shape (there is no `unstyled` variant), so
           render a native <button> for press/focus a11y. */}
       <button
         type="button"
@@ -78,8 +78,8 @@ export function AdminOverviewBar({
           <SheetHeader className="sr-only">
             <SheetTitle>{t('Admin options')}</SheetTitle>
           </SheetHeader>
-          {/* TODO(sense-migration): @op/ui MenuList/MenuItem was used as an
-              inline action list inside the sheet (no trigger/popover). @op/sense
+          {/* TODO(sense-migration): this was an inline action list inside the
+              sheet (no trigger/popover). @op/sense
               DropdownMenu requires a DropdownMenuTrigger + portaled
               DropdownMenuContent, so it can't render inline here. Rebuilt as a
               native <button> list to preserve the bottom-sheet action rows. */}

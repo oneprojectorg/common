@@ -7,7 +7,7 @@ import { IframelyExtension } from '../decisions/IframelyExtension';
 import { SlashCommands } from '../decisions/SlashCommands';
 
 /**
- * Base extensions from @op/ui, minus StarterKit and Link (we configure both
+ * Base extensions from @op/sense, minus StarterKit and Link (we configure both
  * ourselves — leaving the base Link in would register the extension twice).
  */
 function getBaseExtensions(): AnyExtension[] {
@@ -34,7 +34,7 @@ export function getProposalExtensions(
   } = options;
 
   const extensions: AnyExtension[] = [
-    // heading/link disabled to match @op/ui's base config — StyledHeading and
+    // heading/link disabled to match the sense base config — StyledHeading and
     // our own Link.configure below take their place.
     StarterKit.configure({
       undoRedo: collaborative ? false : undefined,

@@ -13,7 +13,7 @@ function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-// Multi-line text placeholder (replaces @op/ui's SkeletonLine). Renders `lines`
+// Multi-line text placeholder. Renders `lines`
 // short bars; the last one is narrower to mimic a ragged final line of text.
 function SkeletonText({
   lines = 3,

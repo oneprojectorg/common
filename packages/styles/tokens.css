@@ -118,7 +118,7 @@
 
 :root {
   /* ============================================
-   * Legacy @op/ui palette — retiring with @op/ui
+   * Legacy pre-sense palette — retiring
    *
    * The pre-sense ramp. Only the stops above have a Colors Scale equivalent
    * (those now alias it rather than repeat the literal); the rest are values

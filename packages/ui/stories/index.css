@@ -1,8 +1,0 @@
-/* Roboto as a variable font (wght 100..900) to match the app's next/font
- * config — intermediate weights like font-strong (450) need real faces. */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Roboto+Serif:ital,opsz,wght@0,8..144,300;0,8..144,400;1,8..144,300;1,8..144,400&display=swap');
-
-:root {
-  --font-sans: 'Roboto', sans-serif;
-  --font-serif: 'Roboto Serif', serif;
-}

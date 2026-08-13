@@ -380,7 +380,7 @@ test.describe('Review Submit', () => {
     // Fill third required criterion: Compliance (yes/no). Anchor by the heading
     // and pick the switch within that section, since every criterion also renders
     // an "Add Note" button. The control is a sense Switch (role="switch" +
-    // aria-checked), not @op/ui's misnamed ToggleButton.
+    // aria-checked).
     await page
       .locator('section')
       .filter({

@@ -5,7 +5,7 @@ import { expect, test } from '../fixtures/index.js';
  * URL param: it reads the param on load, writes it via `history.replaceState`
  * when a tab is clicked, and drops the param for the default tab.
  *
- * Regression guard for the @op/ui → @op/sense Tabs swap (react-aria
+ * Regression guard for the Tabs swap to @op/sense (the old react-aria shell used
  * `selectedKey`/`onSelectionChange(Key)` → base-ui `value`/`onValueChange(string)`).
  * If the controlled-value wiring is off, deep-links and URL updates break
  * silently — typecheck won't catch it.

@@ -16,7 +16,7 @@ import StarterKit from '@tiptap/starter-kit';
 /**
  * TipTap heading extension that bakes the design-system `headingClasses` onto
  * each rendered `<h1>`–`<h4>` tag, keeping editor output visually identical to
- * the `Header1/2/3/4` components in `@op/ui`. Any level without a mapped class
+ * the `Header1`–`Header4` components. Any level without a mapped class
  * renders without a baked class.
  */
 export const StyledHeading = Heading.extend({

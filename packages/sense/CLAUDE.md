@@ -1,8 +1,7 @@
 # @op/sense — agent guide
 
 `@op/sense` is the design system. It is shadcn/ui in its **Base UI** style,
-themed by `@op/styles`. It replaces `@op/ui`, which is in wind-down — never add
-to `@op/ui`, and never import from it in new code.
+themed by `@op/styles`.
 
 [`README.md`](./README.md) explains what the package is and why. This file is
 how to work in it.
@@ -58,10 +57,10 @@ the same change. A component with no story is undocumented.
    new composite.
 2. **Import per component.** `import { Button } from '@op/sense/Button'`. There
    is no barrel export.
-3. **Import `cn` from sense**: `import { cn } from '@op/sense/lib/utils'`. Not
-   from `@op/ui`, not stock `twMerge`. Ours registers the custom type tokens
-   with `tailwind-merge`; the wrong one silently drops `text-title` /
-   `font-strong` whenever a `className` merges a colour in.
+3. **Import `cn` from sense**: `import { cn } from '@op/sense/lib/utils'`, never
+   stock `twMerge`. Ours registers the custom type tokens with `tailwind-merge`;
+   the wrong one silently drops `text-title` / `font-strong` whenever a
+   `className` merges a colour in.
 4. **Use semantic classes only.** `bg-primary`, `text-muted-foreground`,
    `border-input`. Never a raw token (`bg-teal-500`), never an arbitrary value
    (`text-[14px]`, `bg-[#333]`).
@@ -217,14 +216,13 @@ Hard-won; each of these cost real debugging time.
 ## Never
 
 - Edit a primitive in `components/ui/` to use OP tokens or literal colours.
-- Add a component to `@op/ui`, or import `@op/ui` in new code.
 - Add `@op/sense` as a runtime dependency of anything inside this package — it's
   a leaf. (Stories self-reference via the public subpath; that's resolved by
   Node's self-reference support and needs no dependency entry.)
 - Add a public component without a `package.json#exports` entry.
 - Add a `className="sense"` wrapper. Tokens live on `:root`; there is no scope
   class, and adding one does nothing.
-- Use `text-title-*` (e.g. `text-title-lg`) — that's the legacy `@op/ui` scale.
+- Use `text-title-*` (e.g. `text-title-lg`) — that's the retired pre-sense scale.
   The sense scale is `text-label` / `text-title` / `text-headline` /
   `text-display`.
 - Use `any`, a type assertion (`as`), or a non-null assertion (`!`) to get

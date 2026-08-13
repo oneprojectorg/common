@@ -38,7 +38,7 @@ export const AddResourcePanel = ({
         </Button>
       </div>
       <div className="shrink-0 px-4 py-2 sm:px-6">
-        {/* TODO(sense-migration): @op/ui ButtonGroup styled the aria-pressed
+        {/* TODO(sense-migration): the retired ButtonGroup styled the aria-pressed
             selected state; @op/sense ButtonGroup is visual grouping only, so the
             selected look is driven manually via `variant`. Consider migrating to
             @op/sense/ToggleGroup for true segmented-toggle semantics. */}
