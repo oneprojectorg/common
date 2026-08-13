@@ -1,4 +1,8 @@
 import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 try {
   if (process.env.NODE_ENV === 'development') {
@@ -28,6 +32,12 @@ dotenv.config({
 const config = {
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
   turbopack: {
+    // Pin the workspace root. Turbopack otherwise infers it by walking up for
+    // lockfiles, so a stray package-lock.json above the monorepo (e.g. an `npm
+    // install` run in $HOME) silently moves the root and emits externals
+    // symlinks under .next/dev/node_modules with the wrong relative depth —
+    // producing "Cannot find module '@swc/helpers-<hash>/...'" at runtime.
+    root: path.resolve(__dirname, '../..'),
     resolveAlias: {
       // In e2e mode, swap external services for in-process mocks so the API
       // server never makes network calls to TipTap Cloud or PostHog.
