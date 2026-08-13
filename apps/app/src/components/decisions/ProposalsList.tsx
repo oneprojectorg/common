@@ -683,7 +683,7 @@ const ProposalsListContent = ({
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <div className="py-8 text-center text-sm text-neutral-charcoal">
+                  <div className="py-8 text-center text-sm">
                     {t("Couldn't load the map. Refresh to try again.")}
                   </div>
                 ),
@@ -726,11 +726,14 @@ const ProposalsListContent = ({
             proposalsHidden={proposalsHidden}
             excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+            isFetchingNextPage={isFetchingNextPage}
           />
         )}
       </ProposalTranslationProvider>
 
-      {!isMapMode && renderScrollSentinel(<ProposalListSkeletonGrid />)}
+      {/* Grid mode: the load-more skeletons render inside the masonry (see
+          ProposalMasonry `loadingMore`), so the sentinel is just the trigger. */}
+      {!isMapMode && renderScrollSentinel(null)}
 
       {translation.showBanner && (
         <TranslateBanner
