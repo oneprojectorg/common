@@ -89,6 +89,11 @@ export const listProposalLocations = async ({
       ? proposal.profile[0]
       : proposal.profile;
 
+    // Map pins only: no `budgetCurrency` and no `proposalTemplate`, because
+    // the hovercard these feed renders no money. Anything here that starts
+    // rendering a budget has to ship one — `resolveProposalSystemFields`
+    // falls back to USD with neither, which reads as a real currency on a
+    // process denominated in something else.
     return [
       {
         id: proposal.id,

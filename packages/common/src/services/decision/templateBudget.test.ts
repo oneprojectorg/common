@@ -135,6 +135,19 @@ describe('getStoredBudgetCurrency', () => {
     );
   });
 
+  it('reads a currency parsing would have thrown away with the amount', () => {
+    // Why the server resolves this from the raw row and ships the answer:
+    // `budgetValueSchema` drops a budget whose amount it can't read, and the
+    // stored currency goes with it. The raw row still names CAD, so a reader
+    // handed the parsed data alone would fall through to the template's — and
+    // render this proposal's editor in a currency its list card disagrees with.
+    const row = { budget: { amount: 'not a number', currency: 'CAD' } };
+
+    expect(getStoredBudgetCurrency(row)).toBe('CAD');
+    expect(parseProposalData(row).budget).toBeUndefined();
+    expect(getStoredBudgetCurrency(parseProposalData(row))).toBeUndefined();
+  });
+
   it('reports none for budgets that name none', () => {
     // Legacy bare number, the `{amount}`-only shape, a blank code, a cleared
     // budget, and junk from an import — none of these tell us a currency.

@@ -32,6 +32,7 @@ import {
 } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { resolveBudgetFallbackCurrency } from './templateBudget';
 import { ProposalTemplateSchema } from './types';
 
 /** Attachment with signed URL for accessing the file */
@@ -72,6 +73,8 @@ export const getProposal = async ({
     likesCount: number;
     followersCount: number;
     proposalTemplate: ProposalTemplateSchema | null;
+    /** See the resolve at the return site — the raw row's tier is server-only. */
+    budgetCurrency: string;
     documentContent: ProposalDocumentContent | undefined;
     htmlContent: Record<string, string> | undefined;
     attachments: ProposalAttachmentWithDetails[];
@@ -294,6 +297,16 @@ export const getProposal = async ({
     },
     proposalData: parsedProposalData,
     proposalTemplate,
+    // Resolved from the **raw** row, which only the server holds: a budget
+    // whose amount `budgetValueSchema` can't read is dropped by parsing, and
+    // the currency stored beside it goes too. The client is served the parsed
+    // data, so left to resolve this itself it would fall through to the
+    // template's currency and render the editor in dollars under a card the
+    // list route already rendered in euros.
+    budgetCurrency: resolveBudgetFallbackCurrency(
+      proposal.proposalData,
+      proposalTemplate,
+    ),
     ...engagementCounts,
     documentContent,
     htmlContent,

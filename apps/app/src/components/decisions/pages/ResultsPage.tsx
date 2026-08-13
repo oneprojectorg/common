@@ -42,9 +42,8 @@ interface ResultsPageInstance {
   description: string | null;
   process?: {
     description: string | null;
-    /** Where the legacy route's template lives — `legacyInstanceDataEncoder`
-     * drops `instanceData.proposalTemplate`, so this is the only copy that
-     * survives the wire there. Falls back to it below, matching the precedence
+    /** The process-level template — the second tier, and on older instances
+     * the only copy there is. Fallen back to below, matching the precedence
      * the server's `resolveProposalTemplate` applies. */
     processSchema?: {
       proposalTemplate?: ProposalTemplateSchema | null;
@@ -58,7 +57,8 @@ interface ResultsPageInstance {
       rules?: { voting?: { submit?: boolean } };
     }[];
     /** Read only for its budget currency, which the results banner labels
-     * `totalAllocated` with. Absent on legacy instances. */
+     * `totalAllocated` with. Outranks the process-level copy: an instance whose
+     * currency was changed after it was created carries the new one only here. */
     proposalTemplate?: ProposalTemplateSchema | null;
   } | null;
 }

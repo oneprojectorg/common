@@ -130,6 +130,12 @@ const legacyInstanceDataEncoder = z.preprocess(
     budget: z.number().optional(),
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
+    // The instance's own template, which outranks the process-level one
+    // everywhere it exists — `resolveProposalTemplate` reads it first. Omitting
+    // it from this closed object silently deleted the tier on the legacy route:
+    // the results banner fell through to a possibly stale process template and
+    // labelled its total in a currency the cards right below it disagreed with.
+    proposalTemplate: jsonSchemaEncoder.optional(),
     phases: z
       .array(
         z.object({

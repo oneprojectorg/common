@@ -104,13 +104,18 @@ export function resolveProposalSystemFields(proposal: Proposal) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
-  // Server-resolved where the row carries it — list payloads ship the code
-  // instead of the template it was resolved from, and the legacy results route
-  // ships no template at all. Otherwise resolved here, from the parsed data the
-  // client is served: `budgetValueSchema` reads every shape storage carries and
-  // leaves the currency absent rather than defaulting it, so a parsed budget
-  // still says truthfully whether the author named one and which. Either way
-  // the answer is the same, so a card and its detail page agree.
+  // Server-resolved wherever the row carries it, which is every route that
+  // renders a budget: list payloads ship the code instead of the template it
+  // was resolved from, and `getProposal` ships it because only the server sees
+  // the raw row. That last one matters — the client is served *parsed* data,
+  // and a budget whose amount `budgetValueSchema` can't read is dropped whole,
+  // taking the currency stored beside it. Resolving from parsed data would
+  // then miss the row's tier and fall through to the template's, rendering a
+  // proposal's editor in one currency and its list card in another.
+  //
+  // The local resolve is the floor under routes that ship neither — it reads
+  // the same tiers in the same order, and agrees wherever the parse was
+  // lossless, which is every budget storage actually holds today.
   const fallbackCurrency =
     proposal.budgetCurrency ??
     resolveBudgetFallbackCurrency(proposal.proposalData, template);
