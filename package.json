@@ -148,7 +148,6 @@
       "d3-scale": "$d3-scale",
       "d3-selection": "$d3-selection",
       "dotenv": "$dotenv",
-      "immer": "^10.2.0",
       "js-yaml": "$js-yaml",
       "lodash": "$lodash",
       "motion": "$motion",
