@@ -2,43 +2,43 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
+import type { DecisionAccess } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { FooterBar } from '@op/ui/FooterBar';
-import { Header3 } from '@op/ui/Header';
-import { Modal } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import { Dialog, DialogContent, DialogTrigger } from '@op/sense/Dialog';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from '@op/sense/Empty';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
+import { toast } from '@op/sense/Toast';
+import { type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ProposalCard,
-  ProposalCardActions,
-  ProposalCardContent,
-  ProposalCardFooter,
-  ProposalCardHeader,
-  ProposalCardMenu,
-  ProposalCardMeta,
-  ProposalCardMetrics,
-  ProposalCardOwnerActions,
-  ProposalCardPreview,
-  ProposalCardReviseAction,
-} from './ProposalCard';
+import { ButtonLink } from '@/components/ButtonLink';
+
+import { ProposalBrowseCard } from './ProposalBrowseCard';
+import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
-import { VotingProposalCard } from './VotingProposalCard';
 import {
   CustomFormModal,
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
+import { proposalHref } from './proposalHrefs';
 
 export interface ProposalsProps {
   proposals?: Proposal[];
@@ -55,6 +55,8 @@ export interface ProposalsProps {
   proposalsHidden?: boolean;
   /** Reviewer's "Other proposals" tab — tailors the empty state. */
   excludeAssignedForReview?: boolean;
+  /** Next page fetching — appends loading skeletons into the masonry. */
+  isFetchingNextPage?: boolean;
 }
 
 export const ProposalsGrid = ({
@@ -98,30 +100,38 @@ const NoProposalsFound = ({
 
   if (excludeAssignedForReview && !hasFilter) {
     return (
-      <EmptyState icon={<LuLeaf className="size-6" />}>
-        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-          {t('No other proposals')}
-        </Header3>
-        <p className="text-base text-neutral-charcoal">
-          {t('There are no proposals outside your review queue.')}
-        </p>
-      </EmptyState>
+      <Empty className="border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuLeaf className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('No other proposals')}</EmptyTitle>
+          <EmptyDescription>
+            {t('There are no proposals outside your review queue.')}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
   return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {hasFilter
-          ? t('No proposals found matching the current filters.')
-          : t('No proposals yet')}
-      </Header3>
-      <p className="text-base text-neutral-charcoal">
-        {hasFilter
-          ? t('Try adjusting your filter selection above.')
-          : t('You could be the first one to submit a proposal')}
-      </p>
-    </EmptyState>
+    <Empty className="border-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>
+          {hasFilter
+            ? t('No proposals found matching the current filters.')
+            : t('No proposals yet')}
+        </EmptyTitle>
+        <EmptyDescription>
+          {hasFilter
+            ? t('Try adjusting your filter selection above.')
+            : t('You could be the first one to submit a proposal')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 };
 
@@ -129,11 +139,16 @@ const HiddenProposalsEmptyState = () => {
   const t = useTranslations();
 
   return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <p className="text-base text-neutral-charcoal">
-        {t("You'll see your proposal here once you submit.")}
-      </p>
-    </EmptyState>
+    <Empty className="border-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-6" />
+        </EmptyMedia>
+        <EmptyDescription>
+          {t("You'll see your proposal here once you submit.")}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 };
 
@@ -147,10 +162,12 @@ const VotingProposalsList = ({
   hasFilter,
   proposalsHidden,
   excludeAssignedForReview,
+  isFetchingNextPage,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
   const t = useTranslations();
@@ -214,6 +231,9 @@ const VotingProposalsList = ({
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
+    // Closed from here rather than by a `DialogClose` inside it, because the
+    // close fires from a mutation callback, not a click.
+    setIsVoteReviewOpen(false);
     setSelectedProposalIds([]);
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
@@ -244,7 +264,7 @@ const VotingProposalsList = ({
         error,
         context: 'ProposalsGrid.handlePhaseFormSubmit',
       });
-      toast.error({ message: t('Failed to submit form') });
+      toast.error(t('Failed to submit form'));
       return; // Keep the modal open so the user can retry.
     }
     setShowPhaseFormModal(false);
@@ -276,160 +296,137 @@ const VotingProposalsList = ({
 
   return (
     <>
-      <ProposalMasonry>
+      <ProposalMasonry loadingMore={isFetchingNextPage}>
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
           const isEligibleForVote = isVotingEligible(proposal.status);
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          const proposalHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const href = proposalHref({
+            profileId: proposal.profileId,
+            decisionSlug,
+            slug,
+            instanceId,
+          });
 
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
             return (
-              <VotingProposalCard
+              <ProposalCardView
                 key={proposal.id}
-                proposalId={proposal.id}
-                isSelected={isVotedFor}
-                isVotedFor={isVotedFor}
-              >
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    viewHref={proposalHref}
-                    menu={
-                      isVotedFor ? (
-                        <Checkbox
-                          isSelected={true}
-                          shape="circle"
-                          borderColor="light"
-                          className="[&[data-disabled]_svg]:!text-white"
-                          aria-label={t('Selected proposal')}
-                          isDisabled
-                        />
-                      ) : undefined
-                    }
-                  />
-                  <ProposalCardMeta proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-              </VotingProposalCard>
+                proposal={proposal}
+                href={href}
+                selected={isVotedFor}
+                showStatusBadge={false}
+                aside={
+                  isVotedFor ? (
+                    // TODO(sense-migration): sense Checkbox has no
+                    // shape="circle"/borderColor; approximated with
+                    // rounded-full — revisit against Figma vote design.
+                    <Checkbox
+                      checked
+                      disabled
+                      aria-label={t('Selected proposal')}
+                      className="rounded-full"
+                    />
+                  ) : undefined
+                }
+              />
             );
           }
 
-          // Active voting view: interactive cards with selection
+          // Active voting view: the whole card is a selection toggle.
           if (isEligibleForVote) {
             return (
-              <VotingProposalCard
+              <ProposalCardView
                 key={proposal.id}
-                proposalId={proposal.id}
-                isVotingEnabled={true}
-                isReadOnly={isReadOnly}
-                isSelected={isSelected}
-                isVotedFor={isVotedFor}
-                onToggle={toggleProposal}
-              >
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    menu={
-                      (canManageProposals ||
-                        proposal.isEditable ||
-                        showCheckbox) && (
-                        <div className="flex items-center gap-2">
-                          {(canManageProposals || proposal.isEditable) && (
-                            <ProposalCardMenu
-                              proposal={proposal}
-                              canManage={canManageProposals}
-                            />
-                          )}
-                          {showCheckbox && (
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <Checkbox
-                                isSelected={isSelected}
-                                onChange={() => {
-                                  toggleProposal(proposal.id);
-                                }}
-                                shape="circle"
-                                borderColor="light"
-                                aria-label={
-                                  isSelected
-                                    ? t('Deselect proposal')
-                                    : t('Select proposal')
-                                }
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )
-                    }
-                  />
-                  <ProposalCardMeta withLink={false} proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-                <ProposalCardFooter>
-                  <ButtonLink
-                    href={proposalHref}
-                    color="secondary"
-                    className="w-full"
-                  >
-                    {t('Read full proposal')}
-                  </ButtonLink>
-                </ProposalCardFooter>
-              </VotingProposalCard>
-            );
-          } else {
-            return (
-              <ProposalCard key={proposal.id} proposal={proposal}>
-                <div className="flex flex-col justify-between gap-3 space-y-3">
-                  <ProposalCardContent>
-                    <ProposalCardHeader
-                      proposal={proposal}
-                      menu={
-                        (canManageProposals || proposal.isEditable) && (
+                proposal={proposal}
+                selected={isSelected}
+                showStatusBadge={false}
+                role="button"
+                aria-pressed={isSelected}
+                aria-label={
+                  isSelected ? t('Deselect proposal') : t('Select proposal')
+                }
+                onClick={() => toggleProposal(proposal.id)}
+                className="cursor-pointer"
+                aside={
+                  canManageProposals || proposal.isEditable || showCheckbox ? (
+                    <div className="flex items-center gap-2">
+                      {(canManageProposals || proposal.isEditable) && (
+                        <div onClick={(e) => e.stopPropagation()}>
                           <ProposalCardMenu
                             proposal={proposal}
                             canManage={canManageProposals}
                           />
-                        )
-                      }
+                        </div>
+                      )}
+                      {showCheckbox && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {/* TODO(sense-migration): sense Checkbox has no
+                              shape="circle"/borderColor; approximated with
+                              rounded-full — revisit against Figma. */}
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => {
+                              toggleProposal(proposal.id);
+                            }}
+                            aria-label={
+                              isSelected
+                                ? t('Deselect proposal')
+                                : t('Select proposal')
+                            }
+                            className="rounded-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : undefined
+                }
+                actions={
+                  <ButtonLink href={href} variant="outline" className="w-full">
+                    {t('Read full proposal')}
+                  </ButtonLink>
+                }
+              />
+            );
+          } else {
+            return (
+              <ProposalCardView
+                key={proposal.id}
+                proposal={proposal}
+                aside={
+                  canManageProposals || proposal.isEditable ? (
+                    <ProposalCardMenu
+                      proposal={proposal}
+                      canManage={canManageProposals}
                     />
-                    <ProposalCardMeta proposal={proposal} />
-                    <ProposalCardPreview proposal={proposal} />
-                  </ProposalCardContent>
-                </div>
-                <ProposalCardContent>
-                  <ProposalCardFooter>
-                    <ButtonLink
-                      href={proposalHref}
-                      color="secondary"
-                      className="w-full"
-                    >
-                      {t('Read full proposal')}
-                    </ButtonLink>
-                  </ProposalCardFooter>
-                </ProposalCardContent>
-              </ProposalCard>
+                  ) : undefined
+                }
+                actions={
+                  <ButtonLink href={href} variant="outline" className="w-full">
+                    {t('Read full proposal')}
+                  </ButtonLink>
+                }
+              />
             );
           }
         })}
       </ProposalMasonry>
 
       {canVote && !isReadOnly && (
-        <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-          <FooterBar.Start>
-            <span className="text-base text-neutral-black">
+        <FooterBar position="fixed" className="bg-muted/95">
+          <FooterBarStart>
+            <span className="text-base">
               {maxVotesPerMember !== undefined
                 ? t.rich(
                     '<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected',
                     {
                       numSelected,
                       max: maxVotesPerMember,
-                      highlight: (chunks: React.ReactNode) => (
-                        <span className="text-primary-teal">{chunks}</span>
+                      highlight: (chunks: ReactNode) => (
+                        <span className="text-primary">{chunks}</span>
                       ),
                     },
                   )
@@ -437,31 +434,32 @@ const VotingProposalsList = ({
                     '<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected',
                     {
                       numSelected,
-                      highlight: (chunks: React.ReactNode) => (
-                        <span className="text-primary-teal">{chunks}</span>
+                      highlight: (chunks: ReactNode) => (
+                        <span className="text-primary">{chunks}</span>
                       ),
                     },
                   )}
             </span>
-          </FooterBar.Start>
-          <FooterBar.Center />
-          <FooterBar.End>
-            <DialogTrigger>
-              <Button isDisabled={numSelected === 0} variant="primary">
-                {t('Submit my votes')}
-              </Button>
-
-              <Modal isDismissable>
-                <Dialog className="h-full">
-                  <VoteSubmissionModal
-                    selectedProposals={selectedProposals}
-                    instanceId={instanceId}
-                    onSuccess={handleVoteSuccess}
-                  />
-                </Dialog>
-              </Modal>
-            </DialogTrigger>
-          </FooterBar.End>
+          </FooterBarStart>
+          <FooterBarCenter />
+          <FooterBarEnd>
+            <Dialog open={isVoteReviewOpen} onOpenChange={setIsVoteReviewOpen}>
+              <DialogTrigger
+                render={
+                  <Button disabled={numSelected === 0} variant="default">
+                    {t('Submit my votes')}
+                  </Button>
+                }
+              />
+              <DialogContent className="sm:max-w-2xl">
+                <VoteSubmissionModal
+                  selectedProposals={selectedProposals}
+                  instanceId={instanceId}
+                  onSuccess={handleVoteSuccess}
+                />
+              </DialogContent>
+            </Dialog>
+          </FooterBarEnd>
         </FooterBar>
       )}
 
@@ -493,15 +491,11 @@ const ViewProposalsList = ({
   hasFilter,
   proposalsHidden,
   excludeAssignedForReview,
+  isFetchingNextPage,
   revisionRequestIdByProposalId,
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
-  const canManageProposals = permissions?.admin ?? false;
-  // Like/Follow require SUBMIT_PROPOSALS (or admin) on the parent decision —
-  // don't offer buttons the API would reject (e.g. reviewer-only roles).
-  const canEngage =
-    (permissions?.submitProposals ?? false) || canManageProposals;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
@@ -515,83 +509,18 @@ const ViewProposalsList = ({
   }
 
   return (
-    <ProposalMasonry>
-      {proposals.map((proposal) => {
-        const isDraft = proposal.status === ProposalStatus.DRAFT;
-        const isEditable = Boolean(proposal.isEditable);
-        const showMenu = canManageProposals || isEditable;
-        const revisionRequestId = revisionRequestIdByProposalId?.get(
-          proposal.id,
-        );
-        const hasRevisionRequest = revisionRequestId !== undefined;
-        // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
-        const editHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
-        const reviseHref = revisionRequestId
-          ? `${editHref}?reviewRevision=${revisionRequestId}`
-          : editHref;
-        const viewHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
-
-        return (
-          <ProposalCard key={proposal.id} proposal={proposal}>
-            <div className="flex h-full flex-col justify-between gap-3 space-y-3">
-              <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  viewHref={viewHref}
-                  menu={
-                    showMenu && (
-                      <ProposalCardMenu
-                        proposal={proposal}
-                        canManage={canManageProposals}
-                      />
-                    )
-                  }
-                />
-                <ProposalCardMeta
-                  proposal={proposal}
-                  revisionRequested={hasRevisionRequest}
-                />
-                <ProposalCardPreview proposal={proposal} />
-              </ProposalCardContent>
-            </div>
-            <ProposalCardContent>
-              <ProposalCardFooter>
-                {hasRevisionRequest ? (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardReviseAction editHref={reviseHref} />
-                  </>
-                ) : isDraft ? (
-                  <ProposalCardOwnerActions
-                    proposal={proposal}
-                    editHref={editHref}
-                  />
-                ) : isEditable ? (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardOwnerActions
-                      proposal={proposal}
-                      editHref={editHref}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardActions
-                      proposal={proposal}
-                      canEngage={canEngage}
-                    />
-                  </>
-                )}
-              </ProposalCardFooter>
-            </ProposalCardContent>
-          </ProposalCard>
-        );
-      })}
+    <ProposalMasonry loadingMore={isFetchingNextPage}>
+      {proposals.map((proposal) => (
+        <ProposalBrowseCard
+          key={proposal.id}
+          proposal={proposal}
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          permissions={permissions}
+          revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
+        />
+      ))}
     </ProposalMasonry>
   );
 };

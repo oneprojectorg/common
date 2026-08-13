@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from '@op/sense/AlertDialog';
 import { Button } from '@op/sense/Button';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuUndo2 } from 'react-icons/lu';
 
@@ -39,9 +39,7 @@ export const RevertPhaseButton = ({
 
   const revertPhase = trpc.platform.admin.revertDecisionPhase.useMutation({
     onSuccess: () => {
-      toast.success({
-        message: t('Moved back to {phase}', { phase: previousPhaseName }),
-      });
+      toast.success(t('Moved back to {phase}', { phase: previousPhaseName }));
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,
@@ -49,7 +47,7 @@ export const RevertPhaseButton = ({
       setIsOpen(false);
     },
     onError: (error) => {
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 

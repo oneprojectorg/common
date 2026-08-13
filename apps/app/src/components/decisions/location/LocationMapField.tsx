@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { LocationData, MapDefaultView } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import type { LngLat } from '@op/ui/Map';
+import { Button } from '@op/sense/Button';
+import type { LngLat } from '@op/sense/Map';
 import { useCallback, useEffect, useState } from 'react';
 import { LuLocate } from 'react-icons/lu';
 
@@ -155,7 +155,7 @@ export function LocationMapField({
 
       <div
         className={`overflow-hidden rounded-lg border ${
-          isWithinArea ? 'border-neutral-gray1' : 'border-functional-red'
+          isWithinArea ? 'border-border' : 'border-destructive'
         }`}
       >
         <MapCanvas
@@ -173,9 +173,7 @@ export function LocationMapField({
         <div className="flex flex-col justify-between gap-2.5 p-4 sm:flex-row sm:items-center">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span
-              className={
-                isWithinArea ? 'text-neutral-black' : 'text-functional-red'
-              }
+              className={isWithinArea ? 'text-foreground' : 'text-destructive'}
               dir="auto"
             >
               {/* While reverse geocoding is in flight `address` is undefined —
@@ -183,16 +181,15 @@ export function LocationMapField({
               {value ? value.address : t('No location selected')}
             </span>
             {!isWithinArea && (
-              <span className="text-sm text-functional-red">
+              <span className="text-sm text-destructive">
                 {t('This address is outside the allowed proposal area.')}
               </span>
             )}
           </div>
           <Button
-            variant="icon"
-            color="secondary"
-            size="small"
-            onPress={handleUseMyLocation}
+            variant="outline"
+            size="sm"
+            onClick={handleUseMyLocation}
             className="shrink-0"
           >
             <LuLocate aria-hidden className="size-4" />

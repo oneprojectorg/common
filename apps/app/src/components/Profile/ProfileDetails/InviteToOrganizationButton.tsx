@@ -4,8 +4,8 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/sense/Button';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuCheck, LuUserPlus } from 'react-icons/lu';
 
@@ -50,22 +50,19 @@ export const InviteToOrganizationButton = ({
 
       if (wasAdded) {
         setIsMember(true);
-        toast.success({
-          title: 'Member added',
-          message: `${profile.profile.name || profile.profile.email} is now a member of ${user.currentProfile?.name}`,
+        toast.success('Member added', {
+          description: `${profile.profile.name || profile.profile.email} is now a member of ${user.currentProfile?.name}`,
         });
       } else if (isMemberFailed) {
         setIsMember(true);
-        toast.success({
-          title: ' a member',
-          message: `${profile.profile.name || profile.profile.email} is already a member of ${user.currentProfile?.name}`,
+        toast.success(' a member', {
+          description: `${profile.profile.name || profile.profile.email} is already a member of ${user.currentProfile?.name}`,
         });
       } else {
         // Handle other failure cases
         const firstError = failedInvites[0]?.reason || 'Unknown error occurred';
-        toast.error({
-          title: 'Failed to send invite',
-          message: firstError,
+        toast.error('Failed to send invite', {
+          description: firstError,
         });
       }
     },
@@ -73,14 +70,13 @@ export const InviteToOrganizationButton = ({
       const errorInfo = analyzeError(error);
 
       if (errorInfo.isConnectionError) {
-        toast.error({
-          title: 'Connection issue',
-          message: errorInfo.message + ' Please try sending the invite again.',
+        toast.error('Connection issue', {
+          description:
+            errorInfo.message + ' Please try sending the invite again.',
         });
       } else {
-        toast.error({
-          title: 'Failed to send invite',
-          message: errorInfo.message,
+        toast.error('Failed to send invite', {
+          description: errorInfo.message,
         });
       }
     },
@@ -88,17 +84,15 @@ export const InviteToOrganizationButton = ({
 
   const handleInvite = () => {
     if (!isOnline) {
-      toast.error({
-        title: 'No connection',
-        message: 'Please check your internet connection and try again.',
+      toast.error('No connection', {
+        description: 'Please check your internet connection and try again.',
       });
       return;
     }
 
     if (!user.currentOrganization?.id) {
-      toast.error({
-        title: 'No organization',
-        message: 'You must be part of an organization to send invites.',
+      toast.error('No organization', {
+        description: 'You must be part of an organization to send invites.',
       });
       return;
     }
@@ -106,9 +100,8 @@ export const InviteToOrganizationButton = ({
     // Find the Member role - throw error if not found
     const memberRole = rolesData.roles.find((role) => role.name === 'Member');
     if (!memberRole) {
-      toast.error({
-        title: 'System configuration error',
-        message: 'Member role not found. Please contact support.',
+      toast.error('System configuration error', {
+        description: 'Member role not found. Please contact support.',
       });
       return;
     }
@@ -122,7 +115,7 @@ export const InviteToOrganizationButton = ({
 
   if (isMember) {
     return (
-      <Button color="secondary" isDisabled>
+      <Button variant="outline" disabled>
         <LuCheck className="size-4" />
         Member
       </Button>
@@ -131,9 +124,9 @@ export const InviteToOrganizationButton = ({
 
   return user.currentProfile ? (
     <Button
-      color="secondary"
-      onPress={handleInvite}
-      isDisabled={inviteUser.isPending}
+      variant="outline"
+      onClick={handleInvite}
+      disabled={inviteUser.isPending}
       className="min-w-fit"
     >
       {inviteUser.isPending ? (

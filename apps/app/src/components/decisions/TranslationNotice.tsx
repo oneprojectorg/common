@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,14 +25,15 @@ export const TranslationNotice = ({
 
   return (
     <div className="flex items-center gap-1">
-      <p className={cn('text-sm text-neutral-gray4', className)}>
+      <p className={cn('text-sm text-muted-foreground', className)}>
         {t('Translated from {language}', { language: sourceLanguageName })}
       </p>
       <Bullet />
       <Button
         variant="link"
-        onPress={onViewOriginal}
-        className="inline h-auto p-0 text-sm sm:text-sm"
+        size="inline"
+        onClick={onViewOriginal}
+        className="inline text-sm sm:text-sm"
       >
         {t('View original')}
       </Button>

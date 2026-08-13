@@ -3,9 +3,14 @@
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import { getRubricScoringInfo } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { toast } from '@op/ui/Toast';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -80,7 +85,7 @@ export function ReviewSelectionList({
     },
     onError: (error) => {
       setIsConfirmOpen(false);
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -96,25 +101,28 @@ export function ReviewSelectionList({
     <div className="flex flex-col gap-6 pb-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title font-light">
             {t('All proposals')}
           </span>
           <Bullet />
-          <span className="font-serif text-title-base text-neutral-black">
-            {total}
-          </span>
+          <span className="font-serif text-title font-light">{total}</span>
         </div>
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon={<LuLeaf className="size-6" />}>
-          <Header3 className="font-serif font-light">
-            {t('No proposals to review yet')}
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
-            {t('Proposals will appear here once they are submitted.')}
-          </p>
-        </EmptyState>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LuLeaf className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle render={<h3 />}>
+              {t('No proposals to review yet')}
+            </EmptyTitle>
+            <EmptyDescription>
+              {t('Proposals will appear here once they are submitted.')}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ReviewSelectionTable
           items={items}
@@ -146,7 +154,7 @@ export function ReviewSelectionList({
 export function ReviewSelectionListSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="h-8 w-32 animate-pulse rounded bg-neutral-gray1" />
+      <div className="h-8 w-32 animate-pulse rounded bg-secondary" />
       <ReviewSelectionTableSkeleton />
     </div>
   );

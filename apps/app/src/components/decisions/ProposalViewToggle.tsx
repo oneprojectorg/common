@@ -1,7 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { ButtonGroup } from '@op/ui/ButtonGroup';
+import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
 import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -17,8 +16,9 @@ interface ProposalViewToggleProps {
 
 /**
  * Desktop-only segmented control switching the proposals list between the grid
- * and the map browse view, built on the shared `ButtonGroup` (selected/unselected
- * colors come from its `aria-pressed` styling).
+ * and the map browse view, built on the shared `ToggleGroup` (selected/unselected
+ * colors come from its pressed styling). `spacing={0}` joins the items into a
+ * single segmented control.
  */
 export function ProposalViewToggle({
   value,
@@ -33,20 +33,27 @@ export function ProposalViewToggle({
   ] as const;
 
   return (
-    <ButtonGroup aria-label={t('Proposal view')} className={className}>
+    <ToggleGroup
+      value={[value]}
+      onValueChange={(groupValue) => {
+        // Single-select: ignore the empty array from re-pressing the active item
+        // so the current view can't be deselected.
+        const next = groupValue[0];
+        if (next) {
+          onChange(next as ProposalView);
+        }
+      }}
+      variant="outline"
+      size="icon"
+      spacing={0}
+      aria-label={t('Proposal view')}
+      className={className}
+    >
       {options.map(({ id, label, Icon }) => (
-        <Button
-          key={id}
-          color="secondary"
-          size="small"
-          aria-label={label}
-          aria-pressed={value === id}
-          onPress={() => onChange(id)}
-          className="size-8 p-0"
-        >
+        <ToggleGroupItem key={id} value={id} aria-label={label}>
           <Icon className="size-4" aria-hidden />
-        </Button>
+        </ToggleGroupItem>
       ))}
-    </ButtonGroup>
+    </ToggleGroup>
   );
 }

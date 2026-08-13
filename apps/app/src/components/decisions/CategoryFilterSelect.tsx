@@ -14,11 +14,13 @@ export const CategoryFilterSelect = ({
   categories,
   selectedCategory,
   onSelectCategory,
+  className,
 }: {
   decisionSlug: string | undefined;
   categories: { id: string; name: string }[];
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
+  className?: string;
 }) => {
   const t = useTranslations();
 
@@ -33,6 +35,7 @@ export const CategoryFilterSelect = ({
     <ResponsiveSelect
       selectedKey={selectedCategory}
       onSelectionChange={onSelectCategory}
+      className={className}
       aria-label={
         usesDistricts
           ? t('Filter proposals by district')

@@ -1,10 +1,9 @@
 import {
   AccordionContent,
-  AccordionIndicator,
   AccordionItem,
   AccordionTrigger,
-} from '@op/ui/Accordion';
-import { Skeleton } from '@op/ui/Skeleton';
+} from '@op/sense/Accordion';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -24,11 +23,10 @@ export const CollectionSection = ({
 }) => {
   return (
     <AccordionItem
-      id={collectionId}
+      value={collectionId}
       className="rounded-none border-0 bg-transparent"
     >
-      <AccordionTrigger className="w-full gap-1 text-sm font-normal text-neutral-black">
-        <AccordionIndicator className="text-neutral-black" />
+      <AccordionTrigger className="w-full gap-1 text-sm font-normal text-foreground">
         <span className="truncate">{name}</span>
       </AccordionTrigger>
       <AccordionContent>

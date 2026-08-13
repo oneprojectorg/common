@@ -1,19 +1,34 @@
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
+import { getPublicUrl } from '@/utils';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
-import { EntityType } from '@op/api/encoders';
+import { EntityType, ProfileSearchResult } from '@op/api/encoders';
+import { match } from '@op/core';
 import { useDebounce } from '@op/hooks';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { TextField } from '@op/ui/TextField';
-import { cn } from '@op/ui/utils';
-import { useLocale, useTranslations } from 'next-intl';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import {
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandPrimitive,
+  CommandSeparator,
+} from '@op/sense/Command';
+import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
+import { Spinner } from '@op/sense/Spinner';
+import { firstStrongDirection } from '@op/sense/lib/textDirection';
+import { cn } from '@op/sense/lib/utils';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
-import { LuSearch } from 'react-icons/lu';
+import { LuClock, LuSearch } from 'react-icons/lu';
 
-import { getLocaleDirection, Link, useRouter } from '@/lib/i18n';
+import { useRouter } from '@/lib/i18n';
 
-import { ProfileResults } from './ProfileResults';
-import { RecentSearches } from './RecentSearches';
-import { SearchResultItem } from './SearchResultItem';
+interface ProfileCommandItemProps {
+  profile: ProfileSearchResult;
+  query: string;
+  canLinkToProfile: boolean;
+  onSelect: (profile: ProfileSearchResult) => void;
+}
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
@@ -22,16 +37,14 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isMobile, setIsMobile] = useState(false);
-  const locale = useLocale();
-  const localeDirection = getLocaleDirection(locale);
+  const canLinkToProfile = useCanLinkToProfile();
 
-  // Check if we're on mobile using the same breakpoint as the header
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint
+      setIsMobile(window.innerWidth < 640);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -47,7 +60,6 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       {
         staleTime: 30_000,
         gcTime: 30_000,
-        // make sure we don't remove results while continuing to type
         placeholderData: (prev) => prev,
         enabled: debouncedQuery.length > 1,
       },
@@ -66,8 +78,19 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   const dropdownShowing = !!(
     showResults &&
-    (mergedProfileResults?.length || recentSearches.length)
+    (query.length > 0 || recentSearches.length)
   );
+
+  const showProfiles = query.length > 0 && mergedProfileResults.length > 0;
+  const showRecents = query.length === 0 && recentSearches.length > 0;
+  const showEmpty =
+    query.length > 0 &&
+    // Only declare "no results" once the debounce settles, else a stale
+    // debouncedQuery flashes "No results" while the user is still typing.
+    query === debouncedQuery &&
+    debouncedQuery.length > 1 &&
+    !isSearching &&
+    mergedProfileResults.length === 0;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -76,7 +99,6 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         !containerRef.current.contains(event.target as Node)
       ) {
         setShowResults(false);
-        setSelectedIndex(-1);
         onBlur?.();
       }
     };
@@ -92,212 +114,246 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     }
   }, [isMobile]);
 
-  useEffect(() => {
-    setSelectedIndex(-1);
-  }, [mergedProfileResults]);
-
-  const recordSearch = (query: string) => {
+  const recordSearch = (searchQuery: string) => {
     setShowResults(false);
     setImmediateQuery('');
     setQuery('');
 
-    if (query.length && !recentSearches.includes(query)) {
+    if (searchQuery.length && !recentSearches.includes(searchQuery)) {
       const recentTrimmed = recentSearches.slice(0, 2);
-      setRecentSearches([query, ...recentTrimmed]);
+      setRecentSearches([searchQuery, ...recentTrimmed]);
     }
+  };
+
+  const handleSearchSelect = () => {
+    const term = query;
+    recordSearch(term);
+    router.push(`/search?q=${encodeURIComponent(term)}`);
+  };
+
+  const handleProfileSelect = (profile: ProfileSearchResult) => {
+    if (!canLinkToProfile) {
+      return;
+    }
+    recordSearch(query);
+    router.push(
+      profile.type === EntityType.INDIVIDUAL
+        ? `/profile/${profile.slug}`
+        : `/org/${profile.slug}`,
+    );
+  };
+
+  const handleRecentSelect = (term: string) => {
+    setQuery(term);
+    setImmediateQuery(term);
+    setShowResults(true);
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    const isInteractingWithDropdown =
-      !showResults || !mergedProfileResults?.length;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-
-        if (isInteractingWithDropdown) {
-          break;
-        }
-
-        setSelectedIndex((prev) =>
-          prev < mergedProfileResults.length ? prev + 1 : 0,
-        );
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-
-        if (isInteractingWithDropdown) {
-          break;
-        }
-
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : mergedProfileResults.length - 1,
-        );
-        break;
-      case 'Enter':
-        event.preventDefault();
-
-        recordSearch(query);
-
-        if (
-          isInteractingWithDropdown &&
-          mergedProfileResults &&
-          selectedIndex > 0
-        ) {
-          const selectedProfile = mergedProfileResults[selectedIndex - 1];
-
-          if (selectedProfile) {
-            const profilePath =
-              selectedProfile.type === EntityType.INDIVIDUAL
-                ? `/profile/${selectedProfile.slug}`
-                : `/org/${selectedProfile.slug}`;
-            router.push(profilePath);
-            break;
-          }
-        }
-
-        router.push(`/search?q=${query}`);
-        break;
-      case 'Escape':
-        event.preventDefault();
-        setShowResults(false);
-        setSelectedIndex(-1);
-        break;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setShowResults(false);
     }
   };
 
+  const listContent = (
+    <CommandList className="max-h-86 overflow-x-hidden overflow-y-auto">
+      {query.length > 0 ? (
+        <CommandGroup>
+          <CommandItem value="search-action" onSelect={handleSearchSelect}>
+            <LuSearch className="size-4 text-foreground" />
+            <span dir="auto">
+              {t.rich('Search for <strong>{query}</strong>', {
+                query,
+                strong: (chunks) => (
+                  <strong className="font-bold">{chunks}</strong>
+                ),
+              })}
+            </span>
+          </CommandItem>
+        </CommandGroup>
+      ) : null}
+
+      {showProfiles ? (
+        <>
+          <CommandSeparator alwaysRender />
+          <CommandGroup>
+            {mergedProfileResults.map((profile) => (
+              <ProfileCommandItem
+                key={profile.id}
+                profile={profile}
+                query={query}
+                canLinkToProfile={canLinkToProfile}
+                onSelect={handleProfileSelect}
+              />
+            ))}
+          </CommandGroup>
+        </>
+      ) : null}
+
+      {showRecents ? (
+        <CommandGroup heading={t('Recent Searches')}>
+          {recentSearches.map((recentQuery) => (
+            <CommandItem
+              key={recentQuery}
+              value={`recent-${recentQuery}`}
+              onSelect={() => handleRecentSelect(recentQuery)}
+            >
+              <LuClock className="size-4 text-foreground" />
+              <span dir="auto">{recentQuery}</span>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      ) : null}
+
+      {showEmpty ? (
+        <>
+          <CommandSeparator alwaysRender />
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {t('No results')}
+          </div>
+        </>
+      ) : null}
+    </CommandList>
+  );
+
   return (
-    <div ref={containerRef} className="group">
-      <TextField
-        ref={inputRef}
-        inputProps={{
-          dir: query.length > 0 ? 'auto' : undefined,
-          placeholder: t('Search'),
-          color: 'muted',
-          size: 'small',
-          icon: isSearching ? (
-            <LoadingSpinner className="size-4 text-neutral-gray4" />
-          ) : (
-            <LuSearch className="size-4 text-neutral-gray4" />
-          ),
-          className: cn(
-            'bg-transparent placeholder:text-neutral-gray4 focus-visible:bg-white active:bg-white active:text-neutral-gray3',
-            'active:border-inherit', // override TextField input styles that are used everywhere
-            dropdownShowing && 'sm:rounded-b-none',
-            localeDirection === 'rtl' && 'pl-4', // override logical padding property due to dir="auto" in inputProps
-          ),
-          onKeyDown: handleKeyDown,
-          'aria-expanded': dropdownShowing,
-          'aria-haspopup': 'listbox',
-          'aria-activedescendant':
-            selectedIndex >= 0 ? `search-option-${selectedIndex}` : undefined,
-          role: 'combobox',
-          'aria-autocomplete': 'list',
-        }}
-        onChange={(e) => {
-          setQuery(e);
-          setShowResults(true);
-        }}
-        onFocus={() => setShowResults(true)}
-        onBlur={() => {
-          setTimeout(() => {
-            setShowResults(false);
-            onBlur?.();
-          }, 150);
-        }}
-        value={query}
-        className={cn('relative z-20', isMobile ? 'w-full' : 'w-96')}
-        aria-label={t('Search')}
-      >
-        {dropdownShowing ? (
-          <div
-            className="absolute top-10 z-10 hidden !max-h-80 w-(--trigger-width) min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white text-base group-hover:border-neutral-gray2 sm:block"
-            role="listbox"
-            aria-label={t('Search results')}
-          >
-            <div>
-              {query.length > 0 && (
-                <SearchResultItem
-                  selected={selectedIndex === 0}
-                  className={cn(
-                    'py-2',
-                    mergedProfileResults?.length && 'border-b',
-                  )}
-                >
-                  <Link
-                    className="flex w-full items-center gap-2"
-                    href={`/search/?q=${query}`}
-                    onClick={() => recordSearch(query)}
-                  >
-                    <LuSearch className="size-4 text-neutral-charcoal" />{' '}
-                    {query}
-                  </Link>
-                </SearchResultItem>
-              )}
-              {query?.length && mergedProfileResults?.length ? (
-                <ProfileResults
-                  query={query}
-                  profileResults={mergedProfileResults}
-                  selectedIndex={selectedIndex}
-                  onSearch={recordSearch}
-                />
-              ) : (
-                <RecentSearches
-                  recentSearches={recentSearches}
-                  selectedIndex={selectedIndex}
-                  query={query}
-                  onSearch={recordSearch}
-                />
-              )}
-            </div>
-          </div>
-        ) : null}
-      </TextField>
-
-      {/* Mobile full-screen search results */}
-      {dropdownShowing && (
-        <div
-          className="fixed inset-x-0 top-[60px] bottom-0 z-10 block overflow-y-auto bg-white text-base sm:hidden"
-          role="listbox"
-          aria-label={t('Search results')}
-        >
-          <div className="p-4 pt-0">
-            {false && query.length > 0 && (
-              <SearchResultItem
-                selected={selectedIndex === 0}
-                className={cn(
-                  'py-2',
-                  mergedProfileResults?.length && 'border-b',
-                )}
-              >
-                <Link
-                  className="flex w-full items-center gap-2"
-                  href={`/search/?q=${query}`}
-                  onClick={() => recordSearch(query)}
-                >
-                  <LuSearch className="size-4 text-neutral-charcoal" /> {query}
-                </Link>
-              </SearchResultItem>
-            )}
-
-            {query?.length && mergedProfileResults?.length ? (
-              <ProfileResults
-                query={query}
-                profileResults={mergedProfileResults}
-                selectedIndex={selectedIndex}
-                onSearch={recordSearch}
-              />
-            ) : (
-              <RecentSearches
-                recentSearches={recentSearches}
-                selectedIndex={selectedIndex}
-                query={query}
-                onSearch={recordSearch}
-              />
-            )}
-          </div>
-        </div>
+    <CommandPrimitive
+      ref={containerRef}
+      shouldFilter={false}
+      loop
+      label={t('Search')}
+      className={cn(
+        'group relative z-20 min-w-0',
+        isMobile ? 'w-full' : 'w-112 max-w-full',
       )}
-    </div>
+    >
+      <InputGroup className="active:border-inherit">
+        <InputGroupAddon align="inline-start">
+          {isSearching ? (
+            <Spinner className="size-4 text-muted-foreground" />
+          ) : (
+            <LuSearch className="size-4 text-muted-foreground" />
+          )}
+        </InputGroupAddon>
+        <CommandPrimitive.Input
+          ref={inputRef}
+          // Tag as the InputGroup control so the group's focus-visible ring/
+          // border styles (has-[[data-slot=input-group-control]...]) apply.
+          data-slot="input-group-control"
+          value={query}
+          onValueChange={(value) => {
+            setQuery(value);
+            setShowResults(true);
+          }}
+          dir={firstStrongDirection(query) ?? undefined}
+          maxLength={100}
+          placeholder={t('Search')}
+          onFocus={() => {
+            // Re-focusing (e.g. selecting a recent search) must cancel a
+            // pending blur-hide, or the list vanishes ~150ms later.
+            if (blurTimeoutRef.current) {
+              clearTimeout(blurTimeoutRef.current);
+            }
+            setShowResults(true);
+          }}
+          onBlur={() => {
+            blurTimeoutRef.current = setTimeout(() => {
+              setShowResults(false);
+              onBlur?.();
+            }, 150);
+          }}
+          onKeyDown={handleKeyDown}
+          aria-label={t('Search')}
+          className={cn(
+            'flex-1 bg-transparent ps-1.5 text-base text-foreground outline-none placeholder:text-muted-foreground',
+            // cmdk owns this input, so the primitives' rule is inlined here:
+            // direction comes from the query (see `dir` above), and `rtl:pl-4`
+            // is the trailing gap the clear button needs.
+            'rtl:pl-4',
+          )}
+        />
+      </InputGroup>
+
+      {/* Always mounted so the input's `aria-controls` target (the CommandList
+          cmdk renders) exists in the DOM even when closed; just hidden until
+          there's something to show. */}
+      <div
+        aria-label={t('Search results')}
+        className={cn(
+          !dropdownShowing && 'hidden',
+          isMobile
+            ? 'fixed inset-x-0 top-15 bottom-0 z-10 overflow-y-auto bg-popover text-base'
+            : 'absolute top-12 z-10 w-full rounded border bg-popover text-base shadow',
+        )}
+      >
+        {isMobile ? <div className="p-4 pt-0">{listContent}</div> : listContent}
+      </div>
+    </CommandPrimitive>
+  );
+};
+
+const ProfileCommandItem = ({
+  profile,
+  query,
+  canLinkToProfile,
+  onSelect,
+}: ProfileCommandItemProps) => {
+  const t = useTranslations();
+  const isIndividual = profile.type === EntityType.INDIVIDUAL;
+  const profileType = match(profile.type, {
+    [EntityType.INDIVIDUAL]: t('Individual'),
+    [EntityType.ORG]: t('Organization'),
+    _: t('Profile'),
+  });
+
+  const additionalInfo = isIndividual ? profile.bio : profile.city;
+  const subtitle = additionalInfo
+    ? `${profileType} • ${additionalInfo}`
+    : profileType;
+
+  const avatarSrc = profile.avatarImage?.name
+    ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
+    : undefined;
+
+  return (
+    <CommandItem
+      value={`profile-${profile.id}`}
+      disabled={!canLinkToProfile}
+      onSelect={() => onSelect(profile)}
+      className="gap-3 py-2.5"
+    >
+      <Avatar className="aspect-square size-8 shrink-0">
+        {avatarSrc ? (
+          <AvatarImage src={avatarSrc} alt={`${profile.name} avatar`} />
+        ) : null}
+        <AvatarFallback name={profile.name} />
+      </Avatar>
+
+      <div className="flex flex-col font-semibold">
+        {highlightName(profile.name, query)}
+        <span dir="auto" className="text-sm text-muted-foreground capitalize">
+          {subtitle}
+        </span>
+      </div>
+    </CommandItem>
+  );
+};
+
+const highlightName = (name: string, query: string) => {
+  // Text before the (case-insensitive) match; whole name if no match.
+  const firstPiece = name.toLowerCase().split(query.toLowerCase())[0] ?? name;
+
+  return (
+    <bdi>
+      <span className="font-normal">{name.slice(0, firstPiece.length)}</span>
+      <span className="font-bold">
+        {name.slice(firstPiece.length, firstPiece.length + query.length)}
+      </span>
+      <span className="font-normal">
+        {name.slice(firstPiece.length + query.length, name.length)}
+      </span>
+    </bdi>
   );
 };

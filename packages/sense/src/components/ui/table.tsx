@@ -1,5 +1,7 @@
 'use client';
 
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
@@ -70,7 +72,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-10 px-3 text-start align-middle text-sm font-strong whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pe-0',
+        'h-10 px-2 text-start align-middle text-sm font-strong whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pe-0',
         className,
       )}
       {...props}
@@ -78,17 +80,29 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
   );
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
-  return (
-    <td
-      data-slot="table-cell"
-      className={cn(
-        'p-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
-        className,
-      )}
-      {...props}
-    />
-  );
+/**
+ * A `td` by default. Pass `render={<th scope="row" />}` for the cell that names
+ * its row — `TableHead` would apply column-header styling.
+ */
+function TableCell({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'td'>) {
+  return useRender({
+    defaultTagName: 'td',
+    render,
+    props: mergeProps<'td'>(
+      {
+        className: cn(
+          'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
+          className,
+        ),
+      },
+      props,
+    ),
+    state: { slot: 'table-cell' },
+  });
 }
 
 function TableCaption({

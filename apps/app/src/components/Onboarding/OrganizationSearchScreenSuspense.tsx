@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Spinner } from '@op/sense/Spinner';
 import { ReactNode, Suspense } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
@@ -40,7 +40,7 @@ export const OrganizationSearchScreenSuspense = (
         fallback={
           <OnboardingCenterLayout title="" subtitle="">
             <div className="flex items-center justify-center py-8">
-              <LoadingSpinner />
+              <Spinner className="size-6" />
             </div>
           </OnboardingCenterLayout>
         }

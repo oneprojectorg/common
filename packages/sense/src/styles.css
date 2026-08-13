@@ -3,9 +3,9 @@
  *
  * Intentionally empty. The shadcn CLI is configured (via components.json) to
  * write its theme block here when adding components, but we move/merge any
- * generated tokens into `packages/styles/sense-theme.css`, which is the
+ * generated tokens into `packages/styles/theme.css`, which is the
  * single source of truth for sense's semantic CSS variables.
  *
  * Do NOT import this file from apps. Apps already pick up sense's theme via
- * `@op/styles` (shared-styles.css imports sense-theme.css).
+ * `@op/styles` (theme.css is the package entry).
  */

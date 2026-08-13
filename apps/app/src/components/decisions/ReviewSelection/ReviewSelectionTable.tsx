@@ -7,20 +7,19 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Link } from '@op/ui/Link';
-import { Skeleton } from '@op/ui/Skeleton';
-import { StatusDot, type StatusDotIntent } from '@op/ui/StatusDot';
+import { Skeleton } from '@op/sense/Skeleton';
+import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
+import { screens } from '@op/styles/constants';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
 import { SelectionCard } from '../selection/SelectionCard';
@@ -71,24 +70,24 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')} bleed>
+    <Table aria-label={t('All proposals')}>
       <TableHeader>
-        <TableColumn id="proposal" isRowHeader className="w-56">
-          {t('Proposal')}
-        </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
-        <TableColumn id="category">{t('Category')}</TableColumn>
-        <TableColumn id="recommendation">
-          {t('Overall recommendation')}
-        </TableColumn>
-        <TableColumn id="score">
-          <span className="underline decoration-dotted">
-            {t('Score ({pts}pts)', { pts: totalPoints })}
-          </span>
-        </TableColumn>
-        <TableColumn id="action" className="w-28">
-          <span className="sr-only">{t('Advance')}</span>
-        </TableColumn>
+        <TableRow>
+          <TableHead scope="col" className="w-56">
+            {t('Proposal')}
+          </TableHead>
+          <TableHead scope="col">{t('Budget')}</TableHead>
+          <TableHead scope="col">{t('Category')}</TableHead>
+          <TableHead scope="col">{t('Overall recommendation')}</TableHead>
+          <TableHead scope="col">
+            <span className="underline decoration-dotted">
+              {t('Score ({pts}pts)', { pts: totalPoints })}
+            </span>
+          </TableHead>
+          <TableHead scope="col" className="w-28">
+            <span className="sr-only">{t('Advance')}</span>
+          </TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {items.map((item) => {
@@ -98,25 +97,29 @@ export function ReviewSelectionTable({
           const budget = item.proposal.proposalData.budget;
 
           return (
-            <TableRow key={item.proposal.id} id={item.proposal.id}>
-              <TableCell>
+            <TableRow
+              key={item.proposal.id}
+              data-state={advancing ? 'selected' : undefined}
+            >
+              {/* The cell that names the row, so grid navigation can announce
+                  which proposal a value belongs to. */}
+              <TableCell render={<th scope="row" />} className="font-normal">
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    variant="neutral"
-                    className="line-clamp-1 text-base text-neutral-black hover:underline"
+                    className="line-clamp-1 text-base text-foreground"
                   >
                     <bdi>{title}</bdi>
                   </Link>
                   {submitterName && (
-                    <span className="line-clamp-1 text-sm text-neutral-gray4">
+                    <span className="line-clamp-1 text-sm text-muted-foreground">
                       <bdi>{submitterName}</bdi>
                     </span>
                   )}
                 </div>
               </TableCell>
               <TableCell>
-                <span className="text-base text-neutral-black">
+                <span className="text-base">
                   {budget
                     ? formatCurrency(budget.amount, undefined, budget.currency)
                     : '—'}
@@ -133,7 +136,7 @@ export function ReviewSelectionTable({
                 />
               </TableCell>
               <TableCell>
-                <span className="text-base text-neutral-black">
+                <span className="text-base">
                   <ScoreText value={item.aggregates.averageScore} />
                 </span>
               </TableCell>
@@ -156,7 +159,7 @@ export function ReviewSelectionTable({
 export function ReviewSelectionTableSkeleton() {
   return (
     <div className="flex w-full flex-col gap-2">
-      <div className="flex w-full items-center justify-between border-b border-neutral-gray1 py-2">
+      <div className="flex w-full items-center justify-between border-b border-border py-2">
         <Skeleton className="h-4 w-20" />
         <div className="hidden gap-8 md:flex">
           <Skeleton className="h-4 w-12" />
@@ -169,7 +172,7 @@ export function ReviewSelectionTableSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="flex w-full items-center justify-between gap-4 border-b border-neutral-gray1 py-2"
+          className="flex w-full items-center justify-between gap-4 border-b border-border py-2"
         >
           <div className="flex flex-col gap-1">
             <Skeleton className="h-4 w-40" />
@@ -207,19 +210,18 @@ function ProposalCard({
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-          variant="neutral"
-          className="text-base text-neutral-black hover:underline"
+          className="text-base text-foreground"
         >
           {title}
         </Link>
         {submitterName && (
-          <span className="text-sm text-neutral-gray4">{submitterName}</span>
+          <span className="text-sm text-muted-foreground">{submitterName}</span>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {budget && (
-          <span className="text-base text-neutral-black">
+          <span className="text-base">
             {formatCurrency(budget.amount, undefined, budget.currency)}
           </span>
         )}
@@ -231,7 +233,7 @@ function ProposalCard({
       />
 
       <div className="flex items-center justify-between">
-        <span className="text-base text-neutral-black">
+        <span className="text-base">
           <ScoreText value={item.aggregates.averageScore} />
         </span>
         <AdvanceToggleButton
@@ -252,7 +254,7 @@ function RecommendationCounts({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-wrap items-center gap-4 text-base text-neutral-black">
+    <div className="flex flex-wrap items-center gap-4 text-base">
       {Object.values(RECOMMENDATION_OPTION).map((opt) => (
         <CountLabel
           key={opt.value}
@@ -275,7 +277,7 @@ function CountLabel({
   intent: StatusDotIntent;
 }) {
   return (
-    <StatusDot intent={intent} className="text-base text-neutral-black">
+    <StatusDot intent={intent} className="text-base text-foreground">
       {value} {label}
     </StatusDot>
   );

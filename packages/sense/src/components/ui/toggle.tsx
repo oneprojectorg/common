@@ -13,14 +13,31 @@ const toggleVariants = cva(
         default: 'bg-transparent',
         outline:
           'border border-input bg-background hover:bg-muted aria-pressed:border-accent-foreground',
+        // Figma `Toggle` → `Variant=Ghost`: muted label, no fill at rest, and
+        // pressed reads as primary-colored text with NO background (unlike
+        // `default`, which fills with accent). For inline, low-chrome toggles
+        // like the proposal engagement row.
+        ghost:
+          'bg-transparent text-muted-foreground hover:text-foreground aria-pressed:bg-transparent aria-pressed:text-primary',
       },
       size: {
         default:
           'h-11 min-w-11 px-4 has-data-[icon=inline-end]:pe-3 has-data-[icon=inline-start]:ps-3',
         sm: "h-8 min-w-8 rounded-md px-3 text-sm has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2 [&_svg:not([class*='size-'])]:size-4",
         lg: 'h-12 min-w-12 px-4 has-data-[icon=inline-end]:pe-3 has-data-[icon=inline-start]:ps-3',
+        // Square icon-only toggles (no horizontal padding), sized to match the
+        // Button icon variants.
+        icon: 'size-11 p-0',
+        'icon-sm': "size-8 rounded-md p-0 [&_svg:not([class*='size-'])]:size-4",
       },
     },
+    // Ghost sits tighter than the bordered variants at every size (Figma: 12px
+    // vs 16px at default, 8px vs 12px at sm) — it has no border to sit inside.
+    compoundVariants: [
+      { variant: 'ghost', size: 'default', className: 'px-3' },
+      { variant: 'ghost', size: 'sm', className: 'px-2' },
+      { variant: 'ghost', size: 'lg', className: 'px-3' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',

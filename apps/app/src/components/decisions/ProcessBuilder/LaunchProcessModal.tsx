@@ -2,11 +2,18 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
+import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Skeleton } from '@op/sense/Skeleton';
+import { toast } from '@op/sense/Toast';
+import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -57,9 +64,8 @@ export const LaunchProcessModal = ({
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
-      toast.error({
-        message: t('Failed to launch process'),
-        title: error.message,
+      toast.error(error.message, {
+        description: t('Failed to launch process'),
       });
     },
   });
@@ -72,75 +78,82 @@ export const LaunchProcessModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>{t('Launch process?')}</ModalHeader>
-      <ModalBody className="flex flex-col gap-4">
-        {invitesLoading ? (
-          <Skeleton className="h-6 w-full" />
-        ) : pendingNotificationCount > 0 ? (
-          <p className="text-neutral-charcoal">
-            {t('Launching your process will notify')}{' '}
-            <span className="font-bold">
-              {t(
-                '{count, plural, =1 {1 participant} other {# participants}}.',
-                { count: pendingNotificationCount },
-              )}
-            </span>
-          </p>
-        ) : (
-          <p className="text-neutral-charcoal">
-            {t(
-              'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
-              { processName },
-            )}
-          </p>
-        )}
-
-        {/* Summary Section */}
-        <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-4">
-          <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
-            <span className="text-neutral-gray4">{t('Phases')}</span>
-            <span className="text-neutral-charcoal">{phasesCount}</span>
-          </div>
-          {organizeByCategories && (
-            <div className="flex items-center justify-between">
-              <span className="text-neutral-gray4">{t('Categories')}</span>
-              <span className="text-neutral-charcoal">
-                {categoriesCount === 0 ? t('None') : categoriesCount}
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Launch process?')}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-6 py-4">
+          {invitesLoading ? (
+            <Skeleton className="h-6 w-full" />
+          ) : pendingNotificationCount > 0 ? (
+            <p>
+              {t('Launching your process will notify')}{' '}
+              <span className="font-bold">
+                {t(
+                  '{count, plural, =1 {1 participant} other {# participants}}.',
+                  { count: pendingNotificationCount },
+                )}
               </span>
+            </p>
+          ) : (
+            <p>
+              {t(
+                'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
+                { processName },
+              )}
+            </p>
+          )}
+
+          {/* Summary Section */}
+          <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">{t('Phases')}</span>
+              <span>{phasesCount}</span>
             </div>
+            {organizeByCategories && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t('Categories')}</span>
+                <span>
+                  {categoriesCount === 0 ? t('None') : categoriesCount}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm">
+            {t('You can edit settings and advance phases after launching.')}
+          </p>
+
+          {showNoCategoriesWarning && (
+            <Alert variant="warning">
+              <LuTriangleAlert />
+              <AlertDescription>
+                {t(
+                  "No proposal categories defined. Proposers won't be able to categorize their submissions.",
+                )}
+              </AlertDescription>
+            </Alert>
           )}
         </div>
-
-        <p className="text-sm text-neutral-charcoal">
-          {t('You can edit settings and advance phases after launching.')}
-        </p>
-
-        {showNoCategoriesWarning && (
-          <AlertBanner intent="warning">
-            {t(
-              "No proposal categories defined. Proposers won't be able to categorize their submissions.",
-            )}
-          </AlertBanner>
-        )}
-      </ModalBody>
-      <ModalFooter>
-        <Button
-          color="neutral"
-          onPress={() => onOpenChange(false)}
-          className="w-full sm:w-auto"
-        >
-          {t('Cancel')}
-        </Button>
-        <Button
-          onPress={handleLaunch}
-          isPending={updateInstance.isPending}
-          isDisabled={updateInstance.isPending}
-          className="w-full sm:w-auto"
-        >
-          {t('Launch Process')}
-        </Button>
-      </ModalFooter>
-    </Modal>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="w-full sm:w-auto"
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            onClick={handleLaunch}
+            loading={updateInstance.isPending}
+            disabled={updateInstance.isPending}
+            className="w-full sm:w-auto"
+          >
+            {t('Launch Process')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

@@ -754,14 +754,22 @@ test.describe('Proposal View', () => {
       await expect(page.getByText(commentText)).toBeVisible();
       await expect(page.getByText(likeBadge)).toBeVisible();
 
+      // The like and follow toggles are named by the stat they show
+      // ("0 Likes"), so match the noun rather than a bare verb.
       const writeControls = [
         page.getByRole('button', { name: 'Add reaction' }),
-        page.getByRole('button', { name: 'Like', exact: true }),
-        page.getByRole('button', { name: 'Follow', exact: true }),
+        page.getByRole('button', { name: /^\d+ Likes?$/ }),
+        page.getByRole('button', { name: /^\d+ Followers?$/ }),
       ];
       for (const control of writeControls) {
         await expect(control).toHaveCount(canInteract ? 1 : 0);
       }
+
+      // A count of 0 above is satisfied by the stats vanishing as well as by
+      // them rendering as plain text, so assert the text is there either way —
+      // read-only viewers still see the counts, just not as toggles.
+      await expect(page.getByText(/^\d+ Likes?$/)).toBeVisible();
+      await expect(page.getByText(/^\d+ Followers?$/)).toBeVisible();
 
       await expect(
         page.getByRole('button', { name: 'Report', exact: true }),

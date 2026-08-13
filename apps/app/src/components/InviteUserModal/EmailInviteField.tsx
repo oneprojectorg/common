@@ -1,0 +1,143 @@
+'use client';
+
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { InputGroup, InputGroupTextarea } from '@op/sense/InputGroup';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { toast } from '@op/sense/Toast';
+import type { KeyboardEvent, ReactNode } from 'react';
+import { useId } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
+
+import { isValidEmail, parseEmails, shouldParseEmails } from './emailUtils';
+
+interface EmailInviteFieldProps {
+  /** Raw text still in the box — everything not yet accepted as a chip. */
+  emails: string;
+  setEmails: (emails: string) => void;
+  /** Accepted addresses, shown as removable chips. */
+  emailBadges: string[];
+  setEmailBadges: (badges: string[]) => void;
+  /** Seeds the empty-state placeholder — the target org's domain, or an example. */
+  domain: string;
+  /** Optional helper text under the box. */
+  description?: ReactNode;
+}
+
+/**
+ * The "Send to" chips input shared by both invite tabs: type addresses, and a
+ * comma or line break turns the valid ones into chips. Invalid ones stay in the
+ * box to be corrected; duplicates are dropped (they are already chips). Both
+ * are reported by toast.
+ */
+export const EmailInviteField = ({
+  emails,
+  setEmails,
+  emailBadges,
+  setEmailBadges,
+  domain,
+  description,
+}: EmailInviteFieldProps) => {
+  const t = useTranslations();
+  const id = useId();
+
+  const removeEmailBadge = (emailToRemove: string) => {
+    setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!shouldParseEmails(e.key)) {
+      return;
+    }
+
+    e.preventDefault();
+
+    if (!emails.trim()) {
+      return;
+    }
+
+    const { emails: parsedEmails, hasLineBreaks } = parseEmails(emails);
+    const validEmails: string[] = [];
+    const invalidEmails: string[] = [];
+    const duplicateEmails: string[] = [];
+
+    parsedEmails.forEach((email) => {
+      if (!isValidEmail(email)) {
+        invalidEmails.push(email);
+      } else if (emailBadges.includes(email)) {
+        duplicateEmails.push(email);
+      } else {
+        validEmails.push(email);
+      }
+    });
+
+    if (validEmails.length > 0) {
+      setEmailBadges([...emailBadges, ...validEmails]);
+    }
+
+    // Invalid addresses go back in the box, in the separator style they arrived
+    // in; everything else clears it.
+    setEmails(invalidEmails.join(hasLineBreaks ? '\n' : ', '));
+
+    if (invalidEmails.length > 0) {
+      toast.error(
+        invalidEmails.length === 1 ? t('Invalid email') : t('Invalid emails'),
+        {
+          description: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
+        },
+      );
+    }
+
+    if (duplicateEmails.length > 0) {
+      toast.error(
+        duplicateEmails.length === 1
+          ? t('Duplicate email')
+          : t('Duplicate emails'),
+        {
+          description: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
+        },
+      );
+    }
+  };
+
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{t('Send to')}</FieldLabel>
+      {/* The group owns the border and the focus ring, so the textarea inside
+          stays chrome-less as the chips wrap alongside it. */}
+      <InputGroup className="min-h-20 flex-wrap items-start gap-2 p-2">
+        <TagGroup aria-label={t('Selected emails')}>
+          {emailBadges.map((email) => (
+            <Tag
+              key={email}
+              size="lg"
+              onRemove={() => removeEmailBadge(email)}
+              removeLabel={t('Remove {email}', { email })}
+            >
+              {email}
+            </Tag>
+          ))}
+        </TagGroup>
+        <InputGroupTextarea
+          id={id}
+          // Addresses are always latin, and separating them by comma leaves
+          // trailing neutrals that an RTL paragraph reorders — on an Arabic page
+          // the placeholder rendered as "... ,name1@x.org". Same rule we apply
+          // to email/url/tel inputs.
+          dir="ltr"
+          value={emails}
+          onChange={(e) => setEmails(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            emailBadges.length === 0
+              ? `name1@${domain}, name2@${domain}, ...`
+              : t('Type emails followed by a comma or line break...')
+          }
+          className="min-h-0 min-w-50 px-0 pt-1 pb-0"
+          rows={1}
+        />
+      </InputGroup>
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
+    </Field>
+  );
+};

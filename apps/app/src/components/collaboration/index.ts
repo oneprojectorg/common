@@ -6,7 +6,6 @@ export {
 export {
   CollaborativeEditor,
   type CollaborativeEditorProps,
-  type CollaborativeEditorRef,
 } from './CollaborativeEditor';
 export { CollaborativeTitleField } from './CollaborativeTitleField';
 export { CollaborativeDropdownField } from './CollaborativeDropdownField';

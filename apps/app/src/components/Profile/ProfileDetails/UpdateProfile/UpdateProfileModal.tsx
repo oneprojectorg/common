@@ -1,8 +1,11 @@
 import { useRequiredUser } from '@/utils/UserProvider';
-import { Dialog } from '@op/ui/Dialog';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
-import { useEffect, useRef } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -19,38 +22,21 @@ export const UpdateProfileModal = ({
   const t = useTranslations();
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        event.preventDefault();
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
-
   return (
-    <DialogTrigger>
-      <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
-        <Dialog>
-          <ModalHeader>{t('Edit Profile')}</ModalHeader>
-          {user.profile && (
-            <UpdateProfileForm
-              ref={formRef}
-              profile={user.profile}
-              onSuccess={() => setIsOpen(false)}
-              className="p-6"
-            />
-          )}
-        </Dialog>
-      </Modal>
-    </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t('Edit Profile')}</DialogTitle>
+        </DialogHeader>
+        {user.profile && (
+          <UpdateProfileForm
+            ref={formRef}
+            profile={user.profile}
+            onSuccess={() => setIsOpen(false)}
+            className="p-6"
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };

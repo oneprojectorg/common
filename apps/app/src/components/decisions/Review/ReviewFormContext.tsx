@@ -13,7 +13,7 @@ import {
   schemaValidator,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
 import {
   type ReactNode,
@@ -164,13 +164,11 @@ function ReviewFormProviderInner({
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Review submitted successfully') });
+      toast.success(t('Review submitted successfully'));
       router.push(`/decisions/${decisionSlug}/current`);
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to submit review'),
-      });
+      toast.error(error.message || t('Failed to submit review'));
     },
   });
 
@@ -179,12 +177,10 @@ function ReviewFormProviderInner({
       // The mutation's review channels invalidate getReviewAssignment locally,
       // refreshing the read-only view in place (as requestRevision does).
       setIsEditing(false);
-      toast.success({ message: t('Review updated successfully') });
+      toast.success(t('Review updated successfully'));
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update review'),
-      });
+      toast.error(error.message || t('Failed to update review'));
     },
   });
 
@@ -200,24 +196,20 @@ function ReviewFormProviderInner({
 
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Revision requested') });
+      toast.success(t('Revision requested'));
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to request revision'),
-      });
+      toast.error(error.message || t('Failed to request revision'));
     },
   });
 
   const cancelRevisionMutation =
     trpc.decision.cancelRevisionRequest.useMutation({
       onSuccess: () => {
-        toast.success({ message: t('Revision request cancelled') });
+        toast.success(t('Revision request cancelled'));
       },
       onError: (error) => {
-        toast.error({
-          message: error.message || t('Failed to cancel revision request'),
-        });
+        toast.error(error.message || t('Failed to cancel revision request'));
       },
     });
 

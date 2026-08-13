@@ -2,33 +2,34 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { ListBox } from '@op/ui/ListBox';
-import { Popover } from '@op/ui/Popover';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { useEffect, useMemo, useRef } from 'react';
-import type { Key } from 'react';
-import { Dialog, ListBoxItem } from 'react-aria-components';
-import type { Selection } from 'react-aria-components';
-import { LuCheck } from 'react-icons/lu';
+import { Checkbox } from '@op/sense/Checkbox';
+import { OptionBox } from '@op/sense/OptionBox';
+import { useEffect, useId, useMemo, useRef } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { LabeledFieldSet } from '@/components/decisions/forms/LabeledFieldSet';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
+interface MultiSelectOption {
+  value: string;
+  label: string;
+}
+
 interface CollaborativeMultiSelectFieldProps {
-  options: Array<{ value: string; label: string }>;
+  options: Array<MultiSelectOption>;
   initialValue?: string[];
   onChange?: (value: string[]) => void;
   /** Yjs fragment name used to sync this field. Must be unique per instance. */
   fragmentName: string;
-  /** Placeholder text shown when no value is selected. */
-  placeholder?: string;
+  /** Visible group legend. */
+  title: string;
+  description?: string;
+  required?: boolean;
 }
 
 /**
- * Collaborative multi-select field synced through a Yjs fragment.
+ * Collaborative multi-select field synced through a Yjs fragment, rendered as a
+ * row of bordered checkbox chips (Figma "Select a category").
  *
  * Values are serialized as a JSON string array so all connected users see the
  * same category selections in real time while the rest of the app consumes a
@@ -39,10 +40,12 @@ export function CollaborativeMultiSelectField({
   initialValue = [],
   onChange,
   fragmentName,
-  placeholder,
+  title,
+  description,
+  required,
 }: CollaborativeMultiSelectFieldProps) {
-  const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
+  const idPrefix = useId();
   const [syncedValue, setSyncedValue] = useCollaborativeFragment(
     ydoc,
     fragmentName,
@@ -52,11 +55,6 @@ export function CollaborativeMultiSelectField({
   const selectedValues = useMemo(
     () => parseCategoryFragmentValue(syncedValue),
     [syncedValue],
-  );
-  const selectedKeys = useMemo(() => new Set(selectedValues), [selectedValues]);
-  const selectedOptions = useMemo(
-    () => options.filter((option) => selectedValues.includes(option.value)),
-    [options, selectedValues],
   );
 
   const onChangeRef = useRef(onChange);
@@ -76,95 +74,58 @@ export function CollaborativeMultiSelectField({
     onChangeRef.current?.(selectedValues);
   }, [selectedValues]);
 
-  const handleSelectionChange = (keys: Selection) => {
-    if (keys === 'all') {
-      setSyncedValue(JSON.stringify(options.map((o) => o.value)));
-      return;
-    }
-    const nextValues = options
-      .map((option) => option.value)
-      .filter((value) => keys.has(value));
-    setSyncedValue(JSON.stringify(nextValues));
-  };
-
-  const handleTagRemove = (keys: Set<Key>) => {
-    setSyncedValue(
-      JSON.stringify(selectedValues.filter((value) => !keys.has(value))),
-    );
-  };
-
-  const buttonLabel =
-    selectedOptions.length === 0
-      ? (placeholder ?? t('Select option'))
-      : selectedOptions.length === 1
-        ? t('1 category selected')
-        : t('{count} categories selected', { count: selectedOptions.length });
-
   if (options.length === 0) {
     return null;
   }
 
+  const handleToggle = (value: string, checked: boolean) => {
+    const next = new Set(selectedValues);
+    if (checked) {
+      next.add(value);
+    } else {
+      next.delete(value);
+    }
+
+    // Normalize to the option order so the synced array stays stable no matter
+    // which order the chips were ticked in.
+    setSyncedValue(
+      JSON.stringify(
+        options
+          .filter((option) => next.has(option.value))
+          .map((option) => option.value),
+      ),
+    );
+  };
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <DialogTrigger>
-        <Button
-          variant="pill"
-          color="pill"
-          className="w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none"
-        >
-          {buttonLabel}
-        </Button>
-        <Popover
-          placement="bottom start"
-          className="min-w-(--trigger-width) overflow-hidden rounded border bg-white shadow"
-        >
-          <Dialog className="outline-hidden">
-            <ListBox
-              aria-label={placeholder ?? t('Select option')}
-              items={options.map((option) => ({
-                id: option.value,
-                label: option.label,
-              }))}
-              selectionMode="multiple"
-              selectedKeys={selectedKeys}
-              onSelectionChange={handleSelectionChange}
-              className="max-h-60 overflow-auto rounded border-0 p-2 outline-hidden"
-            >
-              {(item) => (
-                <ListBoxItem
-                  id={item.id}
-                  textValue={item.label}
-                  className="group flex cursor-pointer items-center gap-4 rounded px-3 py-2 text-neutral-black outline-hidden select-none data-[focus-visible]:bg-neutral-gray1 data-[hovered]:bg-neutral-gray1"
-                >
-                  <span className="flex h-full flex-1 items-center gap-2 font-normal">
-                    {item.label}
-                  </span>
-                  <span className="flex w-5 items-center">
-                    <LuCheck
-                      aria-hidden
-                      className="size-4 opacity-0 group-selected:opacity-100"
-                    />
-                  </span>
-                </ListBoxItem>
-              )}
-            </ListBox>
-          </Dialog>
-        </Popover>
-      </DialogTrigger>
-      {selectedOptions.length > 0 && (
-        <TagGroup onRemove={handleTagRemove}>
-          {selectedOptions.map((option) => (
-            <Tag
+    <LabeledFieldSet
+      legend={title}
+      description={description}
+      required={required}
+      data-testid={`field-${fragmentName}`}
+    >
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const optionId = `${idPrefix}-${option.value}`;
+          return (
+            <OptionBox
               key={option.value}
-              id={option.value}
-              textValue={option.label}
-              className="text-base leading-none"
-            >
-              {option.label}
-            </Tag>
-          ))}
-        </TagGroup>
-      )}
-    </div>
+              htmlFor={optionId}
+              width="hug"
+              label={option.label}
+              control={
+                <Checkbox
+                  id={optionId}
+                  checked={selectedValues.includes(option.value)}
+                  onCheckedChange={(checked) =>
+                    handleToggle(option.value, checked === true)
+                  }
+                />
+              }
+            />
+          );
+        })}
+      </div>
+    </LabeledFieldSet>
   );
 }

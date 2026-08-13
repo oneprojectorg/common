@@ -8,10 +8,6 @@ export const StyledRichTextContent = ({
 }: EditorContentProps) => (
   <EditorContent
     {...props}
-    className={cn(
-      '[&_div:focus-visible]:outline-auto',
-      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
-      className,
-    )}
+    className={cn('[&_div:focus-visible]:outline-auto', className)}
   />
 );

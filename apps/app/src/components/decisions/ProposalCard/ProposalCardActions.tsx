@@ -1,89 +1,15 @@
 'use client';
 
-import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
-import { useUser } from '@/utils/UserProvider';
-import { userCanInteract } from '@/utils/userCanInteract';
-import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/sense/Button';
 import { useState } from 'react';
-import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Like/Follow actions for viewing other users' proposals. `canEngage` mirrors
- * the server-side engagement gate on the parent decision.
- */
-export function ProposalCardActions({
-  proposal: initialProposal,
-  canEngage,
-}: {
-  proposal: Proposal;
-  canEngage: boolean;
-}) {
-  const t = useTranslations();
-  const { user } = useUser();
+import { ButtonLink } from '@/components/ButtonLink';
 
-  // Subscribe to the individual proposal data which gets optimistically updated
-  const { data: currentProposal } = trpc.decision.getProposal.useQuery(
-    { profileId: initialProposal.profileId },
-    {
-      refetchOnMount: false,
-      initialData: initialProposal,
-    },
-  );
-
-  // Use relationship mutations hook for like/follow functionality
-  const {
-    isLiked: isLikedByUser,
-    isFollowed: isFollowedByUser,
-    isLoading,
-    handleLike: handleLikeClick,
-    handleFollow: handleFollowClick,
-  } = useRelationshipMutations({
-    targetProfileId: currentProposal.profileId,
-    invalidateQueries: [
-      {
-        processInstanceId: initialProposal.processInstanceId,
-      },
-    ],
-  });
-
-  // Like/Follow are user-scoped writes gated at the API — anonymous visitors
-  // can read the proposal but aren't offered these actions.
-  if (!userCanInteract(user) || !canEngage) {
-    return null;
-  }
-
-  return (
-    <div className="flex w-full items-center gap-4 sm:w-auto">
-      <Button
-        onPress={handleLikeClick}
-        size="small"
-        color={isLikedByUser ? 'verified' : 'secondary'}
-        className="w-full text-nowrap"
-        isDisabled={isLoading}
-      >
-        <LuHeart className="size-4" />
-        {isLikedByUser ? t('Liked') : t('Like')}
-      </Button>
-      <Button
-        onPress={handleFollowClick}
-        size="small"
-        color={isFollowedByUser ? 'verified' : 'secondary'}
-        className="w-full text-nowrap"
-        isDisabled={isLoading}
-      >
-        <LuBookmark className="size-4" />
-        {isFollowedByUser ? t('Following') : t('Follow')}
-      </Button>
-    </div>
-  );
-}
+import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 export function ProposalCardReviseAction({
   editHref,
@@ -98,11 +24,11 @@ export function ProposalCardReviseAction({
   return (
     <ButtonLink
       href={editHref}
-      color="primary"
-      size="small"
+      variant="default"
+      size="sm"
       className={`w-full${className ? ` ${className}` : ''}`}
-      onPress={() => setNavigating(true)}
-      isLoading={navigating}
+      onClick={() => setNavigating(true)}
+      loading={navigating}
     >
       {t('Revise proposal')}
     </ButtonLink>
@@ -122,79 +48,28 @@ export function ProposalCardOwnerActions({
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to delete proposal'),
-      });
-    },
-    onSuccess: () => {
-      toast.success({ message: t('Proposal deleted successfully') });
-    },
-  });
-
-  const handleDelete = async () => {
-    await deleteProposalMutation.mutateAsync({ proposalId: proposal.id });
-    setIsDeleteModalOpen(false);
-  };
-
   return (
-    <>
-      <div className="flex w-full items-center gap-4">
-        <ButtonLink
-          href={editHref}
-          color="secondary"
-          size="small"
-          className="w-full"
-        >
-          <LuPencil className="size-4" />
-          {t('Edit')}
-        </ButtonLink>
-        <DialogTrigger
-          isOpen={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-        >
-          <Button
-            onPress={() => setIsDeleteModalOpen(true)}
-            color="secondary"
-            size="small"
-            className="w-full"
-            isDisabled={deleteProposalMutation.isPending}
-          >
+    <div className="flex w-full items-center gap-4">
+      <ButtonLink
+        href={editHref}
+        variant="outline"
+        size="sm"
+        className="flex-1"
+      >
+        <LuPencil className="size-4" />
+        {t('Edit')}
+      </ButtonLink>
+      <DeleteProposalDialog
+        proposalId={proposal.id}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        trigger={
+          <Button variant="destructive" size="sm" className="flex-1">
             <LuTrash2 className="size-4" />
             {t('Delete')}
           </Button>
-          <Modal isDismissable>
-            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
-            <ModalBody>
-              <p>
-                {t(
-                  'Are you sure you want to delete this proposal? This action cannot be undone.',
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsDeleteModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                onPress={handleDelete}
-                className="w-full sm:w-fit"
-                isDisabled={deleteProposalMutation.isPending}
-              >
-                {deleteProposalMutation.isPending
-                  ? t('Deleting...')
-                  : t('Delete')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
-      </div>
-    </>
+        }
+      />
+    </div>
   );
 }

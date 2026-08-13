@@ -9,9 +9,9 @@ import type {
   PostToOrganization,
 } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
-import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
-import { SkeletonLine } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
+import { SkeletonText } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { Fragment, type RefCallback, useCallback } from 'react';
 
 import {
@@ -155,11 +155,7 @@ export const ProfileFeedCards = ({
         {shouldShowTrigger && (
           <HorizontalListItem>
             <div ref={infiniteScrollRef}>
-              {isFetchingNextPage ? (
-                <div className="text-sm text-neutral-gray4">
-                  <SkeletonLine lines={2} />
-                </div>
-              ) : null}
+              {isFetchingNextPage ? <SkeletonText lines={2} /> : null}
             </div>
           </HorizontalListItem>
         )}
@@ -186,7 +182,7 @@ export const ProfileFeedList = ({
 }: ProfileFeedRenderProps & { className?: string }) => {
   return (
     <div className={className}>
-      <PostFeed>
+      <PostFeed className="gap-0">
         {posts.length > 0 ? (
           posts.map((postToOrg) => (
             <Fragment key={postToOrg.postId}>
@@ -197,6 +193,7 @@ export const ProfileFeedList = ({
                 withLinks={false}
                 onReactionClick={onReactionClick}
                 onCommentClick={onCommentClick}
+                className="p-4"
               />
               <hr />
             </Fragment>
@@ -212,11 +209,7 @@ export const ProfileFeedList = ({
       </PostFeed>
       {shouldShowTrigger && (
         <div ref={infiniteScrollRef} className="flex justify-center py-4">
-          {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
-              <SkeletonLine lines={2} />
-            </div>
-          ) : null}
+          {isFetchingNextPage ? <SkeletonText lines={2} /> : null}
         </div>
       )}
     </div>

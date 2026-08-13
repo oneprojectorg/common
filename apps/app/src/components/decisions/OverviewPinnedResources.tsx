@@ -1,9 +1,9 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,7 +38,7 @@ export const OverviewPinnedResourcesSuspense = ({
           actual resources — an empty list returns null above, no orphan rule. */}
       <Separator />
       <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-neutral-gray4">
+        <Header3 className="font-sans text-sm text-muted-foreground">
           {t('Pinned Resources')}
         </Header3>
         {items.map((resource) => (
@@ -70,12 +70,10 @@ export const PinnedResourcesError = () => {
     <>
       <Separator />
       <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-neutral-gray4">
+        <Header3 className="font-sans text-sm text-muted-foreground">
           {t('Pinned Resources')}
         </Header3>
-        <p className="text-neutral-charcoal">
-          {t("Couldn't load pinned resources.")}
-        </p>
+        <p>{t("Couldn't load pinned resources.")}</p>
       </section>
     </>
   );

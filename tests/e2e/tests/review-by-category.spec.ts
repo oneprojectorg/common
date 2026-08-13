@@ -205,16 +205,24 @@ async function openReviewsBuilderStep(page: Page, slug: string) {
   });
   const reviewsNav = page.getByRole('button', { name: 'Reviews', exact: true });
   await expect(reviewsNav).toBeVisible({ timeout: 36_000 });
-  await reviewsNav.click();
+
+  // The nav renders before the builder store finishes hydrating, and a click
+  // that lands in that window is dropped — leaving General Information up.
+  // Retry until the Reviews pane is actually on screen.
+  await expect(async () => {
+    await reviewsNav.click();
+    await expect(
+      page.getByRole('heading', { name: 'Reviews', exact: true }),
+    ).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 36_000 });
 }
 
 /** Locates a single category reviewer card by its category heading. */
 function categoryCard(page: Page, label: string) {
-  return page
-    .locator('div')
-    .filter({ has: page.getByText(label, { exact: true }) })
-    .filter({ has: page.getByRole('combobox') })
-    .last();
+  // The cards are plain nested divs, so a structural locator resolves to a
+  // wrapper holding several of them (two "0 reviewers" cards, say). The card
+  // carries a testid for exactly this reason.
+  return page.getByTestId(`category-reviewer-card-${label}`);
 }
 
 /** Advances an instance from submission→review via the admin overview UI,
@@ -232,7 +240,7 @@ async function advanceToReviewViaUI(page: Page, slug: string) {
   );
 
   await advanceButton.click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('alertdialog');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('Advance to Review?')).toBeVisible();
   await dialog.getByRole('button', { name: 'Advance Phase' }).click();

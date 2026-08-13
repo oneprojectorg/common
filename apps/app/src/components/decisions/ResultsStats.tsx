@@ -2,7 +2,7 @@
 
 import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -17,7 +17,7 @@ const StatNumber = ({
   return (
     <div
       className={cn(
-        'flex items-center justify-center font-serif text-title-lg !text-neutral-offWhite',
+        'flex items-center justify-center font-serif text-headline text-white',
         className,
       )}
     >
@@ -28,7 +28,7 @@ const StatNumber = ({
 
 const StatLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="flex items-center justify-center text-center text-sm text-neutral-offWhite">
+    <div className="flex items-center justify-center text-center text-sm text-white">
       {children}
     </div>
   );
@@ -64,14 +64,20 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
               <StatNumber>{stats.membersVoted}</StatNumber>
               <StatLabel>{t('Members Voted')}</StatLabel>
             </Stat>
-            <hr className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block" />
+            <hr
+              aria-hidden="true"
+              className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block"
+            />
           </>
         )}
         <Stat>
           <StatNumber>{stats.proposalsFunded}</StatNumber>
-          <StatLabel>{t('Proposals Funded')}</StatLabel>
+          <StatLabel>{t('Proposals Selected')}</StatLabel>
         </Stat>
-        <hr className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block" />
+        <hr
+          aria-hidden="true"
+          className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block"
+        />
         <Stat>
           <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
           <StatLabel>{t('Total Allocated')}</StatLabel>

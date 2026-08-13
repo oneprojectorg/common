@@ -354,8 +354,8 @@ test.describe('Non-reviewer review-phase view', () => {
     ).toBeVisible({ timeout: 36_000 });
     await expect(authorPage.getByText('Proposals to review')).toHaveCount(0);
 
-    // The chip + CTA replace the standard Like/Follow footer on the
-    // author's own card while a revision request is pending.
+    // The chip + CTA sit in the card's action row; engagement is the metric
+    // row now, so a pending revision request no longer displaces it.
     await expect(
       authorPage.getByText('Revision requested').first(),
     ).toBeVisible();
@@ -363,8 +363,9 @@ test.describe('Non-reviewer review-phase view', () => {
       authorPage.getByRole('link', { name: 'Revise proposal' }),
     ).toBeVisible();
     await expect(authorPage.getByRole('button', { name: 'Like' })).toHaveCount(
-      0,
+      1,
     );
+    // Follow stays hidden on your own proposal — you're its audience already.
     await expect(
       authorPage.getByRole('button', { name: 'Follow' }),
     ).toHaveCount(0);

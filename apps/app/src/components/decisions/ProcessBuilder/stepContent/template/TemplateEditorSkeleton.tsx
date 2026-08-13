@@ -1,4 +1,4 @@
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 
 /**
  * Skeleton loading state shown while store is hydrating.

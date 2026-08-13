@@ -1,8 +1,14 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Chip } from '@op/ui/Chip';
-import { FooterBar } from '@op/ui/FooterBar';
+import { Badge } from '@op/sense/Badge';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
+import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,14 +36,17 @@ export const FinalPhaseSelectionFooter = ({
   const t = useTranslations();
 
   return (
-    <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-      <FooterBar.Start>
-        <span className="text-base text-neutral-black">
+    <FooterBar position="fixed" className="bg-muted/95">
+      <FooterBarStart>
+        <span className="flex items-center gap-2 text-base">
+          <LuCircleCheck className="size-5 shrink-0" aria-hidden />
+          {/* Keeps "winning": this footer drives the irreversible final-phase
+              publish, and Figma has no frame for this variant. */}
           {t('{count} winning proposals selected', { count: numSelected })}
         </span>
-      </FooterBar.Start>
-      <FooterBar.Center />
-      <FooterBar.End>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
         <SelectionConfirmShell
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
@@ -56,7 +65,7 @@ export const FinalPhaseSelectionFooter = ({
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
-            <p className="text-base text-neutral-charcoal">
+            <p className="text-base">
               {t(
                 'These {numProposals} proposals will be funded and results will be shared with all participants.',
                 { numProposals: numSelected },
@@ -70,7 +79,7 @@ export const FinalPhaseSelectionFooter = ({
             </div>
           </div>
         </SelectionConfirmShell>
-      </FooterBar.End>
+      </FooterBarEnd>
     </FooterBar>
   );
 };
@@ -86,22 +95,20 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
   const voteCount = proposal.voteCount ?? 0;
 
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-3">
+    <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted p-3">
       <div className="flex items-start justify-between gap-2">
-        <span className="truncate font-serif text-title-sm14 text-neutral-black">
+        <span className="truncate font-serif text-sm">
           <bdi>{title}</bdi>
         </span>
-        {budget ? (
-          <span className="font-serif text-title-sm14 text-neutral-charcoal">
-            {budget}
-          </span>
-        ) : null}
+        {budget ? <span className="font-serif text-sm">{budget}</span> : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         {submitterName ? <span>{submitterName}</span> : null}
         {submitterName && hasCategories ? <Bullet /> : null}
         {categories.map((category) => (
-          <Chip key={category}>{category}</Chip>
+          <Badge key={category} variant="secondary">
+            {category}
+          </Badge>
         ))}
         {(submitterName || hasCategories) && <Bullet />}
         <span>{t('{count} votes', { count: voteCount })}</span>

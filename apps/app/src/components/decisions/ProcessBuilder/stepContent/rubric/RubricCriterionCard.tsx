@@ -1,19 +1,31 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
-} from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import type { SortableItemControls } from '@op/ui/Sortable';
-import { DragHandle, Sortable } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { cn } from '@op/ui/utils';
-import { useEffect, useRef, useState } from 'react';
+} from '@op/sense/CollapsibleConfigCard';
+import { Field, FieldLabel, FieldLegend, FieldSet } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupTextarea,
+} from '@op/sense/InputGroup';
+import { NumberField } from '@op/sense/NumberField';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import {
+  DragHandle,
+  Sortable,
+  type SortableItemControls,
+} from '@op/sense/Sortable';
+import { Switch } from '@op/sense/Switch';
+import { Textarea } from '@op/sense/Textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
+import { useEffect, useId, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuTrash2, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,6 +42,9 @@ import {
   CRITERION_TYPE_REGISTRY,
 } from './rubricCriterionRegistry';
 
+const MAX_LABEL_LENGTH = 50;
+const MAX_DESCRIPTION_LENGTH = 250;
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -37,7 +52,9 @@ import {
 interface RubricCriterionCardProps {
   criterion: CriterionView;
   errors?: TranslationKey[];
-  controls?: SortableItemControls;
+  // Required by @op/sense CollapsibleConfigCard's editable-card union (always
+  // supplied by the Sortable render prop that mounts this card).
+  controls: SortableItemControls;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onRemove?: (criterionId: string) => void;
@@ -88,8 +105,9 @@ export function RubricCriterionCard({
 }: RubricCriterionCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
+  const requiredToggleId = useId();
 
-  const displayLabel = criterion.label || t('Untitled field');
+  const displayLabel = criterion.label || t('Untitled');
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
@@ -117,43 +135,66 @@ export function RubricCriterionCard({
       <CollapsibleConfigCard
         label={displayLabel}
         badgeLabel={badgeLabel}
-        badgeClassName="group-data-[expanded]/accordion-item:hidden"
         isCollapsible
         isExpanded={isExpanded}
         onExpandedChange={onExpandedChange}
         controls={controls}
         dragHandleAriaLabel={t('Drag to reorder criterion')}
         className={cn(
-          'data-[expanded]:bg-neutral-offWhite',
+          'data-open:bg-muted',
           isNew && 'animate-border-highlight',
-          errors.length > 0 && 'border-functional-red',
+          errors.length > 0 && 'border-destructive',
         )}
       >
-        <div className="space-y-2.5 px-8">
-          {/* Field name */}
-          <TextField
-            label={t('Field name')}
-            isRequired
-            value={criterion.label}
-            onChange={(value) => onUpdateLabel?.(criterion.id, value)}
-            maxLength={50}
-            inputProps={{
-              className: 'bg-white',
-            }}
-            className="min-w-0 flex-1"
-          />
+        <div className="space-y-2.5">
+          {/* Label */}
+          <Field className="min-w-0 flex-1">
+            <FieldLabel htmlFor={`${criterion.id}-label`}>
+              {t('Label')} <RequiredAsterisk />
+            </FieldLabel>
+            <InputGroup className="bg-white">
+              <InputGroupInput
+                id={`${criterion.id}-label`}
+                required
+                maxLength={MAX_LABEL_LENGTH}
+                value={criterion.label}
+                onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
+              />
+              <InputGroupAddon align="inline-end">
+                {t('{count}/{max}', {
+                  count: criterion.label.length,
+                  max: MAX_LABEL_LENGTH,
+                })}
+              </InputGroupAddon>
+            </InputGroup>
+          </Field>
 
           {/* Description */}
-          <TextField
-            label={t('Description')}
-            useTextArea
-            value={criterion.description ?? ''}
-            onChange={(value) => onUpdateDescription?.(criterion.id, value)}
-            textareaProps={{
-              placeholder: t('Provide additional guidance for participants...'),
-              className: 'min-h-24 resize-none bg-white',
-            }}
-          />
+          <Field>
+            <FieldLabel htmlFor={`${criterion.id}-description`}>
+              {t('Description')}
+            </FieldLabel>
+            <InputGroup className="bg-white">
+              <InputGroupTextarea
+                id={`${criterion.id}-description`}
+                value={criterion.description ?? ''}
+                onChange={(e) =>
+                  onUpdateDescription?.(criterion.id, e.target.value)
+                }
+                maxLength={MAX_DESCRIPTION_LENGTH}
+                placeholder={t(
+                  'Provide additional guidance for participants...',
+                )}
+                className="min-h-24"
+              />
+              <InputGroupAddon align="block-end" className="justify-end">
+                {t('{count}/{max}', {
+                  count: criterion.description?.length ?? 0,
+                  max: MAX_DESCRIPTION_LENGTH,
+                })}
+              </InputGroupAddon>
+            </InputGroup>
+          </Field>
 
           <hr />
 
@@ -166,7 +207,6 @@ export function RubricCriterionCard({
           {/* Type-specific configuration */}
           {criterion.criterionType === 'scored' && (
             <>
-              <hr />
               <ScoredCriterionConfig
                 criterion={criterion}
                 onUpdateMaxPoints={(max) =>
@@ -180,22 +220,19 @@ export function RubricCriterionCard({
           )}
 
           {criterion.criterionType === 'single_select' && (
-            <>
-              <hr />
-              <SingleSelectCriterionConfig
-                criterion={criterion}
-                onUpdateOptions={(options) =>
-                  onUpdateOptions?.(criterion.id, options)
-                }
-              />
-            </>
+            <SingleSelectCriterionConfig
+              criterion={criterion}
+              onUpdateOptions={(options) =>
+                onUpdateOptions?.(criterion.id, options)
+              }
+            />
           )}
 
           {/* Validation errors */}
           {errors.length > 0 && (
             <div className="space-y-1">
               {errors.map((error) => (
-                <p key={error} className="text-sm text-functional-red">
+                <p key={error} className="text-sm text-destructive">
                   {t(error)}
                 </p>
               ))}
@@ -203,25 +240,26 @@ export function RubricCriterionCard({
           )}
 
           {/* Footer: Required toggle + Delete button */}
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={criterion.required}
-                onChange={(isSelected) =>
+          <div className="flex items-center justify-between gap-4 border-t pt-4">
+            <Field orientation="horizontal" className="w-auto">
+              <FieldLabel htmlFor={requiredToggleId}>
+                {t('Required?')}
+              </FieldLabel>
+              <Switch
+                id={requiredToggleId}
+                checked={criterion.required}
+                onCheckedChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
                 }
                 aria-label={t('Required')}
               />
-            </div>
+            </Field>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
-                onPress={() => onRemove(criterion.id)}
+                variant="destructive"
+                size="sm"
+                onClick={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
-                className="text-neutral-charcoal hover:text-functional-red"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -246,33 +284,40 @@ function CriterionTypeSelector({
   onChange: (type: RubricCriterionType) => void;
 }) {
   const t = useTranslations();
+  const groupId = useId();
 
   return (
-    <RadioGroup
-      label={t('How should reviewers score this?')}
-      value={value}
-      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
-      orientation="vertical"
-      labelClassName="text-base"
-    >
-      {CRITERION_TYPES.map((type) => {
-        const entry = CRITERION_TYPE_REGISTRY[type];
-        return (
-          <Radio
-            key={type}
-            value={type}
-            className="group flex items-start gap-2 py-2"
-          >
-            <div className="relative -top-0.5">
-              <span>{t(entry.labelKey)}</span>
-              <p className="text-sm text-neutral-gray4">
-                {t(entry.descriptionKey)}
-              </p>
-            </div>
-          </Radio>
-        );
-      })}
-    </RadioGroup>
+    <FieldSet>
+      <FieldLegend className="text-base">
+        {t('How should reviewers score this?')}
+      </FieldLegend>
+      <RadioGroup
+        value={value}
+        onValueChange={(newValue) => onChange(newValue as RubricCriterionType)}
+      >
+        {CRITERION_TYPES.map((type) => {
+          const entry = CRITERION_TYPE_REGISTRY[type];
+          const id = `${groupId}-${type}`;
+          return (
+            <Field
+              key={type}
+              orientation="horizontal"
+              className="items-start py-2"
+            >
+              <RadioGroupItem id={id} value={type} className="mt-0.5" />
+              <FieldLabel htmlFor={id}>
+                <div className="relative -top-0.5">
+                  <span>{t(entry.labelKey)}</span>
+                  <p className="text-sm text-muted-foreground">
+                    {t(entry.descriptionKey)}
+                  </p>
+                </div>
+              </FieldLabel>
+            </Field>
+          );
+        })}
+      </RadioGroup>
+    </FieldSet>
   );
 }
 
@@ -341,17 +386,16 @@ function ScoredCriterionConfig({
   return (
     <div className="space-y-4">
       <NumberField
+        id={`${criterion.id}-max-points`}
         label={t('Max points')}
+        className="w-32"
         value={max}
         onChange={handleMaxPointsChange}
         errorMessage={max < 2 ? t('Minimum is 2') : undefined}
-        inputProps={{ className: 'w-20' }}
       />
 
       <div className="space-y-2">
-        <h4 className="text-neutral-charcoal">
-          {t('Define what each score means')}
-        </h4>
+        <h4>{t('Define what each score means')}</h4>
         <p className="text-sm">
           {t(
             'Help reviewers score consistently by describing what each point value represents',
@@ -364,18 +408,17 @@ function ScoredCriterionConfig({
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-end font-serif text-title-base text-neutral-gray4">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-secondary text-center font-serif text-label font-strong text-muted-foreground">
                   {scoreValue}
                 </span>
-                <TextField
-                  useTextArea
+                <Textarea
                   value={label}
-                  onChange={(value) => onUpdateScoreLabel(scoreValue, value)}
-                  textareaProps={{
-                    placeholder: t('Describe what earns {number} points...', {
-                      number: scoreValue,
-                    }),
-                  }}
+                  onChange={(e) =>
+                    onUpdateScoreLabel(scoreValue, e.target.value)
+                  }
+                  placeholder={t('Describe what earns {number} points...', {
+                    number: scoreValue,
+                  })}
                   className="w-full"
                 />
               </div>
@@ -388,7 +431,7 @@ function ScoredCriterionConfig({
 }
 
 // ---------------------------------------------------------------------------
-// Single-select criterion config (option list)
+// Single-select criterion config (editable option list)
 // ---------------------------------------------------------------------------
 
 /** Sortable row: `id` is the stored option id, `value` its display label. */
@@ -399,12 +442,11 @@ interface OptionRow {
 }
 
 /**
- * Options editor for single-select criteria. Mirrors the proposal template's
- * FieldConfigDropdown UI: drag to reorder, min-2 removal guard, Enter adds
- * the next option. Each option carries an optional description, revealed via
- * an "Add a description" link. Manages its own row state (initialized on
- * mount) and reports the full option list on every change; row ids are the
- * stored option ids so relabels/reorders never break saved answers.
+ * Editable option list for a single-select criterion: reorderable rows, each
+ * with a label input and an optional "Add a description" textarea. Manages its
+ * own row state (initialized on mount) and reports the full option list on
+ * every change; row ids are the stored option ids so relabels/reorders never
+ * break saved answers.
  */
 function SingleSelectCriterionConfig({
   criterion,
@@ -467,8 +509,8 @@ function SingleSelectCriterionConfig({
     }
     return (
       <div className="flex items-center gap-2">
-        <LuGripVertical className="size-4 text-neutral-gray3" />
-        <span className="me-12 grow rounded-lg border border-neutral-gray2 bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
+        <LuGripVertical className="size-4 text-muted-foreground" />
+        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
           {item.value || t('Option')}
         </span>
       </div>
@@ -500,6 +542,17 @@ function SingleSelectCriterionConfig({
     setOpenDescriptionIds((prev) => new Set(prev).add(id));
   };
 
+  const handleRemoveDescription = (id: string) => {
+    // Clear the stored description too, so a collapsed field can't leave a
+    // hidden-but-saved description on the option.
+    handleUpdateOptionDescription(id, '');
+    setOpenDescriptionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
   const handleRemoveOption = (id: string) => {
     updateOptions(options.filter((opt) => opt.id !== id));
   };
@@ -516,87 +569,97 @@ function SingleSelectCriterionConfig({
 
   return (
     <div ref={containerRef} className="space-y-2">
-      <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
-
+      <h4 className="text-strong">{t('Options')}</h4>
       <Sortable
         items={options}
         onChange={updateOptions}
         dragTrigger="handle"
         getItemLabel={(item) => item.value || t('Option')}
         renderDragPreview={renderDragPreview}
-        className="gap-2"
+        className="gap-4"
         aria-label={t('Options')}
       >
-        {(option, controls) => {
+        {(option, { dragHandleProps }) => {
           const index = options.findIndex((o) => o.id === option.id);
+          const canRemove = options.length > 2;
           return (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <DragHandle
-                  {...controls.dragHandleProps}
+                  {...dragHandleProps}
                   aria-label={t('Drag to reorder option')}
-                  className="text-neutral-gray3 hover:text-neutral-gray4"
+                  className="text-muted-foreground hover:text-muted-foreground"
                 />
-                <TextField
+                <Input
                   value={option.value}
-                  onChange={(value) => handleUpdateOption(option.id, value)}
+                  onChange={(e) =>
+                    handleUpdateOption(option.id, e.target.value)
+                  }
                   onKeyDown={(e) => handleKeyDown(e, option)}
-                  inputProps={{
-                    placeholder: t('Option {number}', { number: index + 1 }),
-                    className: 'bg-white',
-                  }}
-                  className="w-full"
+                  placeholder={t('Option {number}', { number: index + 1 })}
+                  className="w-full bg-white"
                 />
-                <TooltipTrigger isDisabled={options.length > 2}>
-                  <Button
-                    color="ghost"
-                    size="small"
-                    aria-label={t('Remove option')}
-                    aria-disabled={options.length <= 2 || undefined}
-                    aria-description={
-                      options.length <= 2
-                        ? t('At least two options are required')
-                        : undefined
+
+                <Tooltip disabled={canRemove}>
+                  <TooltipTrigger
+                    render={
+                      // aria-disabled (not the `disabled` attr) so the button
+                      // still receives hover/focus — a disabled <button> eats
+                      // pointer events, so the tooltip explaining WHY would never
+                      // fire. The onClick guard keeps it inert when blocked.
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label={t('Remove option')}
+                        aria-disabled={!canRemove || undefined}
+                        className={cn(
+                          !canRemove &&
+                            'cursor-not-allowed opacity-50 hover:bg-transparent',
+                        )}
+                        onClick={() => {
+                          if (canRemove) {
+                            handleRemoveOption(option.id);
+                          }
+                        }}
+                      >
+                        <LuX className="size-4" />
+                      </Button>
                     }
-                    excludeFromTabOrder={options.length <= 2}
-                    onPress={() => {
-                      if (options.length > 2) {
-                        handleRemoveOption(option.id);
-                      }
-                    }}
-                    className={`p-2 ${
-                      options.length <= 2
-                        ? 'cursor-default text-neutral-gray3 opacity-30'
-                        : 'text-neutral-gray3 hover:text-neutral-charcoal'
-                    }`}
-                  >
-                    <LuX className="size-4" />
-                  </Button>
-                  <Tooltip>{t('At least two options are required')}</Tooltip>
-                </TooltipTrigger>
+                  />
+                  <TooltipContent>
+                    {t('At least two options are required')}
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               {openDescriptionIds.has(option.id) ? (
-                <TextField
-                  aria-label={t('Description')}
-                  useTextArea
-                  autoFocus={focusDescriptionIdRef.current === option.id}
-                  value={option.description ?? ''}
-                  onChange={(value) =>
-                    handleUpdateOptionDescription(option.id, value)
-                  }
-                  textareaProps={{
-                    placeholder: t('Add a description'),
-                    className: 'min-h-16 resize-none bg-white',
-                  }}
-                  className="ps-8 pe-10"
-                />
+                <div className="flex w-full flex-col gap-2">
+                  <Textarea
+                    aria-label={t('Description')}
+                    autoFocus={focusDescriptionIdRef.current === option.id}
+                    value={option.description ?? ''}
+                    onChange={(e) =>
+                      handleUpdateOptionDescription(option.id, e.target.value)
+                    }
+                    placeholder={t('Add a description')}
+                    className="ms-8 min-h-16 w-[calc(100%-calc(--spacing*16))] resize-none bg-white"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleRemoveDescription(option.id)}
+                    className="ms-8 mb-4 self-start"
+                  >
+                    <LuX className="size-4" />
+                    <span>{t('Remove description')}</span>
+                  </Button>
+                </div>
               ) : (
                 <Button
-                  color="ghost"
-                  size="small"
-                  onPress={() => handleOpenDescription(option.id)}
-                  className="ms-8 gap-1 self-start p-0 text-primary-teal hover:text-primary-tealBlack"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenDescription(option.id)}
+                  className="ms-8 self-start"
                 >
                   <LuPlus className="size-4" />
                   <span>{t('Add a description')}</span>
@@ -608,10 +671,9 @@ function SingleSelectCriterionConfig({
       </Sortable>
 
       <Button
-        color="ghost"
-        size="small"
-        onPress={handleAddOption}
-        className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
+        variant="ghost"
+        onClick={handleAddOption}
+        className="mt-2 hover:bg-secondary"
       >
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>
@@ -632,7 +694,7 @@ export function RubricCriterionDragPreview({
   const t = useTranslations();
   return (
     <CollapsibleConfigCardDragPreview
-      label={criterion.label || t('Untitled field')}
+      label={criterion.label || t('Untitled')}
       badgeLabel={
         criterion.criterionType === 'scored' && criterion.maxPoints
           ? `${criterion.maxPoints} ${t('pts')}`
@@ -643,5 +705,5 @@ export function RubricCriterionDragPreview({
 }
 
 export function RubricCriterionDropIndicator() {
-  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
+  return <div className="h-16 rounded-lg border bg-muted" />;
 }

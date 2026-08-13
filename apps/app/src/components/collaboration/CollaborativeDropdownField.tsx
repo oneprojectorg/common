@@ -1,10 +1,13 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import { Select, SelectItem } from '@op/ui/Select';
-import { useEffect, useRef, type Key } from 'react';
+import { OptionBox } from '@op/sense/OptionBox';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { useEffect, useId, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { LabeledFieldSet } from '@/components/decisions/forms/LabeledFieldSet';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
@@ -14,31 +17,40 @@ interface CollaborativeDropdownFieldProps {
   options: Array<{ value: string; label: string }>;
   initialValue?: string | null;
   onChange?: (value: string | null) => void;
-  /** Yjs fragment name used to sync this field. Must be unique per dropdown instance. */
+  /** Yjs fragment name used to sync this field. Must be unique per instance. */
   fragmentName: string;
-  /** Placeholder text shown when no value is selected. */
-  placeholder?: string;
-  /** When true, prepends a "None" option that clears the selection back to null. */
+  /** Visible group legend. */
+  title: string;
+  description?: string;
+  /** When true, appends a "None" option that clears the selection back to null. */
   allowEmpty?: boolean;
-  /** When true, sets `aria-required` on the select for assistive tech. */
+  /** When true, renders the asterisk and sets `required` on the radio group. */
   required?: boolean;
 }
 
 /**
- * Collaborative dropdown selector synced via Yjs XmlFragment.
- * When one user picks a value, all connected users see it update in real time.
+ * Collaborative single-select field synced via Yjs XmlFragment, rendered as a
+ * stack of bordered radio option boxes (Figma "Who would primarily benefit from
+ * this project?"). When one user picks a value, all connected users see it
+ * update in real time.
+ *
+ * Every option is always visible — no popup, no virtualisation, so a long
+ * option vocabulary makes a long list. See `ProposalFormRenderer`.
  */
 export function CollaborativeDropdownField({
   options,
   initialValue = null,
   onChange,
   fragmentName,
-  placeholder,
+  title,
+  description,
   allowEmpty = false,
   required = false,
 }: CollaborativeDropdownFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
+  const idPrefix = useId();
+  const legendId = useId();
 
   const [syncedText, setSyncedText] = useCollaborativeFragment(
     ydoc,
@@ -46,7 +58,6 @@ export function CollaborativeDropdownField({
     initialValue ?? '',
   );
   const selectedValue = syncedText || null;
-  const setSelectedValue = (value: string | null) => setSyncedText(value ?? '');
 
   const onChangeRef = useRef(onChange);
   const lastEmittedValueRef = useRef<string | null | undefined>(undefined);
@@ -68,41 +79,45 @@ export function CollaborativeDropdownField({
     return null;
   }
 
-  const handleSelectionChange = (key: Key | null) => {
-    if (key === null) {
-      setSelectedValue(null);
-      return;
-    }
-    const value = String(key);
-    if (value === EMPTY_KEY) {
-      setSelectedValue(null);
-    } else {
-      setSelectedValue(value);
-    }
+  const handleValueChange = (value: unknown) => {
+    setSyncedText(value === EMPTY_KEY || value == null ? '' : String(value));
   };
 
+  // No Figma counterpart, but it's the only way to un-answer an optional
+  // question once a radio is picked.
+  const radioOptions = allowEmpty
+    ? [...options, { value: EMPTY_KEY, label: t('None') }]
+    : options;
+
   return (
-    <Select
-      variant="pill"
-      size="medium"
-      isRequired={required}
-      placeholder={placeholder ?? t('Select option')}
-      selectedKey={selectedValue}
-      onSelectionChange={handleSelectionChange}
-      selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-      className="w-fit max-w-full"
-      popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
+    <LabeledFieldSet
+      legend={title}
+      legendId={legendId}
+      description={description}
+      required={required}
+      data-testid={`field-${fragmentName}`}
     >
-      {allowEmpty && (
-        <SelectItem className="min-w-fit" key={EMPTY_KEY} id={EMPTY_KEY}>
-          {t('None')}
-        </SelectItem>
-      )}
-      {options.map((opt) => (
-        <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-          {opt.label}
-        </SelectItem>
-      ))}
-    </Select>
+      <RadioGroup
+        // A <legend> does not name a nested role="radiogroup", so wire it by id.
+        aria-labelledby={legendId}
+        aria-required={required || undefined}
+        required={required}
+        value={selectedValue ?? EMPTY_KEY}
+        onValueChange={handleValueChange}
+        className="w-fit max-w-full"
+      >
+        {radioOptions.map((option) => {
+          const optionId = `${idPrefix}-${option.value}`;
+          return (
+            <OptionBox
+              key={option.value}
+              htmlFor={optionId}
+              label={option.label}
+              control={<RadioGroupItem id={optionId} value={option.value} />}
+            />
+          );
+        })}
+      </RadioGroup>
+    </LabeledFieldSet>
   );
 }

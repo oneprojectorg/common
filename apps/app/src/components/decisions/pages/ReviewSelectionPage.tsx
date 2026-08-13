@@ -1,7 +1,12 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -45,18 +50,23 @@ export function ReviewSelectionPage({
       </div>
 
       <div className="flex w-full justify-center border-t bg-white">
-        <div className="w-full p-4 sm:max-w-6xl sm:p-8">
+        <div className="w-full p-4 sm:p-8">
           <APIErrorBoundary
             fallbacks={{
               default: () => (
-                <EmptyState icon={<LuLeaf className="size-6" />}>
-                  <Header3 className="font-serif font-light">
-                    <TranslatedText text="We couldn't load proposals" />
-                  </Header3>
-                  <p className="text-base text-neutral-charcoal">
-                    <TranslatedText text="Please refresh the page to try again." />
-                  </p>
-                </EmptyState>
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <LuLeaf className="size-6" />
+                    </EmptyMedia>
+                    <EmptyTitle>
+                      <TranslatedText text="We couldn't load proposals" />
+                    </EmptyTitle>
+                    <EmptyDescription>
+                      <TranslatedText text="Please refresh the page to try again." />
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               ),
             }}
           >

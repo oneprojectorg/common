@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
-import { Sortable } from '@op/ui/Sortable';
-import { toast } from '@op/ui/Toast';
+import { Sortable } from '@op/sense/Sortable';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuUpload } from 'react-icons/lu';
 
@@ -61,13 +61,13 @@ export const ResourcesList = ({
       if (ctx?.previous && ctx?.key) {
         utils.resources.listByCollection.setData(ctx.key, ctx.previous);
       }
-      toast.error({ message: t('Could not reorder resource') });
+      toast.error(t('Could not reorder resource'));
     },
   });
 
   const remove = trpc.resources.delete.useMutation({
-    onSuccess: () => toast.success({ message: t('Resource deleted') }),
-    onError: () => toast.error({ message: t('Could not delete resource') }),
+    onSuccess: () => toast.success(t('Resource deleted')),
+    onError: () => toast.error(t('Could not delete resource')),
   });
 
   const collectionId = data.collectionId ?? null;
@@ -120,7 +120,7 @@ export const ResourcesList = ({
         renderItem={renderItem}
       >
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-gray2 px-6 py-10 text-center text-neutral-gray4">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input px-6 py-10 text-center text-muted-foreground">
             <LuUpload className="size-6" />
             <p className="text-sm">{t('Drag a file or link here to add it')}</p>
           </div>

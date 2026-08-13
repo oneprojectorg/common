@@ -1,7 +1,7 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
@@ -21,7 +21,7 @@ export const PostDetailHeader = () => {
       <div className="flex items-center gap-3">
         <Link
           href="/"
-          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+          className="flex items-center gap-2 text-base text-foreground hover:text-teal-600 md:text-primary"
         >
           <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
           <span className="hidden md:flex">{t('Home')}</span>

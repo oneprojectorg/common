@@ -20,6 +20,9 @@ export function useRichTextEditor({
   onEditorReady,
   editable = true,
   required = false,
+  ariaLabelledBy,
+  ariaDescribedBy,
+  ariaMultiline = true,
 }: {
   extensions?: Extensions;
   content?: Content;
@@ -41,6 +44,19 @@ export function useRichTextEditor({
   editable?: boolean;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
+  /**
+   * Id of the labelling element — `<label for>` can't reach a contenteditable.
+   */
+  ariaLabelledBy?: string;
+  /**
+   * Id(s) of elements describing the editable region (helper text, character
+   * counter). Space-separated, same as the native attribute.
+   */
+  ariaDescribedBy?: string;
+  /**
+   * Sets `aria-multiline`. Pass false for a single-line editable.
+   */
+  ariaMultiline?: boolean;
 }) {
   // Append a single Placeholder extension when a top-level placeholder is asked
   // for OR the Details extension is present (it needs a per-node 'Summary' hint).
@@ -85,7 +101,19 @@ export function useRichTextEditor({
           baseEditorStyles,
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
-        ...(required ? { 'aria-required': 'true' } : {}),
+        // `role="textbox"` is what makes the aria attributes below legal on a
+        // contenteditable div. Editable only — a viewer is prose, not an input.
+        ...(editable
+          ? {
+              role: 'textbox',
+              'aria-multiline': ariaMultiline ? 'true' : 'false',
+              ...(required ? { 'aria-required': 'true' } : {}),
+              ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
+              ...(ariaDescribedBy
+                ? { 'aria-describedby': ariaDescribedBy }
+                : {}),
+            }
+          : {}),
       },
     },
     onUpdate: ({ editor }) => {
@@ -109,8 +137,11 @@ export function useRichTextEditor({
 
   // Readonly viewers reuse one editor instance, so sync incoming content when
   // the selected preview version changes.
+  //
+  // `undefined` means the document is owned elsewhere (a Yjs binding), where
+  // clearing would wipe it for every client. Pass `null` to blank a viewer.
   useEffect(() => {
-    if (!editor || editable) {
+    if (!editor || editable || content === undefined) {
       return;
     }
 

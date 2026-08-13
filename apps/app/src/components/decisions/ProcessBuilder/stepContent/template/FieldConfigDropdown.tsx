@@ -1,9 +1,10 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { DragHandle, Sortable } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/sense/Button';
+import { Input } from '@op/sense/Input';
+import { DragHandle, Sortable } from '@op/sense/Sortable';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
@@ -86,8 +87,8 @@ function FieldConfigDropdownOptions({
     }
     return (
       <div className="flex items-center gap-2">
-        <LuGripVertical className="size-4 text-neutral-gray3" />
-        <span className="me-12 grow rounded-lg border border-neutral-gray2 bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
+        <LuGripVertical className="size-4 text-muted-foreground" />
+        <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
           {item.value || t('Option')}
         </span>
       </div>
@@ -120,8 +121,8 @@ function FieldConfigDropdownOptions({
   };
 
   return (
-    <div ref={containerRef} className="space-y-2">
-      <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
+    <div ref={containerRef} className="space-y-4">
+      <h4 className="text-strong">{t('Options')}</h4>
 
       <Sortable
         items={options}
@@ -139,54 +140,53 @@ function FieldConfigDropdownOptions({
               <DragHandle
                 {...controls.dragHandleProps}
                 aria-label={t('Drag to reorder option')}
-                className="text-neutral-gray3 hover:text-neutral-gray4"
               />
-              <TextField
+              <Input
                 value={option.value}
-                onChange={(value) => handleUpdateOption(option.id, value)}
+                onChange={(e) => handleUpdateOption(option.id, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, option)}
-                inputProps={{
-                  placeholder: t('Option {number}', { number: index + 1 }),
-                }}
+                placeholder={t('Option {number}', { number: index + 1 })}
                 className="w-full"
               />
-              <TooltipTrigger isDisabled={options.length > 2}>
-                <Button
-                  color="ghost"
-                  size="small"
-                  aria-label={t('Remove option')}
-                  aria-disabled={options.length <= 2 || undefined}
-                  aria-description={
-                    options.length <= 2
-                      ? t('At least two options are required')
-                      : undefined
+              <Tooltip disabled={options.length > 2}>
+                <TooltipTrigger
+                  render={
+                    // aria-disabled (not the `disabled` attr) so the button
+                    // still receives hover/focus — a disabled <button> eats
+                    // pointer events, so the tooltip explaining WHY would never
+                    // fire. The onClick guard keeps it inert when blocked.
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label={t('Remove option')}
+                      aria-disabled={options.length <= 2 || undefined}
+                      className={cn(
+                        options.length <= 2 &&
+                          'cursor-not-allowed opacity-50 hover:bg-transparent',
+                      )}
+                      onClick={() => {
+                        if (options.length > 2) {
+                          handleRemoveOption(option.id);
+                        }
+                      }}
+                    >
+                      <LuX className="size-4" />
+                    </Button>
                   }
-                  excludeFromTabOrder={options.length <= 2}
-                  onPress={() => {
-                    if (options.length > 2) {
-                      handleRemoveOption(option.id);
-                    }
-                  }}
-                  className={`p-2 ${
-                    options.length <= 2
-                      ? 'cursor-default text-neutral-gray3 opacity-30'
-                      : 'text-neutral-gray3 hover:text-neutral-charcoal'
-                  }`}
-                >
-                  <LuX className="size-4" />
-                </Button>
-                <Tooltip>{t('At least two options are required')}</Tooltip>
-              </TooltipTrigger>
+                />
+                <TooltipContent>
+                  {t('At least two options are required')}
+                </TooltipContent>
+              </Tooltip>
             </div>
           );
         }}
       </Sortable>
 
       <Button
-        color="ghost"
-        size="small"
-        onPress={handleAddOption}
-        className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
+        variant="ghost"
+        onClick={handleAddOption}
+        className="hover:bg-secondary"
       >
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>

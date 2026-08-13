@@ -1,18 +1,18 @@
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/sense/Header';
 
 import { FormalSection } from '../FormalSection';
 
 export const CommunityCommitmentsContent = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div dir="auto" className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
-        <Header3 className="font-serif">Common Community Commitments</Header3>
+        <Header3>Common Community Commitments</Header3>
         <p className="mb-4">
           Common is a technical platform that makes it easy for organizations,
           funders, and municipalities to democratically allocate resources—
           transparently, in any language, at any scale. Common’s users and
           community share these 10 core commitments and agree to abide by the{' '}
-          <a href="#prohibited-content" className="text-primary-teal underline">
+          <a href="#prohibited-content" className="text-primary underline">
             prohibited content policy
           </a>{' '}
           below.
@@ -117,9 +117,7 @@ export const CommunityCommitmentsContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          How Common Supports These Commitments
-        </Header3>
+        <Header3>How Common Supports These Commitments</Header3>
         <p className="mb-4">
           We are building Common to be a place where participatory processes are
           genuinely transparent and accountable. In partnership with process
@@ -134,9 +132,7 @@ export const CommunityCommitmentsContent = () => {
 
       <div id="prohibited-content">
         <FormalSection>
-          <Header3 className="font-serif">
-            What We Don’t Allow on Common
-          </Header3>
+          <Header3>What We Don’t Allow on Common</Header3>
           <p className="mb-4">
             Common is a space for democratic and participatory processes. To
             keep it that way, we need to be clear about what’s not welcome here.
@@ -148,7 +144,7 @@ export const CommunityCommitmentsContent = () => {
             processes and communities and can enforce their own rules, as long
             as those rules are not in contradiction with the Prohibited Content
             Policy, Community Commitments, and{' '}
-            <a href="/info/tos" className="text-primary-teal underline">
+            <a href="/info/tos" className="text-primary underline">
               Terms of Service
             </a>
             .
@@ -165,7 +161,7 @@ export const CommunityCommitmentsContent = () => {
       </div>
 
       <FormalSection>
-        <Header3 className="font-serif">Prohibited Content:</Header3>
+        <Header3>Prohibited Content:</Header3>
         <ul className="mb-4 list-disc ps-6">
           <li className="mb-2">
             <strong>Abuse.</strong> This includes personal attacks, harassment,
@@ -253,7 +249,7 @@ export const CommunityCommitmentsContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Prohibited Account Conduct:</Header3>
+        <Header3>Prohibited Account Conduct:</Header3>
         <p className="mb-4">
           The following behaviors are not allowed. Common may take action
           against accounts that engage in these behaviors, regardless of the
@@ -304,9 +300,7 @@ export const CommunityCommitmentsContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          Prohibited Participatory Processes Conduct:
-        </Header3>
+        <Header3>Prohibited Participatory Processes Conduct:</Header3>
         <p className="mb-4">
           Common is built for democratic participation. The following behaviors
           are not allowed because they undermine the legitimacy of
@@ -379,7 +373,7 @@ export const CommunityCommitmentsContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Reporting Content</Header3>
+        <Header3>Reporting Content</Header3>
         <p className="mb-4">
           If Common users see something on Common that doesn't look right —
           whether it's a comment, a proposal, an account, or a participatory
@@ -395,7 +389,7 @@ export const CommunityCommitmentsContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">How We Enforce Our Rules</Header3>
+        <Header3>How We Enforce Our Rules</Header3>
         <p className="mb-4">
           Common uses a combination of automated and human moderation. Our
           third-party content moderation vendor proactively flags content and
@@ -407,7 +401,7 @@ export const CommunityCommitmentsContent = () => {
           a user about an action and should be sent to{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             support@oneproject.org
           </a>

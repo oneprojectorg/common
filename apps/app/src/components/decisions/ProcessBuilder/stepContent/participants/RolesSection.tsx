@@ -4,29 +4,54 @@ import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
 import {
-  EditableCell,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Header1, Header3 } from '@op/sense/Header';
+import { Input } from '@op/sense/Input';
+import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
+import { screens } from '@op/styles/constants';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
+import {
+  LuCheck,
+  LuEllipsis,
+  LuLeaf,
+  LuPencil,
+  LuPlus,
+  LuTrash2,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -76,8 +101,8 @@ export default function RolesSection({
   decisionName,
 }: SectionProps) {
   return (
-    <div className="px-4 md:px-24 md:py-16">
-      <div className="mx-auto max-w-5xl">
+    <div className="p-4 md:p-8">
+      <div className="w-full">
         <RolesSectionContent
           decisionProfileId={decisionProfileId}
           instanceId={instanceId}
@@ -119,29 +144,29 @@ function useRoleMutation({
             decisionPermissions,
           });
         } catch {
-          toast.error({ message: t('Failed to update role') });
+          toast.error(t('Failed to update role'));
           utils.profile.listRoles.invalidate();
           onComplete();
           return;
         }
       }
-      toast.success({ message: t('Role created successfully') });
+      toast.success(t('Role created successfully'));
       utils.profile.listRoles.invalidate();
       onComplete();
     },
     onError: () => {
-      toast.error({ message: t('Failed to create role') });
+      toast.error(t('Failed to create role'));
     },
   });
 
   const updateRole = trpc.profile.updateRole.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
+      toast.success(t('Role updated successfully'));
       utils.profile.listRoles.invalidate();
       onComplete();
     },
     onError: () => {
-      toast.error({ message: t('Failed to update role') });
+      toast.error(t('Failed to update role'));
     },
   });
 
@@ -192,24 +217,20 @@ function RoleNameForm({
   const t = useTranslations();
 
   return (
-    <div className="flex h-full w-full items-center py-1.5">
-      <TextField
-        inputProps={{ placeholder: t('Role name…') }}
-        value={roleName}
-        onChange={onRoleNameChange}
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            onSave();
-          }
-          if (e.key === 'Escape') {
-            onCancel();
-          }
-        }}
-        fieldClassName="h-7"
-        className="w-full"
-      />
-    </div>
+    <Input
+      placeholder={t('Role name…')}
+      value={roleName}
+      onChange={(e) => onRoleNameChange(e.target.value)}
+      autoFocus
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          onSave();
+        }
+        if (e.key === 'Escape') {
+          onCancel();
+        }
+      }}
+    />
   );
 }
 
@@ -246,69 +267,76 @@ function RoleRow({
 
   return (
     <TableRow>
-      <EditableCell
-        className="w-36 text-base"
-        isEditing={isEditing}
-        onEditChange={(editing) => {
-          if (!editing) {
-            handleCancel();
-          }
-        }}
-        renderEditing={() => (
+      {/* TODO(sense-migration): the retired EditableCell has no @op/sense
+          equivalent;
+          its popover-overlay editor is replaced with an inline conditional (the
+          edit input renders in-cell). Verify the edit UX. */}
+      <TableCell className="w-48 p-2 text-base">
+        {isEditing ? (
           <RoleNameForm
             roleName={roleName}
             onRoleNameChange={setRoleName}
             onSave={handleSave}
             onCancel={handleCancel}
           />
-        )}
-      >
-        {role.name}
-      </EditableCell>
-      <DecisionRoleCheckboxes roleId={role.id} profileId={profileId} />
-      <TableCell className="w-22">
-        {isEditing ? (
-          <div className="flex gap-1">
-            <IconButton
-              variant="outline"
-              size="medium"
-              onPress={handleSave}
-              isDisabled={!roleName.trim() || isPending}
-              aria-label={t('Save role')}
-              className="ms-auto"
-            >
-              <LuCheck className="size-4" />
-            </IconButton>
-            <IconButton
-              variant="outline"
-              size="medium"
-              onPress={() => onDelete(role)}
-              aria-label={t('Delete')}
-            >
-              <LuTrash2 className="size-4" />
-            </IconButton>
-          </div>
         ) : (
-          <OptionMenu
-            aria-label={t('Role options')}
-            variant="outline"
-            className="ms-auto rounded bg-white shadow-light"
-            size="medium"
-          >
-            <MenuItem key="edit" onAction={() => setIsEditing(true)}>
-              <LuPencil className="size-4" />
-              {t('Edit')}
-            </MenuItem>
-            <MenuItem
-              key="delete"
-              onAction={() => onDelete(role)}
-              className="text-functional-red"
-            >
-              <LuTrash2 className="size-4" />
-              {t('Delete')}
-            </MenuItem>
-          </OptionMenu>
+          role.name
         )}
+      </TableCell>
+      <DecisionRoleCheckboxes roleId={role.id} profileId={profileId} />
+      <TableCell className="w-22 p-2">
+        <div className="flex gap-1">
+          {isEditing ? (
+            <>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={handleSave}
+                disabled={!roleName.trim() || isPending}
+                aria-label={t('Save role')}
+                className="ms-auto"
+              >
+                <LuCheck className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => onDelete(role)}
+                aria-label={t('Delete')}
+              >
+                <LuTrash2 className="size-4" />
+              </Button>
+            </>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={t('Role options')}
+                    className="ms-auto"
+                  >
+                    <LuEllipsis className="size-4" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <LuPencil className="size-4" />
+                  {t('Edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDelete(role)}
+                >
+                  <LuTrash2 className="size-4" />
+                  {t('Delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -344,52 +372,53 @@ function AddRoleDialog({
   };
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal
-        isDismissable
-        isOpen={isOpen}
-        onOpenChange={(open) => !open && onClose()}
-      >
-        <ModalHeader>{t('Add role')}</ModalHeader>
-        <ModalBody>
-          <TextField
-            label={t('Role name')}
-            value={roleName}
-            onChange={setRoleName}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-          />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Add role')}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-6 py-4">
+          <Field>
+            <FieldLabel htmlFor="add-role-name">{t('Role name')}</FieldLabel>
+            <Input
+              id="add-role-name"
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSubmit();
+                }
+              }}
+            />
+          </Field>
           <div className="flex flex-col gap-2 pt-2">
             {PERMISSION_COLUMNS.map(({ key, label }) => (
-              <Checkbox
-                key={key}
-                size="small"
-                isSelected={permissions[key]}
-                onChange={() => togglePermission(key)}
-                aria-label={`${label} permission`}
-              >
-                {t(label)}
-              </Checkbox>
+              <Field key={key} orientation="horizontal">
+                <Checkbox
+                  id={`add-perm-${key}`}
+                  checked={permissions[key]}
+                  onCheckedChange={() => togglePermission(key)}
+                  aria-label={`${label} permission`}
+                />
+                <FieldLabel htmlFor={`add-perm-${key}`}>{t(label)}</FieldLabel>
+              </Field>
             ))}
           </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onPress={onClose}>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             {t('Cancel')}
           </Button>
           <Button
-            onPress={handleSubmit}
-            isDisabled={!roleName.trim() || isPending}
+            onClick={handleSubmit}
+            disabled={!roleName.trim() || isPending}
           >
             {t('Save')}
           </Button>
-        </ModalFooter>
-      </Modal>
-    </DialogTrigger>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -403,14 +432,12 @@ function RolesSectionContent({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm font-light">
-          {t('Roles & permissions')}
-        </Header2>
+        <Header1 className="text-headline">{t('Roles & permissions')}</Header1>
         <Button
-          color="ghost"
-          className="text-primary-teal hover:text-primary-tealBlack"
-          onPress={() => setIsAdding(true)}
-          isDisabled={isAdding}
+          variant="ghost"
+          className="text-primary hover:text-teal-600"
+          onClick={() => setIsAdding(true)}
+          disabled={isAdding}
         >
           <LuPlus className="size-4" />
           {t('Add role')}
@@ -419,7 +446,7 @@ function RolesSectionContent({
 
       <Suspense
         fallback={
-          <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
+          <div className="h-48 animate-pulse rounded-lg bg-secondary" />
         }
       >
         <RolesTable
@@ -466,9 +493,9 @@ function usePermissionToggle(roleId: string, profileId: string) {
               setLocalPermissions(null);
             }
             if (error) {
-              toast.error({ message: t('Failed to update role') });
+              toast.error(t('Failed to update role'));
             } else {
-              toast.success({ message: t('Role updated successfully') });
+              toast.success(t('Role updated successfully'));
             }
             utils.profile.getDecisionRole.invalidate({ roleId, profileId });
           },
@@ -514,12 +541,11 @@ function DecisionRoleCheckboxes({
   );
 
   return PERMISSION_COLUMNS.map(({ key, label }) => (
-    <TableCell key={key} className="text-center">
+    <TableCell key={key} className="p-0 text-center">
       <div className="flex justify-center">
         <Checkbox
-          size="small"
-          isSelected={optimisticPermissions?.[key] ?? false}
-          onChange={() => togglePermission(key)}
+          checked={optimisticPermissions?.[key] ?? false}
+          onCheckedChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         />
       </div>
@@ -543,15 +569,17 @@ function MobileDecisionRoles({
   return (
     <div className="flex flex-col gap-2">
       {PERMISSION_COLUMNS.map(({ key, label }) => (
-        <Checkbox
-          key={key}
-          size="small"
-          isSelected={optimisticPermissions?.[key] ?? false}
-          onChange={() => togglePermission(key)}
-          aria-label={`${label} permission`}
-        >
-          {t(label)}
-        </Checkbox>
+        <Field key={key} orientation="horizontal">
+          <Checkbox
+            id={`mobile-perm-${roleId}-${key}`}
+            checked={optimisticPermissions?.[key] ?? false}
+            onCheckedChange={() => togglePermission(key)}
+            aria-label={`${label} permission`}
+          />
+          <FieldLabel htmlFor={`mobile-perm-${roleId}-${key}`}>
+            {t(label)}
+          </FieldLabel>
+        </Field>
       ))}
     </div>
   );
@@ -571,32 +599,40 @@ function MobileRoleCard({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
-        <Header3 className="font-serif text-sm font-light">{role.name}</Header3>
+        <Header3 className="text-base">{role.name}</Header3>
         {(onDelete || onEdit) && (
-          <OptionMenu
-            aria-label={t('Role options')}
-            variant="outline"
-            className="rounded-lg"
-          >
-            {onEdit && (
-              <MenuItem key="edit" onAction={() => onEdit(role)}>
-                <LuPencil className="size-4" />
-                {t('Edit')}
-              </MenuItem>
-            )}
-            {onDelete && (
-              <MenuItem
-                key="delete"
-                onAction={() => onDelete(role)}
-                className="text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </MenuItem>
-            )}
-          </OptionMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label={t('Role options')}
+                >
+                  <LuEllipsis className="size-4" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(role)}>
+                  <LuPencil className="size-4" />
+                  {t('Edit')}
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDelete(role)}
+                >
+                  <LuTrash2 className="size-4" />
+                  {t('Delete')}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
@@ -632,12 +668,12 @@ function MobileRoleFormCard({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-md border border-border p-4">
       <div className="flex items-center justify-between gap-2">
-        <TextField
-          inputProps={{ placeholder: t('Role name…') }}
+        <Input
+          placeholder={t('Role name…')}
           value={roleName}
-          onChange={setRoleName}
+          onChange={(e) => setRoleName(e.target.value)}
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -650,25 +686,25 @@ function MobileRoleFormCard({
           className="flex-1"
           aria-label="Role name"
         />
-        <IconButton
+        <Button
           variant="outline"
-          size="medium"
-          onPress={handleSave}
-          isDisabled={!roleName.trim() || isPending}
+          size="icon-sm"
+          onClick={handleSave}
+          disabled={!roleName.trim() || isPending}
           aria-label={t('Save role')}
         >
           <LuCheck className="size-4" />
-        </IconButton>
+        </Button>
         {onDelete && (
-          <IconButton
-            variant="ghost"
-            size="medium"
-            onPress={() => onDelete(role)}
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => onDelete(role)}
             aria-label={t('Delete')}
-            className="text-functional-red"
+            className="text-destructive"
           >
             <LuTrash2 className="size-4" />
-          </IconButton>
+          </Button>
         )}
       </div>
 
@@ -702,43 +738,38 @@ function AddRoleRow({
 
   return (
     <TableRow>
-      <EditableCell
-        className="w-36 text-base"
-        isEditing
-        renderEditing={() => (
-          <RoleNameForm
-            roleName={roleName}
-            onRoleNameChange={setRoleName}
-            onSave={handleSave}
-            onCancel={onComplete}
-          />
-        )}
-      >
-        {null}
-      </EditableCell>
+      <TableCell className="w-36 p-2 text-base">
+        <RoleNameForm
+          roleName={roleName}
+          onRoleNameChange={setRoleName}
+          onSave={handleSave}
+          onCancel={onComplete}
+        />
+      </TableCell>
       {PERMISSION_COLUMNS.map(({ key, label }) => (
-        <TableCell key={key} className="text-center">
+        <TableCell key={key} className="p-0 text-center">
           <div className="flex justify-center">
             <Checkbox
-              size="small"
-              isSelected={permissions[key]}
-              onChange={() => togglePermission(key)}
+              checked={permissions[key]}
+              onCheckedChange={() => togglePermission(key)}
               aria-label={`${label} permission`}
             />
           </div>
         </TableCell>
       ))}
-      <TableCell className="w-22">
-        <IconButton
-          variant="outline"
-          size="medium"
-          onPress={handleSave}
-          isDisabled={!roleName.trim() || isPending}
-          aria-label={t('Save role')}
-          className="ms-auto"
-        >
-          <LuCheck className="size-4" />
-        </IconButton>
+      <TableCell className="w-22 p-2">
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={handleSave}
+            disabled={!roleName.trim() || isPending}
+            aria-label={t('Save role')}
+            className="ms-auto"
+          >
+            <LuCheck className="size-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -768,20 +799,25 @@ function RolesTable({
 
   const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Role deleted successfully') });
+      toast.success(t('Role deleted successfully'));
       utils.profile.listRoles.invalidate();
       setRoleToDelete(null);
     },
     onError: () => {
-      toast.error({ message: t('Failed to delete role') });
+      toast.error(t('Failed to delete role'));
     },
   });
 
   if (roles.length === 0 && !isAdding) {
     return (
-      <EmptyState icon={<LuLeaf className="size-6" />}>
-        <span>{t('No roles configured')}</span>
-      </EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuLeaf className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('No roles configured')}</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -826,13 +862,15 @@ function RolesTable({
         <div className="flex flex-col gap-4">
           <Table aria-label={t('Roles & permissions')}>
             <TableHeader>
-              <TableColumn isRowHeader>{t('Role')}</TableColumn>
-              {PERMISSION_COLUMNS.map(({ key, label }) => (
-                <TableColumn key={key} className="text-center">
-                  {t(label)}
-                </TableColumn>
-              ))}
-              <TableColumn className="w-12" />
+              <TableRow>
+                <TableHead>{t('Role')}</TableHead>
+                {PERMISSION_COLUMNS.map(({ key, label }) => (
+                  <TableHead key={key} className="text-center">
+                    {t(label)}
+                  </TableHead>
+                ))}
+                <TableHead className="w-12" />
+              </TableRow>
             </TableHeader>
             <TableBody>
               {roles.map((role) => (
@@ -854,20 +892,21 @@ function RolesTable({
         </div>
       )}
 
-      <DialogTrigger
-        isOpen={roleToDelete !== null}
+      <AlertDialog
+        open={roleToDelete !== null}
         onOpenChange={(open) => !open && setRoleToDelete(null)}
       >
-        <Modal
-          isDismissable
-          isOpen={roleToDelete !== null}
-          onOpenChange={(open) => !open && setRoleToDelete(null)}
-        >
-          <ModalHeader>
-            {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
-          </ModalHeader>
-          <ModalBody>
-            <p>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {/* Email-only entries (no display name) would blow out the title,
+                  so fall back to a generic title — the description still names
+                  the member. */}
+              {roleToDelete && /^\S+@\S+$/.test(roleToDelete.name)
+                ? t('Remove member?')
+                : t('Remove {name}', { name: roleToDelete?.name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
               {t(
                 'Are you sure you want to remove {roleName} from "{processName}"?',
                 {
@@ -875,22 +914,20 @@ function RolesTable({
                   processName: decisionName,
                 },
               )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="secondary" onPress={() => setRoleToDelete(null)}>
-              {t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              onPress={handleDeleteConfirm}
-              isDisabled={deleteRoleMutation.isPending}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteRoleMutation.isPending}
             >
               {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

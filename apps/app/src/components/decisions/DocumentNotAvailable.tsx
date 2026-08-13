@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { LuFileQuestion } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,10 +16,10 @@ export function DocumentNotAvailable({ className }: { className?: string }) {
         className,
       )}
     >
-      <div className="flex size-8 items-center justify-center rounded-full bg-neutral-gray1">
-        <LuFileQuestion className="size-4 text-neutral-gray4" />
+      <div className="flex size-8 items-center justify-center rounded-full bg-secondary">
+        <LuFileQuestion className="size-4 text-muted-foreground" />
       </div>
-      <p className="text-sm text-neutral-gray4">
+      <p className="text-sm text-muted-foreground">
         {t('Content could not be loaded')}
       </p>
     </div>

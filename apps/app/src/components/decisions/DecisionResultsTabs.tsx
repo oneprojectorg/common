@@ -1,7 +1,7 @@
 'use client';
 
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,33 +13,43 @@ export const DecisionResultsTabs = ({
 }: {
   children: ReactNode;
   className?: string;
-  /** Whether to surface the "My Ballot" tab — only when a voting phase took place. */
+  /** Whether to surface the "My ballot" tab — only when a voting phase took place. */
   showBallotTab?: boolean;
 }) => {
   const t = useTranslations();
 
   return (
-    <Tabs className={cn('gap-6', className)} defaultSelectedKey="funded">
-      <TabList className="flex gap-6">
-        <Tab id="funded">{t('Selected Proposals')}</Tab>
-        <Tab id="all-proposals">{t('All proposals')}</Tab>
-        {showBallotTab ? <Tab id="ballot">{t('My Ballot')}</Tab> : null}
-      </TabList>
+    <Tabs className={cn('gap-6', className)} defaultValue="funded">
+      {/* The rail lives on a wrapper, not the list — sense's `line` variant
+          draws the active indicator only. Mirrors ReviewPage's tab row. */}
+      <div className="w-full overflow-x-auto border-b">
+        <TabsList
+          variant="line"
+          className="flex gap-6"
+          aria-label={t('Results sections')}
+        >
+          <TabsTrigger value="funded">{t('Selected proposals')}</TabsTrigger>
+          <TabsTrigger value="all-proposals">{t('All proposals')}</TabsTrigger>
+          {showBallotTab ? (
+            <TabsTrigger value="ballot">{t('My ballot')}</TabsTrigger>
+          ) : null}
+        </TabsList>
+      </div>
       {children}
     </Tabs>
   );
 };
 
 export const DecisionResultsTabPanel = ({
-  id,
+  value,
   children,
 }: {
-  id: string;
+  value: string;
   children: ReactNode;
 }) => {
   return (
-    <TabPanel id={id} className="grow sm:p-0">
+    <TabsContent value={value} className="grow">
       {children}
-    </TabPanel>
+    </TabsContent>
   );
 };

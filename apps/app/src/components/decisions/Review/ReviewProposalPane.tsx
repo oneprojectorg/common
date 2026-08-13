@@ -20,12 +20,18 @@ export function ReviewProposalPane() {
     <div className="flex flex-col gap-8">
       <ProposalPreview
         proposal={assignment.proposal}
+        // The banner needs a comment to show; the date doesn't. A resubmission
+        // without one would otherwise leave the reviewer no sign it happened
+        // (`responseComment` is null when the author left it empty).
         submissionMetaSuffix={
           respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
         }
         headerBanner={
           responseComment ? (
-            <AuthorRevisionNote comment={responseComment} />
+            <AuthorRevisionNote
+              comment={responseComment}
+              respondedAt={respondedAt}
+            />
           ) : undefined
         }
       />

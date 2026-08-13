@@ -6,9 +6,9 @@ import {
   type SubmittedReviewItem,
   findSchemaOption,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Button } from '@op/sense/Button';
+import { Header3 } from '@op/sense/Header';
+import { StatusDot } from '@op/sense/StatusDot';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -50,23 +50,21 @@ export function ReviewerDetail({
       <Button
         variant="link"
         size="inline"
-        onPress={onBack}
-        className="inline-flex items-center gap-1 self-start text-base"
+        onClick={onBack}
+        className="self-start text-base"
       >
         <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {t('Back to all reviewers')}
       </Button>
 
-      <div className="flex items-center justify-between border-b border-neutral-gray1 pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-2">
           <ProfileAvatar
             profile={item.reviewer}
             withLink={false}
             className="size-6"
           />
-          <Header3 className="font-serif">
-            {item.reviewer.name ?? item.reviewer.slug}
-          </Header3>
+          <Header3>{item.reviewer.name ?? item.reviewer.slug}</Header3>
         </div>
         {(recommendationLabel || hasScoring) && (
           <div className="flex items-center gap-1">
@@ -74,14 +72,12 @@ export function ReviewerDetail({
               <StatusDot
                 intent={recommendationIntent(item.overallRecommendation)}
               >
-                <span className="text-sm text-neutral-black">
-                  {recommendationLabel}
-                </span>
+                <span className="text-sm">{recommendationLabel}</span>
               </StatusDot>
             )}
             {hasScoring && (
-              <span className="text-sm text-neutral-gray4">
-                ({item.score}/{totalPoints}pts)
+              <span className="text-sm text-muted-foreground">
+                ({item.score}/{totalPoints})
               </span>
             )}
           </div>

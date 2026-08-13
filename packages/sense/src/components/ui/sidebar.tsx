@@ -209,6 +209,11 @@ function Sidebar({
       data-variant={variant}
       data-side={side}
       data-slot="sidebar"
+      // When offcanvas-collapsed the panel is slid off-screen but stays in the
+      // DOM, so its links stay in the tab order. `inert` removes it from focus
+      // and the a11y tree until it's opened again. (icon-collapse stays
+      // interactive, so it's excluded.)
+      inert={collapsible === 'offcanvas' && state === 'collapsed'}
     >
       {/* This is what handles the sidebar gap on desktop */}
       <div
@@ -250,6 +255,7 @@ function Sidebar({
 function SidebarTrigger({
   className,
   onClick,
+  children,
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar();
@@ -267,7 +273,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <LuPanelLeft />
+      {children ?? <LuPanelLeft />}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

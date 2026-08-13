@@ -212,7 +212,7 @@ test.describe('Open Reviews', () => {
         .getByText('Open reviews', { exact: true })
         .locator('..')
         .locator('..')
-        .getByRole('button');
+        .getByRole('switch');
 
     await page.goto(editUrl);
     await expect(
@@ -226,22 +226,22 @@ test.describe('Open Reviews', () => {
     await expect(page.getByText('Open reviews', { exact: true })).toBeVisible({
       timeout: 12_000,
     });
-    await expect(openReviewsToggle()).toHaveAttribute('aria-pressed', 'false');
+    await expect(openReviewsToggle()).toHaveAttribute('aria-checked', 'false');
 
     // Turning it on opens a confirmation dialog.
     await openReviewsToggle().click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('alertdialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Turn on Open Reviews?')).toBeVisible();
 
     // Cancel leaves the toggle off and nothing persisted.
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dialog).not.toBeVisible();
-    await expect(openReviewsToggle()).toHaveAttribute('aria-pressed', 'false');
+    await expect(openReviewsToggle()).toHaveAttribute('aria-checked', 'false');
 
     // Toggle again → Enable persists via the builder autosave mutation.
     await openReviewsToggle().click();
-    const dialog2 = page.getByRole('dialog');
+    const dialog2 = page.getByRole('alertdialog');
     await expect(dialog2).toBeVisible();
 
     const saveResponse = page.waitForResponse(
@@ -252,7 +252,7 @@ test.describe('Open Reviews', () => {
     await dialog2.getByRole('button', { name: 'Enable' }).click();
     await saveResponse;
 
-    await expect(openReviewsToggle()).toHaveAttribute('aria-pressed', 'true');
+    await expect(openReviewsToggle()).toHaveAttribute('aria-checked', 'true');
 
     // The flag reached the DB.
     await expect
@@ -275,7 +275,7 @@ test.describe('Open Reviews', () => {
     await expect(page.getByText('Open reviews', { exact: true })).toBeVisible({
       timeout: 12_000,
     });
-    await expect(openReviewsToggle()).toHaveAttribute('aria-pressed', 'true');
+    await expect(openReviewsToggle()).toHaveAttribute('aria-checked', 'true');
   });
 
   // ==========================================================================
@@ -460,7 +460,7 @@ test.describe('Open Reviews', () => {
     ).toBeVisible({ timeout: 10_000 });
     // A's name in the detail header, the recommendation badge, and the score.
     await expect(otherPanel.getByText(reviewerAName).first()).toBeVisible();
-    await expect(otherPanel.getByText('(8/8pts)')).toBeVisible();
+    await expect(otherPanel.getByText('(8/8)')).toBeVisible();
     // Rubric answer content + feedback-to-author text.
     await expect(
       otherPanel.getByRole('heading', { name: 'Innovation' }),

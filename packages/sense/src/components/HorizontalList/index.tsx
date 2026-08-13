@@ -2,6 +2,14 @@ import * as React from 'react';
 
 import { cn } from '../../lib/utils';
 
+/**
+ * A horizontally scrolling row of items that snaps to each one, with the
+ * scrollbar hidden.
+ *
+ * A real `<ul>`/`<li>`, so it keeps list semantics and the count a screen
+ * reader announces. The container is focusable by keyboard because it scrolls —
+ * don't remove its tab stop to tidy the focus order.
+ */
 function HorizontalList({ className, ...props }: React.ComponentProps<'ul'>) {
   return (
     <ul
@@ -15,6 +23,7 @@ function HorizontalList({ className, ...props }: React.ComponentProps<'ul'>) {
   );
 }
 
+/** A single snap target inside a {@link HorizontalList}. */
 function HorizontalListItem({
   className,
   ...props

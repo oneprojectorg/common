@@ -3,33 +3,47 @@
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { Button } from '@op/ui/Button';
-import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
-import { useContext } from 'react';
-import { OverlayTriggerStateContext } from 'react-aria-components';
+import { Button } from '@op/sense/Button';
+import {
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { toast } from '@op/sense/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
 
+interface VoteSubmissionModalProps {
+  selectedProposals: Proposal[];
+  instanceId: string;
+  /**
+   * Called after the ballot is accepted. The caller owns the dialog's open
+   * state, so it is also responsible for closing it here — sense `Dialog` has
+   * no descendant close API beyond `DialogClose`.
+   */
+  onSuccess: () => void;
+}
+
+/**
+ * Contents of the "Review your votes" confirmation dialog. Rendered inside the
+ * caller's `DialogContent` (see `ProposalsGrid`), so it supplies the header /
+ * body / footer parts only.
+ */
 export const VoteSubmissionModal = ({
   selectedProposals,
   instanceId,
   onSuccess,
-}: {
-  selectedProposals: Proposal[];
-  instanceId: string;
-  onSuccess: () => void;
-}) => {
+}: VoteSubmissionModalProps) => {
   const t = useTranslations();
-  const overlayState = useContext(OverlayTriggerStateContext);
 
   const utils = trpc.useUtils();
   const submitVoteMutation = trpc.decision.submitVote.useMutation({
     onSuccess: () => {
       utils.decision.getVotingStatus.invalidate();
-      overlayState?.close();
       onSuccess();
     },
     onError: (error) => {
@@ -37,9 +51,7 @@ export const VoteSubmissionModal = ({
         error,
         context: 'VoteSubmissionModal.submitVote',
       });
-      toast.error({
-        message: error.message || 'Failed to submit vote',
-      });
+      toast.error(error.message || 'Failed to submit vote');
     },
   });
 
@@ -53,22 +65,25 @@ export const VoteSubmissionModal = ({
 
   return (
     <>
-      <ModalHeader>{t('Review your votes')}</ModalHeader>
-      <ModalBody>
+      <DialogHeader>
+        <DialogTitle>{t('Review your votes')}</DialogTitle>
+        <DialogDescription>
+          {t('Please confirm your selections before submitting')}
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="px-6 py-4">
         <VoteReviewStep proposals={selectedProposals} />
-      </ModalBody>
-      <ModalFooter>
-        <Button
-          className="w-full"
-          color="primary"
-          onPress={handleSubmit}
-          isDisabled={submitVoteMutation.isPending}
-        >
-          {submitVoteMutation.isPending
-            ? t('Submitting...')
-            : t('Submit my votes')}
+      </div>
+
+      <DialogFooter>
+        <DialogClose render={<Button variant="outline" />}>
+          {t('Cancel')}
+        </DialogClose>
+        <Button onClick={handleSubmit} loading={submitVoteMutation.isPending}>
+          {t('Submit votes')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
     </>
   );
 };

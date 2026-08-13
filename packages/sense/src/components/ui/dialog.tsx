@@ -5,6 +5,7 @@ import * as React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { Confetti } from '../Confetti';
 import { Button } from './button';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -31,7 +32,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'fixed inset-0 isolate z-50 bg-black/15 duration-100 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 supports-backdrop-filter:backdrop-blur-sm',
+        'fixed inset-0 isolate z-50 bg-overlay/15 duration-100 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 supports-backdrop-filter:backdrop-blur-sm',
         className,
       )}
       {...props}
@@ -44,18 +45,34 @@ function DialogContent({
   children,
   showCloseButton = true,
   container,
+  confetti = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
   container?: DialogPrimitive.Portal.Props['container'];
+  /**
+   * Burst confetti behind the card while the dialog is open. Rendered inside
+   * the backdrop so it fills the screen (not clipped to the card) and fades
+   * with the backdrop on close. Replays on each open (the backdrop remounts).
+   */
+  confetti?: boolean;
 }) {
   return (
     <DialogPortal container={container}>
-      <DialogOverlay />
+      <DialogOverlay>
+        {/* Inside the backdrop so it inherits the open/close transition — on an
+            early close the confetti fades out with the backdrop instead of
+            being cut. pointer-events-none keeps click-to-dismiss working. */}
+        {confetti ? (
+          <div className="pointer-events-none absolute inset-0">
+            <Confetti />
+          </div>
+        ) : null}
+      </DialogOverlay>
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-popover text-popover-foreground duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 sm:max-w-sm',
+          'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 grid-cols-[minmax(0,1fr)] overflow-y-auto rounded-xl border bg-popover text-popover-foreground duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 sm:max-w-sm',
           className,
         )}
         {...props}
@@ -139,7 +156,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        'text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground',
+        'text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground',
         className,
       )}
       {...props}

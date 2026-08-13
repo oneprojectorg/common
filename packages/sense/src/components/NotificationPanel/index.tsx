@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
+import { Header2 } from '../Header';
+import { BadgeNumber } from '../ui/badge';
 
 /**
  * A bordered notification surface with a serif header (title + count badge),
@@ -23,12 +25,10 @@ function NotificationPanelHeader({
   count: number;
 }) {
   return (
-    <h2 className="flex items-center gap-1 p-6 font-serif text-title text-foreground">
-      {title}{' '}
-      <span className="flex size-4 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-        {count}
-      </span>
-    </h2>
+    <div className="flex items-center gap-1 p-6 text-foreground">
+      <Header2 className="text-title">{title}</Header2>
+      <BadgeNumber>{count}</BadgeNumber>
+    </div>
   );
 }
 

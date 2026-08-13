@@ -6,18 +6,27 @@ import { trpc } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
 import type { ReviewsScope } from '@op/common';
 import { isReviewPhase } from '@op/common/client';
-import { Chip } from '@op/ui/Chip';
-import { Header2, Header3 } from '@op/ui/Header';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Badge } from '@op/sense/Badge';
+import {
+  Field,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+  FieldDescription,
+  FieldContent,
+} from '@op/sense/Field';
+import { Header1, Header3 } from '@op/sense/Header';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { Switch } from '@op/sense/Switch';
 import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
+
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { CategoryReviewerCards } from './CategoryReviewerCards';
@@ -105,7 +114,7 @@ export function ReviewSettingsContent({
   return (
     <div className="mx-auto w-full space-y-8 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-base">{t('Reviews')}</Header2>
+        <Header1 className="text-headline">{t('Reviews')}</Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}
@@ -114,70 +123,80 @@ export function ReviewSettingsContent({
 
       {/* Scope */}
       <section className="space-y-4">
-        <Header3 className="font-serif text-title-sm">{t('Scope')}</Header3>
-        <RadioGroup
-          value={settings.scope}
-          onChange={(value) => {
-            posthog.capture(
-              'review_scope_changed',
-              getDecisionCommonProperties({
-                decisionInstanceId: instanceId,
-                additionalProps: {
-                  phase_id: reviewPhase?.phaseId ?? null,
-                  scope: value,
-                  previous_scope: settings.scope,
-                },
-              }),
-            );
-            updateSettings({ scope: value as ReviewsScope });
-          }}
-          aria-label={t('Scope')}
-          label={t('What should each reviewer be responsible for?')}
-          labelClassName="text-sm font-normal text-neutral-gray4"
-          orientation="vertical"
-        >
-          <Radio value="all">
-            <div className="flex flex-col">
-              <span className="text-base text-neutral-charcoal">
-                {t('All proposals')}
-              </span>
-              <span className="text-sm text-neutral-gray4">
-                {t('Reviewers can review any submission')}
-              </span>
-            </div>
-          </Radio>
-          <Radio
-            value="by_category"
-            isDisabled={!byCategoryEnabled}
-            className={byCategoryEnabled ? undefined : 'opacity-50'}
+        <Header3 className="text-label">{t('Scope')}</Header3>
+        <FieldSet>
+          <FieldLegend className="mb-3 text-base">
+            {t('What should each reviewer be responsible for?')}
+          </FieldLegend>
+          <RadioGroup
+            value={settings.scope}
+            onValueChange={(value) => {
+              posthog.capture(
+                'review_scope_changed',
+                getDecisionCommonProperties({
+                  decisionInstanceId: instanceId,
+                  additionalProps: {
+                    phase_id: reviewPhase?.phaseId ?? null,
+                    scope: value,
+                    previous_scope: settings.scope,
+                  },
+                }),
+              );
+              updateSettings({ scope: value as ReviewsScope });
+            }}
+            aria-label={t('Scope')}
+            className="gap-3"
           >
-            <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
-                {t('By category')}
-                {!byCategoryEnabled && <Chip>{t('Coming soon')}</Chip>}
-              </span>
-              <span className="text-sm text-neutral-gray4">
-                {t(
-                  'Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.',
-                )}
-              </span>
-            </div>
-          </Radio>
-        </RadioGroup>
+            <Field orientation="horizontal">
+              <RadioGroupItem id="scope-all" value="all" />
+              <FieldContent>
+                <FieldLabel htmlFor="scope-all">
+                  {t('All proposals')}
+                </FieldLabel>
+                <FieldDescription>
+                  {t('Reviewers can review any submission')}
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+            <Field
+              orientation="horizontal"
+              data-disabled={!byCategoryEnabled || undefined}
+            >
+              <RadioGroupItem
+                id="scope-by_category"
+                value="by_category"
+                disabled={!byCategoryEnabled}
+              />
+              <FieldContent>
+                <FieldLabel htmlFor="scope-by_category">
+                  {t('By category')}
+                  {!byCategoryEnabled && (
+                    <Badge variant="secondary">{t('Coming soon')}</Badge>
+                  )}
+                </FieldLabel>
+                <FieldDescription>
+                  {t(
+                    'Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.',
+                  )}
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+          </RadioGroup>
+        </FieldSet>
 
         {byCategoryEnabled && settings.scope === 'by_category' && (
           <>
-            <hr className="border-neutral-gray1" />
+            <hr className="border-border" />
             <CategoryReviewerCards instanceId={instanceId} />
           </>
         )}
       </section>
 
-      <hr className="border-neutral-gray1" />
+      <hr className="border-border" />
 
       {/* Revisions */}
       <section className="space-y-4">
-        <Header3 className="font-serif text-title-sm">{t('Revisions')}</Header3>
+        <Header3 className="text-label">{t('Revisions')}</Header3>
         <div className="space-y-2">
           <ToggleRow
             label={t('Reviewers can request revisions')}
@@ -185,10 +204,11 @@ export function ReviewSettingsContent({
               'Reviewers can ask authors to revise their proposal before scoring',
             )}
           >
-            <ToggleButton
-              isSelected={settings.reviewsAllowRevisions}
-              onChange={(val) => updateSettings({ reviewsAllowRevisions: val })}
-              size="small"
+            <Switch
+              checked={settings.reviewsAllowRevisions}
+              onCheckedChange={(val) =>
+                updateSettings({ reviewsAllowRevisions: val })
+              }
             />
           </ToggleRow>
         </div>

@@ -1,9 +1,15 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuFlag } from 'react-icons/lu';
 
@@ -14,6 +20,9 @@ import { useTranslations } from '@/lib/i18n';
  * confirming sends the proposal for async moderation review via
  * `moderation.flagItem` (records a pending flag + submits to the provider). The
  * proposal stays visible until a verdict confirms it.
+ *
+ * The trigger is icon-only below `sm` (the mobile read-view action row is a row
+ * of icon buttons) and gains its label from `sm` up.
  */
 export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
   const t = useTranslations();
@@ -21,65 +30,70 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
 
   const reportMutation = trpc.moderation.flagItem.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Proposal reported for moderation review') });
+      toast.success(t('Proposal reported for moderation review'));
       setIsOpen(false);
     },
     onError: () => {
-      toast.error({
-        message: t('Could not report this proposal. Please try again.'),
-      });
+      toast.error(t('Could not report this proposal. Please try again.'));
     },
   });
 
   // Reflects a successful report this session — the trigger reads "Reported"
   // and disables so the reporter doesn't re-open the dialog.
   const reported = reportMutation.isSuccess;
+  const triggerLabel = reported ? t('Reported') : t('Report');
 
   return (
     <>
       <Button
-        surface="outline"
-        color="secondary"
-        size="small"
-        onPress={() => setIsOpen(true)}
-        isDisabled={reported}
+        variant="outline"
+        onClick={() => setIsOpen(true)}
+        disabled={reported}
+        aria-label={triggerLabel}
+        className="max-sm:size-11"
       >
         <LuFlag className="size-4" />
-        {reported ? t('Reported') : t('Report')}
+        <span className="hidden sm:inline">{triggerLabel}</span>
       </Button>
 
-      <Modal isDismissable isOpen={isOpen} onOpenChange={setIsOpen}>
-        <ModalHeader>{t('Report this proposal')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.",
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setIsOpen(false)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={() =>
-              reportMutation.mutate({
-                itemType: 'proposal',
-                itemId: proposalId,
-              })
-            }
-            isDisabled={reportMutation.isPending}
-          >
-            {t('Report')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Report this proposal')}</DialogTitle>
+          </DialogHeader>
+
+          <div className="px-6 py-4">
+            <p className="text-base">
+              {t(
+                "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.",
+              )}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="w-full sm:w-fit"
+              onClick={() => setIsOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-fit"
+              onClick={() =>
+                reportMutation.mutate({
+                  itemType: 'proposal',
+                  itemId: proposalId,
+                })
+              }
+              loading={reportMutation.isPending}
+            >
+              {t('Report')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

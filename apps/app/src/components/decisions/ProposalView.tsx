@@ -1,7 +1,10 @@
 'use client';
 
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
-import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
+import {
+  canEngageWithProposals,
+  useProposalEngagement,
+} from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
@@ -12,7 +15,7 @@ import {
   type ProposalTranslation,
   type SupportedLocale,
 } from '@op/common/client';
-import { SplitPane } from '@op/ui/SplitPane';
+import { SplitPane } from '@op/sense/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import {
@@ -113,15 +116,11 @@ export function ProposalView({
     [processInstanceId, proposalId],
   );
 
-  // Use relationship mutations hook for like/follow functionality
-  const {
-    isLiked: isLikedByUser,
-    isFollowed: isFollowedByUser,
-    isLoading,
-    handleLike,
-    handleFollow,
-  } = useRelationshipMutations({
-    targetProfileId: currentProposal.profileId,
+  // Same hook the proposal card's metric toggles use, so the two surfaces
+  // can't drift. Returns undefined when the viewer can't act.
+  const engagement = useProposalEngagement({
+    proposal: currentProposal,
+    canEngage: canEngageWithProposals(currentProposal.access),
   });
 
   // Check if current user can edit (submitter or org admin)
@@ -237,6 +236,18 @@ export function ProposalView({
         proposal={currentProposal}
         selection={selection}
         documentState={documentState}
+        // Everyone sees the counts; only a signed-in member with engagement
+        // access gets the controls (the hook returns undefined otherwise).
+        engagement={
+          engagement
+            ? {
+                isLiked: engagement.isLiked,
+                isFollowing: engagement.isFollowed,
+                onLike: engagement.onLike,
+                onFollow: engagement.onFollow,
+              }
+            : undefined
+        }
         translation={
           translatedHtmlContent
             ? {
@@ -260,12 +271,7 @@ export function ProposalView({
   return (
     <ProposalViewLayout
       backHref={backHref}
-      onLike={handleLike}
-      onFollow={handleFollow}
       reportProposalId={proposalId}
-      isLiked={isLikedByUser}
-      isFollowing={isFollowedByUser}
-      isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}
       // Same viewer-access bit the comments prompt reads (getProposal mirrors
@@ -273,7 +279,9 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
-      canEngage={currentProposal.access?.submitProposals === true}
+      // The admin overflow menu (shortlist / reject / hide) gates itself on
+      // `access.admin` and on the proposal having left draft.
+      moderationProposal={currentProposal}
       revisionToggle={
         firstRevisionRequestId
           ? {
@@ -300,8 +308,10 @@ export function ProposalView({
           </SplitPane.Pane>
         </SplitPane>
       ) : (
-        <div className="flex-1 px-6 py-8">
-          <div className="mx-auto flex max-w-xl flex-col gap-8">
+        // Figma: 544px (max-w-136) centred column, 56px vertical padding and a
+        // 40px region gap on desktop; 16/32 padding and a 24px gap on mobile.
+        <div className="flex-1 px-4 py-8 sm:px-6 sm:py-14">
+          <div className="mx-auto flex max-w-136 flex-col gap-6 sm:gap-10">
             {proposalBody}
           </div>
         </div>

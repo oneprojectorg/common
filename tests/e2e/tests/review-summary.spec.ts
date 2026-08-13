@@ -307,7 +307,7 @@ test.describe('Review Summary page', () => {
     await expect(reviewerRows).toHaveCount(3);
 
     // ====================================================================
-    // Step 3: Click the top-scoring row (Yes1, 8/8pts) → ReviewerDetail mounts
+    // Step 3: Click the top-scoring row (Yes1, 8/8) → ReviewerDetail mounts
     //          and the assignment ID is pushed into the URL
     // ====================================================================
 
@@ -324,7 +324,7 @@ test.describe('Review Summary page', () => {
       page.getByRole('button', { name: 'Back to all reviewers' }),
     ).toBeVisible();
     // Detail header shows the score in parentheses; the list rows do not.
-    await expect(page.getByText('(8/8pts)')).toBeVisible();
+    await expect(page.getByText('(8/8)')).toBeVisible();
     // The submitted rubric content renders below the header.
     await expect(
       page.getByRole('heading', { name: 'Innovation' }),
@@ -356,7 +356,7 @@ test.describe('Review Summary page', () => {
     // Streaming SSR leaves a hidden Suspense fallback (`<div hidden id="S:0">`)
     // alongside the live tabpanel until React finishes hydrating, so duplicates
     // of every text node are present briefly. `.first()` targets the visible copy.
-    await expect(page.getByText('(4/8pts)').first()).toBeVisible();
+    await expect(page.getByText('(4/8)').first()).toBeVisible();
     await expect(page.getByText('Maybe').first()).toBeVisible();
 
     // ====================================================================

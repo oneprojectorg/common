@@ -4,17 +4,19 @@ import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import { SocialLinks } from '@op/sense/SocialLinks';
+import { Spinner } from '@op/sense/Spinner';
+import { CheckIcon } from '@op/sense/icons';
+import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { SocialLinks } from '@op/ui/SocialLinks';
-import { cn } from '@op/ui/utils';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import {
   AuthCodeField,
@@ -153,7 +155,9 @@ export const LoginPanel = () => {
       }
       return (
         <div className="flex flex-col gap-2">
-          <span className="sm:text-base">{t('Welcome to')}</span>
+          <span className="font-sans text-base font-normal tracking-normal text-muted-foreground">
+            {t('Welcome to')}
+          </span>
           <span>
             <CommonLogo className="h-8 w-auto" />
           </span>
@@ -163,9 +167,7 @@ export const LoginPanel = () => {
     return (
       <div className="flex flex-col items-center justify-center gap-4">
         <CheckIcon />
-        <span className="text-title-base sm:text-title-lg">
-          {t('Email sent!')}
-        </span>
+        <span className="text-headline">{t('Email sent!')}</span>
       </div>
     );
   })();
@@ -179,7 +181,7 @@ export const LoginPanel = () => {
     }
     if (combinedError || tokenError) {
       return (
-        <span className={cn(tokenError && 'text-functional-red')}>
+        <span className={cn(tokenError && 'text-destructive')}>
           {combinedError ||
             tokenError ||
             t('There was an error signing you in.')}
@@ -213,7 +215,10 @@ export const LoginPanel = () => {
 
           {!loginSuccess ? (
             <AuthEmailField
-              label={t('Organization email')}
+              label={t('Email')}
+              description={t(
+                'Use the email address associated with your organization',
+              )}
               value={email}
               isDisabled={login.isFetching || loginSuccess || !!combinedError}
               onChange={(val) => {
@@ -237,7 +242,7 @@ export const LoginPanel = () => {
         {!isErrorState ? (
           isConnectionError ? (
             <Button
-              onPress={() => {
+              onClick={() => {
                 void refetchUser().then(({ data }) => {
                   if (data && data.user) {
                     window.location.reload();
@@ -246,7 +251,7 @@ export const LoginPanel = () => {
               }}
             >
               {isRefetchingUser ? (
-                <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-gray3" />
+                <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-input" />
               ) : (
                 t('Try again')
               )}
@@ -255,12 +260,12 @@ export const LoginPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              isDisabled={
+              disabled={
                 !emailIsValid ||
                 login.isFetching ||
                 (!!token && !isValidOtpLength(token))
               }
-              onPress={async () => {
+              onClick={async () => {
                 if (!loginSuccess) {
                   requestEmailCode();
                 } else if (loginSuccess && isValidOtpLength(token)) {
@@ -269,7 +274,7 @@ export const LoginPanel = () => {
               }}
             >
               {login.isFetching ? (
-                <LoadingSpinner />
+                <Spinner className="size-6" />
               ) : loginSuccess ? (
                 isSignup ? (
                   t('Sign up')
@@ -285,18 +290,18 @@ export const LoginPanel = () => {
           <div className="flex flex-col items-center justify-center gap-4">
             <ButtonLink
               href={`${OPURLConfig('APP').ENV_URL}/login`}
-              color="gradient"
+              variant="default"
               className="flex w-full items-center justify-center"
             >
               {t('Back to home')}
             </ButtonLink>
 
-            <SocialLinks iconClassName="size-5 stroke-none text-neutral-gray3" />
+            <SocialLinks iconClassName="size-5 stroke-none text-muted-foreground" />
           </div>
         )}
 
         {!isConnectionError && !isErrorState && (
-          <div className="flex flex-col items-center justify-center text-center text-xs text-darkGray sm:text-sm">
+          <div className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground sm:text-sm">
             {isSignup ? (
               <span>
                 {t(
@@ -306,7 +311,11 @@ export const LoginPanel = () => {
             ) : (
               <>
                 <span>{t("Don't have an account?")}</span>
-                <span>{t('We will automatically create one for you.')}</span>
+                <span>
+                  {t(
+                    'We’ll create one for you with your organization’s email.',
+                  )}
+                </span>
               </>
             )}
           </div>

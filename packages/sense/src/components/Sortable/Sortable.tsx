@@ -137,6 +137,18 @@ function SortableItemWrapper<T extends SortableItem>({
   );
 }
 
+/**
+ * A drag-to-reorder list built on dnd-kit. Render-prop based: you draw each
+ * item, it hands you the drag handle props and the drag state.
+ *
+ * Reordering is keyboard-operable (a `KeyboardSensor` is wired up), so a drag
+ * handle must stay focusable — don't strip `tabIndex` off `dragHandleProps`.
+ * Pass `getItemLabel` so the announcements name the item being moved rather
+ * than reading out an id, and `aria-label` to name the list itself.
+ *
+ * `dragTrigger="handle"` (the default) is the accessible choice; `"item"` makes
+ * the whole row draggable, which conflicts with any control inside it.
+ */
 export function Sortable<T extends SortableItem>({
   items,
   onChange,

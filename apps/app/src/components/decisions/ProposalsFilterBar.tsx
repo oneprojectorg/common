@@ -20,11 +20,7 @@ export const ProposalsListHeader = ({
 }) => {
   const t = useTranslations();
   if (hideFilters) {
-    return (
-      <span className="font-serif text-title-base text-neutral-black">
-        {t('My proposals')}
-      </span>
-    );
+    return <span className="font-serif text-title">{t('My proposals')}</span>;
   }
   return <ProposalCount count={count} total={total} />;
 };
@@ -68,18 +64,20 @@ export const ProposalsFilterBar = ({
         }}
         aria-label={t('Filter proposals')}
         items={filterItems}
+        className="min-w-40"
       />
       <CategoryFilterSelect
         decisionSlug={decisionSlug}
         categories={categories}
         selectedCategory={selectedCategory}
         onSelectCategory={onSelectCategory}
+        className="min-w-40"
       />
       <ResponsiveSelect
         selectedKey={sortOrder}
         onSelectionChange={onSelectSort}
         aria-label={t('Sort proposals')}
-        className="min-w-32"
+        className="min-w-40"
         items={[
           { id: 'newest', label: t('Newest First') },
           { id: 'oldest', label: t('Oldest First') },

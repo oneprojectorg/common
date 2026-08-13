@@ -1,10 +1,15 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
+import { RichTextViewer } from '@op/sense/RichTextEditor';
+import { Spinner } from '@op/sense/Spinner';
 import he from 'he';
 import { useParams } from 'next/navigation';
 
@@ -42,46 +47,49 @@ export const DecisionActionBar = ({
 
   return (
     <div className="flex w-full justify-center">
-      <div className="flex w-full max-w-[12rem] flex-col items-center justify-center gap-4 sm:flex-row">
+      <div className="flex w-full max-w-48 flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
-          <DialogTrigger>
-            <Button color="secondary" className="w-full">
-              {label ?? t('Learn more')}
-            </Button>
+          <Dialog>
+            <DialogTrigger
+              render={
+                <Button variant="outline" className="w-full">
+                  {label ?? t('Learn more')}
+                </Button>
+              }
+            />
 
-            <Modal isDismissable className="sm:max-w-3xl">
-              <Dialog>
-                <ModalHeader>{label ?? t('About the process')}</ModalHeader>
-                <ModalBody>
-                  {markup && description ? (
-                    <div
-                      dir="auto"
-                      className="prose max-w-none prose-gray"
-                      dangerouslySetInnerHTML={{
-                        __html: he.decode(description),
-                      }}
-                    />
-                  ) : (
-                    <RichTextViewer
-                      extensions={getViewerExtensions()}
-                      content={description}
-                      editorClassName="prose prose-base max-w-none [&_p]:text-base"
-                    />
-                  )}
-                </ModalBody>
-              </Dialog>
-            </Modal>
-          </DialogTrigger>
+            <DialogContent className="sm:max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>{label ?? t('About the process')}</DialogTitle>
+              </DialogHeader>
+              <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
+                {markup && description ? (
+                  <div
+                    dir="auto"
+                    className="prose max-w-none prose-gray"
+                    dangerouslySetInnerHTML={{
+                      __html: he.decode(description),
+                    }}
+                  />
+                ) : (
+                  <RichTextViewer
+                    extensions={getViewerExtensions()}
+                    content={description}
+                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                  />
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         ) : null}
 
         {showSubmitButton && (
           <Button
-            color="primary"
             className="w-full"
-            isDisabled={!isReady || isCreating}
-            onPress={handleCreateProposal}
+            disabled={!isReady || isCreating}
+            onClick={handleCreateProposal}
           >
-            {isCreating ? <LoadingSpinner /> : null}
+            {isCreating ? <Spinner /> : null}
             {t('Start a proposal')}
           </Button>
         )}

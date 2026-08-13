@@ -17,18 +17,11 @@ const footerBarVariants = cva('shrink-0 border-t bg-background backdrop-blur', {
   },
 });
 
-const footerBarContentVariants = cva('flex items-center gap-4', {
+const footerBarContentVariants = cva('flex w-full items-center gap-4', {
   variants: {
     padding: {
-      compact: 'px-8 py-2',
+      compact: 'px-6 py-2',
       spacious: 'px-18 py-2',
-    },
-    // For fixed mode, center the inner content at the page max-width so
-    // Start/End slots align with the content above.
-    position: {
-      sticky: '',
-      fixed: 'mx-auto w-full max-w-6xl',
-      static: '',
     },
   },
   defaultVariants: {
@@ -40,8 +33,24 @@ interface FooterBarProps
   extends
     React.ComponentProps<'footer'>,
     VariantProps<typeof footerBarVariants>,
-    VariantProps<typeof footerBarContentVariants> {}
+    VariantProps<typeof footerBarContentVariants> {
+  /**
+   * `sticky` (default) holds the bar at the bottom of its scroll container;
+   * `fixed` pins it to the viewport; `static` lets it flow with the page.
+   */
+  position?: VariantProps<typeof footerBarVariants>['position'];
+  /** `compact` (default) for most bars, `spacious` for full-width page footers. */
+  padding?: VariantProps<typeof footerBarContentVariants>['padding'];
+}
 
+/**
+ * The action bar that sits at the bottom of an editor or wizard — Cancel /
+ * Save, step navigation, and the like.
+ *
+ * Renders a real `<footer>`, so it is a landmark a screen reader can jump to.
+ * Because it overlays content when `sticky` or `fixed`, the scroll container
+ * behind it needs bottom padding of its own, or the last row hides underneath.
+ */
 function FooterBar({
   className,
   children,
@@ -55,9 +64,7 @@ function FooterBar({
       className={cn(footerBarVariants({ position }), className)}
       {...props}
     >
-      <div className={footerBarContentVariants({ position, padding })}>
-        {children}
-      </div>
+      <div className={footerBarContentVariants({ padding })}>{children}</div>
     </footer>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { SplitPane } from '@op/ui/SplitPane';
-import { cn } from '@op/ui/utils';
+import { SplitPane } from '@op/sense/SplitPane';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 
 import { useTranslations } from '@/lib/i18n';

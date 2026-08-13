@@ -1,20 +1,25 @@
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Header3 } from '@op/ui/Header';
-import { cn } from '@op/ui/utils';
-import Image from 'next/image';
+import { Badge } from '@op/sense/Badge';
+import { Header3 } from '@op/sense/Header';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { cn } from '@op/sense/lib/utils';
 
 import type { TranslationKey } from '@/lib/i18n';
 
 import { TranslatedText } from '../TranslatedText';
 
+/**
+ * Name, then who stewards it, then the phase chip alongside whatever metadata
+ * the caller passes as `children` (Figma 17827:3655).
+ *
+ * The chip shares the last line rather than sitting beside the name, so a long
+ * process name gets the full width before it wraps.
+ */
 export const DecisionCardHeader = ({
   name,
   currentState,
   stewardName,
   stewardAvatarPath,
-  chipClassName,
   children,
   className,
 }: {
@@ -22,40 +27,31 @@ export const DecisionCardHeader = ({
   currentState?: string | null;
   stewardName?: string | null;
   stewardAvatarPath?: string | null;
-  chipClassName?: string;
   children?: React.ReactNode;
   className?: string;
 }) => (
-  <div className={cn('flex flex-col gap-2', className)}>
-    <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
-      <Header3 className="font-serif !text-title-base text-neutral-black">
-        {name}
-      </Header3>
-      {currentState ? (
-        <Chip
-          className={
-            chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
-          }
-        >
-          <TranslatedText text={currentState as TranslationKey} />
-        </Chip>
-      ) : null}
-    </div>
+  <div className={cn('flex flex-col gap-3', className)}>
+    <Header3>{name}</Header3>
     {stewardName ? (
-      <div className="flex items-center gap-1">
-        <Avatar placeholder={stewardName} className="size-4">
-          {stewardAvatarPath ? (
-            <Image
-              src={getPublicUrl(stewardAvatarPath) ?? ''}
-              alt={stewardName}
-              fill
-              className="object-cover"
-            />
-          ) : null}
-        </Avatar>
-        <span className="text-sm text-neutral-black">{stewardName}</span>
+      <div className="flex items-center gap-2">
+        <ProfileAvatar
+          name={stewardName}
+          src={getPublicUrl(stewardAvatarPath)}
+          alt={stewardName}
+          size="sm"
+        />
+        <span className="text-sm text-muted-foreground">{stewardName}</span>
       </div>
     ) : null}
-    {children}
+    {currentState || children ? (
+      <div className="flex flex-wrap items-center gap-3">
+        {currentState ? (
+          <Badge variant="accent">
+            <TranslatedText text={currentState as TranslationKey} />
+          </Badge>
+        ) : null}
+        {children}
+      </div>
+    ) : null}
   </div>
 );

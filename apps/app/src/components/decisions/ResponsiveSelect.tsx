@@ -1,18 +1,20 @@
 'use client';
 
 import { useMediaQuery } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Sheet, SheetContent } from '@op/sense/Sheet';
+import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { MenuItem, MenuList } from '@op/ui/Menu';
-import { Modal, ModalBody } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
-
-const BOTTOM_SHEET_OVERLAY_CLASS =
-  'p-0 items-end justify-center animate-in fade-in-0 duration-300';
-const BOTTOM_SHEET_CLASS =
-  'm-0 h-auto max-h-[calc(100svh-5rem)] w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full';
 
 interface SelectOption<T extends string> {
   id: T;
@@ -34,7 +36,7 @@ interface ResponsiveSelectProps<T extends string> {
   /** Additional class for the trigger button/select */
   className?: string;
   /** Size variant */
-  size?: 'small' | 'medium';
+  size?: 'sm' | 'default';
   /** Render custom label for selected item (defaults to item.label) */
   renderSelectedLabel?: (item: SelectOption<T> | undefined) => ReactNode;
 }
@@ -49,7 +51,7 @@ export function ResponsiveSelect<T extends string>({
   items,
   'aria-label': ariaLabel,
   className = 'min-w-36',
-  size = 'small',
+  size = 'default',
   renderSelectedLabel,
 }: ResponsiveSelectProps<T>) {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
@@ -64,70 +66,77 @@ export function ResponsiveSelect<T extends string>({
     return (
       <>
         <Button
-          color="secondary"
+          variant="outline"
           size={size}
           className={`${className} max-w-48 shrink-0 justify-between shadow-none`}
-          onPress={() => setIsOpen(true)}
+          onClick={() => setIsOpen(true)}
         >
           <span className="min-w-0 overflow-hidden whitespace-nowrap">
             {displayLabel}
           </span>
           <LuChevronDown className="size-4 shrink-0" />
         </Button>
-        <Modal
-          isOpen={isOpen}
-          onOpenChange={setIsOpen}
-          isDismissable={true}
-          isKeyboardDismissDisabled={false}
-          overlayClassName={BOTTOM_SHEET_OVERLAY_CLASS}
-          className={BOTTOM_SHEET_CLASS}
-        >
-          <ModalBody className="pb-safe p-0">
-            <MenuList
-              selectionMode="single"
-              selectedKeys={[selectedKey]}
-              className="flex min-w-full flex-col border-0 p-0 shadow-none"
-            >
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          {/* Native bottom sheet (side="bottom"). Keyboard nav is plain tab
+              order through the option buttons, not react-aria's roving
+              selection — acceptable for this short single-select list. */}
+          <SheetContent
+            side="bottom"
+            aria-label={ariaLabel}
+            showCloseButton={false}
+            className="max-h-[calc(100svh-5rem)] gap-0 overflow-hidden rounded-t-lg border-0 p-0"
+          >
+            <div className="pb-safe flex flex-col overflow-y-auto">
               {items.map((item, index) => (
-                <MenuItem
+                <button
                   key={item.id}
-                  id={item.id}
-                  textValue={item.textValue}
-                  isDisabled={item.isDisabled}
-                  className={`bg-transparent px-6 py-4 outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-                  onAction={() => {
+                  type="button"
+                  disabled={item.isDisabled}
+                  className={cn(
+                    'bg-transparent px-6 py-4 text-start outline-0 focus-visible:bg-accent focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-50',
+                    index < items.length - 1 && 'border-b border-border',
+                    item.id === selectedKey && 'bg-accent',
+                  )}
+                  onClick={() => {
                     onSelectionChange(item.id);
                     setIsOpen(false);
                   }}
                 >
                   {item.label}
-                </MenuItem>
+                </button>
               ))}
-            </MenuList>
-          </ModalBody>
-        </Modal>
+            </div>
+          </SheetContent>
+        </Sheet>
       </>
     );
   }
 
   return (
     <Select
-      selectedKey={selectedKey}
-      size={size}
-      className={className}
-      onSelectionChange={(key) => onSelectionChange(key as T)}
-      aria-label={ariaLabel}
+      value={selectedKey}
+      onValueChange={(value) => {
+        if (value !== null) {
+          onSelectionChange(value);
+        }
+      }}
     >
-      {items.map((item) => (
-        <SelectItem
-          key={item.id}
-          id={item.id}
-          textValue={item.textValue}
-          isDisabled={item.isDisabled}
-        >
-          {item.label}
-        </SelectItem>
-      ))}
+      <SelectTrigger size={size} className={className} aria-label={ariaLabel}>
+        <SelectValue>{() => displayLabel}</SelectValue>
+      </SelectTrigger>
+      <SelectContent size={size}>
+        <SelectGroup>
+          {items.map((item) => (
+            <SelectItem
+              key={item.id}
+              value={item.id}
+              disabled={item.isDisabled}
+            >
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
     </Select>
   );
 }

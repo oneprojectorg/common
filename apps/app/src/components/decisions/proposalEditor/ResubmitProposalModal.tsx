@@ -1,12 +1,18 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Textarea } from '@op/sense/Textarea';
+import { toast } from '@op/sense/Toast';
+import { useId, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -25,18 +31,19 @@ export function ResubmitProposalModal({
 }: ResubmitProposalModalProps) {
   const t = useTranslations();
   const router = useRouter();
+  const commentId = useId();
   const [comment, setComment] = useState('');
 
   const submitRevisionResponse =
     trpc.decision.submitRevisionResponse.useMutation({
       onSuccess: () => {
-        toast.success({ message: t('Proposal resubmitted') });
+        toast.success(t('Proposal resubmitted'));
         onOpenChange(false);
         setComment('');
         router.push(backHref);
       },
       onError: () => {
-        toast.error({ message: t('Failed to resubmit proposal') });
+        toast.error(t('Failed to resubmit proposal'));
       },
     });
 
@@ -53,56 +60,50 @@ export function ResubmitProposalModal({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
+    <Dialog
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
           setComment('');
         }
         onOpenChange(open);
       }}
-      isDismissable
     >
-      <ModalHeader>{t('Resubmit proposal')}</ModalHeader>
-      <ModalBody>
-        <div className="flex flex-col gap-2">
-          <span className="text-base text-neutral-black">
-            {t('What did you change?')}
-          </span>
-          <div className="flex flex-col gap-1">
-            <span className="text-sm text-neutral-black">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Resubmit proposal')}</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 py-4">
+          <Field>
+            <FieldLabel htmlFor={commentId}>
+              {t('What did you change?')}
+            </FieldLabel>
+            <FieldDescription>
               {t(
                 'Briefly describe your revisions so reviewers know what to look for.',
               )}
-            </span>
-            <TextField
-              aria-label={t('What did you change?')}
+            </FieldDescription>
+            <Textarea
+              id={commentId}
+              rows={4}
+              placeholder={t('Describe what you changed…')}
               value={comment}
-              onChange={setComment}
-              useTextArea
-              textareaProps={{
-                rows: 4,
-                placeholder: t('Describe what you changed…'),
-              }}
+              onChange={(event) => setComment(event.target.value)}
             />
-          </div>
+          </Field>
         </div>
-      </ModalBody>
-      <ModalFooter>
-        <Button color="secondary" onPress={handleCancel}>
-          {t('Cancel')}
-        </Button>
-        <Button
-          color="primary"
-          onPress={handleSubmit}
-          isDisabled={submitRevisionResponse.isPending}
-        >
-          {submitRevisionResponse.isPending ? (
-            <LoadingSpinner className="size-4" />
-          ) : null}
-          {t('Resubmit proposal')}
-        </Button>
-      </ModalFooter>
-    </Modal>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleCancel}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            loading={submitRevisionResponse.isPending}
+          >
+            {t('Resubmit proposal')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

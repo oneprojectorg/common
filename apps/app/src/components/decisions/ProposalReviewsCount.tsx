@@ -5,12 +5,9 @@ import {
   type ProposalReviewAggregates,
   ProposalReviewAssignmentStatus,
 } from '@op/common/client';
-import { Link } from '@op/ui/Link';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { useRef } from 'react';
-import { useFocusable } from 'react-aria';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
 
@@ -44,35 +41,30 @@ export function ProposalReviewsCount({
     .map((reviewer) => reviewer.profile.name)
     .join(', ');
   const label = t('{count} Reviews', { count: completedReviewers.length });
+  // Dotted underline reads as "explicable", not "navigable" — the tooltip is
+  // the payload for everyone, and admins additionally get a real link. The ring
+  // is the sense focus treatment, replacing react-aria's useFocusable.
   const className =
-    'shrink-0 text-base text-neutral-gray4 underline decoration-dotted underline-offset-2';
+    'shrink-0 rounded-sm text-base text-muted-foreground underline decoration-dotted underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
 
   return (
-    <TooltipTrigger>
-      {access?.admin ? (
-        <Link href={href} variant="neutral" className={className}>
-          {label}
-        </Link>
-      ) : (
-        <FocusableSpan className={className}>{label}</FocusableSpan>
-      )}
-      <Tooltip>{names}</Tooltip>
-    </TooltipTrigger>
-  );
-}
-
-function FocusableSpan({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const { focusableProps } = useFocusable({}, ref);
-  return (
-    <span {...focusableProps} ref={ref} tabIndex={0} className={className}>
-      {children}
-    </span>
+    // The root layout provides the tooltip group and delay.
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          // No aria-label: the visible "{count} Reviews" text is the accessible
+          // name, and base-ui exposes the names popup as the description. The
+          // non-admin span still takes focus so keyboard users reach the names.
+          access?.admin ? (
+            <Link href={href} className={className} />
+          ) : (
+            <span tabIndex={0} className={className} />
+          )
+        }
+      >
+        {label}
+      </TooltipTrigger>
+      <TooltipContent className="text-sm">{names}</TooltipContent>
+    </Tooltip>
   );
 }

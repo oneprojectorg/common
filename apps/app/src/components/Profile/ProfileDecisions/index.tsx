@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/sense/Header';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -27,9 +27,9 @@ const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-4 sm:gap-0">
       {data.items.map((item) => (
-        <DecisionListItem key={item.id} item={item} />
+        <DecisionListItem className="sm:p-6" key={item.id} item={item} />
       ))}
     </div>
   );
@@ -82,18 +82,18 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
   const isProcessAdmin = permission.decisions.create && isOwnProfile;
 
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-      <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
-        <LuLeaf className="size-6 text-neutral-gray4" />
+    <div className="flex min-h-100 flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+      <div className="flex size-10 items-center justify-center rounded-full bg-secondary">
+        <LuLeaf className="size-6 text-muted-foreground" />
       </div>
       <div className="flex max-w-md flex-col gap-2">
-        <Header2 className="font-serif text-title-base">
+        <Header2 className="text-title">
           {isProcessAdmin
             ? t('Set up your decision-making process')
             : t('There are no current decision-making processes')}
         </Header2>
         {isProcessAdmin && (
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base">
             {t(
               'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
             )}
@@ -128,7 +128,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       <ErrorBoundary fallback={null}>
         <Suspense fallback={null}>
           <DecisionProfilesList profileId={profileId} />
@@ -154,9 +154,7 @@ export const ProfileDecisionsSuspense = ({
     <Suspense
       fallback={
         <div className="flex min-h-96 items-center justify-center">
-          <div className="animate-pulse text-base text-neutral-charcoal">
-            {t('Loading...')}
-          </div>
+          <div className="animate-pulse text-base">{t('Loading...')}</div>
         </div>
       }
     >

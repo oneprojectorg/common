@@ -7,9 +7,9 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Button } from '@op/sense/Button';
+import { Header3 } from '@op/sense/Header';
+import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
@@ -65,10 +65,8 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3 className="font-serif">
-            {title ?? t('Review Summary')}
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
+          <Header3>{title ?? t('Review Summary')}</Header3>
+          <p className="text-base">
             {t(
               '{submitted} out of {total} reviewers submitted a review for this proposal',
               { submitted: reviewsSubmittedCount, total: assignmentsCount },
@@ -107,9 +105,7 @@ export function ReviewerList({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Header3 className="font-serif !text-title-sm">
-            {t('Submitted Reviews')}
-          </Header3>
+          <Header3 className="text-label">{t('Submitted Reviews')}</Header3>
           <div className="flex flex-col gap-2">
             {reviews.map((item) => (
               <ReviewerRow
@@ -176,7 +172,7 @@ function RecommendationGroup({
   return (
     <div className="flex flex-col gap-4">
       <StatusDot intent={recommendationIntent(value)} className="gap-2">
-        <span className="font-serif !text-title-sm14 text-neutral-black">
+        <span className="font-serif text-sm">
           {label} ({count})
         </span>
       </StatusDot>
@@ -198,10 +194,12 @@ function ReviewerRow({
 }) {
   const t = useTranslations();
   return (
+    // `bare`: the row keeps its card look and picks up the sense focus ring,
+    // which the hand-rolled outline it used to carry never matched.
     <Button
-      unstyled
-      onPress={() => onSelect(item.review.assignmentId)}
-      className="flex h-14 w-full cursor-pointer items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start outline-0 outline-transparent transition-colors duration-200 hover:bg-neutral-offWhite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
+      variant="bare"
+      onClick={() => onSelect(item.review.assignmentId)}
+      className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
       aria-label={t('View review by {name}', {
         name: item.reviewer.name ?? item.reviewer.slug,
       })}
@@ -213,18 +211,18 @@ function ReviewerRow({
           className="size-6"
         />
         <div className="flex flex-col">
-          <span className="text-base text-neutral-black">
+          <span className="text-base">
             {item.reviewer.name ?? item.reviewer.slug}
           </span>
           {showScore && (
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm">
               {item.score}
-              <span className="text-neutral-gray4">/{totalPoints}pts</span>
+              <span className="text-muted-foreground">/{totalPoints}pts</span>
             </span>
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-neutral-gray4 rtl:-scale-x-100" />
+      <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
     </Button>
   );
 }

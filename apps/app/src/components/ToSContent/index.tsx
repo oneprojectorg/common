@@ -1,12 +1,12 @@
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/sense/Header';
 
 import { FormalSection } from '../FormalSection';
 
 export const ToSContent = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div dir="auto" className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
-        <Header3 className="font-serif">
+        <Header3>
           TERMS OF SERVICE FOR COMMON PLATFORM AND ONE PROJECT SERVICES
         </Header3>
         <p className="mb-4">
@@ -73,9 +73,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          1. Changes to these Terms of Service
-        </Header3>
+        <Header3>1. Changes to these Terms of Service</Header3>
         <p className="mb-4">
           We reserve the right to update, add, remove, or otherwise change any
           portion of these Terms of Service from time to time in our sole
@@ -94,15 +92,13 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          2. Account and Use of the Services
-        </Header3>
+        <Header3>2. Account and Use of the Services</Header3>
         <p className="mb-4">
           To access some of the Services, you may be asked to provide certain
           information, including, but not limited to, personal information. We
           will treat any personal information that you submit through the
           Services in accordance with our{' '}
-          <a href="/info/privacy" className="text-primary-teal underline">
+          <a href="/info/privacy" className="text-primary underline">
             Privacy Notice
           </a>
           . You may need to create an account with a user name and password to
@@ -124,7 +120,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">3. Our Mission</Header3>
+        <Header3>3. Our Mission</Header3>
         <p className="mb-4">
           One Project builds infrastructure for economic democracy. We build the
           technology, mobilize the resources, and make the case, so communities
@@ -132,7 +128,7 @@ export const ToSContent = () => {
           see our{' '}
           <a
             href="/info/community-commitments"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             Community Commitments
           </a>{' '}
@@ -142,7 +138,7 @@ export const ToSContent = () => {
 
       {/* Section text carried over from the previous revision — the July 2026 export omitted it; internal references (Section 6/19/27/28) require it here. Pending legal confirmation. */}
       <FormalSection>
-        <Header3 className="font-serif">4. The Code</Header3>
+        <Header3>4. The Code</Header3>
         <p className="mb-4">
           In connection with its collaborative mission, One Project endeavors to
           place all intellectual property developed in the course of its
@@ -162,7 +158,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">5. Suggestions</Header3>
+        <Header3>5. Suggestions</Header3>
         <p className="mb-4">
           We are continuously trying to improve and refine our activities and
           services. If you elect to provide or make available to One Project any
@@ -181,7 +177,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">6. License</Header3>
+        <Header3>6. License</Header3>
         <p className="mb-4">
           Subject to the terms and conditions of these Terms of Service, and any
           additional terms that accompany any additional features,
@@ -197,7 +193,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">7. System Requirements</Header3>
+        <Header3>7. System Requirements</Header3>
         <p className="mb-4">
           Use of the Services requires internet access. You acknowledge and
           agree that all such connectivity requirements are your responsibility.
@@ -210,7 +206,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">8. Use Restrictions</Header3>
+        <Header3>8. Use Restrictions</Header3>
         <p className="mb-4">
           The Services and any related documentation are protected by applicable
           intellectual property and other Laws, including without limitation
@@ -296,7 +292,7 @@ export const ToSContent = () => {
             that violates our{' '}
             <a
               href="/info/community-commitments#prohibited-content"
-              className="text-primary-teal underline"
+              className="text-primary underline"
             >
               Prohibited Content Policy
             </a>
@@ -319,7 +315,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">9. Ownership</Header3>
+        <Header3>9. Ownership</Header3>
         <p className="mb-4">
           The Services are licensed, and not sold, to you under these Terms of
           Service. You have no ownership rights in the Services, any related
@@ -332,7 +328,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">10. Trademarks</Header3>
+        <Header3>10. Trademarks</Header3>
         <p className="mb-4">
           The One Project and Common names and logos, as well as other
           trademarks, names, and logos used in connection with the Services, are
@@ -345,7 +341,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">11. Your Content</Header3>
+        <Header3>11. Your Content</Header3>
         <p className="mb-4">
           You represent and warrant that you either own or have permission to
           use and disclose all of the information, content and other materials
@@ -364,13 +360,13 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">12. Prohibited Content</Header3>
+        <Header3>12. Prohibited Content</Header3>
         <p className="mb-4">
           You agree not to upload information, content or any other material
           that violates our{' '}
           <a
             href="/info/community-commitments#prohibited-content"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             Prohibited Content Policy
           </a>
@@ -379,7 +375,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">13. Copyright Infringement</Header3>
+        <Header3>13. Copyright Infringement</Header3>
         <p className="mb-4">
           If you believe that Your Content has been copied in a way that
           constitutes copyright infringement, or that your intellectual property
@@ -398,7 +394,7 @@ export const ToSContent = () => {
           One Project’s Copyright Agent at{' '}
           <a
             href="mailto:privacy@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             privacy@oneproject.org
           </a>{' '}
@@ -488,7 +484,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">14. Limited Liability</Header3>
+        <Header3>14. Limited Liability</Header3>
         <p className="mb-4">
           You understand and acknowledge that you are responsible for Your
           Content, and you, not One Project, have full responsibility for such
@@ -508,7 +504,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">15. Payment</Header3>
+        <Header3>15. Payment</Header3>
         <p className="mb-4">
           During the initial release of the Platform, you may be offered use of
           the Services free of charge. We reserve the right to charge fees for
@@ -524,9 +520,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          16. Limitations Regarding the Services
-        </Header3>
+        <Header3>16. Limitations Regarding the Services</Header3>
         <p className="mb-4">
           One Project, without any liability to you, (a) may suspend or cease
           providing, may limit, or may disable access to all or part of the
@@ -542,7 +536,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">17. Storage</Header3>
+        <Header3>17. Storage</Header3>
         <p className="mb-4">
           The Platform may provide functionality through which you are able to
           store information (such as your profile, photos, and messages) in your
@@ -553,7 +547,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">18. Disclaimer of Warranty</Header3>
+        <Header3>18. Disclaimer of Warranty</Header3>
         <p className="mb-4 font-semibold">
           YOU UNDERSTAND THAT THE SERVICES ARE PROVIDED ON AN "AS IS" AND "AS
           AVAILABLE" BASIS, WITHOUT ANY WARRANTIES OF ANY KIND, EITHER EXPRESS,
@@ -583,7 +577,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">19. Limitation of Liability</Header3>
+        <Header3>19. Limitation of Liability</Header3>
         <p className="mb-4 font-semibold">
           TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT WILL ONE PROJECT
           OR OUR PARENTS, SUBSIDIARIES, AFFILIATES, OR OTHER RELATED ENTITIES,
@@ -604,7 +598,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">20. Exclusions and Local Laws</Header3>
+        <Header3>20. Exclusions and Local Laws</Header3>
         <p className="mb-4">
           Some jurisdictions do not allow the exclusion of certain warranties or
           the limitation or exclusion of liability for incidental or
@@ -622,7 +616,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">21. Indemnification</Header3>
+        <Header3>21. Indemnification</Header3>
         <p className="mb-4">
           Except to the extent prohibited by Law, you agree to defend,
           indemnify, and hold harmless the One Project Parties from and against
@@ -639,7 +633,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">22. Termination</Header3>
+        <Header3>22. Termination</Header3>
         <p className="mb-4">
           These Terms of Service are effective until terminated. You may
           terminate these Terms of Service at any time by ceasing all use of the
@@ -656,7 +650,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">23. Export Laws</Header3>
+        <Header3>23. Export Laws</Header3>
         <p className="mb-4">
           You acknowledge that the laws and regulations of the United States and
           other countries restrict the export and re-export of commodities and
@@ -675,9 +669,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">
-          24. Use Outside the United States
-        </Header3>
+        <Header3>24. Use Outside the United States</Header3>
         <p className="mb-4">
           The Services may not be available for use in all countries or regions,
           nor are they necessarily translated into all languages. One Project
@@ -691,7 +683,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">25. Miscellaneous</Header3>
+        <Header3>25. Miscellaneous</Header3>
         <p className="mb-4">
           These Terms of Service are the entire agreement between you and One
           Project with respect to, and supersedes any previous oral or written
@@ -701,7 +693,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">26. Governing Law</Header3>
+        <Header3>26. Governing Law</Header3>
         <p className="mb-4">
           These Terms of Service are governed by the laws of the State of
           California, as such laws apply to contracts between California
@@ -722,7 +714,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">27. Dispute Resolution</Header3>
+        <Header3>27. Dispute Resolution</Header3>
         <p className="mb-4 font-semibold">
           PLEASE READ THIS SECTION CAREFULLY. YOU AND ONE PROJECT ARE AGREEING
           TO GIVE UP ANY RIGHTS TO LITIGATE CLAIMS IN A COURT OR BEFORE A JURY,
@@ -795,7 +787,7 @@ export const ToSContent = () => {
             href="https://www.jamsadr.com/rules-streamlined-arbitration/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             https://www.jamsadr.com/rules-streamlined-arbitration/
           </a>
@@ -805,7 +797,7 @@ export const ToSContent = () => {
             href="https://www.jamsadr.com/consumer-minimum-standards/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             https://www.jamsadr.com/consumer-minimum-standards/
           </a>
@@ -881,7 +873,7 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">28. Contact Us</Header3>
+        <Header3>28. Contact Us</Header3>
         <p className="mb-4">
           All legal notices to us must be in writing and must reference these
           Terms of Service. The address for One Project for notice purposes
@@ -890,7 +882,7 @@ export const ToSContent = () => {
           notice sent to that address to{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             support@oneproject.org
           </a>
@@ -899,7 +891,7 @@ export const ToSContent = () => {
           of Service should be directed to:{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal underline"
+            className="text-primary underline"
           >
             support@oneproject.org
           </a>

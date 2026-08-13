@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import type { SectionProps } from '../../contentRegistry';

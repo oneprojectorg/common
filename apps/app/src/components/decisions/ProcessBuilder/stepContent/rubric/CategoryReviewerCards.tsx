@@ -1,9 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -53,22 +54,25 @@ function CategoryReviewerCardsContent({
   // Proposal Categories section to define them first.
   if (categories.length === 0) {
     return (
-      <AlertBanner variant="banner" intent="warning">
-        {t.rich(
-          'No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.',
-          {
-            link: (chunks: React.ReactNode) => (
-              <button
-                type="button"
-                className="text-primary-teal underline"
-                onClick={() => void setSection('proposalCategories')}
-              >
-                {chunks}
-              </button>
-            ),
-          },
-        )}
-      </AlertBanner>
+      <Alert variant="warning">
+        <LuCircleAlert />
+        <AlertTitle>
+          {t.rich(
+            'No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.',
+            {
+              link: (chunks: React.ReactNode) => (
+                <button
+                  type="button"
+                  className="text-primary underline"
+                  onClick={() => void setSection('proposalCategories')}
+                >
+                  {chunks}
+                </button>
+              ),
+            },
+          )}
+        </AlertTitle>
+      </Alert>
     );
   }
 
@@ -77,31 +81,34 @@ function CategoryReviewerCardsContent({
       {eligibleReviewers.length === 0 ? (
         // Replaces the intro entirely — the intro invites adding reviewers,
         // which contradicts an alert saying no one can review yet.
-        <AlertBanner variant="banner" intent="warning">
-          {t.rich(
-            'No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.',
-            {
-              link: (chunks: React.ReactNode) => (
-                <button
-                  type="button"
-                  className="text-primary-teal underline"
-                  onClick={() => void setSection('participants')}
-                >
-                  {chunks}
-                </button>
-              ),
-            },
-          )}
-        </AlertBanner>
+        <Alert variant="warning">
+          <LuCircleAlert />
+          <AlertTitle>
+            {t.rich(
+              'No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.',
+              {
+                link: (chunks: React.ReactNode) => (
+                  <button
+                    type="button"
+                    className="text-primary underline"
+                    onClick={() => void setSection('participants')}
+                  >
+                    {chunks}
+                  </button>
+                ),
+              },
+            )}
+          </AlertTitle>
+        </Alert>
       ) : (
-        <p className="text-base text-neutral-black">
+        <p className="text-base">
           {t.rich(
             'Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.',
             {
               link: (chunks: React.ReactNode) => (
                 <button
                   type="button"
-                  className="text-primary-teal underline"
+                  className="text-primary underline"
                   onClick={() => void setSection('proposalCategories')}
                 >
                   {chunks}
@@ -128,14 +135,14 @@ function CategoryReviewerCardsContent({
 function CategoryReviewerCardsSkeleton() {
   return (
     <div className="flex animate-pulse flex-col gap-6">
-      <div className="h-4 w-80 rounded bg-neutral-gray1" />
+      <div className="h-4 w-80 rounded bg-secondary" />
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="h-4 w-40 rounded bg-neutral-gray1" />
-            <div className="h-4 w-20 rounded bg-neutral-gray1" />
+            <div className="h-4 w-40 rounded bg-secondary" />
+            <div className="h-4 w-20 rounded bg-secondary" />
           </div>
-          <div className="h-10 w-full rounded-lg bg-neutral-gray1" />
+          <div className="h-10 w-full rounded-lg bg-secondary" />
         </div>
       ))}
     </div>

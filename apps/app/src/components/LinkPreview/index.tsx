@@ -2,9 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
@@ -62,40 +61,55 @@ export const LinkPreview = memo(
     // Loading state: show card with spinner and domain
     if (loading) {
       return (
-        <Surface className={cn('rounded-lg', className)}>
-          <div className="flex aspect-video w-full items-center justify-center bg-neutral-gray1">
-            <LoadingSpinner className="size-8" />
+        <div
+          className={cn(
+            'overflow-hidden rounded border bg-white',
+            'rounded-lg',
+            className,
+          )}
+        >
+          <div className="flex aspect-video w-full items-center justify-center bg-secondary">
+            <Spinner className="size-8" />
           </div>
-          <div className="border-t border-neutral-gray2 px-4 py-3">
-            <span className="text-sm text-neutral-gray4">{domain}</span>
+          <div className="border-t border-input px-4 py-3">
+            <span className="text-sm text-muted-foreground">{domain}</span>
           </div>
-        </Surface>
+        </div>
       );
     }
 
     // Error/fallback state: show URL as a simple link card
     if (error || !previewData || previewData.error) {
       return (
-        <Surface className={cn('rounded-lg', className)}>
+        <div
+          className={cn(
+            'overflow-hidden rounded border bg-white',
+            'rounded-lg',
+            className,
+          )}
+        >
           <a
             href={safeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-4"
           >
-            <LuGlobe className="size-5 shrink-0 text-neutral-gray4" />
-            <span className="truncate text-sm text-neutral-gray4">{url}</span>
+            <LuGlobe className="size-5 shrink-0 text-muted-foreground" />
+            <span className="truncate text-sm text-muted-foreground">
+              {url}
+            </span>
           </a>
-        </Surface>
+        </div>
       );
     }
 
     const title = previewData.meta?.title;
 
     return (
-      <Surface
+      <div
         className={cn(
-          'group relative rounded-lg border-neutral-gray1 bg-white',
+          'overflow-hidden rounded border bg-white',
+          'group relative rounded-lg border-border bg-white',
           className,
         )}
       >
@@ -107,7 +121,7 @@ export const LinkPreview = memo(
               e.stopPropagation();
               onRemove();
             }}
-            className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
+            className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-border bg-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-secondary focus-visible:opacity-100"
             aria-label={t('Remove preview')}
           >
             <LuX className="size-4" />
@@ -134,18 +148,18 @@ export const LinkPreview = memo(
             </div>
           ) : null}
           <div className="px-4 py-4">
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm">
               {title ?? domain}
               {title && (
                 <>
                   {' '}
-                  <span className="text-neutral-gray4">· {domain}</span>
+                  <span className="text-muted-foreground">· {domain}</span>
                 </>
               )}
             </span>
           </div>
         </a>
-      </Surface>
+      </div>
     );
   },
 );

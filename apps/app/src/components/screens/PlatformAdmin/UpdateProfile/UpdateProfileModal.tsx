@@ -1,7 +1,10 @@
 import { Profile } from '@op/api/encoders';
-import { Dialog } from '@op/ui/Dialog';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -24,21 +27,21 @@ export const UpdateProfileModal = ({
   const t = useTranslations();
 
   return (
-    <DialogTrigger>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-        <Dialog>
-          <ModalHeader>{t('Edit Profile')}</ModalHeader>
-          <UpdateProfileForm
-            authUserId={authUserId}
-            profile={profile}
-            onSuccess={() => {
-              onSuccess();
-              onOpenChange(false);
-            }}
-            className="p-6"
-          />
-        </Dialog>
-      </Modal>
-    </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t('Edit Profile')}</DialogTitle>
+        </DialogHeader>
+        <UpdateProfileForm
+          authUserId={authUserId}
+          profile={profile}
+          onSuccess={() => {
+            onSuccess();
+            onOpenChange(false);
+          }}
+          className="p-6"
+        />
+      </DialogContent>
+    </Dialog>
   );
 };

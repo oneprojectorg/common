@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProcess } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { Header1, Header2 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Avatar } from '@op/sense/Avatar';
+import { Header1, Header2 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -14,7 +14,7 @@ export const ProcessBuilderProcessSelector = () => {
 
   return (
     <div className="size-full grow p-4 sm:p-8">
-      <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto rounded-lg border bg-neutral-offWhite p-4 md:gap-8 md:p-8">
+      <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto rounded-lg border bg-muted p-4 md:gap-8 md:p-8">
         <Header1 className="text-center">
           {t('How do you want to structure your decision-making process?')}
         </Header1>
@@ -74,16 +74,14 @@ export const ProcessBuilderProcessCard = ({
 
   return (
     <button
-      className="flex w-full cursor-pointer flex-col gap-2 rounded-lg border bg-white p-6 text-start transition-shadow hover:border-neutral-300 hover:shadow-md sm:w-72 md:aspect-[4/3] md:w-[360px] md:p-12 md:text-center"
+      className="flex w-full cursor-pointer flex-col gap-2 rounded-lg border bg-white p-6 text-start transition-shadow hover:border-input hover:shadow-md sm:w-72 md:aspect-[4/3] md:w-90 md:p-12 md:text-center"
       onClick={onSelect}
     >
       <div className="flex gap-2 md:flex-col md:items-center md:gap-6">
-        <Avatar className="shrink-0 md:size-20">{}</Avatar>
-        <Header2 className="font-serif text-xl leading-6 font-light">
-          {name}
-        </Header2>
+        <Avatar className="shrink-0 md:size-20" />
+        <Header2 className="text-xl leading-6 font-light">{name}</Header2>
       </div>
-      <p className="text-neutral-gray4">{description}</p>
+      <p className="text-muted-foreground">{description}</p>
     </button>
   );
 };

@@ -2,15 +2,27 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { StatusBadge } from '@op/sense/StatusBadge';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-import { LuCalendar } from 'react-icons/lu';
+import { LuCalendar, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
@@ -38,7 +50,13 @@ const isClosingSoon = (dateString: string) => {
   return daysUntilClose >= 0 && daysUntilClose <= 7;
 };
 
-export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
+export const DecisionListItem = ({
+  item,
+  className,
+}: {
+  item: DecisionProfile;
+  className?: string;
+}) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const { processInstance } = item;
@@ -50,11 +68,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   const deleteMutation = trpc.decision.deleteDecision.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Decision deleted successfully') });
+      toast.success(t('Decision deleted successfully'));
       utils.decision.listDecisionProfiles.invalidate();
     },
     onError: () => {
-      toast.error({ message: t('Failed to delete decision') });
+      toast.error(t('Failed to delete decision'));
     },
   });
 
@@ -62,7 +80,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
-  const currentPhaseName = isDraft ? t('Draft') : currentPhase?.name;
+  // A draft carries none of the running-process metadata (Figma 17827:9692): no
+  // phase chip, no closing date, no counts — just the name, its owner, and a
+  // Draft badge where the metrics sit.
+  const currentPhaseName = isDraft ? undefined : currentPhase?.name;
   const closingDate = isDraft ? undefined : currentPhase?.endDate;
 
   // For drafts show owner; for published prefer steward, fall back to owner
@@ -77,76 +98,86 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   return (
     <>
-      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+      <div className="flex items-start rounded-lg border hover:bg-muted sm:items-center sm:rounded-none sm:border-0">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
-          className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
+          className={cn(
+            'flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between',
+            className,
+          )}
         >
           <DecisionCardHeader
-            name={processInstance.name || item.name}
+            name={processInstance.name || item.name || t('Untitled')}
             currentState={currentPhaseName}
             stewardName={displayProfile?.name}
             stewardAvatarPath={displayProfile?.avatarImage?.name}
-            chipClassName={
-              isDraft ? 'bg-neutral-gray1 text-neutral-charcoal' : undefined
-            }
           >
-            {closingDate && (
-              <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
-                <DecisionClosingDate closingDate={closingDate} />
-              </div>
-            )}
+            {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           </DecisionCardHeader>
 
-          <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
-            <DecisionStat
-              number={processInstance.participantCount ?? 0}
-              label="Participants"
-            />
-            <DecisionStat
-              number={processInstance.proposalCount ?? 0}
-              label="Proposals"
-            />
-          </div>
+          {isDraft ? (
+            <StatusBadge variant="inactive" icon={false}>
+              {t('Draft')}
+            </StatusBadge>
+          ) : (
+            <div className="flex items-end gap-4 sm:items-center sm:gap-10">
+              <DecisionStat
+                number={processInstance.participantCount ?? 0}
+                label="Participants"
+              />
+              <DecisionStat
+                number={processInstance.proposalCount ?? 0}
+                label="Proposals"
+              />
+            </div>
+          )}
         </Link>
 
         {(canManage || canDelete) && (
-          <div className="flex items-center pe-2 pt-4 sm:ps-12 sm:pt-0">
-            <OptionMenu
-              aria-label={t('Decision options')}
-              variant="outline"
-              className="rounded bg-white shadow-light"
-              size="medium"
-            >
-              {canManage && (
-                <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
-                  {t('Settings')}
-                </MenuItem>
-              )}
-              {canManage && (
-                <MenuItem
-                  key="duplicate"
-                  onAction={() => setShowDuplicateModal(true)}
-                >
-                  {t('Duplicate')}
-                </MenuItem>
-              )}
-              {canDelete && (
-                <MenuItem
-                  key="delete"
-                  onAction={() => setShowDeleteModal(true)}
-                  className="text-functional-red"
-                >
-                  {t('Delete')}
-                </MenuItem>
-              )}
-            </OptionMenu>
+          <div className="flex items-center pe-4 pt-4 sm:ps-8 sm:pt-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label={t('Decision options')}
+                    variant="ghost"
+                    size="icon"
+                  />
+                }
+              >
+                <LuEllipsis className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="bottom" align="end">
+                {canManage && (
+                  <DropdownMenuLinkItem
+                    closeOnClick
+                    render={<Link href={`/decisions/${item.slug}/edit`} />}
+                  >
+                    {t('Settings')}
+                  </DropdownMenuLinkItem>
+                )}
+                {canManage && (
+                  <DropdownMenuItem onClick={() => setShowDuplicateModal(true)}>
+                    {t('Duplicate')}
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteModal(true)}
+                    variant="destructive"
+                  >
+                    {t('Delete')}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
 
-      {/* Manual state instead of DialogTrigger because the trigger is a MenuItem
-         inside a Menu popover — DialogTrigger conflicts with menu focus/close behavior */}
+      {/* Manual state instead of DialogTrigger because the trigger is a dropdown
+         menu item inside a menu popover — DialogTrigger conflicts with menu
+         focus/close behavior */}
       {showDuplicateModal && (
         <DuplicateProcessModal
           item={item}
@@ -154,46 +185,49 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         />
       )}
 
-      <Modal
-        isOpen={showDeleteModal}
+      <Dialog
+        open={showDeleteModal}
         onOpenChange={(open) => !open && setShowDeleteModal(false)}
-        surface="flat"
       >
-        <ModalHeader className="ps-6 text-start">
-          {isDraft
-            ? t('Delete draft?')
-            : t('Delete {name}?', {
-                name: processInstance.name || item.name,
-              })}
-        </ModalHeader>
-        <ModalBody>
-          <p>
-            {isDraft
-              ? t(
-                  "This draft will be permanently deleted and can't be recovered.",
-                )
-              : t(
-                  "This decision will be permanently deleted and can't be recovered.",
-                )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
-            {isDraft ? t('Keep draft') : t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            onPress={handleDeleteConfirm}
-            isDisabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending
-              ? t('Deleting...')
-              : isDraft
-                ? t('Delete draft')
-                : t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              {isDraft
+                ? t('Delete draft?')
+                : t('Delete {name}?', {
+                    name: processInstance.name || item.name,
+                  })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-4">
+            <p>
+              {isDraft
+                ? t(
+                    "This draft will be permanently deleted and can't be recovered.",
+                  )
+                : t(
+                    "This decision will be permanently deleted and can't be recovered.",
+                  )}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              {isDraft ? t('Keep draft') : t('Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending
+                ? t('Deleting...')
+                : isDraft
+                  ? t('Delete draft')
+                  : t('Delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
@@ -223,18 +257,20 @@ export const ProfileDecisionListItem = ({
         name={processInstance.name || item.name}
         currentState={currentPhaseName}
       >
-        <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
+        {/* `w-full` so this takes its own line under the phase chip, which now
+            shares the header's last row. */}
+        <div className="flex w-full flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between">
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
-          <div className="flex items-end gap-4 text-neutral-black">
+          <div className="flex items-end gap-4">
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
-              className="sm:flex-row sm:items-end sm:gap-1"
+              className="sm:flex-row"
             />
             <DecisionStat
               number={processInstance.proposalCount ?? 0}
               label="Proposals"
-              className="sm:flex-row sm:items-end sm:gap-1"
+              className="sm:flex-row"
             />
           </div>
         </div>
@@ -265,7 +301,7 @@ export const LegacyDecisionListItem = ({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-muted hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
     >
       <DecisionCardHeader
         name={name}
@@ -273,14 +309,10 @@ export const LegacyDecisionListItem = ({
         stewardName={ownerName}
         stewardAvatarPath={ownerAvatarPath}
       >
-        {closingDate && (
-          <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
-            <DecisionClosingDate closingDate={closingDate} />
-          </div>
-        )}
+        {closingDate && <DecisionClosingDate closingDate={closingDate} />}
       </DecisionCardHeader>
 
-      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+      <div className="flex items-end gap-4 sm:items-center sm:gap-10">
         <DecisionStat number={participantCount} label="Participants" />
         <DecisionStat number={proposalCount} label="Proposals" />
       </div>
@@ -297,14 +329,9 @@ const DecisionStat = ({
   label: TranslationKey;
   className?: string;
 }) => (
-  <div
-    className={cn(
-      'flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0',
-      className,
-    )}
-  >
-    <span className="font-serif text-title-base">{number}</span>
-    <span className="text-sm">
+  <div className={cn('flex items-center gap-1 sm:flex-col', className)}>
+    <span className="font-serif text-title">{number}</span>
+    <span className="text-sm text-muted-foreground">
       <TranslatedText text={label} />
     </span>
   </div>
@@ -312,21 +339,20 @@ const DecisionStat = ({
 
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   const locale = useLocale();
+  const closingSoon = isClosingSoon(closingDate);
+
   return (
-    <div className="flex items-center gap-1">
-      <LuCalendar
-        className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
+    <div
+      className={cn(
+        'flex items-center gap-2 text-sm',
+        closingSoon ? 'text-destructive' : 'text-muted-foreground',
+      )}
+    >
+      <LuCalendar className="size-4" aria-hidden />
+      <TranslatedText
+        text="Closes on {date}"
+        values={{ date: formatDateShort(closingDate, locale) }}
       />
-      <span
-        className={cn(
-          isClosingSoon(closingDate)
-            ? 'text-functional-red'
-            : 'text-neutral-charcoal',
-          'text-sm',
-        )}
-      >
-        <TranslatedText text="Closes" /> {formatDateShort(closingDate, locale)}
-      </span>
     </div>
   );
 };

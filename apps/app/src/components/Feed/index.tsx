@@ -1,4 +1,4 @@
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 export const FeedItem = ({
@@ -68,7 +68,7 @@ export const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col items-start justify-start gap-0.5 overflow-hidden',
+        'flex w-full flex-col items-start justify-start gap-2 overflow-hidden',
         className,
       )}
       {...props}

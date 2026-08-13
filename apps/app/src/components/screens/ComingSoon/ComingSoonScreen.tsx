@@ -1,9 +1,8 @@
 'use client';
 
-import { ButtonLink } from '@op/ui/Button';
-import { Header2, Header3 } from '@op/ui/Header';
-import { LogoLoop } from '@op/ui/LogoLoop';
-import { cn } from '@op/ui/utils';
+import { Header2, Header3 } from '@op/sense/Header';
+import { LogoLoop } from '@op/sense/LogoLoop';
+import { cn } from '@op/sense/lib/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';
@@ -11,6 +10,8 @@ import { ReactNode } from 'react';
 import { LuArrowRight } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import {
   AnimatedGradientBackground,
@@ -28,7 +29,7 @@ export const ComingSoonScreen = () => {
           initial={{ y: '-100%', opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
-          className="relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-primary-tealWhite px-6 py-2.5 text-center text-neutral-charcoal"
+          className="relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-accent px-6 py-2.5 text-center"
         >
           <div className="pointer-events-none absolute inset-x-0 top-full h-30 bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
           <p>
@@ -43,10 +44,10 @@ export const ComingSoonScreen = () => {
                   // /login.
                   <a
                     href="/columbus"
-                    className="inline-flex items-center gap-1 align-bottom whitespace-nowrap text-primary-teal underline hover:no-underline"
+                    className="inline-flex items-center gap-1 align-bottom whitespace-nowrap text-primary underline hover:no-underline"
                   >
                     {chunks}
-                    <LuArrowRight className="size-4" />
+                    <LuArrowRight className="size-4 rtl:-scale-x-100" />
                   </a>
                 ),
               },
@@ -60,11 +61,7 @@ export const ComingSoonScreen = () => {
           className="relative flex items-center justify-between p-4 md:px-8 md:py-6"
         >
           <img src="/logo-common.svg" alt="Common" className="h-4" />
-          <ButtonLink
-            href="/login"
-            color="secondary"
-            className="rounded-lg text-black shadow-md"
-          >
+          <ButtonLink href="/login" variant="outline">
             {t('Log in')}
           </ButtonLink>
         </motion.header>
@@ -77,11 +74,11 @@ export const ComingSoonScreen = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 2, delay: 0.25 }}
           >
-            <h1 className="flex flex-col font-serif text-title-md font-normal text-balance text-neutral-charcoal sm:text-3xl">
+            <h1 className="flex flex-col font-serif text-headline font-normal text-balance">
               <span>
                 {t('Helping people decide together how to use their resources')}
               </span>
-              <span className="font-serif text-title-md font-normal sm:text-3xl">
+              <span className="font-serif text-headline font-normal">
                 <AnimatedGradientText>
                   {t('simply, intuitively, and effectively.')}
                 </AnimatedGradientText>
@@ -147,16 +144,14 @@ export const ComingSoonScreen = () => {
               gap={40}
               hoverSpeed={5}
               fadeOut
-              fadeOutColor="#ffffff"
-              ariaLabel="Technology partners"
+              fadeOutColor="var(--color-background)"
+              ariaLabel={t('Technology partners')}
             />
           </section>
         </FadeInWrapper>
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
-            <Header2 className="font-serif text-title-md sm:text-title-lg">
-              {t('Get early access')}
-            </Header2>
+            <Header2>{t('Get early access')}</Header2>
             <div className="sm:text-lg">
               <p>
                 {t(

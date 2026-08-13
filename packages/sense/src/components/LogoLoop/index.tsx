@@ -29,6 +29,7 @@ export type LogoItem =
 
 export interface LogoLoopProps {
   logos: LogoItem[];
+  /** Pixels per second. */
   speed?: number;
   direction?: 'left' | 'right' | 'up' | 'down';
   width?: number | string;
@@ -207,6 +208,15 @@ const useAnimationLoop = (
   }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical]);
 };
 
+/**
+ * A continuously scrolling marquee of logos (partner and funder strips on
+ * marketing pages). Vendored from reactbits.dev.
+ *
+ * Decorative motion: it stops under `prefers-reduced-motion`, and `pauseOnHover`
+ * gives a pointer user a way to stop it. Pass `ariaLabel` to name the strip, and
+ * give each logo an `alt`/`ariaLabel` — a wall of nameless images is the usual
+ * failure here. Nothing inside should be the only route to a destination.
+ */
 export const LogoLoop = React.memo<LogoLoopProps>(
   ({
     logos,

@@ -19,13 +19,9 @@ export function DecisionHeroBanner({
 }) {
   const heroImageUrl = getPublicUrl(heroImagePath);
 
-  if (!heroImageUrl) {
-    return <>{children}</>;
-  }
-
   return (
-    <section className="relative w-full overflow-hidden">
-      <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />
+    <section className="relative w-full overflow-hidden bg-muted">
+      {heroImageUrl && <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />}
       <div className="relative z-10">{children}</div>
     </section>
   );
@@ -55,10 +51,7 @@ export function DecisionHeroBackgroundImage({
       />
       {/* Dark scrim so the white banner text stays legible over arbitrary
           photos. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-neutral-black/50"
-      />
+      <div aria-hidden="true" className="absolute inset-0 bg-foreground/50" />
     </>
   );
 }

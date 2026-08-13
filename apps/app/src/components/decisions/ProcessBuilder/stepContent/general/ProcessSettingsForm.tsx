@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Header2 } from '@op/ui/Header';
-import { SelectItem } from '@op/ui/Select';
+import { Header1, Header3 } from '@op/sense/Header';
+import { Switch } from '@op/sense/Switch';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 
@@ -11,10 +11,10 @@ import type { TranslateFn } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
-import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
-import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
+import { useAppForm } from '@/components/form/utils';
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 const createProcessSettingsValidator = (t: TranslateFn) =>
   z.object({
@@ -146,6 +146,7 @@ export function ProcessSettingsForm({
   return (
     <div className="size-full [scrollbar-gutter:stable]">
       <form
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
         }}
@@ -166,15 +167,15 @@ export function ProcessSettingsForm({
           <section className="space-y-6">
             <div>
               <div className="flex items-center justify-between">
-                <Header2 className="font-serif text-title-sm">
+                <Header1 className="text-headline">
                   {t('Process Settings')}
-                </Header2>
+                </Header1>
                 <SaveStatusIndicator
                   status={autosaveStatus.status}
                   savedAt={autosaveStatus.savedAt}
                 />
               </div>
-              <p className="mt-2 text-neutral-gray4">
+              <p className="mt-2 text-muted-foreground">
                 {t('Define the key details for your decision process.')}
               </p>
             </div>
@@ -185,23 +186,15 @@ export function ProcessSettingsForm({
                 <field.Select
                   label={t('Who is stewarding this process?')}
                   placeholder={t('Select')}
-                  isDisabled={!isProcessOwner}
-                  selectedKey={field.state.value || null}
-                  onSelectionChange={(key) => field.handleChange(key as string)}
-                  onBlur={field.handleBlur}
+                  disabled={!isProcessOwner}
                   description={t(
                     'The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.',
                   )}
-                  errorMessage={getFieldErrorMessage(field, {
-                    requireBlur: true,
-                  })}
-                >
-                  {profileItems.map((item) => (
-                    <SelectItem key={item.id} id={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </field.Select>
+                  options={profileItems.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  }))}
+                />
               )}
             />
 
@@ -211,15 +204,7 @@ export function ProcessSettingsForm({
                 <field.TextField
                   label={t('Process Name')}
                   isRequired
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={field.handleChange}
-                  inputProps={{
-                    placeholder: t('My new process'),
-                  }}
-                  errorMessage={getFieldErrorMessage(field, {
-                    requireBlur: true,
-                  })}
+                  placeholder={t('My new process')}
                   maxLength={50}
                 />
               )}
@@ -228,19 +213,10 @@ export function ProcessSettingsForm({
             <form.AppField
               name="description"
               children={(field) => (
-                <field.TextField
-                  useTextArea
+                <field.TextArea
                   label={t('Description')}
                   isRequired
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={field.handleChange}
-                  textareaProps={{
-                    placeholder: t('A description about my process'),
-                  }}
-                  errorMessage={getFieldErrorMessage(field, {
-                    requireBlur: true,
-                  })}
+                  placeholder={t('A description about my process')}
                   maxLength={250}
                   description={t(
                     'This information appears when participants want to learn more about the process',
@@ -260,9 +236,9 @@ export function ProcessSettingsForm({
                       'Group proposals into categories for better organization and evaluation.',
                     )}
                   >
-                    <field.ToggleButton
-                      isSelected={field.state.value}
-                      onChange={(value) => {
+                    <Switch
+                      checked={!!field.state.value}
+                      onCheckedChange={(value) => {
                         field.handleChange(value);
                         // Write to store immediately so the sidebar
                         // hides/shows "Proposal Categories" without waiting
@@ -271,7 +247,6 @@ export function ProcessSettingsForm({
                           config: { organizeByCategories: value },
                         });
                       }}
-                      size="small"
                     />
                   </ToggleRow>
                 )}
@@ -286,11 +261,7 @@ export function ProcessSettingsForm({
                       'Require proposals to be co-authored by at least 2 participants.',
                     )}
                   >
-                    <field.ToggleButton
-                      isSelected={field.state.value}
-                      onChange={field.handleChange}
-                      size="small"
-                    />
+                    <field.Switch />
                   </ToggleRow>
                 )}
               />
@@ -299,9 +270,7 @@ export function ProcessSettingsForm({
 
           {/* Visibility Section */}
           <section className="space-y-6">
-            <Header2 className="font-serif text-title-sm">
-              {t('Visibility')}
-            </Header2>
+            <Header3>{t('Visibility')}</Header3>
 
             <form.AppField
               name="isPrivate"
@@ -312,10 +281,9 @@ export function ProcessSettingsForm({
                     'Anyone on Common can view this process. Only invited participants can submit.',
                   )}
                 >
-                  <field.ToggleButton
-                    isSelected={!field.state.value}
-                    onChange={(value) => field.handleChange(!value)}
-                    size="small"
+                  <Switch
+                    checked={!field.state.value}
+                    onCheckedChange={(value) => field.handleChange(!value)}
                   />
                 </ToggleRow>
               )}

@@ -1,9 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { Key, useEffect, useMemo, useRef } from 'react';
+import { BadgeNumber } from '@op/sense/Badge';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,7 +18,7 @@ export const RoleSelector = ({
 }: {
   profileId: string;
   selectedRoleId: string;
-  onSelectionChange: (key: Key) => void;
+  onSelectionChange: (key: string) => void;
   countsByRole: Record<string, number>;
   onRolesLoaded: (roleId: string, roleName: string) => void;
   onRoleNameChange: (roleName: string) => void;
@@ -39,7 +40,7 @@ export const RoleSelector = ({
     }
   }, [firstRole, selectedRoleId, onRolesLoaded]);
 
-  const handleSelectionChange = (key: Key) => {
+  const handleSelectionChange = (key: string) => {
     const role = roles.find((r) => r.id === key);
     if (role) {
       onRoleNameChange(role.name);
@@ -49,26 +50,23 @@ export const RoleSelector = ({
 
   return (
     <Tabs
-      selectedKey={selectedRoleId}
-      onSelectionChange={handleSelectionChange}
+      className="scrollbar-none w-full overflow-x-auto border-b"
+      value={selectedRoleId}
+      onValueChange={handleSelectionChange}
     >
-      <TabList aria-label={t('Select a role')}>
+      <TabsList variant="line" aria-label={t('Select a role')}>
         {roles.map((role) => {
           const count = countsByRole[role.id] ?? 0;
           return (
-            <Tab key={role.id} id={role.id}>
-              <span className="flex items-center gap-1">
+            <TabsTrigger key={role.id} value={role.id}>
+              <span className="flex items-center gap-2">
                 {t('{roleName} plural', { roleName: role.name })}
-                {count > 0 && (
-                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-teal px-1 text-xs text-neutral-offWhite">
-                    {count}
-                  </span>
-                )}
+                {count > 0 && <BadgeNumber>{count}</BadgeNumber>}
               </span>
-            </Tab>
+            </TabsTrigger>
           );
         })}
-      </TabList>
+      </TabsList>
     </Tabs>
   );
 };

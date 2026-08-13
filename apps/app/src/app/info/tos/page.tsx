@@ -7,7 +7,7 @@ import { FormHeader } from '@/components/form/FormHeader';
 const ToSPage = () => {
   const t = useTranslations();
   return (
-    <FormContainer className="max-w-[32rem]">
+    <FormContainer className="max-w-lg">
       <FormHeader text={t('Terms of Service')}></FormHeader>
       <ToSContent />
     </FormContainer>

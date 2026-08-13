@@ -2,30 +2,41 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
-import { FacePile } from '@op/ui/FacePile';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Card } from '@op/sense/Card';
+import { GrowingFacePile } from '@op/sense/FacePile';
+import { cn } from '@op/sense/lib/utils';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
-import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
+
+import {
+  AvatarLinkHoverTint,
+  ProfileAvatarLink,
+  avatarLinkClassName,
+} from '../ProfileAvatarLink';
 
 export const PlatformHighlights = () => {
   const [stats] = trpc.platform.getStats.useSuspenseQuery();
   const t = useTranslations();
 
   return (
-    <Surface className="shadow-light">
+    <Card className="gap-0 py-0">
       <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
-        <Highlight>
-          <HighlightNumber className="bg-tealGreen">
-            {stats.newOrganizations}
-          </HighlightNumber>
-          <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        {stats.newOrganizations > 0 && (
+          <>
+            <Highlight>
+              <HighlightNumber className="bg-tealGreen">
+                {stats.newOrganizations}
+              </HighlightNumber>
+              <HighlightLabel>
+                {t('new organizations to explore')}
+              </HighlightLabel>
+            </Highlight>
+            <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
+          </>
+        )}
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
@@ -37,14 +48,14 @@ export const PlatformHighlights = () => {
             )}
           </HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
@@ -52,7 +63,7 @@ export const PlatformHighlights = () => {
           <HighlightLabel>{t('people on Common')}</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-muted p-6 text-sm sm:flex-row sm:items-center">
         <Suspense>
           <div className="flex max-w-full items-center gap-2">
             <OrganizationFacePile>
@@ -63,7 +74,7 @@ export const PlatformHighlights = () => {
           </div>
         </Suspense>
       </div>
-    </Surface>
+    </Card>
   );
 };
 
@@ -78,7 +89,7 @@ const HighlightNumber = ({
     <div className="col-span-3 text-transparent xxs:col-span-2">
       <div
         className={cn(
-          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-title-xxl',
+          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-display font-light',
           className,
         )}
       >
@@ -90,7 +101,7 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center text-neutral-charcoal xxs:col-span-3">
+    <div className="col-span-2 flex h-12 max-w-32 items-center xxs:col-span-3">
       {children}
     </div>
   );
@@ -109,68 +120,34 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
     t.organization.list({ limit: 100 }),
     t.platform.getStats(),
   ]);
-  const facePileRef = useRef<HTMLDivElement>(null);
-  const [numItems, setNumItems] = useState(20);
 
-  useEffect(() => {
-    if (!facePileRef.current) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver((e) => {
-      // divide by 2 rem - 0.5 rem overlap
-      setNumItems(
-        Math.min(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)), 20),
-      );
-    });
-
-    resizeObserver.observe(facePileRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [facePileRef]);
-
-  const items = organizations
-    .map((org) => {
-      const { avatarImage } = org.profile;
-      const avatarUrl = getPublicUrl(avatarImage?.name);
-      return (
-        <Link
-          key={org.id}
-          href={`/org/${org.profile.slug}`}
-          className="hover:no-underline"
-        >
-          <Avatar placeholder={org.profile.name}>
-            {avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={org.profile.name}
-                fill
-                className="object-cover"
-              />
-            ) : null}
-          </Avatar>
-          <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
-        </Link>
-      );
-    })
-    .slice(0, numItems);
-
-  if (stats.totalOrganizations > numItems) {
-    items.push(
-      <Link key="more" href="/org" className="hover:no-underline">
-        <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
-          <span className="align-super">+</span>
-          {stats.totalOrganizations - numItems}
-        </Avatar>
-      </Link>,
-    );
-  }
+  const items = organizations.map((org) => (
+    <ProfileAvatarLink
+      key={org.id}
+      href={`/org/${org.profile.slug}`}
+      name={org.profile.name}
+      src={getPublicUrl(org.profile.avatarImage?.name)}
+      alt={org.profile.name}
+    />
+  ));
 
   return (
-    <FacePile items={items} ref={facePileRef}>
+    <GrowingFacePile
+      items={items}
+      totalCount={stats.totalOrganizations}
+      renderOverflow={(count) => (
+        <Link href="/org" className={avatarLinkClassName}>
+          <Avatar>
+            <AvatarFallback className="bg-foreground text-sm text-background">
+              <span className="align-super">+</span>
+              {count}
+            </AvatarFallback>
+          </Avatar>
+          <AvatarLinkHoverTint />
+        </Link>
+      )}
+    >
       {children}
-    </FacePile>
+    </GrowingFacePile>
   );
 };

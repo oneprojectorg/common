@@ -1,13 +1,21 @@
 'use client';
 
 import { ProposalTemplateSchema } from '@op/common';
-import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
-import { Select, SelectItem } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { NumberField } from '@op/sense/NumberField';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
+import { useLocale } from 'next-intl';
 import type { Key } from 'react';
-import { useCallback } from 'react';
-import { LuHash } from 'react-icons/lu';
+import { useCallback, useId, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -49,6 +57,27 @@ export function BudgetFieldConfig({
   >;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
+  const showInTemplateId = useId();
+  const requiredId = useId();
+
+  // Localized currency display name, e.g. "US Dollar (USD $)".
+  const currencyName = useMemo(
+    () => new Intl.DisplayNames([locale], { type: 'currency' }),
+    [locale],
+  );
+  const currencyLabel = useCallback(
+    (code: string, symbol: string) =>
+      `${currencyName.of(code) ?? code} (${code} ${symbol})`,
+    [currencyName],
+  );
+  const currencyItems = useMemo(
+    () =>
+      Object.fromEntries(
+        CURRENCIES.map((c) => [c.code, currencyLabel(c.code, c.symbol)]),
+      ),
+    [currencyLabel],
+  );
 
   const budgetSchema = getFieldSchema(template, 'budget');
   const showBudget = !!budgetSchema;
@@ -166,61 +195,75 @@ export function BudgetFieldConfig({
 
   return (
     <CollapsibleConfigCard
-      icon={LuHash}
-      label={t('Budget')}
+      label={t('Funding amount')}
       badgeLabel={badgeLabel}
       isCollapsible
       locked
     >
-      <div className="space-y-4 px-8">
+      <div className="space-y-4">
         {showBudget && (
           <>
-            <Select
-              label={t('Currency')}
-              selectedKey={budgetCurrency}
-              onSelectionChange={handleBudgetCurrencyChange}
-              buttonClassName="bg-white"
-            >
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} id={c.code}>
-                  {c.code} {c.symbol}
-                </SelectItem>
-              ))}
-            </Select>
+            <Field>
+              <FieldLabel htmlFor="budget-currency">{t('Currency')}</FieldLabel>
+              <Select
+                value={budgetCurrency}
+                onValueChange={(currency) =>
+                  handleBudgetCurrencyChange(currency)
+                }
+                items={currencyItems}
+              >
+                <SelectTrigger id="budget-currency" className="w-full bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {currencyLabel(c.code, c.symbol)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
             <NumberField
-              label={t('Max budget')}
+              id="budget-max"
+              label={t('Max amount')}
+              prefixText={budgetCurrencySymbol}
+              placeholder={t('Set maximum amount')}
               value={budgetMaxAmount ?? null}
               onChange={handleBudgetMaxChange}
-              prefixText={budgetCurrencySymbol}
-              inputProps={{
-                placeholder: t('Set maximum budget'),
-              }}
             />
           </>
         )}
-        <div className="flex items-center justify-between">
-          <span className="text-neutral-charcoal">
-            {t('Show in template?')}
-          </span>
-          <ToggleButton
-            size="small"
-            isSelected={showBudget}
-            onChange={handleShowBudgetChange}
-            aria-label={t('Show in template?')}
-            data-testid="budget-show-in-template-toggle"
-          />
-        </div>
-        {showBudget && (
-          <div className="flex items-center justify-between">
-            <span className="text-neutral-charcoal">{t('Required?')}</span>
-            <ToggleButton
-              size="small"
-              isSelected={budgetRequired}
-              onChange={handleBudgetRequiredChange}
-              aria-label={t('Required?')}
+        {/* Required? (left) and Show in template? (right) share one row. */}
+        <div className="flex items-center justify-between gap-4 pt-2">
+          {showBudget ? (
+            <Field orientation="horizontal" className="w-auto">
+              <FieldLabel htmlFor={requiredId}>{t('Required?')}</FieldLabel>
+              <Switch
+                id={requiredId}
+                checked={budgetRequired}
+                onCheckedChange={handleBudgetRequiredChange}
+                aria-label={t('Required?')}
+              />
+            </Field>
+          ) : (
+            <span />
+          )}
+          <Field orientation="horizontal" className="w-auto">
+            <FieldLabel htmlFor={showInTemplateId}>
+              {t('Show in template?')}
+            </FieldLabel>
+            <Switch
+              id={showInTemplateId}
+              checked={showBudget}
+              onCheckedChange={handleShowBudgetChange}
+              aria-label={t('Show in template?')}
+              data-testid="budget-show-in-template-toggle"
             />
-          </div>
-        )}
+          </Field>
+        </div>
       </div>
     </CollapsibleConfigCard>
   );

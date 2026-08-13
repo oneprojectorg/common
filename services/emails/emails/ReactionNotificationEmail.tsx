@@ -34,7 +34,7 @@ export const ReactionNotificationEmail = ({
       </Text>
 
       <Section className="my-6">
-        <Text className="my-0 rounded-lg bg-neutral-gray1 p-4">
+        <Text className="bg-neutral-gray1 my-0 rounded-lg p-4">
           "{getTextPreview({ content, maxLines: 3, maxLength: 200 })}"
         </Text>
       </Section>

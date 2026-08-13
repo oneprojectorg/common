@@ -2,8 +2,8 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -108,15 +108,15 @@ function ReviewProgressStat({
     <div
       className={cn(
         'flex flex-col items-center',
-        hasImage ? 'text-white' : 'text-neutral-charcoal',
+        hasImage ? 'text-white' : 'text-foreground',
       )}
     >
-      <span className="font-serif text-title-lg">{value}</span>
+      <span className="font-serif text-headline font-light">{value}</span>
       <span className="text-sm whitespace-nowrap">{label}</span>
     </div>
   );
 }
 
 function Divider() {
-  return <div className="h-8 w-px bg-neutral-gray2" />;
+  return <div className="h-8 w-px bg-border" />;
 }

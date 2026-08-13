@@ -1,91 +1,198 @@
 /*
  * OP Brand Design Tokens — Figma source of truth
  *
- * Raw palette values from the design-system Figma file. Consumed by
- * shared-styles.css, which maps these into the Tailwind `@theme` layer
- * as `--color-*` tokens (plus legacy aliases for the pre-rename naming).
+ * Raw values from the design-system Figma file: the Colors Scale ramps, the
+ * four off-ramp brand gradient stops, and the non-colour primitives (type,
+ * spacing, radius, breakpoints, shadows). Values only, no meaning — the
+ * semantic layer that names them lives in theme.css.
  *
- * Naming: --op-<category>[-<role>]-<scale>
- *
- * Figma↔code gaps (handled by semantic aliases in shared-styles.css):
- *   - one orange   → orange1 + orange2 collapse to a single hue
- *   - no separate status-green → uses functional-green-600 / -100
+ * Naming: `--color-<hue>-<step>` for the ramps, `--brand-*` for the gradient
+ * stops that sit off them.
  */
 
+@theme {
+  /* ============================================
+   * Colors Scale — the current raw palette
+   *
+   * The Figma "Colors Scale" variables collection. This is the ramp the
+   * sense semantic tokens alias (see theme.css) and the one new work
+   * should build on. Exposed to Tailwind by theme.css, so it
+   * intentionally overrides Tailwind's default palette for these eight hues:
+   * `bg-teal-500`, `text-gray-600`, etc. resolve to brand ramps.
+   * ============================================ */
+  --color-red-50: #fcf3f2;
+  --color-red-100: #fae2e0;
+  --color-red-200: #f6cbc8;
+  --color-red-300: #eea8a2;
+  --color-red-400: #e2766d;
+  --color-red-500: #cc3d31;
+  --color-red-600: #9d3b33;
+  --color-red-700: #86312a;
+  --color-red-800: #6e2c26;
+  --color-red-900: #5d2924;
+  --color-red-950: #33120f;
+  --color-orange-50: #fdf8ed;
+  --color-orange-100: #f8eacd;
+  --color-orange-200: #f0d497;
+  --color-orange-300: #e8b961;
+  --color-orange-400: #e2a23d;
+  --color-orange-500: #db862a;
+  --color-orange-600: #c1631e;
+  --color-orange-700: #a0481d;
+  --color-orange-800: #83391d;
+  --color-orange-900: #6c2f1b;
+  --color-orange-950: #3d170b;
+  --color-yellow-50: #fefce8;
+  --color-yellow-100: #fffac2;
+  --color-yellow-200: #fff088;
+  --color-yellow-300: #ffe145;
+  --color-yellow-400: #fdcd12;
+  --color-yellow-500: #f2b705;
+  --color-yellow-600: #cd8a01;
+  --color-yellow-700: #a36105;
+  --color-yellow-800: #874c0c;
+  --color-yellow-900: #723e11;
+  --color-yellow-950: #432005;
+  --color-green-50: #eefae4;
+  --color-green-100: #d6f3c4;
+  --color-green-200: #b0e790;
+  --color-green-300: #7ed64e;
+  --color-green-400: #58ab2d;
+  --color-green-500: #3f7f20;
+  --color-green-600: #2b5b15;
+  --color-green-700: #254e14;
+  --color-green-800: #203e14;
+  --color-green-900: #1b3513;
+  --color-green-950: #0c1d07;
+  --color-teal-50: #eff7f9;
+  --color-teal-100: #d7ebef;
+  --color-teal-200: #b5dade;
+  --color-teal-300: #81bcc8;
+  --color-teal-400: #4d96a3;
+  --color-teal-500: #387582;
+  --color-teal-600: #31606e;
+  --color-teal-700: #2d4f5a;
+  --color-teal-800: #2a434c;
+  --color-teal-900: #273941;
+  --color-teal-950: #16242b;
+  --color-blue-50: #eef1fc;
+  --color-blue-100: #dfe4fa;
+  --color-blue-200: #c5cdf5;
+  --color-blue-300: #a2acec;
+  --color-blue-400: #7d84e1;
+  --color-blue-500: #4444cc;
+  --color-blue-600: #473db3;
+  --color-blue-700: #514a90;
+  --color-blue-800: #413d6c;
+  --color-blue-900: #393755;
+  --color-blue-950: #212032;
+  --color-purple-50: #faf7fa;
+  --color-purple-100: #f5eef6;
+  --color-purple-200: #eadceb;
+  --color-purple-300: #dbbedb;
+  --color-purple-400: #c598c3;
+  --color-purple-500: #a1649f;
+  --color-purple-600: #845882;
+  --color-purple-700: #674464;
+  --color-purple-800: #553953;
+  --color-purple-900: #473145;
+  --color-purple-950: #2c1a2a;
+  --color-gray-50: #fafbfb;
+  /* Figma's Gray ramp says #f1f2f2, but adopting it washed out every border
+   * (`--border` and `--sidebar-border` both alias this step). Reverted pending a
+   * design answer — the ramp and our borders can't both be right. */
+  --color-gray-100: #edeeee;
+  --color-gray-200: #dee0e1;
+  --color-gray-300: #d0d3d4;
+  --color-gray-400: #aab0b1;
+  --color-gray-500: #858d8f;
+  --color-gray-600: #606a6c;
+  --color-gray-700: #3a4749;
+  --color-gray-800: #273638;
+  --color-gray-900: #142426;
+  --color-gray-950: #0a1517;
+
+}
+
+/* ============================================
+ * Brand gradient stops
+ *
+ * Four values the Colors Scale does not carry: the brand gradients read a
+ * teal, green and blue that sit off the ramp (#3f8d99 vs teal-500 #387582,
+ * #5db131 vs green-500 #3f7f20, #446fcc vs blue-500 #4444cc). Kept because
+ * theme.css's gradient utilities and the ComingSoon background need them.
+ *
+ * Deliberately not named --color-*: these are gradient inputs read through
+ * var(), never Tailwind utilities, and a --color-* name would mint bg-/text-/
+ * border- utilities nothing uses.
+ * ============================================ */
 :root {
-  /* ============================================
-   * Primary (teal)
-   * ============================================ */
-  --op-primary-50: hsla(187, 47.4%, 96.3%, 1);    /* #F1F9FA */
-  --op-primary-100: hsla(186, 42.9%, 90.4%, 1);   /* #DCEFF1 */
-  --op-primary-200: hsla(186.2, 41.9%, 81.8%, 1); /* #BDE0E4 */
-  --op-primary-300: hsla(185.6, 40.5%, 69%, 1);   /* #90CAD0 */
-  --op-primary-400: hsla(187.3, 37.8%, 53.3%, 1); /* #5BAAB5 */
-  --op-primary-500: hsla(188, 41.7%, 42.4%, 1);   /* #3F8D99 */
-  --op-primary-600: hsla(191, 39.8%, 36.5%, 1);   /* #387582 */
-  --op-primary-700: hsla(192, 36.7%, 31%, 1);     /* #32606C */
-  --op-primary-800: hsla(192.9, 30.4%, 27.1%, 1); /* #30515A */
-  --op-primary-900: hsla(196.3, 27.3%, 23.7%, 1); /* #2C444D */
-  --op-primary-950: hsla(196.2, 34.2%, 14.9%, 1); /* #192C33 */
+  --brand-teal-50: #f1f9fa;
+  --brand-teal-500: #3f8d99;
+  --brand-green-500: #5db131;
+  --brand-blue-500: #446fcc;
+}
 
+/* ============================================
+ * Scale — the rest of the raw design values
+ *
+ * Non-colour primitives from the Figma file: type, spacing, radius,
+ * breakpoints, shadows. Same rule as the Colors Scale above — values only,
+ * no meaning. The semantic layer that names them lives in theme.css.
+ * ============================================ */
+@theme {
   /* ============================================
-   * Primary - Yellow
+   * Breakpoints (screens)
    * ============================================ */
-  --op-primary-yellow-500: hsla(45, 96%, 48.4%, 1); /* #F2B705 */
-
-  /* ============================================
-   * Primary - Orange
-   * ============================================ */
-  --op-primary-orange-50: hsla(41, 80%, 96.1%, 1); /* #FDF8ED */
-  --op-primary-orange-500: hsla(31, 71.1%, 51.2%, 1); /* #DB862A */
+  --breakpoint-xxs: 320px;
+  --breakpoint-xs: 480px;
+  /* sm, md, lg, xl, 2xl use Tailwind defaults */
 
   /* ============================================
-   * Neutrals
+   * Border Radius
    * ============================================ */
-  --op-white: #ffffff;
-  --op-neutral-off-white: hsla(180, 11.1%, 98.2%, 1); /* #FAFBFB */
-  --op-neutral-gray-1: hsla(180, 2.9%, 93.1%, 1); /* #EDEEEE */
-  --op-neutral-gray-2: hsla(195, 4.4%, 82.4%, 1); /* #D0D3D4 */
-  --op-neutral-gray-3: hsla(189, 4.3%, 68%, 1); /* #AAB0B1 */
-  --op-neutral-gray-4: hsla(190, 5.9%, 40%, 1); /* #606A6C */
-  --op-neutral-charcoal: hsla(188, 11.5%, 25.7%, 1); /* #3A4749 */
-  --op-neutral-black: hsla(187, 31%, 11.4%, 1); /* #142426 */
+  --radius-xs: 0px; /* TW default is 0.125rem */
+  --radius: 0.5rem;
+  --radius-3xl: 1.25rem; /* TW default is 1.5rem */
+  --radius-4xl: 1.5rem; /* TW default is 2rem */
 
   /* ============================================
-   * Functional
+   * Font Families
    * ============================================ */
-  --op-functional-red-50: hsla(6, 71.4%, 97.3%, 1);    /* #FDF4F3 */
-  --op-functional-red-100: hsla(5, 80%, 94.1%, 1);     /* #FCE6E4 */
-  --op-functional-red-200: hsla(4.1, 81.5%, 89.4%, 1); /* #FAD1CE */
-  --op-functional-red-300: hsla(4.9, 78.5%, 81.8%, 1); /* #F5B2AC */
-  --op-functional-red-400: hsla(4.7, 77.2%, 70.8%, 1); /* #EE847B */
-  --op-functional-red-500: hsla(4.6, 71.4%, 60.2%, 1); /* #E25C51 */
-  --op-functional-red-600: hsla(4.6, 61.3%, 49.6%, 1); /* #CC3D31 */
-  --op-functional-red-700: hsla(4.5, 62.4%, 41.8%, 1); /* #AD3228 */
-  --op-functional-red-800: hsla(5, 58.9%, 35.3%, 1);   /* #8F2D25 */
-  --op-functional-red-900: hsla(5, 53.8%, 30.6%, 1);   /* #782B24 */
-  --op-functional-red-950: hsla(4.7, 64.6%, 15.5%, 1); /* #41120E */
-
-  --op-functional-green-50:  hsla(91.8, 68%, 95.1%, 1);    /* #F2FBEA */
-  --op-functional-green-100: hsla(96, 63.6%, 89.2%, 1);    /* #E0F5D2 */
-  --op-functional-green-200: hsla(96.6, 61.5%, 79.6%, 1);  /* #C4EBAB */
-  --op-functional-green-300: hsla(97.8, 59.5%, 67.1%, 1);  /* #9EDD79 */
-  --op-functional-green-400: hsla(98.4, 55.1%, 55.5%, 1);  /* #7CCC4F */
-  --op-functional-green-500: hsla(99.4, 56.6%, 44.3%, 1);  /* #5DB131 */
-  --op-functional-green-600: hsla(100.4, 59.7%, 31.2%, 1); /* #3F7F20 */
-  --op-functional-green-700: hsla(101.3, 55.4%, 27.3%, 1); /* #376C1F */
-  --op-functional-green-800: hsla(101.8, 48.3%, 22.7%, 1); /* #2F561E */
-  --op-functional-green-900: hsla(104, 43.7%, 20.2%, 1);   /* #294A1D */
-  --op-functional-green-950: hsla(105.5, 56.9%, 10%, 1);   /* #12280B */
-
-  /* Blue endpoint of the BlueGreen brand gradient (pairs with green-500 in the
-   * `bg-blueGreen` utility and the map marker). Single source of truth for the
-   * value so the utility and the marker can't drift. */
-  --op-brand-blue: hsla(221, 57.1%, 53.3%, 1); /* #446FCC */
+  --font-accent:
+    var(--font-accent), ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif:
+    var(--font-serif), ui-serif, Georgia, Cambria, 'Times New Roman', Times,
+    serif;
+  --font-sans:
+    var(--font-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  /* No web font for mono — the app relies on system monospace fonts */
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
 
   /* ============================================
-   * Data Visualization
+   * Line Height
    * ============================================ */
-  --op-data-purple: hsla(302, 24.5%, 51.2%, 1); /* #A1649F */
-  --op-data-blue: hsla(240, 57.1%, 53.3%, 1); /* #4444CC */
+  --leading-base: 0.875rem;
+
+  /* ============================================
+   * Spacing
+   * ============================================ */
+  /* Proposal editor top bar. 60px per the Figma "Proposal Bar" component
+   * (was 4rem/64px). Consumed by ProposalEditorHeader only. */
+  --spacing-editor-topbar: 3.75rem;
+  --spacing-18: 4.5rem;
+
+  /* ============================================
+   * Box Shadows
+   * ============================================ */
+  --shadow-light: 0px 0px 16px 0px rgba(20, 35, 38, 0.04);
+  --shadow-green: 0px 0px 16px 0px rgba(193, 255, 173, 0.88);
+  --shadow-orange: 0px 0px 16px 0px rgba(242, 183, 5, 0.64);
+
+  /* Backdrop Blur — --blur-sm (8px) matches Tailwind's default; inherited. */
+
 }

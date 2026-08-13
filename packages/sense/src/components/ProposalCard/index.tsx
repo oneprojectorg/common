@@ -1,10 +1,22 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ElementType, ReactNode } from 'react';
+import { useId } from 'react';
+
+/** Props the title/author link element must accept (a plain `<a>`, an i18n
+ *  `Link`, a router `Link`, …). Typing `linkComponent` as `ElementType<this>`
+ *  keeps the rendered element's props concrete — a bare `ElementType` infers
+ *  them as `never`. */
+type ProposalCardLinkProps = {
+  href: string;
+  className?: string;
+  children?: ReactNode;
+};
 import type { IconType } from 'react-icons';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { AnimatedCount } from '../AnimatedCount';
 import { FacePile } from '../FacePile';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
@@ -15,12 +27,20 @@ import { Toggle } from '../ui/toggle';
 export interface ProposalCardAuthor {
   name: string;
   avatarSrc?: string;
+  /** Profile link for the author label. Rendered with `linkComponent`. */
+  href?: string;
 }
 
 /** A single engagement metric — a bare count, or a pressable toggle/button. */
 export type ProposalCardMetric =
   | number
-  | { count?: number; active?: boolean; onClick?: () => void; label?: string };
+  | {
+      count?: number;
+      active?: boolean;
+      onClick?: () => void;
+      /** Accessible name for the metric. Translate it — the default is English. */
+      label?: string;
+    };
 
 export interface ProposalCardMetrics {
   likes?: ProposalCardMetric;
@@ -40,6 +60,12 @@ export interface ProposalCardProps extends Omit<
    * single real control and no nested interactive elements.
    */
   href?: string;
+  /**
+   * Element used to render the title (and author) links — pass an i18n / router
+   * `Link` to preserve client-side navigation and locale prefixing. Defaults to
+   * a plain `<a>`. Must accept `href`, `className`, and children.
+   */
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
   headerBadge?: ReactNode;
   /** Alert below the title — typically a `StatusBadge` (e.g. "Revision requested"). */
@@ -81,6 +107,7 @@ export interface ProposalCardProps extends Omit<
 export function ProposalCard({
   title,
   href,
+  linkComponent,
   headerBadge,
   alert,
   aside,
@@ -101,6 +128,9 @@ export function ProposalCard({
   className,
   ...rest
 }: ProposalCardProps) {
+  // Points the metric controls at the title. Without it a grid of cards gives a
+  // screen reader a run of identically-named "Likes: 4" toggles.
+  const titleId = useId();
   const hasTags = Boolean(budget) || (tags?.length ?? 0) > 0;
 
   if (variant === 'pin') {
@@ -112,10 +142,14 @@ export function ProposalCard({
         )}
         {...rest}
       >
-        <h3 className="line-clamp-2 font-serif text-title-sm text-foreground">
-          <TitleLink href={href}>{title}</TitleLink>
+        <h3 className="line-clamp-2 font-serif text-label text-foreground">
+          <TitleLink href={href} linkComponent={linkComponent}>
+            {title}
+          </TitleLink>
         </h3>
-        {authors?.length ? <AuthorRow authors={authors} compact /> : null}
+        {authors?.length ? (
+          <AuthorRow authors={authors} linkComponent={linkComponent} compact />
+        ) : null}
         {hasTags ? (
           <TagRow budget={budget} tags={tags} maxTags={maxTags} />
         ) : null}
@@ -140,12 +174,15 @@ export function ProposalCard({
       <div className={cn('flex flex-col gap-3', aside && 'pe-10')}>
         {headerBadge}
         <h3
+          id={titleId}
           className={cn(
             'font-serif text-title',
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
-          <TitleLink href={href}>{title}</TitleLink>
+          <TitleLink href={href} linkComponent={linkComponent}>
+            {title}
+          </TitleLink>
         </h3>
         {alert}
       </div>
@@ -154,7 +191,9 @@ export function ProposalCard({
           {hasTags ? (
             <TagRow budget={budget} tags={tags} maxTags={maxTags} />
           ) : null}
-          {authors?.length ? <AuthorRow authors={authors} /> : null}
+          {authors?.length ? (
+            <AuthorRow authors={authors} linkComponent={linkComponent} />
+          ) : null}
         </div>
       ) : null}
       {description ? (
@@ -162,16 +201,23 @@ export function ProposalCard({
       ) : null}
       {metrics ? (
         <div className="relative z-10 flex items-center gap-1">
-          <MetricToggle icon={LuHeart} metric={metrics.likes} label="Like" />
+          <MetricToggle
+            icon={LuHeart}
+            metric={metrics.likes}
+            label="Like"
+            describedBy={titleId}
+          />
           <MetricToggle
             icon={LuBookmark}
             metric={metrics.bookmarks}
             label="Follow"
+            describedBy={titleId}
           />
           <MetricButton
             icon={LuMessageCircle}
             metric={metrics.comments}
             label="Comments"
+            describedBy={titleId}
           />
         </div>
       ) : null}
@@ -180,7 +226,10 @@ export function ProposalCard({
           <Separator />
           <div className="flex items-center justify-between gap-3">
             {status}
-            <span className="text-sm text-muted-foreground">
+            {/* `relative z-10` lifts the label above the title's stretched
+                link overlay so an interactive `reviewedLabel` (e.g. a
+                reviewers tooltip trigger) stays hoverable/clickable. */}
+            <span className="relative z-10 text-sm text-muted-foreground">
               {reviewedLabel}
             </span>
           </div>
@@ -197,32 +246,45 @@ export function ProposalCard({
         </div>
       ) : null}
       {actions ? (
-        <div className="relative z-10 flex items-center gap-3">{actions}</div>
+        // Equal-width actions in a row — each top-level action fills its share.
+        <div className="relative z-10 flex items-center gap-3 [&>*]:flex-1">
+          {actions}
+        </div>
       ) : null}
     </div>
   );
 }
 
 /** Title content — a stretched primary link when `href` is set, else plain. */
-function TitleLink({ href, children }: { href?: string; children: ReactNode }) {
+function TitleLink({
+  href,
+  linkComponent: Link = 'a',
+  children,
+}: {
+  href?: string;
+  linkComponent?: ElementType<ProposalCardLinkProps>;
+  children: ReactNode;
+}) {
   if (!href) {
     return <>{children}</>;
   }
   return (
-    <a
+    <Link
       href={href}
       className="outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring/50"
     >
       {children}
-    </a>
+    </Link>
   );
 }
 
 function AuthorRow({
   authors,
+  linkComponent: Link = 'a',
   compact,
 }: {
   authors: ProposalCardAuthor[];
+  linkComponent?: ElementType<ProposalCardLinkProps>;
   compact?: boolean;
 }) {
   const first = authors[0];
@@ -246,7 +308,18 @@ function AuthorRow({
           </Avatar>
         ))}
       />
-      <span className="text-sm text-muted-foreground">{label}</span>
+      {first?.href ? (
+        // `relative z-10` lifts the author link above the title's stretched
+        // overlay so it stays independently clickable (clickable-card pattern).
+        <Link
+          href={first.href}
+          className="relative z-10 w-fit rounded-sm text-sm text-muted-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {label}
+        </Link>
+      ) : (
+        <span className="text-sm text-muted-foreground">{label}</span>
+      )}
     </div>
   );
 }
@@ -270,8 +343,10 @@ function TagRow({
         </Badge>
       ) : null}
       {shown.map((tag) => (
-        <Badge key={tag} variant="secondary">
-          {tag}
+        // Categories are free text, so a long one has to ellipsize instead of
+        // pushing the row past the card. Full text stays in the DOM.
+        <Badge key={tag} variant="secondary" className="max-w-full" title={tag}>
+          <span className="truncate">{tag}</span>
         </Badge>
       ))}
       {overflow > 0 ? (
@@ -285,11 +360,39 @@ function metricParts(metric: ProposalCardMetric) {
   return typeof metric === 'number' ? { count: metric } : metric;
 }
 
-const METRIC_CLASS = 'gap-1 px-2 font-normal text-muted-foreground';
+const METRIC_CLASS =
+  'gap-1 px-2 font-normal text-muted-foreground hover:text-foreground hover:bg-muted';
+
+/**
+ * Icon, name, count — the accessible name of every metric, interactive or not.
+ *
+ * The name is rendered rather than set with `aria-label` so it includes the
+ * count: `aria-label` would replace the content, and a toggle announced as just
+ * "Like" leaves a screen reader with no read on the number that moved.
+ */
+function MetricContent({
+  icon: Icon,
+  count,
+  label,
+  active,
+}: {
+  icon: IconType;
+  count?: number;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <>
+      <Icon className={cn('size-4', active && 'fill-current')} aria-hidden />
+      <span className="sr-only">{label}: </span>
+      <AnimatedCount value={count ?? 0} />
+    </>
+  );
+}
 
 /** Non-interactive count (no handler) — matches the app's display-only chips. */
 function MetricDisplay({
-  icon: Icon,
+  icon,
   count,
   label,
 }: {
@@ -298,14 +401,8 @@ function MetricDisplay({
   label: string;
 }) {
   return (
-    <span
-      className={cn(
-        'inline-flex h-8 items-center px-2 text-sm text-muted-foreground',
-      )}
-    >
-      <Icon className="me-1 size-4" aria-hidden />
-      <span className="sr-only">{label}: </span>
-      {count ?? 0}
+    <span className="inline-flex h-8 items-center gap-1 px-2 text-sm text-muted-foreground">
+      <MetricContent icon={icon} count={count} label={label} />
     </span>
   );
 }
@@ -315,29 +412,40 @@ function MetricToggle({
   icon,
   metric,
   label,
+  describedBy,
 }: {
   icon: IconType;
   metric?: ProposalCardMetric;
   label: string;
+  /** Id of the card title, so the control says which proposal it acts on. */
+  describedBy?: string;
 }) {
   if (metric == null) {
     return null;
   }
-  const { count, active, onClick } = metricParts(metric);
+  const {
+    count,
+    active,
+    onClick,
+    label: metricLabel = label,
+  } = metricParts(metric);
   if (!onClick) {
-    return <MetricDisplay icon={icon} count={count} label={label} />;
+    return <MetricDisplay icon={icon} count={count} label={metricLabel} />;
   }
-  const Icon = icon;
   return (
     <Toggle
       size="sm"
       pressed={active}
       onPressedChange={() => onClick()}
-      aria-label={label}
+      aria-describedby={describedBy}
       className={METRIC_CLASS}
     >
-      <Icon className={cn('size-4', active && 'fill-current')} aria-hidden />
-      {count ?? 0}
+      <MetricContent
+        icon={icon}
+        count={count}
+        label={metricLabel}
+        active={active}
+      />
     </Toggle>
   );
 }
@@ -347,29 +455,30 @@ function MetricButton({
   icon,
   metric,
   label,
+  describedBy,
 }: {
   icon: IconType;
   metric?: ProposalCardMetric;
   label: string;
+  /** Id of the card title, so the control says which proposal it acts on. */
+  describedBy?: string;
 }) {
   if (metric == null) {
     return null;
   }
-  const { count, onClick } = metricParts(metric);
+  const { count, onClick, label: metricLabel = label } = metricParts(metric);
   if (!onClick) {
-    return <MetricDisplay icon={icon} count={count} label={label} />;
+    return <MetricDisplay icon={icon} count={count} label={metricLabel} />;
   }
-  const Icon = icon;
   return (
     <Button
       variant="ghost"
       size="sm"
       onClick={onClick}
-      aria-label={label}
+      aria-describedby={describedBy}
       className={METRIC_CLASS}
     >
-      <Icon className="size-4" aria-hidden />
-      {count ?? 0}
+      <MetricContent icon={icon} count={count} label={metricLabel} />
     </Button>
   );
 }

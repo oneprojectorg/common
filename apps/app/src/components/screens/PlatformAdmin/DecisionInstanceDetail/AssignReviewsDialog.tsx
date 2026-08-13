@@ -21,11 +21,12 @@ import { Label } from '@op/sense/Label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -83,11 +84,11 @@ export const AssignReviewsDialog = ({
 
   const assignReviews = trpc.platform.admin.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
-      toast.success({
-        message: t('{count} review assignments created', {
+      toast.success(
+        t('{count} review assignments created', {
           count: createdCount,
         }),
-      });
+      );
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,
         phaseId,
@@ -95,7 +96,7 @@ export const AssignReviewsDialog = ({
       setIsOpen(false);
     },
     onError: (error) => {
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -166,11 +167,13 @@ export const AssignReviewsDialog = ({
                 <SelectValue placeholder={t('Select a reviewer')} />
               </SelectTrigger>
               <SelectContent>
-                {reviewerItems.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {reviewerItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -212,7 +215,7 @@ export const AssignReviewsDialog = ({
                       />
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate">
-                          {proposal.title ?? t('Untitled proposal')}
+                          {proposal.title ?? t('Untitled Proposal')}
                         </span>
                         {proposal.author ? (
                           <span className="truncate text-sm text-muted-foreground">

@@ -134,13 +134,14 @@ test.describe('Proposal Submit Validation', () => {
     );
 
     const submitButton = authenticatedPage.getByRole('button', {
-      name: 'Submit Proposal',
+      name: 'Submit',
+      exact: true,
     });
     await expect(submitButton).toBeVisible({ timeout: 36_000 });
 
     // Helper: dismiss any visible toasts before the next submit
     const dismissToasts = async () => {
-      const toasts = authenticatedPage.locator('[data-sonner-toast]');
+      const toasts = authenticatedPage.locator('[data-slot="toast"]');
       const count = await toasts.count();
       for (let i = 0; i < count; i++) {
         const dismissBtn = toasts.nth(i).locator('button').last();
@@ -160,7 +161,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast).toBeVisible({ timeout: 6_000 });
@@ -174,7 +175,11 @@ test.describe('Proposal Submit Validation', () => {
     // Step 2: Fill in Title → re-submit → expect 2 errors (Budget, Category)
     // =========================================================================
 
-    const titleEditor = authenticatedPage.locator('.ProseMirror.text-title-lg');
+    // The title field is a contenteditable with `role="textbox"`; it lost its
+    // legacy `text-title-lg` hook class in the sense migration.
+    const titleEditor = authenticatedPage
+      .getByTestId('field-title')
+      .getByRole('textbox');
     await titleEditor.click();
     await authenticatedPage.keyboard.type('My Test Proposal');
 
@@ -184,7 +189,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast2 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast2).toBeVisible({ timeout: 6_000 });
@@ -198,11 +203,8 @@ test.describe('Proposal Submit Validation', () => {
     // Step 3: Fill in Budget → re-submit → expect 1 error (Category)
     // =========================================================================
 
-    const addBudgetButton = authenticatedPage.getByRole('button', {
-      name: 'Add budget',
-    });
-    await addBudgetButton.click();
-
+    // The budget field is a plain NumberField now — no "Add budget" button
+    // standing between the reviewer and the input.
     const budgetInput = authenticatedPage.getByPlaceholder('Enter amount');
     await expect(budgetInput).toBeVisible({ timeout: 6_000 });
     await budgetInput.fill('5000');
@@ -213,7 +215,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast3 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast3).toBeVisible({ timeout: 6_000 });
@@ -234,13 +236,10 @@ test.describe('Proposal Submit Validation', () => {
     // client-side validation does not yet check dynamic required fields.
     // =========================================================================
 
-    const categoryButton = authenticatedPage.getByRole('button', {
-      name: 'Select category',
-    });
-    await categoryButton.click();
+    // Categories are boxed radios now, not a dropdown of options.
     await authenticatedPage
-      .getByRole('option', { name: 'Infrastructure' })
-      .click();
+      .getByRole('radio', { name: 'Infrastructure' })
+      .check();
 
     await authenticatedPage.waitForTimeout(2_400);
 
@@ -250,7 +249,7 @@ test.describe('Proposal Submit Validation', () => {
     // dynamic field validation. The toast should list the missing dynamic
     // required fields.
     const errorToast4 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast4).toBeVisible({ timeout: 6_000 });
@@ -277,7 +276,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast5 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast5).toBeVisible({ timeout: 6_000 });
@@ -306,7 +305,7 @@ test.describe('Proposal Submit Validation', () => {
     await submitButton.click();
 
     const errorToast6 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast6).toBeVisible({ timeout: 6_000 });
@@ -321,16 +320,16 @@ test.describe('Proposal Submit Validation', () => {
     // Step 7: Select Priority Level → re-submit → 1 dynamic error remains
     // =========================================================================
 
+    // Single-select fields render as boxed radios, not a dropdown.
     const priorityField = authenticatedPage.getByTestId('field-priority');
-    await priorityField.getByRole('button', { name: 'Select option' }).click();
-    await authenticatedPage.getByRole('option', { name: 'High' }).click();
+    await priorityField.getByRole('radio', { name: 'High' }).check();
 
     await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
     const errorToast7 = authenticatedPage
-      .locator('[data-sonner-toast]')
+      .locator('[data-slot="toast"]')
       .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast7).toBeVisible({ timeout: 6_000 });
@@ -344,8 +343,7 @@ test.describe('Proposal Submit Validation', () => {
     // =========================================================================
 
     const regionField = authenticatedPage.getByTestId('field-region');
-    await regionField.getByRole('button', { name: 'Select option' }).click();
-    await authenticatedPage.getByRole('option', { name: 'North' }).click();
+    await regionField.getByRole('radio', { name: 'North' }).check();
 
     await authenticatedPage.waitForTimeout(2_400);
 
@@ -357,7 +355,7 @@ test.describe('Proposal Submit Validation', () => {
     // that the frontend schema validator accepted all fields.
     await expect(
       authenticatedPage
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Please fix the following issues:' }),
     ).not.toBeVisible({ timeout: 6_000 });
   });

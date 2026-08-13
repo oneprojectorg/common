@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProposalReviewRequest } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,12 +18,10 @@ export function RevisionFeedbackPanel({
 
   return (
     <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
-      <div className="flex flex-col gap-4 border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif text-title-base">
-          {t('Revision feedback')}
-        </Header3>
+      <div className="flex flex-col gap-4 border-b pb-4">
+        <Header3>{t('Revision feedback')}</Header3>
 
-        <p className="text-neutral-black">
+        <p>
           {t(
             'A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.',
           )}
@@ -31,9 +29,7 @@ export function RevisionFeedbackPanel({
       </div>
 
       <div className="flex flex-col gap-4">
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
-          {t('Reviewer feedback')}
-        </span>
+        <span className="font-serif text-label">{t('Reviewer feedback')}</span>
 
         <RevisionFeedbackCard
           comment={revisionRequest.requestComment}
@@ -41,7 +37,7 @@ export function RevisionFeedbackPanel({
           variant="reviewer"
         />
 
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-sm text-muted-foreground">
           {t(
             "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.",
           )}

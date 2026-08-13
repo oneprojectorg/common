@@ -85,7 +85,7 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
 
     // PromoteOnboardingFlow — step 1: personal details.
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
     await page.getByLabel('Full Name').fill('Promo Tester');
     await page.getByLabel('Headline').fill('Community member');

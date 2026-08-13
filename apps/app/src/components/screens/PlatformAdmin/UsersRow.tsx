@@ -5,19 +5,32 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
-import { MenuItem, MenuSeparator } from '@op/ui/Menu';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { Select, SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { TableCell } from '@op/ui/ui/table';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { TableCell } from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
-import { Button } from 'react-aria-components';
+import { LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { AddUserToOrgModal } from './AddUserToOrgModal';
+import { TimestampTooltip } from './TimestampTooltip';
 import { UpdateProfileModal } from './UpdateProfile';
 
 // Infer types from tRPC router output
@@ -41,106 +54,94 @@ export const UsersRowCells = ({ user }: { user: User }) => {
 
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {user.profile?.name ?? user.name ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {user.email}
       </TableCell>
       <UserRolesAndOrganizationCells
         organizationUsers={user.organizationUsers ?? []}
       />
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-muted-foreground">
         {createdAt ? (
-          <TooltipTrigger>
-            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-              {relativeCreatedAt}
-            </Button>
-            <Tooltip>
-              {format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
-            </Tooltip>
-          </TooltipTrigger>
-        ) : (
-          '—'
-        )}
-      </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
-        {lastSignInAt ? (
-          <TooltipTrigger>
-            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-              {relativeLastSignIn}
-            </Button>
-            <Tooltip>
-              {format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
-            </Tooltip>
-          </TooltipTrigger>
-        ) : (
-          '—'
-        )}
-      </TableCell>
-      <TableCell className="text-sm text-neutral-charcoal">
-        <div className="flex justify-end">
-          <OptionMenu
-            aria-label={t('User options')}
-            variant="outline"
-            size="medium"
-            menuClassName="min-w-48 p-2"
+          <TimestampTooltip
+            className="text-sm font-normal"
+            title={format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
           >
-            <MenuItem
-              key="edit-profile"
-              onAction={() => {
-                if (user.profile) {
-                  setIsEditModalOpen(true);
-                }
-              }}
-              className="px-3 py-1"
-              isDisabled={!user.profile}
-            >
-              {t('Edit profile')}
-            </MenuItem>
-            <MenuItem
-              key="add-to-org"
-              onAction={() => {
-                setIsAddToOrgModalOpen(true);
-              }}
-              className="px-3 py-1"
-            >
-              {t('Add to organization')}
-            </MenuItem>
-            <MenuSeparator />
-            <MenuItem
-              key="copy-auth-user-id"
-              onAction={() => {
-                navigator.clipboard.writeText(user.authUserId);
-                toast.success({
-                  message: t('Auth user ID copied to your clipboard.'),
-                  dismissable: false,
-                });
-              }}
-              className="px-3 py-1"
-            >
-              {t('Copy authUserId')}
-            </MenuItem>
-            <MenuItem
-              key="view-analytics"
-              onAction={() => {
-                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-              }}
-              className="px-3 py-1"
-            >
-              {t('View analytics')}
-            </MenuItem>
-            <MenuSeparator />
-            <MenuItem
-              key="remove-user"
-              onAction={() => {
-                alert('coming soon');
-              }}
-              className="px-3 py-1"
-            >
-              <span className="text-functional-red">{t('Remove user')}</span>
-            </MenuItem>
-          </OptionMenu>
+            {relativeCreatedAt}
+          </TimestampTooltip>
+        ) : (
+          '—'
+        )}
+      </TableCell>
+      <TableCell className="text-sm font-normal text-muted-foreground">
+        {lastSignInAt ? (
+          <TimestampTooltip
+            className="text-sm font-normal"
+            title={format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
+          >
+            {relativeLastSignIn}
+          </TimestampTooltip>
+        ) : (
+          '—'
+        )}
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t('User options')}
+                >
+                  <LuEllipsis />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="min-w-48">
+              <DropdownMenuItem
+                disabled={!user.profile}
+                onClick={() => {
+                  if (user.profile) {
+                    setIsEditModalOpen(true);
+                  }
+                }}
+              >
+                {t('Edit profile')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsAddToOrgModalOpen(true)}>
+                {t('Add to organization')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  navigator.clipboard.writeText(user.authUserId);
+                  toast.success(t('Auth user ID copied to your clipboard.'));
+                }}
+              >
+                {t('Copy authUserId')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+                }}
+              >
+                {t('View analytics')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => {
+                  alert('coming soon');
+                }}
+              >
+                {t('Remove user')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {user.profile ? (
           <UpdateProfileModal
@@ -175,8 +176,8 @@ const UserRolesAndOrganizationCells = ({
   if (!organizationUsers || organizationUsers.length === 0) {
     return (
       <>
-        <TableCell className="text-sm text-neutral-charcoal">-</TableCell>
-        <TableCell className="text-sm text-neutral-charcoal">-</TableCell>
+        <TableCell className="text-sm text-muted-foreground">-</TableCell>
+        <TableCell className="text-sm text-muted-foreground">-</TableCell>
       </>
     );
   }
@@ -188,10 +189,10 @@ const UserRolesAndOrganizationCells = ({
   if (!selectedOrgUser) {
     return (
       <>
-        <TableCell className="text-sm text-neutral-charcoal">
+        <TableCell className="text-sm text-muted-foreground">
           Something went wrong
         </TableCell>
-        <TableCell className="text-sm text-neutral-charcoal">
+        <TableCell className="text-sm text-muted-foreground">
           Something went wrong
         </TableCell>
       </>
@@ -204,22 +205,34 @@ const UserRolesAndOrganizationCells = ({
       ? roles.map((roleJunction) => roleJunction.accessRole.name).join(', ')
       : 'No roles';
 
+  const orgItems = organizationUsers.map(({ id: orgUserId, organization }) => ({
+    value: orgUserId,
+    label: organization?.profile?.name ?? 'Unknown Organization',
+  }));
+
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {roleNames}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         <Select
-          className="w-full"
-          defaultSelectedKey={selectedOrgUserId}
-          onSelectionChange={(key) => setSelectedOrgUserId(String(key))}
+          items={orgItems}
+          defaultValue={selectedOrgUserId}
+          onValueChange={(value) => setSelectedOrgUserId(value ?? undefined)}
         >
-          {organizationUsers.map(({ id: orgUserId, organization }) => (
-            <SelectItem key={orgUserId} id={orgUserId}>
-              {organization?.profile?.name ?? 'Unknown Organization'}
-            </SelectItem>
-          ))}
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {orgItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
         </Select>
       </TableCell>
     </>

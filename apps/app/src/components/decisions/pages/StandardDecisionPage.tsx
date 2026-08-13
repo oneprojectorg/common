@@ -3,8 +3,13 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { Suspense } from 'react';
 import { LuClock, LuTriangleAlert } from 'react-icons/lu';
 
@@ -68,7 +73,7 @@ export function StandardDecisionPage({
     isLastPhase(currentPhaseId, phases);
 
   const heroTitle =
-    translation?.headline ?? currentPhase?.headline ?? t('SHARE YOUR IDEAS.');
+    translation?.headline ?? currentPhase?.headline ?? t('Share your ideas.');
   const heroDescription =
     translation?.phaseDescription ?? currentPhase?.description;
   const actionBarDescription =
@@ -80,21 +85,25 @@ export function StandardDecisionPage({
   const hasHeroImage = Boolean(heroImagePath);
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full bg-muted">
       <DecisionHeroBanner heroImagePath={heroImagePath}>
-        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
-          <DecisionHero
-            title={heroTitle}
-            description={heroDescription ? <p>{heroDescription}</p> : undefined}
-            variant="standard"
-            hasImage={hasHeroImage}
-          />
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-8 px-4 pt-16 pb-8 md:pb-16">
+          <div className="flex flex-col items-center gap-4">
+            <DecisionHero
+              title={heroTitle}
+              description={
+                heroDescription ? <p>{heroDescription}</p> : undefined
+              }
+              variant="standard"
+              hasImage={hasHeroImage}
+            />
 
-          <MemberParticipationFacePile
-            submitters={submitters}
-            total={total}
-            hasImage={hasHeroImage}
-          />
+            <MemberParticipationFacePile
+              submitters={submitters}
+              total={total}
+              hasImage={hasHeroImage}
+            />
+          </div>
 
           <DecisionActionBar
             instanceId={instanceId}
@@ -105,35 +114,45 @@ export function StandardDecisionPage({
         </div>
       </DecisionHeroBanner>
 
-      <div className="flex w-full flex-col items-center border-t bg-white">
+      <div className="flex w-full flex-col items-center bg-white">
         {proposalsHidden && (
           <HiddenProposalsBanner
             nextPhaseName={nextPhase?.name}
             currentPhaseEndDate={currentPhase?.endDate}
           />
         )}
-        <div className="flex w-full flex-col gap-6 p-4 sm:max-w-6xl sm:p-8">
+        <div className="flex w-full flex-col gap-6 p-4 sm:p-8">
           {isAwaitingFinalResults ? (
-            <EmptyState icon={<LuClock className="size-6" />}>
-              <Header3 className="font-serif font-light">
-                {t('Results pending')}
-              </Header3>
-              <p className="text-base text-neutral-charcoal">
-                {t("Results for this process haven't been processed yet.")}
-              </p>
-            </EmptyState>
+            <Empty className="border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LuClock className="size-6" />
+                </EmptyMedia>
+                <EmptyTitle className="font-light">
+                  {t('Results pending')}
+                </EmptyTitle>
+                <EmptyDescription className="text-base text-foreground">
+                  {t("Results for this process haven't been processed yet.")}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : !instance.selectionsAreConfirmed && isAdmin && decisionSlug ? (
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                    <Header3 className="font-serif font-light">
-                      {t("Couldn't load manual selection")}
-                    </Header3>
-                    <p className="text-base text-neutral-charcoal">
-                      {t('Refresh the page to try again.')}
-                    </p>
-                  </EmptyState>
+                  <Empty className="border-0">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <LuTriangleAlert className="size-6" />
+                      </EmptyMedia>
+                      <EmptyTitle className="font-light">
+                        {t("Couldn't load manual selection")}
+                      </EmptyTitle>
+                      <EmptyDescription className="text-base text-foreground">
+                        {t('Refresh the page to try again.')}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ),
               }}
             >
@@ -141,6 +160,7 @@ export function StandardDecisionPage({
                 <ManualSelectionList
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
+                  pinOffset={pinOffset}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -148,14 +168,19 @@ export function StandardDecisionPage({
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
-                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                    <Header3 className="font-serif font-light">
-                      {t("Couldn't load proposals")}
-                    </Header3>
-                    <p className="text-base text-neutral-charcoal">
-                      {t('Refresh the page to try again.')}
-                    </p>
-                  </EmptyState>
+                  <Empty className="border-0">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <LuTriangleAlert className="size-6" />
+                      </EmptyMedia>
+                      <EmptyTitle className="font-light">
+                        {t("Couldn't load proposals")}
+                      </EmptyTitle>
+                      <EmptyDescription className="text-base text-foreground">
+                        {t('Refresh the page to try again.')}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ),
               }}
             >

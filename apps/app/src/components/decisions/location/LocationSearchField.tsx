@@ -3,9 +3,17 @@
 import { trpc } from '@op/api/client';
 import type { LocationData } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
-import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import type { LngLat } from '@op/ui/Map';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import { InputGroupAddon } from '@op/sense/InputGroup';
+import type { LngLat } from '@op/sense/Map';
+import { Spinner } from '@op/sense/Spinner';
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
@@ -92,66 +100,72 @@ export function LocationSearchField({
   });
 
   return (
-    <ComboBox
+    <Combobox
       aria-label={t('Search for a location')}
       items={items}
-      // Mirrors the global profile search: the magnifying glass becomes a
-      // spinner while a query is in flight so the user knows the picker is
-      // still working before any results land.
-      icon={
-        isSearching ? (
-          <LoadingSpinner className="size-4 text-neutral-gray4" />
-        ) : (
-          <LuSearch aria-hidden className="size-4" />
-        )
+      // Server-side search already filters, so disable base-ui's local filter
+      // and drive the option list purely off the debounced query result.
+      filter={null}
+      onInputValueChange={setQuery}
+      itemToStringLabel={(item: GeoOption) =>
+        item.name ? `${item.name} ${item.address}` : item.address
       }
-      placeholder={t('Address, cross streets, or landmark')}
-      menuTrigger="input"
-      // Keep the popover open as soon as the query passes the min length so a
-      // "Searching…" / "No results" state can replace it once results land.
-      // Closing it mid-flight (e.g. gating on `!isSearching`) wedges the
-      // dropdown: react-aria does not auto-reopen when items arrive, so the
-      // user only sees results after blurring and refocusing the input.
-      allowsEmptyCollection={query.length >= MIN_QUERY_LENGTH}
-      onInputChange={setQuery}
-      onSelectionChange={(key) => {
-        const item = items.find((option) => option.id === key);
+      isItemEqualToValue={(a: GeoOption, b: GeoOption) => a.id === b.id}
+      onValueChange={(item: GeoOption | null) => {
         if (item) {
           onSelect(item.location);
         }
       }}
-      renderEmptyState={() => (
-        <div className="px-3 py-2 text-sm text-neutral-charcoal">
-          {isSearching ? t('Searching…') : t('No results')}
-        </div>
-      )}
     >
-      {(item) => (
-        <ComboBoxItem
-          id={item.id}
-          textValue={item.name ? `${item.name} ${item.address}` : item.address}
-        >
-          {/* Two-line presentation so business / POI results read as
-              "Starbucks" + "123 Main St", not as the bare street address. */}
-          <div className="flex min-w-0 flex-col">
-            {item.name && (
-              <span className="truncate text-neutral-black" dir="auto">
-                {item.name}
-              </span>
-            )}
-            <span
-              className={
-                item.name
-                  ? 'truncate text-sm text-neutral-charcoal'
-                  : 'truncate text-neutral-black'
-              }
-              dir="auto"
-            >
-              {item.address}
-            </span>
-          </div>
-        </ComboBoxItem>
-      )}
-    </ComboBox>
+      {/* Leading search affordance mirrors the global profile search: the
+          magnifying glass becomes a spinner while a query is in flight so the
+          user knows the picker is still working before any results land. */}
+      <ComboboxInput
+        placeholder={t('Address, cross streets, or landmark')}
+        showTrigger={false}
+      >
+        <InputGroupAddon align="inline-start">
+          {isSearching ? (
+            <Spinner className="size-4 text-muted-foreground" />
+          ) : (
+            <LuSearch aria-hidden className="size-4" />
+          )}
+        </InputGroupAddon>
+      </ComboboxInput>
+      <ComboboxContent>
+        <ComboboxEmpty>
+          {isSearching
+            ? t('Searching…')
+            : query.length >= MIN_QUERY_LENGTH
+              ? t('No results')
+              : null}
+        </ComboboxEmpty>
+        <ComboboxList>
+          {(item: GeoOption) => (
+            <ComboboxItem key={item.id} value={item}>
+              {/* Two-line presentation so business / POI results read as
+                  "Starbucks" + "123 Main St", not as the bare street address. */}
+              <div className="flex min-w-0 flex-col">
+                {item.name && (
+                  <span className="truncate" dir="auto">
+                    {item.name}
+                  </span>
+                )}
+                <span
+                  className={
+                    item.name
+                      ? 'truncate text-sm text-foreground'
+                      : 'truncate text-foreground'
+                  }
+                  dir="auto"
+                >
+                  {item.address}
+                </span>
+              </div>
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }

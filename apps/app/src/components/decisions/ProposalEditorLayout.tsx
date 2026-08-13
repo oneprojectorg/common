@@ -21,10 +21,8 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
-  /** Optional end-aligned status pill shown while viewing history */
+  /** Optional save/version status text shown in the header's left cluster */
   statusSlot?: ReactNode;
-  /** Whether action controls should be rendered in the header */
-  showHeaderActions?: boolean;
   /** When true, hide editing actions while showing a historical version. */
   readOnlyMode?: boolean;
   /** The proposal's profile ID, used for the share modal */
@@ -49,7 +47,6 @@ export function ProposalEditorLayout({
   presenceSlot,
   asideHeaderIcons,
   statusSlot,
-  showHeaderActions = true,
   readOnlyMode = false,
   proposalProfileId,
   access,
@@ -67,7 +64,7 @@ export function ProposalEditorLayout({
   const isRevisionMode = Boolean(revisionRequest);
 
   return (
-    <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[auto_1fr] bg-white">
+    <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[auto_1fr] bg-background">
       <ProposalEditorHeader
         backHref={backHref}
         title={title}
@@ -78,7 +75,6 @@ export function ProposalEditorLayout({
         presenceSlot={presenceSlot}
         asideHeaderIcons={asideHeaderIcons}
         statusSlot={statusSlot}
-        showHeaderActions={showHeaderActions}
         readOnlyMode={readOnlyMode}
         canShare={canShare}
         isRevisionMode={isRevisionMode}
@@ -91,7 +87,6 @@ export function ProposalEditorLayout({
       {canShare && (
         <ShareProposalModal
           proposalProfileId={proposalProfileId}
-          proposalTitle={title}
           isOpen={isShareModalOpen}
           onOpenChange={setIsShareModalOpen}
         />

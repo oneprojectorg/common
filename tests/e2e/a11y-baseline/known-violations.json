@@ -3,36 +3,6 @@
   "axeVersion": "4.11.3",
   "violations": [
     {
-      "rule": "button-name",
-      "impact": "critical",
-      "route": "/en/decisions/{slug}/edit",
-      "fingerprint": "section > div > button",
-      "snippet": "<button class=\"focus-within:outline...\" data-rac=\"\" type=\"button\" tabindex=\"0\" data-react-aria-pres...=\"true\" aria-pressed=\"true\" data-selected=\"true\">",
-      "wcagCriteria": [
-        "4.1.2"
-      ]
-    },
-    {
-      "rule": "button-name",
-      "impact": "critical",
-      "route": "/en/decisions/{slug}/edit",
-      "fingerprint": "section > div:nth-of-type(5) > div:nth-of-type(1) > button",
-      "snippet": "<button class=\"focus-within:outline...\" data-rac=\"\" type=\"button\" tabindex=\"0\" data-react-aria-pres...=\"true\" aria-pressed=\"true\" data-selected=\"true\">",
-      "wcagCriteria": [
-        "4.1.2"
-      ]
-    },
-    {
-      "rule": "button-name",
-      "impact": "critical",
-      "route": "/en/decisions/{slug}/edit",
-      "fingerprint": "section > div:nth-of-type(5) > div:nth-of-type(2) > button",
-      "snippet": "<button class=\"focus-within:outline...\" data-rac=\"\" type=\"button\" tabindex=\"0\" data-react-aria-pres...=\"true\" aria-pressed=\"false\">",
-      "wcagCriteria": [
-        "4.1.2"
-      ]
-    },
-    {
       "rule": "scrollable-region-focusable",
       "impact": "serious",
       "route": "/info/privacy",

@@ -2,9 +2,17 @@
 
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { skipBatch, trpc } from '@op/api/client';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@op/sense/Breadcrumb';
+import { Header2 } from '@op/sense/Header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -86,54 +94,59 @@ export const ProfileRelationshipsSuspense = ({
     <>
       <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
-          <Breadcrumbs className="hidden sm:flex">
-            <Breadcrumb href={`/org/${slug}`}>
-              {organization.profile.name}
-            </Breadcrumb>
-            <Breadcrumb>{t('Relationships')}</Breadcrumb>
-          </Breadcrumbs>
+          <Breadcrumb className="hidden sm:flex">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={<Link href={`/org/${slug}`} />}>
+                  {organization.profile.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{t('Relationships')}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-title-sm sm:text-title-lg">
+          <Header2 className="w-full">
             {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
               count,
             })}
-          </div>
+          </Header2>
           <div className="w-72"></div>
         </div>
       </div>
 
-      <Tabs>
-        <TabList className="px-4 sm:px-0" variant="pill">
-          <Tab id="all" variant="pill">
-            {t('All relationships')}
-          </Tab>
+      <Tabs defaultValue="all">
+        <TabsList className="px-4 sm:px-0">
+          <TabsTrigger value="all">{t('All relationships')}</TabsTrigger>
           {relationshipsSegmented.map(([noun, items]) =>
             items?.length ? (
-              <Tab id={noun} key={noun} variant="pill">
+              <TabsTrigger value={noun} key={noun}>
                 {noun}s
-              </Tab>
+              </TabsTrigger>
             ) : null,
           )}
-        </TabList>
+        </TabsList>
 
-        <TabPanel id="all" className="px-4 sm:px-0">
+        <TabsContent value="all" className="px-4 sm:px-0">
           <RelationshipList
             profiles={relationshipItems}
             searchTerm={searchTerm}
             relationshipMap={relationshipMap}
           />
-        </TabPanel>
+        </TabsContent>
 
         {relationshipsSegmented.map(([noun, items]) =>
           items?.length ? (
-            <TabPanel id={noun} key={noun} className="px-4 sm:px-0">
+            <TabsContent value={noun} key={noun} className="px-4 sm:px-0">
               <RelationshipList
                 profiles={items}
                 searchTerm={searchTerm}
                 relationshipMap={relationshipMap}
               />
-            </TabPanel>
+            </TabsContent>
           ) : null,
         )}
       </Tabs>
@@ -149,7 +162,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
         <ErrorBoundary
           errorComponent={() => (
             <Link href="/" className="flex items-center gap-2">
-              <LuArrowLeft className="size-6 text-neutral-black rtl:-scale-x-100" />
+              <LuArrowLeft className="size-6 text-foreground rtl:-scale-x-100" />
             </Link>
           )}
         >

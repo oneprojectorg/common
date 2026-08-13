@@ -2,8 +2,8 @@
 
 import type { Organization, Profile } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
+import { TabsContent } from '@op/sense/Tabs';
 import { screens } from '@op/styles/constants';
-import { TabPanel } from '@op/ui/Tabs';
 
 import {
   OrganizationProfileGrid,
@@ -71,25 +71,29 @@ export const ProfileTabsRenderer = ({
         <MembersTab profileId={profile.id} />
         <DecisionsTab profileId={profile.id} />
       </ProfileTabList>
-
-      <TabPanel id="home" className="flex grow flex-col sm:p-0">
-        <OrganizationProfileGrid profile={organization} />
-      </TabPanel>
-      <TabPanel id="relationships" className="grow px-4 sm:px-6 sm:py-0">
-        <ProfileOrganizations>
-          <ProfileRelationshipsSuspense
-            slug={profile.slug}
-            showBreadcrumb={false}
-          />
-        </ProfileOrganizations>
-      </TabPanel>
-      <FollowersTabPanel>
-        <ProfileFollowers profileId={profile.id} />
-      </FollowersTabPanel>
-      <DecisionsTabPanel>
-        <ProfileDecisionsSuspense profileId={profile.id} />
-      </DecisionsTabPanel>
-      <MembersTabPanel profileId={profile.id} />
+      <div className="border-t">
+        <TabsContent value="home" className="flex grow flex-col sm:p-0">
+          <OrganizationProfileGrid profile={organization} />
+        </TabsContent>
+        <TabsContent
+          value="relationships"
+          className="grow px-4 sm:px-6 sm:py-0"
+        >
+          <ProfileOrganizations>
+            <ProfileRelationshipsSuspense
+              slug={profile.slug}
+              showBreadcrumb={false}
+            />
+          </ProfileOrganizations>
+        </TabsContent>
+        <FollowersTabPanel>
+          <ProfileFollowers profileId={profile.id} />
+        </FollowersTabPanel>
+        <DecisionsTabPanel>
+          <ProfileDecisionsSuspense profileId={profile.id} />
+        </DecisionsTabPanel>
+        <MembersTabPanel profileId={profile.id} />
+      </div>
     </ProfileTabs>
   );
 };
@@ -126,20 +130,20 @@ export const IndividualProfileTabsRenderer = ({
         <DesktopIndividualTabs />
       </ProfileTabList>
 
-      <TabPanel id="about" className="sm:p-0">
+      <TabsContent value="about" className="sm:p-0">
         <ProfileGrid profile={userProfile} />
-      </TabPanel>
-      <TabPanel id="organizations" className="px-4 sm:px-6 sm:py-0">
+      </TabsContent>
+      <TabsContent value="organizations" className="px-4 sm:px-6 sm:py-0">
         <ProfileOrganizations>
           <ProfileOrganizationsSuspense
             slug={profile.slug}
             showBreadcrumb={false}
           />
         </ProfileOrganizations>
-      </TabPanel>
-      <TabPanel id="following" className="px-4 sm:px-6 sm:py-0">
+      </TabsContent>
+      <TabsContent value="following" className="px-4 sm:px-6 sm:py-0">
         <ProfileFollowing profileId={profile.id} />
-      </TabPanel>
+      </TabsContent>
     </ProfileTabs>
   );
 };

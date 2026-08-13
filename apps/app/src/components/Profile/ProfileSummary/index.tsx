@@ -2,8 +2,8 @@
 
 import { skipBatch, trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Header1 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Header1 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -24,7 +24,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
   return (
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
-        <span className="font-bold text-teal">
+        <span className="text-primary">
           {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
             count,
           })}
@@ -41,24 +41,24 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-2 py-2">
-      <Header1>
+      <Header1 className="text-headline">
         <bdi>{profile.profile.name}</bdi>
       </Header1>
 
       {whereWeWork.length ? (
-        <div dir="auto" className="text-base text-neutral-gray4">
+        <div dir="auto" className="text-base text-muted-foreground">
           {whereWeWork}
         </div>
       ) : null}
 
-      <div dir="auto" className="max-w-xl text-base text-neutral-charcoal">
+      <div dir="auto" className="max-w-xl text-base">
         {profile.profile.bio}
       </div>
 
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
-          <div className="flex gap-1 text-base text-neutral-gray4">
-            <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
+          <div className="flex gap-1 text-base text-muted-foreground">
+            <Suspense fallback={<Skeleton className="h-5 w-32" />}>
               <RelationshipCount profile={profile} />
             </Suspense>
           </div>

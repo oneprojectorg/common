@@ -7,9 +7,9 @@ import {
 } from '@/hooks/useClaimAccount';
 import { isSafeRedirectPath } from '@op/common/client';
 import { useMount } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
+import { Spinner } from '@op/sense/Spinner';
+import { CheckIcon } from '@op/sense/icons';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 
@@ -155,9 +155,7 @@ export const LinkAccountPanel = () => {
     return (
       <div className="flex flex-col items-center justify-center gap-4">
         <CheckIcon />
-        <span className="text-title-base sm:text-title-lg">
-          {t('Email sent!')}
-        </span>
+        <span className="text-headline">{t('Email sent!')}</span>
       </div>
     );
   })();
@@ -165,7 +163,7 @@ export const LinkAccountPanel = () => {
   const subtitle = (() => {
     if (errorMessage) {
       return (
-        <span className={tokenError ? 'text-functional-red' : undefined}>
+        <span className={tokenError ? 'text-destructive' : undefined}>
           {errorMessage}
         </span>
       );
@@ -173,7 +171,7 @@ export const LinkAccountPanel = () => {
     if (!loginSuccess) {
       return t.rich('Already have an account? <login>Log in</login>', {
         login: (chunks: React.ReactNode) => (
-          <a href={regularLoginHref} className="text-primary-teal underline">
+          <a href={regularLoginHref} className="text-primary underline">
             {chunks}
           </a>
         ),
@@ -196,7 +194,7 @@ export const LinkAccountPanel = () => {
       <AuthPanelShell title={title} subtitle={subtitle}>
         <Button
           className="flex w-full items-center justify-center"
-          onPress={() => {
+          onClick={() => {
             setLinkError(undefined);
             setTokenError(undefined);
           }}
@@ -223,19 +221,23 @@ export const LinkAccountPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              isDisabled={isSubmitting || !isValidOtpLength(token)}
-              onPress={async () => {
+              disabled={isSubmitting || !isValidOtpLength(token)}
+              onClick={async () => {
                 if (isValidOtpLength(token)) {
                   await handleTokenSubmit();
                 }
               }}
             >
-              {isSubmitting ? <LoadingSpinner /> : t('Create profile')}
+              {isSubmitting ? (
+                <Spinner className="size-6" />
+              ) : (
+                t('Create profile')
+              )}
             </Button>
             <Button
-              color="secondary"
+              variant="secondary"
               className="flex w-full items-center justify-center"
-              onPress={goBack}
+              onClick={goBack}
             >
               {t('Go back')}
             </Button>
@@ -264,12 +266,12 @@ export const LinkAccountPanel = () => {
         <Button
           type="button"
           className="flex w-full items-center justify-center"
-          isDisabled={isSubmitting || !emailIsValid}
-          onPress={() => {
+          disabled={isSubmitting || !emailIsValid}
+          onClick={() => {
             void submitEmail();
           }}
         >
-          {isSubmitting ? <LoadingSpinner /> : t('Continue')}
+          {isSubmitting ? <Spinner className="size-6" /> : t('Continue')}
         </Button>
       </div>
     </AuthPanelShell>

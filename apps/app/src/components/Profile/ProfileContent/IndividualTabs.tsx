@@ -1,7 +1,7 @@
 'use client';
 
-import { Tab, TabPanel } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
+import { TabsContent, TabsTrigger } from '@op/sense/Tabs';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -9,7 +9,7 @@ import { useTranslations } from '@/lib/i18n';
 export const FollowersTab = () => {
   const t = useTranslations();
 
-  return <Tab id="followers">{t('Followers')}</Tab>;
+  return <TabsTrigger value="followers">{t('Followers')}</TabsTrigger>;
 };
 
 export const FollowersTabPanel = ({
@@ -20,11 +20,11 @@ export const FollowersTabPanel = ({
   className?: string;
 }) => {
   return (
-    <TabPanel
-      id="followers"
+    <TabsContent
+      value="followers"
       className={cn('px-4 py-2 sm:px-6 sm:py-0', className)}
     >
       {children}
-    </TabPanel>
+    </TabsContent>
   );
 };

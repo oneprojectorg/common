@@ -1,35 +1,23 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { LuLeaf } from 'react-icons/lu';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
+import { StatusBadge } from '@op/sense/StatusBadge';
+import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ProposalCard,
-  ProposalCardContent,
-  ProposalCardFooter,
-  ProposalCardHeader,
-  ProposalCardMeta,
-  ProposalCardPreview,
-} from './ProposalCard';
+import { formatBudget } from './BudgetDisplay';
+import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
-
-const NoProposalsFound = () => {
-  const t = useTranslations();
-  return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {t('No results yet for this decision.')}
-      </Header3>
-      <p className="text-base text-neutral-charcoal">
-        {t('Results are still being worked on.')}
-      </p>
-    </EmptyState>
-  );
-};
+import { proposalHref } from './proposalHrefs';
 
 export const ResultsList = ({
   slug,
@@ -58,56 +46,65 @@ export const ResultsList = ({
     return <NoProposalsFound />;
   }
 
+  const showVotes = slug !== 'cowop' && Boolean(resultStats?.membersVoted);
+
   return (
     <div className="flex flex-col gap-4 pb-12">
       <div className="flex items-center gap-4">
-        <Header3 className="font-serif !text-title-base">
-          {t('Selected Proposals')}
-        </Header3>
+        <Header3>{t('Selected Proposals')}</Header3>
       </div>
 
       <ProposalMasonry>
         {proposals.map((proposal) => {
-          const viewHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const viewHref = proposalHref({
+            profileId: proposal.profileId,
+            decisionSlug,
+            slug,
+            instanceId,
+          });
+
+          const awardedText =
+            proposal.allocated != null
+              ? formatBudget(proposal.allocated)
+              : undefined;
 
           return (
-            <ProposalCard key={proposal.id}>
-              <div className="flex flex-col justify-between gap-3 space-y-3">
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    viewHref={viewHref}
-                    allocated={proposal.allocated}
-                  />
-
-                  <ProposalCardMeta proposal={proposal} />
-
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-              </div>
-              <ProposalCardContent>
-                {slug !== 'cowop' && resultStats?.membersVoted ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="h-0 w-full border-b border-neutral-gray-2" />
-
-                    {/* Footer - Total Votes */}
-                    <ProposalCardFooter>
-                      <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                        <span className="font-bold">
-                          {proposal.voteCount ?? 0}
-                        </span>
-                        <span>{t('Total Votes')}</span>
-                      </div>
-                    </ProposalCardFooter>
-                  </div>
-                ) : null}
-              </ProposalCardContent>
-            </ProposalCard>
+            <ProposalCardView
+              key={proposal.id}
+              proposal={proposal}
+              href={viewHref}
+              showMetrics
+              totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
+              awardedLabel={
+                awardedText ? (
+                  <StatusBadge variant="success" icon={LuBadgeCheck}>
+                    {t('{amount} Awarded', { amount: awardedText })}
+                  </StatusBadge>
+                ) : undefined
+              }
+            />
           );
         })}
       </ProposalMasonry>
     </div>
+  );
+};
+
+const NoProposalsFound = () => {
+  const t = useTranslations();
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle render={<h3 />}>
+          {t('No results yet for this decision.')}
+        </EmptyTitle>
+        <EmptyDescription>
+          {t('Results are still being worked on.')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 };

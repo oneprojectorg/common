@@ -33,7 +33,7 @@ test.describe('Onboarding', () => {
 
     // Should skip directly to personal details form
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     // Should NOT show decision invites heading
@@ -98,7 +98,7 @@ test.describe('Onboarding', () => {
 
     // Should proceed to personal details form
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
   });
 });

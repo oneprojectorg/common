@@ -47,7 +47,9 @@ test.describe('Process survey modal', () => {
 
     // The survey modal opens once getProcessSurveyResponse resolves
     // hasResponded=false for this freshly-authenticated, never-submitted user.
-    const dialog = authenticatedPage.getByRole('dialog');
+    const dialog = authenticatedPage
+      .getByRole('dialog')
+      .and(authenticatedPage.locator(':not([data-slot="toast"])'));
     await expect(dialog.getByText('Your voice shapes Common.')).toBeVisible({
       timeout: 15_000,
     });

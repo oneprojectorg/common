@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils';
 // Serif headings on the sense semantic type scale (Figma Typography
 // collection): display 24→48, headline 20→30, title 18→20, label 16.
 // `dir="auto"` by default — headings always carry real content, so the
-// direction resolves from it (see the @op/ui RTL decisions).
+// direction resolves from it.
 
 interface HeaderProps extends React.ComponentProps<'h1'> {
   dir?: 'ltr' | 'rtl' | 'auto';
@@ -15,7 +15,7 @@ function Header1({ className, dir = 'auto', ...props }: HeaderProps) {
   return (
     <h1
       dir={dir}
-      className={cn('font-serif text-display', className)}
+      className={cn('font-serif text-display font-light', className)}
       {...props}
     />
   );
@@ -25,7 +25,7 @@ function Header2({ className, dir = 'auto', ...props }: HeaderProps) {
   return (
     <h2
       dir={dir}
-      className={cn('font-serif text-headline', className)}
+      className={cn('font-serif text-headline font-light', className)}
       {...props}
     />
   );

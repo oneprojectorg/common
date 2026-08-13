@@ -260,7 +260,9 @@ test.describe('Review Submit', () => {
 
     await page.getByRole('button', { name: 'Request revision' }).click();
 
-    const requestModal = page.getByRole('dialog');
+    const requestModal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await expect(requestModal).toBeVisible();
 
     await requestModal
@@ -273,7 +275,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Revision requested' }),
     ).toBeVisible({ timeout: 10_000 });
 
@@ -303,7 +305,9 @@ test.describe('Review Submit', () => {
     // hidden and the rubric pane's alert banner exposes "View feedback".
     await page.getByRole('button', { name: 'View feedback' }).click();
 
-    const viewModal = page.getByRole('dialog');
+    const viewModal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
     await expect(viewModal).toBeVisible();
     await expect(
       viewModal.getByRole('heading', { name: 'Revision request' }),
@@ -316,7 +320,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Revision request cancelled' }),
     ).toBeVisible({ timeout: 10_000 });
 
@@ -345,8 +349,9 @@ test.describe('Review Submit', () => {
     const submitButton = page.getByRole('button', { name: 'Submit review' });
     await expect(submitButton).toBeDisabled();
 
-    // Fill first required criterion: Innovation (scored, 4 pts)
-    await page.getByRole('button', { name: 'Innovation' }).click();
+    // Fill first required criterion: Innovation (scored, 4 pts). The scored
+    // scale is a sense Select, so its trigger is a combobox, not a button.
+    await page.getByRole('combobox', { name: 'Innovation' }).click();
     await page.getByRole('option', { name: '4 — Very Good' }).click();
 
     // Fill Innovation's optional rationale. The textarea is collapsed behind
@@ -359,28 +364,29 @@ test.describe('Review Submit', () => {
       .filter({ hasText: 'Innovation' });
     await innovationSection.getByRole('button', { name: 'Add Note' }).click();
     await innovationSection
-      .getByRole('textbox', { name: 'Notes' })
+      .getByRole('textbox', { name: 'Note' })
       .fill(innovationRationale);
 
     // Still disabled — two more required criteria (Feasibility, Compliance)
     await expect(submitButton).toBeDisabled();
 
     // Fill second required criterion: Feasibility (scored, 2 pts)
-    await page.getByRole('button', { name: 'Feasibility' }).click();
+    await page.getByRole('combobox', { name: 'Feasibility' }).click();
     await page.getByRole('option', { name: '2 — Possible' }).click();
 
     // Still disabled — Compliance is still missing
     await expect(submitButton).toBeDisabled();
 
-    // Fill third required criterion: Compliance (yes/no toggle). Anchor by
-    // the heading and pick the aria-pressed ToggleButton within that section,
-    // since every criterion also renders an "Add Note" button.
+    // Fill third required criterion: Compliance (yes/no). Anchor by the heading
+    // and pick the switch within that section, since every criterion also renders
+    // an "Add Note" button. The control is a sense Switch (role="switch" +
+    // aria-checked).
     await page
       .locator('section')
       .filter({
         has: page.getByRole('heading', { name: 'Compliance', level: 4 }),
       })
-      .locator('button[aria-pressed]')
+      .getByRole('switch')
       .click();
 
     // Still disabled — Overall Recommendation is still missing
@@ -414,7 +420,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Review submitted successfully' }),
     ).toBeVisible({ timeout: 10_000 });
 
@@ -478,7 +484,7 @@ test.describe('Review Submit', () => {
 
     await expect(
       page
-        .locator('[data-sonner-toast]')
+        .locator('[data-slot="toast"]')
         .filter({ hasText: 'Review updated successfully' }),
     ).toBeVisible({ timeout: 10_000 });
 

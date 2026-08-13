@@ -3,15 +3,22 @@
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { match } from '@op/core';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import {
+  Empty,
+  EmptyMedia,
+  EmptyHeader,
+  EmptyDescription,
+} from '@op/sense/Empty';
+import { Header1 } from '@op/sense/Header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Suspense } from 'react';
+import { LuUsers, LuUser } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { ProfileListSkeleton, ProfileSummaryList } from '../ProfileList';
-import { ListPageLayoutHeader } from '../layout/ListPageLayout';
 
 export const ProfileSearchResultsSuspense = ({
   query,
@@ -33,39 +40,41 @@ export const ProfileSearchResultsSuspense = ({
     0,
   );
 
-  return totalResults > 0 ? (
+  return (
     <>
-      <ListPageLayoutHeader>
-        <span className="text-neutral-gray4">
-          {t.rich('Results for <highlight>{query}</highlight>', {
-            query: query,
-            highlight: (chunks: React.ReactNode) => (
-              <span className="text-neutral-black">{chunks}</span>
-            ),
-          })}
-        </span>
-      </ListPageLayoutHeader>
-      <TabbedProfileSearchResults profiles={profileSearchResults} />
-    </>
-  ) : (
-    <>
-      <ListPageLayoutHeader className="flex justify-center gap-2">
-        <span className="text-neutral-gray4">
-          {t.rich('No results for <highlight>{query}</highlight>', {
-            query: query,
-            highlight: (chunks: React.ReactNode) => (
-              <span className="text-neutral-black">{chunks}</span>
-            ),
-          })}
-        </span>
-      </ListPageLayoutHeader>
-      <div className="flex justify-center">
-        <span className="max-w-96 text-center text-neutral-black">
-          {t(
-            'You may want to try using different keywords, checking for typos, or adjusting your filters.',
-          )}
-        </span>
-      </div>
+      <Header1 className="text-headline">
+        {totalResults > 0 ? (
+          <span className="text-muted-foreground">
+            {t.rich('Results for <highlight>{query}</highlight>', {
+              query: query,
+              highlight: (chunks: React.ReactNode) => (
+                <span className="font-strong text-foreground">{chunks}</span>
+              ),
+            })}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">
+            {t.rich('No results for <highlight>{query}</highlight>', {
+              query: query,
+              highlight: (chunks: React.ReactNode) => (
+                <span className="font-strong text-foreground">{chunks}</span>
+              ),
+            })}
+          </span>
+        )}
+      </Header1>
+
+      {totalResults > 0 ? (
+        <TabbedProfileSearchResults profiles={profileSearchResults} />
+      ) : (
+        <div className="flex justify-center">
+          <span className="max-w-96 text-center">
+            {t(
+              'You may want to try using different keywords, checking for typos, or adjusting your filters.',
+            )}
+          </span>
+        </div>
+      )}
     </>
   );
 };
@@ -83,36 +92,45 @@ export const TabbedProfileSearchResults = ({
 
   return (
     // Use the defaultSelectedKey as the key for the Tabs component so that it switches to the tab with available results.
-    <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
-      <TabList variant="pill">
+    <Tabs key={defaultSelectedKey} defaultValue={defaultSelectedKey}>
+      <TabsList>
         {profiles.map(({ type, results }) => {
           const label = match(type, {
             [EntityType.INDIVIDUAL]: t('Individuals'),
             [EntityType.ORG]: t('Organizations'),
           });
           return (
-            <Tab id={type} variant="pill" className="gap-2" key={`${type}-tab`}>
+            <TabsTrigger value={type} className="gap-2" key={`${type}-tab`}>
               {label}
-              <span className="text-neutral-gray4">{results.length}</span>
-            </Tab>
+              <span className="text-muted-foreground">{results.length}</span>
+            </TabsTrigger>
           );
         })}
-      </TabList>
+      </TabsList>
       {profiles.map(({ type, results }) => {
         const label = match(type, {
           [EntityType.INDIVIDUAL]: t('individuals'),
           [EntityType.ORG]: t('organizations'),
         });
+        const icon = match(type, {
+          [EntityType.INDIVIDUAL]: <LuUser />,
+          [EntityType.ORG]: <LuUsers />,
+        });
         return (
-          <TabPanel key={`${type}-panel`} id={type}>
+          <TabsContent key={`${type}-panel`} value={type} className="mt-6">
             {results.length > 0 ? (
               <ProfileSummaryList profiles={results} />
             ) : (
-              <div className="mt-2 w-full rounded p-8 text-center text-neutral-gray4">
-                {t('No {type} found.', { type: label })}
-              </div>
+              <Empty className="rounded border">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">{icon}</EmptyMedia>
+                  <EmptyDescription>
+                    {t('No {type} found.', { type: label })}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
-          </TabPanel>
+          </TabsContent>
         );
       })}
     </Tabs>

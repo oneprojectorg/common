@@ -53,7 +53,6 @@ COPY packages/hooks/package.json ./packages/hooks/
 COPY packages/logging/package.json ./packages/logging/
 COPY packages/styles/package.json ./packages/styles/
 COPY packages/types/package.json ./packages/types/
-COPY packages/ui/package.json ./packages/ui/
 COPY services/api/package.json ./services/api/
 COPY services/cache/package.json ./services/cache/
 COPY services/collab/package.json ./services/collab/
