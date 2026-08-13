@@ -189,9 +189,11 @@ const buildBaseConditions = (
     // full-text search can't, matching only from word starts) while making word
     // order irrelevant, which a single `%a b%` match can't.
     //
-    // Correlated EXISTS, not `profileId IN (SELECT ...)`: the semi-join scans
-    // every profile on the platform before the phase predicates narrow anything,
-    // and the name trigram index can't help a query under 3 characters.
+    // Postgres normalizes this EXISTS into a semi-join and picks the driving
+    // side by cost, so both plans stay available: a 3+ character word goes
+    // through `profiles_name_trgm_idx`, while 1-2 characters (too short for
+    // pg_trgm to extract a trigram) drive from the phase-scoped proposals and
+    // probe profiles by primary key. Both paths are already indexed.
     conditions.push(
       exists(
         db
