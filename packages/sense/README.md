@@ -210,38 +210,44 @@ primitives via relative imports, add the exports entry, write a story.
 Forgetting the exports entry gives consumers a clear
 `Cannot find module '@op/sense/<Name>'` — that's the drift signal.
 
-## Known broken: `Chart`
+## The `Chart` build warning
 
-`@op/sense/Chart` does not build today, and has no story for that reason:
+Building anything that imports `Chart` prints:
 
 ```
-No matching export in immer/dist/immer.mjs for import "setUseStrictIteration"
+"setUseStrictIteration" is not exported by immer/dist/immer.mjs
 ```
 
-### Why we have `immer` at all
+It is a **warning, not a failure** — Rollup builds through it, and nothing
+breaks at runtime, because `@reduxjs/toolkit` imports that binding and never
+calls it (zero call sites in its `modern` and `browser` bundles). A binding
+that is never dereferenced cannot throw.
 
-We don't use it. No file in any workspace imports `immer`. It is in the tree
-because of a chain that starts with a dependency nobody removed:
+It still matters, because **esbuild treats it as a hard error**. Any
+esbuild-based tooling in this package's graph — notably the
+`@storybook/addon-vitest` a11y gate — fails outright rather than warning.
 
-1. `apps/app/package.json` has declared `immer: ^10.1.1` since the repo's
-   initial commit (`a95d8bb8`, 2025-04-01). Nothing in `apps/app/src` has ever
-   imported it — it is a dead direct dependency.
-2. Because a workspace declares it, `pnpm deps:override`
-   (`scripts/depCheck.ts --multiuse`) hoists it into the root
-   `devDependencies` and writes `"immer": "$immer"` into `pnpm.overrides`. That
-   override's job is to force **one** `immer` across the monorepo — so every
-   transitive consumer is pinned to `apps/app`'s `^10.1.1`.
-3. `recharts` (which `Chart` wraps) depends on `@reduxjs/toolkit@2.12`, and
-   RTK 2.12 declares `immer: ^11`. The override drags it two majors down to
-   10.1.1, where `setUseStrictIteration` doesn't exist, and the import dangles.
+Why the version is wrong: `pnpm.overrides` in the root `package.json` maps
+`immer` to `$immer`, which resolves to the root's own declaration. That forces
+**one** `immer` on every consumer in the monorepo. `recharts` (which `Chart`
+wraps) depends on `@reduxjs/toolkit@2.12`, which declares `immer: ^11`, so the
+override drags RTK down to the root's `^10.1.1` — and
+`setUseStrictIteration` did not exist until **10.2.0**.
 
-So a dependency we never used is pinning a version that breaks a package we do.
+The fix is a one-line bump of the root pin to `^10.2.0`, not a move to v11:
 
-**The fix is to delete `immer` from `apps/app/package.json`**, then re-run
-`pnpm deps:override` so the root pin and the override drop out and RTK resolves
-its own `immer@11`. That touches resolution for the whole monorepo, so it wants
-its own PR and a full `pnpm test` — not a change to smuggle in alongside
-component work.
+- `setUseStrictIteration` shipped in 10.2.0 (2025-10-25), a month *before*
+  11.0.0 — it is the opt-in flag added ahead of v11 making strict iteration the
+  default. Calling it on 10.2.0 does exactly what RTK intends.
+- 10.2.0 satisfies `recharts`' own `^10.1.1`, so it stays inside its declared
+  range. Forcing v11 would push `recharts` outside it.
+- It keeps a single `immer`. Letting RTK and `recharts` resolve separate majors
+  risks a draft created by one copy failing the other copy's `isDraft` — and
+  `recharts` drives RTK's store, so drafts do cross that boundary.
+
+Nothing in any workspace imports `immer` (`zustand`'s `immer` peer is optional
+and we don't use its middleware), so the root declaration exists only to feed
+the override.
 
 ## Known upstream patches
 
