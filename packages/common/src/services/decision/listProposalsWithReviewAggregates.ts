@@ -15,6 +15,7 @@ import {
   decodeCursor,
   encodeCursor,
   getCursorCondition,
+  sortDirSchema,
 } from '../../utils';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
@@ -51,7 +52,7 @@ export const listProposalsWithReviewAggregatesInputSchema = z.union([
   }),
   instanceOptionalPhaseRefSchema.extend({
     orderBy: z.enum(PROPOSAL_AGGREGATE_SORTS),
-    dir: z.enum(['asc', 'desc']).default('desc'),
+    dir: sortDirSchema.default('desc'),
   }),
   instanceOptionalPhaseRefSchema.extend({
     limit: z.number().int().min(1).max(100).default(50),
