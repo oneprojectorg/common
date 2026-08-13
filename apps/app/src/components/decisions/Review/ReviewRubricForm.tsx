@@ -3,7 +3,9 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   ProposalReviewState,
+  type TemplateSectionBlock,
   type XFormatPropertySchema,
+  groupFieldsBySection,
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
@@ -13,7 +15,7 @@ import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import type { Key } from 'react';
+import type { Key, ReactNode } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
@@ -26,6 +28,7 @@ import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
+import { RubricSectionShell } from './RubricSection';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
@@ -84,11 +87,29 @@ function MyReviewForm() {
     review,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
+  const blocks = groupFieldsBySection(template, fields);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(
     overallComment.length > 0,
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const renderCriterion = (field: FieldDescriptor) => (
+    <RubricCriterionSection
+      key={field.key}
+      field={field}
+      maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
+      value={values[field.key]}
+      onChange={(value) => handleValueChange(field.key, value)}
+      rationaleValue={rationales[field.key] ?? ''}
+      onRationaleChange={(value) => handleRationaleChange(field.key, value)}
+      rationalePlaceholder={
+        isOverallRecommendationField(field.key)
+          ? t('Add overall notes...')
+          : t('Add reasons or insights...')
+      }
+    />
+  );
 
   // A submitted review shows the read-only result unless the reviewer has
   // switched it back into the form via "Edit review".
@@ -137,22 +158,11 @@ function MyReviewForm() {
         }
       >
         <div className="flex flex-col gap-6">
-          {fields.map((field) => (
-            <RubricCriterionSection
-              key={field.key}
-              field={field}
-              maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
-              value={values[field.key]}
-              onChange={(value) => handleValueChange(field.key, value)}
-              rationaleValue={rationales[field.key] ?? ''}
-              onRationaleChange={(value) =>
-                handleRationaleChange(field.key, value)
-              }
-              rationalePlaceholder={
-                isOverallRecommendationField(field.key)
-                  ? t('Add overall notes...')
-                  : t('Add reasons or insights...')
-              }
+          {blocks.map((block) => (
+            <RubricBlock
+              key={blockKey(block)}
+              block={block}
+              renderCriterion={renderCriterion}
             />
           ))}
 
@@ -191,6 +201,38 @@ function MyReviewForm() {
       </div>
     </>
   );
+}
+
+/**
+ * Render one grouping block: either a bare criterion or a section wrapper
+ * with its members.
+ */
+function RubricBlock({
+  block,
+  renderCriterion,
+}: {
+  block: TemplateSectionBlock<FieldDescriptor>;
+  renderCriterion: (field: FieldDescriptor) => ReactNode;
+}) {
+  if (block.kind === 'field') {
+    return renderCriterion(block.field);
+  }
+
+  return (
+    <RubricSectionShell section={block.section}>
+      {block.fields.map(renderCriterion)}
+    </RubricSectionShell>
+  );
+}
+
+/**
+ * Keyed on a field key rather than the section id: a legacy template with a
+ * split section yields one block per run, so the section id alone is not unique.
+ */
+function blockKey(block: TemplateSectionBlock<FieldDescriptor>): string {
+  return block.kind === 'field'
+    ? `field:${block.field.key}`
+    : `section:${block.section.id}:${block.fields[0]?.key ?? ''}`;
 }
 
 /**

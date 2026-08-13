@@ -449,6 +449,13 @@ export function changeCriterionType(
     if (existing.description) {
       newSchema.description = existing.description;
     }
+    // Section membership is presentation, independent of the criterion's type:
+    // any type can sit in any section, so changing the type must not silently
+    // pull the criterion out of its group.
+    const sectionId = existing['x-section'];
+    if (sectionId !== undefined) {
+      newSchema['x-section'] = sectionId;
+    }
     return newSchema;
   });
 }

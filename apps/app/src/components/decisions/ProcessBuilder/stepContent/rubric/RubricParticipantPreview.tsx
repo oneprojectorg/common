@@ -42,7 +42,7 @@ export function RubricParticipantPreview({
           {t('Review Proposal')}
         </Header2>
 
-        <RubricFormPreviewRenderer fields={fields} />
+        <RubricFormPreviewRenderer template={template} fields={fields} />
       </div>
     </aside>
   );

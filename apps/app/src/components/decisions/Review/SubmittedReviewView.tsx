@@ -1,7 +1,9 @@
 import {
   type ProposalReview,
   type RubricTemplateSchema,
+  type TemplateSectionBlock,
   findSchemaOption,
+  groupFieldsBySection,
   isOverallRecommendationField,
 } from '@op/common/client';
 import type { ReactNode } from 'react';
@@ -12,6 +14,7 @@ import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { inferCriterionType } from '../rubricTemplate';
+import { RubricSectionShell } from './RubricSection';
 
 export function SubmittedReviewView({
   rubricTemplate,
@@ -22,23 +25,32 @@ export function SubmittedReviewView({
 }) {
   const t = useTranslations();
   const fields = compileRubricSchema(rubricTemplate);
+  const blocks = groupFieldsBySection(rubricTemplate, fields);
   const { answers, rationales } = review.reviewData;
+
+  const renderField = (field: FieldDescriptor) => (
+    <ResultSection
+      key={field.key}
+      title={field.schema.title}
+      description={field.schema.description}
+      required={field.required}
+    >
+      <RubricFieldResult
+        field={field}
+        value={answers[field.key]}
+        rationale={rationales[field.key]?.trim() || undefined}
+      />
+    </ResultSection>
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      {fields.map((field) => (
-        <ResultSection
-          key={field.key}
-          title={field.schema.title}
-          description={field.schema.description}
-          required={field.required}
-        >
-          <RubricFieldResult
-            field={field}
-            value={answers[field.key]}
-            rationale={rationales[field.key]?.trim() || undefined}
-          />
-        </ResultSection>
+      {blocks.map((block) => (
+        <ResultBlock
+          key={blockKey(block)}
+          block={block}
+          renderField={renderField}
+        />
       ))}
 
       {review.overallComment && (
@@ -48,6 +60,38 @@ export function SubmittedReviewView({
       )}
     </div>
   );
+}
+
+/**
+ * One grouping block of a submitted review: a bare criterion result, or a
+ * section wrapper with its members.
+ */
+function ResultBlock({
+  block,
+  renderField,
+}: {
+  block: TemplateSectionBlock<FieldDescriptor>;
+  renderField: (field: FieldDescriptor) => ReactNode;
+}) {
+  if (block.kind === 'field') {
+    return renderField(block.field);
+  }
+
+  return (
+    <RubricSectionShell section={block.section}>
+      {block.fields.map(renderField)}
+    </RubricSectionShell>
+  );
+}
+
+/**
+ * Keyed on a field key rather than the section id: a legacy template with a
+ * split section yields one block per run, so the section id alone is not unique.
+ */
+function blockKey(block: TemplateSectionBlock<FieldDescriptor>): string {
+  return block.kind === 'field'
+    ? `field:${block.field.key}`
+    : `section:${block.section.id}:${block.fields[0]?.key ?? ''}`;
 }
 
 function ResultSection({
