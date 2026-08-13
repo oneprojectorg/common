@@ -437,6 +437,31 @@ describe('stored budget parsing', () => {
     expect(normalizeBudget({ amount: 5000 })).toEqual({ amount: 5000 });
     expect(normalizeBudget(5000)).toEqual({ amount: 5000 });
   });
+
+  it('keeps the amount when the stored currency is null or not a string', () => {
+    // Same failure the blank-code case above guards, one shape further out: a
+    // currency that fails the object branch sends the whole budget to the
+    // numeric branch, which fails too, and the amount disappears from every
+    // surface. An unreadable code names no currency; it does not name no
+    // budget.
+    expect(normalizeBudget({ amount: 5000, currency: null })).toEqual({
+      amount: 5000,
+    });
+    expect(normalizeBudget({ amount: 5000, currency: 123 })).toEqual({
+      amount: 5000,
+    });
+  });
+
+  it('keeps a zero budget rather than reading it as none', () => {
+    // `{amount: 0}` is a real budget an author entered. Readers gate on the
+    // budget object, not on the amount's truthiness, so this has to survive
+    // parsing as an object for them to have anything to gate on.
+    expect(normalizeBudget({ amount: 0, currency: 'EUR' })).toEqual({
+      amount: 0,
+      currency: 'EUR',
+    });
+    expect(normalizeBudget(0)).toEqual({ amount: 0 });
+  });
 });
 
 describe('parseStoredBudgetFragmentValue', () => {
@@ -463,6 +488,26 @@ describe('parseStoredBudgetFragmentValue', () => {
     for (const text of ['', '   ', '{"amount":""}', 'no budget here']) {
       expect(parseStoredBudgetFragmentValue(text)).toBeUndefined();
     }
+  });
+
+  it('keeps the amount when the fragment currency is null or not a string', () => {
+    // A fragment written by a client that stamped `"currency":null` still
+    // carries an amount the author typed. Failing the object here drops it to
+    // the bare-number reader, which can't read an object at all — so the
+    // editor shows "Add budget" for a budget that is plainly there.
+    expect(
+      parseStoredBudgetFragmentValue('{"amount":5000,"currency":null}'),
+    ).toEqual({ amount: 5000 });
+    expect(
+      parseStoredBudgetFragmentValue('{"amount":5000,"currency":123}'),
+    ).toEqual({ amount: 5000 });
+  });
+
+  it('reads a zero amount as a budget, not as an absent one', () => {
+    expect(parseStoredBudgetFragmentValue('{"amount":0}')).toEqual({
+      amount: 0,
+    });
+    expect(parseStoredBudgetFragmentValue('0')).toEqual({ amount: 0 });
   });
 });
 

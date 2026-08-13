@@ -73,8 +73,12 @@ export function buildProposalListPreview({
    * {@link resolveBudgetFallbackCurrency}. Pass the raw row rather than a
    * parsed one: parsing drops a budget whose shape `budgetValueSchema` can't
    * read, and the stored currency goes with it.
+   *
+   * Required, though `unknown` admits `undefined`: a list route that forgets it
+   * still compiles and still renders, just with the stored-currency tier
+   * missing — which is the original bug, back on that one route, and silent.
    */
-  storedProposalData?: unknown;
+  storedProposalData: unknown;
 }): ProposalListPreview {
   const budgetCurrency = resolveBudgetFallbackCurrency(
     storedProposalData,

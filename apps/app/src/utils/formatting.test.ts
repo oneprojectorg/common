@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { formatAmount, formatMoney, getCurrencySymbol } from './formatting';
 
@@ -27,11 +27,22 @@ describe('formatMoney', () => {
   });
 
   it('caches the fallback under the bad code, so it is built once', () => {
-    // Repeating the call is the test: an uncached failure re-runs the throwing
-    // constructor on every render of every row that holds the bad code.
+    // Counting constructions rather than comparing the two return values: the
+    // output is deterministic either way, so an assertion on it passes with the
+    // cache torn out. What has to hold is that the *throwing* constructor is
+    // not re-entered — an uncached failure re-runs it on every render of every
+    // row holding the bad code, and it is also what keeps the invalid-currency
+    // warning to one per code instead of one per row.
     const first = formatMoney({ amount: 1234.5, currency: '!!' });
     expect(first).toBe('1,234.50');
-    expect(formatMoney({ amount: 1234.5, currency: '!!' })).toBe(first);
+
+    const spy = vi.spyOn(Intl, 'NumberFormat');
+    try {
+      expect(formatMoney({ amount: 1234.5, currency: '!!' })).toBe(first);
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

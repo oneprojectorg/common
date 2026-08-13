@@ -52,13 +52,16 @@ export const budgetValueSchema = z
     // currency then won a budget that had named its own. Readers can only
     // resolve from a parsed row if parsing reads every shape storage holds.
     //
-    // Not `min(1)` on the currency: a blank code has to still parse, or the
-    // union falls through to the numeric branch, fails there too, and the
-    // amount disappears from the proposal entirely. Readers treat a blank code
-    // as naming none — see `getStoredBudgetCurrency`.
+    // Nothing about the currency may fail this branch: whatever fails it sends
+    // the whole object to the numeric branch, which fails too, and the amount
+    // disappears from the proposal entirely — the currency taking the budget
+    // down with it. So no `min(1)` (readers treat a blank code as naming none,
+    // see `getStoredBudgetCurrency`), and a `catch` for everything else a row
+    // can hold: an explicit `null`, or the non-string an import wrote. Those
+    // name no currency either, and the amount is not theirs to delete.
     moneyAmountSchema.extend({
       amount: budgetAmountSchema,
-      currency: z.string().optional(),
+      currency: z.string().optional().catch(undefined),
     }),
     // Legacy: plain number → { amount } with no currency. The return type is
     // annotated so both branches produce one shape rather than a union TS
@@ -207,8 +210,10 @@ const budgetFragmentObjectSchema = z.object({
   // Accepted as written and trimmed by the reader below rather than rejected
   // here: a blank code makes the whole object fail to parse, and the fragment
   // would then fall through to the bare-number reader, which drops the
-  // currency key the author may well have filled in.
-  currency: z.string().optional(),
+  // currency key the author may well have filled in. `catch` for the same
+  // reason one step further out — a `null` or non-string currency must not
+  // fail the object and take the amount with it.
+  currency: z.string().optional().catch(undefined),
 });
 
 /**
