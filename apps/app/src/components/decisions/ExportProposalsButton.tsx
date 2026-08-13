@@ -171,8 +171,23 @@ export const ExportProposalsButton = ({
     <Button
       variant="secondary"
       size="sm"
-      disabled={isEmpty}
-      loading={isRunning || startExport.isPending}
+      // Disabled rather than `loading` once a run is under way: that prop
+      // draws a spinner over the label and renders the label invisible, so the
+      // state the label reports would never be readable. A spinner only says
+      // "busy", which being disabled already says; the label says which part
+      // is busy, and that is the only thing here that distinguishes a job
+      // nothing has picked up from one that is genuinely working.
+      //
+      // The spinner is kept for the request that starts the run, where there
+      // is no state to report yet and nothing to hide.
+      disabled={isEmpty || isRunning}
+      loading={startExport.isPending}
+      // Disabled reads as "unavailable", which is not what a run in progress
+      // is — the spinner this replaces carried that meaning on its own. Said
+      // explicitly so a screen reader still reports the control as working
+      // rather than as switched off. (`loading` sets `aria-busy` itself, but
+      // it is deliberately not in use for this state.)
+      aria-busy={isRunning}
       onClick={() =>
         startExport.mutate({
           processInstanceId,
