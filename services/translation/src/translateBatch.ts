@@ -2,13 +2,19 @@ import { and, db, eq, or, sql } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
 
 import { hashContent } from './hashContent';
-import type { TranslationProvider } from './providers';
+import type { TranslationFormat, TranslationProvider } from './providers';
 
 export type TranslatableEntry = {
   /** Identifies the content source, e.g. "proposal:abc123:default" */
   contentKey: string;
   /** The source text (plain text or HTML) */
   text: string;
+  /**
+   * How the provider should treat the text. Defaults to `html` because most
+   * entries are rich-text fragments; pass `text` for bare strings (titles,
+   * categories, field labels) or DeepL returns them wrapped in a `<p>`.
+   */
+  format?: TranslationFormat;
 };
 
 export type TranslationResult = {
@@ -44,7 +50,7 @@ export async function translateBatch({
 
   const hashed = entries.map((entry) => ({
     ...entry,
-    hash: hashContent(entry.text),
+    hash: hashContent(entry.text, entry.format ?? 'html'),
   }));
 
   const cacheHits = await lookupCached(hashed, targetLocale);
@@ -113,9 +119,9 @@ async function translateCacheMisses(
   targetLocale: string,
   provider: TranslationProvider,
 ): Promise<FreshTranslation[]> {
-  const texts = misses.map((m) => m.text);
-
-  const results = await provider.translate(texts);
+  const results = await provider.translate(
+    misses.map((m) => ({ text: m.text, format: m.format ?? 'html' })),
+  );
 
   return results.map((result, i) => {
     const miss = misses[i];
