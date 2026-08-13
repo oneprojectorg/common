@@ -16,8 +16,9 @@ review comment. The package survives only to serve its own Storybook and the
 side-by-side comparison surface, and is deleted once those go.
 
 **Storybook is the component reference.** `pnpm w:sense dev` → http://localhost:3600.
-Every component has stories, every story is axe-checked, and the props tables
-are generated from the source. Start there before you read anything here.
+Every component has stories, each one has an **A11y** panel running axe against
+it live, and the props tables are generated from the source. Start there before
+you read anything here.
 
 ---
 
@@ -41,19 +42,18 @@ Less to memorise, and it composes with plain HTML.
 
 ```
 packages/sense/
-├── .storybook/                    # Storybook + a11y test config
-├── src/
-│   ├── components/
-│   │   ├── ui/                    # PRIMITIVES — generated, regenerable
-│   │   │   ├── button.tsx
-│   │   │   ├── button.stories.tsx
-│   │   │   └── …
-│   │   └── <Name>/                # COMPOSITES — hand-written
-│   │       ├── index.tsx
-│   │       └── index.stories.tsx
-│   ├── hooks/
-│   └── lib/utils.ts               # cn()
-└── vitest.config.ts               # runs the stories as tests
+├── .storybook/                    # Storybook + addon config
+└── src/
+    ├── components/
+    │   ├── ui/                    # PRIMITIVES — generated, regenerable
+    │   │   ├── button.tsx
+    │   │   ├── button.stories.tsx
+    │   │   └── …
+    │   └── <Name>/                # COMPOSITES — hand-written
+    │       ├── index.tsx
+    │       └── index.stories.tsx
+    ├── hooks/
+    └── lib/utils.ts               # cn()
 ```
 
 The split is the important part:
