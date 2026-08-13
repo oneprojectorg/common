@@ -108,6 +108,8 @@
   },
   "module": "./src/index.ts",
   "scripts": {
+    "build": "storybook build",
+    "dev": "storybook dev -p 3600 --no-open",
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit"
   },
@@ -148,7 +150,19 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@storybook/addon-a11y": "^10.5.7",
+    "@storybook/addon-docs": "^10.5.7",
+    "@storybook/addon-themes": "^10.5.7",
+    "@storybook/react": "^10.5.7",
+    "@storybook/react-vite": "^10.5.7",
+    "@tailwindcss/postcss": "4.1.18",
+    "@types/node": "^22.13.5",
     "@types/react": "19.0.10",
-    "typescript": "7.0.2"
+    "postcss": "^8.5.3",
+    "react-masonry-css": "^1.0.16",
+    "storybook": "^10.5.7",
+    "tailwindcss": "4.1.18",
+    "typescript": "7.0.2",
+    "vite": "^6.2.0"
   }
 }

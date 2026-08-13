@@ -58,3 +58,56 @@ jobs:
 
       - name: Run TypeScript checks - App
         run: pnpm typecheck
+
+  design-system:
+    name: Design system
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    # Fork PRs route through the `fork-ci` environment so a maintainer must
+    # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
+    # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
+    environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
+
+    env:
+      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Every story has to compile and bundle. Kept off the Supabase-backed
+      # Tests job so a design-system regression reports on its own and doesn't
+      # wait on a database. The axe gate joins this job once the
+      # addon-vitest/aria-query break upstream is resolved.
+      - name: Build Storybook
+        run: pnpm w:sense build

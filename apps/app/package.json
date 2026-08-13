@@ -34,7 +34,6 @@
     "@op/styles": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
-    "@op/ui": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-web": "^0.56.0",
     "@opentelemetry/context-zone": "^2.5.0",

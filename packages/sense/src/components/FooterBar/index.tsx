@@ -33,8 +33,24 @@ interface FooterBarProps
   extends
     React.ComponentProps<'footer'>,
     VariantProps<typeof footerBarVariants>,
-    VariantProps<typeof footerBarContentVariants> {}
+    VariantProps<typeof footerBarContentVariants> {
+  /**
+   * `sticky` (default) holds the bar at the bottom of its scroll container;
+   * `fixed` pins it to the viewport; `static` lets it flow with the page.
+   */
+  position?: VariantProps<typeof footerBarVariants>['position'];
+  /** `compact` (default) for most bars, `spacious` for full-width page footers. */
+  padding?: VariantProps<typeof footerBarContentVariants>['padding'];
+}
 
+/**
+ * The action bar that sits at the bottom of an editor or wizard — Cancel /
+ * Save, step navigation, and the like.
+ *
+ * Renders a real `<footer>`, so it is a landmark a screen reader can jump to.
+ * Because it overlays content when `sticky` or `fixed`, the scroll container
+ * behind it needs bottom padding of its own, or the last row hides underneath.
+ */
 function FooterBar({
   className,
   children,

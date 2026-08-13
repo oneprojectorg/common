@@ -5,12 +5,12 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
+  // @op/sense has its own Storybook (`pnpm w:sense dev`, port 3600) with its
+  // stories colocated beside the components. What's left here is @op/ui and
+  // the side-by-side comparison surface, both of which die with this package.
   stories: [
     '../stories/**/*.mdx',
     '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)',
-    // First-class @op/sense stories, kept apart from the @op/ui stories so
-    // they survive @op/ui's eventual deletion.
-    '../stories-sense/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: [
     getAbsolutePath('@storybook/addon-onboarding'),

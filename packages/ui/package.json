@@ -91,7 +91,7 @@
   },
   "scripts": {
     "build": "storybook build",
-    "dev": "storybook dev -p 3600 --no-open",
+    "dev": "storybook dev -p 3601 --no-open",
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit"
   },
