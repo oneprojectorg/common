@@ -69,15 +69,17 @@ function splitSectionRubric(): RubricTemplateSchema {
   };
 }
 
-/** The canonical money-criterion schema. */
+/** The canonical money-criterion schema, optionally in a section. */
 function moneyCriterion(
   title: string,
   currency = 'USD',
+  sectionId?: string,
 ): XFormatPropertySchema {
   return {
     type: 'object',
     title,
     'x-format': 'money',
+    ...(sectionId ? { 'x-section': sectionId } : {}),
     properties: {
       amount: { type: 'number', minimum: 0 },
       currency: { type: 'string', const: currency, default: currency },
@@ -96,6 +98,33 @@ function moneyRubric(
     'x-field-order': ['design'],
     properties: { design: { ...moneyCriterion('Design'), ...overrides } },
     required: ['design'],
+  };
+}
+
+/**
+ * Rubric with one presentational section that shows a derived total, and two
+ * money criteria in it — one currency per criterion, so the pair can be made
+ * to agree or disagree.
+ */
+function sectionedMoneyRubric(
+  firstCurrency: string,
+  secondCurrency: string,
+): RubricTemplateSchema {
+  return {
+    type: 'object',
+    'x-sections': [
+      { id: 'cost', title: 'Total Estimated Cost', showTotal: true },
+    ],
+    'x-field-order': ['design', 'construction'],
+    properties: {
+      design: moneyCriterion(
+        'Design & Engineering Cost',
+        firstCurrency,
+        'cost',
+      ),
+      construction: moneyCriterion('Construction', secondCurrency, 'cost'),
+    },
+    required: ['design', 'construction'],
   };
 }
 
@@ -1058,6 +1087,63 @@ describe.concurrent('updateDecisionInstance', () => {
         ],
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('accepts a summed section whose money criteria share a currency', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: sectionedMoneyRubric('USD', 'USD'),
+      }),
+    ).resolves.toBeDefined();
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+    expect(instanceData.rubricTemplate?.['x-sections']).toEqual([
+      { id: 'cost', title: 'Total Estimated Cost', showTotal: true },
+    ]);
+  });
+
+  it('rejects a summed section whose money criteria mix currencies', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const before = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: sectionedMoneyRubric('USD', 'EUR'),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const after = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    expect(
+      (after!.instanceData as DecisionInstanceData).rubricTemplate,
+    ).toEqual((before!.instanceData as DecisionInstanceData).rubricTemplate);
   });
 
   const unsafeMoneyOverrides: Array<[string, Partial<XFormatPropertySchema>]> =

@@ -140,6 +140,7 @@ export { assertRubricTemplateAuthoring } from './services/decision/templateAutho
 export {
   DEFAULT_MONEY_CURRENCY,
   assertMoneyFieldSchemas,
+  assertTemplateSectionCurrencies,
   isSchemaObjectDefinition,
   buildMoneyFieldAnswer,
   getMoneyAnswerAmount,
@@ -148,7 +149,9 @@ export {
   isMoneyFieldSchema,
   isValidCurrencyCode,
   resolveMoneyDisplayCurrency,
+  sumMoneyFields,
   type MoneyFieldAnswer,
+  type MoneyFieldSum,
 } from './services/decision/templateMoney';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';

@@ -33,7 +33,12 @@
  * stored** — the same philosophy as review scores.
  */
 import { ValidationError } from '../../utils';
-import type { SectionableTemplate } from './templateSections';
+import {
+  type SectionableField,
+  type SectionableTemplate,
+  getFieldSectionId,
+  getTemplateSections,
+} from './templateSections';
 import type { XFormatPropertySchema } from './types';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +49,16 @@ import type { XFormatPropertySchema } from './types';
 export interface MoneyFieldAnswer {
   amount: number;
   currency: string;
+}
+
+/** A currency-tagged sum derived from several money answers. */
+export interface MoneyFieldSum {
+  /** Sum of the answered amounts. `null` when nothing is answered yet. */
+  total: number | null;
+  /** Currency to format `total` in. */
+  currency: string;
+  /** How many member fields contributed an amount. */
+  answeredCount: number;
 }
 
 /**
@@ -162,6 +177,56 @@ export function buildMoneyFieldAnswer(
 }
 
 // ---------------------------------------------------------------------------
+// Derived totals
+// ---------------------------------------------------------------------------
+
+/**
+ * Sum the money members of a field list. Non-money members are simply not
+ * summed, so a mixed section with `showTotal` totals only its money fields.
+ *
+ * The total is labelled with the **first answered member's stored currency**,
+ * falling back to the template pin only when no answered member carries one.
+ * Stored-first matters after a template is re-pinned: a historical review's
+ * amounts and its derived total must agree, and they are the amounts that were
+ * actually entered — the same precedence as
+ * {@link resolveMoneyDisplayCurrency}. A summed section is guaranteed
+ * single-currency at authoring time by {@link assertTemplateSectionCurrencies}.
+ */
+export function sumMoneyFields<TField extends SectionableField>(
+  fields: TField[],
+  answers: Record<string, unknown>,
+): MoneyFieldSum {
+  let total: number | null = null;
+  let answeredCount = 0;
+  let answeredCurrency: string | undefined;
+  let templateCurrency: string | undefined;
+
+  for (const field of fields) {
+    if (!isMoneyFieldSchema(field.schema)) {
+      continue;
+    }
+
+    templateCurrency ??= getMoneyFieldCurrency(field.schema);
+
+    const answer = answers[field.key];
+    const amount = getMoneyAnswerAmount(answer);
+    if (amount === null) {
+      continue;
+    }
+
+    answeredCurrency ??= getMoneyAnswerCurrency(answer);
+    total = (total ?? 0) + amount;
+    answeredCount += 1;
+  }
+
+  return {
+    total,
+    currency: answeredCurrency ?? templateCurrency ?? DEFAULT_MONEY_CURRENCY,
+    answeredCount,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Template-authoring guards
 // ---------------------------------------------------------------------------
 
@@ -194,6 +259,68 @@ export function assertMoneyFieldSchemas(
       throw new ValidationError(
         `Money field "${key}" has an invalid schema: ${problem}`,
         { [key]: problem },
+      );
+    }
+  }
+}
+
+/**
+ * A sum over mixed currencies is meaningless, so a section that declares
+ * `showTotal` must have all of its money members pinned to one currency.
+ * Currencies are template-declared (`const`), so this is a static check.
+ *
+ * Run {@link assertMoneyFieldSchemas} first: this check only compares
+ * currencies that are validly declared, and never substitutes a default for a
+ * missing one — inventing USD here would let invalid authoring pass as
+ * "consistent".
+ *
+ * @throws ValidationError when a summed section mixes currencies.
+ */
+export function assertTemplateSectionCurrencies(
+  template: SectionableTemplate & {
+    properties?: Record<string, XFormatPropertySchema | boolean>;
+  },
+): void {
+  const summedSectionIds = new Set(
+    getTemplateSections(template)
+      .filter((section) => section.showTotal)
+      .map((section) => section.id),
+  );
+
+  if (summedSectionIds.size === 0) {
+    return;
+  }
+
+  const currenciesBySection = new Map<string, Set<string>>();
+
+  for (const definition of Object.values(template.properties ?? {})) {
+    if (!isSchemaObjectDefinition(definition)) {
+      continue;
+    }
+    if (!isMoneyFieldSchema(definition)) {
+      continue;
+    }
+    const sectionId = getFieldSectionId(definition);
+    if (!sectionId || !summedSectionIds.has(sectionId)) {
+      continue;
+    }
+    const currency = getMoneyFieldCurrency(definition);
+    if (currency === undefined) {
+      // Invalid authoring; assertMoneyFieldSchemas is the check that reports
+      // it. Skipping keeps this assertion from either crashing or blessing it.
+      continue;
+    }
+    const seen = currenciesBySection.get(sectionId) ?? new Set<string>();
+    seen.add(currency);
+    currenciesBySection.set(sectionId, seen);
+  }
+
+  for (const [sectionId, currencies] of currenciesBySection) {
+    if (currencies.size > 1) {
+      const listed = [...currencies].sort().join(', ');
+      throw new ValidationError(
+        `Section "${sectionId}" shows a total but mixes currencies (${listed}); a summed section must use one currency`,
+        { [`x-sections.${sectionId}`]: 'Mixed currencies in a summed section' },
       );
     }
   }

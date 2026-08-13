@@ -17,7 +17,7 @@ import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { inferCriterionType } from '../rubricTemplate';
-import { RubricSectionShell } from './RubricSection';
+import { RubricSectionShell, RubricSectionTotal } from './RubricSection';
 
 export function SubmittedReviewView({
   rubricTemplate,
@@ -52,6 +52,7 @@ export function SubmittedReviewView({
         <ResultBlock
           key={blockKey(block)}
           block={block}
+          answers={answers}
           renderField={renderField}
         />
       ))}
@@ -67,13 +68,16 @@ export function SubmittedReviewView({
 
 /**
  * One grouping block of a submitted review: a bare criterion result, or a
- * section wrapper with its members.
+ * section wrapper with its members and (when declared) the derived total —
+ * re-summed here at read time, exactly as the live form does.
  */
 function ResultBlock({
   block,
+  answers,
   renderField,
 }: {
   block: TemplateSectionBlock<FieldDescriptor>;
+  answers: Record<string, unknown>;
   renderField: (field: FieldDescriptor) => ReactNode;
 }) {
   if (block.kind === 'field') {
@@ -83,6 +87,9 @@ function ResultBlock({
   return (
     <RubricSectionShell section={block.section}>
       {block.fields.map(renderField)}
+      {block.section.showTotal && (
+        <RubricSectionTotal fields={block.fields} answers={answers} />
+      )}
     </RubricSectionShell>
   );
 }

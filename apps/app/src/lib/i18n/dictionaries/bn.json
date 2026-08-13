@@ -1441,6 +1441,7 @@
   "Turn on Open Reviews?": "উন্মুক্ত পর্যালোচনা চালু করবেন?",
   "This can lead reviewers to agree with each other more than they would independently.": "এটি পর্যালোচকদের স্বাধীনভাবে যতটা একমত হতেন তার চেয়ে বেশি একে অপরের সাথে একমত হতে পরিচালিত করতে পারে।",
   "Enable": "চালু করুন",
+  "Total": "মোট",
   "Amount": "পরিমাণ",
   "Cost estimate": "ব্যয়ের প্রাক্কলন",
   "Reviewers enter an amount": "পর্যালোচকরা একটি পরিমাণ লিখবেন",
