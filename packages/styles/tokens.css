@@ -1,15 +1,13 @@
 /*
  * OP Brand Design Tokens — Figma source of truth
  *
- * Raw palette values from the design-system Figma file. Consumed by
- * theme.css, which maps these into the Tailwind `@theme` layer
- * as `--color-*` tokens (plus legacy aliases for the pre-rename naming).
+ * Raw values from the design-system Figma file: the Colors Scale ramps, the
+ * four off-ramp brand gradient stops, and the non-colour primitives (type,
+ * spacing, radius, breakpoints, shadows). Values only, no meaning — the
+ * semantic layer that names them lives in theme.css.
  *
- * Naming: --op-<category>[-<role>]-<scale>
- *
- * Figma↔code gaps (handled by semantic aliases in theme.css):
- *   - one orange   → orange1 + orange2 collapse to a single hue
- *   - no separate status-green → uses functional-green-600 / -100
+ * Naming: `--color-<hue>-<step>` for the ramps, `--brand-*` for the gradient
+ * stops that sit off them.
  */
 
 @theme {
@@ -116,94 +114,23 @@
 
 }
 
+/* ============================================
+ * Brand gradient stops
+ *
+ * Four values the Colors Scale does not carry: the brand gradients read a
+ * teal, green and blue that sit off the ramp (#3f8d99 vs teal-500 #387582,
+ * #5db131 vs green-500 #3f7f20, #446fcc vs blue-500 #4444cc). Kept because
+ * theme.css's gradient utilities and the ComingSoon background need them.
+ *
+ * Deliberately not named --color-*: these are gradient inputs read through
+ * var(), never Tailwind utilities, and a --color-* name would mint bg-/text-/
+ * border- utilities nothing uses.
+ * ============================================ */
 :root {
-  /* ============================================
-   * Raw --op-* palette
-   *
-   * The pre-sense ramp, and still load-bearing: the brand gradient utilities
-   * in theme.css resolve through --op-primary-500, --op-functional-red-600,
-   * --op-functional-green-500, --op-data-purple and --op-brand-blue, none of
-   * which the Colors Scale carries. Only the stops above have a Colors Scale
-   * equivalent (those alias it rather than repeat the literal).
-   *
-   * Prefer a Colors Scale token or a semantic token in new code, but this
-   * block is not going away.
-   * ============================================ */
-  /* ============================================
-   * Primary (teal)
-   * ============================================ */
-  --op-primary-50: hsla(187, 47.4%, 96.3%, 1);    /* #F1F9FA */
-  --op-primary-100: hsla(186, 42.9%, 90.4%, 1);   /* #DCEFF1 */
-  --op-primary-200: hsla(186.2, 41.9%, 81.8%, 1); /* #BDE0E4 */
-  --op-primary-300: hsla(185.6, 40.5%, 69%, 1);   /* #90CAD0 */
-  --op-primary-400: hsla(187.3, 37.8%, 53.3%, 1); /* #5BAAB5 */
-  --op-primary-500: hsla(188, 41.7%, 42.4%, 1);   /* #3F8D99 */
-  --op-primary-600: var(--color-teal-500);   /* #387582 */
-  --op-primary-700: hsla(192, 36.7%, 31%, 1);     /* #32606C */
-  --op-primary-800: hsla(192.9, 30.4%, 27.1%, 1); /* #30515A */
-  --op-primary-900: hsla(196.3, 27.3%, 23.7%, 1); /* #2C444D */
-  --op-primary-950: hsla(196.2, 34.2%, 14.9%, 1); /* #192C33 */
-
-  /* ============================================
-   * Primary - Yellow
-   * ============================================ */
-  --op-primary-yellow-500: var(--color-yellow-500); /* #F2B705 */
-
-  /* ============================================
-   * Primary - Orange
-   * ============================================ */
-  --op-primary-orange-50: var(--color-orange-50); /* #FDF8ED */
-  --op-primary-orange-500: var(--color-orange-500); /* #DB862A */
-
-  /* ============================================
-   * Neutrals
-   * ============================================ */
-  --op-white: #ffffff;
-  --op-neutral-off-white: var(--color-gray-50); /* #FAFBFB */
-  --op-neutral-gray-1: var(--color-gray-100); /* #EDEEEE */
-  --op-neutral-gray-2: var(--color-gray-300); /* #D0D3D4 */
-  --op-neutral-gray-3: var(--color-gray-400); /* #AAB0B1 */
-  --op-neutral-gray-4: var(--color-gray-600); /* #606A6C */
-  --op-neutral-charcoal: var(--color-gray-700); /* #3A4749 */
-  --op-neutral-black: var(--color-gray-900); /* #142426 */
-
-  /* ============================================
-   * Functional
-   * ============================================ */
-  --op-functional-red-50: hsla(6, 71.4%, 97.3%, 1);    /* #FDF4F3 */
-  --op-functional-red-100: hsla(5, 80%, 94.1%, 1);     /* #FCE6E4 */
-  --op-functional-red-200: hsla(4.1, 81.5%, 89.4%, 1); /* #FAD1CE */
-  --op-functional-red-300: hsla(4.9, 78.5%, 81.8%, 1); /* #F5B2AC */
-  --op-functional-red-400: hsla(4.7, 77.2%, 70.8%, 1); /* #EE847B */
-  --op-functional-red-500: hsla(4.6, 71.4%, 60.2%, 1); /* #E25C51 */
-  --op-functional-red-600: var(--color-red-500); /* #CC3D31 */
-  --op-functional-red-700: hsla(4.5, 62.4%, 41.8%, 1); /* #AD3228 */
-  --op-functional-red-800: hsla(5, 58.9%, 35.3%, 1);   /* #8F2D25 */
-  --op-functional-red-900: hsla(5, 53.8%, 30.6%, 1);   /* #782B24 */
-  --op-functional-red-950: hsla(4.7, 64.6%, 15.5%, 1); /* #41120E */
-
-  --op-functional-green-50:  hsla(91.8, 68%, 95.1%, 1);    /* #F2FBEA */
-  --op-functional-green-100: hsla(96, 63.6%, 89.2%, 1);    /* #E0F5D2 */
-  --op-functional-green-200: hsla(96.6, 61.5%, 79.6%, 1);  /* #C4EBAB */
-  --op-functional-green-300: hsla(97.8, 59.5%, 67.1%, 1);  /* #9EDD79 */
-  --op-functional-green-400: hsla(98.4, 55.1%, 55.5%, 1);  /* #7CCC4F */
-  --op-functional-green-500: hsla(99.4, 56.6%, 44.3%, 1);  /* #5DB131 */
-  --op-functional-green-600: var(--color-green-500); /* #3F7F20 */
-  --op-functional-green-700: hsla(101.3, 55.4%, 27.3%, 1); /* #376C1F */
-  --op-functional-green-800: hsla(101.8, 48.3%, 22.7%, 1); /* #2F561E */
-  --op-functional-green-900: hsla(104, 43.7%, 20.2%, 1);   /* #294A1D */
-  --op-functional-green-950: hsla(105.5, 56.9%, 10%, 1);   /* #12280B */
-
-  /* Blue endpoint of the BlueGreen brand gradient (pairs with green-500 in the
-   * `bg-blueGreen` utility and the map marker). Single source of truth for the
-   * value so the utility and the marker can't drift. */
-  --op-brand-blue: hsla(221, 57.1%, 53.3%, 1); /* #446FCC */
-
-  /* ============================================
-   * Data Visualization
-   * ============================================ */
-  --op-data-purple: var(--color-purple-500); /* #A1649F */
-  --op-data-blue: var(--color-blue-500); /* #4444CC */
+  --brand-teal-50: #f1f9fa;
+  --brand-teal-500: #3f8d99;
+  --brand-green-500: #5db131;
+  --brand-blue-500: #446fcc;
 }
 
 /* ============================================

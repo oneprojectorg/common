@@ -268,10 +268,9 @@
   --popover: var(--color-white);
   --popover-foreground: var(--color-gray-900);
 
-  /* Primary. Defined here rather than inherited: `--color-primary` used to
-   * resolve through the legacy alias (--op-primary-600), so the 57
-   * `bg-primary` / `text-primary` usages inside @op/sense depended on the
-   * package sense is replacing. Same value — teal-500 is #387582. */
+  /* Primary. Declared against the Colors Scale directly — it used to resolve
+   * through a pre-sense alias, which made every `bg-primary` / `text-primary`
+   * in @op/sense depend on the retired layer. Same value: teal-500 #387582. */
   --primary: var(--color-teal-500);
   --primary-foreground: var(--color-gray-50);
 
@@ -384,7 +383,7 @@
   --text-title-sm14--line-height: 130%;
   --text-title-sm14--font-weight: 400;
   --text-title-sm14--letter-spacing: -0.01313rem;
-  --color-neutral-black: var(--op-neutral-black);
+  --color-neutral-black: var(--color-gray-900);
 }
 
 /*
@@ -453,8 +452,8 @@
 @utility bg-redTeal {
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
-    var(--op-primary-500) 0%,
-    var(--op-functional-red-600) 92%,
+    var(--brand-teal-500) 0%,
+    var(--color-red-500) 92%,
     #fafbfb 100%
   );
 }
@@ -462,8 +461,8 @@
 @utility bg-redPurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    var(--op-data-purple) 0%,
-    var(--op-functional-red-600) 100%
+    var(--color-purple-500) 0%,
+    var(--color-red-500) 100%
   );
 }
 
@@ -480,15 +479,15 @@
 @utility bg-blueGreen {
   background-image: radial-gradient(
     91.78% 91.78% at 89.17% 4.38%,
-    var(--op-functional-green-500) 0%,
-    var(--op-brand-blue) 100%
+    var(--brand-green-500) 0%,
+    var(--brand-blue-500) 100%
   );
 }
 
 @utility bg-orangePurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    var(--op-data-purple) 0%,
+    var(--color-purple-500) 0%,
     #e35f00 100%
   );
 }

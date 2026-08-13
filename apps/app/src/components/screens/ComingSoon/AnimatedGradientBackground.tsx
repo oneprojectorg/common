@@ -104,7 +104,7 @@ export function AnimatedGradientBackground() {
   const background = useMotionTemplate`radial-gradient(
     ellipse at ${gradientX}% ${gradientY}%,
     var(--color-primary),
-    var(--op-primary-50)
+    var(--brand-teal-50)
   )`;
 
   return (
@@ -127,7 +127,7 @@ export function AnimatedGradientText({
   const backgroundImage = useMotionTemplate`radial-gradient(
     50% 120% at ${gradientX}% ${gradientY}%,
     var(--color-green-400) 0%,
-    var(--op-brand-blue) 70%
+    var(--brand-blue-500) 70%
   )`;
 
   return (
