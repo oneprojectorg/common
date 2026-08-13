@@ -4,15 +4,18 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   PROPOSAL_AGGREGATE_SORTS,
+  type ProposalWithAggregates,
   type ProposalsWithReviewAggregatesList,
   getRubricScoringInfo,
 } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import type { SortDescriptor } from '@op/ui/RAC';
+import { SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { notFound } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,6 +28,8 @@ import {
   ReviewSelectionTable,
   ReviewSelectionTableSkeleton,
 } from './ReviewSelectionTable';
+
+const PROPOSALS_PER_PAGE = 25;
 
 export function ReviewSelectionList({
   instance,
@@ -51,21 +56,41 @@ export function ReviewSelectionList({
   // the table while the server re-fetches (same pattern as ManualSelectionList).
   // `throwOnError` keeps failures going to the page's APIErrorBoundary, which is
   // where they landed while this was a suspense query.
-  const proposalsQuery = trpc.decision.listWithReviewAggregates.useQuery(
-    {
-      processInstanceId: instance.id,
-      phaseId: previousPhaseId,
-      orderBy,
-      dir: sortDescriptor.direction === 'ascending' ? 'asc' : 'desc',
-    },
-    { placeholderData: (prev) => prev, throwOnError: true },
+  const proposalsQuery =
+    trpc.decision.listWithReviewAggregates.useInfiniteQuery(
+      {
+        processInstanceId: instance.id,
+        phaseId: previousPhaseId,
+        limit: PROPOSALS_PER_PAGE,
+        orderBy,
+        dir: sortDescriptor.direction === 'ascending' ? 'asc' : 'desc',
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        placeholderData: (prev) => prev,
+        throwOnError: true,
+      },
+    );
+
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = proposalsQuery;
+  const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
+    fetchNextPage,
+    { hasNextPage, isFetchingNextPage },
+  );
+
+  const pages = proposalsQuery.data?.pages;
+  // Stable across renders so the selection cache downstream only rebuilds when
+  // a page actually arrives.
+  const items = useMemo(
+    () => pages?.flatMap((page) => page.items) ?? [],
+    [pages],
   );
 
   if (!decisionSlug) {
     notFound();
   }
 
-  if (!proposalsQuery.data) {
+  if (!pages) {
     return <ReviewSelectionListSkeleton />;
   }
 
@@ -74,9 +99,18 @@ export function ReviewSelectionList({
       instance={instance}
       previousPhaseId={previousPhaseId}
       decisionSlug={decisionSlug}
-      proposals={proposalsQuery.data}
+      items={items}
+      total={pages[0]?.total ?? 0}
+      rubricTemplate={pages[0]?.rubricTemplate ?? null}
       sortDescriptor={sortDescriptor}
       onSortChange={setSortDescriptor}
+      scrollTrigger={
+        shouldShowTrigger ? (
+          <div ref={scrollTriggerRef} className="flex justify-center py-4">
+            {isFetchingNextPage ? <SkeletonLine lines={3} /> : null}
+          </div>
+        ) : null
+      }
     />
   );
 }
@@ -95,20 +129,26 @@ function LoadedReviewSelectionList({
   instance,
   previousPhaseId,
   decisionSlug,
-  proposals,
+  items,
+  total,
+  rubricTemplate,
   sortDescriptor,
   onSortChange,
+  scrollTrigger,
 }: {
   instance: ProcessInstance;
   previousPhaseId: string;
   decisionSlug: string;
-  proposals: ProposalsWithReviewAggregatesList;
+  items: ProposalWithAggregates[];
+  total: number;
+  rubricTemplate: ProposalsWithReviewAggregatesList['rubricTemplate'];
   sortDescriptor: SortDescriptor;
   onSortChange: (descriptor: SortDescriptor) => void;
+  /** Sentinel that pulls the next page into view; null on the last page. */
+  scrollTrigger: ReactNode;
 }) {
   const t = useTranslations();
   const processInstanceId = instance.id;
-  const { items, total, rubricTemplate } = proposals;
 
   // Persisted in localStorage so selection survives navigation to the
   // per-proposal review summary and back.
@@ -126,12 +166,28 @@ function LoadedReviewSelectionList({
     [rubricTemplate],
   );
 
+  // Resolve selected ids → proposals via a cache that accumulates across pages,
+  // so the confirm dialog still names a pick made on a page that a re-sort has
+  // since dropped (same reason ManualSelectionList keeps one).
+  const [proposalCache, setProposalCache] = useState<
+    Record<string, ProposalWithAggregates['proposal']>
+  >({});
+  useEffect(() => {
+    setProposalCache((prev) => {
+      const next = { ...prev };
+      for (const item of items) {
+        next[item.proposal.id] = item.proposal;
+      }
+      return next;
+    });
+  }, [items]);
+
   const selectedProposals = useMemo(
     () =>
-      items
-        .filter((item) => advancing.has(item.proposal.id))
-        .map((item) => item.proposal),
-    [items, advancing],
+      advancingIds
+        .map((id) => proposalCache[id])
+        .filter((proposal) => proposal !== undefined),
+    [advancingIds, proposalCache],
   );
 
   const currentPhaseName =
@@ -193,6 +249,8 @@ function LoadedReviewSelectionList({
           onSortChange={onSortChange}
         />
       )}
+
+      {scrollTrigger}
 
       <StandardSelectionFooter
         selectedProposals={selectedProposals}

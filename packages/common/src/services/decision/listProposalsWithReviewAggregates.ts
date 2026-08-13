@@ -1,12 +1,16 @@
-import { and, db, eq, inArray, isNull } from '@op/db/client';
+import { and, db, eq, inArray, isNull, sql } from '@op/db/client';
 import {
   ProposalReviewState,
   proposalCategories,
+  proposalReviewAssignments,
+  proposalReviews,
   proposals,
+  profiles,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
+import { type SQL, count as countFn } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 
 import {
@@ -14,7 +18,6 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
-  getCursorCondition,
   sortDirSchema,
 } from '../../utils';
 import { getInstance } from './getInstance';
@@ -28,7 +31,6 @@ import {
   PROPOSAL_AGGREGATE_SORTS,
   type ProposalAggregateSort,
   type ProposalCategoryItem,
-  type ProposalWithAggregates,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
@@ -38,27 +40,21 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 // ── Input schema ───────────────────────────────────────────────────────
 
 /**
- * Single union schema for the three dispatch modes:
- *   - filtered: caller passes `proposalIds`, no pagination.
- *   - sorted: caller passes `orderBy`, whole phase set in one page.
- *   - paginated: phase-scoped, cursor-paginated.
+ * One input for both dispatch modes. `proposalIds` selects the filtered mode,
+ * where the caller already owns the ID list and the pagination / sort fields
+ * don't apply; everything else is the phase-scoped paginated read.
  *
- * Union order matters — the paginated member's fields are all optional, so it
- * would otherwise swallow a sorted request.
+ * Flat rather than a union so tRPC can see `cursor` and offer the endpoint as
+ * an infinite query.
  */
-export const listProposalsWithReviewAggregatesInputSchema = z.union([
+export const listProposalsWithReviewAggregatesInputSchema =
   instanceOptionalPhaseRefSchema.extend({
-    proposalIds: z.array(z.uuid()).min(1),
-  }),
-  instanceOptionalPhaseRefSchema.extend({
-    orderBy: z.enum(PROPOSAL_AGGREGATE_SORTS),
-    dir: sortDirSchema.default('desc'),
-  }),
-  instanceOptionalPhaseRefSchema.extend({
+    proposalIds: z.array(z.uuid()).min(1).optional(),
     limit: z.number().int().min(1).max(100).default(50),
-    cursor: z.string().optional(),
-  }),
-]);
+    cursor: z.string().nullish(),
+    orderBy: z.enum(PROPOSAL_AGGREGATE_SORTS).default('createdAt'),
+    dir: sortDirSchema.default('desc'),
+  });
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<
   typeof listProposalsWithReviewAggregatesInputSchema
@@ -67,15 +63,14 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
 // ── Public entry ───────────────────────────────────────────────────────
 
 /**
- * Admin-only proposal list with per-proposal review aggregates. Three dispatch
- * modes determined by input shape:
+ * Admin-only proposal list with per-proposal review aggregates. Two dispatch
+ * modes:
  *
  *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
- *   - sorted (`orderBy` present): whole phase set ordered by a derived value,
- *     returned as a single page.
- *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated.
+ *   - paginated: phase-scoped, sorted by any `PROPOSAL_AGGREGATE_SORTS` column
+ *     (`createdAt DESC` by default), cursor-paginated.
  *
- * All modes share the auth + instance + rubric setup; the split happens
+ * Both modes share the auth + instance + rubric setup; the split happens
  * after the admin check.
  */
 export async function listProposalsWithReviewAggregates(
@@ -106,7 +101,7 @@ export async function listProposalsWithReviewAggregates(
     phaseId,
   });
 
-  if ('proposalIds' in input) {
+  if (input.proposalIds) {
     return listProposalsFiltered({
       proposalIds: input.proposalIds,
       phaseProposalIds,
@@ -117,24 +112,14 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
-  if ('orderBy' in input) {
-    return listProposalsSorted({
-      processInstanceId,
-      phaseId,
-      phaseProposalIds,
-      orderBy: input.orderBy,
-      dir: input.dir,
-      scoredCriterionKeys,
-      rubricTemplate,
-    });
-  }
-
   return listProposalsPaginated({
     processInstanceId,
     phaseId,
     phaseProposalIds,
     limit: input.limit,
-    cursor: input.cursor,
+    cursor: input.cursor ?? undefined,
+    orderBy: input.orderBy,
+    dir: input.dir,
     scoredCriterionKeys,
     rubricTemplate,
   });
@@ -167,7 +152,7 @@ async function listProposalsFiltered({
   }
 
   // The IDs are known up front here, so the categories read runs alongside the
-  // proposal query instead of after it (unlike the paginated / sorted modes).
+  // proposal query instead of after it (unlike the paginated mode).
   const [proposalsFull, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findMany({
       // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
@@ -197,7 +182,7 @@ async function listProposalsFiltered({
   });
 }
 
-// ── Paginated mode (phase-scoped, cursor) ──────────────────────────────
+// ── Paginated mode (phase-scoped, sortable, cursor) ────────────────────
 
 async function listProposalsPaginated({
   processInstanceId,
@@ -205,6 +190,8 @@ async function listProposalsPaginated({
   phaseProposalIds,
   limit,
   cursor,
+  orderBy,
+  dir,
   scoredCriterionKeys,
   rubricTemplate,
 }: {
@@ -213,6 +200,8 @@ async function listProposalsPaginated({
   phaseProposalIds: string[];
   limit: number;
   cursor: string | undefined;
+  orderBy: ProposalAggregateSort;
+  dir: SortDir;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
@@ -224,6 +213,17 @@ async function listProposalsPaginated({
     ? decodeCursor<{ value: string; id: string }>(cursor)
     : undefined;
 
+  // One expression drives ORDER BY, the cursor condition, and the value that
+  // gets encoded into the next cursor, so the three can't disagree.
+  const sortExpression = (table: ProposalsTable) =>
+    buildSortExpression({
+      table,
+      orderBy,
+      processInstanceId,
+      phaseId,
+      scoredCriterionKeys,
+    });
+
   const [pageRowsRaw, totalRows] = await Promise.all([
     db.query.proposals.findMany({
       // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
@@ -234,18 +234,29 @@ async function listProposalsPaginated({
           and(
             inArray(table.id, phaseProposalIds),
             isNull(table.moderationDetachedAt),
-            decodedCursor
-              ? getCursorCondition({
-                  column: table.createdAt,
-                  tieBreakerColumn: table.id,
-                  cursor: decodedCursor,
-                  direction: 'desc',
-                })
-              : undefined,
+            buildCursorCondition({
+              sortValue: sortExpression(table),
+              tieBreaker: table.id,
+              orderBy,
+              dir,
+              cursor: decodedCursor,
+            }),
           )!,
       },
       with: proposalRelations({ processInstanceId, phaseId }),
-      orderBy: { createdAt: 'desc', id: 'desc' },
+      // Read the sort key back from the database rather than recomputing it in
+      // JS — the next cursor is then compared against the exact value Postgres
+      // ordered by, down to numeric precision.
+      extras: {
+        sortValue: (table) => sortExpression(table).as('sort_value'),
+      },
+      orderBy: (table, { asc: ascOp, desc: descOp }) => {
+        // `id` tie-break: rows sharing a sort key (a score of 0, a missing
+        // budget) would otherwise come back in undefined order, which breaks
+        // keyset pagination.
+        const directional = dir === 'asc' ? ascOp : descOp;
+        return [directional(sortExpression(table)), directional(table.id)];
+      },
       limit: limit + 1,
     }),
     db
@@ -273,7 +284,7 @@ async function listProposalsPaginated({
   if (hasMore) {
     const lastRow = pageRows[pageRows.length - 1]!;
     next = encodeCursor<{ value: string; id: string }>({
-      value: lastRow.createdAt ?? '',
+      value: String(lastRow.sortValue),
       id: lastRow.id,
     });
   }
@@ -286,125 +297,164 @@ async function listProposalsPaginated({
   });
 }
 
-// ── Sorted mode (whole phase set, one page) ────────────────────────────
+// ── Sort expressions ───────────────────────────────────────────────────
+
+type ProposalsTable = typeof proposals;
 
 /**
- * Phase-scoped list ordered by one of the review-selection table's columns.
- *
- * Ordering happens in memory over the *complete* phase set rather than in SQL:
- * `score` is derived from rubric answers stored as JSON, so ordering it in the
- * database would mean re-implementing `getComputedReviewAggregates` in SQL and
- * risking a sort key that disagrees with the score rendered in the cell. The
- * whole set is loaded and returned as a single page (`next: null`) so the
- * order covers every proposal instead of just the rows on one keyset page —
- * the same trade-off `listProposals` makes for its computed `votes` sort.
+ * Guards the `::numeric` casts below: JSON holds these values as free text, and
+ * a cast of anything non-numeric raises rather than returning null. Matches the
+ * forms `Number()` accepts on the JS side (integer, decimal, exponent).
  */
-async function listProposalsSorted({
-  processInstanceId,
-  phaseId,
-  phaseProposalIds,
-  orderBy,
-  dir,
-  scoredCriterionKeys,
-  rubricTemplate,
-}: {
-  processInstanceId: string;
-  phaseId: string | undefined;
-  phaseProposalIds: string[];
-  orderBy: ProposalAggregateSort;
-  dir: SortDir;
-  scoredCriterionKeys: string[];
-  rubricTemplate: RubricTemplateSchema | null;
-}): Promise<ProposalsWithReviewAggregatesList> {
-  if (phaseProposalIds.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
-  }
+const NUMERIC_TEXT_PATTERN = '^[+-]?[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$';
 
-  const rows = await db.query.proposals.findMany({
-    // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
-    // getProposalsForPhase (see the paginated mode for the same guard).
-    where: {
-      RAW: (table) =>
-        and(
-          inArray(table.id, phaseProposalIds),
-          isNull(table.moderationDetachedAt),
-        )!,
-    },
-    with: proposalRelations({ processInstanceId, phaseId }),
-  });
-
-  const items = await buildItems({ rows, scoredCriterionKeys });
-
-  // Parse before sorting so the comparators read the encoded shape — notably
-  // `proposalData.budget` normalized to `{ amount, currency }`.
-  const parsed = proposalsWithReviewAggregatesListSchema.parse({
-    items,
-    total: items.length,
-    next: null,
-    rubricTemplate,
-  });
-
-  return { ...parsed, items: sortItems(parsed.items, orderBy, dir) };
-}
-
-/** Sort key per column; `null` for rows the column has no value for. */
-const SORT_VALUES: Record<
-  ProposalAggregateSort,
-  (item: ProposalWithAggregates) => string | number | null
-> = {
-  createdAt: (item) => item.proposal.createdAt ?? null,
-  title: (item) => item.proposal.profile.name,
-  budget: (item) => item.proposal.proposalData.budget?.amount ?? null,
-  score: (item) => item.aggregates.averageScore,
+/** Postgres type each sort key is compared as when a cursor is decoded. */
+const SORT_VALUE_CASTS: Record<ProposalAggregateSort, SQL> = {
+  createdAt: sql`timestamptz`,
+  title: sql`text`,
+  budget: sql`numeric`,
+  score: sql`numeric`,
 };
 
-function sortItems(
-  items: Array<ProposalWithAggregates>,
-  orderBy: ProposalAggregateSort,
-  dir: SortDir,
-): Array<ProposalWithAggregates> {
-  const sortValue = SORT_VALUES[orderBy];
-  const direction = dir === 'asc' ? 1 : -1;
-
-  return [...items].sort((left, right) => {
-    const leftValue = sortValue(left);
-    const rightValue = sortValue(right);
-
-    // Rows without a value (no budget, no timestamp) sort last in both
-    // directions — flipping the header reorders the real values instead of
-    // paging the blanks to the top.
-    if (leftValue === null || rightValue === null) {
-      if (leftValue === rightValue) {
-        return compareTieBreak(left, right);
-      }
-      return leftValue === null ? 1 : -1;
-    }
-
-    const delta =
-      typeof leftValue === 'string' || typeof rightValue === 'string'
-        ? String(leftValue).localeCompare(String(rightValue))
-        : leftValue - rightValue;
-
-    return delta === 0
-      ? compareTieBreak(left, right)
-      : direction * Math.sign(delta);
-  });
+/**
+ * The sortable columns of the review-selection table, as SQL.
+ *
+ * `title`, `budget` and `score` aren't columns on `proposals` — they live on
+ * the proposal's profile, inside `proposalData`, and across the phase's
+ * submitted reviews respectively. Each expression coalesces to a non-null
+ * value so a missing budget or an unreviewed proposal still keysets cleanly
+ * (`NULL` would drop the row from the cursor comparison entirely).
+ */
+function buildSortExpression({
+  table,
+  orderBy,
+  processInstanceId,
+  phaseId,
+  scoredCriterionKeys,
+}: {
+  table: ProposalsTable;
+  orderBy: ProposalAggregateSort;
+  processInstanceId: string;
+  phaseId: string | undefined;
+  scoredCriterionKeys: string[];
+}): SQL {
+  switch (orderBy) {
+    case 'title':
+      return sql`COALESCE((
+        SELECT ${profiles.name} FROM ${profiles}
+        WHERE ${profiles.id} = ${table.profileId}
+      ), '')`;
+    case 'budget':
+      return buildBudgetAmountExpression(table);
+    case 'score':
+      return buildAverageScoreExpression({
+        table,
+        processInstanceId,
+        phaseId,
+        scoredCriterionKeys,
+      });
+    case 'createdAt':
+      return sql`${table.createdAt}`;
+  }
 }
 
 /**
- * Newest first, then id — direction-independent so equal sort keys keep a
- * stable order when the admin toggles a column.
+ * Budget as a number, reading both the canonical `{ amount, currency }` shape
+ * and the legacy bare-number form (see `budgetValueSchema`). Anything
+ * unparseable — including no budget at all — sorts as 0.
  */
-function compareTieBreak(
-  left: ProposalWithAggregates,
-  right: ProposalWithAggregates,
-): number {
-  const byCreatedAt = (right.proposal.createdAt ?? '').localeCompare(
-    left.proposal.createdAt ?? '',
-  );
-  return byCreatedAt !== 0
-    ? byCreatedAt
-    : left.proposal.id.localeCompare(right.proposal.id);
+function buildBudgetAmountExpression(table: ProposalsTable): SQL {
+  return sql`(
+    SELECT CASE
+      WHEN raw.value ~ ${NUMERIC_TEXT_PATTERN} THEN raw.value::numeric
+      ELSE 0
+    END
+    FROM (
+      SELECT CASE
+        WHEN jsonb_typeof(${table.proposalData}->'budget') = 'object'
+          THEN ${table.proposalData}->'budget'->>'amount'
+        ELSE ${table.proposalData}->>'budget'
+      END AS value
+    ) raw
+  )`;
+}
+
+/**
+ * Mean of the per-review scores across the phase's submitted reviews — the SQL
+ * twin of `getComputedReviewAggregates`: sum the scored criteria of each
+ * submitted review, average across reviews, 0 when nothing is submitted.
+ * Non-numeric answers contribute 0, matching the `Number.isFinite` guard in
+ * `getSubmittedReviewScore`.
+ */
+function buildAverageScoreExpression({
+  table,
+  processInstanceId,
+  phaseId,
+  scoredCriterionKeys,
+}: {
+  table: ProposalsTable;
+  processInstanceId: string;
+  phaseId: string | undefined;
+  scoredCriterionKeys: string[];
+}): SQL {
+  const criterionKeys =
+    scoredCriterionKeys.length === 0
+      ? sql`ARRAY[]::text[]`
+      : sql`ARRAY[${sql.join(
+          scoredCriterionKeys.map((key) => sql`${key}`),
+          sql`, `,
+        )}]::text[]`;
+
+  return sql`COALESCE((
+    SELECT AVG(submitted.total)
+    FROM ${proposalReviewAssignments} assignment
+    INNER JOIN ${proposalReviews} review
+      ON review.assignment_id = assignment.id
+      AND review.state = ${ProposalReviewState.SUBMITTED}
+    CROSS JOIN LATERAL (
+      SELECT COALESCE(SUM(
+        CASE
+          WHEN review.review_data->'answers'->>criterion ~ ${NUMERIC_TEXT_PATTERN}
+            THEN (review.review_data->'answers'->>criterion)::numeric
+          ELSE 0
+        END
+      ), 0) AS total
+      FROM unnest(${criterionKeys}) AS criterion
+    ) submitted
+    WHERE assignment.proposal_id = ${table.id}
+      AND assignment.process_instance_id = ${processInstanceId}
+      ${phaseId ? sql`AND assignment.phase_id = ${phaseId}` : sql``}
+  ), 0)`;
+}
+
+/**
+ * Keyset condition over the same expression the query orders by: everything
+ * strictly past the cursor's `(sortValue, id)`.
+ */
+function buildCursorCondition({
+  sortValue,
+  tieBreaker,
+  orderBy,
+  dir,
+  cursor,
+}: {
+  sortValue: SQL;
+  tieBreaker: PgColumn;
+  orderBy: ProposalAggregateSort;
+  dir: SortDir;
+  cursor: { value: string; id: string } | undefined;
+}): SQL | undefined {
+  if (!cursor) {
+    return undefined;
+  }
+
+  const compare = dir === 'asc' ? sql`>` : sql`<`;
+  const cursorValue = sql`${cursor.value}::${SORT_VALUE_CASTS[orderBy]}`;
+
+  return sql`(
+    ${sortValue} ${compare} ${cursorValue}
+    OR (${sortValue} = ${cursorValue} AND ${tieBreaker} ${compare} ${cursor.id})
+  )`;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────

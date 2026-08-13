@@ -302,7 +302,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
   });
 
-  it('orders the whole phase set by average score in sorted mode', async ({
+  it('orders by average score, computed in SQL', async ({
     task,
     onTestFinished,
   }) => {
@@ -364,10 +364,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ]);
   });
 
-  it('orders by proposal title in sorted mode', async ({
-    task,
-    onTestFinished,
-  }) => {
+  it('orders by proposal title', async ({ task, onTestFinished }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
@@ -393,7 +390,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ]);
   });
 
-  it('orders by budget and keeps proposals without one last', async ({
+  it('orders by budget, treating a missing budget as zero', async ({
     task,
     onTestFinished,
   }) => {
@@ -431,8 +428,8 @@ describe.concurrent('listWithReviewAggregates', () => {
       'Unbudgeted',
     ]);
 
-    // Flipping the direction reorders the real budgets; the proposal without
-    // one stays at the bottom instead of taking over the top of the table.
+    // A proposal with no budget sorts as 0 rather than as NULL: the sort key
+    // has to be non-null for the keyset cursor to compare against it.
     const ascending = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       orderBy: 'budget',
@@ -440,10 +437,60 @@ describe.concurrent('listWithReviewAggregates', () => {
     });
 
     expect(ascending.items.map((i) => i.proposal.profile.name)).toEqual([
+      'Unbudgeted',
       'Cheap',
       'Pricey',
-      'Unbudgeted',
     ]);
+  });
+
+  it('keeps a score sort in order across cursor pages', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Created lowest-score first, so a page that fell back to `createdAt`
+    // ordering would return the exact reverse of the expected order.
+    const scoresByTitle = { Fourth: 2, Third: 5, Second: 8, First: 11 };
+    for (const [title, score] of Object.entries(scoresByTitle)) {
+      const proposal = await testData.createReviewAssignment({
+        context,
+        title,
+      });
+      await createProposalReview({
+        assignmentId: proposal.assignment.id,
+        state: ProposalReviewState.SUBMITTED,
+        reviewData: {
+          answers: { impact: score - 1, feasibility: 1 },
+          rationales: {},
+        },
+        submittedAt: new Date().toISOString(),
+      });
+    }
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        orderBy: 'score',
+        dir: 'desc',
+        limit: 2,
+        ...(cursor ? { cursor } : {}),
+      });
+      expect(page.total).toBe(4);
+      seen.push(...page.items.map((item) => item.proposal.profile.name));
+      cursor = page.next ?? undefined;
+    } while (cursor);
+
+    expect(seen).toEqual(['First', 'Second', 'Third', 'Fourth']);
   });
 
   it('attaches categories to response items', async ({
