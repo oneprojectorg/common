@@ -81,7 +81,6 @@
     "dotenv": "^16.4.7",
     "franc": "^6.2.0",
     "he": "^1.2.0",
-    "immer": "^10.1.1",
     "js.foresight": "^4.2.0",
     "next": "catalog:",
     "next-intl": "^4.8.3",
