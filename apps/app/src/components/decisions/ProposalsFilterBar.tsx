@@ -48,10 +48,16 @@ export const ProposalsListHeader = ({
 }) => {
   const t = useTranslations();
 
-  return showCount ? (
-    <ProposalCount count={count} total={total} />
-  ) : (
-    <span className="font-serif text-title">{t('My proposals')}</span>
+  return (
+    // Filtering swaps the results in place, so the count is the only feedback a
+    // screen reader gets that a search or filter landed. Announce it.
+    <span role="status" aria-live="polite">
+      {showCount ? (
+        <ProposalCount count={count} total={total} />
+      ) : (
+        <span className="font-serif text-title">{t('My proposals')}</span>
+      )}
+    </span>
   );
 };
 
