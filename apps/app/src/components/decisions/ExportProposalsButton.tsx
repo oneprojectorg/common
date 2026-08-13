@@ -107,6 +107,23 @@ export const ExportProposalsButton = ({
     setExportId(null);
   }, [isFailed, status, t]);
 
+  // Bounds silence, not duration: the timer restarts whenever the run reports a
+  // new state, so what it measures is how long the export has gone without
+  // saying anything. Bounding total elapsed time instead would abort a healthy
+  // run purely for being large — generation scales with proposal count, and the
+  // ceiling on that is due to be lifted — while still waiting the full period
+  // on a job that died a second after starting.
+  const reportedState = status?.status;
+
+  // The run distinguishes accepted-but-not-started from actually-running, and
+  // collapsing both into one label throws that away. Kept apart because they
+  // fail differently: a wait that stays on the first means the job was never
+  // picked up, which is a different thing to chase than one that is slow. The
+  // record can also be missing on an early read — that is still "accepted", so
+  // it reads the same as pending rather than as an error.
+  const runningLabel =
+    reportedState === 'processing' ? t('Generating...') : t('Preparing...');
+
   useEffect(() => {
     if (!isRunning) {
       return;
@@ -118,7 +135,7 @@ export const ExportProposalsButton = ({
     }, EXPORT_WAIT_TIMEOUT_MS);
 
     return () => clearTimeout(timer);
-  }, [isRunning, t]);
+  }, [isRunning, reportedState, t]);
 
   if (isResolved && status.signedUrl) {
     return (
@@ -165,7 +182,7 @@ export const ExportProposalsButton = ({
       }
     >
       <LuDownload aria-hidden />
-      {isRunning ? t('Exporting...') : t('Export')}
+      {isRunning ? runningLabel : t('Export')}
     </Button>
   );
 };
