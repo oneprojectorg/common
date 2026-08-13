@@ -38,6 +38,7 @@ import {
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
+import type { ProposalControls } from './ProposalsFilterBar';
 import { ProposalsGrid } from './ProposalsGrid';
 import {
   ProposalsMapView,
@@ -313,7 +314,6 @@ export const ProposalsList = (props: ProposalsListProps) => {
     appliedSortOrder !== sortOrder ||
     appliedFilter !== proposalFilter;
 
-  // fallow-ignore-next-line complexity
   const queryParams = useMemo<ProposalQueryParams>(() => {
     const params: ProposalQueryParams = {
       processInstanceId: instanceId,
@@ -573,6 +573,27 @@ const ProposalsListContent = ({
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
+  // The filter bar's whole state in one object: the URL-backed values and
+  // setters from above, plus the pieces only resolvable here (the category list,
+  // ballot status, the caller's profile).
+  const controls: ProposalControls = {
+    search,
+    setSearch,
+    // `listAllProposals` (results phase) has no search support.
+    canSearch: phase !== 'results',
+    isSearchPending: isSearchFetching,
+    proposalFilter,
+    setProposalFilter,
+    selectedCategory,
+    setSelectedCategory,
+    sortOrder,
+    setSortOrder,
+    categories,
+    hasVoted,
+    currentProfileId,
+    decisionSlug,
+  };
+
   // One sentinel definition for both views — map mode renders it inside the
   // list column (via listFooter), grid mode below the grid. Only the loading
   // skeleton differs.
@@ -610,27 +631,17 @@ const ProposalsListContent = ({
       {showFilterBar && (
         <ProposalsStickyFilterBar
           pinOffset={pinOffset}
-          hideFilters={hideFilters}
+          count={total}
+          total={totalProposalCount}
           header={header?.(total)}
-          total={total}
-          totalProposalCount={totalProposalCount}
-          proposalFilter={proposalFilter}
-          setProposalFilter={setProposalFilter}
-          hasVoted={hasVoted}
-          currentProfileId={currentProfileId}
-          decisionSlug={decisionSlug}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          search={search}
-          setSearch={setSearch}
-          isSearchPending={isSearchFetching}
-          showSearch={phase !== 'results'}
-          hasLocationField={hasLocationField}
-          effectiveView={effectiveView}
-          onViewChange={handleViewChange}
+          // Omitted when the phase hides proposals from non-admins.
+          controls={hideFilters ? undefined : controls}
+          // Omitted when the process collects no location.
+          view={
+            hasLocationField
+              ? { value: effectiveView, onChange: handleViewChange }
+              : undefined
+          }
           exportControl={
             canExportProposals ? (
               <ExportProposalsButton
