@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './tw-animate.css';
-@import './intent-ui-theme.css';
 
 /* ==== SENSE LAYER ==== */
 
@@ -35,6 +34,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
@@ -53,6 +53,10 @@
   --color-success-muted: var(--success-muted);
   --color-success-muted-foreground: var(--success-muted-foreground);
   --color-input: var(--input);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-mark: var(--mark);
 
   /* Sidebar */
   --color-sidebar: var(--sidebar);
@@ -264,10 +268,9 @@
   --popover: var(--color-white);
   --popover-foreground: var(--color-gray-900);
 
-  /* Primary. Defined here rather than inherited: `--color-primary` used to
-   * resolve through the legacy alias (--op-primary-600), so the 57
-   * `bg-primary` / `text-primary` usages inside @op/sense depended on the
-   * package sense is replacing. Same value — teal-500 is #387582. */
+  /* Primary. Declared against the Colors Scale directly — it used to resolve
+   * through a pre-sense alias, which made every `bg-primary` / `text-primary`
+   * in @op/sense depend on the retired layer. Same value: teal-500 #387582. */
   --primary: var(--color-teal-500);
   --primary-foreground: var(--color-gray-50);
 
@@ -304,13 +307,21 @@
 
   /* Borders / inputs / focus ring.
    * shadcn components read these via `var(--border)` etc. directly (not via
-   * the Tailwind `--color-*` layer), so sense needs them declared regardless
-   * of what the legacy layer/intent-ui-theme also declares.
+   * the Tailwind `--color-*` layer), so sense needs them declared regardless.
    * Components apply the focus ring at 50% opacity. */
   --border: var(--color-gray-100);
   --input: var(--color-gray-300);
   --ring: var(--color-gray-400);
   --ring-offset: var(--color-white);
+
+  /* Modal/drawer scrim. Same value the `bg-black/15` overlays used before —
+   * gray-900, not true black — but named for the job it does. */
+  --overlay: var(--color-gray-900);
+
+  /* Rich-text highlight mark. Off-ramp: #dceff1 sits between teal-50
+   * (#eff7f9) and teal-100 (#d7ebef), so it has no Colors Scale equivalent.
+   * Kept at its original value pending a design decision. */
+  --mark: #dceff1;
 
   /* `--radius` is the base radius shadcn primitives derive their scale from
    * (and consume directly, e.g. `rounded-[var(--radius)]`). */
@@ -341,6 +352,39 @@
 @source './constants.ts';
 
 @plugin '@tailwindcss/typography';
+
+/* ============================================================================
+ * PRE-SENSE HEADING SCALE — deliberately kept
+ *
+ * The rest of the pre-sense layer is gone. These four survive because
+ * `headingClasses` in ./constants.ts still names them, and that object is not
+ * a normal call site: its class strings are baked into server-rendered HTML by
+ * @op/common's StyledHeading extension, and that HTML is the source text
+ * hashed into `content_translations.contentHash`. Changing these strings
+ * invalidates every cached translation of every decision and proposal body in
+ * every locale — paid re-translation plus orphaned rows — and restyles already
+ * published proposals. Proposals can also be stored as raw HTML, so the class
+ * names live in rows no grep can see.
+ *
+ * Moving `headingClasses` onto the sense scale is its own task, with a design
+ * decision and a call on purging vs letting the cache re-fill. Until then these
+ * stay, and nothing new should reference them.
+ * ========================================================================= */
+@theme {
+  --text-title-lg: 1.75rem;
+  --text-title-lg--line-height: 120%;
+  --text-title-lg--font-weight: 300;
+  --text-title-lg--letter-spacing: -0.02625rem;
+  --text-title-base: 1.25rem;
+  --text-title-base--line-height: 120%;
+  --text-title-base--font-weight: 300;
+  --text-title-base--letter-spacing: -0.01875rem;
+  --text-title-sm14: 0.875rem;
+  --text-title-sm14--line-height: 130%;
+  --text-title-sm14--font-weight: 400;
+  --text-title-sm14--letter-spacing: -0.01313rem;
+  --color-neutral-black: var(--color-gray-900);
+}
 
 /*
  * Shared Tailwind v4 theme configuration. Animation utilities come from
@@ -378,199 +422,6 @@
 }
 
 
-/* ============================================================================
- * LEGACY PRE-SENSE LAYER — being retired, but NOT deletable wholesale
- *
- * The pre-sense type scale and colour aliases. Nothing new should reference
- * these names. Declared after the sense layer so the cascade matches what
- * shared-styles.css produced before the split.
- *
- * Do not delete this block in one go. It still hosts definitions that live app
- * and sense code depends on, and Tailwind emits NO error for an unknown colour
- * token — it silently stops generating the utility. Known tenants:
- *   - `--color-border` (the only definition in the repo; ~75 uses)
- *   - `--color-teal`, `--color-offWhite`, `--color-primary-orange2`,
- *     `--color-darkGray`, `--color-primary-100`
- *   - the brand/avatar gradient utilities below
- *   - the four `--text-title-*` steps still pinned by ./constants.ts
- * Relocate what survives into the sense layer above, sweep the call sites, and
- * delete tokens and call sites in the SAME commit — oxfmt derives its Tailwind
- * class order from this file, so a token removed on its own fails format:check
- * and then reorders every affected className.
- * ========================================================================= */
-@theme {
-
-  /* Title sizes */
-  --text-title-xxl: 3rem;
-  --text-title-xxl--line-height: 120%;
-  --text-title-xxl--font-weight: 300;
-  --text-title-xxl--letter-spacing: -0.075rem;
-
-  --text-title-xl: 2.5rem;
-  --text-title-xl--line-height: 120%;
-  --text-title-xl--font-weight: 300;
-  --text-title-xl--letter-spacing: -0.0625rem;
-
-  --text-title-lg: 1.75rem;
-  --text-title-lg--line-height: 120%;
-  --text-title-lg--font-weight: 300;
-  --text-title-lg--letter-spacing: -0.02625rem;
-
-  --text-title-md: 1.5rem;
-  --text-title-md--line-height: 120%;
-  --text-title-md--font-weight: 300;
-  --text-title-md--letter-spacing: -0.0225rem;
-
-  --text-title-base: 1.25rem;
-  --text-title-base--line-height: 120%;
-  --text-title-base--font-weight: 300;
-  --text-title-base--letter-spacing: -0.01875rem;
-
-  --text-title-sm: 1rem;
-  --text-title-sm--line-height: 130%;
-  --text-title-sm--font-weight: 400;
-  --text-title-sm--letter-spacing: -0.015rem;
-
-  --text-title-xs: 0.875rem;
-  --text-title-xs--line-height: 130%;
-  --text-title-xs--font-weight: 400;
-  --text-title-xs--letter-spacing: -0.01313rem;
-
-  --text-title-xxs: 0.75rem;
-  --text-title-xxs--line-height: 130%;
-  --text-title-xxs--font-weight: 400;
-  --text-title-xxs--letter-spacing: -0.01125rem;
-
-  --text-title-sm14: 0.875rem;
-  --text-title-sm14--line-height: 130%;
-  --text-title-sm14--font-weight: 400;
-  --text-title-sm14--letter-spacing: -0.01313rem;
-
-  --text-title-sm12: 0.75rem;
-  --text-title-sm12--line-height: 130%;
-  --text-title-sm12--font-weight: 400;
-  --text-title-sm12--letter-spacing: -0.01125rem;
-
-  /* Body sizes (--text-xs … --text-2xl): the Common Sense scale is identical
-   * to Tailwind v4's rem defaults, so we no longer override them here — the
-   * pre-sense overrides that used to shrink them (0.875rem base etc.) are gone
-   * and Tailwind's defaults apply. The custom serif heading scale (--text-label /
-   * title / headline / display) lives in the sense layer above. */
-
-  /* ============================================
-   * Colors - Primary (Figma source-of-truth names)
-   * ============================================ */
-  --color-primary-50: var(--op-primary-50);
-  --color-primary-100: var(--op-primary-100);
-  --color-primary-200: var(--op-primary-200);
-  --color-primary-300: var(--op-primary-300);
-  --color-primary-400: var(--op-primary-400);
-  --color-primary-500: var(--op-primary-500);
-  --color-primary-600: var(--op-primary-600);
-  --color-primary-700: var(--op-primary-700);
-  --color-primary-800: var(--op-primary-800);
-  --color-primary-900: var(--op-primary-900);
-  --color-primary-950: var(--op-primary-950);
-
-  --color-primary-yellow-500: var(--op-primary-yellow-500);
-  --color-primary-orange-50: var(--op-primary-orange-50);
-  --color-primary-orange-500: var(--op-primary-orange-500);
-
-  /* ============================================
-   * Colors - Neutrals
-   * ============================================ */
-  --color-white: var(--op-white);
-  --color-neutral-off-white: var(--op-neutral-off-white);
-  --color-neutral-gray-1: var(--op-neutral-gray-1);
-  --color-neutral-gray-2: var(--op-neutral-gray-2);
-  --color-neutral-gray-3: var(--op-neutral-gray-3);
-  --color-neutral-gray-4: var(--op-neutral-gray-4);
-  --color-neutral-charcoal: var(--op-neutral-charcoal);
-  --color-neutral-black: var(--op-neutral-black);
-
-  /* ============================================
-   * Colors - Functional
-   * ============================================ */
-  --color-functional-red-50: var(--op-functional-red-50);
-  --color-functional-red-100: var(--op-functional-red-100);
-  --color-functional-red-300: var(--op-functional-red-300);
-  --color-functional-red-600: var(--op-functional-red-600);
-  --color-functional-red-800: var(--op-functional-red-800);
-  --color-functional-green-50: var(--op-functional-green-50);
-  --color-functional-green-100: var(--op-functional-green-100);
-  --color-functional-green-600: var(--op-functional-green-600);
-
-  /* ============================================
-   * Colors - Data Visualization
-   * ============================================ */
-  --color-data-purple: var(--op-data-purple);
-  --color-data-blue: var(--op-data-blue);
-
-  /* ============================================
-   * Colors - Accent (default Tailwind neutral palette)
-   * ============================================ */
-  --color-accent-50: #fafafa;
-  --color-accent-100: #f5f5f5;
-  --color-accent-200: #e5e5e5;
-  --color-accent-300: #d4d4d4;
-  --color-accent-400: #a3a3a3;
-  --color-accent-500: #737373;
-  --color-accent-600: #525252;
-  --color-accent-700: #404040;
-  --color-accent-800: #262626;
-  --color-accent-900: #171717;
-  --color-accent-950: #0a0a0a;
-
-  /* ============================================
-   * Legacy color aliases — pre-rename naming.
-   * ============================================ */
-  /* `--color-primary` is no longer aliased here — the sense layer owns it as a
-   * semantic (`--primary`), so `bg-primary` resolves through the Colors Scale
-   * instead of the legacy ramp. Same value either way. */
-  --color-primary-teal: var(--color-primary-600);
-  --color-primary-tealBlack: var(--color-primary-700);
-  --color-primary-tealWhite: var(--color-primary-50);
-  --color-teal: var(--color-primary-600);
-  /* teal-50..950 step aliases removed: the Common Sense Colors Scale in
-   * the Colors Scale owns the teal ramp now (old aliases re-overrode it,
-   * shifting sense accents back to the legacy OP ramp). */
-
-  --color-primary-yellow: var(--color-primary-yellow-500);
-  --color-primary-orange1: var(--color-primary-orange-500);
-  --color-primary-orange2: var(--color-primary-orange-500);
-
-  --color-neutral-offWhite: var(--color-neutral-off-white);
-  --color-neutral-gray1: var(--color-neutral-gray-1);
-  --color-neutral-gray2: var(--color-neutral-gray-2);
-  --color-neutral-gray3: var(--color-neutral-gray-3);
-  --color-neutral-gray4: var(--color-neutral-gray-4);
-
-  /* Bare neutral aliases (e.g. text-charcoal, bg-offWhite) */
-  --color-black: var(--color-neutral-black);
-  --color-charcoal: var(--color-neutral-charcoal);
-  --color-darkGray: var(--color-neutral-gray-4);
-  --color-midGray: var(--color-neutral-gray-3);
-  --color-lightGray: var(--color-neutral-gray-2);
-  --color-offWhite: var(--color-neutral-gray-1);
-  --color-whiteish: var(--color-neutral-off-white);
-
-  --color-functional-red: var(--color-functional-red-600);
-  --color-functional-redBlack: var(--color-functional-red-800);
-  --color-functional-redWhite: var(--color-functional-red-50);
-  --color-red: var(--color-functional-red-600);
-  /* red-* step aliases removed — Colors Scale owns the red ramp. */
-
-  --color-functional-green: var(--color-functional-green-600);
-  --color-functional-greenWhite: var(--color-functional-green-50);
-  --color-functional-yellowWhite: var(--color-primary-orange-50);
-  --color-status-green: var(--color-functional-green-600);
-  --color-status-greenBg: var(--color-functional-green-100);
-  --color-green: var(--color-functional-green-600);
-  /* green-* step aliases removed — Colors Scale owns the green ramp. */
-
-  --color-border: var(--border);
-
-}
 
 /* ============================================
  * Custom Utilities
@@ -601,8 +452,8 @@
 @utility bg-redTeal {
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
-    var(--op-primary-500) 0%,
-    var(--color-red) 92%,
+    var(--brand-teal-500) 0%,
+    var(--color-red-500) 92%,
     #fafbfb 100%
   );
 }
@@ -610,8 +461,8 @@
 @utility bg-redPurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    var(--color-data-purple) 0%,
-    var(--color-red) 100%
+    var(--color-purple-500) 0%,
+    var(--color-red-500) 100%
   );
 }
 
@@ -628,15 +479,15 @@
 @utility bg-blueGreen {
   background-image: radial-gradient(
     91.78% 91.78% at 89.17% 4.38%,
-    var(--op-functional-green-500) 0%,
-    var(--op-brand-blue) 100%
+    var(--brand-green-500) 0%,
+    var(--brand-blue-500) 100%
   );
 }
 
 @utility bg-orangePurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    var(--color-data-purple) 0%,
+    var(--color-purple-500) 0%,
     #e35f00 100%
   );
 }
@@ -691,16 +542,16 @@
   body {
     background-color: var(--color-white);
     font-family: var(--font-sans);
-    color: var(--color-neutral-charcoal);
+    color: var(--color-gray-700);
   }
 
   /* Placeholder styles */
   input::placeholder {
-    color: var(--color-neutral-gray-3);
+    color: var(--color-gray-400);
   }
 
   textarea::placeholder {
-    color: var(--color-neutral-gray-3);
+    color: var(--color-gray-400);
   }
 
   /* Hide Google extension bubble */
@@ -732,7 +583,7 @@
 @utility better-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-neutral-gray-4) transparent;
+  scrollbar-color: var(--color-gray-600) transparent;
 }
 
 @utility scrollable-hidden-scrollbar {
@@ -780,7 +631,7 @@
 /* Border glow utility */
 @utility border-glow {
   border: 1px solid
-    color-mix(in srgb, var(--color-neutral-gray-3) 50%, transparent);
+    color-mix(in srgb, var(--color-gray-400) 50%, transparent);
   background-clip: padding-box;
   backdrop-filter: blur(40px) contrast(1.5) saturate(3);
   box-shadow:
@@ -842,7 +693,7 @@
 @keyframes border-highlight {
   0%,
   40% {
-    border-color: var(--color-primary-600);
+    border-color: var(--color-teal-500);
   }
 
   100% {
@@ -919,7 +770,7 @@
     --rt-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
   }
   .details summary {
-    @apply py-2 font-serif text-lg text-neutral-black tracking-[-0.0125em];
+    @apply py-2 font-serif text-lg text-foreground tracking-[-0.0125em];
     list-style: none;
   }
   .details summary::-webkit-details-marker {
@@ -930,7 +781,7 @@
    * <summary>::before. (`content` is inert on the real <button>.) */
   div.details > button,
   details.details > summary::before {
-    @apply size-4 flex-none bg-neutral-gray3 transition-transform;
+    @apply size-4 flex-none bg-gray-400 transition-transform;
     content: '';
     -webkit-mask: var(--rt-chevron) center / contain no-repeat;
     mask: var(--rt-chevron) center / contain no-repeat;
@@ -949,7 +800,7 @@
    * tags it with `is-focused`; gate on `.ProseMirror-focused` so it only paints
    * while the editor is focused. */
   div.details.is-focused {
-    @apply bg-neutral-gray1/60 shadow-[12px_0_0_hsla(180,2.9%,93.1%,0.6),-8px_0_0_hsla(180,2.9%,93.1%,0.6)];
+    @apply bg-border/60 shadow-[12px_0_0_hsla(180,2.9%,93.1%,0.6),-8px_0_0_hsla(180,2.9%,93.1%,0.6)];
   }
   div.details > button {
     @apply mt-3 cursor-pointer border-0 p-0;

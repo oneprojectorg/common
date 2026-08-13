@@ -53,7 +53,7 @@ const EmailTemplate = ({
         </Head>
         <Preview>{previewText}</Preview>
 
-        <Body className="m-auto bg-[#FAFBFB] p-4 font-sans text-neutral-charcoal">
+        <Body className="text-neutral-charcoal m-auto bg-[#FAFBFB] p-4 font-sans">
           <Container className="mt-4 max-w-[648px] md:mt-10">
             <Container className="mx-auto w-full max-w-[600px] rounded-lg border border-solid border-neutral-200 bg-white p-8">
               <Section>

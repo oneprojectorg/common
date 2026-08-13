@@ -136,9 +136,7 @@ export function CategoryReviewerCard({
         <span className="font-serif text-sm">{category.name}</span>
         <span
           className={
-            isEmpty
-              ? 'text-sm text-primary-orange2'
-              : 'text-sm text-muted-foreground'
+            isEmpty ? 'text-sm text-warning' : 'text-sm text-muted-foreground'
           }
         >
           {t(
@@ -169,7 +167,7 @@ export function CategoryReviewerCard({
       </Combobox>
 
       {isEmpty ? (
-        <p className="text-sm text-primary-orange2">
+        <p className="text-sm text-warning">
           {t(
             'No reviewers yet. Proposals in this category can’t be reviewed until someone is added.',
           )}

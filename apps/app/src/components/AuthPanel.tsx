@@ -84,7 +84,7 @@ export const AuthPanelShell = ({
   return (
     // TODO: using a tailwind v4 class here "min-w-xs"
     <div className="flex items-center justify-center sm:block">
-      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans xs:w-96 sm:border-0 sm:px-0">
+      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-border bg-white bg-clip-padding px-4 py-8 font-sans xs:w-96 sm:border-0 sm:px-0">
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center sm:text-headline">{title}</Header1>

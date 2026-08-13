@@ -550,7 +550,7 @@ function createLinkHighlightPlugin(key: PluginKey<DecorationSet>) {
             // the background to line-box height like native selection —
             // inline vertical padding paints without affecting line layout.
             Decoration.inline(meta.from, meta.to, {
-              class: 'bg-primary-100 py-0.5',
+              class: 'bg-mark py-0.5',
             }),
           ]);
         }

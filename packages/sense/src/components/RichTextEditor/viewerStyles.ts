@@ -16,7 +16,7 @@
  */
 export const viewerProseStyles = [
   'prose prose-lg !text-base text-foreground',
-  '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
+  '[&_a:hover]:underline [&_a]:text-primary [&_a]:no-underline',
   '[&_li_p]:my-0',
   '[&_blockquote]:font-normal',
   '[&_:is(h1,h2,h3)]:my-4',

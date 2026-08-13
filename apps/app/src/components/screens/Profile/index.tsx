@@ -148,7 +148,7 @@ export const Profile = ({
           <LuArrowLeft className="size-6 text-white rtl:-scale-x-100" />
         </Link>
       </header>
-      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-offWhite">
+      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-border border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-border">
         <ProfileWithData slug={slug} initialTab={initialTab} />
       </div>
     </>

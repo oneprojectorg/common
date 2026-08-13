@@ -24,7 +24,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
   return (
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
-        <span className="text-teal">
+        <span className="text-primary">
           {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
             count,
           })}

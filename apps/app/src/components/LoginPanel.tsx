@@ -301,7 +301,7 @@ export const LoginPanel = () => {
         )}
 
         {!isConnectionError && !isErrorState && (
-          <div className="flex flex-col items-center justify-center text-center text-xs text-darkGray sm:text-sm">
+          <div className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground sm:text-sm">
             {isSignup ? (
               <span>
                 {t(

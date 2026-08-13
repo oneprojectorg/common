@@ -15,7 +15,7 @@ export const alt = 'A decision on One Project';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-// Brand palette (mirrors --op-primary-{600,700}); ImageResponse can't read
+// Brand palette (mirrors the teal ramp); ImageResponse can't read
 // Tailwind tokens, so the hex values live here.
 const TEAL = '#387582';
 const TEAL_DARK = '#32606C';

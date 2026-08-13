@@ -60,7 +60,7 @@ export const MemberParticipationFacePile = ({
               className="hover:no-underline"
             >
               <Avatar>{avatarChildren}</Avatar>
-              <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
+              <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-overlay" />
             </Link>
           ) : (
             <Avatar key={submitter.slug}>{avatarChildren}</Avatar>

@@ -100,7 +100,7 @@ export const ActiveDecisionsNotifications = () => {
 };
 
 const RevisionRequestIcon = () => (
-  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-orange2/10 text-primary-orange2">
+  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning">
     <LuPenLine className="size-6" />
   </div>
 );
