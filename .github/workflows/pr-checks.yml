@@ -109,5 +109,10 @@ jobs:
       # Tests job so a design-system regression reports on its own and doesn't
       # wait on a database. The axe gate joins this job once the
       # addon-vitest/aria-query break upstream is resolved.
+      #
+      # Driven through turbo, not `pnpm w:sense build`: @op/styles resolves to
+      # a generated ./dist/styles.css, so the storybook build needs turbo's
+      # `^build` to compile it first. Calling storybook directly works locally
+      # only because dist/ is already lying around from an earlier build.
       - name: Build Storybook
-        run: pnpm w:sense build
+        run: pnpm exec turbo build --filter=@op/sense
