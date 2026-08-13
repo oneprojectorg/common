@@ -1,6 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { profileUsers, profiles, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -146,6 +146,93 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(
         adminUser.email,
       );
+    });
+
+    it('should sort by the displayed profile name, not the denormalized column', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+      const [firstMember, secondMember] = memberUsers;
+      if (!firstMember || !secondMember) {
+        throw new Error('Expected two member users');
+      }
+
+      // Profile-linked users display their own profile's name, while the
+      // denormalized profile_users.name is null or stale. Point the two apart
+      // so a sort on the wrong column produces the wrong order.
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Mika Middle', staleName: null },
+        { user: firstMember, displayName: 'Aaron Ascender', staleName: 'zzz' },
+        { user: secondMember, displayName: 'Zoe Zenith', staleName: 'aaa' },
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      expect(result.items.map((u) => u.name)).toEqual([
+        'Aaron Ascender',
+        'Mika Middle',
+        'Zoe Zenith',
+      ]);
+    });
+
+    it('should interleave participants with no linked profile by their denormalized name', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+      const [firstMember, secondMember] = memberUsers;
+      if (!firstMember || !secondMember) {
+        throw new Error('Expected two member users');
+      }
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Ascender', staleName: null },
+        { user: firstMember, displayName: 'Zoe Zenith', staleName: null },
+        {
+          user: secondMember,
+          displayName: 'ignored',
+          staleName: 'Mika Middle',
+        },
+      ]);
+
+      // Unlink the second member's profile so only the denormalized
+      // profile_users.name is left to sort on — the fallback arm of the
+      // display-name expression.
+      await db
+        .update(users)
+        .set({ profileId: null })
+        .where(eq(users.authUserId, secondMember.authUserId));
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      // The profile-less participant sorts between the two profile-linked
+      // ones rather than clustering at either end.
+      expect(result.items.map((u) => u.name)).toEqual([
+        'Aaron Ascender',
+        'Mika Middle',
+        'Zoe Zenith',
+      ]);
     });
 
     it('should reverse order when switching between asc and desc for email', async ({
@@ -647,6 +734,271 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(allNames).toEqual(sortedNames);
     });
 
+    it('should paginate on the displayed profile name without skipping users', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // Same divergence as the sorting test: a cursor built from the stale
+      // column drops or repeats rows once the pages are stitched together.
+      const memberDisplayNames = ['Bella Beta', 'Cleo Gamma', 'Dara Delta'];
+      const memberAssignments = memberDisplayNames.map((displayName, index) => {
+        const user = memberUsers[index];
+        if (!user) {
+          throw new Error(`Expected a member user at index ${index}`);
+        }
+
+        // Stale names descend while the display names ascend.
+        return {
+          user,
+          displayName,
+          staleName: `stale-${memberDisplayNames.length - index}`,
+        };
+      });
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberAssignments,
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedNames: (string | null)[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        pagedNames.push(...page.items.map((u) => u.name));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      expect(pagedNames).toEqual(['Aaron Alpha', ...memberDisplayNames]);
+    });
+
+    it('should paginate the displayed name in descending order', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      const memberDisplayNames = ['Bella Beta', 'Cleo Gamma', 'Dara Delta'];
+      const memberAssignments = memberDisplayNames.map((displayName, index) => {
+        const user = memberUsers[index];
+        if (!user) {
+          throw new Error(`Expected a member user at index ${index}`);
+        }
+
+        // Stale names ascend while the display names descend.
+        return { user, displayName, staleName: `stale-${index}` };
+      });
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberAssignments,
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedNames: (string | null)[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'desc',
+        });
+
+        pagedNames.push(...page.items.map((u) => u.name));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      expect(pagedNames).toEqual([
+        ...[...memberDisplayNames].reverse(),
+        'Aaron Alpha',
+      ]);
+    });
+
+    it('should fall back to the first page for a cursor issued before the id tiebreaker', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // The shape this endpoint handed out before the tiebreaker moved to
+      // profile_users.id. Casting an email to uuid is a Postgres error, so a
+      // client still holding one mid-scroll must not get a 500.
+      const staleCursor = Buffer.from(
+        JSON.stringify({
+          value: 'Test Admin User',
+          tiebreaker: adminUser.email,
+        }),
+      ).toString('base64');
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        limit: 2,
+        cursor: staleCursor,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('should page past a participant with no email address', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // The three members share a display name, so they land in one sort-key
+      // bucket where only the tiebreaker separates them.
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberUsers.map((user) => ({
+          user,
+          displayName: 'Sam Shared',
+          staleName: null,
+        })),
+      ]);
+
+      // `profile_users.email` is nullable, so it can't carry the cursor: a
+      // participant without one fails every `email > $tiebreaker` comparison
+      // and disappears once the bucket spans a page boundary.
+      const [firstMember] = memberUsers;
+      if (!firstMember) {
+        throw new Error('Expected a member user');
+      }
+
+      await db
+        .update(profileUsers)
+        .set({ email: null })
+        .where(eq(profileUsers.id, firstMember.profileUserId));
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedIds: string[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        pagedIds.push(...page.items.map((u) => u.id));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      expect(pagedIds).toHaveLength(4);
+      expect(new Set(pagedIds).size).toBe(4);
+      expect(pagedIds).toContain(firstMember.profileUserId);
+    });
+
+    it('should page past participants who share a displayed name', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // Three participants collapse into one sort-key bucket, so only the
+      // tiebreaker separates them across the page boundary.
+      const sharedName = 'Sam Shared';
+      const memberAssignments = memberUsers.map((user) => ({
+        user,
+        displayName: sharedName,
+        staleName: null,
+      }));
+
+      await setDisplayAndStaleNames([
+        { user: adminUser, displayName: 'Aaron Alpha', staleName: null },
+        ...memberAssignments,
+      ]);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const pagedEmails: string[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        pagedEmails.push(...page.items.map((u) => u.email!));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      // Every participant appears exactly once, tie bucket included.
+      expect(pagedEmails).toHaveLength(4);
+      expect(new Set(pagedEmails).size).toBe(4);
+      expect(pagedEmails[0]).toBe(adminUser.email);
+    });
+
     it('should paginate correctly when ordering by role', async ({
       task,
       onTestFinished,
@@ -748,3 +1100,29 @@ describeAccessTierGating('profile.listUsers', {
     },
   ),
 });
+
+/**
+ * Splits a participant's displayed name from the denormalized
+ * `profile_users.name`. The display name goes on the user's own profile, which
+ * is what the participants table renders; the stale value stays on the
+ * membership row. This is the shape profile-linked users have in practice.
+ */
+const setDisplayAndStaleNames = async (
+  assignments: Array<{
+    user: { userProfileId: string; profileUserId: string };
+    displayName: string;
+    staleName: string | null;
+  }>,
+): Promise<void> => {
+  for (const { user, displayName, staleName } of assignments) {
+    await db
+      .update(profiles)
+      .set({ name: displayName })
+      .where(eq(profiles.id, user.userProfileId));
+
+    await db
+      .update(profileUsers)
+      .set({ name: staleName })
+      .where(eq(profileUsers.id, user.profileUserId));
+  }
+};

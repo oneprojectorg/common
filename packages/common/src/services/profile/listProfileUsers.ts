@@ -1,11 +1,14 @@
-import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
+import { and, db, eq, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { z } from 'zod';
 
 import {
   type PaginatedResult,
   type SortDir,
-  decodeCursor,
+  decodeCursorIfValid,
   encodeCursor,
   excludeGlobalUsers,
 } from '../../utils/db';
@@ -17,12 +20,18 @@ import type {
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
-/**
- * Builds a subquery to get the first role name (alphabetically) for a profile user.
- * Used for both ORDER BY and cursor conditions to ensure consistency.
- * Returns empty string if user has no roles (via COALESCE) to match JS cursor encoding.
- */
-const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
+/** The tiebreaker is a `profileUsers.id`, cast to uuid in the comparison. */
+const cursorSchema = z.object({
+  value: z.string(),
+  tiebreaker: z.string().uuid(),
+});
+
+type ProfileUserCursor = z.infer<typeof cursorSchema>;
+
+/** First role name alphabetically, or '' — matching what the cursor encodes. */
+const buildRoleNameSubquery = (
+  profileUserIdColumn: AnyPgColumn,
+) => sql`COALESCE((
   SELECT ar.name
   FROM "profileUser_to_access_roles" pur
   INNER JOIN "access_roles" ar ON ar.id = pur.access_role_id
@@ -30,6 +39,67 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
   ORDER BY ar.name
   LIMIT 1
 ), '')`;
+
+/** Must stay in sync with `buildDisplayNameSubquery`, the SQL equivalent. */
+const resolveDisplayName = (result: ProfileUserQueryResult): string | null =>
+  result.serviceUser?.profile?.name || result.name;
+
+/**
+ * Mirrors `resolveDisplayName`. Never null, so the ORDER BY and the cursor
+ * agree on where nameless rows sit — a null sort key can't satisfy the cursor
+ * comparison, and the row would vanish after the first page.
+ *
+ * The `u` / `p` aliases and raw column names are load-bearing: interpolating
+ * `profiles.name` instead makes drizzle rewrite it to the alias it gave the
+ * `profile` lateral join in the enclosing query, silently turning this into a
+ * reference to that outer join. Renders fine in isolation; mis-sorts for real.
+ */
+const buildDisplayNameSubquery = ({
+  authUserIdColumn,
+  nameColumn,
+}: {
+  authUserIdColumn: AnyPgColumn;
+  nameColumn: AnyPgColumn;
+}) => sql`COALESCE(NULLIF((
+  SELECT p.name
+  FROM ${users} u
+  INNER JOIN ${profiles} p ON p.id = u.profile_id
+  WHERE u.auth_user_id = ${authUserIdColumn}
+  ORDER BY p.name
+  LIMIT 1
+), ''), NULLIF(${nameColumn}, ''), '')`;
+
+/** Coalesced for the same reason: `email` is nullable. */
+const buildEmailSortKey = (emailColumn: AnyPgColumn) =>
+  sql`COALESCE(${emailColumn}, '')`;
+
+/**
+ * Paired with `id` for a total order — `email` is nullable and non-unique, so
+ * it can't tiebreak reliably.
+ */
+const buildSortKey = ({
+  orderBy,
+  idColumn,
+  authUserIdColumn,
+  nameColumn,
+  emailColumn,
+}: {
+  orderBy: ProfileUserOrderBy;
+  idColumn: AnyPgColumn;
+  authUserIdColumn: AnyPgColumn;
+  nameColumn: AnyPgColumn;
+  emailColumn: AnyPgColumn;
+}) => {
+  if (orderBy === 'email') {
+    return buildEmailSortKey(emailColumn);
+  }
+
+  if (orderBy === 'role') {
+    return buildRoleNameSubquery(idColumn);
+  }
+
+  return buildDisplayNameSubquery({ authUserIdColumn, nameColumn });
+};
 
 /**
  * List all members of a profile with cursor-based pagination
@@ -84,43 +154,36 @@ export const listProfileUsers = async ({
         })()
       : undefined;
 
-  // Build cursor condition for pagination
-  // The cursor must match the ORDER BY columns for correct pagination
-  type ProfileUserCursor = { value: string; tiebreaker?: string };
+  // Cursors issued before the tiebreaker moved off `email` carry an address,
+  // and Postgres rejects a non-uuid on the cast — so a client mid-scroll across
+  // the deploy repeats a page instead of seeing a 500.
   const decodedCursor = cursor
-    ? decodeCursor<ProfileUserCursor>(cursor)
+    ? decodeCursorIfValid(cursor, cursorSchema)
     : undefined;
 
-  const compareFn = dir === 'asc' ? gt : lt;
+  if (cursor && !decodedCursor) {
+    // Otherwise invisible: re-walking from page 1 looks identical to never
+    // having paginated.
+    logger.warn('Discarded an unusable participants cursor', { orderBy });
+  }
 
   const buildCursorCondition = () => {
     if (!decodedCursor) {
       return undefined;
     }
 
-    if (orderBy === 'email') {
-      // Email is unique, no tiebreaker needed
-      return compareFn(profileUsers.email, decodedCursor.value);
-    }
-
-    if (orderBy === 'name') {
-      // ORDER BY name, email - compound condition
-      return or(
-        compareFn(profileUsers.name, decodedCursor.value),
-        and(
-          eq(profileUsers.name, decodedCursor.value),
-          compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
-        ),
-      );
-    }
-
-    // orderBy === 'role' - uses shared subquery helper
-    const roleSubquery = buildRoleNameSubquery(profileUsers.id);
+    // A row constructor rather than the equivalent `a > x OR (a = x AND b > y)`
+    // so the sort key — a correlated subquery — is inlined once, not twice.
+    const sortKey = buildSortKey({
+      orderBy,
+      idColumn: profileUsers.id,
+      authUserIdColumn: profileUsers.authUserId,
+      nameColumn: profileUsers.name,
+      emailColumn: profileUsers.email,
+    });
     const compareOp = dir === 'asc' ? sql`>` : sql`<`;
-    return sql`(
-      ${roleSubquery} ${compareOp} ${decodedCursor.value}
-      OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
-    )`;
+
+    return sql`(${sortKey}, ${profileUsers.id}) ${compareOp} (${decodedCursor.value}, ${decodedCursor.tiebreaker}::uuid)`;
   };
 
   const cursorCondition = buildCursorCondition();
@@ -138,7 +201,9 @@ export const listProfileUsers = async ({
 
   // Fetch profile users with their roles and user profiles
   // Request one extra to check if there are more results
-  const profileUserResults = await db._query.profileUsers.findMany({
+  // `db._query` is the legacy v1 API and types relations loosely, so the shape
+  // is asserted once here, at the boundary.
+  const profileUserResults = (await db._query.profileUsers.findMany({
     where: whereClause,
     with: {
       roles: {
@@ -159,22 +224,19 @@ export const listProfileUsers = async ({
     orderBy: (table, { asc, desc }) => {
       const orderFn = dir === 'desc' ? desc : asc;
 
-      if (orderBy === 'role') {
-        // Use shared subquery helper for consistency with cursor condition
-        const roleNameSubquery = buildRoleNameSubquery(table.id);
-        // Add email as secondary sort for consistent cursor pagination
-        return [orderFn(roleNameSubquery), orderFn(table.email)];
-      }
+      // Same `(sortKey, id)` pair the cursor condition compares against.
+      const sortKey = buildSortKey({
+        orderBy,
+        idColumn: table.id,
+        authUserIdColumn: table.authUserId,
+        nameColumn: table.name,
+        emailColumn: table.email,
+      });
 
-      if (orderBy === 'email') {
-        return [orderFn(table.email)];
-      }
-
-      // Default to name, with email as secondary for consistent ordering
-      return [orderFn(table.name), orderFn(table.email)];
+      return [orderFn(sortKey), orderFn(table.id)];
     },
     limit: limit + 1,
-  });
+  })) as ProfileUserQueryResult[];
 
   // Check if there are more results
   const hasMore = profileUserResults.length > limit;
@@ -182,13 +244,12 @@ export const listProfileUsers = async ({
 
   // Transform results
   const items: ProfileUserWithRelations[] = resultItems.map((result) => {
-    const { serviceUser, roles, ...baseProfileUser } =
-      result as ProfileUserQueryResult;
+    const { serviceUser, roles, ...baseProfileUser } = result;
     const userProfile = serviceUser?.profile;
 
     return {
       ...baseProfileUser,
-      name: userProfile?.name || baseProfileUser.name,
+      name: resolveDisplayName(result),
       about: userProfile?.bio || baseProfileUser.about,
       profile: userProfile ?? null,
       roles: roles.map((roleJunction) => roleJunction.accessRole),
@@ -201,16 +262,20 @@ export const listProfileUsers = async ({
       return null;
     }
 
+    // Matches the ORDER BY tiebreaker for every sort.
+    const tiebreaker = lastResult.id;
+
     if (orderBy === 'email') {
       return encodeCursor<ProfileUserCursor>({
         value: lastResult.email ?? '',
+        tiebreaker,
       });
     }
 
     if (orderBy === 'name') {
       return encodeCursor<ProfileUserCursor>({
-        value: lastResult.name ?? '',
-        tiebreaker: lastResult.email ?? '',
+        value: resolveDisplayName(lastResult) ?? '',
+        tiebreaker,
       });
     }
 
@@ -230,7 +295,7 @@ export const listProfileUsers = async ({
     const firstRoleName = sortedRoles[0]?.accessRole.name ?? '';
     return encodeCursor<ProfileUserCursor>({
       value: firstRoleName,
-      tiebreaker: lastResult.email ?? '',
+      tiebreaker,
     });
   };
 
