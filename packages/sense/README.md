@@ -222,44 +222,40 @@ primitives via relative imports, add the exports entry, write a story.
 Forgetting the exports entry gives consumers a clear
 `Cannot find module '@op/sense/<Name>'` — that's the drift signal.
 
-## The `Chart` build warning
+## Why `immer` is pinned to `^10.2.0`
 
-Building anything that imports `Chart` prints:
+`Chart` wraps `recharts`, which depends on `@reduxjs/toolkit@2.12`, which
+declares `immer: ^11`. The root `package.json` overrides `immer` to a single
+version for the whole monorepo, so RTK gets whatever that pin says — and
+`setUseStrictIteration`, which RTK imports, did not exist before **10.2.0**.
+Under the old `^10.1.1` pin, bundling anything that imported `Chart` printed:
 
 ```
 "setUseStrictIteration" is not exported by immer/dist/immer.mjs
 ```
 
-It is a **warning, not a failure** — Rollup builds through it, and nothing
-breaks at runtime, because `@reduxjs/toolkit` imports that binding and never
-calls it (zero call sites in its `modern` and `browser` bundles). A binding
-that is never dereferenced cannot throw.
+Rollup treated that as a warning and built through it, and nothing broke at
+runtime (RTK imports the binding and never calls it — zero call sites in its
+`modern` and `browser` bundles). **esbuild treats it as a hard error**, which is
+how it surfaced: esbuild-based tooling in this package's graph, notably the
+deferred `@storybook/addon-vitest` a11y gate, failed outright.
 
-It still matters, because **esbuild treats it as a hard error**. Any
-esbuild-based tooling in this package's graph — notably the
-`@storybook/addon-vitest` a11y gate — fails outright rather than warning.
-
-Why the version is wrong: `pnpm.overrides` in the root `package.json` maps
-`immer` to `$immer`, which resolves to the root's own declaration. That forces
-**one** `immer` on every consumer in the monorepo. `recharts` (which `Chart`
-wraps) depends on `@reduxjs/toolkit@2.12`, which declares `immer: ^11`, so the
-override drags RTK down to the root's `^10.1.1` — and
-`setUseStrictIteration` did not exist until **10.2.0**.
-
-The fix is a one-line bump of the root pin to `^10.2.0`, not a move to v11:
+`^10.2.0` rather than `^11` because:
 
 - `setUseStrictIteration` shipped in 10.2.0 (2025-10-25), a month *before*
   11.0.0 — it is the opt-in flag added ahead of v11 making strict iteration the
-  default. Calling it on 10.2.0 does exactly what RTK intends.
+  default. Calling it on 10.2.0 does what RTK intends.
 - 10.2.0 satisfies `recharts`' own `^10.1.1`, so it stays inside its declared
   range. Forcing v11 would push `recharts` outside it.
 - It keeps a single `immer`. Letting RTK and `recharts` resolve separate majors
-  risks a draft created by one copy failing the other copy's `isDraft` — and
-  `recharts` drives RTK's store, so drafts do cross that boundary.
+  risks a draft made by one copy failing the other copy's `isDraft` — and
+  `recharts` drives RTK's store, so drafts cross that boundary.
 
-Nothing in any workspace imports `immer` (`zustand`'s `immer` peer is optional
-and we don't use its middleware), so the root declaration exists only to feed
-the override.
+No workspace imports `immer` (`zustand`'s `immer` peer is optional and we don't
+use its middleware), so the override carries the version **literally** rather
+than the `$immer` form that resolves to a root declaration. That way there is no
+apparently-unused root dependency for a `pnpm deps:clean` sweep to prune out
+from under the override.
 
 ## Known upstream patches
 
