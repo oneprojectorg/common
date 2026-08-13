@@ -43,16 +43,8 @@ export const CreateMenu = () => {
 
   const createDecisionMutation = useMutation({
     mutationFn: async () => {
-      // `fetch`, not `ensureData`: template ids are regenerated on every seed
-      // (decision_processes.id is an autoId, and seed-access-control dedupes on
-      // name), so a cached list can hand out an id the server no longer has and
-      // createInstanceFromTemplate 404s. `ensureData` returns cached data
-      // without revalidating, and with gcTime 24h + refetchOnWindowFocus off a
-      // stale entry survives all day. `fetch` respects staleTime (0 here), so
-      // the id is always checked against the server.
-      const { processes: templates } = await utils.decision.listProcesses.fetch(
-        {},
-      );
+      const { processes: templates } =
+        await utils.decision.listProcesses.ensureData({});
       const firstTemplate = templates[0];
       if (!firstTemplate) {
         throw new Error('No decision process templates available');
