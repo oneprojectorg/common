@@ -15,12 +15,15 @@ import { createCallerFactory } from '../../../trpcFactory';
 const createCaller = createCallerFactory(appRouter);
 
 /**
- * Columbus feasibility shape (flat slice): three flat money criteria plus a
- * scored criterion. Criterion ids are opaque, as the builder generates them.
+ * Columbus feasibility shape: one presentational section ("Total Estimated
+ * Cost", `showTotal`) whose three members are flat money criteria, plus a
+ * scored criterion outside the section. Section ids and criterion ids are
+ * opaque, as the builder generates them.
  *
- * Every answer lives at `answers[criterionId]` — one top-level key per money
- * criterion — which is what these tests assert.
+ * The section is layout only — every answer still lives at
+ * `answers[criterionId]`, which is what these tests assert.
  */
+const COST_SECTION_ID = 'sec-9f1c';
 const DESIGN = 'a1b2c3d4';
 const CONSTRUCTION = 'e5f6a7b8';
 const CONTINGENCY = 'c9d0e1f2';
@@ -30,6 +33,7 @@ function moneyCriterion(title: string, currency = 'USD') {
     type: 'object' as const,
     title,
     'x-format': 'money' as const,
+    'x-section': COST_SECTION_ID,
     properties: {
       amount: { type: 'number' as const, minimum: 0 },
       currency: { type: 'string' as const, const: currency, default: currency },
@@ -41,6 +45,13 @@ function moneyCriterion(title: string, currency = 'USD') {
 
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
+  'x-sections': [
+    {
+      id: COST_SECTION_ID,
+      title: 'Total Estimated Cost',
+      showTotal: true,
+    },
+  ],
   'x-field-order': [
     DESIGN,
     CONSTRUCTION,

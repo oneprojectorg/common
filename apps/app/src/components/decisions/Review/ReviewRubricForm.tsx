@@ -34,7 +34,7 @@ import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
-import { RubricSectionShell } from './RubricSection';
+import { RubricSectionShell, RubricSectionTotal } from './RubricSection';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
@@ -168,6 +168,7 @@ function MyReviewForm() {
             <RubricBlock
               key={blockKey(block)}
               block={block}
+              answers={values}
               renderCriterion={renderCriterion}
             />
           ))}
@@ -211,13 +212,15 @@ function MyReviewForm() {
 
 /**
  * Render one grouping block: either a bare criterion or a section wrapper
- * with its members.
+ * with its members and (when declared) a derived total row.
  */
 function RubricBlock({
   block,
+  answers,
   renderCriterion,
 }: {
   block: TemplateSectionBlock<FieldDescriptor>;
+  answers: Record<string, unknown>;
   renderCriterion: (field: FieldDescriptor) => ReactNode;
 }) {
   if (block.kind === 'field') {
@@ -227,6 +230,9 @@ function RubricBlock({
   return (
     <RubricSectionShell section={block.section}>
       {block.fields.map(renderCriterion)}
+      {block.section.showTotal && (
+        <RubricSectionTotal fields={block.fields} answers={answers} />
+      )}
     </RubricSectionShell>
   );
 }

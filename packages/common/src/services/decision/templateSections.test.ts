@@ -18,14 +18,14 @@ function field(key: string, schema: XFormatPropertySchema = {}) {
 
 const sections = [
   { id: 's1', title: 'Total Estimated Cost', description: 'All-in cost' },
-  { id: 's2', title: 'Community Impact' },
+  { id: 's2', title: 'Community Impact', showTotal: true },
 ];
 
 describe('getTemplateSections', () => {
   it('returns declared sections in declaration order', () => {
     expect(getTemplateSections({ 'x-sections': sections })).toEqual([
       { id: 's1', title: 'Total Estimated Cost', description: 'All-in cost' },
-      { id: 's2', title: 'Community Impact' },
+      { id: 's2', title: 'Community Impact', showTotal: true },
     ]);
   });
 
@@ -60,6 +60,14 @@ describe('getTemplateSections', () => {
     expect(
       groupFieldsBySection({ 'x-sections': [{ id: 'untitled' }] }, [orphan]),
     ).toEqual([{ kind: 'field', field: orphan }]);
+  });
+
+  it('only honours showTotal when it is literally true', () => {
+    expect(
+      getTemplateSections({
+        'x-sections': [{ id: 'a', title: 'A', showTotal: 'yes' }],
+      })[0]?.showTotal,
+    ).toBeUndefined();
   });
 });
 

@@ -5,7 +5,7 @@
  * with one property per field, ordered by `x-field-order`. Sections add
  * *layout only* on top of that, via two vendor keys:
  *
- * - top-level `x-sections: [{ id, title, description? }]`
+ * - top-level `x-sections: [{ id, title, description?, showTotal? }]`
  * - per-property `x-section: <sectionId>`
  *
  * Nothing else changes: answers stay keyed by the property id, `required`
@@ -34,6 +34,12 @@ export interface TemplateSection {
   id: string;
   title: string;
   description?: string;
+  /**
+   * Render a derived total row after the section's members. The total is
+   * computed at render time from the members' money answers and is never
+   * stored (see `templateMoney.ts`).
+   */
+  showTotal?: boolean;
 }
 
 /**
@@ -105,6 +111,7 @@ export function getTemplateSections(
       ...(typeof entry.description === 'string'
         ? { description: entry.description }
         : {}),
+      ...(entry.showTotal === true ? { showTotal: true } : {}),
     });
   }
 

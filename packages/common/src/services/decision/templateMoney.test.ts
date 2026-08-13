@@ -4,6 +4,7 @@ import { ValidationError } from '../../utils';
 import { SchemaValidator } from './schemaValidator';
 import {
   assertMoneyFieldSchemas,
+  assertTemplateSectionCurrencies,
   buildMoneyFieldAnswer,
   getMoneyAnswerAmount,
   getMoneyAnswerCurrency,
@@ -11,20 +12,24 @@ import {
   isMoneyFieldSchema,
   isValidCurrencyCode,
   resolveMoneyDisplayCurrency,
+  sumMoneyFields,
 } from './templateMoney';
 import type { RubricTemplateSchema, XFormatPropertySchema } from './types';
 
 function moneySchema({
   title = 'Cost',
   currency = 'USD',
+  sectionId,
 }: {
   title?: string;
   currency?: string | null;
+  sectionId?: string;
 } = {}): XFormatPropertySchema {
   return {
     type: 'object',
     title,
     'x-format': 'money',
+    ...(sectionId ? { 'x-section': sectionId } : {}),
     properties: {
       amount: { type: 'number', minimum: 0 },
       ...(currency
@@ -139,6 +144,74 @@ describe('buildMoneyFieldAnswer', () => {
   });
 });
 
+describe('sumMoneyFields', () => {
+  const fields = [
+    { key: 'a', schema: moneySchema() },
+    { key: 'b', schema: moneySchema() },
+    {
+      key: 'notes',
+      schema: { type: 'string' as const, 'x-format': 'long-text' as const },
+    },
+  ];
+
+  it('sums the answered money members only', () => {
+    expect(
+      sumMoneyFields(fields, {
+        a: { amount: 1000, currency: 'USD' },
+        b: { amount: 250.5, currency: 'USD' },
+        notes: 'long text is not money',
+      }),
+    ).toEqual({ total: 1250.5, currency: 'USD', answeredCount: 2 });
+  });
+
+  it('returns a null total when nothing is answered yet', () => {
+    expect(sumMoneyFields(fields, {})).toEqual({
+      total: null,
+      currency: 'USD',
+      answeredCount: 0,
+    });
+  });
+
+  it('ignores partially filled members', () => {
+    expect(
+      sumMoneyFields(fields, { a: { amount: 10, currency: 'USD' }, b: {} }),
+    ).toEqual({ total: 10, currency: 'USD', answeredCount: 1 });
+  });
+
+  it('takes the currency from the template pin when nothing is answered', () => {
+    expect(
+      sumMoneyFields([{ key: 'a', schema: moneySchema({ currency: 'EUR' }) }], {
+        a: {},
+      }).currency,
+    ).toBe('EUR');
+  });
+
+  it('labels the total with the stored currency, not a re-pinned template', () => {
+    // A historical review filled in USD, then the template was re-pinned to
+    // EUR. The individual amounts still read USD (resolveMoneyDisplayCurrency),
+    // so the derived total must agree instead of relabelling the same numbers.
+    const repinned = [
+      { key: 'a', schema: moneySchema({ currency: 'EUR' }) },
+      { key: 'b', schema: moneySchema({ currency: 'EUR' }) },
+    ];
+
+    expect(
+      sumMoneyFields(repinned, {
+        a: { amount: 1000, currency: 'USD' },
+        b: { amount: 250, currency: 'USD' },
+      }),
+    ).toEqual({ total: 1250, currency: 'USD', answeredCount: 2 });
+  });
+
+  it('ignores a malformed stored currency and falls back to the pin', () => {
+    expect(
+      sumMoneyFields([{ key: 'a', schema: moneySchema({ currency: 'EUR' }) }], {
+        a: { amount: 5, currency: 'nonsense' },
+      }).currency,
+    ).toBe('EUR');
+  });
+});
+
 describe('assertMoneyFieldSchemas', () => {
   function template(schema: XFormatPropertySchema): RubricTemplateSchema {
     return { type: 'object', properties: { cost: schema } };
@@ -250,6 +323,89 @@ describe('assertMoneyFieldSchemas', () => {
     expect(() => assertMoneyFieldSchemas(template(schema))).toThrow(
       ValidationError,
     );
+  });
+});
+
+describe('assertTemplateSectionCurrencies', () => {
+  function template(
+    properties: Record<string, XFormatPropertySchema>,
+    showTotal = true,
+  ): RubricTemplateSchema {
+    return {
+      type: 'object',
+      'x-sections': [{ id: 'cost', title: 'Total Estimated Cost', showTotal }],
+      properties,
+    };
+  }
+
+  it('accepts a summed section whose money members share a currency', () => {
+    expect(() =>
+      assertTemplateSectionCurrencies(
+        template({
+          a: moneySchema({ currency: 'USD', sectionId: 'cost' }),
+          b: moneySchema({ currency: 'USD', sectionId: 'cost' }),
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects a summed section that mixes currencies', () => {
+    expect(() =>
+      assertTemplateSectionCurrencies(
+        template({
+          a: moneySchema({ currency: 'USD', sectionId: 'cost' }),
+          b: moneySchema({ currency: 'EUR', sectionId: 'cost' }),
+        }),
+      ),
+    ).toThrow(ValidationError);
+  });
+
+  it('allows mixed currencies in a section that shows no total', () => {
+    expect(() =>
+      assertTemplateSectionCurrencies(
+        template(
+          {
+            a: moneySchema({ currency: 'USD', sectionId: 'cost' }),
+            b: moneySchema({ currency: 'EUR', sectionId: 'cost' }),
+          },
+          false,
+        ),
+      ),
+    ).not.toThrow();
+  });
+
+  it('does not invent a default for an unpinned money field', () => {
+    // No currency declared at all: assertMoneyFieldSchemas is the check that
+    // reports it. This assertion must not substitute USD and thereby call a
+    // mixed section "consistent" — nor crash.
+    expect(() =>
+      assertTemplateSectionCurrencies(
+        template({
+          a: moneySchema({ currency: 'EUR', sectionId: 'cost' }),
+          b: moneySchema({ currency: null, sectionId: 'cost' }),
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('ignores money fields outside the summed section', () => {
+    expect(() =>
+      assertTemplateSectionCurrencies(
+        template({
+          a: moneySchema({ currency: 'USD', sectionId: 'cost' }),
+          loose: moneySchema({ currency: 'EUR' }),
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('is a no-op for templates without sections', () => {
+    expect(() =>
+      assertTemplateSectionCurrencies({
+        type: 'object',
+        properties: { a: moneySchema() },
+      }),
+    ).not.toThrow();
   });
 });
 

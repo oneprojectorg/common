@@ -10,7 +10,10 @@
  *
  * These run at the persistence boundary, next to `validateJsonSchema`.
  */
-import { assertMoneyFieldSchemas } from './templateMoney';
+import {
+  assertMoneyFieldSchemas,
+  assertTemplateSectionCurrencies,
+} from './templateMoney';
 import type { SectionableTemplate } from './templateSections';
 import { assertContiguousTemplateSections } from './templateSections';
 import type { XFormatPropertySchema } from './types';
@@ -24,6 +27,10 @@ type AuthorableTemplate = SectionableTemplate & {
 /**
  * Assert a rubric template is safely authored.
  *
+ * Order matters: the money-field shape check runs first so the currency
+ * comparison only ever sees validly pinned currencies, and reports the precise
+ * shape problem rather than a confusing downstream one.
+ *
  * @throws ValidationError describing the first problem found.
  */
 export function assertRubricTemplateAuthoring(
@@ -31,4 +38,5 @@ export function assertRubricTemplateAuthoring(
 ): void {
   assertMoneyFieldSchemas(template);
   assertContiguousTemplateSections(template);
+  assertTemplateSectionCurrencies(template);
 }
