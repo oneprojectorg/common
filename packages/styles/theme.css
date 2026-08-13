@@ -35,6 +35,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
@@ -53,6 +54,10 @@
   --color-success-muted: var(--success-muted);
   --color-success-muted-foreground: var(--success-muted-foreground);
   --color-input: var(--input);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-mark: var(--mark);
 
   /* Sidebar */
   --color-sidebar: var(--sidebar);
@@ -255,13 +260,13 @@
  * unsupported (the Figma dark mode is unpopulated), so no dark block. */
 :root {
   /* Core surfaces */
-  --background: var(--color-white);
+  --background: var(--op-white);
   --foreground: var(--color-gray-900);
 
   /* Card / popover */
-  --card: var(--color-white);
+  --card: var(--op-white);
   --card-foreground: var(--color-gray-900);
-  --popover: var(--color-white);
+  --popover: var(--op-white);
   --popover-foreground: var(--color-gray-900);
 
   /* Primary. Defined here rather than inherited: `--color-primary` used to
@@ -290,7 +295,7 @@
 
   /* Status: destructive / warning / success (+ muted surfaces) */
   --destructive: var(--color-red-500);
-  --destructive-foreground: var(--color-white);
+  --destructive-foreground: var(--op-white);
   --destructive-muted: var(--color-red-50);
   --destructive-muted-foreground: var(--color-gray-900);
   --warning: var(--color-orange-500);
@@ -304,13 +309,21 @@
 
   /* Borders / inputs / focus ring.
    * shadcn components read these via `var(--border)` etc. directly (not via
-   * the Tailwind `--color-*` layer), so sense needs them declared regardless
-   * of what the legacy layer/intent-ui-theme also declares.
+   * the Tailwind `--color-*` layer), so sense needs them declared regardless.
    * Components apply the focus ring at 50% opacity. */
   --border: var(--color-gray-100);
   --input: var(--color-gray-300);
   --ring: var(--color-gray-400);
-  --ring-offset: var(--color-white);
+  --ring-offset: var(--op-white);
+
+  /* Modal/drawer scrim. Same value the `bg-black/15` overlays used before —
+   * gray-900, not true black — but named for the job it does. */
+  --overlay: var(--color-gray-900);
+
+  /* Rich-text highlight mark. Off-ramp: #dceff1 sits between teal-50
+   * (#eff7f9) and teal-100 (#d7ebef), so it has no Colors Scale equivalent.
+   * Kept at its original value pending a design decision. */
+  --mark: var(--op-primary-100);
 
   /* `--radius` is the base radius shadcn primitives derive their scale from
    * (and consume directly, e.g. `rounded-[var(--radius)]`). */
@@ -602,7 +615,7 @@
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
     var(--op-primary-500) 0%,
-    var(--color-red) 92%,
+    var(--op-functional-red-600) 92%,
     #fafbfb 100%
   );
 }
@@ -610,8 +623,8 @@
 @utility bg-redPurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    var(--color-data-purple) 0%,
-    var(--color-red) 100%
+    var(--op-data-purple) 0%,
+    var(--op-functional-red-600) 100%
   );
 }
 
@@ -636,7 +649,7 @@
 @utility bg-orangePurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    var(--color-data-purple) 0%,
+    var(--op-data-purple) 0%,
     #e35f00 100%
   );
 }
@@ -689,9 +702,9 @@
 
   /* Base body styles */
   body {
-    background-color: var(--color-white);
+    background-color: var(--op-white);
     font-family: var(--font-sans);
-    color: var(--color-neutral-charcoal);
+    color: var(--color-gray-700);
   }
 
   /* Placeholder styles */
@@ -919,7 +932,7 @@
     --rt-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
   }
   .details summary {
-    @apply py-2 font-serif text-lg text-neutral-black tracking-[-0.0125em];
+    @apply py-2 font-serif text-lg text-foreground tracking-[-0.0125em];
     list-style: none;
   }
   .details summary::-webkit-details-marker {
@@ -930,7 +943,7 @@
    * <summary>::before. (`content` is inert on the real <button>.) */
   div.details > button,
   details.details > summary::before {
-    @apply size-4 flex-none bg-neutral-gray3 transition-transform;
+    @apply size-4 flex-none bg-gray-400 transition-transform;
     content: '';
     -webkit-mask: var(--rt-chevron) center / contain no-repeat;
     mask: var(--rt-chevron) center / contain no-repeat;
@@ -949,7 +962,7 @@
    * tags it with `is-focused`; gate on `.ProseMirror-focused` so it only paints
    * while the editor is focused. */
   div.details.is-focused {
-    @apply bg-neutral-gray1/60 shadow-[12px_0_0_hsla(180,2.9%,93.1%,0.6),-8px_0_0_hsla(180,2.9%,93.1%,0.6)];
+    @apply bg-border/60 shadow-[12px_0_0_hsla(180,2.9%,93.1%,0.6),-8px_0_0_hsla(180,2.9%,93.1%,0.6)];
   }
   div.details > button {
     @apply mt-3 cursor-pointer border-0 p-0;
