@@ -1,7 +1,11 @@
 'use client';
 
-import type { XFormatPropertySchema } from '@op/common/client';
+import type {
+  RubricTemplateSchema,
+  XFormatPropertySchema,
+} from '@op/common/client';
 import {
+  groupFieldsBySection,
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
@@ -155,20 +159,45 @@ function RubricField({ field }: { field: FieldDescriptor }) {
  * Static read-only preview of rubric fields.
  * Shows field labels and placeholder inputs — no interactivity.
  * Rationale placeholder is rendered under every criterion.
+ *
+ * Sections are previewed as a heading above their members — enough for the
+ * admin to see the grouping; editing sections is not supported here.
  */
 export function RubricFormPreviewRenderer({
+  template,
   fields,
 }: {
+  template: RubricTemplateSchema;
   fields: FieldDescriptor[];
 }) {
+  const blocks = groupFieldsBySection(template, fields);
+
   return (
     <div className="pointer-events-none flex flex-col gap-6">
-      {fields.map((field) => (
-        <div key={field.key} className="flex flex-col gap-4">
-          <RubricField field={field} />
-          <RationalePlaceholder />
-        </div>
-      ))}
+      {blocks.map((block) =>
+        block.kind === 'field' ? (
+          <div key={block.field.key} className="flex flex-col gap-4">
+            <RubricField field={block.field} />
+            <RationalePlaceholder />
+          </div>
+        ) : (
+          <div
+            key={`section:${block.section.id}`}
+            className="flex flex-col gap-4"
+          >
+            <FieldHeader
+              title={block.section.title}
+              description={block.section.description}
+            />
+            {block.fields.map((field) => (
+              <div key={field.key} className="flex flex-col gap-4">
+                <RubricField field={field} />
+                <RationalePlaceholder />
+              </div>
+            ))}
+          </div>
+        ),
+      )}
     </div>
   );
 }

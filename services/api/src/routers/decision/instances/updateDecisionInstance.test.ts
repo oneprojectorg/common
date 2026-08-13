@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   type RubricTemplateSchema,
+  type XFormatPropertySchema,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
@@ -25,6 +26,47 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** A plain long-text criterion, optionally in a section. */
+function sectionedCriterion(
+  title: string,
+  sectionId?: string,
+): XFormatPropertySchema {
+  return {
+    type: 'string',
+    title,
+    'x-format': 'long-text',
+    ...(sectionId ? { 'x-section': sectionId } : {}),
+  };
+}
+
+/** Rubric with one presentational section holding two criteria. */
+function sectionedRubric(): RubricTemplateSchema {
+  return {
+    type: 'object',
+    'x-sections': [{ id: 'cost', title: 'Total Estimated Cost' }],
+    'x-field-order': ['design', 'construction'],
+    properties: {
+      design: sectionedCriterion('Design & Engineering Cost', 'cost'),
+      construction: sectionedCriterion('Construction', 'cost'),
+    },
+    required: ['design', 'construction'],
+  };
+}
+
+/** Rubric whose one section is split by a non-member criterion. */
+function splitSectionRubric(): RubricTemplateSchema {
+  return {
+    type: 'object',
+    'x-sections': [{ id: 'cost', title: 'Total Estimated Cost' }],
+    'x-field-order': ['design', 'impact', 'construction'],
+    properties: {
+      design: sectionedCriterion('Design', 'cost'),
+      impact: sectionedCriterion('Impact'),
+      construction: sectionedCriterion('Construction', 'cost'),
+    },
+  };
 }
 
 describe.concurrent('updateDecisionInstance', () => {
@@ -898,6 +940,94 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     const afterData = afterInstance!.instanceData as DecisionInstanceData;
     expect(afterData.rubricTemplate).toEqual(beforeData.rubricTemplate);
+  });
+
+  it('accepts a sectioned rubric and persists its x-sections', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: sectionedRubric(),
+      }),
+    ).resolves.toBeDefined();
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+    expect(instanceData.rubricTemplate?.['x-sections']).toEqual([
+      { id: 'cost', title: 'Total Estimated Cost' },
+    ]);
+  });
+
+  it('rejects a section split by another criterion', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const before = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        rubricTemplate: splitSectionRubric(),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const after = await db.query.processInstances.findFirst({
+      where: { id: setup.instance.instance.id },
+    });
+    expect(
+      (after!.instanceData as DecisionInstanceData).rubricTemplate,
+    ).toEqual((before!.instanceData as DecisionInstanceData).rubricTemplate);
+  });
+
+  it('applies the same section guard to a per-phase rubric template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const phases = (
+      (setup.instance.instance.instanceData as DecisionInstanceData).phases ??
+      []
+    ).map((phase) => ({ phaseId: phase.phaseId }));
+    const targetPhaseId = phases[0]?.phaseId;
+    expect(targetPhaseId).toBeDefined();
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: setup.instance.instance.id,
+        phases: [
+          {
+            phaseId: targetPhaseId!,
+            rubricTemplate: splitSectionRubric(),
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should update phases on a published instance when some phases have no dates', async ({

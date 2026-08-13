@@ -34,6 +34,10 @@ export class SchemaValidator {
     this.ajv.addKeyword('x-map-default');
     // Phase designation on custom forms (see CustomFormDefinitionSchema).
     this.ajv.addKeyword('x-phase');
+    // Purely presentational field grouping (see templateSections.ts): the
+    // top-level section list and the per-property membership marker.
+    this.ajv.addKeyword('x-sections');
+    this.ajv.addKeyword('x-section');
   }
 
   /**

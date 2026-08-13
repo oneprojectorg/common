@@ -17,6 +17,7 @@ import {
   setCriterionRequired,
   setSelectOptions,
   updateCriterionDescription,
+  updateCriterionJsonSchema,
 } from './rubricTemplate';
 
 const ALL_TYPES: RubricCriterionType[] = [
@@ -274,5 +275,31 @@ describe('getCriteria', () => {
     expect(single?.criterionType).toBe('single_select');
     expect(single?.options).toHaveLength(2);
     expect(single?.options[0]?.title).toBe('Parks');
+  });
+});
+
+describe('section membership under type changes', () => {
+  it('keeps x-section when a criterion changes type', () => {
+    let template = createEmptyRubricTemplate();
+    template = addCriterion(template, 'crit1', 'scored', 'Impact');
+    template = updateCriterionJsonSchema(template, 'crit1', {
+      'x-section': 'cost',
+    });
+
+    const updated = changeCriterionType(template, 'crit1', 'long_text');
+
+    expect(getCriterionType(updated, 'crit1')).toBe('long_text');
+    // Sections are presentation only: any type can live in any section, so
+    // switching the type must not silently regroup the criterion.
+    expect(updated.properties?.crit1).toMatchObject({ 'x-section': 'cost' });
+  });
+
+  it('leaves an unsectioned criterion unsectioned', () => {
+    let template = createEmptyRubricTemplate();
+    template = addCriterion(template, 'crit1', 'scored', 'Impact');
+
+    const updated = changeCriterionType(template, 'crit1', 'yes_no');
+
+    expect(updated.properties?.crit1).not.toHaveProperty('x-section');
   });
 });
