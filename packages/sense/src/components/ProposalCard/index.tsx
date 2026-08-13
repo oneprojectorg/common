@@ -343,8 +343,10 @@ function TagRow({
         </Badge>
       ) : null}
       {shown.map((tag) => (
-        <Badge key={tag} variant="secondary">
-          {tag}
+        // Categories are free text, so a long one has to ellipsize instead of
+        // pushing the row past the card. Full text stays in the DOM.
+        <Badge key={tag} variant="secondary" className="max-w-full" title={tag}>
+          <span className="truncate">{tag}</span>
         </Badge>
       ))}
       {overflow > 0 ? (

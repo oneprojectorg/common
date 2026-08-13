@@ -47,14 +47,18 @@ export const ProfileSearchResultsSuspense = ({
           <span className="text-muted-foreground">
             {t.rich('Results for <highlight>{query}</highlight>', {
               query: query,
-              highlight: (chunks: React.ReactNode) => <span>{chunks}</span>,
+              highlight: (chunks: React.ReactNode) => (
+                <span className="font-strong text-foreground">{chunks}</span>
+              ),
             })}
           </span>
         ) : (
           <span className="text-muted-foreground">
             {t.rich('No results for <highlight>{query}</highlight>', {
               query: query,
-              highlight: (chunks: React.ReactNode) => <span>{chunks}</span>,
+              highlight: (chunks: React.ReactNode) => (
+                <span className="font-strong text-foreground">{chunks}</span>
+              ),
             })}
           </span>
         )}

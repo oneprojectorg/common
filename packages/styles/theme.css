@@ -718,7 +718,6 @@
   /* Default hr styling - Tailwind v4 reset removes borders */
   hr {
     border-top-width: 1px;
-    border-color: var(--color-neutral-gray-1);
   }
 
   /* Only show focus outlines for keyboard navigation, not mouse clicks */
@@ -849,7 +848,7 @@
   }
 
   100% {
-    border-color: var(--color-neutral-gray-1);
+    border-color: var(--border);
   }
 }
 

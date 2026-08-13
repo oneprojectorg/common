@@ -611,6 +611,7 @@
   "Status": "Status",
   "Published": "Published",
   "Completed": "Completed",
+  "Active": "Active",
   "Cancelled": "Cancelled",
   "View instance data": "View instance data",
   "Instance data for {name}": "Instance data for {name}",
