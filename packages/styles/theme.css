@@ -353,39 +353,6 @@
 
 @plugin '@tailwindcss/typography';
 
-/* ============================================================================
- * PRE-SENSE HEADING SCALE — deliberately kept
- *
- * The rest of the pre-sense layer is gone. These four survive because
- * `headingClasses` in ./constants.ts still names them, and that object is not
- * a normal call site: its class strings are baked into server-rendered HTML by
- * @op/common's StyledHeading extension, and that HTML is the source text
- * hashed into `content_translations.contentHash`. Changing these strings
- * invalidates every cached translation of every decision and proposal body in
- * every locale — paid re-translation plus orphaned rows — and restyles already
- * published proposals. Proposals can also be stored as raw HTML, so the class
- * names live in rows no grep can see.
- *
- * Moving `headingClasses` onto the sense scale is its own task, with a design
- * decision and a call on purging vs letting the cache re-fill. Until then these
- * stay, and nothing new should reference them.
- * ========================================================================= */
-@theme {
-  --text-title-lg: 1.75rem;
-  --text-title-lg--line-height: 120%;
-  --text-title-lg--font-weight: 300;
-  --text-title-lg--letter-spacing: -0.02625rem;
-  --text-title-base: 1.25rem;
-  --text-title-base--line-height: 120%;
-  --text-title-base--font-weight: 300;
-  --text-title-base--letter-spacing: -0.01875rem;
-  --text-title-sm14: 0.875rem;
-  --text-title-sm14--line-height: 130%;
-  --text-title-sm14--font-weight: 400;
-  --text-title-sm14--letter-spacing: -0.01313rem;
-  --color-neutral-black: var(--color-gray-900);
-}
-
 /*
  * Shared Tailwind v4 theme configuration. Animation utilities come from
  * tw-animate.css (vendored).

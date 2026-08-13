@@ -54,9 +54,20 @@ export const getGradientForString = (name: string) => {
   return getAvatarColorForString(name).gradient;
 };
 
+/**
+ * Matched step-for-step to the `Header1`–`Header4` components in
+ * `@op/sense/Header`, which is the whole point of this object: the editor, the
+ * static renderer and the components have to agree.
+ *
+ * `font-light` is explicit because the sense type steps bake no weight, where
+ * the pre-sense `text-title-*` steps carried 300. The colour stays explicit
+ * too — these strings end up in stored HTML that renders outside the app's
+ * cascade — and `text-foreground` is the same gray-900 the old
+ * `text-neutral-black` resolved to.
+ */
 export const headingClasses = {
-  h1: 'font-serif text-title-lg',
-  h2: 'font-serif text-title-lg text-neutral-black',
-  h3: 'font-serif text-title-base text-neutral-black',
-  h4: 'font-serif text-title-sm14 text-neutral-black',
+  h1: 'font-serif text-display font-light',
+  h2: 'font-serif text-headline font-light text-foreground',
+  h3: 'font-serif text-title text-foreground',
+  h4: 'font-serif text-label text-foreground',
 } as const;
