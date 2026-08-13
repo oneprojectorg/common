@@ -17,7 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
 import { AverageScoreBar } from './AverageScoreBar';
-import type { RubricSummary } from './ReviewsPanel';
+import type { OwnReviewEntry, RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
 
 interface ReviewerListProps {
@@ -28,6 +28,7 @@ interface ReviewerListProps {
   onSelectAssignment: (assignmentId: string) => void;
   hideSummaryHeader?: boolean;
   title?: string;
+  ownReview?: OwnReviewEntry;
 }
 
 export function ReviewerList({
@@ -38,6 +39,7 @@ export function ReviewerList({
   onSelectAssignment,
   hideSummaryHeader,
   title,
+  ownReview,
 }: ReviewerListProps) {
   const t = useTranslations();
   const { reviewsSubmittedCount, assignmentsCount, averageScore } =
@@ -75,7 +77,7 @@ export function ReviewerList({
         </header>
       )}
 
-      {hasScoring && (
+      {hasScoring && reviewsSubmittedCount > 0 && (
         <AverageScoreBar
           averageScore={averageScore}
           totalPoints={totalPoints}
@@ -98,6 +100,7 @@ export function ReviewerList({
                   showScore={hasScoring}
                   totalPoints={totalPoints}
                   onSelect={onSelectAssignment}
+                  isOwn={item.reviewer.id === ownReview?.profileId}
                 />
               ))}
             </RecommendationGroup>
@@ -114,10 +117,22 @@ export function ReviewerList({
                 showScore={hasScoring}
                 totalPoints={totalPoints}
                 onSelect={onSelectAssignment}
+                isOwn={item.reviewer.id === ownReview?.profileId}
               />
             ))}
           </div>
         </div>
+      )}
+
+      {ownReview && !ownReview.hasSubmitted && (
+        <Button
+          variant="link"
+          size="inline"
+          onClick={ownReview.onOpenForm}
+          className="self-start text-base"
+        >
+          {t('+ Add review')}
+        </Button>
       )}
     </div>
   );
@@ -186,13 +201,20 @@ function ReviewerRow({
   showScore,
   totalPoints,
   onSelect,
+  isOwn,
 }: {
   item: SubmittedReviewItem;
   showScore: boolean;
   totalPoints: number;
   onSelect: (assignmentId: string) => void;
+  isOwn?: boolean;
 }) {
   const t = useTranslations();
+  const reviewerName = item.reviewer.name ?? item.reviewer.slug;
+  const rowLabel = isOwn
+    ? t('{name} (You)', { name: reviewerName })
+    : reviewerName;
+
   return (
     // `bare`: the row keeps its card look and picks up the sense focus ring,
     // which the hand-rolled outline it used to carry never matched.
@@ -200,9 +222,7 @@ function ReviewerRow({
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
-      aria-label={t('View review by {name}', {
-        name: item.reviewer.name ?? item.reviewer.slug,
-      })}
+      aria-label={t('View review by {name}', { name: rowLabel })}
     >
       <div className="flex items-center gap-2">
         <ProfileAvatar
@@ -211,9 +231,7 @@ function ReviewerRow({
           className="size-6"
         />
         <div className="flex flex-col">
-          <span className="text-base">
-            {item.reviewer.name ?? item.reviewer.slug}
-          </span>
+          <span className="text-base">{rowLabel}</span>
           {showScore && (
             <span className="text-sm">
               {item.score}

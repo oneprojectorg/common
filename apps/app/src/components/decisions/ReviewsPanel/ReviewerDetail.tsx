@@ -6,15 +6,12 @@ import {
   type SubmittedReviewItem,
   findSchemaOption,
 } from '@op/common/client';
-import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
 import { StatusDot } from '@op/sense/StatusDot';
-import { LuArrowLeft } from 'react-icons/lu';
-
-import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
 import { SubmittedReviewView } from '../Review/SubmittedReviewView';
+import { BackToReviewers } from './BackToReviewers';
 import type { RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
 
@@ -31,7 +28,6 @@ export function ReviewerDetail({
   rubricSummary,
   onBack,
 }: ReviewerDetailProps) {
-  const t = useTranslations();
   const { hasOverallRecommendation, hasScoring, totalPoints } = rubricSummary;
 
   const recommendationLabel = (() => {
@@ -47,15 +43,7 @@ export function ReviewerDetail({
 
   return (
     <div className="flex flex-col gap-6">
-      <Button
-        variant="link"
-        size="inline"
-        onClick={onBack}
-        className="self-start text-base"
-      >
-        <LuArrowLeft className="size-4 rtl:-scale-x-100" />
-        {t('Back to all reviewers')}
-      </Button>
+      <BackToReviewers onClick={onBack} />
 
       <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-2">

@@ -88,11 +88,21 @@ export async function ReviewSummaryLayout({
     phaseId === instance.currentStateId &&
     isReviewPhase(assertInstancePhase({ instance, phaseId }));
 
-  await utils.decision.getProposalWithReviewAggregates.prefetch({
-    processInstanceId: instanceId,
-    proposalId,
-    phaseId,
-  });
+  await Promise.all([
+    utils.decision.getProposalWithReviewAggregates.prefetch({
+      processInstanceId: instanceId,
+      proposalId,
+      phaseId,
+    }),
+    // Same key as the query in ReviewSummaryView, `sort` included, or the
+    // client refetches on mount.
+    utils.decision.listReviewAssignments.prefetch({
+      processInstanceId: instanceId,
+      proposalProfileId,
+      phaseId,
+      sort: 'newest',
+    }),
+  ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

@@ -57,9 +57,9 @@ interface ReviewFormState {
   handleValueChange: (key: string, value: unknown) => void;
   handleRationaleChange: (key: string, value: string) => void;
   handleOverallCommentChange: (value: string) => void;
-  handleSubmit: () => void;
+  handleSubmit: () => Promise<void>;
   startEditing: () => void;
-  handleUpdate: () => void;
+  handleUpdate: () => Promise<void>;
   requestRevision: (comment: string) => void;
   cancelRevisionRequest: () => void;
   isRequestingRevision: boolean;
@@ -76,10 +76,22 @@ export function useReviewForm(): ReviewFormState {
   return ctx;
 }
 
+/** What a host rendering the form's primary action outside it needs. */
+export interface ReviewFormStatus {
+  /** Resolves once the write settles, whether it succeeded or not. */
+  submit: () => Promise<void>;
+  canSubmit: boolean;
+}
+
 export function ReviewFormProvider(props: {
   assignmentId: string;
   decisionSlug: string;
   allowRevisions: boolean;
+  /** Runs after a submit or an update instead of leaving for the decision page. */
+  onCompleted?: () => void;
+  /** Lets a host render the primary action outside the form. */
+  onStatusChange?: (status: ReviewFormStatus) => void;
+  initiallyEditing?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -93,11 +105,17 @@ function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
   allowRevisions,
+  onCompleted,
+  onStatusChange,
+  initiallyEditing = false,
   children,
 }: {
   assignmentId: string;
   decisionSlug: string;
   allowRevisions: boolean;
+  onCompleted?: () => void;
+  onStatusChange?: (status: ReviewFormStatus) => void;
+  initiallyEditing?: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations();
@@ -160,11 +178,15 @@ function ReviewFormProviderInner({
     allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initiallyEditing);
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
       toast.success(t('Review submitted successfully'));
+      if (onCompleted) {
+        onCompleted();
+        return;
+      }
       router.push(`/decisions/${decisionSlug}/current`);
     },
     onError: (error) => {
@@ -178,6 +200,7 @@ function ReviewFormProviderInner({
       // refreshing the read-only view in place (as requestRevision does).
       setIsEditing(false);
       toast.success(t('Review updated successfully'));
+      onCompleted?.();
     },
     onError: (error) => {
       toast.error(error.message || t('Failed to update review'));
@@ -242,58 +265,81 @@ function ReviewFormProviderInner({
     [scheduleAutosave],
   );
 
-  const handleSubmit = useCallback(() => {
-    submitReview.mutate({
+  // `.mutate` is stable; the mutation object is a new snapshot every render and
+  // would give every handler, and the context value, a new identity each time.
+  const submitMutate = submitReview.mutateAsync;
+  const updateMutate = updateReview.mutateAsync;
+  const requestRevisionMutate = requestRevisionMutation.mutate;
+  const cancelRevisionMutate = cancelRevisionMutation.mutate;
+
+  // Rejections are swallowed: the mutation's onError owns the message, and
+  // callers only await settlement.
+  const handleSubmit = useCallback(async () => {
+    await submitMutate({
       assignmentId,
       reviewData: { answers: values, rationales },
       overallComment: overallComment.trim() ? overallComment : null,
-    });
-  }, [assignmentId, values, rationales, overallComment, submitReview]);
+    }).catch(() => {});
+  }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
   const startEditing = useCallback(() => {
     setIsEditing(true);
   }, []);
 
-  const handleUpdate = useCallback(() => {
-    updateReview.mutate({
+  const handleUpdate = useCallback(async () => {
+    await updateMutate({
       assignmentId,
       reviewData: { answers: values, rationales },
       overallComment: overallComment.trim() ? overallComment : null,
-    });
-  }, [assignmentId, values, rationales, overallComment, updateReview]);
+    }).catch(() => {});
+  }, [assignmentId, values, rationales, overallComment, updateMutate]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
-      requestRevisionMutation.mutate({
+      requestRevisionMutate({
         assignmentId,
         requestComment: comment,
       });
     },
-    [assignmentId, requestRevisionMutation],
+    [assignmentId, requestRevisionMutate],
   );
 
   const handleCancelRevision = useCallback(() => {
     if (!ownRevisionRequest) {
       return;
     }
-    cancelRevisionMutation.mutate({
+    cancelRevisionMutate({
       assignmentId,
       revisionRequestId: ownRevisionRequest.id,
     });
-  }, [assignmentId, ownRevisionRequest, cancelRevisionMutation]);
+  }, [assignmentId, ownRevisionRequest, cancelRevisionMutate]);
+
+  const canSubmit = isRubricValid && !isSubmitted && !isPausedForRevision;
+  const canUpdate = isRubricValid && isEditing;
+
+  // What a host outside the form needs to drive its primary action.
+  const primaryAction = isEditing ? handleUpdate : handleSubmit;
+  const primaryActionEnabled = isEditing ? canUpdate : canSubmit;
+
+  useEffect(() => {
+    onStatusChange?.({
+      submit: primaryAction,
+      canSubmit: primaryActionEnabled,
+    });
+  }, [onStatusChange, primaryAction, primaryActionEnabled]);
 
   const state = useMemo<ReviewFormState>(
     () => ({
       values,
       rationales,
       overallComment,
-      canSubmit: isRubricValid && !isSubmitted && !isPausedForRevision,
+      canSubmit,
       isSubmitting: submitReview.isPending,
       isSubmitted,
       canEditReview,
       isEditing,
       isUpdating: updateReview.isPending,
-      canUpdate: isRubricValid && isEditing,
+      canUpdate,
       isPausedForRevision,
       revisionRequest: effectiveRevisionRequest,
       isOwnRevisionRequest,
@@ -316,7 +362,8 @@ function ReviewFormProviderInner({
       values,
       rationales,
       overallComment,
-      isRubricValid,
+      canSubmit,
+      canUpdate,
       isSubmitted,
       canEditReview,
       isEditing,
