@@ -66,12 +66,6 @@ const config = {
     authInterrupts: true,
   },
   turbopack: {
-    // Pin the workspace root. Turbopack otherwise infers it by walking up for
-    // lockfiles, so a stray package-lock.json above the monorepo (e.g. an `npm
-    // install` run in $HOME) silently moves the root and emits externals
-    // symlinks under .next/dev/node_modules with the wrong relative depth —
-    // producing "Cannot find module '@swc/helpers-<hash>/...'" at runtime.
-    root: path.resolve(__dirname, '../..'),
     resolveAlias: {
       // Disable the 'tls' module on the client side
       tls: { browser: '' },
