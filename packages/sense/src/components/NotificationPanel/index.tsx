@@ -55,8 +55,19 @@ function NotificationPanelItem({
   );
 }
 
+/**
+ * The action group for a row. Stacks its buttons on narrow viewports and turns
+ * into a row at `sm`, matching NotificationPanelItem's own breakpoint — so a
+ * call site's `w-full sm:w-auto` buttons get a container that honours the
+ * full-width half. A row here at every width overflows the card instead:
+ * `Button` is `shrink-0`, so two `w-full` siblings can't shrink to share it.
+ */
 function NotificationPanelActions({ children }: { children: ReactNode }) {
-  return <div className="flex items-center gap-4">{children}</div>;
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      {children}
+    </div>
+  );
 }
 
 export {
