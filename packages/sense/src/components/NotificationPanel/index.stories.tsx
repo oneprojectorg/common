@@ -45,10 +45,10 @@ export const ResponsiveActions: Story = {
               description="A reviewer has requested changes to Community Solar"
             />
             <NotificationPanelActions>
+              <Button className="w-full sm:w-auto">Revise proposal</Button>
               <Button variant="outline" className="w-full sm:w-auto">
                 Ignore
               </Button>
-              <Button className="w-full sm:w-auto">Revise proposal</Button>
             </NotificationPanelActions>
           </NotificationPanelItem>
         </NotificationPanelList>

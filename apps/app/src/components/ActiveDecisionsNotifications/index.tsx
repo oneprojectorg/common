@@ -133,13 +133,6 @@ const RevisionRequestRow = ({
         })}
       />
       <NotificationPanelActions>
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto"
-          onClick={() => setDismissed(true)}
-        >
-          {t('Ignore')}
-        </Button>
         <ButtonLink
           href={editHref}
           className="w-full sm:w-auto"
@@ -148,6 +141,13 @@ const RevisionRequestRow = ({
         >
           {t('Revise proposal')}
         </ButtonLink>
+        <Button
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={() => setDismissed(true)}
+        >
+          {t('Ignore')}
+        </Button>
       </NotificationPanelActions>
     </NotificationPanelItem>
   );
