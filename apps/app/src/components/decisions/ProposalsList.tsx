@@ -1,6 +1,5 @@
 'use client';
 
-import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
@@ -39,6 +38,10 @@ import {
 } from './ProposalsMapView';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
+import {
+  useDecisionNeedsTranslation,
+  useRegisterTranslationSamples,
+} from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { getProposalDetectionText } from './translationDetectionText';
@@ -485,7 +488,9 @@ const ProposalsListContent = ({
     ],
     [allProposals, currentPhase?.headline, currentPhase?.description],
   );
-  const needsTranslation = useAnyContentNeedsTranslation(detectionSamples);
+
+  useRegisterTranslationSamples('proposals', detectionSamples);
+  const needsTranslation = useDecisionNeedsTranslation();
 
   const translation = useTranslateDecision({
     proposals: allProposals,

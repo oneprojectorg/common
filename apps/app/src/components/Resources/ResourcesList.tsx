@@ -4,13 +4,14 @@ import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
 import { Sortable } from '@op/sense/Sortable';
 import { toast } from '@op/sense/Toast';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LuUpload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
+import { useRegisterTranslationSamples } from '@/components/decisions/TranslationDetectionContext';
 
 import { ResourceCard } from './ResourceCard';
 import { ResourceDropZone } from './ResourceDropZone';
@@ -43,6 +44,16 @@ export const ResourcesList = ({
     setSyncedFrom(data.items);
     setItems(data.items);
   }
+
+  // `handleTranslate` already sends this profile's resources to
+  // translateResources. Register their text so the Translate control appears
+  // for a reader whose only unreadable content is a resource. No-ops outside a
+  // decision screen, where no detection provider is mounted.
+  const resourceSamples = useMemo(
+    () => items.flatMap((item) => [item.title, item.description ?? '']),
+    [items],
+  );
+  useRegisterTranslationSamples('resources', resourceSamples);
 
   const reorder = trpc.resources.reorder.useMutation({
     onMutate: async (vars) => {
