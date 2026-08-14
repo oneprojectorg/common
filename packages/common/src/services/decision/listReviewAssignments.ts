@@ -41,23 +41,26 @@ const STATUS_SORT_RANK: Record<string, number> = {
 const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
 /**
- * Returns the reviewer's authorized review assignments for a single phase — the
- * requested `phaseId`, else the current one.
+ * Returns the reviewer's authorized review assignments — scoped to `phaseId`
+ * when given, across every phase when it is omitted.
  */
 export async function listReviewAssignments({
   processInstanceId,
-  phaseId: requestedPhaseId,
+  phaseId,
   status,
   categoryIds,
+  proposalProfileId,
   sort = 'leastReviewed',
   user,
 }: {
   processInstanceId: string;
-  /** Defaults to the instance's current phase. */
+  /** Omit for every phase. */
   phaseId?: string;
   status?: string;
   /** Taxonomy term ids — limits results to assignments whose proposal is in any of the categories. */
   categoryIds?: string[];
+  /** Profile id of a single proposal — limits results to that proposal's assignments. */
+  proposalProfileId?: string;
   sort?: ReviewAssignmentSort;
   user: User;
 }): Promise<ReviewAssignmentList> {
@@ -73,10 +76,6 @@ export async function listReviewAssignments({
   if (!instance.access.review && !instance.access.admin) {
     throw new UnauthorizedError("You don't have access to review proposals");
   }
-
-  // Same resolution as listProposalsWithReviewAggregates. Assignment rows are
-  // never unphased, so only a phase-less instance skips the filter.
-  const phaseId = requestedPhaseId ?? instance.currentStateId ?? undefined;
 
   // Resolve the categories' proposal IDs up front (same approach as
   // resolveProposalListScope): assignments have no category column, so the
@@ -140,16 +139,23 @@ export async function listReviewAssignments({
       ...(categoryProposalIds && {
         proposalId: { in: categoryProposalIds },
       }),
+      ...(proposalProfileId && {
+        proposal: { profileId: proposalProfileId },
+      }),
     },
     with: reviewAssignmentWithConfig,
     // The `id` tie-break gives a deterministic order when the primary keys are
     // equal (e.g. same `assignedAt`, or same coverage before the shuffle).
     orderBy: (table, { asc, desc }) => {
+      // `assignedAt` is nullable, and Postgres puts NULLs first on DESC — which
+      // would let an undated assignment lead the "newest" list (the single-
+      // proposal resolver reads the first row as the latest one). NULLS LAST on
+      // both directions keeps an undated assignment from ever winning.
       if (sort === 'newest') {
-        return [desc(table.assignedAt), desc(table.id)];
+        return [sql`${table.assignedAt} DESC NULLS LAST`, desc(table.id)];
       }
       if (sort === 'oldest') {
-        return [asc(table.assignedAt), asc(table.id)];
+        return [sql`${table.assignedAt} ASC NULLS LAST`, asc(table.id)];
       }
       // 'leastReviewed': fewest completed reviews, then status priority, then
       // the stable per-reviewer shuffle.

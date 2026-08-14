@@ -93,6 +93,11 @@ export interface CreateReviewAssignmentOptions {
   phaseId?: string;
   assignedProposalHistoryId?: string | null;
   status?: ProposalReviewAssignmentStatus;
+  /**
+   * Defaults to `now()`. Set it explicitly to pin the ordering — e.g. two rows
+   * sharing a timestamp, as a single batch insert produces.
+   */
+  assignedAt?: string;
 }
 
 export interface CreateProposalReviewOptions {
@@ -122,6 +127,7 @@ export async function createReviewAssignment(
     phaseId = 'review',
     assignedProposalHistoryId = null,
     status = ProposalReviewAssignmentStatus.PENDING,
+    assignedAt,
   } = opts;
 
   const [assignment] = await db
@@ -133,6 +139,7 @@ export async function createReviewAssignment(
       phaseId,
       assignedProposalHistoryId,
       status,
+      ...(assignedAt !== undefined && { assignedAt }),
     })
     .returning();
 
@@ -194,6 +201,8 @@ export interface CreateReviewScenarioOptions {
   assignmentStatus?: ProposalReviewAssignmentStatus;
   /** Phase ID the assignment belongs to (defaults to 'review') */
   phaseId?: string;
+  /** Assignment timestamp (defaults to `now()`) — pin it to control ordering */
+  assignedAt?: string;
   /**
    * If provided, also create a revision request on the assignment.
    * Mirrors `CreateRevisionRequestOptions` minus assignmentId.
@@ -248,6 +257,7 @@ export async function createReviewScenario(
     phaseId: opts.phaseId,
     assignedProposalHistoryId,
     status: opts.assignmentStatus ?? ProposalReviewAssignmentStatus.PENDING,
+    assignedAt: opts.assignedAt,
   });
 
   const revisionRequest = opts.revisionRequest

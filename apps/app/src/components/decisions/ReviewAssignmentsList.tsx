@@ -69,8 +69,19 @@ export function ReviewAssignmentsList({
     parseAsStringLiteral(REVIEW_ASSIGNMENT_SORTS).withDefault('leastReviewed'),
   );
 
+  // cached from the page-level suspense query — no extra request
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: processInstanceId,
+  });
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhase = phases.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+
   const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
     processInstanceId,
+    // The queue is this phase's work; omitting phaseId would list every phase.
+    ...(instance.currentStateId && { phaseId: instance.currentStateId }),
     ...(statusFilter && {
       status: statusFilter as ProposalReviewAssignmentStatus,
     }),
@@ -90,15 +101,6 @@ export function ReviewAssignmentsList({
         enabled: canViewReviewers && proposalIds.length > 0,
       },
     );
-
-  // cached from the page-level suspense query — no extra request
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: processInstanceId,
-  });
-  const phases = instance.instanceData?.phases ?? [];
-  const currentPhase = phases.find(
-    (phase) => phase.phaseId === instance.currentStateId,
-  );
   const isByCategory =
     !!currentPhase &&
     getPhaseReviewSettings({ phases }, currentPhase.phaseId).scope ===
@@ -257,7 +259,9 @@ export function ReviewAssignmentsList({
             <ReviewAssignmentCard
               key={item.assignment.id}
               assignment={item}
-              viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
+              // The proposal-keyed URL resolves per viewer (own review screen
+              // for a reviewer, review progress for an admin).
+              viewHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
               reviewers={
                 aggregatesData?.items.find(
                   (i) => i.proposal.id === item.assignment.proposal.id,
