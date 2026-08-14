@@ -176,7 +176,7 @@
   "Newest First": "Kuwa Ugu Cusub Marka Hore",
   "Oldest First": "Kuwa Ugu Duugan Marka Hore",
   "No proposals found matching the current filters.": "Lama helin soo jeedimo la mid ah shaandhaynta hadda.",
-  "No proposals match '{query}'": "Ma jiraan soo jeedimo la mid ah '{query}'",
+  "No proposals match “{query}”": "Ma jiraan soo jeedimo la mid ah “{query}”",
   "Search matches the original titles, not the translations.": "Raadintu waxay la mid tahay cinwaannada asalka ah, ee ma aha turjumaadaha.",
   "Clear filters": "Tirtir shaandhaynta",
   "Try adjusting your filter selection above.": "Isku day inaad hagaajiso xulashada shaandhayntaada sare.",

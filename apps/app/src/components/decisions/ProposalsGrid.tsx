@@ -142,8 +142,10 @@ export const NoProposalsFound = ({
   }
 
   // A search names itself; the generic filter copy only has to cover the rest.
+  // Curly quotes, not straight: ICU reads `'{` as the start of an escaped
+  // literal, which would print the placeholder instead of the term.
   const title = searchQuery
-    ? t("No proposals match '{query}'", { query: searchQuery })
+    ? t('No proposals match “{query}”', { query: searchQuery })
     : hasFilter
       ? t('No proposals found matching the current filters.')
       : t('No proposals yet');

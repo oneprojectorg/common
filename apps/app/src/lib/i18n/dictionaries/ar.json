@@ -176,7 +176,7 @@
   "Newest First": "الأحدث أولاً",
   "Oldest First": "الأقدم أولاً",
   "No proposals found matching the current filters.": "لم يتم العثور على مقترحات تطابق المرشحات الحالية.",
-  "No proposals match '{query}'": "لا توجد مقترحات تطابق '{query}'",
+  "No proposals match “{query}”": "لا توجد مقترحات تطابق «{query}»",
   "Search matches the original titles, not the translations.": "يطابق البحث العناوين الأصلية، وليس الترجمات.",
   "Clear filters": "مسح المرشحات",
   "Try adjusting your filter selection above.": "حاول تعديل اختيار التصفية أعلاه.",

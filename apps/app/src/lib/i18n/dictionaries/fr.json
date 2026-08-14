@@ -224,7 +224,7 @@
   "Newest First": "Plus récent en premier",
   "Oldest First": "Plus ancien en premier",
   "No proposals found matching the current filters.": "Aucune proposition trouvée correspondant aux filtres actuels.",
-  "No proposals match '{query}'": "Aucune proposition ne correspond à '{query}'",
+  "No proposals match “{query}”": "Aucune proposition ne correspond à « {query} »",
   "Search matches the original titles, not the translations.": "La recherche porte sur les titres d'origine, pas sur les traductions.",
   "Clear filters": "Effacer les filtres",
   "Try adjusting your filter selection above.": "Essayez de changer votre sélection de filtres ci-dessus.",

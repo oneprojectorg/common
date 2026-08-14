@@ -181,7 +181,7 @@
   "Newest First": "Newest First",
   "Oldest First": "Oldest First",
   "No proposals found matching the current filters.": "No proposals found matching the current filters.",
-  "No proposals match '{query}'": "No proposals match '{query}'",
+  "No proposals match “{query}”": "No proposals match “{query}”",
   "Search matches the original titles, not the translations.": "Search matches the original titles, not the translations.",
   "Clear filters": "Clear filters",
   "Try adjusting your filter selection above.": "Try adjusting your filter selection above.",

@@ -224,7 +224,7 @@
   "Newest First": "সবচেয়ে নতুনটি প্রথমে",
   "Oldest First": "সবচেয়ে পুরাতনটি প্রথমে",
   "No proposals found matching the current filters.": "বর্তমান ফিল্টারগুলোর সাথে ম্যাচ করে এমন কোনো প্রস্তাব পাওয়া যায়নি।",
-  "No proposals match '{query}'": "'{query}' এর সাথে কোনো প্রস্তাব মেলে না",
+  "No proposals match “{query}”": "“{query}” এর সাথে কোনো প্রস্তাব মেলে না",
   "Search matches the original titles, not the translations.": "অনুসন্ধান মূল শিরোনামের সাথে মেলে, অনুবাদের সাথে নয়।",
   "Clear filters": "ফিল্টার মুছুন",
   "Try adjusting your filter selection above.": "উপরে আপনার ফিল্টার নির্বাচন সমন্বয় করার চেষ্টা করুন।",
