@@ -21,14 +21,20 @@ import {
 } from '../fixtures/index.js';
 
 /**
- * Reproduces the reported gaps in user-content translation (ONE COWOP report:
+ * Covers the reported gaps in user-content translation (ONE COWOP report:
  * "when viewing proposals, browsing all, viewing a proposal, and reviewing a
  * proposal against the rubric — none of the UGC is available. But I did see the
  * overview page translating").
  *
- * Each test asserts the presence or absence of the Translate affordance only.
- * No test clicks Translate, so no test calls DeepL — the affordance is the
- * thing under test, and gating it off is what the report describes.
+ * Two gaps are fixed and pinned here:
+ * 1. The rubric review screen had no translate affordance at all. It now
+ *    shares `useTranslateProposal` with the proposal page.
+ * 2. Language detection sampled the body and skipped the title, so a proposal
+ *    with a foreign title over a short body looked same-language.
+ *
+ * Each test asserts the presence of the Translate affordance only. No test
+ * clicks Translate, so no test calls DeepL — reaching the affordance is what
+ * the report is about.
  *
  * The Spanish samples below are long enough for franc (used by
  * `lib/languageDetection.ts`) to resolve a language. Short strings return
@@ -92,7 +98,7 @@ const RUBRIC_TEMPLATE = {
 } as const satisfies RubricTemplateSchema;
 
 test.describe('UGC translation coverage', () => {
-  test('the overview offers translation but the rubric review screen does not', async ({
+  test('both the overview and the rubric review screen offer translation', async ({
     browser,
     org,
     supabaseAdmin,
@@ -167,8 +173,8 @@ test.describe('UGC translation coverage', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    // Control: the overview owns both a provider and a trigger, so the button
-    // appears. This proves the Spanish samples above are detected.
+    // The overview has always offered the button. Assert it first so a
+    // detection regression shows up here rather than on the review screen.
     await page.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'domcontentloaded',
     });
@@ -179,14 +185,12 @@ test.describe('UGC translation coverage', () => {
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
     ).toBeVisible({ timeout: 36_000 });
 
-    // The rubric review screen renders the same Spanish proposal, but sits
-    // outside the `(decision-view)` route group — no provider, no trigger.
+    // The reviewer scoring the same Spanish proposal gets the same affordance.
     await page.goto(`/en/decisions/${instance.slug}/reviews/${assignment.id}`, {
       waitUntil: 'domcontentloaded',
     });
-    // ReviewLayout renders the proposal pane twice (desktop + mobile
-    // containers), so anchor on the review chrome and assert the Spanish
-    // proposal is on the page rather than fighting the duplicate panes.
+    // SplitPane hides the inactive pane with CSS, so the proposal title can
+    // resolve to a hidden copy — anchor on the review chrome instead.
     await expect(
       page.getByRole('link', { name: 'Back to proposals' }),
     ).toBeVisible({ timeout: 36_000 });
@@ -196,12 +200,12 @@ test.describe('UGC translation coverage', () => {
     await expect(page.getByText('Proponemos construir').first()).toBeAttached();
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
-    ).toHaveCount(0);
+    ).toBeVisible({ timeout: 36_000 });
 
     await ctx.close();
   });
 
-  test('a proposal with a Spanish title but no body offers no translation', async ({
+  test('a proposal with a Spanish title but no body offers translation', async ({
     browser,
     org,
     supabaseAdmin,
@@ -263,7 +267,7 @@ test.describe('UGC translation coverage', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    // Control: a Spanish body is detected, so the detail page offers Translate.
+    // A Spanish body has always been detected.
     await page.goto(
       `/en/decisions/${instance.slug}/proposal/${withBody.profileId}`,
       { waitUntil: 'domcontentloaded' },
@@ -272,8 +276,8 @@ test.describe('UGC translation coverage', () => {
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
     ).toBeVisible({ timeout: 36_000 });
 
-    // Subject: the title is Spanish and visible, but the detection sample
-    // skips the title, so no Translate button renders.
+    // Subject: the title is the only Spanish text on the page. Detection now
+    // samples it, so the reader can still translate.
     await page.goto(
       `/en/decisions/${instance.slug}/proposal/${titleOnly.profileId}`,
       { waitUntil: 'domcontentloaded' },
@@ -283,7 +287,7 @@ test.describe('UGC translation coverage', () => {
     ).toBeVisible({ timeout: 36_000 });
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
-    ).toHaveCount(0);
+    ).toBeVisible({ timeout: 36_000 });
 
     await ctx.close();
   });
