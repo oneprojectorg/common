@@ -101,7 +101,7 @@ export function SummarySectionInner({
         <div className="flex flex-col space-y-2 rounded-lg border p-4">
           {incompleteItems.map((item, index) => (
             <div key={item.id}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-base">{t(item.labelKey)}</span>
                 <Button
                   variant="outline"

@@ -142,7 +142,12 @@ export function ProposalCard({
         )}
         {...rest}
       >
-        <h3 className="line-clamp-2 font-serif text-label text-foreground">
+        {/* Clamped, so `dir` has to come from the content or the ellipsis clips
+            the wrong end; alignment is pinned back to the page. */}
+        <h3
+          dir="auto"
+          className="line-clamp-2 font-serif text-label text-foreground ltr:text-left rtl:text-right"
+        >
           <TitleLink href={href} linkComponent={linkComponent}>
             {title}
           </TitleLink>
@@ -173,6 +178,10 @@ export function ProposalCard({
       {aside ? <div className="absolute end-6 top-6 z-10">{aside}</div> : null}
       <div className={cn('flex flex-col gap-3', aside && 'pe-10')}>
         {headerBadge}
+        {/* Proposal text is user content, so it can run counter to the page
+            direction. `<bdi>` isolates the run — without it the trailing
+            punctuation jumps to the wrong end — while the heading itself keeps
+            the page's direction, so a grid of cards stays in one column. */}
         <h3
           id={titleId}
           className={cn(
@@ -181,7 +190,7 @@ export function ProposalCard({
           )}
         >
           <TitleLink href={href} linkComponent={linkComponent}>
-            {title}
+            <bdi>{title}</bdi>
           </TitleLink>
         </h3>
         {alert}
@@ -197,7 +206,12 @@ export function ProposalCard({
         </div>
       ) : null}
       {description ? (
-        <p className="line-clamp-3 text-base text-foreground">{description}</p>
+        <p
+          dir="auto"
+          className="line-clamp-3 text-base text-foreground ltr:text-left rtl:text-right"
+        >
+          {description}
+        </p>
       ) : null}
       {metrics ? (
         <div className="relative z-10 flex items-center gap-1">
@@ -288,8 +302,13 @@ function AuthorRow({
   compact?: boolean;
 }) {
   const first = authors[0];
-  const label =
-    authors.length > 1 ? `${first?.name} +${authors.length - 1}` : first?.name;
+  // The name is isolated so a "+2" stays after it whichever way the name runs.
+  const label = (
+    <>
+      <bdi>{first?.name}</bdi>
+      {authors.length > 1 ? ` +${authors.length - 1}` : null}
+    </>
+  );
   return (
     <div className="flex items-center gap-1.5">
       <FacePile
@@ -346,7 +365,9 @@ function TagRow({
         // Categories are free text, so a long one has to ellipsize instead of
         // pushing the row past the card. Full text stays in the DOM.
         <Badge key={tag} variant="secondary" className="max-w-full" title={tag}>
-          <span className="truncate">{tag}</span>
+          <span className="truncate">
+            <bdi>{tag}</bdi>
+          </span>
         </Badge>
       ))}
       {overflow > 0 ? (

@@ -23,7 +23,7 @@ export const PlatformHighlights = () => {
 
   return (
     <Card className="gap-0 py-0">
-      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
+      <div className="flex flex-col items-center justify-around gap-6 px-10 py-6 sm:flex-row sm:gap-4">
         {stats.newOrganizations > 0 && (
           <>
             <Highlight>
@@ -89,7 +89,7 @@ const HighlightNumber = ({
     <div className="col-span-3 text-transparent xxs:col-span-2">
       <div
         className={cn(
-          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-display font-light',
+          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-5xl font-light sm:text-display',
           className,
         )}
       >
@@ -100,16 +100,12 @@ const HighlightNumber = ({
 };
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
-  return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center xxs:col-span-3">
-      {children}
-    </div>
-  );
+  return <div className="flex h-12 items-center">{children}</div>;
 };
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="grid w-full grid-cols-5 items-center gap-4 xxs:flex sm:flex">
+    <div className="flex w-full items-center justify-start gap-4 sm:w-fit">
       {children}
     </div>
   );

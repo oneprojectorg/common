@@ -27,7 +27,6 @@ export function EditBannerModal({
     <>
       <Button
         variant="outline"
-        size="sm"
         className="absolute end-4 top-4 z-10 hidden md:flex"
         onClick={() => setIsOpen(true)}
       >

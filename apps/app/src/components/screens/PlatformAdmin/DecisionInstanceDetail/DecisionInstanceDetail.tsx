@@ -71,7 +71,9 @@ const DecisionInstanceDetailContent = ({
           {t('All Decisions')}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-serif text-headline font-light">{detail.name}</h1>
+          <h1 className="font-serif text-headline font-light">
+            <bdi>{detail.name}</bdi>
+          </h1>
           {detail.status ? (
             <Badge variant="secondary">
               {STATUS_DISPLAY[detail.status] ?? detail.status}
