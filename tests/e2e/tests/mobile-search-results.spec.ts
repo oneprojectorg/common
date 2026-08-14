@@ -59,6 +59,32 @@ test.describe('Mobile search results fill the screen', () => {
     const listHeight = await list.evaluate((element) => element.clientHeight);
     expect(listHeight).toBeGreaterThan(panelBox.height - 64);
   });
+
+  test('submitting the search dismisses the sheet', async ({ page }) => {
+    const org = await createOrganization({
+      testId: `search-submit-${randomUUID().slice(0, 6)}`,
+      supabaseAdmin: admin,
+      users: { admin: 1, member: 0 },
+    });
+    await authenticateAsUser(page, {
+      email: org.adminUser.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+    await page.goto('/en/', { waitUntil: 'domcontentloaded' });
+
+    await page.getByRole('button', { name: 'Search' }).first().click();
+    const input = page.getByRole('combobox', { name: 'Search' });
+    await input.fill('test');
+
+    const panel = page.getByLabel('Search results');
+    await expect(panel).toBeVisible();
+
+    // The sheet covers the page, so leaving it open reads as "nothing happened"
+    // even though the navigation landed.
+    await input.press('Enter');
+    await expect(page).toHaveURL(/\/search\?q=test/);
+    await expect(panel).toBeHidden();
+  });
 });
 
 async function boundingBox(locator: Locator) {

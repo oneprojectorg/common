@@ -289,10 +289,12 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       <div
         aria-label={t('Search results')}
         className={cn(
-          !dropdownShowing && 'hidden',
           isMobile
             ? 'fixed inset-x-0 top-15 bottom-0 z-10 flex flex-col overflow-hidden bg-popover text-base'
             : 'absolute top-12 z-10 w-full rounded border bg-popover text-base shadow',
+          // Last, so it displaces the `flex` above — same tailwind-merge display
+          // group, and losing it leaves the sheet stuck open over the page.
+          !dropdownShowing && 'hidden',
         )}
       >
         {isMobile ? (
