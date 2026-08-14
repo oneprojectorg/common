@@ -142,9 +142,11 @@ export function ProposalCard({
         )}
         {...rest}
       >
+        {/* Clamped, so `dir` has to come from the content or the ellipsis clips
+            the wrong end; alignment is pinned back to the page. */}
         <h3
           dir="auto"
-          className="line-clamp-2 [text-align:match-parent] font-serif text-label text-foreground"
+          className="line-clamp-2 font-serif text-label text-foreground ltr:text-left rtl:text-right"
         >
           <TitleLink href={href} linkComponent={linkComponent}>
             {title}
@@ -176,21 +178,19 @@ export function ProposalCard({
       {aside ? <div className="absolute end-6 top-6 z-10">{aside}</div> : null}
       <div className={cn('flex flex-col gap-3', aside && 'pe-10')}>
         {headerBadge}
-        {/* Proposal text is user content, so it can be LTR on an RTL page (or
-            the reverse). `dir="auto"` resolves the block's direction from its
-            own first strong character — without it the trailing punctuation and
-            the clamp ellipsis jump to the wrong end. `match-parent` keeps the
-            alignment on the page, so a grid of cards stays in one column. */}
+        {/* Proposal text is user content, so it can run counter to the page
+            direction. `<bdi>` isolates the run — without it the trailing
+            punctuation jumps to the wrong end — while the heading itself keeps
+            the page's direction, so a grid of cards stays in one column. */}
         <h3
           id={titleId}
-          dir="auto"
           className={cn(
-            '[text-align:match-parent] font-serif text-title',
+            'font-serif text-title',
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
           <TitleLink href={href} linkComponent={linkComponent}>
-            {title}
+            <bdi>{title}</bdi>
           </TitleLink>
         </h3>
         {alert}
@@ -208,7 +208,7 @@ export function ProposalCard({
       {description ? (
         <p
           dir="auto"
-          className="line-clamp-3 [text-align:match-parent] text-base text-foreground"
+          className="line-clamp-3 text-base text-foreground ltr:text-left rtl:text-right"
         >
           {description}
         </p>

@@ -32,7 +32,7 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
   - Colors: semantic classes (e.g. `bg-primary`, `text-muted-foreground`, `border-input`) — raw values in `packages/styles/tokens.css`, semantic names in `packages/styles/theme.css`
   - Text sizes: the sense type scale (`text-label`, `text-title`, `text-headline`, `text-display`) — no raw Tailwind size utilities we haven't defined, and never the legacy `text-title-*` scale
 - **Always use logical properties** — `ms-`/`me-`, `ps-`/`pe-`, `start-`/`end-`, `text-start`/`text-end` — never `ml-`/`pl-`/`left-`. The app ships Arabic.
-- **Isolate user-authored text** — a title, name, or category can run counter to the page direction, and without isolation its punctuation lands on the wrong side. Block of text → `dir="auto"` plus `[text-align:match-parent]` (direction from the content, alignment from the page); a name or short value sitting inline → wrap it in `<bdi>`. See [`packages/sense/CLAUDE.md`](packages/sense/CLAUDE.md) for why both halves are needed and which sense components already do this.
+- **Isolate user-authored text** — a title, name, or category can run counter to the page direction, and without isolation its punctuation lands on the wrong side. Wrap it in `<bdi>`; if the block truncates or clamps, it needs `dir="auto"` plus `ltr:text-left rtl:text-right` instead, or the ellipsis clips the wrong end. See [`packages/sense/CLAUDE.md`](packages/sense/CLAUDE.md) for the reasoning and which sense components already do this.
 - Tailwind configuration is centralized in `@op/styles`: `tokens.css` holds raw values, `theme.css` holds semantics and is the package entry
 
 ### Accessibility

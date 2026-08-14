@@ -24,8 +24,9 @@ const titleClasses: Record<ProfileItemSize, string> = {
 
 /**
  * Avatar + title (+ optional description / trailing content) row. Presentational
- * — pass a rendered avatar; the consumer owns data. `dir="auto"` on text so
- * RTL names/descriptions resolve their own direction.
+ * — pass a rendered avatar; the consumer owns data. Title and description take
+ * their direction from the content and their alignment from the page, so a name
+ * running counter to the page still truncates from its own tail.
  */
 function ProfileItem({
   avatar,
@@ -41,14 +42,16 @@ function ProfileItem({
     <div className={cn('flex min-w-0 gap-3 text-start', className)}>
       {avatar}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        {/* `dir="auto"` gets the ordering (and the ellipsis side) from the
-            content; `match-parent` keeps the *alignment* on the page, so a row
-            of mixed-language items doesn't align every other one differently. */}
+        {/* A truncating block needs `dir` from its own content — the ellipsis
+            lands at the block's direction end, so an RTL block would clip the
+            *head* off an English name. Alignment then has to be pinned back to
+            the page, which is the one place physical `text-left`/`text-right`
+            is the point rather than a bug: `start` would follow the content. */}
         <div
           dir="auto"
           className={cn(
             titleClasses[size],
-            'truncate [text-align:match-parent]',
+            'truncate ltr:text-left rtl:text-right',
             titleClassName,
           )}
         >
@@ -58,7 +61,7 @@ function ProfileItem({
           <div
             dir="auto"
             className={cn(
-              'truncate [text-align:match-parent] text-sm font-normal text-muted-foreground',
+              'truncate text-sm font-normal text-muted-foreground ltr:text-left rtl:text-right',
               descriptionClassName,
             )}
           >
