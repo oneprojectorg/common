@@ -35,7 +35,9 @@ export interface StickyFilterBarProps {
  * the bar locks; once pinned, the full-bleed hairlines and white backing fade
  * in. Requires a `relative` ancestor for the sentinel to anchor to. Callers
  * supply the bar's content — typically a header on the left, filters on the
- * right (the shell lays them out with `justify-between`).
+ * right (the shell lays them out with `justify-between`). A caller that needs a
+ * different arrangement overrides it through `className`; the layout defaults
+ * live here only because two of the three callers want them.
  */
 export const StickyFilterBar = ({
   pinOffset = 0,
@@ -79,7 +81,7 @@ export const StickyFilterBar = ({
         className={cn(
           // `top` (inline) only matters on mobile, where it clears the floating
           // toggle; on >=md the toggle is inline in the header, so pin flush at 0.
-          'group sticky z-20 flex flex-col justify-between gap-4 overflow-visible bg-white py-3 transition-shadow md:top-0! 2xl:grid 2xl:grid-cols-[1fr_auto]',
+          'group sticky z-20 flex flex-wrap items-center justify-between gap-4 overflow-visible bg-white py-3 transition-shadow md:top-0!',
           // Top hairline fades in on pin — mobile only (>=md has no floating
           // toggle above the bar, so no top edge to delineate).
           "max-md:before:pointer-events-none max-md:before:absolute max-md:before:top-0 max-md:before:left-1/2 max-md:before:w-screen max-md:before:-translate-x-1/2 max-md:before:border-t max-md:before:border-border max-md:before:opacity-0 max-md:before:content-['']",
