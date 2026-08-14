@@ -117,9 +117,12 @@ export const ProposalsFilterBar = ({
           />
         )}
       </div>
-      {/* `w-full` below 2xl so the selects' own `ms-auto` has slack to push
-          against; at 2xl the box is content-width and sits beside the count. */}
-      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:w-full sm:-mx-8 sm:px-8">
+      {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
+          slack to push against; at 2xl it's content-width beside the count.
+          `grow`, not `w-full`: the negative margins bleed this box past the
+          container, and only an auto width grows to absorb them — a fixed 100%
+          would leave the padding stranding the last select short of the edge. */}
+      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
         <ResponsiveSelect
           selectedKey={controls.proposalFilter}
           onSelectionChange={(key) => {
