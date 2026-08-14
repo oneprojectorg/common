@@ -11,6 +11,7 @@ import {
   ProposalStatus,
 } from '@op/api/encoders';
 import {
+  PROPOSAL_SEARCH_MAX_LENGTH,
   type Proposal,
   ProposalReviewRequestState,
   isReviewPhase,
@@ -278,7 +279,14 @@ export const ProposalsList = (props: ProposalsListProps) => {
     parseAsString.withDefault('newest'),
   );
   // Every keystroke, but nuqs replaces rather than pushes — no history spam.
-  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+  const [urlSearch, setSearch] = useQueryState(
+    'q',
+    parseAsString.withDefault(''),
+  );
+  // Clamped here, not at the field: `maxLength` bounds typing, but a shared
+  // link can carry any `?q=`, and past the cap the endpoint rejects the query
+  // and the error boundary takes the list down with it.
+  const search = urlSearch.slice(0, PROPOSAL_SEARCH_MAX_LENGTH);
   const [debouncedSearch] = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
   const [filterParam, setProposalFilter] = useQueryState(
     'filter',

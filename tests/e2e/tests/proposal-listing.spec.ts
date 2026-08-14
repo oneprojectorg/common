@@ -643,4 +643,41 @@ test.describe('Proposal Listing', () => {
     // so it tracks whatever the shared control height becomes.
     expect(Math.abs(search.height - filter.height)).toBeLessThanOrEqual(2);
   });
+
+  /**
+   * The field's `maxLength` bounds typing, not a shared link. An over-cap `?q=`
+   * failed endpoint validation, and the error boundary took the list — search
+   * field included — leaving a reload as the only way back.
+   */
+  test('clamps an over-length search carried in the URL', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { slug, name } = await createSearchListing(org);
+
+    // Mirrors PROPOSAL_SEARCH_MAX_LENGTH from @op/common/client. Inlined to
+    // sidestep CJS/ESM interop when loading @op/common from the e2e runner.
+    const searchMaxLength = 200;
+    const overlong = 'a'.repeat(searchMaxLength + 50);
+
+    await authenticatedPage.goto(
+      `/en/decisions/${slug}/current?filter=all&q=${overlong}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // The bar still renders, holding the clamped term — the request went out
+    // within the cap rather than being rejected.
+    const searchField = authenticatedPage.getByRole('searchbox', {
+      name: 'Search proposals',
+    });
+    await expect(searchField).toBeVisible({ timeout: 15_000 });
+    await expect(searchField).toHaveValue('a'.repeat(searchMaxLength));
+    await expect(
+      authenticatedPage.getByText("Couldn't load proposals"),
+    ).toBeHidden();
+  });
 });
