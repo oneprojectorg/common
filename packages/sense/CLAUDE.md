@@ -93,11 +93,48 @@ reimplement or work around any of it. These four are yours:
    whole surface must be clickable, use `Button variant="bare"`, which keeps
    button semantics without imposing button styling.
 
+Check your work in the **A11y** panel of the component's story — it runs axe
+against whatever is on screen, live.
+
+### RTL: layout, and then direction
+
+Logical properties (`ms-`, `ps-`, `start-`, `text-start`) get the *layout*
+right. They do nothing for *text direction*, which is a separate bug with a
+separate fix.
+
+The app ships Arabic, and its content is user-authored, so any proposal title,
+decision name, profile name, or category can run counter to the page direction.
+Rendered unisolated, its neutral characters — punctuation, digits, a currency
+symbol, the line-clamp ellipsis — resolve against the *page's* direction and
+jump to the wrong end: `Hell yeah??` renders as `??Hell yeah`. The text is
+correct in the DOM; only the rendering is wrong, which is why this survives
+review so easily.
+
+Pick by shape, not by content — you can't know at build time which way a value
+runs:
+
+- **A block of text** (heading, paragraph, card title) → `[unicode-bidi:plaintext]`
+  on the block. Each block then resolves its own base direction from its first
+  strong character, and because `text-align` is `start`, the alignment follows
+  too.
+- **A name or short value sitting inline** with other text (`Name +2`,
+  a tag beside its remove button, a table cell) → wrap it in `<bdi>`. It
+  isolates the run so neighbouring content can't reorder around it.
+- **An input** → nothing. `Input`, `Textarea` and the `RichTextEditor` viewer
+  already handle it; see `lib/textDirection.ts` for why `dir="auto"` alone isn't
+  equivalent.
+
+Already handled inside sense — don't re-wrap: `Header1`/`Header2`/`Header3`
+(default `dir="auto"`), `ProfileItem`, `PhaseCard`, `ProposalCard`, `TagGroup`,
+`Input`, `Textarea`, `RichTextEditor`. A raw `<h1>`/`<p>`/`<span>` you write
+yourself is not.
+
 Also: anything that animates needs a `motion-reduce:` branch, and any
 directional icon needs `rtl:-scale-x-100`.
 
-Check your work in the **A11y** panel of the component's story — it runs axe
-against whatever is on screen, live.
+To check it, switch Storybook or the app to Arabic and look at a story whose
+text is English — the mismatch is the whole point, and it's invisible when both
+run the same way.
 
 ---
 
