@@ -132,8 +132,7 @@ const RevisionRequestRow = ({
           proposalName: title,
         })}
       />
-      {/* Stacked on mobile the primary action leads, so the visual order is
-          reversed there; the `sm` row keeps "Ignore" then "Revise proposal". */}
+      {/* Source order is the desktop row; the mobile stack leads with Revise. */}
       <NotificationPanelActions className="flex-col-reverse">
         <Button
           variant="outline"

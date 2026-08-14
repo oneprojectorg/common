@@ -56,15 +56,12 @@ function NotificationPanelItem({
 }
 
 /**
- * The action group for a row. Stacks its buttons on narrow viewports and turns
- * into a row at `sm`, matching NotificationPanelItem's own breakpoint — so a
- * call site's `w-full sm:w-auto` buttons get a container that honours the
- * full-width half. A row here at every width overflows the card instead:
- * `Button` is `shrink-0`, so two `w-full` siblings can't shrink to share it.
+ * The action group for a row: a stack below `sm`, a row above it, matching
+ * NotificationPanelItem's breakpoint. Actions want `w-full sm:w-auto` — a row
+ * at every width overflows the card, since `Button` is `shrink-0`.
  *
- * Pass `flex-col-reverse` to lead the stack with the primary action while the
- * `sm` row keeps source order — DOM order stays the desktop order, so only the
- * stacked breakpoint reads against it.
+ * Pass `flex-col-reverse` to lead the stack with the primary action; the `sm`
+ * row keeps source order.
  */
 function NotificationPanelActions({
   children,

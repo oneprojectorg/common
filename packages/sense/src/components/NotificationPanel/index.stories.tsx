@@ -23,11 +23,8 @@ type Story = StoryObj<typeof NotificationPanel>;
 const people = ['Frida Kahlo', 'Mark Rothko'];
 
 /**
- * How the app calls it: `w-full sm:w-auto` on every action, so the buttons fill
- * the row when NotificationPanelItem stacks and shrink to their labels once it
- * turns into a row. Narrow the browser below `sm` (640px) — the two buttons
- * stack instead of running off the card, and `flex-col-reverse` lifts the
- * primary action to the top of that stack without touching the `sm` row.
+ * The app's pattern: `w-full sm:w-auto` on each action, plus `flex-col-reverse`
+ * so the primary leads the stack. Narrow below `sm` (640px) to see it.
  */
 export const ResponsiveActions: Story = {
   render: () => (
