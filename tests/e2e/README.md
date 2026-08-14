@@ -48,6 +48,20 @@ pnpm start:e2e
 
 Wait for both `http://localhost:4100` and `http://localhost:4300` to be reachable.
 
+### Step 2b: Start the Inngest dev server (background workflows only)
+
+Specs that exercise a background workflow — currently `proposals-export.spec.ts` — need an Inngest dev server. `apps/api` already serves the workflow handler at `/api/v1/workflows`; the dev server is what relays a sent event back to it. Without one, `event.send` has nowhere to go and the export never leaves `pending`.
+
+```bash
+pnpm w:workflows exec inngest-cli dev --no-discovery -u http://localhost:4300/api/v1/workflows
+```
+
+`start:e2e` sets `INNGEST_DEV=1`, which is what points the production build's SDK at `127.0.0.1:8288` instead of Inngest Cloud.
+
+If you already have a dev server running for the `:3300` stack, reuse it — a second one cannot start, because the executor's gRPC ports (50052/50053) are fixed. The spec syncs the e2e app into whichever server is listening on `:8288` with a `PUT` to the serve URL, so reuse works without further setup.
+
+These specs skip locally when `:8288` is unreachable, and fail in CI (where the workflow starts one).
+
 ### Step 3: Run tests
 
 ```bash

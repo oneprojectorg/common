@@ -237,6 +237,16 @@ jobs:
         run: |
           timeout 60 bash -c 'until curl -s http://localhost:4100 > /dev/null 2>&1 && curl -s http://localhost:4300 > /dev/null 2>&1; do sleep 1; done'
 
+      # The proposals CSV export runs as an Inngest workflow. The serve handler
+      # is already mounted by apps/api at /api/v1/workflows; this is the dev
+      # server that relays the event back to it. Without it `event.send` has
+      # nowhere to go and the export never leaves `pending`.
+      - name: Start Inngest dev server
+        run: pnpm -C ./services/workflows exec inngest-cli dev --no-discovery -u http://localhost:4300/api/v1/workflows &
+
+      - name: Wait for Inngest dev server
+        run: timeout 60 bash -c 'until curl -s http://127.0.0.1:8288/health > /dev/null 2>&1; do sleep 1; done'
+
       - name: Run E2E tests
         run: pnpm -C ./tests/e2e exec playwright test --project=e2e --shard=${{ matrix.shard }}/2 --reporter=blob
 
