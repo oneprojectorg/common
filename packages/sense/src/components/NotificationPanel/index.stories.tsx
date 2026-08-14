@@ -26,7 +26,8 @@ const people = ['Frida Kahlo', 'Mark Rothko'];
  * How the app calls it: `w-full sm:w-auto` on every action, so the buttons fill
  * the row when NotificationPanelItem stacks and shrink to their labels once it
  * turns into a row. Narrow the browser below `sm` (640px) — the two buttons
- * stack instead of running off the card.
+ * stack instead of running off the card, and `flex-col-reverse` lifts the
+ * primary action to the top of that stack without touching the `sm` row.
  */
 export const ResponsiveActions: Story = {
   render: () => (
@@ -44,11 +45,11 @@ export const ResponsiveActions: Story = {
               title="Revision Request"
               description="A reviewer has requested changes to Community Solar"
             />
-            <NotificationPanelActions>
-              <Button className="w-full sm:w-auto">Revise proposal</Button>
+            <NotificationPanelActions className="flex-col-reverse">
               <Button variant="outline" className="w-full sm:w-auto">
                 Ignore
               </Button>
+              <Button className="w-full sm:w-auto">Revise proposal</Button>
             </NotificationPanelActions>
           </NotificationPanelItem>
         </NotificationPanelList>

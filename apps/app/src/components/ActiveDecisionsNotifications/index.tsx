@@ -132,7 +132,16 @@ const RevisionRequestRow = ({
           proposalName: title,
         })}
       />
-      <NotificationPanelActions>
+      {/* Stacked on mobile the primary action leads, so the visual order is
+          reversed there; the `sm` row keeps "Ignore" then "Revise proposal". */}
+      <NotificationPanelActions className="flex-col-reverse">
+        <Button
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={() => setDismissed(true)}
+        >
+          {t('Ignore')}
+        </Button>
         <ButtonLink
           href={editHref}
           className="w-full sm:w-auto"
@@ -141,13 +150,6 @@ const RevisionRequestRow = ({
         >
           {t('Revise proposal')}
         </ButtonLink>
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto"
-          onClick={() => setDismissed(true)}
-        >
-          {t('Ignore')}
-        </Button>
       </NotificationPanelActions>
     </NotificationPanelItem>
   );

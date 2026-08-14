@@ -66,8 +66,8 @@ test.describe('Landing page — Active Decisions revision request actions', () =
 
     const { ignoreBox, reviseBox } = await getActionBoxes(page);
 
-    // Stacked, not side by side: "Ignore" starts at or below the bottom of the
-    // primary "Revise proposal" rather than sharing its row.
+    // Stacked, not side by side, and the primary leads: "Ignore" starts at or
+    // below the bottom of "Revise proposal" rather than sharing its row.
     expect(ignoreBox.y).toBeGreaterThanOrEqual(
       reviseBox.y + reviseBox.height - 1,
     );
@@ -100,10 +100,11 @@ test.describe('Landing page — Active Decisions revision request actions', () =
 
     const { ignoreBox, reviseBox } = await getActionBoxes(page);
 
-    // One row, "Ignore" to the right of the primary "Revise proposal". Physical
-    // x holds because this loads /en/ (LTR); a RTL locale would flip it.
-    expect(ignoreBox.y).toBeLessThan(reviseBox.y + reviseBox.height);
-    expect(ignoreBox.x).toBeGreaterThan(reviseBox.x);
+    // One row, and the mobile-only reversal does not leak up here: "Revise
+    // proposal" sits to the right of "Ignore". Physical x holds because this
+    // loads /en/ (LTR); a RTL locale would flip it.
+    expect(reviseBox.y).toBeLessThan(ignoreBox.y + ignoreBox.height);
+    expect(reviseBox.x).toBeGreaterThan(ignoreBox.x);
     expect(reviseBox.x + reviseBox.width).toBeLessThanOrEqual(
       DESKTOP_VIEWPORT.width,
     );

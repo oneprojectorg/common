@@ -61,10 +61,25 @@ function NotificationPanelItem({
  * call site's `w-full sm:w-auto` buttons get a container that honours the
  * full-width half. A row here at every width overflows the card instead:
  * `Button` is `shrink-0`, so two `w-full` siblings can't shrink to share it.
+ *
+ * Pass `flex-col-reverse` to lead the stack with the primary action while the
+ * `sm` row keeps source order — DOM order stays the desktop order, so only the
+ * stacked breakpoint reads against it.
  */
-function NotificationPanelActions({ children }: { children: ReactNode }) {
+function NotificationPanelActions({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+    <div
+      className={cn(
+        'flex flex-col gap-4 sm:flex-row sm:items-center',
+        className,
+      )}
+    >
       {children}
     </div>
   );
