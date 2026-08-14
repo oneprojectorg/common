@@ -158,7 +158,19 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   };
 
   const listContent = (
-    <CommandList className="max-h-86 overflow-x-hidden overflow-y-auto">
+    <CommandList
+      className={cn(
+        'overflow-x-hidden overflow-y-auto',
+        // Mobile is a full-height sheet, so the list fills it and owns the
+        // scroll. A fixed cap here would strand the results in the top third
+        // of the screen. Desktop keeps the capped dropdown.
+        //
+        // `max-h-full`, not `max-h-none`: tailwind-merge 3.4 leaves `none` out
+        // of its `max-h` group (unlike `max-w`), so `max-h-none` does NOT
+        // displace the `max-h-72` CommandList ships with — it just loses to it.
+        isMobile ? 'max-h-full min-h-0 flex-1' : 'max-h-86',
+      )}
+    >
       {query.length > 0 ? (
         <CommandGroup>
           <CommandItem value="search-action" onSelect={handleSearchSelect}>
@@ -284,11 +296,17 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         className={cn(
           !dropdownShowing && 'hidden',
           isMobile
-            ? 'fixed inset-x-0 top-15 bottom-0 z-10 overflow-y-auto bg-popover text-base'
+            ? 'fixed inset-x-0 top-15 bottom-0 z-10 flex flex-col overflow-hidden bg-popover text-base'
             : 'absolute top-12 z-10 w-full rounded border bg-popover text-base shadow',
         )}
       >
-        {isMobile ? <div className="p-4 pt-0">{listContent}</div> : listContent}
+        {isMobile ? (
+          <div className="flex min-h-0 flex-1 flex-col p-4 pt-0">
+            {listContent}
+          </div>
+        ) : (
+          listContent
+        )}
       </div>
     </CommandPrimitive>
   );
