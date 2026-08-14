@@ -47,12 +47,12 @@ export const DecisionActionBar = ({
 
   return (
     <div className="flex w-full justify-center">
-      <div className="flex w-full max-w-48 flex-col items-center justify-center gap-4 sm:flex-row">
+      <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
           <Dialog>
             <DialogTrigger
               render={
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full sm:w-auto">
                   {label ?? t('Learn more')}
                 </Button>
               }
@@ -85,7 +85,7 @@ export const DecisionActionBar = ({
 
         {showSubmitButton && (
           <Button
-            className="w-full"
+            className="w-full sm:w-auto"
             disabled={!isReady || isCreating}
             onClick={handleCreateProposal}
           >
