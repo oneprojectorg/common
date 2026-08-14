@@ -56,7 +56,11 @@ function NotificationPanelItem({
 }
 
 function NotificationPanelActions({ children }: { children: ReactNode }) {
-  return <div className="flex items-center gap-4">{children}</div>;
+  return (
+    <div className="flex flex-col items-center gap-4 sm:flex-row">
+      {children}
+    </div>
+  );
 }
 
 export {

@@ -41,9 +41,16 @@ function ProfileItem({
     <div className={cn('flex min-w-0 gap-3 text-start', className)}>
       {avatar}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {/* `dir="auto"` gets the ordering (and the ellipsis side) from the
+            content; `match-parent` keeps the *alignment* on the page, so a row
+            of mixed-language items doesn't align every other one differently. */}
         <div
           dir="auto"
-          className={cn(titleClasses[size], 'truncate', titleClassName)}
+          className={cn(
+            titleClasses[size],
+            'truncate [text-align:match-parent]',
+            titleClassName,
+          )}
         >
           {title}
         </div>
@@ -51,7 +58,7 @@ function ProfileItem({
           <div
             dir="auto"
             className={cn(
-              'truncate text-sm font-normal text-muted-foreground',
+              'truncate [text-align:match-parent] text-sm font-normal text-muted-foreground',
               descriptionClassName,
             )}
           >

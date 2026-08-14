@@ -142,7 +142,10 @@ export function ProposalCard({
         )}
         {...rest}
       >
-        <h3 className="line-clamp-2 font-serif text-label text-foreground [unicode-bidi:plaintext]">
+        <h3
+          dir="auto"
+          className="line-clamp-2 [text-align:match-parent] font-serif text-label text-foreground"
+        >
           <TitleLink href={href} linkComponent={linkComponent}>
             {title}
           </TitleLink>
@@ -174,13 +177,15 @@ export function ProposalCard({
       <div className={cn('flex flex-col gap-3', aside && 'pe-10')}>
         {headerBadge}
         {/* Proposal text is user content, so it can be LTR on an RTL page (or
-            the reverse). `plaintext` resolves each block's base direction from
-            its own first strong character, which fixes both the punctuation
-            order and — `text-align` being `start` — the alignment. */}
+            the reverse). `dir="auto"` resolves the block's direction from its
+            own first strong character — without it the trailing punctuation and
+            the clamp ellipsis jump to the wrong end. `match-parent` keeps the
+            alignment on the page, so a grid of cards stays in one column. */}
         <h3
           id={titleId}
+          dir="auto"
           className={cn(
-            'font-serif text-title [unicode-bidi:plaintext]',
+            '[text-align:match-parent] font-serif text-title',
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
@@ -201,7 +206,10 @@ export function ProposalCard({
         </div>
       ) : null}
       {description ? (
-        <p className="line-clamp-3 text-base text-foreground [unicode-bidi:plaintext]">
+        <p
+          dir="auto"
+          className="line-clamp-3 [text-align:match-parent] text-base text-foreground"
+        >
           {description}
         </p>
       ) : null}

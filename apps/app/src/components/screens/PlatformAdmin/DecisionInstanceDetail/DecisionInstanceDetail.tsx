@@ -73,7 +73,10 @@ const DecisionInstanceDetailContent = ({
         <div className="flex flex-wrap items-center gap-3">
           {/* `dir="auto"` matches the sense `Header1` default — the name is
               user content and can run counter to the page direction. */}
-          <h1 dir="auto" className="font-serif text-headline font-light">
+          <h1
+            dir="auto"
+            className="[text-align:match-parent] font-serif text-headline font-light"
+          >
             {detail.name}
           </h1>
           {detail.status ? (

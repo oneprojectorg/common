@@ -113,21 +113,32 @@ review so easily.
 Pick by shape, not by content — you can't know at build time which way a value
 runs:
 
-- **A block of text** (heading, paragraph, card title) → `[unicode-bidi:plaintext]`
-  on the block. Each block then resolves its own base direction from its first
-  strong character, and because `text-align` is `start`, the alignment follows
-  too.
+- **A block of text** (heading, paragraph, card title) →
+  `dir="auto" className="[text-align:match-parent]"`. The two halves are not
+  optional and do different jobs: `dir="auto"` sets the block's direction from
+  its first strong character, which fixes the ordering *and* the side the
+  truncation ellipsis lands on; `match-parent` then pins the **alignment** to
+  the page. Without it `text-align: start` follows the block's own resolved
+  direction, so an English item in an Arabic list aligns left while its Arabic
+  neighbours align right — the list ends up with two ragged edges.
 - **A name or short value sitting inline** with other text (`Name +2`,
   a tag beside its remove button, a table cell) → wrap it in `<bdi>`. It
-  isolates the run so neighbouring content can't reorder around it.
+  isolates the run so neighbouring content can't reorder around it, and being
+  inline it doesn't touch alignment at all.
 - **An input** → nothing. `Input`, `Textarea` and the `RichTextEditor` viewer
   already handle it; see `lib/textDirection.ts` for why `dir="auto"` alone isn't
-  equivalent.
+  equivalent there.
 
-Already handled inside sense — don't re-wrap: `Header1`/`Header2`/`Header3`
-(default `dir="auto"`), `ProfileItem`, `PhaseCard`, `ProposalCard`, `TagGroup`,
-`Input`, `Textarea`, `RichTextEditor`. A raw `<h1>`/`<p>`/`<span>` you write
-yourself is not.
+`unicode-bidi: plaintext` looks like the tidier answer and mostly isn't: it
+resolves per *line* rather than per block, and it drags alignment along with it.
+The editor surfaces use it deliberately — mixed-language paragraphs are the
+point there — but display text wants the pair above.
+
+Already handled inside sense — don't re-wrap: `ProfileItem`, `PhaseCard`,
+`ProposalCard`, `TagGroup`, `Input`, `Textarea`, `RichTextEditor`. The `Header*`
+components default to `dir="auto"` but leave alignment alone, so a heading
+holding user content still wants `[text-align:match-parent]` at the call site.
+A raw `<h1>`/`<p>`/`<span>` you write yourself is handled by nothing.
 
 Also: anything that animates needs a `motion-reduce:` branch, and any
 directional icon needs `rtl:-scale-x-100`.
