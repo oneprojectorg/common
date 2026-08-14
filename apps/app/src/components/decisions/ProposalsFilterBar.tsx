@@ -1,6 +1,7 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
+import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -62,23 +63,34 @@ export const ProposalsListHeader = ({
 };
 
 /**
- * Search and the three filter selects, plus the view toggle where the process
- * has one.
+ * The count and search on one side, the three filter selects and the view
+ * toggle on the other.
  *
- * Returns them as siblings rather than one wrapper, so the bar's `flex-wrap`
- * can break between them and search rides up onto the count's row when the
- * whole set won't fit. `md:ms-auto` keeps search anchored to the selects on a
- * single row, and against the count's row once it wraps. Below `md` its
- * `w-full` claims a row of its own, above the horizontally scrolling selects.
- * One instance at every width, so focus survives a breakpoint change.
+ * Two boxes rather than one wrapping row, so the split is an element boundary
+ * and not a measurement: below `xl` the count/search box takes a full row and
+ * the selects drop beneath it, right-aligned by `ms-auto`; from `xl` it grows
+ * instead, putting everything on one line with search against the selects.
+ * Inside the box, `ms-auto` holds search to the end, and below `lg` its
+ * `w-full` wraps it under the count while the selects break out edge-to-edge
+ * and scroll. One search instance at every width, so focus survives a
+ * breakpoint change.
  */
 export const ProposalsFilterBar = ({
   controls,
   view,
+  count,
+  total,
+  header,
   exportControl,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
+  /** Server count for the active filter. */
+  count: number;
+  /** Unfiltered count for the phase — the "of N" pool. */
+  total: number;
+  /** Replaces the count — e.g. the admin review title. */
+  header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
 }) => {
@@ -90,15 +102,20 @@ export const ProposalsFilterBar = ({
 
   return (
     <>
-      {controls.canSearch && (
-        <ProposalSearchField
-          className="md:ms-auto"
-          value={controls.search}
-          onChange={controls.setSearch}
-          isPending={controls.isSearchPending}
-        />
-      )}
-      <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
+      <div className={cn('flex flex-wrap items-center justify-between gap-4')}>
+        {header ?? (
+          <ProposalsListHeader showCount count={count} total={total} />
+        )}
+        {controls.canSearch && (
+          <ProposalSearchField
+            className="ms-auto"
+            value={controls.search}
+            onChange={controls.setSearch}
+            isPending={controls.isSearchPending}
+          />
+        )}
+      </div>
+      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 sm:-mx-8 sm:px-8">
         <ResponsiveSelect
           selectedKey={controls.proposalFilter}
           onSelectionChange={(key) => {
@@ -113,20 +130,20 @@ export const ProposalsFilterBar = ({
           }}
           aria-label={t('Filter proposals')}
           items={filterItems}
-          className="min-w-40"
+          className="ms-auto min-w-40 shrink-0"
         />
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}
           categories={controls.categories}
           selectedCategory={controls.selectedCategory}
           onSelectCategory={controls.setSelectedCategory}
-          className="min-w-40"
+          className="min-w-40 shrink-0"
         />
         <ResponsiveSelect
           selectedKey={controls.sortOrder}
           onSelectionChange={controls.setSortOrder}
           aria-label={t('Sort proposals')}
-          className="min-w-40"
+          className="min-w-40 shrink-0"
           items={[
             { id: 'newest', label: t('Newest First') },
             { id: 'oldest', label: t('Oldest First') },

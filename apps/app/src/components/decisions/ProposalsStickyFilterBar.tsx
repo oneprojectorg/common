@@ -33,8 +33,9 @@ export interface ProposalsStickyFilterBarProps {
 }
 
 /**
- * Proposal browse/grid filter bar: the count on the left, the filters on the
- * right, inside the shared pinning shell.
+ * Proposal browse/grid filter bar inside the shared pinning shell. The count
+ * belongs to the filter bar — it pairs with search on one row — so the bar owns
+ * it, and only the filter-less fallback renders a header of its own.
  */
 export const ProposalsStickyFilterBar = ({
   count,
@@ -46,15 +47,19 @@ export const ProposalsStickyFilterBar = ({
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
   <StickyFilterBar pinOffset={pinOffset}>
-    {header ?? (
-      <ProposalsListHeader showCount={!!controls} count={count} total={total} />
-    )}
-    {controls && (
+    {controls ? (
       <ProposalsFilterBar
         controls={controls}
         view={view}
+        count={count}
+        total={total}
+        header={header}
         exportControl={exportControl}
       />
+    ) : (
+      (header ?? (
+        <ProposalsListHeader showCount={false} count={count} total={total} />
+      ))
     )}
   </StickyFilterBar>
 );

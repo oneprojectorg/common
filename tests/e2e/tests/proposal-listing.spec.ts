@@ -581,10 +581,11 @@ test.describe('Proposal Listing', () => {
     expect(listRequestCount).toBeGreaterThan(0);
     expect(listRequestCount).toBeLessThanOrEqual(2);
 
-    // Inline at md:w-52 (208px group) rather than spanning the row — the mobile
-    // test asserts the full-width counterpart.
+    // Inline at md:w-96 (384px group) rather than spanning the row — the mobile
+    // test asserts the full-width counterpart. The bound is loose so a width
+    // tweak doesn't fail it; only spanning the row would.
     const desktopBox = await searchField.boundingBox();
-    expect(desktopBox?.width).toBeLessThan(230);
+    expect(desktopBox?.width).toBeLessThan(500);
 
     // Still focused, so the bar was never swapped for the loading skeleton.
     await expect(searchField).toBeFocused();
