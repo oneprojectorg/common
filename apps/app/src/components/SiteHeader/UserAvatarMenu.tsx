@@ -465,13 +465,12 @@ const LegalDialogs = ({
 
   return (
     <Dialog open={open !== null} onOpenChange={onOpenChange}>
-      {/* shadcn scrollable-dialog pattern: fixed header, scrollable body. The
-          default DialogContent is a grid with no scroll, so we make it a flex
-          column, cap its height, and scroll only the body. `initialFocus` lands
-          on the scroll container (top) instead of the first link deep in the
-          legal text, which otherwise opens the dialog scrolled partway down. */}
+      {/* Capped height on desktop so only the body scrolls, not the whole card.
+          `initialFocus` lands on the scroll container (top) instead of the first
+          link deep in the legal text, which otherwise opens the dialog scrolled
+          partway down. */}
       <DialogContent
-        className="flex max-h-[85vh] flex-col p-0 sm:max-w-xl"
+        className="p-0 sm:max-h-[85vh] sm:max-w-xl"
         initialFocus={scrollRef}
       >
         <DialogHeader>
@@ -605,9 +604,11 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           >
             {avatarContent}
           </DialogTrigger>
+          {/* A bottom sheet, deliberately not the full-screen mobile default:
+              this is a menu, so it stays short and shows the page behind it. */}
           <DialogContent
             showCloseButton={false}
-            className="top-auto bottom-0 left-0 flex max-h-[85svh] w-full max-w-none translate-x-0 translate-y-0 flex-col rounded-t rounded-b-none border-0 p-0"
+            className="top-auto bottom-0 max-h-[85svh] rounded-t p-0"
           >
             <DialogTitle className="sr-only">{t('Open menu')}</DialogTitle>
             <div className="pb-safe flex min-h-0 w-full flex-1 flex-col gap-3 overflow-y-auto py-4 pb-8">

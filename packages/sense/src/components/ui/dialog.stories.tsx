@@ -11,6 +11,7 @@ import {
 } from '@op/sense/Dialog';
 import { Field, FieldGroup, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import { cn } from '@op/sense/lib/utils';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof Dialog> = {
@@ -139,35 +140,58 @@ const communityAgreement = [
 
 // Upstream pattern: cap and scroll the body div; header and footer stay put.
 export const ScrollingBody: Story = {
+  render: () => <AgreementDialog bodyClassName="max-h-[calc(100dvh-14rem)]" />,
+};
+
+// Narrow the viewport below `sm` (640px) to see the mobile treatment: the popup
+// fills the screen, the header pins to the top, the footer pins to the bottom,
+// and only the middle scrolls. `overflow-hidden` + a `flex-1 min-h-0` body is
+// what moves the scroll off the popup and onto the body.
+export const MobileFullScreen: Story = {
   render: () => (
-    <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        View community agreement
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Community agreement</DialogTitle>
-          <DialogDescription>
-            Please review before joining the decision process.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="max-h-[calc(100dvh-14rem)] overflow-y-auto px-6 py-4">
-          <div className="flex flex-col gap-6">
-            {communityAgreement.map((section) => (
-              <section key={section.heading} className="flex flex-col gap-3">
-                <h3 className="font-serif text-label">{section.heading}</h3>
-                {section.clauses.map((clause, index) => (
-                  <p key={index}>{clause}</p>
-                ))}
-              </section>
-            ))}
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>Close</DialogClose>
-          <Button>Agree and join</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AgreementDialog
+      contentClassName="overflow-hidden"
+      bodyClassName="min-h-0 flex-1"
+    />
   ),
 };
+
+// Long enough to overflow a phone screen, so the two stories above differ only
+// in how they hand the overflow to the body.
+const AgreementDialog = ({
+  contentClassName,
+  bodyClassName,
+}: {
+  contentClassName?: string;
+  bodyClassName?: string;
+}) => (
+  <Dialog>
+    <DialogTrigger render={<Button variant="outline" />}>
+      View community agreement
+    </DialogTrigger>
+    <DialogContent className={contentClassName}>
+      <DialogHeader>
+        <DialogTitle>Community agreement</DialogTitle>
+        <DialogDescription>
+          Please review before joining the decision process.
+        </DialogDescription>
+      </DialogHeader>
+      <div className={cn('overflow-y-auto px-6 py-4', bodyClassName)}>
+        <div className="flex flex-col gap-6">
+          {communityAgreement.map((section) => (
+            <section key={section.heading} className="flex flex-col gap-3">
+              <h3 className="font-serif text-label">{section.heading}</h3>
+              {section.clauses.map((clause, index) => (
+                <p key={index}>{clause}</p>
+              ))}
+            </section>
+          ))}
+        </div>
+      </div>
+      <DialogFooter>
+        <DialogClose render={<Button variant="outline" />}>Close</DialogClose>
+        <Button>Agree and join</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);

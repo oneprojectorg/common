@@ -51,7 +51,7 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
       {/* 32rem — the sense default (sm:max-w-sm) is narrower than this needs. */}
       <DialogContent
         confetti
-        className="flex flex-col items-center gap-6 p-12 text-center sm:max-w-lg"
+        className="items-center justify-center gap-6 p-12 text-center sm:max-w-lg"
       >
         <CheckIcon />
         <div className="flex flex-col gap-3">

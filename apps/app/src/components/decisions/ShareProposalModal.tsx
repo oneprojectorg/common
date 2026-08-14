@@ -77,7 +77,7 @@ export function ShareProposalModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
-      <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-xl">
+      <DialogContent className="overflow-hidden sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('Share Proposal')}</DialogTitle>
         </DialogHeader>
@@ -397,7 +397,7 @@ function ShareProposalModalContent({
 
   return (
     <>
-      <div className="min-h-0 space-y-6 overflow-y-auto px-6 py-4">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-4">
         {/* People search — base-ui owns positioning, focus and the
             listbox/option roles, so there's no portal or measured dropdown. */}
         <Combobox

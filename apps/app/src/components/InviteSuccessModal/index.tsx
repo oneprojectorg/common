@@ -33,7 +33,12 @@ export const InviteSuccessModal = ({
     // No `onOpenChange`, as before: the two buttons are the only way out, so a
     // close affordance would be dead.
     <Dialog open={isOpen}>
-      <DialogContent showCloseButton={false} className="shadow-green">
+      {/* No header or footer to pin, so centre the card in the mobile sheet
+          rather than leaving it stranded at the top. */}
+      <DialogContent
+        showCloseButton={false}
+        className="justify-center shadow-green"
+      >
         <div className="flex flex-col items-center justify-center gap-6 p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
             {/* Same mark as before, now on the success tokens. */}

@@ -24,7 +24,7 @@ export const UpdateProfileModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-h-[85vh] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('Edit Profile')}</DialogTitle>
         </DialogHeader>

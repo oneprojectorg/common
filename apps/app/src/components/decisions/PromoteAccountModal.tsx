@@ -40,7 +40,10 @@ export const PromoteAccountModal = () => {
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent showCloseButton={false} className="sm:max-w-lg">
+      <DialogContent
+        showCloseButton={false}
+        className="justify-center sm:max-w-lg"
+      >
         <PromoteAccountModalContent
           onContinueAsGuest={close}
           proposalId={proposalId}

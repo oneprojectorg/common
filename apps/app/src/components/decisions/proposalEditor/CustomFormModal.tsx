@@ -126,7 +126,7 @@ export function CustomFormModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {/* DialogContent already caps its height and scrolls internally. */}
-      <DialogContent className="flex flex-col gap-0 p-0 sm:max-w-120">
+      <DialogContent className="gap-0 p-0 sm:max-w-120">
         <DialogHeader>
           <DialogTitle>
             {definition.title ?? t('Additional details')}

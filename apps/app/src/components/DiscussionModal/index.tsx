@@ -93,7 +93,7 @@ export function DiscussionModal({
         }
       }}
     >
-      <DialogContent className="grid h-svh w-screen max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none p-0 text-start sm:max-h-[80svh] sm:max-w-lg sm:rounded-lg">
+      <DialogContent className="overflow-hidden p-0 text-start sm:max-h-[80svh] sm:max-w-lg sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {t.rich("<bdi>{authorName}</bdi>'s Post", {
@@ -103,7 +103,10 @@ export function DiscussionModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pt-6" ref={commentsContainerRef}>
+        <div
+          className="min-h-0 flex-1 overflow-y-auto pt-6"
+          ref={commentsContainerRef}
+        >
           {/* Original Post Display */}
           <PostFeed className="originalPost border-none pb-0">
             <PostItem

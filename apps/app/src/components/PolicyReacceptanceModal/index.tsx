@@ -74,11 +74,10 @@ const PolicyReacceptanceModalContent = () => {
     // Controlled `open` with no `onOpenChange`: Escape and the backdrop have
     // nowhere to write, so the gate can't be dismissed.
     <Dialog open disablePointerDismissal>
-      {/* Column, not the default grid, so the body scrolls rather than the
-          whole card. */}
+      {/* `overflow-hidden` so the body scrolls rather than the whole card. */}
       <DialogContent
         showCloseButton={false}
-        className="flex flex-col overflow-hidden sm:max-w-lg"
+        className="overflow-hidden sm:max-w-lg"
       >
         {/* No divider, no room reserved for a close button, and centred: the
           slot's chrome is for a titled dialog with an X, which this isn't. */}
@@ -196,7 +195,7 @@ const PolicyDocumentDialog = ({
       <DialogContent
         showCloseButton={false}
         initialFocus={scrollRef}
-        className="flex flex-col overflow-hidden sm:max-w-xl"
+        className="overflow-hidden sm:max-w-xl"
       >
         <DialogHeader className="relative min-h-16 shrink-0 flex-row items-center px-4 py-0">
           {/* Back rather than a close X: this reads as a drill-down from the

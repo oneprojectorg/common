@@ -248,7 +248,7 @@ export const ProcessSurveyModal = ({
     <Dialog open={isOpen}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-120"
+        className="gap-0 overflow-hidden p-0 sm:max-h-[85vh] sm:max-w-120"
       >
         <DialogHeader>
           <DialogTitle>{t('Your voice shapes Common.')}</DialogTitle>

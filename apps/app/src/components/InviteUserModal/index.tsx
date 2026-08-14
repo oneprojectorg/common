@@ -195,12 +195,12 @@ export const InviteUserModal = ({
   return (
     <>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="flex flex-col sm:max-w-xl">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{t('Invite others to Common')}</DialogTitle>
           </DialogHeader>
           <ErrorBoundary>
-            <div className="flex min-h-0 flex-col gap-6 overflow-y-scroll p-6">
+            <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-scroll p-6">
               <Tabs
                 value={activeTab}
                 onValueChange={(value) => {

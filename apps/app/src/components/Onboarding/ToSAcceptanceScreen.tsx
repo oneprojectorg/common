@@ -127,7 +127,7 @@ function PolicyCheckbox({
             container (top) instead of the first link in the legal text, which
             otherwise opens the dialog scrolled partway down. */}
         <DialogContent
-          className="flex max-h-[85vh] flex-col p-0 sm:max-w-xl"
+          className="p-0 sm:max-h-[85vh] sm:max-w-xl"
           initialFocus={scrollRef}
         >
           <DialogHeader>
