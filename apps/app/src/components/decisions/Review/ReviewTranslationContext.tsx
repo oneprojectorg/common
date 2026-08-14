@@ -84,7 +84,15 @@ export function ReviewTranslationProvider({
   // can't be undone by an in-flight request (as in useTranslateDecision).
   const translatingRef = useRef(false);
 
+  // One banner drives both requests, so they succeed or fail as one. A failure
+  // discards whatever the other request returned, and clearing the ref makes
+  // its late success a no-op via the guards below. Keeping a partial result
+  // would hide the banner — the only retry control — with one pane still
+  // untranslated, and a rubric-only success renders no "View original" either,
+  // stranding the screen until a reload.
   const onTranslateError = useCallback(() => {
+    translatingRef.current = false;
+    setTranslated(null);
     toast.error(t('Failed to translate content'));
   }, [t]);
 
