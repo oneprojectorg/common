@@ -1,7 +1,6 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
-import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -102,7 +101,10 @@ export const ProposalsFilterBar = ({
 
   return (
     <>
-      <div className={cn('flex flex-wrap items-center justify-between gap-4')}>
+      {/* `w-full` claims a row of its own, so the selects always wrap beneath;
+          from 2xl it grows instead, taking the slack that pushes search to the
+          end and putting both boxes on one line. */}
+      <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
         {header ?? (
           <ProposalsListHeader showCount count={count} total={total} />
         )}
@@ -115,7 +117,9 @@ export const ProposalsFilterBar = ({
           />
         )}
       </div>
-      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 sm:-mx-8 sm:px-8">
+      {/* `w-full` below 2xl so the selects' own `ms-auto` has slack to push
+          against; at 2xl the box is content-width and sits beside the count. */}
+      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:w-full sm:-mx-8 sm:px-8">
         <ResponsiveSelect
           selectedKey={controls.proposalFilter}
           onSelectionChange={(key) => {

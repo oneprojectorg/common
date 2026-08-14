@@ -46,14 +46,7 @@ export const ProposalsStickyFilterBar = ({
   exportControl,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
-  <StickyFilterBar
-    pinOffset={pinOffset}
-    // Overrides the shell's wrapping row: search makes this bar tall enough to
-    // want explicit rows — count/search stacked over the selects — collapsing
-    // to two columns only once there's width for both. Scoped here so the
-    // selection and review toolbars keep the shared row layout.
-    className="flex-col flex-nowrap items-stretch 2xl:grid 2xl:grid-cols-[1fr_auto]"
-  >
+  <StickyFilterBar pinOffset={pinOffset}>
     {controls ? (
       <ProposalsFilterBar
         controls={controls}
