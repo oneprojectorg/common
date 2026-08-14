@@ -67,6 +67,11 @@ export function ReviewPage({
   const actionBarLabel = phaseAdditionalInfo
     ? t('About this phase')
     : undefined;
+  // Admins get the static "Review Progress" heading; only the reviewer-facing
+  // phase copy is author-written, so only it goes through translation.
+  const heroHeadline = translation?.headline ?? currentPhase.headline;
+  const heroDescription =
+    translation?.phaseDescription ?? currentPhase.description;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
@@ -97,15 +102,11 @@ export function ReviewPage({
               isAdmin ? (
                 <TranslatedText text="Review Progress" />
               ) : (
-                (currentPhase.headline ?? (
-                  <TranslatedText text="Review proposals." />
-                ))
+                (heroHeadline ?? <TranslatedText text="Review proposals." />)
               )
             }
             description={
-              !isAdmin && currentPhase.description ? (
-                <p>{currentPhase.description}</p>
-              ) : undefined
+              !isAdmin && heroDescription ? <p>{heroDescription}</p> : undefined
             }
             variant="standard"
             hasImage={hasHeroImage}
@@ -150,6 +151,7 @@ export function ReviewPage({
                     <ReviewAssignmentsList
                       processInstanceId={instance.id}
                       decisionSlug={decisionSlug}
+                      decisionProfileId={decisionProfileId}
                       access={instance.access}
                       pinOffset={pinOffset}
                     />

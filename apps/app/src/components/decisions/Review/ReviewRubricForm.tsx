@@ -32,17 +32,22 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
+import {
+  getCriterionMaxPoints,
+  inferCriterionType,
+  translateRubricTemplate,
+} from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
+import { useReviewTranslation } from './ReviewTranslationContext';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
@@ -89,7 +94,7 @@ export function ReviewRubricForm({
 function MyReviewForm() {
   const t = useTranslations();
   const {
-    rubricTemplate: template,
+    rubricTemplate: authoredTemplate,
     values,
     rationales,
     overallComment,
@@ -100,6 +105,14 @@ function MyReviewForm() {
     isEditing,
     review,
   } = useReviewForm();
+  const { rubricMeta } = useReviewTranslation();
+
+  // Display copy only — option values, bounds and the required list are
+  // untouched, so the answers this form collects are identical either way.
+  const template = useMemo(
+    () => translateRubricTemplate(authoredTemplate, rubricMeta),
+    [authoredTemplate, rubricMeta],
+  );
   const fields = compileRubricSchema(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(

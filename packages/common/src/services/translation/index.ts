@@ -5,6 +5,7 @@ export type { PostTranslation } from './translatePosts';
 export { translateProposal } from './translateProposal';
 export { translateProposals } from './translateProposals';
 export type { ProposalTranslation } from './translateProposal';
+export { translateRubric } from './translateRubric';
 export { translateResources } from './translateResources';
 export type { ResourceTranslation } from './translateResources';
 export type {

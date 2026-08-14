@@ -550,6 +550,94 @@ export function setSelectOptions(
 }
 
 // ---------------------------------------------------------------------------
+// Translation
+// ---------------------------------------------------------------------------
+
+/**
+ * Translated rubric copy keyed by criterion id (and, for options, by option
+ * value) — the shape `parseTranslatedMeta` produces from a `translateRubric`
+ * response.
+ */
+export interface RubricTranslatedMeta {
+  fieldTitles: Record<string, string>;
+  fieldDescriptions: Record<string, string>;
+  optionLabels: Record<string, Record<string, string>>;
+  optionDescriptions: Record<string, Record<string, string>>;
+}
+
+/**
+ * Returns the template with every criterion prompt, description and option
+ * label replaced by its translation, leaving anything untranslated as-authored.
+ *
+ * Applied at the template level rather than per render site so one call covers
+ * the review form, the submitted-review view and the score card — and so only
+ * display copy moves: `const` option values, `x-format`, bounds and the
+ * `required` list are untouched, which keeps stored answers matching and
+ * validation running against the same values either way.
+ */
+export function translateRubricTemplate(
+  template: RubricTemplateSchema,
+  meta: RubricTranslatedMeta | null,
+): RubricTemplateSchema {
+  if (!meta) {
+    return template;
+  }
+
+  let translated = template;
+
+  for (const criterionId of Object.keys(template.properties ?? {})) {
+    const title = meta.fieldTitles[criterionId];
+    const description = meta.fieldDescriptions[criterionId];
+    const optionLabels = meta.optionLabels[criterionId];
+    const optionDescriptions = meta.optionDescriptions[criterionId];
+
+    if (!title && !description && !optionLabels && !optionDescriptions) {
+      continue;
+    }
+
+    translated = updateProperty(translated, criterionId, (schema) => ({
+      ...schema,
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
+      ...(Array.isArray(schema.oneOf) && (optionLabels || optionDescriptions)
+        ? {
+            oneOf: schema.oneOf.map((entry) =>
+              translateOptionEntry(entry, optionLabels, optionDescriptions),
+            ),
+          }
+        : {}),
+    }));
+  }
+
+  return translated;
+}
+
+/** Swaps one `oneOf` option's label and description; other entry shapes pass through. */
+function translateOptionEntry(
+  entry: JSONSchema7 | boolean,
+  labels: Record<string, string> | undefined,
+  descriptions: Record<string, string> | undefined,
+): JSONSchema7 | boolean {
+  if (!isSchemaObject(entry) || entry.const == null) {
+    return entry;
+  }
+
+  const optionValue = String(entry.const);
+  const title = labels?.[optionValue];
+  const description = descriptions?.[optionValue];
+
+  if (!title && !description) {
+    return entry;
+  }
+
+  return {
+    ...entry,
+    ...(title ? { title } : {}),
+    ...(description ? { description } : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Overall Recommendation
 // ---------------------------------------------------------------------------
 

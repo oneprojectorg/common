@@ -1,5 +1,6 @@
 'use client';
 
+import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
@@ -21,7 +22,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -36,9 +37,14 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
+import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { StickyFilterBar } from './StickyFilterBar';
+import { TranslateBanner } from './TranslateBanner';
+import { TranslationNotice } from './TranslationNotice';
+import { getProposalDetectionText } from './translationDetectionText';
+import { useTranslateDecision } from './useTranslateDecision';
 
 const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
   string,
@@ -48,11 +54,14 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
+  decisionProfileId,
   access,
   pinOffset,
 }: {
   processInstanceId: string;
   decisionSlug: string;
+  /** Decision profile whose phase copy, updates and resources translate with the queue. */
+  decisionProfileId?: string | null;
   access?: DecisionAccess;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
@@ -90,6 +99,24 @@ export function ReviewAssignmentsList({
 
   const assignments = data?.assignments ?? [];
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
+
+  // The reviewer's queue renders the same proposal cards as the "Other
+  // proposals" tab, so it gets the same translation wiring — without it the two
+  // tabs disagreed, one offering translation and one not.
+  const assignedProposals = useMemo(
+    () => assignments.map((item) => item.assignment.proposal),
+    [assignments],
+  );
+  const proposalSamples = useMemo(
+    () => assignedProposals.map(getProposalDetectionText),
+    [assignedProposals],
+  );
+  const needsTranslation = useAnyContentNeedsTranslation(proposalSamples);
+  const translation = useTranslateDecision({
+    proposals: assignedProposals,
+    decisionProfileId,
+    needsTranslation,
+  });
 
   const { data: aggregatesData } =
     trpc.decision.listWithReviewAggregates.useQuery(
@@ -230,6 +257,13 @@ export function ReviewAssignmentsList({
         </StickyFilterBar>
       )}
 
+      {translation.translationState && (
+        <TranslationNotice
+          sourceLanguageName={translation.sourceLanguageName}
+          onViewOriginal={translation.handleViewOriginal}
+        />
+      )}
+
       {/* Cards grid */}
       {isLoading ? (
         <ReviewAssignmentListSkeletonGrid />
@@ -254,25 +288,38 @@ export function ReviewAssignmentsList({
           </EmptyHeader>
         </Empty>
       ) : (
-        <ProposalMasonry>
-          {assignments.map((item) => (
-            <ReviewAssignmentCard
-              key={item.assignment.id}
-              assignment={item}
-              // The proposal-keyed URL resolves per viewer (own review screen
-              // for a reviewer, review progress for an admin).
-              viewHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
-              reviewers={
-                aggregatesData?.items.find(
-                  (i) => i.proposal.id === item.assignment.proposal.id,
-                )?.aggregates.reviewers
-              }
-              reviewsHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
-              access={access}
-              showCategory={showCategory}
-            />
-          ))}
-        </ProposalMasonry>
+        <ProposalTranslationProvider
+          translations={translation.translationState?.translations ?? {}}
+        >
+          <ProposalMasonry>
+            {assignments.map((item) => (
+              <ReviewAssignmentCard
+                key={item.assignment.id}
+                assignment={item}
+                // The proposal-keyed URL resolves per viewer (own review screen
+                // for a reviewer, review progress for an admin).
+                viewHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
+                reviewers={
+                  aggregatesData?.items.find(
+                    (i) => i.proposal.id === item.assignment.proposal.id,
+                  )?.aggregates.reviewers
+                }
+                reviewsHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
+                access={access}
+                showCategory={showCategory}
+              />
+            ))}
+          </ProposalMasonry>
+        </ProposalTranslationProvider>
+      )}
+
+      {translation.showBanner && (
+        <TranslateBanner
+          onTranslate={translation.handleTranslate}
+          onDismiss={translation.dismissBanner}
+          isTranslating={translation.isTranslating}
+          languageName={translation.targetLanguageName}
+        />
       )}
     </div>
   );
