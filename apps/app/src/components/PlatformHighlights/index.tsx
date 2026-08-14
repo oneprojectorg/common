@@ -105,7 +105,7 @@ const HighlightLabel = ({ children }: { children?: ReactNode }) => {
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="flex w-full items-center justify-start gap-4 sm:w-auto">
+    <div className="flex w-full items-center justify-start gap-4 sm:w-fit">
       {children}
     </div>
   );
