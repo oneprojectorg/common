@@ -14,6 +14,7 @@ import {
   PROPOSAL_SEARCH_MAX_LENGTH,
   type Proposal,
   ProposalReviewRequestState,
+  type ProposalTranslation,
   isReviewPhase,
   isVotingPhase,
 } from '@op/common/client';
@@ -26,7 +27,9 @@ import {
   Suspense,
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
+  useRef,
 } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,7 +43,7 @@ import {
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import type { ProposalControls } from './ProposalsFilterBar';
-import { ProposalsGrid } from './ProposalsGrid';
+import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
 import {
   ProposalsMapView,
   ProposalsMapWithLocations,
@@ -98,6 +101,10 @@ const PROPOSALS_PAGE_LIMIT = 24;
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+// Stable identity: the provider's value is read by every card, so a fresh `{}`
+// per render would re-run all of them for nothing.
+const NO_TRANSLATIONS: Record<string, ProposalTranslation> = {};
 
 type ProposalQueryParams = {
   processInstanceId: string;
@@ -457,6 +464,24 @@ const ProposalsListContent = ({
   const t = useTranslations();
   const { user } = useUser();
 
+  const listRef = useRef<HTMLDivElement>(null);
+  const hasMounted = useRef(false);
+
+  // Filtering shrinks the list under the reader: partway down a long scroll, a
+  // narrowing search clamps them to the tail of a handful of results, with the
+  // infinite-scroll sentinel already on screen and fetching. Reset to the bar.
+  // Keyed on `queryParams`, which changes per applied filter and never per page.
+  useEffect(() => {
+    // Not on the first pass, or a shared `?q=` link yanks the page on load.
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    // No `behavior`, so it lands instantly: there is nothing to read on the way
+    // past, and the results have already changed by the time it starts.
+    listRef.current?.scrollIntoView({ block: 'start' });
+  }, [queryParams]);
+
   const currentProfileId = user?.currentProfile?.id;
   const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
     (t) => [
@@ -581,6 +606,24 @@ const ProposalsListContent = ({
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
+  // Everything `hasActiveFilter` counts, and nothing else — sort reorders the
+  // same set rather than narrowing it, so resetting it would only surprise.
+  const handleClearFilters = useCallback(() => {
+    setSearch('');
+    setSelectedCategory('all-categories');
+    setProposalFilter(ProposalFilter.ALL);
+  }, [setSearch, setSelectedCategory, setProposalFilter]);
+
+  // The applied term, not the live field: it names the search the empty result
+  // actually came from, which is the one the reader is owed an answer about.
+  const emptyStateProps = {
+    hasFilter: hasActiveFilter,
+    searchQuery: queryParams.search,
+    isTranslated: !!translation.translationState,
+    onClearFilters: handleClearFilters,
+    excludeAssignedForReview,
+  };
+
   // The filter bar's whole state in one object: the URL-backed values and
   // setters from above, plus the pieces only resolvable here (the category list,
   // ballot status, the caller's profile).
@@ -628,8 +671,12 @@ const ProposalsListContent = ({
 
   return (
     <div
+      ref={listRef}
       // Nothing visibly unmounts any more, so announce the stale window.
       aria-busy={isFilterFetching || undefined}
+      // Clears the floating toggle the filter bar pins below, so a filter reset
+      // doesn't park the bar underneath it.
+      style={{ scrollMarginTop: pinOffset }}
       className={cn(
         'relative flex flex-col gap-6 pb-12',
         // On mobile the map view is edge-to-edge and flush to the bottom.
@@ -667,11 +714,22 @@ const ProposalsListContent = ({
         <TranslationNotice
           sourceLanguageName={translation.sourceLanguageName}
           onViewOriginal={translation.handleViewOriginal}
+          searchActive={!!queryParams.search}
         />
       )}
 
       <ProposalTranslationProvider
-        translations={translation.translationState?.translations ?? {}}
+        // Search matched the untranslated titles, and only proposals loaded
+        // before Translate was pressed have a translation at all — so a search
+        // otherwise returns a mix of both languages. Show the source language
+        // for all of them instead, which is what the notice above now says.
+        // Display-only: `translationState` is untouched, so clearing the search
+        // brings the translations straight back.
+        translations={
+          queryParams.search
+            ? NO_TRANSLATIONS
+            : (translation.translationState?.translations ?? NO_TRANSLATIONS)
+        }
       >
         {isMapMode && !isEmptyUnfiltered ? (
           phase === 'results' ? (
@@ -684,6 +742,7 @@ const ProposalsListContent = ({
               hrefFor={hrefFor}
               mapView={mapView}
               listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
+              emptyState={<NoProposalsFound {...emptyStateProps} />}
             />
           ) : (
             // Local boundaries keep the pin query from suspending / erroring
@@ -717,6 +776,7 @@ const ProposalsListContent = ({
                       queryParams.excludeAssignedForReview,
                   }}
                   listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
+                  emptyState={<NoProposalsFound {...emptyStateProps} />}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -729,10 +789,9 @@ const ProposalsListContent = ({
             decisionSlug={decisionSlug}
             permissions={permissions}
             votedProposalIds={selectedProposalIds}
-            hasFilter={hasActiveFilter}
+            {...emptyStateProps}
             isVotingPhase={isInVotingPhase}
             proposalsHidden={proposalsHidden}
-            excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
             isFetchingNextPage={isFetchingNextPage}
           />
