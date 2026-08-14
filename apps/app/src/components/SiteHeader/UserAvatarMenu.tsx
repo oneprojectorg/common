@@ -465,10 +465,8 @@ const LegalDialogs = ({
 
   return (
     <Dialog open={open !== null} onOpenChange={onOpenChange}>
-      {/* Capped height on desktop so only the body scrolls, not the whole card.
-          `initialFocus` lands on the scroll container (top) instead of the first
-          link deep in the legal text, which otherwise opens the dialog scrolled
-          partway down. */}
+      {/* `initialFocus` on the scroll container, else base-ui focuses the first
+          link deep in the legal text and opens the dialog scrolled. */}
       <DialogContent
         className="p-0 sm:max-h-[85vh] sm:max-w-xl"
         initialFocus={scrollRef}
@@ -604,8 +602,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           >
             {avatarContent}
           </DialogTrigger>
-          {/* A bottom sheet, deliberately not the full-screen mobile default:
-              this is a menu, so it stays short and shows the page behind it. */}
+          {/* A bottom sheet, deliberately opting out of the full-screen default. */}
           <DialogContent
             showCloseButton={false}
             className="top-auto bottom-0 max-h-[85svh] rounded-t p-0"

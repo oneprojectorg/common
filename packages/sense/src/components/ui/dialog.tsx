@@ -41,19 +41,9 @@ function DialogOverlay({
 }
 
 /**
- * Below `sm` the popup is a full-viewport sheet — `DialogHeader` pins to the top,
- * `DialogFooter` pins to the bottom, and whatever sits between them is the
- * scrolling body. At `sm` and up it is the centred card. Two consequences for
- * callers:
- *
- * - **Prefix layout overrides with `sm:`.** An unprefixed `max-h-*`, `max-w-*` or
- *   `rounded-*` shrinks the mobile sheet back into a floating card.
- * - **Give the body `flex-1 min-h-0`** if the popup should not scroll as a whole
- *   (i.e. you pass `overflow-hidden`). Without `flex-1` the body won't absorb the
- *   free space and the pinned footer leaves a gap under short content.
- *
- * One layout model — `flex flex-col` — at every breakpoint, because the footer can
- * only reach the bottom of a short mobile sheet via `mt-auto`.
+ * Full-viewport sheet below `sm`, centred card above it. Prefix layout overrides
+ * with `sm:` or they shrink the sheet, and give the body `flex-1 min-h-0` if you
+ * pass `overflow-hidden`.
  */
 function DialogContent({
   className,
@@ -87,10 +77,8 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          // Mobile-first: a full-viewport sheet. `inset-0` (not `h-dvh`) so a
-          // caller can re-anchor it with `top-auto bottom-0` and a `max-h-*`.
-          // No `translate` here on purpose — a non-`none` `translate` would make
-          // this a containing block and break the `fixed` close button below.
+          // No mobile `translate`: it would become a containing block and break
+          // the `fixed` close button below.
           'fixed inset-0 z-50 flex w-full flex-col overflow-y-auto bg-popover text-popover-foreground duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
           className,
         )}
@@ -101,9 +89,8 @@ function DialogContent({
           <DialogPrimitive.Close
             data-slot="dialog-close"
             render={
-              // `fixed` on mobile: the popup is the scroll container, so an
-              // `absolute` button would scroll away with the body. `z-20` clears
-              // the sticky header.
+              // `fixed`, not `absolute`: the mobile popup is the scroll
+              // container, so `absolute` scrolls away with the body.
               <Button
                 variant="ghost"
                 className="fixed end-4 top-4 z-20 opacity-70 hover:bg-transparent hover:opacity-100 sm:absolute"
@@ -125,9 +112,6 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-header"
       className={cn(
-        // Sticky (mobile) keeps it at the top of the screen when the popup itself
-        // is the scroll container; `sm:static` restores the desktop card, where
-        // the header scrolls with the content.
         'sticky top-0 z-10 flex flex-col gap-2 border-b bg-popover px-6 pe-12 pt-6 pb-4 sm:static',
         className,
       )}
@@ -148,8 +132,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        // `mt-auto` pins it to the bottom of a short mobile sheet; `sticky` keeps
-        // it there once the body is tall enough to scroll. Both are needed.
+        // `mt-auto` pins it under short content, `sticky` under scrolling content.
         'sticky bottom-0 z-10 mt-auto flex flex-col-reverse gap-2 border-t bg-muted px-6 py-4 sm:static sm:mt-0 sm:flex-row sm:justify-end sm:rounded-b-xl',
         className,
       )}

@@ -18,27 +18,16 @@ import {
 } from '../fixtures/index.js';
 
 /**
- * Below the `sm` breakpoint every `Dialog` covers the viewport, with its header
- * pinned to the top of the screen and its footer pinned to the bottom. The
- * geometry is the contract, so it is measured rather than asserted on classes.
- *
- * Two anatomies, two different mechanisms in `DialogContent`, one test each:
- *
- * - **Short content** (`JoinAccountModal`) — nothing absorbs the free space, so
- *   `mt-auto` on the footer is what drives it to the bottom of the screen.
- * - **Tall content** (a policy document) — a `flex-1 min-h-0` body absorbs the
- *   space and scrolls on its own, and the sticky header must hold y=0 while it
- *   does. That dialog has no footer, so the footer-under-overflow case is
- *   covered by the sticky rule rather than by an assertion here.
+ * Below `sm` a `Dialog` covers the viewport with its header and footer pinned.
+ * Geometry is the contract, so it's measured rather than asserted on classes:
+ * short content pins the footer via `mt-auto`, tall content via `sticky`.
  */
 
-// iPhone 14-ish. Anything under `sm` (640px) triggers the full-screen treatment.
 const MOBILE_VIEWPORT = { width: 390, height: 844 };
 
 test.use({ viewport: MOBILE_VIEWPORT });
 
 test.describe('Modals on mobile are full screen', () => {
-  // Both tests establish their own session state.
   test.use({ storageState: { cookies: [], origins: [] } });
 
   const admin = createSupabaseAdminClient();
@@ -59,8 +48,7 @@ test.describe('Modals on mobile are full screen', () => {
       email: org.adminUser.email,
       schema: template.processSchema,
     });
-    // A public decision is what makes the header offer Join to a no-session
-    // visitor, which is the cheapest route to a short header/body/footer modal.
+    // Public is what makes the header offer Join to a no-session visitor.
     await makeDecisionPublic({ profileId: instance.profileId });
 
     await page.goto(`/en/decisions/${instance.slug}`, {
@@ -89,8 +77,7 @@ test.describe('Modals on mobile are full screen', () => {
       users: { admin: 1, member: 0 },
     });
 
-    // Clearing acceptance opens the re-acceptance gate on the first page load —
-    // a modal whose body is taller than a phone screen, with no click to reach it.
+    // Clearing acceptance opens the re-acceptance gate on first page load.
     await db
       .update(users)
       .set({ tosAcceptedOn: null, privacyAcceptedOn: null })
@@ -114,8 +101,7 @@ test.describe('Modals on mobile are full screen', () => {
     await expectHeaderAtTopOfScreen(gate);
     await expectFooterAtBottomOfScreen(gate);
 
-    // The gate's own body is short, so open the policy document it links to —
-    // stacked over the gate, and long enough to actually scroll on a phone.
+    // The gate's body is short; the document it stacks on top is not.
     await gate.getByRole('button', { name: 'Terms of Use' }).click();
     const doc = dialogs.filter({
       hasText: 'TERMS OF SERVICE FOR COMMON PLATFORM',
@@ -133,8 +119,7 @@ test.describe('Modals on mobile are full screen', () => {
     await body.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
-    // Non-zero scrollTop is what proves the body overflowed, which is the only
-    // condition under which a pinned header is worth asserting.
+    // Non-zero scrollTop proves the body actually overflowed.
     await expect
       .poll(() => body.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
@@ -175,11 +160,7 @@ async function boundingBox(locator: Locator) {
   return box;
 }
 
-/**
- * `window.innerWidth/Height`, not the configured viewport: what a `fixed`
- * element resolves against is the live visual viewport, and that is the number
- * the assertions have to match.
- */
+// The live visual viewport, which is what a `fixed` element resolves against.
 function viewportSize(page: Page) {
   return page.evaluate(() => ({
     width: window.innerWidth,

@@ -161,13 +161,8 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     <CommandList
       className={cn(
         'overflow-x-hidden overflow-y-auto',
-        // Mobile is a full-height sheet, so the list fills it and owns the
-        // scroll. A fixed cap here would strand the results in the top third
-        // of the screen. Desktop keeps the capped dropdown.
-        //
-        // `max-h-full`, not `max-h-none`: tailwind-merge 3.4 leaves `none` out
-        // of its `max-h` group (unlike `max-w`), so `max-h-none` does NOT
-        // displace the `max-h-72` CommandList ships with — it just loses to it.
+        // `max-h-full`, not `max-h-none`: tailwind-merge omits `none` from its
+        // `max-h` group, so `max-h-none` never displaces CommandList's `max-h-72`.
         isMobile ? 'max-h-full min-h-0 flex-1' : 'max-h-86',
       )}
     >
