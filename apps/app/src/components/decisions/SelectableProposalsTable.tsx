@@ -88,10 +88,12 @@ export const SelectableProposalsTable = ({
                       href={href}
                       className="text-base text-foreground hover:underline"
                     >
-                      {fields.title}
+                      <bdi>{fields.title}</bdi>
                     </Link>
                   ) : (
-                    <span className="text-base">{fields.title}</span>
+                    <span className="text-base">
+                      <bdi>{fields.title}</bdi>
+                    </span>
                   )}
                   {fields.submitterName ? (
                     <span className="text-sm text-muted-foreground">
@@ -160,10 +162,12 @@ const SelectableProposalCard = ({
             href={href}
             className="text-base text-foreground hover:underline"
           >
-            {fields.title}
+            <bdi>{fields.title}</bdi>
           </Link>
         ) : (
-          <span className="text-base">{fields.title}</span>
+          <span className="text-base">
+            <bdi>{fields.title}</bdi>
+          </span>
         )}
         {fields.submitterName ? (
           <span className="text-sm text-muted-foreground">

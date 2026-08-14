@@ -213,7 +213,9 @@ export function PhasesSectionContent({
                   <DragHandle {...dragHandleProps} />
                   <div className="flex flex-1 items-center justify-between gap-3">
                     <div className="flex-1">
-                      <p className="font-serif text-label">{phase.name}</p>
+                      <p className="font-serif text-label">
+                        <bdi>{phase.name}</bdi>
+                      </p>
                       {configured ? (
                         <span className="flex items-center gap-1 text-sm text-primary">
                           <LuCheck className="size-3" />
@@ -309,7 +311,9 @@ const PhaseDragPreview = ({
       <DragHandle tabIndex={-1} aria-hidden />
       <div className="flex flex-1 items-center justify-between gap-3">
         <div className="flex-1">
-          <p className="font-serif text-label">{phase.name}</p>
+          <p className="font-serif text-label">
+            <bdi>{phase.name}</bdi>
+          </p>
           {configured ? (
             <span className="flex items-center gap-1 text-sm text-primary">
               <LuCheck className="size-3" />
