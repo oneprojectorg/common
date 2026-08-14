@@ -7,11 +7,14 @@ import {
   profileUserToAccessRoles,
   profileUsers,
   profiles,
+  proposalCategories,
+  taxonomyTerms,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
 import { createProposal } from '@op/test';
 import { parse } from 'csv-parse/sync';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import { expect, test } from '../fixtures/index.js';
@@ -29,7 +32,6 @@ const ALT_MOCK_DOC_ID = 'test-proposal-listing-doc-alt';
 const FIXTURE_SUMMARY_TEXT = 'Bold text';
 const FIXTURE_SUMMARY_LIST_ITEM = 'First item';
 
-const INNGEST_HEALTH_URL = 'http://127.0.0.1:8288/health';
 const WORKFLOWS_SERVE_URL = 'http://localhost:4300/api/v1/workflows';
 
 const processSchema = {
@@ -44,6 +46,20 @@ const processSchema = {
       description: 'Submit proposals',
       rules: {
         proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    // A phase after the current one, without which `DecisionStateRouter` sends
+    // the whole route to `ResultsPage`: it renders results whenever the current
+    // phase is the last one and doesn't accept submissions, so a single-phase
+    // instance shows "The results are in." and never mounts a proposals list.
+    {
+      id: 'review',
+      name: 'Review',
+      description: 'Review proposals',
+      rules: {
+        proposals: { submit: false },
         voting: { submit: false },
         advancement: { method: 'manual' as const },
       },
@@ -84,11 +100,29 @@ const instanceData = {
   budget: 50000,
   hideBudget: false,
   proposalTemplate: processSchema.proposalTemplate,
+  // Rules are carried on the instance's phases, not just the template's — the
+  // router reads `currentPhase.rules` to decide the route, and the process
+  // builder writes them here for the same reason.
   phases: [
     {
       phaseId: 'proposalSubmission',
       startDate: '2025-09-20',
       endDate: '2025-10-01',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      phaseId: 'review',
+      startDate: '2025-10-02',
+      endDate: '2025-10-20',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
     },
   ],
 };
@@ -104,31 +138,10 @@ test.describe('Proposals CSV export', () => {
 
     // The export is a background Inngest workflow: the mutation only returns an
     // id, and the file is produced by the handler apps/api mounts at
-    // /api/v1/workflows. The dev server is what relays the event back to it —
-    // without one, `event.send` has nowhere to go and nothing ever completes.
-    //
-    // Checked here rather than in `beforeAll`, where `test.skip()` has no
-    // TestInfo to attach to and throws instead of skipping.
-    const isReachable = await request
-      .get(INNGEST_HEALTH_URL)
-      .then((response) => response.ok())
-      .catch(() => false);
-
-    const guidance =
-      'Inngest dev server is not running on :8288. Start it with ' +
-      '`pnpm w:workflows exec inngest-cli dev --no-discovery ' +
-      '-u http://localhost:4300/api/v1/workflows` — see tests/e2e/README.md.';
-
-    // Hard failure in CI, which starts one: a skip there would report a green
-    // run for a spec that never executed.
-    if (!isReachable && process.env.CI) {
-      throw new Error(guidance);
-    }
-    test.skip(!isReachable, guidance);
-
-    // Sync this build's functions into whichever dev server is listening. In CI
-    // the `-u` flag already did it; locally the running dev server belongs to
-    // the :3300 stack and has never seen the e2e app on :4300.
+    // /api/v1/workflows. The dev server that relays the event back to it is
+    // started by `webServer` in playwright.config.ts, so it is up by the time
+    // this runs — but a reused one belongs to the :3300 stack and has never
+    // seen the e2e app on :4300, so its functions are registered here.
     const sync = await request.fetch(WORKFLOWS_SERVE_URL, { method: 'PUT' });
     expect(sync.ok()).toBe(true);
 
@@ -136,7 +149,7 @@ test.describe('Proposals CSV export', () => {
 
     const included = await createProposal({
       processInstanceId: instance.id,
-      submittedByProfileId: org.organizationProfile.id,
+      submittedByProfileId: org.adminUser.profileId,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       status: ProposalStatus.SUBMITTED,
@@ -150,7 +163,7 @@ test.describe('Proposals CSV export', () => {
 
     await createProposal({
       processInstanceId: instance.id,
-      submittedByProfileId: org.organizationProfile.id,
+      submittedByProfileId: org.adminUser.profileId,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       status: ProposalStatus.SUBMITTED,
@@ -162,13 +175,32 @@ test.describe('Proposals CSV export', () => {
       },
     });
 
+    // The category filter matches on a taxonomy term id, not on the label the
+    // template offers — `resolveProposalListScope` reads `decision_categories`
+    // and never looks at `proposalData.category`. So the category has to exist
+    // as a term with a row joining it to the proposal it covers; passing
+    // "Environment" straight through matches nothing and silently empties the
+    // list.
+    const [category] = await db
+      .insert(taxonomyTerms)
+      .values({ termUri: `e2e:category:${randomUUID()}`, label: 'Environment' })
+      .returning();
+
+    if (!category) {
+      throw new Error('Failed to create the category term');
+    }
+
+    await db
+      .insert(proposalCategories)
+      .values({ proposalId: included.id, taxonomyTermId: category.id });
+
     // Narrow the list by category up front. An export that ignored the filter
     // and one that applied it are indistinguishable on an unfiltered list, so
     // this is what makes the row count below an assertion rather than a
     // coincidence. The filter is URL state (nuqs), so it is set by navigation
     // rather than by driving the dropdown.
     await authenticatedPage.goto(
-      `/en/decisions/${slug}/current?filter=all&category=Environment`,
+      `/en/decisions/${slug}/current?filter=all&category=${category.id}`,
       { waitUntil: 'domcontentloaded' },
     );
 
@@ -214,8 +246,21 @@ test.describe('Proposals CSV export', () => {
       Budget: '8000',
       Currency: 'USD',
       Categories: 'Environment',
-      'Submitter Email': org.adminUser.email,
     });
+
+    // The submitter columns read the *profile* row, so they are asserted
+    // against it rather than against the account that signed in. `Submitter
+    // Email` reports `profiles.email`, which nothing in this fixture sets —
+    // the address lives on `users`/`profile_users` — so only the name is
+    // pinned here. A blank email column is the export reporting the profile
+    // faithfully, not a join that failed.
+    const [submitter] = await db
+      .select({ name: profiles.name, email: profiles.email })
+      .from(profiles)
+      .where(eq(profiles.id, org.adminUser.profileId));
+
+    expect(rows[0]?.['Submitted By']).toBe(submitter?.name);
+    expect(rows[0]?.['Submitter Email']).toBe(submitter?.email ?? '');
 
     // Description comes from the `summary` fragment. Reading only the legacy
     // `default` fragment — as this did — exported an empty column for every
