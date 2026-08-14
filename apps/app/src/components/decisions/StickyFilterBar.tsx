@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 // Nearest scrollable ancestor — the IntersectionObserver root, so pin detection
 // is measured against the content scroll container rather than the viewport.
-const getScrollParent = (node: Element | null): Element | null => {
+export const getScrollParent = (node: Element | null): Element | null => {
   let el = node?.parentElement ?? null;
   while (el) {
     const overflowY = getComputedStyle(el).overflowY;
