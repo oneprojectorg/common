@@ -122,6 +122,14 @@
   }
 }
 
+/* The height a dialog may grow to before its body scrolls, leaving a margin so
+ * the card never touches the viewport edge. v4 has no `--max-height-*` theme
+ * namespace, so this is a utility rather than a token. Registered with
+ * tailwind-merge in sense's `cn`, or call sites can't override it. */
+@utility max-h-dialog {
+  max-height: calc(100dvh - 2rem);
+}
+
 /* Bare `border` (no color utility) defaults to the sense border token,
  * mirroring the app-wide rule below (which hardcodes the legacy neutral and is
  * retired with it). Explicit utilities like border-input still win — they live

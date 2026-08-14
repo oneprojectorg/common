@@ -467,10 +467,7 @@ const LegalDialogs = ({
     <Dialog open={open !== null} onOpenChange={onOpenChange}>
       {/* `initialFocus` on the scroll container, else base-ui focuses the first
           link deep in the legal text and opens the dialog scrolled. */}
-      <DialogContent
-        className="p-0 sm:max-h-[85vh] sm:max-w-xl"
-        initialFocus={scrollRef}
-      >
+      <DialogContent className="p-0 sm:max-w-xl" initialFocus={scrollRef}>
         <DialogHeader>
           <DialogTitle>{open ? t(legalTitles[open]) : ''}</DialogTitle>
         </DialogHeader>

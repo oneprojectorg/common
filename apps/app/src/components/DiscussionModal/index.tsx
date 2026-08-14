@@ -93,7 +93,7 @@ export function DiscussionModal({
         }
       }}
     >
-      <DialogContent className="overflow-hidden p-0 text-start sm:max-h-[80svh] sm:max-w-lg sm:rounded-lg">
+      <DialogContent className="overflow-hidden p-0 text-start sm:max-w-lg sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {t.rich("<bdi>{authorName}</bdi>'s Post", {
