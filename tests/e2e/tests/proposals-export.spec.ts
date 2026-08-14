@@ -136,6 +136,70 @@ test.describe('Proposals CSV export', () => {
     // Page load, then a real background workflow round trip on top of it.
     test.setTimeout(150_000);
 
+    // TEMPORARY DIAGNOSTIC — remove once the CI failure is understood.
+    // The export reaches the browser over a single realtime broadcast. When
+    // that broadcast goes missing the UI is indistinguishable from a job that
+    // never started, so these three traces separate the possibilities: whether
+    // the socket carried a join and a message, what the status endpoint
+    // actually returned, and what the realtime manager logged.
+    const wsFrames: string[] = [];
+    const statusReads: string[] = [];
+    const realtimeLogs: string[] = [];
+    const since = Date.now();
+    const at = () => `+${String(Date.now() - since).padStart(6)}ms`;
+
+    authenticatedPage.on('websocket', (ws) => {
+      if (!ws.url().includes('/realtime/v1/')) {
+        return;
+      }
+      wsFrames.push(`${at()} socket opened`);
+      ws.on('framesent', (frame) => {
+        const payload = String(frame.payload);
+        if (payload.includes('proposalExport')) {
+          wsFrames.push(`${at()} sent ${payload.slice(0, 240)}`);
+        }
+      });
+      ws.on('framereceived', (frame) => {
+        const payload = String(frame.payload);
+        if (
+          payload.includes('proposalExport') ||
+          payload.includes('invalidation')
+        ) {
+          wsFrames.push(`${at()} recv ${payload.slice(0, 240)}`);
+        }
+      });
+      ws.on('close', () => wsFrames.push(`${at()} socket closed`));
+    });
+
+    authenticatedPage.on('console', (message) => {
+      const text = message.text();
+      if (text.includes('[Realtime]')) {
+        realtimeLogs.push(`${at()} ${text}`);
+      }
+    });
+
+    authenticatedPage.on('response', async (response) => {
+      if (!response.url().includes('getExportStatus')) {
+        return;
+      }
+      try {
+        statusReads.push(`${at()} ${(await response.text()).slice(0, 300)}`);
+      } catch {
+        statusReads.push(`${at()} <body unavailable>`);
+      }
+    });
+
+    const dumpDiagnostics = (label: string) => {
+      console.log(`\n===== EXPORT DIAGNOSTICS (${label}) =====`);
+      console.log(`--- websocket frames (${wsFrames.length}) ---`);
+      wsFrames.forEach((line) => console.log(line));
+      console.log(`--- getExportStatus responses (${statusReads.length}) ---`);
+      statusReads.forEach((line) => console.log(line));
+      console.log(`--- realtime console (${realtimeLogs.length}) ---`);
+      realtimeLogs.forEach((line) => console.log(line));
+      console.log('===== END EXPORT DIAGNOSTICS =====\n');
+    };
+
     // The export is a background Inngest workflow: the mutation only returns an
     // id, and the file is produced by the handler apps/api mounts at
     // /api/v1/workflows. The dev server that relays the event back to it is
@@ -223,7 +287,13 @@ test.describe('Proposals CSV export', () => {
     const downloadLink = authenticatedPage.getByRole('link', {
       name: 'Download CSV',
     });
-    await expect(downloadLink).toBeVisible({ timeout: 90_000 });
+    try {
+      await expect(downloadLink).toBeVisible({ timeout: 90_000 });
+    } catch (error) {
+      dumpDiagnostics('download link never appeared');
+      throw error;
+    }
+    dumpDiagnostics('download link appeared');
 
     // Fetch the signed URL directly rather than going through the browser's
     // download: the point is the bytes, and the link is target="_blank", which
