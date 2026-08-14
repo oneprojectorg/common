@@ -1537,5 +1537,7 @@
   "No invitations were sent": "কোনো আমন্ত্রণ পাঠানো হয়নি",
   "Some invitations could not be sent": "কিছু আমন্ত্রণ পাঠানো যায়নি",
   "Select an organization": "একটি সংস্থা নির্বাচন করুন",
-  "You can only invite people to organizations you administer.": "আপনি শুধু সেই সংস্থাগুলিতে মানুষকে আমন্ত্রণ জানাতে পারেন যেগুলি আপনি পরিচালনা করেন।"
+  "You can only invite people to organizations you administer.": "আপনি শুধু সেই সংস্থাগুলিতে মানুষকে আমন্ত্রণ জানাতে পারেন যেগুলি আপনি পরিচালনা করেন।",
+  "+ Add review": "+ পর্যালোচনা যোগ করুন",
+  "{name} (You)": "{name} (আপনি)"
 }

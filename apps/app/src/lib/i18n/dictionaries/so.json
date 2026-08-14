@@ -1536,5 +1536,7 @@
   "No invitations were sent": "Casuumaad lama dirin",
   "Some invitations could not be sent": "Casuumaadaha qaarkood lama diri karin",
   "Select an organization": "Dooro urur",
-  "You can only invite people to organizations you administer.": "Waxaad dad ku casuumi kartaa oo keliya ururrada aad maamusho."
+  "You can only invite people to organizations you administer.": "Waxaad dad ku casuumi kartaa oo keliya ururrada aad maamusho.",
+  "+ Add review": "+ Ku dar dib-u-eegis",
+  "{name} (You)": "{name} (Adiga)"
 }

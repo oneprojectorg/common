@@ -1599,5 +1599,7 @@
   "No invitations were sent": "No invitations were sent",
   "Some invitations could not be sent": "Some invitations could not be sent",
   "Select an organization": "Select an organization",
-  "You can only invite people to organizations you administer.": "You can only invite people to organizations you administer."
+  "You can only invite people to organizations you administer.": "You can only invite people to organizations you administer.",
+  "+ Add review": "+ Add review",
+  "{name} (You)": "{name} (You)"
 }

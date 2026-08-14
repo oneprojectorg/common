@@ -1534,5 +1534,7 @@
   "No invitations were sent": "Aucune invitation n'a été envoyée",
   "Some invitations could not be sent": "Certaines invitations n'ont pas pu être envoyées",
   "Select an organization": "Sélectionnez une organisation",
-  "You can only invite people to organizations you administer.": "Vous pouvez uniquement inviter des personnes dans les organisations que vous administrez."
+  "You can only invite people to organizations you administer.": "Vous pouvez uniquement inviter des personnes dans les organisations que vous administrez.",
+  "+ Add review": "+ Ajouter une évaluation",
+  "{name} (You)": "{name} (Vous)"
 }
