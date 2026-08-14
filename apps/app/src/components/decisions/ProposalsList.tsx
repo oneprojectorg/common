@@ -465,22 +465,35 @@ const ProposalsListContent = ({
   const { user } = useUser();
 
   const listRef = useRef<HTMLDivElement>(null);
-  const hasMounted = useRef(false);
+  // Armed by the filter setters below, so only a change the reader made can
+  // scroll. `queryParams` alone isn't that signal: it also settles once on load
+  // as the profile resolves, and React's dev double-invoke would fire a
+  // run-once guard on the second pass — either way yanking the page off the
+  // hero before anyone has touched a filter.
+  const scrollOnNextResults = useRef(false);
 
   // Filtering shrinks the list under the reader: partway down a long scroll, a
   // narrowing search clamps them to the tail of a handful of results, with the
-  // infinite-scroll sentinel already on screen and fetching. Reset to the bar.
-  // Keyed on `queryParams`, which changes per applied filter and never per page.
+  // infinite-scroll sentinel already on screen and fetching. Reset to the bar
+  // once the new results land — `queryParams` changes per applied filter and
+  // never per page, so it stands in for "the results just changed".
   useEffect(() => {
-    // Not on the first pass, or a shared `?q=` link yanks the page on load.
-    if (!hasMounted.current) {
-      hasMounted.current = true;
+    if (!scrollOnNextResults.current) {
       return;
     }
+    scrollOnNextResults.current = false;
     // No `behavior`, so it lands instantly: there is nothing to read on the way
     // past, and the results have already changed by the time it starts.
     listRef.current?.scrollIntoView({ block: 'start' });
   }, [queryParams]);
+
+  // Wraps a filter setter so the next results land at the top of the list.
+  const withScrollToTop =
+    <TValue,>(set: (value: TValue) => void) =>
+    (value: TValue) => {
+      scrollOnNextResults.current = true;
+      set(value);
+    };
 
   const currentProfileId = user?.currentProfile?.id;
   const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
@@ -609,6 +622,7 @@ const ProposalsListContent = ({
   // Everything `hasActiveFilter` counts, and nothing else — sort reorders the
   // same set rather than narrowing it, so resetting it would only surprise.
   const handleClearFilters = useCallback(() => {
+    scrollOnNextResults.current = true;
     setSearch('');
     setSelectedCategory('all-categories');
     setProposalFilter(ProposalFilter.ALL);
@@ -629,16 +643,16 @@ const ProposalsListContent = ({
   // ballot status, the caller's profile).
   const controls: ProposalControls = {
     search,
-    setSearch,
+    setSearch: withScrollToTop(setSearch),
     // `listAllProposals` (results phase) has no search support.
     canSearch: phase !== 'results',
     isSearchPending: isSearchFetching,
     proposalFilter,
-    setProposalFilter,
+    setProposalFilter: withScrollToTop(setProposalFilter),
     selectedCategory,
-    setSelectedCategory,
+    setSelectedCategory: withScrollToTop(setSelectedCategory),
     sortOrder,
-    setSortOrder,
+    setSortOrder: withScrollToTop(setSortOrder),
     categories,
     hasVoted,
     currentProfileId,
