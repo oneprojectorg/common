@@ -94,21 +94,24 @@ export function ReviewSettingsContent({
           : phase.rules,
     }));
 
+  // Computed outside a `setSettings` updater: updaters must be pure, and React
+  // runs them during render, so saving from one wrote to the autosave store
+  // mid-render and scheduled an update on other store subscribers while this
+  // component was still rendering. Safe to read `settings` from the closure
+  // because every caller updates one field per event.
   const updateSettings = (updates: Partial<ReviewSettings>) => {
-    setSettings((prev) => {
-      const updated = { ...prev, ...updates };
-      // scope and revisions write to different places: scope to the review
-      // phase's rules, revisions to legacy config. Route each independently.
-      if (updates.scope !== undefined && reviewPhase) {
-        saveChanges({ phases: phasesWithScope(updated.scope) });
-      }
-      if (updates.reviewsAllowRevisions !== undefined) {
-        saveChanges({
-          config: { reviewsAllowRevisions: updated.reviewsAllowRevisions },
-        });
-      }
-      return updated;
-    });
+    const updated = { ...settings, ...updates };
+    setSettings(updated);
+    // scope and revisions write to different places: scope to the review
+    // phase's rules, revisions to legacy config. Route each independently.
+    if (updates.scope !== undefined && reviewPhase) {
+      saveChanges({ phases: phasesWithScope(updated.scope) });
+    }
+    if (updates.reviewsAllowRevisions !== undefined) {
+      saveChanges({
+        config: { reviewsAllowRevisions: updated.reviewsAllowRevisions },
+      });
+    }
   };
 
   return (
