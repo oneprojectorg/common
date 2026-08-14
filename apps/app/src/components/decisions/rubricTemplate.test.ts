@@ -16,6 +16,7 @@ import {
   inferCriterionType,
   setCriterionRequired,
   setSelectOptions,
+  translateRubricTemplate,
   updateCriterionDescription,
 } from './rubricTemplate';
 
@@ -274,5 +275,77 @@ describe('getCriteria', () => {
     expect(single?.criterionType).toBe('single_select');
     expect(single?.options).toHaveLength(2);
     expect(single?.options[0]?.title).toBe('Parks');
+  });
+});
+
+describe('translateRubricTemplate', () => {
+  const rubric = () => {
+    let template = createEmptyRubricTemplate();
+    template = addCriterion(template, 'impact', 'single_select', 'Impact');
+    template = updateCriterionDescription(template, 'impact', 'How many?');
+    template = setSelectOptions(template, 'impact', [
+      { value: 'high', title: 'High', description: 'Whole city' },
+      { value: 'low', title: 'Low' },
+    ]);
+    template = setCriterionRequired(template, 'impact', true);
+    return template;
+  };
+
+  const meta = {
+    fieldTitles: { impact: 'Impacto' },
+    fieldDescriptions: { impact: '¿A cuántas personas?' },
+    optionLabels: { impact: { high: 'Alto', low: 'Bajo' } },
+    optionDescriptions: { impact: { high: 'Toda la ciudad' } },
+  };
+
+  it('replaces criterion prompts, descriptions, and option copy', () => {
+    const criterion = getCriterion(
+      translateRubricTemplate(rubric(), meta),
+      'impact',
+    );
+
+    expect(criterion?.label).toBe('Impacto');
+    expect(criterion?.description).toBe('¿A cuántas personas?');
+    expect(criterion?.options.map((option) => option.title)).toEqual([
+      'Alto',
+      'Bajo',
+    ]);
+    expect(criterion?.options[0]?.description).toBe('Toda la ciudad');
+  });
+
+  // Answers are stored against the option `const`, and validation runs off the
+  // required list — translating display copy must not disturb either.
+  it('leaves option values and the required list untouched', () => {
+    const translated = translateRubricTemplate(rubric(), meta);
+    const criterion = getCriterion(translated, 'impact');
+
+    expect(criterion?.options.map((option) => option.value)).toEqual([
+      'high',
+      'low',
+    ]);
+    expect(criterion?.required).toBe(true);
+    expect(translated.required).toEqual(['impact']);
+  });
+
+  it('keeps authored copy for criteria and options with no translation', () => {
+    const translated = translateRubricTemplate(rubric(), {
+      fieldTitles: {},
+      fieldDescriptions: {},
+      optionLabels: { impact: { high: 'Alto' } },
+      optionDescriptions: {},
+    });
+    const criterion = getCriterion(translated, 'impact');
+
+    expect(criterion?.label).toBe('Impact');
+    expect(criterion?.description).toBe('How many?');
+    expect(criterion?.options.map((option) => option.title)).toEqual([
+      'Alto',
+      'Low',
+    ]);
+  });
+
+  it('returns the template unchanged with no translation', () => {
+    const template = rubric();
+    expect(translateRubricTemplate(template, null)).toBe(template);
   });
 });
