@@ -8,6 +8,7 @@ import {
   InputGroupInput,
 } from '@op/sense/InputGroup';
 import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import { useRef } from 'react';
 import { LuSearch, LuX } from 'react-icons/lu';
 
@@ -18,17 +19,19 @@ export const ProposalSearchField = ({
   value,
   onChange,
   isPending,
+  className,
 }: {
   value: string;
   onChange: (next: string) => void;
   /** A query is in flight — results on screen are for an earlier term. */
   isPending?: boolean;
+  className?: string;
 }) => {
   const t = useTranslations();
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <InputGroup className="w-full shrink-0 md:w-52">
+    <InputGroup className={cn('w-full shrink-0 md:w-52', className)}>
       <InputGroupAddon>
         {isPending ? <Spinner /> : <LuSearch />}
       </InputGroupAddon>

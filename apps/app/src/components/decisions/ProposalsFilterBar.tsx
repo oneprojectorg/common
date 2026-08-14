@@ -63,9 +63,14 @@ export const ProposalsListHeader = ({
 
 /**
  * Search and the three filter selects, plus the view toggle where the process
- * has one. Search takes a full-width row above the selects on mobile and sits
- * beside them from md up — one instance either way, so focus survives a
- * breakpoint change.
+ * has one.
+ *
+ * Returns them as siblings rather than one wrapper, so the bar's `flex-wrap`
+ * can break between them and search rides up onto the count's row when the
+ * whole set won't fit. `md:ms-auto` keeps search anchored to the selects on a
+ * single row, and against the count's row once it wraps. Below `md` its
+ * `w-full` claims a row of its own, above the horizontally scrolling selects.
+ * One instance at every width, so focus survives a breakpoint change.
  */
 export const ProposalsFilterBar = ({
   controls,
@@ -84,9 +89,10 @@ export const ProposalsFilterBar = ({
   });
 
   return (
-    <div className="flex flex-col gap-4 max-md:w-full md:flex-row md:items-center">
+    <>
       {controls.canSearch && (
         <ProposalSearchField
+          className="md:ms-auto"
           value={controls.search}
           onChange={controls.setSearch}
           isPending={controls.isSearchPending}
@@ -139,6 +145,6 @@ export const ProposalsFilterBar = ({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
