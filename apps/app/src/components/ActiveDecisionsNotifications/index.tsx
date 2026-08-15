@@ -132,7 +132,7 @@ const RevisionRequestRow = ({
           proposalName: title,
         })}
       />
-      <NotificationPanelActions>
+      <NotificationPanelActions className="flex-col-reverse">
         <Button
           variant="outline"
           className="w-full sm:w-auto"

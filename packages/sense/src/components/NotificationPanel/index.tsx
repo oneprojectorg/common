@@ -55,8 +55,24 @@ function NotificationPanelItem({
   );
 }
 
-function NotificationPanelActions({ children }: { children: ReactNode }) {
-  return <div className="flex items-center gap-4">{children}</div>;
+/** Pass `flex-col-reverse` to lead the mobile stack with the primary action. */
+function NotificationPanelActions({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-4 sm:flex-row sm:items-center',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 export {
