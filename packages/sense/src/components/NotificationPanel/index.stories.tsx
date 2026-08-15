@@ -22,10 +22,6 @@ type Story = StoryObj<typeof NotificationPanel>;
 
 const people = ['Frida Kahlo', 'Mark Rothko'];
 
-/**
- * The app's pattern: `w-full sm:w-auto` on each action, plus `flex-col-reverse`
- * so the primary leads the stack. Narrow below `sm` (640px) to see it.
- */
 export const ResponsiveActions: Story = {
   render: () => (
     <div className="w-[36rem] max-w-full">

@@ -132,7 +132,6 @@ const RevisionRequestRow = ({
           proposalName: title,
         })}
       />
-      {/* Source order is the desktop row; the mobile stack leads with Revise. */}
       <NotificationPanelActions className="flex-col-reverse">
         <Button
           variant="outline"

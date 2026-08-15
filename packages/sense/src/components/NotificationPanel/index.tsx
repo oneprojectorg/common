@@ -55,14 +55,7 @@ function NotificationPanelItem({
   );
 }
 
-/**
- * The action group for a row: a stack below `sm`, a row above it, matching
- * NotificationPanelItem's breakpoint. Actions want `w-full sm:w-auto` — a row
- * at every width overflows the card, since `Button` is `shrink-0`.
- *
- * Pass `flex-col-reverse` to lead the stack with the primary action; the `sm`
- * row keeps source order.
- */
+/** Pass `flex-col-reverse` to lead the mobile stack with the primary action. */
 function NotificationPanelActions({
   children,
   className,

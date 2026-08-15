@@ -17,7 +17,6 @@ import {
   test,
 } from '../fixtures/index.js';
 
-// Either side of the `sm` breakpoint (640px).
 const MOBILE_VIEWPORT = { width: 390, height: 844 };
 const DESKTOP_VIEWPORT = { width: 1280, height: 900 };
 
@@ -65,12 +64,11 @@ test.describe('Landing page — Active Decisions revision request actions', () =
 
     const { ignoreBox, reviseBox } = await getActionBoxes(page);
 
-    // Primary on top; the -1 absorbs sub-pixel rounding.
+    // -1 absorbs sub-pixel rounding.
     expect(ignoreBox.y).toBeGreaterThanOrEqual(
       reviseBox.y + reviseBox.height - 1,
     );
 
-    // The bug pushed the second button past the right edge.
     expect(ignoreBox.x + ignoreBox.width).toBeLessThanOrEqual(
       MOBILE_VIEWPORT.width,
     );
@@ -96,7 +94,7 @@ test.describe('Landing page — Active Decisions revision request actions', () =
 
     const { ignoreBox, reviseBox } = await getActionBoxes(page);
 
-    // Source order here, so the mobile reversal must not leak up. x assumes LTR.
+    // x comparison assumes LTR.
     expect(reviseBox.y).toBeLessThan(ignoreBox.y + ignoreBox.height);
     expect(reviseBox.x).toBeGreaterThan(ignoreBox.x);
     expect(reviseBox.x + reviseBox.width).toBeLessThanOrEqual(
@@ -107,10 +105,6 @@ test.describe('Landing page — Active Decisions revision request actions', () =
   });
 });
 
-/**
- * Seeds a proposal with a pending revision request and opens its author's
- * landing page, where the request renders as an Active Decisions row.
- */
 async function openLandingPageWithRevisionRequest({
   browser,
   org,
@@ -145,7 +139,6 @@ async function openLandingPageWithRevisionRequest({
     instanceProfileId: instance.profileId,
   });
 
-  // Scoped by submitter, so only this author sees it.
   const { revisionRequest } = await createReviewScenario({
     instance: { id: instance.instance.id },
     author,
@@ -173,7 +166,6 @@ async function openLandingPageWithRevisionRequest({
 }
 
 async function getActionBoxes(page: Page) {
-  // Scoped to the row so another "Ignore" can't make this ambiguous.
   const row = page
     .getByRole('listitem')
     .filter({ hasText: 'Revision Request' });
