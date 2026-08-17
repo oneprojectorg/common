@@ -55,13 +55,14 @@ const requestExport = () =>
 describe('exportProposals request', () => {
   // An export used to inherit whatever the list had been narrowed to, so one
   // button produced different files from state the CSV itself cannot show, and
-  // an admin could not ask for the whole instance at all. Nothing about the
-  // caller's view may reach the job now.
+  // an admin could not ask for anything wider than their own view. Nothing
+  // about that view may reach the job now — what an export covers is settled
+  // by the job itself.
   //
   // The payload is asserted whole rather than by naming keys that should be
   // absent: a filter put back by way of a spread adds a key nobody thought to
   // write a test for, and only an exact match notices that.
-  it('asks the job for the instance and nothing about the caller', async () => {
+  it('tells the job which instance and nothing about the caller', async () => {
     const { exportId } = await requestExport();
 
     const [payload] = sendEvent.mock.calls[0] as [

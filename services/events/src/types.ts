@@ -32,9 +32,10 @@ export const Events = {
       reactionType: z.string(),
     }),
   },
-  // Scoped to the instance and nothing else. An export used to inherit
-  // whatever the list was narrowed to, which made the same button produce a
-  // different file depending on state the admin could not see from the CSV.
+  // Carries no filters. An export used to inherit whatever the list had been
+  // narrowed to, which made the same button produce a different file depending
+  // on state the admin could not see from the CSV. What it covers is now fixed
+  // by the job: every non-draft proposal in the instance's current phase.
   proposalExportRequested: {
     name: 'proposal/export-requested' as const,
     schema: z.object({

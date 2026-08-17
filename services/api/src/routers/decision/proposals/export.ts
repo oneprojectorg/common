@@ -3,8 +3,9 @@ import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
-// An export covers the whole instance. It takes no filters, so the file a given
-// instance produces is the same file whatever the requester was looking at.
+// No filters: what an export covers is fixed by the job — every non-draft
+// proposal in the instance's current phase — rather than by whatever the
+// requester happened to have on screen.
 const exportInputSchema = z.object({
   processInstanceId: z.string().uuid(),
   format: z.enum(['csv']).default('csv'),

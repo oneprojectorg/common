@@ -95,11 +95,20 @@ export const exportProposals = inngest.createFunction(
 
         const result = await listProposals({
           input: {
-            // Every proposal on the instance. The export deliberately does not
-            // inherit the list's filters: the same instance has to produce the
-            // same file, and a CSV cannot show the reader which filters were
-            // active when it was built. `dir` is left to the query's own
-            // default rather than restated here.
+            // This call is the whole definition of what an export covers, so
+            // what it leaves unsaid matters as much as what it passes. No
+            // filters: the same instance has to produce the same file, and a
+            // CSV cannot show its reader which filters were active when it was
+            // built. No `phaseId`, which resolves to the instance's *current*
+            // phase — so an export is not the instance's whole history, and
+            // what it holds changes as the instance advances. No `dir`, so
+            // rows arrive in the query's own order.
+            //
+            // `skipAccessCheck` also settles the row set rather than merely
+            // skipping a check: the trusted branch takes every phase-scoped
+            // non-draft proposal, ignoring the visibility and moderation
+            // filters a signed-in caller would get. Drafts are never included,
+            // and two admins exporting the same instance get the same rows.
             processInstanceId,
             limit: 1000, // High limit for exports
             skipAccessCheck: true, // Access already verified when export was created

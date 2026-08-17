@@ -128,7 +128,7 @@ const instanceData = {
 };
 
 test.describe('Proposals CSV export', () => {
-  test('exports every proposal on the instance, whatever the list shows', async ({
+  test('exports the phase in full, whatever the list has been narrowed to', async ({
     authenticatedPage,
     org,
     request,
@@ -195,11 +195,12 @@ test.describe('Proposals CSV export', () => {
       .values({ proposalId: inFilter.id, taxonomyTermId: category.id });
 
     // Narrow the list by category up front, and leave it narrowed. The export
-    // covers the instance and no longer follows the list, so running it from a
-    // filtered view is what makes the row count below an assertion rather than
-    // a coincidence: an export that still inherited the filter would return one
-    // row here instead of two. The filter is URL state (nuqs), so it is set by
-    // navigation rather than by driving the dropdown.
+    // no longer follows the list, so running it from a filtered view is what
+    // makes the row count below an assertion rather than a coincidence: an
+    // export that still inherited the filter would return one row here instead
+    // of two. Both proposals sit in the same phase, which is what the export
+    // covers. The filter is URL state (nuqs), so it is set by navigation rather
+    // than by driving the dropdown.
     await authenticatedPage.goto(
       `/en/decisions/${slug}/current?filter=all&category=${category.id}`,
       { waitUntil: 'domcontentloaded' },

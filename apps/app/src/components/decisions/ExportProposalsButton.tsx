@@ -16,20 +16,26 @@ import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
   /**
-   * Nothing to export — the instance holds no proposals at all. Deliberately
-   * not the filtered count: the export covers the whole instance, so a list
-   * narrowed to nothing still has rows to hand over.
+   * Nothing to export. Deliberately not the filtered count: the export ignores
+   * the list's filters, so a view narrowed to nothing still has rows to hand
+   * over. The phase's unfiltered count is the closest signal the list already
+   * holds — near enough to enable a button, though not an exact preview of the
+   * row set, since it is counted with the caller's own visibility.
    */
   isEmpty?: boolean;
 }
 
 /**
- * Admin-only CSV export of every proposal on the instance.
+ * Admin-only CSV export of every non-draft proposal in the current phase.
  *
  * It does not follow the list's filters. An export that quietly inherited them
  * produced a different file from the same button depending on state the CSV
  * itself cannot show, so two admins comparing files had no way to tell why
- * they differed — and no way to ask for the whole instance.
+ * they differed — and no way to ask for anything wider than their own view.
+ *
+ * Note that "the current phase" is a real limit, not a turn of phrase: the file
+ * is not the instance's whole history, and the same button will produce a
+ * different one once the instance advances.
  *
  * Kick off → wait to be told it finished → hand back a download link. The wait
  * is driven by a broadcast on the run's own channel rather than by polling, so

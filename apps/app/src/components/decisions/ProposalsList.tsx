@@ -529,8 +529,8 @@ const ProposalsListContent = ({
             canExportProposals ? (
               <ExportProposalsButton
                 processInstanceId={queryParams.processInstanceId}
-                // The unfiltered count: the export covers the instance, so a
-                // filter that matches nothing must not disable it.
+                // The phase's unfiltered count: the export ignores the list's
+                // filters, so a filter matching nothing must not disable it.
                 isEmpty={totalProposalCount === 0}
               />
             ) : null
