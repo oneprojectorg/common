@@ -312,10 +312,15 @@ const ExportTruncationNotice = ({
       aria-live="polite"
     >
       <LuTriangleAlert aria-hidden />
-      {t('Only {rowCount} of {total} proposals are in this file.', {
-        rowCount,
-        total,
-      })}
+      {/* ICU `number` rather than bare interpolation: these run to five
+          figures, and grouping separators are locale-specific. */}
+      {t(
+        'Only {rowCount, number} of {total, number} proposals are in this file.',
+        {
+          rowCount,
+          total,
+        },
+      )}
     </p>
   );
 };
