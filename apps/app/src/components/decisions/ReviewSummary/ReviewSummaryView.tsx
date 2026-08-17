@@ -19,6 +19,8 @@ import { ProposalPreview } from '../ProposalPreview';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
+import { TranslateBanner } from '../TranslateBanner';
+import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
 
@@ -67,6 +69,23 @@ export function ReviewSummaryView({
     ]);
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
+
+  // This screen is the admin half of `/proposal/<id>/reviews`; the reviewer
+  // half gets its translation from `ReviewTranslationProvider`, which is keyed
+  // by an assignment this screen does not have. An admin reading a proposal in
+  // a language they don't speak had no control at all.
+  //
+  // Scoped to the proposal deliberately. `translateRubric` takes an assignment
+  // id, and reviewer-authored notes have no endpoint, so detection stays on the
+  // proposal rather than offering a control that cannot move what triggered it.
+  const {
+    translation,
+    showBanner,
+    isTranslating,
+    targetLanguageName,
+    handleTranslate,
+    dismissBanner,
+  } = useTranslateProposal(proposal);
 
   // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.
   const ownAssignment = ownAssignments.assignments[0];
@@ -180,7 +199,7 @@ export function ReviewSummaryView({
           id="proposal"
           label={<TranslatedText text="Proposal" />}
         >
-          <ProposalPreview proposal={proposal} />
+          <ProposalPreview proposal={proposal} translation={translation} />
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
@@ -225,6 +244,15 @@ export function ReviewSummaryView({
           instanceId={instanceId}
           proposalId={proposalId}
           phaseId={phaseId}
+        />
+      )}
+
+      {showBanner && (
+        <TranslateBanner
+          onTranslate={handleTranslate}
+          onDismiss={dismissBanner}
+          isTranslating={isTranslating}
+          languageName={targetLanguageName}
         />
       )}
     </div>

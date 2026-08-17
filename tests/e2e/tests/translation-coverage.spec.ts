@@ -581,6 +581,64 @@ test.describe('UGC translation coverage', () => {
     ).toBeVisible();
   });
 
+  test('the admin review summary offers translation for a Spanish proposal', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-summary-${testInfo.workerIndex}-${Date.now()}`;
+
+    // `/proposal/<id>/reviews` serves two different screens: a reviewer gets
+    // the review form, an admin gets this summary. Only the reviewer's branch
+    // was ever wired for translation, so an admin reading a Spanish proposal
+    // had no control at all.
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: author.profileId,
+      authUserId: author.authUserId,
+      email: author.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: PROPOSAL_TITLE_ES,
+        description: PROPOSAL_BODY_ES,
+      },
+    });
+
+    // The org admin owns the decision, so this URL resolves to the summary.
+    const page = await signIn(org.adminUser);
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    // Anchor on the summary so the reviewer branch cannot satisfy this test.
+    // SplitPane hides the inactive pane with CSS, so both of these resolve to
+    // a hidden copy — assert presence, as the review-screen test does.
+    await expect(
+      page.getByText(/Review (Progress|Summary)/).first(),
+    ).toBeAttached({ timeout: PAGE_READY_TIMEOUT });
+    await expect(
+      page.getByRole('heading', { name: PROPOSAL_TITLE_ES }).first(),
+    ).toBeAttached();
+
+    await expect(
+      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toBeVisible();
+  });
+
   test('a Spanish pinned resource on the overview offers translation', async ({
     cleanup,
     org,
