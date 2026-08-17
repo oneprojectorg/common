@@ -4,10 +4,13 @@ import { trpc } from '@op/api/client';
 import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
+
+import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 
 /**
  * Read-only "Pinned Resources" list for the decision overview sidebar. There is
@@ -27,6 +30,15 @@ export const OverviewPinnedResourcesSuspense = ({
   const [{ items }] = trpc.resources.list.useSuspenseQuery({
     profileId,
   });
+
+  // The overview reads resources itself rather than through the side panel's
+  // list, so it has to register its own samples — a reader who never opens the
+  // panel would otherwise have no way to translate the text shown here.
+  const resourceSamples = useMemo(
+    () => items.flatMap((item) => [item.title, item.description ?? '']),
+    [items],
+  );
+  useRegisterTranslationSamples('overview-resources', resourceSamples);
 
   if (items.length === 0) {
     return null;

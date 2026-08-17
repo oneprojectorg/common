@@ -11,8 +11,11 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense } from 'react';
+
+import { Suspense, useMemo } from 'react';
+
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -27,6 +30,7 @@ import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
+import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
@@ -101,6 +105,16 @@ export function ReviewPage({
     translation?.phaseDescription ?? currentPhase.description;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
+
+  // The phase hero is author-written, and `translateDecision` translates it.
+  // Only ProposalsList sampled this copy, and a review phase can render with
+  // that list unmounted (the reviewer's queue is the default tab), so the copy
+  // on screen was undetectable — register it from the screen that renders it.
+  const phaseSamples = useMemo(
+    () => [currentPhase.headline ?? '', currentPhase.description ?? ''],
+    [currentPhase.headline, currentPhase.description],
+  );
+  useRegisterTranslationSamples('review-phase', phaseSamples);
 
   const proposalsLoadErrorFallback = {
     default: () => (

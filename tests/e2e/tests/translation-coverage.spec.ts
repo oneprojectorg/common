@@ -38,7 +38,7 @@ import {
  * proposal against the rubric — none of the UGC is available. But I did see the
  * overview page translating").
  *
- * Three gaps are fixed and pinned here:
+ * The gaps fixed and pinned here:
  * 1. The rubric review screen had no translate affordance at all. It now
  *    mounts `ReviewTranslationProvider`, whose single banner moves the
  *    proposal pane and the rubric together.
@@ -49,15 +49,23 @@ import {
  *    never sampled. `TranslationDetectionContext` now collects a sample from
  *    every surface on the screen.
  *
+ * Every surface that renders author-written content has to register into that
+ * context, and three of them did not. Each has a test below: the reviewer's
+ * queue (the default tab of a review phase, which mounts with the "Other
+ * proposals" list unmounted beside it), the review phase hero copy, and the
+ * overview's "Pinned Resources" list. A surface that renders content but
+ * registers nothing is the recurring shape of this bug.
+ *
  * No test clicks Translate, so no test calls DeepL — reaching the affordance
  * is what the report is about. The click path (the mutation, the "Translated
  * from Spanish · View original" swap, and the failure toast) is therefore not
  * covered here.
  *
- * `no translation is offered when every surface is in the reader's language`
- * is the negative control for the whole file. Detection is a gate, so without
- * it every test here would still pass against a build that dropped the gate
- * and showed the control unconditionally.
+ * `no translation is offered when every surface is already in English` is the
+ * negative control for the whole file. Detection is a gate, so without it every
+ * test here would still pass against a build that dropped the gate and showed
+ * the control unconditionally — verified by forcing the gate open and watching
+ * only that test fail.
  *
  * The Spanish samples below are long enough for franc (used by
  * `lib/languageDetection.ts`) to resolve a language. Short strings return
@@ -71,6 +79,10 @@ const OVERVIEW_DESCRIPTION_ES =
 const OVERVIEW_HEADLINE_EN = 'Neighbourhood participatory budget';
 const OVERVIEW_DESCRIPTION_EN =
   'This process lets neighbours decide how the city spends its budget on local improvements over the coming year. Every proposal is reviewed before the final vote.';
+
+const PHASE_HEADLINE_ES = 'Revisión de propuestas del barrio';
+const PHASE_DESCRIPTION_ES =
+  'En esta fase las personas revisoras leen cada propuesta y la puntúan con la rúbrica. Cada propuesta recibe al menos dos revisiones antes de pasar a la votación final del barrio.';
 
 const POST_ES =
   'La fase de revisión comienza el lunes que viene. Los vecinos que quieran revisar propuestas deben inscribirse antes del viernes, y el equipo enviará las instrucciones por correo.';
@@ -402,11 +414,230 @@ test.describe('UGC translation coverage', () => {
     // The side panel is a modal, so it marks the page behind it aria-hidden and
     // the control is unreachable while the panel is open. Close it to read the
     // control the way a reader would.
-    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await closeSidePanel(page);
 
     // `handleTranslate` already sends this decision's updates to
     // translatePosts, so the control has to be reachable for a reader whose
     // only unreadable content is an update.
+    await expect(
+      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toBeVisible();
+  });
+
+  test('the reviewer queue offers translation for foreign content elsewhere on the screen', async ({
+    cleanup,
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-queue-${testInfo.workerIndex}-${Date.now()}`;
+
+    // A review phase puts the reviewer's queue in front of them, and that tab
+    // is the only proposal surface mounted — Base UI unmounts the inactive
+    // panel, so the "Other proposals" list is not on the page. The queue has to
+    // read the screen's detection set like every other surface, or the control
+    // is unreachable for everything the reader did not happen to be assigned.
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    // The one proposal this reviewer is assigned is English, so the queue's own
+    // content gives it no reason to offer translation.
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+    });
+
+    // The Spanish text is an update — a surface the side panel already
+    // registers, and one `handleTranslate` already covers.
+    const [post] = await db
+      .insert(posts)
+      .values({ content: POST_ES, profileId: org.organizationProfile.id })
+      .returning();
+    if (!post) {
+      throw new Error('Failed to seed the update post');
+    }
+    cleanup(async () => {
+      await db.delete(posts).where(eq(posts.id, post.id));
+    });
+    await db
+      .insert(postsToProfiles)
+      .values({ postId: post.id, profileId: instance.profileId });
+
+    const page = await signIn(reviewer);
+
+    await page.goto(`/en/decisions/${instance.slug}/current?panel=updates`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(page.getByText('La fase de revisión').first()).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+
+    await closeSidePanel(page);
+
+    // Anchor on the queue so a routing change cannot pass this by rendering
+    // some other phase's screen.
+    await expect(
+      page.getByRole('tab', { name: 'Proposals to review' }),
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toBeVisible();
+  });
+
+  test('a Spanish review phase offers translation when the proposals are English', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-phase-${testInfo.workerIndex}-${Date.now()}`;
+
+    // The phase hero is author-written and `translateDecision` already covers
+    // it, but only the "Other proposals" list sampled it — and a review phase
+    // does not mount that list. A reader whose proposals happen to be English
+    // could not translate the phase copy in front of them.
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+      phaseCopy: {
+        phaseId: 'review',
+        headline: PHASE_HEADLINE_ES,
+        description: PHASE_DESCRIPTION_ES,
+      },
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+    });
+
+    const page = await signIn(reviewer);
+
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    // The Spanish phase copy is on screen, so the reader is looking at text
+    // they may not be able to read.
+    await expect(
+      page.getByRole('heading', { name: PHASE_HEADLINE_ES }).first(),
+    ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
+
+    await expect(
+      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toBeVisible();
+  });
+
+  test('a Spanish pinned resource on the overview offers translation', async ({
+    cleanup,
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-pinned-${testInfo.workerIndex}-${Date.now()}`;
+
+    // The overview renders the decision's resources itself, in "Pinned
+    // Resources" — a separate read from the side panel's manager. A reader who
+    // never opens the panel still has that Spanish text in front of them.
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'submission',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+    });
+
+    await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: author.profileId,
+      authUserId: author.authUserId,
+      email: author.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+    });
+
+    await seedResourceCollection({
+      cleanup,
+      profileId: instance.profileId,
+      addedByProfileId: author.profileId,
+      name: `Guías ${testId}`,
+      sortKey: 'a0',
+      resource: {
+        title: RESOURCE_TITLE_ES,
+        description: RESOURCE_DESCRIPTION_ES,
+      },
+    });
+
+    const page = await signIn(author);
+
+    // No panel — the pinned list is the only place this text appears.
+    await page.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(page.getByText(RESOURCE_TITLE_ES).first()).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
     ).toBeVisible();
@@ -475,7 +706,10 @@ test.describe('UGC translation coverage', () => {
 
     const page = await signIn(author);
 
-    await page.goto(`/en/decisions/${instance.slug}?panel=resources`, {
+    // The phase tab, not the overview: "Pinned Resources" is an overview-only
+    // section that reads the same resources, and it would satisfy the waits
+    // below without either panel list ever mounting.
+    await page.goto(`/en/decisions/${instance.slug}/current?panel=resources`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -485,7 +719,7 @@ test.describe('UGC translation coverage', () => {
     });
     await expect(page.getByText(RESOURCE_TITLE_EN).first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await closeSidePanel(page);
 
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
@@ -527,23 +761,42 @@ test.describe('UGC translation coverage', () => {
 
     const page = await signIn(author);
 
-    await page.goto(`/en/decisions/${instance.slug}`, {
+    // The phase tab, not the overview: this is the screen that registers the
+    // most samples (the proposals and the phase copy), so it is where a gate
+    // that stopped gating would show up first.
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
     // Wait for the content detection reads before asserting on its verdict —
-    // the overview copy and the proposal card are the samples this screen
-    // registers, so once both are on screen detection has had its input.
-    await expect(
-      page.getByRole('heading', { name: OVERVIEW_HEADLINE_EN }).first(),
-    ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
-    await expect(page.getByText(PROPOSAL_TITLE_EN).first()).toBeVisible();
+    // once the proposal card is on screen, detection has had its input.
+    await expect(page.getByText(PROPOSAL_TITLE_EN).first()).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
 
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
     ).toHaveCount(0);
   });
 });
+
+/**
+ * Closes the decision side panel and waits for it to go.
+ *
+ * The panel is a modal: while it is open the page behind it is aria-hidden, and
+ * `getByRole` skips an aria-hidden subtree. Asserting on the Translate control
+ * straight after the click raced the close and reported the button missing.
+ *
+ * Waiting on the dialog rather than on panel content, because the overview also
+ * renders resources inline ("Pinned Resources") — that copy stays on screen
+ * after the panel closes and would never satisfy a content-based wait.
+ */
+async function closeSidePanel(page: Page) {
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Decision updates panel' }),
+  ).toHaveCount(0);
+}
 
 /**
  * A decision instance with one member, ready to read as that member. Every
@@ -556,6 +809,7 @@ async function seedDecision({
   testId,
   currentStateId,
   overview,
+  phaseCopy,
   rubricTemplate,
 }: {
   org: CreateOrganizationResult;
@@ -564,6 +818,8 @@ async function seedDecision({
   currentStateId: string;
   /** Left as the template seeded it when omitted. */
   overview?: { headline: string; description: string };
+  /** Author-written copy for one phase — what the phase hero renders. */
+  phaseCopy?: { phaseId: string; headline: string; description: string };
   rubricTemplate?: RubricTemplateSchema;
 }) {
   const template = await getSeededTemplate();
@@ -577,6 +833,9 @@ async function seedDecision({
   });
 
   const seededData = instance.instance.instanceData as Record<string, unknown>;
+  const seededPhases = (seededData.phases ?? []) as Array<
+    Record<string, unknown>
+  >;
 
   await db
     .update(processInstances)
@@ -585,6 +844,19 @@ async function seedDecision({
         ...seededData,
         ...(rubricTemplate ? { rubricTemplate } : {}),
         ...(overview ? { overview } : {}),
+        ...(phaseCopy
+          ? {
+              phases: seededPhases.map((phase) =>
+                phase.phaseId === phaseCopy.phaseId
+                  ? {
+                      ...phase,
+                      headline: phaseCopy.headline,
+                      description: phaseCopy.description,
+                    }
+                  : phase,
+              ),
+            }
+          : {}),
       },
       currentStateId,
     })
