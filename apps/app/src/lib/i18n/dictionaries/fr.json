@@ -1545,7 +1545,7 @@
   "Retry download": "Réessayer le téléchargement",
   "Could not prepare the download. Please try again.": "Impossible de préparer le téléchargement. Veuillez réessayer.",
   "Export timed out. Please try again.": "L’exportation a expiré. Veuillez réessayer.",
-  "Only {rowCount} of {total} proposals are in this file.": "Ce fichier ne contient que {rowCount} propositions sur {total}.",
+  "Only {rowCount, number} of {total, number} proposals are in this file.": "Ce fichier ne contient que {rowCount, number} propositions sur {total, number}.",
   "Couldn't check the export's status. It may still be running.": "Impossible de vérifier l'état de l'exportation. Elle est peut-être toujours en cours.",
   "Export all": "Tout exporter",
   "Proposals in review · {count}": "Propositions en cours d’examen · {count}",
