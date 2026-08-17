@@ -34,8 +34,13 @@ import type {
 
 const containerClasses = 'flex flex-col outline-none';
 
+// Not `none`: TouchSensor's delay constraint already cancels a pending drag past
+// its tolerance, so `manipulation` lets a swipe scroll while a long press drags.
 const itemClasses = (hasDragHandle: boolean) =>
-  cn('relative outline-none', !hasDragHandle && 'cursor-grab touch-none');
+  cn(
+    'relative outline-none',
+    !hasDragHandle && 'cursor-grab touch-manipulation',
+  );
 
 interface SortableItemWrapperProps<T extends SortableItem> {
   item: T;
@@ -147,7 +152,9 @@ function SortableItemWrapper<T extends SortableItem>({
  * than reading out an id, and `aria-label` to name the list itself.
  *
  * `dragTrigger="handle"` (the default) is the accessible choice; `"item"` makes
- * the whole row draggable, which conflicts with any control inside it.
+ * the whole row draggable, which conflicts with any control inside it. There the
+ * rows are also the scroll surface — a swipe scrolls, a long press drags — so
+ * don't override their `touch-action` via `itemClassName`.
  */
 export function Sortable<T extends SortableItem>({
   items,
