@@ -73,6 +73,11 @@ export function TranslationDetectionProvider({
  * Contributes `samples` under `key` to the screen's detection set. Memoize
  * `samples` at the call site — a fresh array each render is compared by value
  * here, but memoizing keeps the comparison cheap.
+ *
+ * `key` must be unique per mounted instance, not per component: a surface that
+ * can render more than once on a screen (resources, one list per collection)
+ * has to fold its own id into the key. Two instances sharing a key overwrite
+ * each other, and the samples that lose are silently absent from detection.
  */
 export function useRegisterTranslationSamples(key: string, samples: string[]) {
   const context = useContext(TranslationDetectionContext);

@@ -49,11 +49,19 @@ export const ResourcesList = ({
   // translateResources. Register their text so the Translate control appears
   // for a reader whose only unreadable content is a resource. No-ops outside a
   // decision screen, where no detection provider is mounted.
+  //
+  // Keyed per collection because a decision with more than one renders a list
+  // per collection, all mounted together in the open accordion. A shared key
+  // would let the last one registered drop every other collection's samples,
+  // hiding the control on a foreign-language resource in an earlier section.
   const resourceSamples = useMemo(
     () => items.flatMap((item) => [item.title, item.description ?? '']),
     [items],
   );
-  useRegisterTranslationSamples('resources', resourceSamples);
+  useRegisterTranslationSamples(
+    `resources:${data.collectionId ?? profileId}`,
+    resourceSamples,
+  );
 
   const reorder = trpc.resources.reorder.useMutation({
     onMutate: async (vars) => {
