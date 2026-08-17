@@ -1131,7 +1131,6 @@
   "Read full proposal": "Read full proposal",
   "My ballot": "My ballot",
   "Click to download": "Click to download",
-  "Export": "Export",
   "Preparing...": "Preparing...",
   "Generating...": "Generating...",
   "Your ballot is in!": "Your ballot is in!",
@@ -1606,5 +1605,6 @@
   "Failed to start export": "Failed to start export",
   "Export failed": "Export failed",
   "Export timed out. Please try again.": "Export timed out. Please try again.",
-  "Couldn't check the export's status. It may still be running.": "Couldn't check the export's status. It may still be running."
+  "Couldn't check the export's status. It may still be running.": "Couldn't check the export's status. It may still be running.",
+  "Export all": "Export all"
 }

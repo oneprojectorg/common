@@ -1,7 +1,6 @@
 import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
-import type { ProposalExportFilters } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { createSBServerClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
@@ -22,7 +21,6 @@ export interface ExportStatusData {
   userId: string;
   format: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  filters: ProposalExportFilters;
   fileName?: string;
   signedUrl?: string;
   urlExpiresAt?: string;

@@ -1034,7 +1034,6 @@
   "Read full proposal": "اقرأ المقترح الكامل",
   "My ballot": "بطاقة اقتراعي",
   "Click to download": "انقر للتنزيل",
-  "Export": "تصدير",
   "Preparing...": "جارٍ التحضير...",
   "Generating...": "جارٍ الإنشاء...",
   "Your ballot is in!": "تم تسجيل بطاقة اقتراعك!",
@@ -1542,5 +1541,6 @@
   "Failed to start export": "تعذّر بدء التصدير",
   "Export failed": "فشل التصدير",
   "Export timed out. Please try again.": "انتهت مهلة التصدير. يرجى المحاولة مرة أخرى.",
-  "Couldn't check the export's status. It may still be running.": "تعذّر التحقق من حالة التصدير. قد تكون لا تزال قيد التنفيذ."
+  "Couldn't check the export's status. It may still be running.": "تعذّر التحقق من حالة التصدير. قد تكون لا تزال قيد التنفيذ.",
+  "Export all": "تصدير الكل"
 }

@@ -1121,7 +1121,6 @@
   "Read full proposal": "Ler proposta completa",
   "My ballot": "Minha cédula",
   "Click to download": "Clique para baixar",
-  "Export": "Exportar",
   "Preparing...": "Preparando...",
   "Generating...": "Gerando...",
   "Your ballot is in!": "Seu voto foi registrado!",
@@ -1542,5 +1541,6 @@
   "Failed to start export": "Não foi possível iniciar a exportação",
   "Export failed": "A exportação falhou",
   "Export timed out. Please try again.": "A exportação expirou. Tente novamente.",
-  "Couldn't check the export's status. It may still be running.": "Não foi possível verificar o estado da exportação. Pode ainda estar em execução."
+  "Couldn't check the export's status. It may still be running.": "Não foi possível verificar o estado da exportação. Pode ainda estar em execução.",
+  "Export all": "Exportar tudo"
 }

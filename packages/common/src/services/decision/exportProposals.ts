@@ -1,7 +1,7 @@
 import { set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
-import { Events, type ProposalExportFilters, event } from '@op/events';
+import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { randomUUID } from 'crypto';
@@ -9,22 +9,8 @@ import { randomUUID } from 'crypto';
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { EXPORT_CACHE_TTL_SECONDS, exportStatusCacheKey } from './exports';
-import type { ListProposalsInput } from './listProposals';
 
-/**
- * The export filters, constrained to filters `listProposals` can actually
- * apply.
- *
- * An export is only trustworthy if it reproduces the list query it was launched
- * from, and that previously drifted: the request carried a UI-level filter the
- * workflow had no way to apply, so it was dropped on the floor. Naming a filter
- * the list query does not accept now fails to compile rather than silently
- * widening the exported file.
- */
-type AppliedExportFilters = ProposalExportFilters &
-  Pick<ListProposalsInput, keyof ProposalExportFilters>;
-
-export interface ExportProposalsInput extends ProposalExportFilters {
+export interface ExportProposalsInput {
   processInstanceId: string;
   format: 'csv';
 }
@@ -73,26 +59,10 @@ export const exportProposals = async ({
 
   const exportId = randomUUID();
 
-  const filters = {
-    categoryId: input.categoryId,
-    submittedByProfileId: input.submittedByProfileId,
-    votedByProfileId: input.votedByProfileId,
-    status: input.status,
-    dir: input.dir,
-    phase: input.phase,
-    excludeAssignedForReview: input.excludeAssignedForReview,
-  } satisfies AppliedExportFilters;
-
-  // Seed the full status record — not just the id and state — so the frontend
-  // can poll immediately and read the same shape it gets once the workflow
-  // takes over. A partial seed would answer the first poll with a record
-  // missing `format`/`filters`, which no longer satisfies the status contract.
-
-  // Deferred: this record exists because the client polls. Once export state
-  // moves onto a realtime channel the workflow can broadcast readiness and the
-  // finished URL directly, and the client re-fetches on that message instead of
-  // on a timer. Inngest already holds the run state and can be queried for it,
-  // so the cache record becomes redundant rather than authoritative.
+  // Seeded in full rather than as an id and a state: the status contract
+  // requires `format`, so a partial record fails the first read instead of
+  // answering it. This cache is the only store of export state — no table
+  // stands behind it — so nothing else can supply what the seed omits.
   await set(
     exportStatusCacheKey(exportId),
     {
@@ -100,7 +70,6 @@ export const exportProposals = async ({
       processInstanceId: input.processInstanceId,
       userId: user.id,
       format: input.format,
-      filters,
       status: 'pending',
       createdAt: new Date().toISOString(),
     },
@@ -115,7 +84,6 @@ export const exportProposals = async ({
       processInstanceId: input.processInstanceId,
       userId: user.id,
       format: input.format,
-      filters,
     },
   });
 

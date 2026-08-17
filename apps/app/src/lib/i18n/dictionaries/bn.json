@@ -1122,7 +1122,6 @@
   "Read full proposal": "সম্পূর্ণ প্রস্তাব পড়ুন",
   "My ballot": "আমার ব্যালট",
   "Click to download": "ডাউনলোড করতে ক্লিক করুন",
-  "Export": "রপ্তানি",
   "Preparing...": "প্রস্তুত হচ্ছে...",
   "Generating...": "তৈরি হচ্ছে...",
   "Your ballot is in!": "আপনার ব্যালট জমা হয়েছে!",
@@ -1545,5 +1544,6 @@
   "Failed to start export": "রপ্তানি শুরু করা যায়নি",
   "Export failed": "রপ্তানি ব্যর্থ হয়েছে",
   "Export timed out. Please try again.": "রপ্তানির সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
-  "Couldn't check the export's status. It may still be running.": "রপ্তানির স্ট্যাটাস যাচাই করা যায়নি। এটি এখনও চলতে পারে।"
+  "Couldn't check the export's status. It may still be running.": "রপ্তানির স্ট্যাটাস যাচাই করা যায়নি। এটি এখনও চলতে পারে।",
+  "Export all": "সব রপ্তানি করুন"
 }

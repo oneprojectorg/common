@@ -2,11 +2,10 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { ProposalExportFilters } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
@@ -17,23 +16,20 @@ import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
   /**
-   * The filters currently applied to the list. These are the list's own
-   * resolved query params — not its filter-tab identity — so the export
-   * reproduces the same server-side query and the CSV matches what the admin is
-   * looking at, rather than silently exporting the whole instance.
-   *
-   * Taken from the shared schema rather than restated here: it is the one
-   * definition the event payload, the request input, and the status response
-   * all derive from, and a fourth hand-written copy is how a newly added filter
-   * ends up silently not forwarded.
+   * Nothing to export — the instance holds no proposals at all. Deliberately
+   * not the filtered count: the export covers the whole instance, so a list
+   * narrowed to nothing still has rows to hand over.
    */
-  filters: ProposalExportFilters;
-  /** Nothing to export — the list is empty under the active filter. */
   isEmpty?: boolean;
 }
 
 /**
- * Admin-only CSV export for the proposals list.
+ * Admin-only CSV export of every proposal on the instance.
+ *
+ * It does not follow the list's filters. An export that quietly inherited them
+ * produced a different file from the same button depending on state the CSV
+ * itself cannot show, so two admins comparing files had no way to tell why
+ * they differed — and no way to ask for the whole instance.
  *
  * Kick off → wait to be told it finished → hand back a download link. The wait
  * is driven by a broadcast on the run's own channel rather than by polling, so
@@ -113,22 +109,14 @@ const ExportStatusUnreadable = ({
 
 const ExportProposalsButtonContent = ({
   processInstanceId,
-  filters,
   isEmpty = false,
 }: ExportProposalsButtonProps) => {
   const t = useTranslations();
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
-  // Identity of the filter set this export was started from. When the admin
-  // changes filters the finished file no longer describes what is on screen, so
-  // the stale link is cleared rather than left to be downloaded by mistake.
-  const filterKey = useMemo(() => JSON.stringify(filters), [filters]);
-  const startedFilterKey = useRef<string | null>(null);
-
   const startExport = trpc.decision.export.useMutation({
     onSuccess: ({ exportId: id }) => {
-      startedFilterKey.current = filterKey;
       setHasTimedOut(false);
       setExportId(id);
     },
@@ -164,18 +152,8 @@ const ExportProposalsButtonContent = ({
   // terminal state narrows away the not-found branch on its own.
   const isResolved = status?.status === 'completed';
   const isFailed = status?.status === 'failed';
-  const isStale = exportId !== null && startedFilterKey.current !== filterKey;
   const isRunning =
-    exportId !== null && !isResolved && !isFailed && !hasTimedOut && !isStale;
-
-  // Drop a completed link once it no longer matches the visible filters.
-  useEffect(() => {
-    if (isStale) {
-      setExportId(null);
-      setHasTimedOut(false);
-      startedFilterKey.current = null;
-    }
-  }, [isStale]);
+    exportId !== null && !isResolved && !isFailed && !hasTimedOut;
 
   // Surface a failed workflow once, then return the button to its idle state so
   // the admin can retry.
@@ -241,7 +219,6 @@ const ExportProposalsButtonContent = ({
           // One file per run: once taken, fall back to the idle button so a
           // later export is not confused with this one.
           setExportId(null);
-          startedFilterKey.current = null;
         }}
       >
         <LuDownload aria-hidden />
@@ -275,12 +252,14 @@ const ExportProposalsButtonContent = ({
         startExport.mutate({
           processInstanceId,
           format: 'csv',
-          ...filters,
         })
       }
     >
       <LuDownload aria-hidden />
-      {isRunning ? runningLabel : t('Export')}
+      {/* Named for what it covers, not for where it sits. The control lives in
+          the filter bar and no longer follows it, so a bare "Export" beside an
+          active filter would read as exporting that selection. */}
+      {isRunning ? runningLabel : t('Export all')}
     </Button>
   );
 };

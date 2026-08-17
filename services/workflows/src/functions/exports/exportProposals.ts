@@ -38,11 +38,16 @@ const updateExportStatus = async (
  *
  * Broadcast-only: the cached record written just before this is the source of
  * truth, and the message carries no payload — subscribers re-read
- * `getExportStatus` on receipt. So a dropped broadcast costs latency, not
- * correctness, and the client's poll still resolves the run on its own. That is
- * the reason polling stays in place rather than being replaced: a broadcast
- * published before the client has finished subscribing is simply lost, and an
- * export that finishes in under a second can easily beat it.
+ * `getExportStatus` on receipt.
+ *
+ * Nothing polls behind this, so a lost broadcast costs correctness rather than
+ * latency: the client never sees a terminal state, and the wait ends by
+ * reporting a timeout for an export that worked. One way to lose it is to
+ * publish before the client has finished subscribing, which an export settling
+ * in under a second can easily do. Covering that is not this function's job —
+ * every channel re-reads its queries once its join is confirmed, so whatever
+ * settled before the join is in that read and whatever settles after arrives
+ * here.
  *
  * `realtime.publish` logs and swallows its own failures, so this cannot fail
  * the run or trigger a retry that would rewrite a settled status.
@@ -63,7 +68,7 @@ export const exportProposals = inngest.createFunction(
   { event: proposalExportRequested.name },
   async ({ event, step }) => {
     // Validate event data
-    const { exportId, processInstanceId, userId, format, filters } =
+    const { exportId, processInstanceId, userId, format } =
       proposalExportRequested.schema.parse(event.data);
 
     // Step 1: Update status to processing
@@ -74,7 +79,6 @@ export const exportProposals = inngest.createFunction(
         processInstanceId,
         userId,
         format,
-        filters,
         createdAt: new Date().toISOString(),
       });
     });
@@ -91,16 +95,12 @@ export const exportProposals = inngest.createFunction(
 
         const result = await listProposals({
           input: {
+            // Every proposal on the instance. The export deliberately does not
+            // inherit the list's filters: the same instance has to produce the
+            // same file, and a CSV cannot show the reader which filters were
+            // active when it was built. `dir` is left to the query's own
+            // default rather than restated here.
             processInstanceId,
-            // Mirror the list query the export was requested from. Anything
-            // omitted here widens the file beyond what the admin was looking at.
-            categoryId: filters.categoryId,
-            submittedByProfileId: filters.submittedByProfileId,
-            votedByProfileId: filters.votedByProfileId,
-            status: filters.status,
-            dir: filters.dir,
-            phase: filters.phase,
-            excludeAssignedForReview: filters.excludeAssignedForReview,
             limit: 1000, // High limit for exports
             skipAccessCheck: true, // Access already verified when export was created
             includeDocumentContent: true, // CSV descriptions come from the full fragments

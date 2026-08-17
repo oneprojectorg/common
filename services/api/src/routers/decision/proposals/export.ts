@@ -1,15 +1,13 @@
 import { exportProposals } from '@op/common';
-import { proposalExportFiltersSchema } from '@op/events';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
-// Filters come from the shared export-filter schema so the request, the event
-// payload, and the status response can't drift apart on what an export covers.
-const exportInputSchema = proposalExportFiltersSchema.extend({
+// An export covers the whole instance. It takes no filters, so the file a given
+// instance produces is the same file whatever the requester was looking at.
+const exportInputSchema = z.object({
   processInstanceId: z.string().uuid(),
   format: z.enum(['csv']).default('csv'),
-  dir: z.enum(['asc', 'desc']).default('desc'),
 });
 
 const exportOutputSchema = z.object({
@@ -27,13 +25,6 @@ export const exportProposalsRouter = router({
         input: {
           processInstanceId: input.processInstanceId,
           format: input.format,
-          categoryId: input.categoryId,
-          submittedByProfileId: input.submittedByProfileId,
-          votedByProfileId: input.votedByProfileId,
-          status: input.status,
-          dir: input.dir,
-          phase: input.phase,
-          excludeAssignedForReview: input.excludeAssignedForReview,
         },
         user,
       });

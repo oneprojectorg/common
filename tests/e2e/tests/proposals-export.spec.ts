@@ -128,7 +128,7 @@ const instanceData = {
 };
 
 test.describe('Proposals CSV export', () => {
-  test('exports the filtered proposal list as a downloadable CSV', async ({
+  test('exports every proposal on the instance, whatever the list shows', async ({
     authenticatedPage,
     org,
     request,
@@ -147,7 +147,7 @@ test.describe('Proposals CSV export', () => {
 
     const { instance, slug } = await createProcessAndInstance({ org });
 
-    const included = await createProposal({
+    const inFilter = await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.adminUser.profileId,
       authUserId: org.adminUser.authUserId,
@@ -161,7 +161,7 @@ test.describe('Proposals CSV export', () => {
       },
     });
 
-    await createProposal({
+    const outOfFilter = await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.adminUser.profileId,
       authUserId: org.adminUser.authUserId,
@@ -192,13 +192,14 @@ test.describe('Proposals CSV export', () => {
 
     await db
       .insert(proposalCategories)
-      .values({ proposalId: included.id, taxonomyTermId: category.id });
+      .values({ proposalId: inFilter.id, taxonomyTermId: category.id });
 
-    // Narrow the list by category up front. An export that ignored the filter
-    // and one that applied it are indistinguishable on an unfiltered list, so
-    // this is what makes the row count below an assertion rather than a
-    // coincidence. The filter is URL state (nuqs), so it is set by navigation
-    // rather than by driving the dropdown.
+    // Narrow the list by category up front, and leave it narrowed. The export
+    // covers the instance and no longer follows the list, so running it from a
+    // filtered view is what makes the row count below an assertion rather than
+    // a coincidence: an export that still inherited the filter would return one
+    // row here instead of two. The filter is URL state (nuqs), so it is set by
+    // navigation rather than by driving the dropdown.
     await authenticatedPage.goto(
       `/en/decisions/${slug}/current?filter=all&category=${category.id}`,
       { waitUntil: 'domcontentloaded' },
@@ -212,7 +213,7 @@ test.describe('Proposals CSV export', () => {
     ).toHaveCount(0);
 
     const exportButton = authenticatedPage.getByRole('button', {
-      name: 'Export',
+      name: 'Export all',
     });
     await expect(exportButton).toBeEnabled();
     await exportButton.click();
@@ -238,10 +239,19 @@ test.describe('Proposals CSV export', () => {
       columns: true,
     }) as Record<string, string>[];
 
-    // One row: the Education proposal is outside the active filter.
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      'Proposal ID': included.id,
+    // Both rows. The list on screen is showing one proposal and the file
+    // carries the other as well, which is the whole point of an export that no
+    // longer follows the filter. One row here would mean it still does.
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row['Proposal ID']).sort()).toEqual(
+      [inFilter.id, outOfFilter.id].sort(),
+    );
+
+    // Found by id rather than taken by position: rows arrive in the proposal
+    // query's own order, which is not the order they were seeded in.
+    const exported = rows.find((row) => row['Proposal ID'] === inFilter.id);
+
+    expect(exported).toMatchObject({
       Title: 'Community Garden Project',
       Budget: '8000',
       Currency: 'USD',
@@ -259,14 +269,14 @@ test.describe('Proposals CSV export', () => {
       .from(profiles)
       .where(eq(profiles.id, org.adminUser.profileId));
 
-    expect(rows[0]?.['Submitted By']).toBe(submitter?.name);
-    expect(rows[0]?.['Submitter Email']).toBe(submitter?.email ?? '');
+    expect(exported?.['Submitted By']).toBe(submitter?.name);
+    expect(exported?.['Submitter Email']).toBe(submitter?.email ?? '');
 
     // Description comes from the `summary` fragment. Reading only the legacy
     // `default` fragment — as this did — exported an empty column for every
     // templated proposal.
-    expect(rows[0]?.Description).toContain(FIXTURE_SUMMARY_TEXT);
-    expect(rows[0]?.Description).toContain(FIXTURE_SUMMARY_LIST_ITEM);
+    expect(exported?.Description).toContain(FIXTURE_SUMMARY_TEXT);
+    expect(exported?.Description).toContain(FIXTURE_SUMMARY_LIST_ITEM);
   });
 });
 

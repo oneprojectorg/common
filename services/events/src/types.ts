@@ -1,34 +1,8 @@
-import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 // Mirrors the db `moderation_item_type` enum values; kept as a plain string
 // union so it flows cleanly through the service layer without enum coercion.
 const moderationItemType = z.enum(['proposal', 'post', 'user']);
-
-/**
- * The proposal-list filters an export runs under.
- *
- * These are the resolved `listProposals` inputs, not the UI's filter tabs: the
- * proposals list already maps its `ProposalFilter` selection onto
- * `submittedByProfileId`/`votedByProfileId` before querying, and the export has
- * to reproduce that same query to produce a file matching what is on screen.
- * Sending the tab identity instead would require re-deriving the mapping here,
- * which is exactly how the two drifted apart before.
- *
- * Shared by the event payload, the export request input, and the status
- * response so all three cannot disagree about what an export was scoped to.
- */
-export const proposalExportFiltersSchema = z.object({
-  categoryId: z.string().optional(),
-  submittedByProfileId: z.string().optional(),
-  votedByProfileId: z.string().optional(),
-  status: z.enum(ProposalStatus).optional(),
-  dir: z.enum(['asc', 'desc']),
-  phase: z.literal('results').optional(),
-  excludeAssignedForReview: z.boolean().optional(),
-});
-
-export type ProposalExportFilters = z.infer<typeof proposalExportFiltersSchema>;
 
 export const Events = {
   // Carries only the item ref: the workflow resolves the item's current text
@@ -58,6 +32,9 @@ export const Events = {
       reactionType: z.string(),
     }),
   },
+  // Scoped to the instance and nothing else. An export used to inherit
+  // whatever the list was narrowed to, which made the same button produce a
+  // different file depending on state the admin could not see from the CSV.
   proposalExportRequested: {
     name: 'proposal/export-requested' as const,
     schema: z.object({
@@ -65,7 +42,6 @@ export const Events = {
       processInstanceId: z.string().uuid(),
       userId: z.string().uuid(),
       format: z.enum(['csv']),
-      filters: proposalExportFiltersSchema,
     }),
   },
   profileInviteSent: {
