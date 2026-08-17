@@ -217,4 +217,38 @@ describe('getExportStatus', () => {
     ).rejects.toThrow();
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
+
+  // The admin's only signal that a file is short. It is carried, not derived, so
+  // it has to survive every hop from the workflow's write to the download — and
+  // this read is the hop that also re-signs and rewrites the record.
+  it('carries the truncation counts through a read that re-signs the URL', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      rowCount: 5000,
+      total: 12431,
+      truncated: true,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toMatchObject({
+      rowCount: 5000,
+      total: 12431,
+      truncated: true,
+      signedUrl: 'https://storage.example/fresh-url',
+    });
+  });
+
+  it('reports a complete export as not truncated', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      rowCount: 42,
+      total: 42,
+      truncated: false,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toMatchObject({ truncated: false, rowCount: 42 });
+  });
 });

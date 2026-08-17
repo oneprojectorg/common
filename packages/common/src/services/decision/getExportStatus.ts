@@ -27,6 +27,18 @@ export interface ExportStatusData {
   errorMessage?: string;
   createdAt: string;
   completedAt?: string;
+  /** Rows written to the file. Set once the export completes. */
+  rowCount?: number;
+  /** Rows the instance held when the read started. Set once it completes. */
+  total?: number;
+  /**
+   * True when the row ceiling ended the read early, so `rowCount` is short of
+   * `total`. Optional because records written before this field existed, and
+   * records for runs still in flight, do not carry it — absent means "not
+   * known to be truncated", which is the safe reading for a run that has not
+   * finished.
+   */
+  truncated?: boolean;
 }
 
 export const getExportStatus = async ({

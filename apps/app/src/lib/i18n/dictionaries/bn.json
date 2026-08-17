@@ -1544,6 +1544,7 @@
   "Failed to start export": "রপ্তানি শুরু করা যায়নি",
   "Export failed": "রপ্তানি ব্যর্থ হয়েছে",
   "Export timed out. Please try again.": "রপ্তানির সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
+  "Only {rowCount} of {total} proposals are in this file.": "এই ফাইলে {total}টি প্রস্তাবের মধ্যে কেবল {rowCount}টি রয়েছে।",
   "Couldn't check the export's status. It may still be running.": "রপ্তানির স্ট্যাটাস যাচাই করা যায়নি। এটি এখনও চলতে পারে।",
   "Export all": "সব রপ্তানি করুন"
 }

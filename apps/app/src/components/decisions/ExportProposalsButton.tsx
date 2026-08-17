@@ -205,7 +205,7 @@ const ExportProposalsButtonContent = ({
   }, [isRunning, reportedState, t]);
 
   if (isResolved && status.signedUrl) {
-    return (
+    const downloadButton = (
       <Button
         variant="secondary"
         size="sm"
@@ -231,6 +231,23 @@ const ExportProposalsButtonContent = ({
         {t('Download CSV')}
       </Button>
     );
+
+    // Both counts are required, not defaulted: the workflow writes them in the
+    // same update that sets `truncated`, so their absence means a record from
+    // before this shipped. "Only 0 of 0 proposals" would be a worse answer than
+    // staying quiet, and `?? 0` is how that gets rendered.
+    const { rowCount, total } = status;
+
+    if (status.truncated && rowCount != null && total != null) {
+      return (
+        <div className="flex flex-col items-start gap-1">
+          {downloadButton}
+          <ExportTruncationNotice rowCount={rowCount} total={total} />
+        </div>
+      );
+    }
+
+    return downloadButton;
   }
 
   return (
@@ -267,5 +284,38 @@ const ExportProposalsButtonContent = ({
           active filter would read as exporting that selection. */}
       {isRunning ? runningLabel : t('Export all')}
     </Button>
+  );
+};
+
+/**
+ * Says that a completed export is short of the instance's row count.
+ *
+ * A truncated export is the one case where the file cannot speak for itself: it
+ * is well-formed, it reports success, and nothing in it marks where the rows
+ * stop. Rendered beside the download rather than raised as a toast, because a
+ * toast is gone by the time the admin opens the CSV and it is the person
+ * holding the file who needs to know it is incomplete.
+ */
+const ExportTruncationNotice = ({
+  rowCount,
+  total,
+}: {
+  rowCount: number;
+  total: number;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <p
+      className="flex items-center gap-1 text-label text-warning-muted-foreground"
+      // Appears when the run settles, with no navigation to announce it.
+      aria-live="polite"
+    >
+      <LuTriangleAlert aria-hidden />
+      {t('Only {rowCount} of {total} proposals are in this file.', {
+        rowCount,
+        total,
+      })}
+    </p>
   );
 };
