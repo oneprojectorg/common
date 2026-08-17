@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Bootstrap prerequisites for `pnpm docker:dev` on a fresh Debian/Ubuntu system.
-# Installs Docker (engine + compose plugin), Node.js 22, and pnpm via corepack.
+# Installs Docker (engine + compose plugin), Node.js 24, and pnpm via corepack.
 # Idempotent: safe to re-run.
 #
-# For Fedora/RHEL/Arch: install Docker and Node 22 manually with your package
+# For Fedora/RHEL/Arch: install Docker and Node 24 manually with your package
 # manager, then run `sudo corepack enable && corepack prepare pnpm@9.15.4 --activate`.
 
 set -euo pipefail
@@ -43,17 +43,17 @@ else
   NEEDS_RELOGIN=1
 fi
 
-# --- Node.js 22 ---------------------------------------------------------------
+# --- Node.js 24 ---------------------------------------------------------------
 NODE_MAJOR=0
 if command -v node >/dev/null; then
   NODE_MAJOR=$(node -v | sed -E 's/v([0-9]+).*/\1/')
 fi
 
-if [[ "$NODE_MAJOR" -ge 22 ]]; then
+if [[ "$NODE_MAJOR" -ge 24 ]]; then
   log "Node.js $(node -v) already installed."
 else
-  log "Installing Node.js 22 via NodeSource…"
-  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+  log "Installing Node.js 24 via NodeSource…"
+  curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
   sudo apt-get install -y nodejs
 fi
 

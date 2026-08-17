@@ -6,7 +6,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 ## Quick Start & Setup
 
 1.  **Prerequisites**:
-    - Ensure you have **Node.js v22+** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
+    - Ensure you have **Node.js v24** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
     - Enable [Corepack](https://nodejs.org/api/corepack.html) (Node.js's built-in package manager manager) by running: `corepack enable` (This ensures you use the `pnpm` version specified in the root `package.json`).
 2.  **Install Dependencies**: Run `pnpm install` in the project root. This will install dependencies for all workspaces.
 3.  **Environment Variables**:
@@ -30,15 +30,15 @@ A fully containerised dev environment is available via `docker-compose.dev.yml`.
 On a fresh machine, you can install everything below with one of the bootstrap scripts:
 
 ```bash
-scripts/bootstrap-macos.sh    # Homebrew + OrbStack + Node 22 + pnpm
-scripts/bootstrap-linux.sh    # Docker engine + Node 22 + pnpm (Debian/Ubuntu)
+scripts/bootstrap-macos.sh    # Homebrew + OrbStack + Node 24 + pnpm
+scripts/bootstrap-linux.sh    # Docker engine + Node 24 + pnpm (Debian/Ubuntu)
 ```
 
 Otherwise, install these manually:
 
 - **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
 - **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
-- **Node.js 22+** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
+- **Node.js 24** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
 - **`TIPTAP_PRO_TOKEN`** — set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
 - **Platform** — tested on arm64 macOS. amd64 Linux should work but isn't verified in CI.
 

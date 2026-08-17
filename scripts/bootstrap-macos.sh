@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bootstrap prerequisites for `pnpm docker:dev` on a fresh macOS system.
-# Installs Homebrew (if missing), OrbStack, Node.js 22, and pnpm via corepack.
+# Installs Homebrew (if missing), OrbStack, Node.js 24, and pnpm via corepack.
 # OrbStack is the preferred macOS Docker runtime — lighter and faster than
 # Docker Desktop, with a drop-in `docker` / `docker compose` CLI. If Docker
 # Desktop or another daemon is already running, the install is skipped so we
@@ -72,19 +72,19 @@ if ! docker info >/dev/null 2>&1; then
   docker info >/dev/null 2>&1 || die "Docker daemon didn't start within 150s. Launch it manually and re-run."
 fi
 
-# --- Node.js 22 ---------------------------------------------------------------
+# --- Node.js 24 ---------------------------------------------------------------
 NODE_MAJOR=0
 if command -v node >/dev/null; then
   NODE_MAJOR=$(node -v | sed -E 's/v([0-9]+).*/\1/')
 fi
 
-if [[ "$NODE_MAJOR" -ge 22 ]]; then
+if [[ "$NODE_MAJOR" -ge 24 ]]; then
   log "Node.js $(node -v) already installed."
 else
-  log "Installing Node.js 22 via Homebrew…"
-  brew install node@22
-  # node@22 is keg-only; link it onto PATH.
-  brew link --overwrite --force node@22
+  log "Installing Node.js 24 via Homebrew…"
+  brew install node@24
+  # node@24 is keg-only; link it onto PATH.
+  brew link --overwrite --force node@24
 fi
 
 # --- Corepack + pnpm ---------------------------------------------------------
