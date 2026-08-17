@@ -13,9 +13,13 @@ import { z } from 'zod';
  * the record it reads.
  *
  * The optional fields arrive later, or never. The workflow writes `fileName`,
- * `signedUrl`, `urlExpiresAt`, and `completedAt` when a run completes, and
- * `errorMessage` when one fails. `getExportStatus` also clears `signedUrl` when
- * it cannot re-sign a lapsed URL.
+ * `signedUrl`, `urlExpiresAt`, `completedAt`, and the `rowCount` / `total` /
+ * `truncated` counts when a run completes, and `errorMessage` when one fails.
+ * `getExportStatus` also clears `signedUrl` when it cannot re-sign a lapsed URL.
+ *
+ * The counts must be listed here to survive a read: this schema is not strict,
+ * so a field it does not name is stripped from every parsed record, and the
+ * truncation notice would never reach the admin.
  */
 export const exportStatusRecordSchema = z.object({
   exportId: z.string(),
@@ -29,6 +33,18 @@ export const exportStatusRecordSchema = z.object({
   errorMessage: z.string().optional(),
   createdAt: z.string(),
   completedAt: z.string().optional(),
+  /** Rows written to the file. Set once the export completes. */
+  rowCount: z.number().optional(),
+  /** Rows the instance held when the read started. Set once it completes. */
+  total: z.number().optional(),
+  /**
+   * True when the row ceiling ended the read early, so `rowCount` is short of
+   * `total`. Optional because records written before this field existed, and
+   * records for runs still in flight, do not carry it — absent means "not
+   * known to be truncated", which is the safe reading for a run that has not
+   * finished.
+   */
+  truncated: z.boolean().optional(),
 });
 
 /**

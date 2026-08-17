@@ -107,6 +107,11 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
 
+  // The access check passes by default. `clearAllMocks` resets calls but keeps
+  // implementations, so a test that makes this reject would otherwise leak the
+  // rejection into every test declared after it.
+  vi.mocked(assertInstanceProfileAccess).mockResolvedValue(undefined as never);
+
   // The instance lookup that backs the access check.
   vi.mocked(db.select).mockReturnValue({
     from: () => ({
@@ -558,4 +563,38 @@ describe('getExportStatus', () => {
       expect(createSignedUrl).not.toHaveBeenCalled();
     },
   );
+
+  // The admin's only signal that a file is short. It is carried, not derived, so
+  // it has to survive every hop from the workflow's write to the download — and
+  // this read is the hop that also re-signs and rewrites the record.
+  it('carries the truncation counts through a read that re-signs the URL', async () => {
+    givenCachedRecord({
+      ...expiredRecord(),
+      rowCount: 5000,
+      total: 12431,
+      truncated: true,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
+
+    expect(result).toMatchObject({
+      rowCount: 5000,
+      total: 12431,
+      truncated: true,
+      signedUrl: FRESH_URL,
+    });
+  });
+
+  it('reports a complete export as not truncated', async () => {
+    givenCachedRecord({
+      ...expiredRecord(),
+      rowCount: 42,
+      total: 42,
+      truncated: false,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
+
+    expect(result).toMatchObject({ truncated: false, rowCount: 42 });
+  });
 });

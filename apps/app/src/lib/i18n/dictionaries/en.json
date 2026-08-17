@@ -1611,6 +1611,7 @@
   "Retry download": "Retry download",
   "Could not prepare the download. Please try again.": "Could not prepare the download. Please try again.",
   "Export timed out. Please try again.": "Export timed out. Please try again.",
+  "Only {rowCount} of {total} proposals are in this file.": "Only {rowCount} of {total} proposals are in this file.",
   "Couldn't check the export's status. It may still be running.": "Couldn't check the export's status. It may still be running.",
   "Export all": "Export all",
   "Proposals in review · {count}": "Proposals in review · {count}",
