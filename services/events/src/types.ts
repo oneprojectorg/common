@@ -1,5 +1,3 @@
-import { ProposalFilter } from '@op/core';
-import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 // Mirrors the db `moderation_item_type` enum values; kept as a plain string
@@ -34,6 +32,10 @@ export const Events = {
       reactionType: z.string(),
     }),
   },
+  // Carries no filters. An export used to inherit whatever the list had been
+  // narrowed to, which made the same button produce a different file depending
+  // on state the admin could not see from the CSV. What it covers is now fixed
+  // by the job: every non-draft proposal in the instance's current phase.
   proposalExportRequested: {
     name: 'proposal/export-requested' as const,
     schema: z.object({
@@ -41,13 +43,6 @@ export const Events = {
       processInstanceId: z.string().uuid(),
       userId: z.string().uuid(),
       format: z.enum(['csv']),
-      filters: z.object({
-        categoryId: z.string().optional(),
-        submittedByProfileId: z.string().optional(),
-        status: z.enum(ProposalStatus).optional(),
-        dir: z.enum(['asc', 'desc']),
-        proposalFilter: z.enum(ProposalFilter).optional(),
-      }),
     }),
   },
   profileInviteSent: {

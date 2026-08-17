@@ -75,6 +75,7 @@
     "DB_MIGRATING",
     "DB_SEEDING",
     "E2E",
+    "INNGEST_DEV",
     "REDIS_URL",
     "TIPTAP_SECRET",
     "NEXT_PUBLIC_TIPTAP_APP_ID"

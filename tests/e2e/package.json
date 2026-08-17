@@ -29,6 +29,7 @@
     "@rjsf/utils": "^6.3.1",
     "@supabase/supabase-js": "catalog:",
     "axe-core": "^4.11.3",
+    "csv-parse": "^7.0.2",
     "dotenv": "^16.4.7",
     "drizzle-orm": "catalog:"
   }

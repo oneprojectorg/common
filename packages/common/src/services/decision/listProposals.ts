@@ -5,11 +5,11 @@ import {
   decisionsVoteSubmissions,
   proposals,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { decodeCursor, encodeCursor, getCursorCondition } from '../../utils';
+import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
@@ -95,7 +95,12 @@ export const listProposals = async ({
   user,
 }: {
   input: ListProposalsInput;
-  user: User | undefined;
+  // Only the auth-user id is ever read from the caller (see
+  // `resolveProposalListScope`), so this takes the narrow `AccessUser` rather
+  // than a full Supabase `User`. Trusted server-side callers — the proposals
+  // export workflow — hold an auth id but no session object, and widening here
+  // lets them pass it without fabricating a `User`.
+  user: AccessUser | undefined;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 

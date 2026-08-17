@@ -1,26 +1,63 @@
 import { get, set } from '@op/cache';
 import {
+  EXPORTS_BUCKET,
+  EXPORT_CACHE_TTL_SECONDS,
+  EXPORT_URL_TTL_SECONDS,
+  type ExportStatusData,
   assertUserByAuthId,
+  exportFileName,
+  exportFilePath,
+  exportStatusCacheKey,
   generateProposalsCsv,
   listProposals,
 } from '@op/common';
+import { Channels } from '@op/common/realtime';
 import { Events, inngest } from '@op/events';
+import { realtime } from '@op/realtime/server';
 import { createSBServiceClient } from '@op/supabase/server';
 
 type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
-// Helper to get cache key for export status
-const getExportCacheKey = (exportId: string) => `export:proposal:${exportId}`;
-
-// Helper to update export status in cache
-const updateExportStatus = async (exportId: string, updates: any) => {
-  const key = getExportCacheKey(exportId);
-  const existing = await get(key);
-  const updated = { ...(existing || {}), ...updates };
-  await set(key, updated, 2 * 60 * 60); // 2 hours
+// Helper to merge a partial update into the cached export status. The record is
+// seeded in full when the export is requested, so every write here is a patch
+// over an existing record rather than a fresh one.
+const updateExportStatus = async (
+  exportId: string,
+  updates: Partial<ExportStatusData>,
+) => {
+  const key = exportStatusCacheKey(exportId);
+  const existing = (await get(key)) as ExportStatusData | null;
+  const updated = { ...(existing ?? {}), ...updates };
+  await set(key, updated, EXPORT_CACHE_TTL_SECONDS);
 };
+
+/**
+ * Tell any admin waiting on this export that it has reached a terminal state.
+ *
+ * Broadcast-only: the cached record written just before this is the source of
+ * truth, and the message carries no payload — subscribers re-read
+ * `getExportStatus` on receipt.
+ *
+ * Nothing polls behind this, so a lost broadcast costs correctness rather than
+ * latency: the client never sees a terminal state, and the wait ends by
+ * reporting a timeout for an export that worked. One way to lose it is to
+ * publish before the client has finished subscribing, which an export settling
+ * in under a second can easily do. Covering that is not this function's job —
+ * every channel re-reads its queries once its join is confirmed, so whatever
+ * settled before the join is in that read and whatever settles after arrives
+ * here.
+ *
+ * `realtime.publish` logs and swallows its own failures, so this cannot fail
+ * the run or trigger a retry that would rewrite a settled status.
+ */
+const notifyExportFinished = (exportId: string) =>
+  realtime.publish(Channels.proposalExport(exportId), {
+    // Identifies the broadcast for client-side dedup; the export id is stable
+    // across this run's terminal write, which is the only thing published here.
+    mutationId: `export:${exportId}`,
+  });
 
 const { proposalExportRequested } = Events;
 
@@ -31,7 +68,7 @@ export const exportProposals = inngest.createFunction(
   { event: proposalExportRequested.name },
   async ({ event, step }) => {
     // Validate event data
-    const { exportId, processInstanceId, userId, format, filters } =
+    const { exportId, processInstanceId, userId, format } =
       proposalExportRequested.schema.parse(event.data);
 
     // Step 1: Update status to processing
@@ -42,7 +79,6 @@ export const exportProposals = inngest.createFunction(
         processInstanceId,
         userId,
         format,
-        filters,
         createdAt: new Date().toISOString(),
       });
     });
@@ -50,20 +86,35 @@ export const exportProposals = inngest.createFunction(
     try {
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
-        const userRecord = await assertUserByAuthId(userId);
+        // Confirm the requester still exists, then hand `listProposals` an
+        // auth-shaped user. Every identity path it reaches — `getCurrentProfileId`,
+        // `assertUserByAuthId`, `resolveAccessUserIds` — reads `user.id` as an
+        // *auth* user id, so passing the `users` row (whose `id` is the database
+        // key) silently resolved the wrong caller.
+        await assertUserByAuthId(userId);
 
         const result = await listProposals({
           input: {
+            // This call is the whole definition of what an export covers, so
+            // what it leaves unsaid matters as much as what it passes. No
+            // filters: the same instance has to produce the same file, and a
+            // CSV cannot show its reader which filters were active when it was
+            // built. No `phaseId`, which resolves to the instance's *current*
+            // phase — so an export is not the instance's whole history, and
+            // what it holds changes as the instance advances. No `dir`, so
+            // rows arrive in the query's own order.
+            //
+            // `skipAccessCheck` also settles the row set rather than merely
+            // skipping a check: the trusted branch takes every phase-scoped
+            // non-draft proposal, ignoring the visibility and moderation
+            // filters a signed-in caller would get. Drafts are never included,
+            // and two admins exporting the same instance get the same rows.
             processInstanceId,
-            categoryId: filters.categoryId,
-            submittedByProfileId: filters.submittedByProfileId,
-            status: filters.status,
-            dir: filters.dir,
             limit: 1000, // High limit for exports
             skipAccessCheck: true, // Access already verified when export was created
             includeDocumentContent: true, // CSV descriptions come from the full fragments
           },
-          user: userRecord as any,
+          user: { id: userId },
         });
 
         return result.proposals;
@@ -92,13 +143,13 @@ export const exportProposals = inngest.createFunction(
         async () => {
           // Use service role client to bypass RLS in background job
           const supabase = createSBServiceClient();
-          const timestamp = Date.now();
-          const fileName = `proposals_export_${timestamp}.${extension}`;
-          const filePath = `exports/proposals/${processInstanceId}/${fileName}`;
+
+          const fileName = exportFileName(extension);
+          const filePath = exportFilePath(processInstanceId, fileName);
 
           // Upload CSV to Supabase storage
           const { error: uploadError } = await supabase.storage
-            .from('assets')
+            .from(EXPORTS_BUCKET)
             .upload(filePath, Buffer.from(content), {
               contentType: mimeType,
               upsert: false,
@@ -108,10 +159,9 @@ export const exportProposals = inngest.createFunction(
             throw new Error(`Storage upload failed: ${uploadError.message}`);
           }
 
-          // Generate 2-hour signed URL
           const { data: urlData, error: urlError } = await supabase.storage
-            .from('assets')
-            .createSignedUrl(filePath, 2 * 60 * 60); // 2 hours
+            .from(EXPORTS_BUCKET)
+            .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
 
           if (urlError || !urlData) {
             throw new Error(
@@ -133,11 +183,15 @@ export const exportProposals = inngest.createFunction(
           fileName,
           signedUrl,
           urlExpiresAt: new Date(
-            Date.now() + 24 * 60 * 60 * 1000,
+            Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
           ).toISOString(),
           completedAt: new Date().toISOString(),
         });
       });
+
+      await step.run('notify-export-finished', () =>
+        notifyExportFinished(exportId),
+      );
 
       return { exportId, status: 'completed' };
     } catch (error) {
@@ -150,6 +204,10 @@ export const exportProposals = inngest.createFunction(
           completedAt: new Date().toISOString(),
         });
       });
+
+      await step.run('notify-export-failed', () =>
+        notifyExportFinished(exportId),
+      );
 
       throw error;
     }

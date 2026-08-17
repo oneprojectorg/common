@@ -24,7 +24,6 @@ describeDecisionAccessTierGating('export', {
         caller.decision.export({
           processInstanceId: instance.instance.id,
           format: 'csv',
-          dir: 'desc',
         }),
         'none',
       );
@@ -47,7 +46,6 @@ describeDecisionAccessTierGating('export', {
         caller.decision.export({
           processInstanceId: instance.instance.id,
           format: 'csv',
-          dir: 'desc',
         }),
         'anon',
       );
@@ -70,7 +68,6 @@ describeDecisionAccessTierGating('export', {
         caller.decision.export({
           processInstanceId: instance.instance.id,
           format: 'csv',
-          dir: 'desc',
         }),
         'user',
       );
@@ -92,7 +89,6 @@ describeDecisionAccessTierGating('export', {
       const result = await caller.decision.export({
         processInstanceId: instance.instance.id,
         format: 'csv',
-        dir: 'desc',
       });
 
       expect(result.exportId).toBeDefined();

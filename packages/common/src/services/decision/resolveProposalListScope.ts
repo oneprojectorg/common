@@ -22,11 +22,11 @@ import {
   proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
 import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import {
+  type AccessUser,
   assertInstanceProfileAccess,
   getCurrentProfileId,
   resolveAccessUserIds,
@@ -213,7 +213,8 @@ export const resolveProposalListScope = async ({
   user,
 }: {
   input: ListProposalsInput;
-  user: User | undefined;
+  // Narrow to the id the resolver actually reads — see `listProposals`.
+  user: AccessUser | undefined;
 }): Promise<ProposalListScope> => {
   const { processInstanceId, skipAccessCheck = false } = input;
 

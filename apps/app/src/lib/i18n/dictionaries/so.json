@@ -1055,8 +1055,8 @@
   "Read full proposal": "Akhri soo jeedinta oo dhan",
   "My ballot": "Codkayga",
   "Click to download": "Guji si aad u soo dejiso",
-  "Exporting...": "Waa la soo saarayaa...",
-  "Export": "Soo saar",
+  "Preparing...": "Waa la diyaarinayaa...",
+  "Generating...": "Waa la abuurayaa...",
   "Your ballot is in!": "Codkaaga waa la helay!",
   "Thank you for participating. Your voice helps shape how we invest in our community.": "Waad ku mahadsan tahay ka qaybgalka. Codkaaga wuxuu caawimaa qaabka aan u maalgalinno bulshadaenna.",
   "Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.": "Waad ku mahadsan tahay ka qaybgalka Codaynta Bulshada 2025. Codkaaga wuxuu caawimaa qaabka aan u maalgalinno bulshadaenna.",
@@ -1538,5 +1538,11 @@
   "Select an organization": "Dooro urur",
   "You can only invite people to organizations you administer.": "Waxaad dad ku casuumi kartaa oo keliya ururrada aad maamusho.",
   "+ Add review": "+ Ku dar dib-u-eegis",
-  "{name} (You)": "{name} (Adiga)"
+  "{name} (You)": "{name} (Adiga)",
+  "Download CSV": "Soo dejiso CSV",
+  "Failed to start export": "Lama bilaabi karin soo saarista",
+  "Export failed": "Soo saaristu way fashilantay",
+  "Export timed out. Please try again.": "Soo saaristu waqtigii way dhaaftay. Fadlan isku day mar kale.",
+  "Couldn't check the export's status. It may still be running.": "Lama hubin karin xaaladda soo-saarka. Waxaa laga yaabaa inay weli socoto.",
+  "Export all": "Dhammaan soo saar"
 }

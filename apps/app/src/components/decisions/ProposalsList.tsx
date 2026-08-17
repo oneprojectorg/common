@@ -26,6 +26,7 @@ import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ExportProposalsButton } from './ExportProposalsButton';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import {
   ProposalCardSkeleton,
@@ -429,6 +430,12 @@ const ProposalsListContent = ({
 
   const canManageProposals = permissions?.admin ?? false;
 
+  // CSV export is behind a flag for staged rollout. Defaulted rather than left
+  // as `boolean | undefined` so the control stays hidden while flags load
+  // instead of appearing and then vanishing.
+  const exportEnabled = useFeatureFlag('export-feature') ?? false;
+  const canExportProposals = canManageProposals && exportEnabled;
+
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },
@@ -518,6 +525,16 @@ const ProposalsListContent = ({
           hasLocationField={hasLocationField}
           effectiveView={effectiveView}
           onViewChange={handleViewChange}
+          exportControl={
+            canExportProposals ? (
+              <ExportProposalsButton
+                processInstanceId={queryParams.processInstanceId}
+                // The phase's unfiltered count: the export ignores the list's
+                // filters, so a filter matching nothing must not disable it.
+                isEmpty={totalProposalCount === 0}
+              />
+            ) : null
+          }
         />
       )}
 

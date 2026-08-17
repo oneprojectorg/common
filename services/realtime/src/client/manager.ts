@@ -22,6 +22,8 @@ export class RealtimeManager {
   private supabase: SupabaseClient | null = null;
   private channels = new Map<ChannelName, RealtimeChannel>();
   private channelListeners = new Map<ChannelName, Set<RealtimeHandler>>();
+  /** Channels whose socket join has been confirmed — see `onSubscribed`. */
+  private subscribedChannels = new Set<ChannelName>();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
   private config: RealtimeConfig | null = null;
 
@@ -66,7 +68,21 @@ export class RealtimeManager {
    * Subscribe to a channel with a message handler
    * Returns an unsubscribe function to clean up the subscription
    */
-  subscribe(channel: ChannelName, handler: RealtimeHandler): () => void {
+  subscribe(
+    channel: ChannelName,
+    handler: RealtimeHandler,
+    /**
+     * Called once the channel's socket join is confirmed, and immediately if it
+     * already was.
+     *
+     * Broadcasts are not replayed, so anything published before the join lands
+     * is lost. A caller that cannot tolerate that — one waiting on a background
+     * job that may finish first — uses this to re-read once the channel is
+     * actually live, which is the only point after which the broadcast is
+     * guaranteed to arrive.
+     */
+    onSubscribed?: () => void,
+  ): () => void {
     this.ensureClient();
 
     if (!this.supabase) {
@@ -89,6 +105,12 @@ export class RealtimeManager {
     }
 
     listeners.add(handler);
+
+    // A later subscriber joins a channel whose socket is already open, so the
+    // status callback below has already fired and will not fire again.
+    if (onSubscribed && this.subscribedChannels.has(channel)) {
+      onSubscribed();
+    }
 
     // Create channel subscription if it doesn't exist
     if (!this.channels.has(channel)) {
@@ -122,9 +144,12 @@ export class RealtimeManager {
       realtimeChannel.subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('[Realtime] Subscribed to channel:', channel);
+          this.subscribedChannels.add(channel);
+          onSubscribed?.();
           this.connectionListeners.forEach((listener) => listener(true));
         } else if (status === 'CLOSED') {
           console.log('[Realtime] Unsubscribed from channel:', channel);
+          this.subscribedChannels.delete(channel);
           this.connectionListeners.forEach((listener) => listener(false));
         } else if (status === 'CHANNEL_ERROR') {
           console.error('[Realtime] Channel error:', channel);
@@ -156,6 +181,8 @@ export class RealtimeManager {
     if (listeners.size === 0) {
       this.channelListeners.delete(channel);
 
+      this.subscribedChannels.delete(channel);
+
       const realtimeChannel = this.channels.get(channel);
       if (realtimeChannel && this.supabase) {
         this.supabase.removeChannel(realtimeChannel);
@@ -186,6 +213,7 @@ export class RealtimeManager {
     });
     this.channels.clear();
     this.channelListeners.clear();
+    this.subscribedChannels.clear();
   }
 
   /**

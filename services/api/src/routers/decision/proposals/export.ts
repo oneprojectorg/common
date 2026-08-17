@@ -1,18 +1,14 @@
 import { exportProposals } from '@op/common';
-import { ProposalFilter } from '@op/core';
-import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
+// No filters: what an export covers is fixed by the job — every non-draft
+// proposal in the instance's current phase — rather than by whatever the
+// requester happened to have on screen.
 const exportInputSchema = z.object({
   processInstanceId: z.string().uuid(),
   format: z.enum(['csv']).default('csv'),
-  categoryId: z.string().optional(),
-  submittedByProfileId: z.string().optional(),
-  status: z.enum(ProposalStatus).optional(),
-  dir: z.enum(['asc', 'desc']).default('desc'),
-  proposalFilter: z.enum(ProposalFilter).optional(),
 });
 
 const exportOutputSchema = z.object({
@@ -26,15 +22,10 @@ export const exportProposalsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
-      const { exportId, organizationId } = await exportProposals({
+      const { exportId } = await exportProposals({
         input: {
           processInstanceId: input.processInstanceId,
           format: input.format,
-          categoryId: input.categoryId,
-          submittedByProfileId: input.submittedByProfileId,
-          status: input.status,
-          dir: input.dir,
-          proposalFilter: input.proposalFilter,
         },
         user,
       });
@@ -44,7 +35,6 @@ export const exportProposalsRouter = router({
         userId: user.id,
         processInstanceId: input.processInstanceId,
         format: input.format,
-        organizationId,
       });
 
       return { exportId };

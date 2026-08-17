@@ -116,4 +116,29 @@ describe('queryChannelRegistry', () => {
 
     off();
   });
+
+  // Consumers waiting on a background job re-read when their channel goes live,
+  // because a broadcast published before the socket join is never delivered.
+  it('channel:subscribed reports the channel whose join completed', () => {
+    const onSubscribed = vi.fn();
+    const off = queryChannelRegistry.on('channel:subscribed', onSubscribed);
+
+    queryChannelRegistry.notifyChannelSubscribed(CH_A);
+
+    expect(onSubscribed).toHaveBeenCalledWith({ channel: CH_A });
+
+    off();
+  });
+
+  // A listener that kept firing after teardown would re-read on behalf of a
+  // component that has gone away.
+  it('stops delivering channel:subscribed once unsubscribed', () => {
+    const onSubscribed = vi.fn();
+    const off = queryChannelRegistry.on('channel:subscribed', onSubscribed);
+
+    off();
+    queryChannelRegistry.notifyChannelSubscribed(CH_A);
+
+    expect(onSubscribed).not.toHaveBeenCalled();
+  });
 });

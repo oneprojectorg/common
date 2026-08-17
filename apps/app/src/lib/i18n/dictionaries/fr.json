@@ -1121,8 +1121,8 @@
   "Read full proposal": "Lire la proposition complète",
   "My ballot": "Mon bulletin",
   "Click to download": "Cliquez pour télécharger",
-  "Exporting...": "Exportation...",
-  "Export": "Exporter",
+  "Preparing...": "Préparation...",
+  "Generating...": "Génération...",
   "Your ballot is in!": "Votre bulletin est enregistré !",
   "Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.": "Merci d'avoir participé au Vote Communautaire 2025. Votre voix aide à façonner la manière dont nous investissons dans notre communauté.",
   "Here's what will happen next:": "Voici ce qui va se passer ensuite :",
@@ -1536,5 +1536,11 @@
   "Select an organization": "Sélectionnez une organisation",
   "You can only invite people to organizations you administer.": "Vous pouvez uniquement inviter des personnes dans les organisations que vous administrez.",
   "+ Add review": "+ Ajouter une évaluation",
-  "{name} (You)": "{name} (Vous)"
+  "{name} (You)": "{name} (Vous)",
+  "Download CSV": "Télécharger le CSV",
+  "Failed to start export": "Impossible de démarrer l’exportation",
+  "Export failed": "L’exportation a échoué",
+  "Export timed out. Please try again.": "L’exportation a expiré. Veuillez réessayer.",
+  "Couldn't check the export's status. It may still be running.": "Impossible de vérifier l'état de l'exportation. Elle est peut-être toujours en cours.",
+  "Export all": "Tout exporter"
 }

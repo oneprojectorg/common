@@ -1131,8 +1131,8 @@
   "Read full proposal": "Read full proposal",
   "My ballot": "My ballot",
   "Click to download": "Click to download",
-  "Exporting...": "Exporting...",
-  "Export": "Export",
+  "Preparing...": "Preparing...",
+  "Generating...": "Generating...",
   "Your ballot is in!": "Your ballot is in!",
   "Thank you for participating. Your voice helps shape how we invest in our community.": "Thank you for participating. Your voice helps shape how we invest in our community.",
   "Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.": "Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.",
@@ -1601,5 +1601,10 @@
   "Select an organization": "Select an organization",
   "You can only invite people to organizations you administer.": "You can only invite people to organizations you administer.",
   "+ Add review": "+ Add review",
-  "{name} (You)": "{name} (You)"
+  "{name} (You)": "{name} (You)",
+  "Failed to start export": "Failed to start export",
+  "Export failed": "Export failed",
+  "Export timed out. Please try again.": "Export timed out. Please try again.",
+  "Couldn't check the export's status. It may still be running.": "Couldn't check the export's status. It may still be running.",
+  "Export all": "Export all"
 }
