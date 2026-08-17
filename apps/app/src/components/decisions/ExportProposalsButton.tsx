@@ -1,12 +1,14 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { ProposalExportFilters } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LuDownload } from 'react-icons/lu';
+import type { FallbackProps } from 'react-error-boundary';
+import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -41,8 +43,75 @@ export interface ExportProposalsButtonProps {
  * is built in the background, so downloading it the instant it arrives would
  * fire a save dialog at an arbitrary moment — easy to miss entirely, and
  * impossible to retry without re-running the whole export.
+ *
+ * The boundary is part of the component rather than left to each call site,
+ * because there is nothing a call site could usefully decide here: the failure
+ * being guarded is internal to the wait, and a caller that forgot the wrapper
+ * would get the misreport described on the status query below.
  */
-export const ExportProposalsButton = ({
+export const ExportProposalsButton = (props: ExportProposalsButtonProps) => (
+  <APIErrorBoundary fallbacks={statusUnreadableFallbacks}>
+    <ExportProposalsButtonContent {...props} />
+  </APIErrorBoundary>
+);
+
+/**
+ * Only what the status query escalates reaches this — see its `throwOnError`.
+ * Nothing arrives here on its own: a non-suspense `useQuery` reports an error
+ * on the result and never throws, so a boundary added without that option
+ * would sit here catching nothing.
+ *
+ * No per-status entries. A 403 is the obvious candidate to map to `null` — the
+ * admin lost access, so drop the control — but `getExportStatus` also answers
+ * 403 when the export id belongs to someone else, which is a bug rather than a
+ * permission change. One fallback that says something beats two that hide it.
+ */
+const statusUnreadableFallbacks = {
+  default: ({ error, resetErrorBoundary }: FallbackProps) => (
+    <ExportStatusUnreadable error={error} onRetry={resetErrorBoundary} />
+  ),
+};
+
+/**
+ * Shown when the export's status cannot be read at all.
+ *
+ * Deliberately not phrased as a failure. `failed` and the timeout are outcomes
+ * the run reported; this is the absence of one. The workflow may well still be
+ * running and may still write the file — the client has only lost sight of it,
+ * and saying "the export failed" would claim knowledge it does not have.
+ *
+ * Retrying resets the boundary, which remounts the button at idle. That drops
+ * the id of the run in flight, and export state is cache-only with no history,
+ * so a file it goes on to write is unreachable. That cost is real and already
+ * paid by the timeout path; it is not introduced here.
+ */
+const ExportStatusUnreadable = ({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) => {
+  const t = useTranslations();
+
+  // Announced by toast, the same way a reported failure is, rather than by a
+  // live region that would compete with it to describe the same event.
+  useEffect(() => {
+    logger.error('Could not read proposals export status', { error });
+    toast.error(
+      t("Couldn't check the export's status. It may still be running."),
+    );
+  }, [error, t]);
+
+  return (
+    <Button variant="secondary" size="sm" onClick={onRetry}>
+      <LuTriangleAlert aria-hidden />
+      {t('Try again')}
+    </Button>
+  );
+};
+
+const ExportProposalsButtonContent = ({
   processInstanceId,
   filters,
   isEmpty = false,
@@ -74,7 +143,21 @@ export const ExportProposalsButton = ({
   // which is what covers an export finishing before the socket join lands.
   const { data: status } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId ?? '' },
-    { enabled: Boolean(exportId) && !hasTimedOut },
+    {
+      enabled: Boolean(exportId) && !hasTimedOut,
+      // Escalate to the boundary while the run is unresolved. A failed status
+      // read is not inert here: `status` stays undefined, so no terminal state
+      // is ever matched, `isRunning` stays true, and the silence timer below
+      // ends the wait by reporting a timeout — a claim about the run that the
+      // client is in no position to make. Escalating turns "we cannot tell"
+      // into something that says so.
+      //
+      // A completed record is exempt. Its signed URL is the only route to the
+      // file — export state is cache-only, with no history to recover it from
+      // — so discarding a good link because a later background refetch failed
+      // would cost the admin the entire run.
+      throwOnError: (_error, query) => query.state.data?.status !== 'completed',
+    },
   );
 
   // `not_found` is not a member of ExportStatusData['status'], so matching a
