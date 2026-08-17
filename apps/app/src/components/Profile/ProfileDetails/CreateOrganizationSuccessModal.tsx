@@ -19,9 +19,9 @@ export const CreateOrganizationSuccessModal = ({
     // off on success, so the dialog is intentionally non-dismissable (Esc/overlay
     // no-op, close button hidden).
     <Dialog open={isOpen}>
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="justify-center">
         <DialogTitle className="sr-only">{t('Setting up')}</DialogTitle>
-        <div className="flex h-full flex-col items-center justify-center gap-6 p-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-6 p-12 text-center">
           <p>
             {t('Setting up')}{' '}
             <span className="font-semibold">

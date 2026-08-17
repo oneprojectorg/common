@@ -38,7 +38,7 @@ export const NewlyJoinedModal = () => {
     <Dialog open={modalOpen} onOpenChange={handleModalChange}>
       <DialogContent
         confetti
-        className="shadow-green inset-shadow-none"
+        className="justify-center shadow-green inset-shadow-none"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">{t("You're all set!")}</DialogTitle>

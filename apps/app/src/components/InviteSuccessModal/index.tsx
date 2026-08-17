@@ -33,7 +33,10 @@ export const InviteSuccessModal = ({
     // No `onOpenChange`, as before: the two buttons are the only way out, so a
     // close affordance would be dead.
     <Dialog open={isOpen}>
-      <DialogContent showCloseButton={false} className="shadow-green">
+      <DialogContent
+        showCloseButton={false}
+        className="justify-center shadow-green"
+      >
         <div className="flex flex-col items-center justify-center gap-6 p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
             {/* Same mark as before, now on the success tokens. */}

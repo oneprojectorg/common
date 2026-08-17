@@ -158,7 +158,14 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   };
 
   const listContent = (
-    <CommandList className="max-h-86 overflow-x-hidden overflow-y-auto">
+    <CommandList
+      className={cn(
+        'overflow-x-hidden overflow-y-auto',
+        // `max-h-full`, not `max-h-none`: tailwind-merge omits `none` from its
+        // `max-h` group, so `max-h-none` never displaces CommandList's `max-h-72`.
+        isMobile ? 'max-h-full min-h-0 flex-1' : 'max-h-86',
+      )}
+    >
       {query.length > 0 ? (
         <CommandGroup>
           <CommandItem value="search-action" onSelect={handleSearchSelect}>
@@ -282,13 +289,21 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       <div
         aria-label={t('Search results')}
         className={cn(
-          !dropdownShowing && 'hidden',
           isMobile
-            ? 'fixed inset-x-0 top-15 bottom-0 z-10 overflow-y-auto bg-popover text-base'
+            ? 'fixed inset-x-0 top-15 bottom-0 z-10 flex flex-col overflow-hidden bg-popover text-base'
             : 'absolute top-12 z-10 w-full rounded border bg-popover text-base shadow',
+          // Last, so it displaces the `flex` above — same tailwind-merge display
+          // group, and losing it leaves the sheet stuck open over the page.
+          !dropdownShowing && 'hidden',
         )}
       >
-        {isMobile ? <div className="p-4 pt-0">{listContent}</div> : listContent}
+        {isMobile ? (
+          <div className="flex min-h-0 flex-1 flex-col p-4 pt-0">
+            {listContent}
+          </div>
+        ) : (
+          listContent
+        )}
       </div>
     </CommandPrimitive>
   );

@@ -126,10 +126,7 @@ function PolicyCheckbox({
             fixed header, scrollable body. `initialFocus` lands on the scroll
             container (top) instead of the first link in the legal text, which
             otherwise opens the dialog scrolled partway down. */}
-        <DialogContent
-          className="flex max-h-[85vh] flex-col p-0 sm:max-w-xl"
-          initialFocus={scrollRef}
-        >
+        <DialogContent className="p-0 sm:max-w-xl" initialFocus={scrollRef}>
           <DialogHeader>
             <DialogTitle>{modalTitle}</DialogTitle>
           </DialogHeader>

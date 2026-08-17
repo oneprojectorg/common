@@ -31,7 +31,10 @@ export const ProfileSwitchingModal = ({
     // `disablePointerDismissal`: the switch is in flight and closing this would
     // leave the header showing the profile the user just left.
     <Dialog open={isOpen} onOpenChange={onOpenChange} disablePointerDismissal>
-      <DialogContent showCloseButton={false} className="sm:max-w-sm">
+      <DialogContent
+        showCloseButton={false}
+        className="justify-center sm:max-w-sm"
+      >
         <div className="flex flex-col items-center justify-center gap-6 p-12">
           <div className="relative flex size-28">
             <ProfileAvatar

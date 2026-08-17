@@ -144,7 +144,7 @@ export const DeleteOrganizationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col overflow-hidden text-start sm:max-w-md">
+      <DialogContent className="overflow-hidden text-start sm:max-w-md">
         {steps[currentStep]}
       </DialogContent>
     </Dialog>

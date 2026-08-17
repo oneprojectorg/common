@@ -54,7 +54,7 @@ export const CreateOrganizationModal = ({
   return (
     <>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('Create Organization')}</DialogTitle>
           </DialogHeader>

@@ -36,14 +36,14 @@ export function ProposalInfoModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-2xl">
+      <DialogContent className="overflow-hidden sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             <bdi>{title}</bdi>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="min-h-0 overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           <div
             dir="auto"
             className={viewerProseStyles}

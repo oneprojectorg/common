@@ -83,7 +83,7 @@ export const ProfileInviteModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
-      <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-xl">
+      <DialogContent className="overflow-hidden sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {t('Invite participants to your decision-making process')}
@@ -461,7 +461,7 @@ function ProfileInviteModalContent({
 
   return (
     <>
-      <div className="min-h-0 space-y-6 overflow-y-auto px-6 py-4">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-4">
         {/* Role Tabs */}
         <RoleSelector
           profileId={profileId}

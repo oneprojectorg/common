@@ -44,7 +44,7 @@ const VoteSuccessModalSuspense = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       {/* 32rem — the sense default (sm:max-w-sm) is narrower than this needs. */}
-      <DialogContent confetti className="sm:max-w-lg">
+      <DialogContent confetti className="justify-center sm:max-w-lg">
         <div className="z-10 p-12 text-center">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-4">
