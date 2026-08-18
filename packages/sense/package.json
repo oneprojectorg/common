@@ -74,6 +74,7 @@
     "./ProfileItem": "./src/components/ProfileItem/index.tsx",
     "./Progress": "./src/components/ui/progress.tsx",
     "./ProposalCard": "./src/components/ProposalCard/index.tsx",
+    "./ProposalFeed": "./src/components/ProposalFeed/index.tsx",
     "./RadioGroup": "./src/components/ui/radio-group.tsx",
     "./ReactionsButton": "./src/components/ReactionsButton/index.tsx",
     "./RequiredAsterisk": "./src/components/RequiredAsterisk/index.tsx",
