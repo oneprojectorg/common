@@ -396,6 +396,38 @@ export function parseSchemaOptions(
   return [];
 }
 
+/**
+ * The subset of {@link parseSchemaOptions} whose labels a translation may
+ * replace: `oneOf` entries (top-level or under `items`) that store a `title`
+ * apart from the answer value.
+ *
+ * A legacy `enum` option has no separate label — the label *is* the value every
+ * stored answer holds — so translating it would rewrite answers rather than
+ * copy. Excluded here so the sender and the renderer agree on what can move:
+ * anything collected for translation can be swapped back in, and anything else
+ * reads as authored.
+ */
+export function parseTranslatableSchemaOptions(
+  schema: XFormatPropertySchema | null | undefined,
+): SchemaOption[] {
+  if (!schema) {
+    return [];
+  }
+
+  const itemSchema =
+    typeof schema.items === 'object' &&
+    schema.items !== null &&
+    !Array.isArray(schema.items)
+      ? schema.items
+      : undefined;
+
+  if (!Array.isArray(schema.oneOf) && !Array.isArray(itemSchema?.oneOf)) {
+    return [];
+  }
+
+  return parseSchemaOptions(schema);
+}
+
 const DISTRICT_CATEGORY_LABEL_PATTERN = /^district\s*\d+$/i;
 
 /**

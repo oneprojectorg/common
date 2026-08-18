@@ -3,6 +3,7 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
+  ProposalReviewState,
   ProposalStatus,
   posts,
   postsToProfiles,
@@ -18,6 +19,7 @@ import {
   createDecisionInstance,
   createInstanceMember,
   createProposal,
+  createProposalReview,
   createReviewScenario,
   getSeededTemplate,
   grantInstanceReviewerRole,
@@ -48,6 +50,9 @@ import {
  *    only the content that component rendered, so updates and resources were
  *    never sampled. `TranslationDetectionContext` now collects a sample from
  *    every surface on the screen.
+ * 4. The reviews themselves — the notes, free-text answers and feedback the
+ *    reviewers wrote — were neither sampled nor translatable, so the admin
+ *    review summary translated the questions and left the answers.
  *
  * Every surface that renders author-written content has to register into that
  * context, and three of them did not. Each has a test below: the reviewer's
@@ -94,6 +99,11 @@ const PROPOSAL_BODY_EN =
 const PROPOSAL_TITLE_ES = 'Huerta comunitaria en el parque central del barrio';
 const PROPOSAL_BODY_ES =
   '<p>Proponemos construir una huerta comunitaria en el parque central del barrio. La huerta ofrecerá alimentos frescos a las familias y será un espacio de encuentro para los vecinos. Solicitamos fondos para herramientas, semillas y un sistema de riego.</p>';
+
+const REVIEW_NOTE_ES =
+  'La propuesta plantea una idea que el barrio no tiene hoy y explica bien cómo se mantendría la huerta durante el invierno, aunque el presupuesto de riego parece corto.';
+const REVIEW_COMMENT_ES =
+  'Buen trabajo en general. Recomiendo revisar el cálculo del sistema de riego y añadir una carta de apoyo de la asociación de vecinos antes de la votación final.';
 
 const RESOURCE_TITLE_ES = 'Guía para preparar una propuesta vecinal';
 const RESOURCE_DESCRIPTION_ES =
@@ -703,6 +713,79 @@ test.describe('UGC translation coverage', () => {
         title: PROPOSAL_TITLE_EN,
         description: PROPOSAL_BODY_EN,
       },
+    });
+
+    const page = await signIn(org.adminUser);
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    await expect(
+      page.getByText(/Review (Progress|Summary)/).first(),
+    ).toBeAttached({ timeout: PAGE_READY_TIMEOUT });
+
+    await expect(
+      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toBeVisible();
+  });
+
+  // The reviews are what an admin opens this screen to read, and they were the
+  // one surface on it that fed nothing into detection: an English proposal and
+  // an English rubric with Spanish reviews under them offered no control at all.
+  test('the admin review summary offers translation for a Spanish review', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-summary-review-${testInfo.workerIndex}-${Date.now()}`;
+
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    const { proposal, assignment } = await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+    });
+
+    // The reviewer wrote in Spanish — the only foreign copy on the screen.
+    await createProposalReview({
+      assignmentId: assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: { innovation: 2 },
+        rationales: { innovation: REVIEW_NOTE_ES },
+      },
+      overallComment: REVIEW_COMMENT_ES,
+      submittedAt: new Date().toISOString(),
     });
 
     const page = await signIn(org.adminUser);
