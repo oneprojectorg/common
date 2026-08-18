@@ -12,7 +12,10 @@ import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertAssignmentPhaseIsCurrent,
+  assertReviewAssignmentContext,
+} from './reviewHelpers';
 import type { RubricReviewData } from './schemas/reviews';
 
 /**
@@ -43,6 +46,13 @@ export async function saveReviewDraft({
   ) {
     throw new ValidationError('Review has already been submitted');
   }
+
+  // Assignments outlive a phase advance, so a leftover assignment from an
+  // earlier phase must not accept a first write either.
+  await assertAssignmentPhaseIsCurrent({
+    assignment: context.assignment,
+    action: 'saved',
+  });
 
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');

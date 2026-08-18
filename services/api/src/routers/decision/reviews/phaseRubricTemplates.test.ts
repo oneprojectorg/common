@@ -383,6 +383,11 @@ describe.concurrent('per-phase rubric templates', () => {
       title: 'Submit against phase rubric',
       phaseId: FEASIBILITY_PHASE,
     });
+    // Reviews can only be written while the assignment's phase is current.
+    await testData.setCurrentPhase(
+      context.instance.instance.id,
+      FEASIBILITY_PHASE,
+    );
     const reviewerCaller = await createAuthenticatedCaller(
       scenario.reviewer.email,
     );

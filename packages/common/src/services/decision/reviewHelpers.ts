@@ -178,6 +178,43 @@ export function assertCanReadPhaseReviews(
   }
 }
 
+/**
+ * Review writes are pinned to the assignment's phase: a reviewer may only
+ * write while that phase is still the instance's current phase. Assignments
+ * deliberately survive a phase advance, so without this a leftover assignment
+ * from an earlier phase stays writable.
+ *
+ * `getInstance`'s `currentStateId` is cached and can lag a phase advance, so
+ * this re-reads the live phase rather than trusting a loaded instance. It
+ * applies to admins too — the phase, not the caller, is what closed.
+ *
+ * `action` names what the caller was doing, so the message reads naturally on
+ * the submit, draft and edit paths alike.
+ */
+export async function assertAssignmentPhaseIsCurrent({
+  assignment,
+  action,
+}: {
+  assignment: { processInstanceId: string; phaseId: string };
+  action: 'edited' | 'submitted' | 'saved';
+}): Promise<void> {
+  const liveInstance = await db.query.processInstances.findFirst({
+    where: { id: assignment.processInstanceId },
+    columns: { currentStateId: true },
+  });
+
+  if (
+    !isInstanceCurrentPhase(
+      { currentStateId: liveInstance?.currentStateId ?? null },
+      assignment.phaseId,
+    )
+  ) {
+    throw new ValidationError(
+      `This review can no longer be ${action} because the review phase has ended`,
+    );
+  }
+}
+
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
 export async function assertReviewAssignmentContext({
   assignmentId,

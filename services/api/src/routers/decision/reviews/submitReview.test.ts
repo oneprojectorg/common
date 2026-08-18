@@ -59,9 +59,30 @@ const singleSelectRubricTemplate: RubricTemplateSchema = {
   required: ['department'],
 };
 
+/** Assignments default to the `'review'` phase (see `createReviewAssignment`). */
+const REVIEW_PHASE = 'review';
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/**
+ * Creates an assignment, sets its rubric, and moves the instance onto the
+ * assignment's phase — the state a reviewer actually submits in. Review writes
+ * are rejected once that phase is no longer the instance's current phase.
+ */
+async function createAssignmentInReviewPhase(
+  testData: TestReviewsDataManager,
+  rubric: RubricTemplateSchema = rubricTemplate,
+) {
+  const created = await testData.createReviewAssignment();
+  await testData.setRubricTemplate(created.context, rubric);
+  await testData.setCurrentPhase(
+    created.context.instance.instance.id,
+    REVIEW_PHASE,
+  );
+  return created;
 }
 
 describe.concurrent('submitReview', () => {
@@ -70,8 +91,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentInReviewPhase(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -113,8 +133,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentInReviewPhase(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -137,9 +156,8 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(
-      created.context,
+    const created = await createAssignmentInReviewPhase(
+      testData,
       singleSelectRubricTemplate,
     );
 
@@ -163,9 +181,8 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(
-      created.context,
+    const created = await createAssignmentInReviewPhase(
+      testData,
       singleSelectRubricTemplate,
     );
 
@@ -193,9 +210,8 @@ describe.concurrent('submitReview', () => {
     // keeps its original array shape since only the validation copy is
     // coerced.
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(
-      created.context,
+    const created = await createAssignmentInReviewPhase(
+      testData,
       singleSelectRubricTemplate,
     );
 
@@ -214,10 +230,75 @@ describe.concurrent('submitReview', () => {
     expect(result.reviewData.answers).toEqual({ department: ['e5f6a7b8'] });
   });
 
-  it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {
+  it('allows a first submit while the assignment phase is the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment();
     await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    // Advance the instance into the assignment's phase, as a real process does
+    // before its reviewers are let in.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      REVIEW_PHASE,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('rejects a first submit once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentInReviewPhase(testData);
+
+    // Assignments survive a phase advance, so a never-submitted assignment
+    // from an earlier phase is still loadable — it just can't be written.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: { answers: { impact: 3 }, rationales: {} },
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    // Nothing was written.
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review).toBeUndefined();
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).not.toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+  });
+
+  it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentInReviewPhase(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,

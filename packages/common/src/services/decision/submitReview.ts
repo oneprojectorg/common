@@ -14,7 +14,10 @@ import { count } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertAssignmentPhaseIsCurrent,
+  assertReviewAssignmentContext,
+} from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 
@@ -41,6 +44,13 @@ export async function submitReview({
   ) {
     throw new ValidationError('Review has already been submitted');
   }
+
+  // Assignments outlive a phase advance, so a leftover assignment from an
+  // earlier phase must not accept a first write either.
+  await assertAssignmentPhaseIsCurrent({
+    assignment: context.assignment,
+    action: 'submitted',
+  });
 
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');
