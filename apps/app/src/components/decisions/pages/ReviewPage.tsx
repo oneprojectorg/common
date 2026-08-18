@@ -11,6 +11,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -28,6 +29,13 @@ import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 
 type Instance = RouterOutput['decision']['getInstance'];
+
+const REVIEW_TABS = ['to-review', 'other-proposals'] as const;
+const DEFAULT_REVIEW_TAB = 'to-review';
+
+// Shared by the URL state and the change handler so the accepted values stay a
+// single source of truth; an unknown `?tab=` falls back to the default.
+const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
 
 export function ReviewPage({
   instance,
@@ -57,6 +65,25 @@ export function ReviewPage({
   const isAdmin = Boolean(instance.access?.admin);
 
   const t = useTranslations();
+
+  // The tab lives in the URL so a reload or a shared link lands on the tab the
+  // reviewer was on, and so the per-tab params (`?sort=`) are unambiguous.
+  const [tab, setTab] = useQueryState(
+    'tab',
+    reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
+  );
+
+  const handleTabChange = (next: string) => {
+    const parsed = reviewTabParser.parse(next);
+
+    if (!parsed) {
+      return;
+    }
+
+    // Strip the param on the default tab so the URL stays clean.
+    void setTab(parsed === DEFAULT_REVIEW_TAB ? null : parsed);
+  };
+
   const translation = useDecisionTranslation();
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
@@ -133,7 +160,7 @@ export function ReviewPage({
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:p-8">
           {canReview ? (
-            <Tabs className="gap-6" defaultValue="to-review">
+            <Tabs className="gap-6" value={tab} onValueChange={handleTabChange}>
               <div className="w-full border-b">
                 <TabsList variant="line" className="flex gap-6">
                   <TabsTrigger value="to-review">
