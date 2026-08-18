@@ -6,7 +6,11 @@ import { type ReactNode, createContext, useContext, useMemo } from 'react';
 
 import type { ProposalTranslation } from '../ProposalPreview';
 import { TranslateBanner } from '../TranslateBanner';
-import type { RubricTranslatedMeta } from '../rubricTemplate';
+import {
+  type RubricTemplateSchema,
+  type RubricTranslatedMeta,
+  translateRubricTemplate,
+} from '../rubricTemplate';
 import {
   type ReviewsTarget,
   type RubricTarget,
@@ -187,4 +191,51 @@ export function ReviewTranslationScope({
  */
 export function useReviewTranslation(): ReviewTranslationValue {
   return useContext(ReviewTranslationContext) ?? NO_TRANSLATION;
+}
+
+/**
+ * Applies one phase's translated rubric copy to the authored template, for a
+ * caller holding the phase-keyed map itself rather than reading it from context
+ * (the admin summary, which produces the map).
+ */
+export function translateRubricForPhase(
+  template: RubricTemplateSchema,
+  rubricMetaByPhase: Record<string, RubricTranslatedMeta>,
+  phaseId: string | null | undefined,
+): RubricTemplateSchema {
+  return translateRubricTemplate(
+    template,
+    (phaseId ? rubricMetaByPhase[phaseId] : null) ?? null,
+  );
+}
+
+/**
+ * The rubric to render for a phase: the authored template with this screen's
+ * translation applied, or the template itself when nothing is translated.
+ *
+ * Every rubric surface needs exactly this, so it reads the context and memoizes
+ * here rather than each one repeating the lookup and its dep list. Overloaded so
+ * a caller with a non-null template keeps a non-null result.
+ */
+export function useTranslatedRubric(
+  template: RubricTemplateSchema,
+  phaseId: string | null | undefined,
+): RubricTemplateSchema;
+export function useTranslatedRubric(
+  template: RubricTemplateSchema | null | undefined,
+  phaseId: string | null | undefined,
+): RubricTemplateSchema | null;
+export function useTranslatedRubric(
+  template: RubricTemplateSchema | null | undefined,
+  phaseId: string | null | undefined,
+): RubricTemplateSchema | null {
+  const { rubricMetaByPhase } = useReviewTranslation();
+
+  return useMemo(
+    () =>
+      template
+        ? translateRubricForPhase(template, rubricMetaByPhase, phaseId)
+        : null,
+    [template, rubricMetaByPhase, phaseId],
+  );
 }

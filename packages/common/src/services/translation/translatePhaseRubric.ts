@@ -4,10 +4,8 @@ import { UnauthorizedError } from '../../utils';
 import { getInstance } from '../decision/getInstance';
 import { getPhaseRubricTemplate } from '../decision/utils/phaseTemplates';
 import type { SupportedLocale } from './locales';
-import { buildRubricEntries } from './rubricEntries';
-import { runTranslateBatch } from './runTranslateBatch';
+import { translateRubricEntries } from './rubricEntries';
 import type { TranslatedFields } from './translatedFields';
-import { unflattenTranslatedFields } from './translatedFields';
 
 /**
  * Translates a phase's rubric for a caller who holds no assignment against it.
@@ -45,20 +43,10 @@ export async function translatePhaseRubric({
     throw new UnauthorizedError("You don't have access to this rubric");
   }
 
-  const { prefix, entries } = buildRubricEntries({
+  return translateRubricEntries({
     instanceId: instance.id,
     phaseId,
     rubricTemplate: getPhaseRubricTemplate(instance.instanceData, phaseId),
-  });
-
-  if (entries.length === 0) {
-    return { translated: {}, sourceLocale: '', targetLocale };
-  }
-
-  const results = await runTranslateBatch(entries, targetLocale);
-
-  return {
-    ...unflattenTranslatedFields(prefix, results),
     targetLocale,
-  };
+  });
 }

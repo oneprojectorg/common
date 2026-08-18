@@ -61,40 +61,10 @@ export async function translateReviews({
     user,
   });
 
-  const freeTextKeys = getFreeTextCriterionKeys(rubricTemplate);
-  const entries: TranslatableEntry[] = [];
-
-  for (const { review } of reviews) {
-    const prefix = `review:${review.id}:`;
-
-    if (review.overallComment?.trim()) {
-      entries.push({
-        contentKey: `${prefix}${OVERALL_COMMENT_KEY}`,
-        text: review.overallComment,
-      });
-    }
-
-    for (const [criterionKey, rationale] of Object.entries(
-      review.reviewData.rationales,
-    )) {
-      if (rationale.trim()) {
-        entries.push({
-          contentKey: `${prefix}${RATIONALE_PREFIX}${criterionKey}`,
-          text: rationale,
-        });
-      }
-    }
-
-    for (const criterionKey of freeTextKeys) {
-      const answer = review.reviewData.answers[criterionKey];
-      if (typeof answer === 'string' && answer.trim()) {
-        entries.push({
-          contentKey: `${prefix}${ANSWER_PREFIX}${criterionKey}`,
-          text: answer,
-        });
-      }
-    }
-  }
+  const entries = buildReviewEntries(
+    reviews,
+    getFreeTextCriterionKeys(rubricTemplate),
+  );
 
   if (entries.length === 0) {
     return { translations: {}, sourceLocale: '', targetLocale };
@@ -132,6 +102,56 @@ export async function translateReviews({
   }
 
   return { translations, sourceLocale, targetLocale };
+}
+
+/**
+ * Every piece of reviewer prose across these reviews, keyed by review id and
+ * field so `parseReviewContentKey` can put the translations back.
+ *
+ * Blank text is skipped rather than sent: an empty note is not something to pay
+ * a provider for, and an empty result would overwrite nothing usefully.
+ */
+function buildReviewEntries(
+  reviews: Awaited<
+    ReturnType<typeof getProposalWithReviewAggregates>
+  >['reviews'],
+  freeTextKeys: string[],
+): TranslatableEntry[] {
+  const entries: TranslatableEntry[] = [];
+
+  for (const { review } of reviews) {
+    const prefix = `review:${review.id}:`;
+
+    if (review.overallComment?.trim()) {
+      entries.push({
+        contentKey: `${prefix}${OVERALL_COMMENT_KEY}`,
+        text: review.overallComment,
+      });
+    }
+
+    for (const [criterionKey, rationale] of Object.entries(
+      review.reviewData.rationales,
+    )) {
+      if (rationale.trim()) {
+        entries.push({
+          contentKey: `${prefix}${RATIONALE_PREFIX}${criterionKey}`,
+          text: rationale,
+        });
+      }
+    }
+
+    for (const criterionKey of freeTextKeys) {
+      const answer = review.reviewData.answers[criterionKey];
+      if (typeof answer === 'string' && answer.trim()) {
+        entries.push({
+          contentKey: `${prefix}${ANSWER_PREFIX}${criterionKey}`,
+          text: answer,
+        });
+      }
+    }
+  }
+
+  return entries;
 }
 
 /** `review:<uuid>:<fieldKey>` — the field key may itself contain colons. */

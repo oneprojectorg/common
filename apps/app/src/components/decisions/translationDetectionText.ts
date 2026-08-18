@@ -155,6 +155,38 @@ export const getReviewsDetectionText = (
   return joinSample(parts.map((part) => part.trim()));
 };
 
+/**
+ * Detection samples for a phase's authored hero copy.
+ *
+ * `additionalInfo` is included because `translateDecision` moves it and the
+ * phase pages render it in the "About this phase" bar — a phase whose only
+ * foreign copy lived there hid the control while a click would have translated
+ * it.
+ *
+ * Returned as separate samples rather than one joined string so each is judged
+ * on its own; a short foreign headline is not drowned out by a long English
+ * description.
+ */
+export const getPhaseDetectionSamples = (
+  phase:
+    | {
+        headline?: string | null;
+        description?: string | null;
+        additionalInfo?: string | null;
+      }
+    | null
+    | undefined,
+): string[] => [
+  phase?.headline ?? '',
+  phase?.description ?? '',
+  phase?.additionalInfo ?? '',
+];
+
+/** Detection samples for a list of resources (each title and description). */
+export const getResourceDetectionSamples = (
+  items: readonly { title: string; description?: string | null }[],
+): string[] => items.flatMap((item) => [item.title, item.description ?? '']);
+
 /** Plain-text sample of a decision overview (headline + description + body). */
 export const getOverviewDetectionText = ({
   headline,

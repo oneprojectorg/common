@@ -2,10 +2,8 @@ import type { User } from '@op/supabase/lib';
 
 import { assertReviewAssignmentContext } from '../decision/reviewHelpers';
 import type { SupportedLocale } from './locales';
-import { buildRubricEntries } from './rubricEntries';
-import { runTranslateBatch } from './runTranslateBatch';
+import { translateRubricEntries } from './rubricEntries';
 import type { TranslatedFields } from './translatedFields';
-import { unflattenTranslatedFields } from './translatedFields';
 
 /**
  * Translates the rubric a review assignment is scored against — every
@@ -35,20 +33,10 @@ export async function translateRubric({
   const { assignment, instance, rubricTemplate } =
     await assertReviewAssignmentContext({ assignmentId, user });
 
-  const { prefix, entries } = buildRubricEntries({
+  return translateRubricEntries({
     instanceId: instance.id,
     phaseId: assignment.phaseId,
     rubricTemplate,
-  });
-
-  if (entries.length === 0) {
-    return { translated: {}, sourceLocale: '', targetLocale };
-  }
-
-  const results = await runTranslateBatch(entries, targetLocale);
-
-  return {
-    ...unflattenTranslatedFields(prefix, results),
     targetLocale,
-  };
+  });
 }

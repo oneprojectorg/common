@@ -30,7 +30,7 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
-import { useId, useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,13 +41,12 @@ import {
   YES_NO_VALUES,
   getCriterionMaxPoints,
   inferCriterionType,
-  translateRubricTemplate,
 } from '../rubricTemplate';
 import { useRecommendationLabels } from '../useRecommendationLabels';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
-import { useReviewTranslation } from './ReviewTranslationContext';
+import { useTranslatedRubric } from './ReviewTranslationContext';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
@@ -110,18 +109,9 @@ function MyReviewForm() {
     isEditing,
     review,
   } = useReviewForm();
-  const { rubricMetaByPhase } = useReviewTranslation();
-
   // Display copy only — option values, bounds and the required list are
   // untouched, so the answers this form collects are identical either way.
-  const template = useMemo(
-    () =>
-      translateRubricTemplate(
-        authoredTemplate,
-        rubricMetaByPhase[assignment.phaseId] ?? null,
-      ),
-    [authoredTemplate, rubricMetaByPhase, assignment.phaseId],
-  );
+  const template = useTranslatedRubric(authoredTemplate, assignment.phaseId);
   const fields = compileRubricSchema(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(

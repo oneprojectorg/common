@@ -2,6 +2,10 @@ import type { TranslatableEntry } from '@op/translation';
 
 import { getTranslatableRubricCopy } from '../decision/rubricTranslatableCopy';
 import type { RubricTemplateSchema } from '../decision/types';
+import type { SupportedLocale } from './locales';
+import { runTranslateBatch } from './runTranslateBatch';
+import type { TranslatedFields } from './translatedFields';
+import { unflattenTranslatedFields } from './translatedFields';
 
 /**
  * The translatable copy of a rubric, keyed by phase.
@@ -18,7 +22,7 @@ import type { RubricTemplateSchema } from '../decision/types';
  * Covers the rubric's authored copy only — see `getTranslatableRubricCopy` for
  * what that excludes and why.
  */
-export function buildRubricEntries({
+function buildRubricEntries({
   instanceId,
   phaseId,
   rubricTemplate,
@@ -66,4 +70,48 @@ export function buildRubricEntries({
   }
 
   return { prefix, entries };
+}
+
+/**
+ * Builds a rubric's entries, translates them, and returns the per-criterion
+ * maps — everything the two rubric services do after resolving their own
+ * context.
+ *
+ * They differ only in how they reach the rubric and what they authorize against
+ * (`translateRubric` by assignment, `translatePhaseRubric` by phase). Sharing
+ * the body is what keeps their cache keys identical, which is the invariant that
+ * lets whichever screen asks first pay for the translation and the other read
+ * it.
+ */
+export async function translateRubricEntries({
+  instanceId,
+  phaseId,
+  rubricTemplate,
+  targetLocale,
+}: {
+  instanceId: string;
+  phaseId: string | null | undefined;
+  rubricTemplate: RubricTemplateSchema | null | undefined;
+  targetLocale: SupportedLocale;
+}): Promise<{
+  translated: TranslatedFields;
+  sourceLocale: string;
+  targetLocale: SupportedLocale;
+}> {
+  const { prefix, entries } = buildRubricEntries({
+    instanceId,
+    phaseId,
+    rubricTemplate,
+  });
+
+  if (entries.length === 0) {
+    return { translated: {}, sourceLocale: '', targetLocale };
+  }
+
+  const results = await runTranslateBatch(entries, targetLocale);
+
+  return {
+    ...unflattenTranslatedFields(prefix, results),
+    targetLocale,
+  };
 }
