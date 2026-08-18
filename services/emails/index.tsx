@@ -6,6 +6,13 @@ import z from 'zod';
 
 type RenderParameter = Parameters<typeof render>;
 
+export interface BatchEmailItem {
+  to: string;
+  subject: string;
+  from?: string;
+  component: () => React.JSX.Element;
+}
+
 // Reject CR/LF before passing addresses to nodemailer/Resend — prevents
 // SMTP header injection (extra Bcc:, Subject:, etc.) since z.string().email()
 // alone does not strip control chars from every accepted shape.
@@ -20,7 +27,14 @@ const safeEmailSchema = z
 // TLS handshake and kept Vercel waitUntil alive through the full SMTP
 // round-trip.
 const createPooledTransporter = () => {
-  const { RESEND_PASSWORD } = process.env;
+  const { EMAIL_SMTP_URL, RESEND_PASSWORD } = process.env;
+
+  // Local/self-hosted override: nodemailer accepts a connection URL directly,
+  // so a dev inbox (mailpit/inbucket) can stand in for Resend SMTP.
+  if (EMAIL_SMTP_URL) {
+    return nodemailer.createTransport(EMAIL_SMTP_URL);
+  }
+
   return nodemailer.createTransport({
     host: 'smtp.resend.com',
     port: 465,
@@ -44,6 +58,24 @@ const getTransporter = () => {
   return cachedTransporter;
 };
 
+/** Renders and sends one email through the configured SMTP transport. */
+const sendSmtpEmail = async ({
+  to,
+  from,
+  component,
+  subject,
+  renderOptions,
+}: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => {
+  const html = await render(component(), renderOptions);
+
+  return getTransporter().sendMail({
+    from: `${from ?? APP_NAME} <${genericEmail}>`,
+    to: safeEmailSchema.parse(to),
+    subject,
+    html,
+  });
+};
+
 export const OPNodemailer = async ({
   to,
   from,
@@ -59,18 +91,7 @@ export const OPNodemailer = async ({
   };
   renderOptions?: RenderParameter[1];
 }) => {
-  const safeEmail = safeEmailSchema.parse(to);
-
-  const htmlString = await render(component(), renderOptions);
-
-  const sendMailOptions = {
-    from: `${from ?? APP_NAME} <${genericEmail}>`,
-    to: safeEmail,
-    subject,
-    html: htmlString,
-  };
-
-  await getTransporter().sendMail(sendMailOptions);
+  await sendSmtpEmail({ to, from, component, subject, renderOptions });
 };
 
 // Initialize Resend client
@@ -87,22 +108,29 @@ const getResendClient = () => {
   return resendClient;
 };
 
-export interface BatchEmailItem {
-  to: string;
-  subject: string;
-  from?: string;
-  component: () => React.JSX.Element;
-}
-
 export const OPBatchSend = async (emails: BatchEmailItem[]) => {
   if (emails.length === 0) {
     return { data: [], errors: [] };
   }
 
-  const resend = getResendClient();
-  const batchSize = 100; // Resend's limit
   const results: any[] = [];
   const errors: { email: string; error: any }[] = [];
+
+  if (process.env.EMAIL_SMTP_URL) {
+    for (const email of emails) {
+      try {
+        const info = await sendSmtpEmail(email);
+        results.push({ id: info.messageId });
+      } catch (error) {
+        errors.push({ email: email.to, error });
+      }
+    }
+
+    return { data: results, errors };
+  }
+
+  const resend = getResendClient();
+  const batchSize = 100; // Resend's limit
 
   // Process emails in chunks of 100
   for (let i = 0; i < emails.length; i += batchSize) {
