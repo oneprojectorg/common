@@ -1,34 +1,11 @@
 'use client';
 
-import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
-import { trpc } from '@op/api/client';
-import {
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
-  type TranslatedFields,
-  parseTranslatedMeta,
-} from '@op/common/client';
-import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
-import {
-  type ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
-import { useTranslations } from '@/lib/i18n';
+import { type ReactNode, createContext, useContext, useMemo } from 'react';
 
 import type { ProposalTranslation } from '../ProposalPreview';
 import { TranslateBanner } from '../TranslateBanner';
 import type { RubricTranslatedMeta } from '../rubricTemplate';
-import {
-  getProposalDetectionText,
-  getRubricDetectionText,
-} from '../translationDetectionText';
+import { useProposalRubricTranslation } from '../useProposalRubricTranslation';
 import { useReviewForm } from './ReviewFormContext';
 
 interface ReviewTranslationValue {
@@ -61,136 +38,26 @@ export function ReviewTranslationProvider({
   assignmentId: string;
   children: ReactNode;
 }) {
-  const t = useTranslations();
-  const locale = useLocale();
   const { assignment, rubricTemplate } = useReviewForm();
-  const proposal = assignment.proposal;
 
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
-
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [translated, setTranslated] = useState<{
-    proposal?: TranslatedFields;
-    rubric?: TranslatedFields;
-    sourceLocale: string;
-  } | null>(null);
-
-  // Flipped true on Translate, false on View Original. A response that lands
-  // after the reviewer reverts checks this before writing state, so the revert
-  // can't be undone by an in-flight request (as in useTranslateDecision).
-  const translatingRef = useRef(false);
-
-  // One banner drives both requests, so they succeed or fail as one. A failure
-  // discards whatever the other request returned, and clearing the ref makes
-  // its late success a no-op via the guards below. Keeping a partial result
-  // would hide the banner — the only retry control — with one pane still
-  // untranslated, and a rubric-only success renders no "View original" either,
-  // stranding the screen until a reload.
-  const onTranslateError = useCallback(() => {
-    translatingRef.current = false;
-    setTranslated(null);
-    toast.error(t('Failed to translate content'));
-  }, [t]);
-
-  const translateProposalMutation =
-    trpc.translation.translateProposal.useMutation({
-      onSuccess: (data) => {
-        if (!translatingRef.current) {
-          return;
-        }
-        setTranslated((prev) => ({
-          ...prev,
-          proposal: data.translated,
-          sourceLocale: prev?.sourceLocale || data.sourceLocale,
-        }));
-      },
-      onError: onTranslateError,
-    });
-
-  const translateRubricMutation = trpc.translation.translateRubric.useMutation({
-    onSuccess: (data) => {
-      if (!translatingRef.current) {
-        return;
-      }
-      setTranslated((prev) => ({
-        ...prev,
-        rubric: data.translated,
-        sourceLocale: prev?.sourceLocale || data.sourceLocale,
-      }));
-    },
-    onError: onTranslateError,
+  const {
+    proposal,
+    rubricMeta,
+    showBanner,
+    isTranslating,
+    targetLanguageName,
+    handleTranslate,
+    dismissBanner,
+  } = useProposalRubricTranslation({
+    proposal: assignment.proposal,
+    rubricTemplate,
+    rubricTarget: { assignmentId },
   });
 
-  // One sample per surface rather than one concatenated blob: a rubric authored
-  // in Spanish must offer translation even when the proposal is in English, and
-  // vice versa.
-  const samples = useMemo(
-    () => [
-      getProposalDetectionText(proposal),
-      getRubricDetectionText(rubricTemplate),
-    ],
-    [proposal, rubricTemplate],
-  );
-  const needsTranslation = useAnyContentNeedsTranslation(samples);
-
-  const handleTranslate = useCallback(() => {
-    if (!supportedLocale) {
-      return;
-    }
-    translatingRef.current = true;
-    translateProposalMutation.mutate({
-      profileId: proposal.profileId,
-      targetLocale: supportedLocale,
-    });
-    translateRubricMutation.mutate({
-      assignmentId,
-      targetLocale: supportedLocale,
-    });
-  }, [
-    assignmentId,
-    proposal.profileId,
-    supportedLocale,
-    translateProposalMutation,
-    translateRubricMutation,
-  ]);
-
-  const handleViewOriginal = useCallback(() => {
-    translatingRef.current = false;
-    setTranslated(null);
-  }, []);
-
-  const languageNames = useMemo(
-    () => new Intl.DisplayNames([locale], { type: 'language' }),
-    [locale],
-  );
-  const sourceLanguageName = translated
-    ? (languageNames.of(
-        translated.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      ) ?? '')
-    : '';
-
   const value = useMemo<ReviewTranslationValue>(
-    () => ({
-      proposal: translated?.proposal
-        ? {
-            htmlContent: translated.proposal,
-            sourceLanguageName,
-            onViewOriginal: handleViewOriginal,
-          }
-        : undefined,
-      rubricMeta: translated?.rubric
-        ? parseTranslatedMeta(translated.rubric)
-        : null,
-    }),
-    [translated, sourceLanguageName, handleViewOriginal],
+    () => ({ proposal, rubricMeta }),
+    [proposal, rubricMeta],
   );
-
-  const showBanner =
-    !!supportedLocale && needsTranslation && !bannerDismissed && !translated;
 
   return (
     <ReviewTranslationContext.Provider value={value}>
@@ -199,12 +66,9 @@ export function ReviewTranslationProvider({
       {showBanner && (
         <TranslateBanner
           onTranslate={handleTranslate}
-          onDismiss={() => setBannerDismissed(true)}
-          isTranslating={
-            translateProposalMutation.isPending ||
-            translateRubricMutation.isPending
-          }
-          languageName={languageNames.of(locale) ?? locale}
+          onDismiss={dismissBanner}
+          isTranslating={isTranslating}
+          languageName={targetLanguageName}
         />
       )}
     </ReviewTranslationContext.Provider>
