@@ -10,9 +10,12 @@ import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
 import { listProposalsRouter } from './list';
 import { listProposalLocationsRouter } from './listProposalLocations';
+import { listProposalRelationshipsRouter } from './listProposalRelationships';
 import { listWithReviewAggregatesRouter } from './listWithReviewAggregates';
+import { mergeProposalsRouter } from './mergeProposals';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
+import { unmergeProposalRouter } from './unmergeProposal';
 import { updateProposalRouter } from './update';
 
 export const proposalsRouter = mergeRouters(
@@ -25,7 +28,10 @@ export const proposalsRouter = mergeRouters(
   getProposalWithReviewAggregatesRouter,
   listProposalsRouter,
   listProposalLocationsRouter,
+  listProposalRelationshipsRouter,
   listWithReviewAggregatesRouter,
+  mergeProposalsRouter,
+  unmergeProposalRouter,
   submitProposalRouter,
   updateProposalRouter,
   deleteProposalRouter,

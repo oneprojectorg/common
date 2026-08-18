@@ -79,6 +79,16 @@ export {
   type ProposalSelection,
 } from './services/decision/schemas/selection';
 export {
+  mergeProposalsInputSchema,
+  unmergeProposalInputSchema,
+  listProposalRelationshipsInputSchema,
+  proposalRelationshipListSchema,
+  type MergeProposalsInput,
+  type UnmergeProposalInput,
+  type ListProposalRelationshipsInput,
+  type ProposalRelationshipList,
+} from './services/decision/schemas/proposalRelationships';
+export {
   profileUserSchema,
   profileUserWithProfileSchema,
   profileUserWithRolesSchema,

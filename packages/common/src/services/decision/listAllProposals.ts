@@ -44,14 +44,15 @@ import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { proposalProfileColumns } from './listProposals';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
 /**
  * Returns proposals on the instance for the "All proposals" tab on the
- * results page. Drafts, rejected, duplicate, and soft-deleted proposals
- * are excluded for everyone. Non-admin members additionally see only
+ * results page. Drafts, rejected, duplicate, merged, and soft-deleted
+ * proposals are excluded for everyone. Non-admin members additionally see only
  * visible proposals; decision admins also see hidden proposals so they
  * can audit and report on what was submitted to the process.
  */
@@ -178,6 +179,7 @@ export const listAllProposals = async ({
         ProposalStatus.REJECTED,
         ProposalStatus.DUPLICATE,
       ]),
+      notSuperseded({ proposalId: t.id, processInstanceId }),
       isNull(t.deletedAt),
       // Moderation-detached (CSAM) proposals are invisible to everyone —
       // admins included. No source of proposal-facing UI shows detached rows.

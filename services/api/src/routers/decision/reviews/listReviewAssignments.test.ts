@@ -4,10 +4,12 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
+  ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalReviewState,
   proposalCategories,
+  proposalRelationships,
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
@@ -886,6 +888,55 @@ describe.concurrent('listReviewAssignments', () => {
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
     });
+  });
+
+  it('drops an assignment whose proposal was merged away', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await createReviewPhaseContext(testData);
+    const merged = await testData.createReviewAssignment({
+      context,
+      title: 'Merged Away Proposal',
+    });
+    // Same context, so the same reviewer holds both assignments.
+    const survivor = await testData.createReviewAssignment({
+      context,
+      reviewer: merged.reviewer,
+      title: 'Surviving Proposal',
+    });
+    const instanceId = context.instance.instance.id;
+
+    for (const created of [merged, survivor]) {
+      seedProposalCollab(created.proposal);
+    }
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      merged.reviewer.email,
+    );
+
+    const before = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: instanceId,
+    });
+    expect(before.assignments).toHaveLength(2);
+
+    // The edge directly rather than through mergeProposals: what's under test is
+    // the read, and the assignment already exists at this point either way.
+    await db.insert(proposalRelationships).values({
+      processInstanceId: instanceId,
+      sourceProposalId: merged.proposal.id,
+      targetProposalId: survivor.proposal.id,
+      relationshipType: ProposalRelationshipType.MERGED,
+    });
+
+    const after = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: instanceId,
+    });
+
+    expect(
+      after.assignments.map((entry) => entry.assignment.proposal.id),
+    ).toEqual([survivor.proposal.id]);
   });
 });
 
