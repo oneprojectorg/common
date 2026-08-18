@@ -4,7 +4,10 @@ import {
   ProposalReviewState,
   proposalReviews,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import { ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
@@ -83,8 +86,27 @@ export async function updateReview({
     );
   }
 
+  const processInstanceId = context.assignment.processInstanceId;
+
+  waitUntil(
+    event
+      .send({
+        name: Events.reviewUpdated.name,
+        data: {
+          assignmentId,
+          processInstanceId,
+        },
+      })
+      .catch((error) => {
+        logger.error('Failed to send review updated event', {
+          assignmentId,
+          error,
+        });
+      }),
+  );
+
   return {
     review: updatedReview,
-    processInstanceId: context.assignment.processInstanceId,
+    processInstanceId,
   };
 }

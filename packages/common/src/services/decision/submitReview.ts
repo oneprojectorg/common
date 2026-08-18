@@ -7,6 +7,8 @@ import {
   proposalReviewAssignments,
   proposalReviews,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { count } from 'drizzle-orm';
@@ -87,6 +89,23 @@ export async function submitReview({
   });
 
   const processInstanceId = context.assignment.processInstanceId;
+
+  waitUntil(
+    event
+      .send({
+        name: Events.reviewSubmitted.name,
+        data: {
+          assignmentId,
+          processInstanceId,
+        },
+      })
+      .catch((error) => {
+        logger.error('Failed to send review submitted event', {
+          assignmentId,
+          error,
+        });
+      }),
+  );
 
   const scoredCriterionKeys = getRubricScoringInfo(context.rubricTemplate)
     .criteria.filter((criterion) => criterion.scored)

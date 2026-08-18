@@ -20,7 +20,15 @@ const safeEmailSchema = z
 // TLS handshake and kept Vercel waitUntil alive through the full SMTP
 // round-trip.
 const createPooledTransporter = () => {
-  const { RESEND_PASSWORD } = process.env;
+  const { RESEND_PASSWORD, EMAIL_SMTP_URL } = process.env;
+
+  // Local-dev escape hatch: point sends at a mail catcher (e.g. the Supabase
+  // Inbucket SMTP, smtp://127.0.0.1:54325) instead of Resend. Never set in
+  // deployed environments.
+  if (EMAIL_SMTP_URL) {
+    return nodemailer.createTransport(EMAIL_SMTP_URL);
+  }
+
   return nodemailer.createTransport({
     host: 'smtp.resend.com',
     port: 465,
@@ -50,6 +58,9 @@ export const OPNodemailer = async ({
   component,
   subject,
   renderOptions,
+  headers,
+  messageId,
+  references,
 }: {
   to: string;
   from?: string;
@@ -58,6 +69,9 @@ export const OPNodemailer = async ({
     (): React.JSX.Element;
   };
   renderOptions?: RenderParameter[1];
+  headers?: Record<string, string>;
+  messageId?: string;
+  references?: string;
 }) => {
   const safeEmail = safeEmailSchema.parse(to);
 
@@ -68,6 +82,9 @@ export const OPNodemailer = async ({
     to: safeEmail,
     subject,
     html: htmlString,
+    ...(headers ? { headers } : {}),
+    ...(messageId ? { messageId } : {}),
+    ...(references ? { references } : {}),
   };
 
   await getTransporter().sendMail(sendMailOptions);
@@ -144,6 +161,7 @@ export * from './emails/ReactionNotificationEmail';
 export * from './emails/ProposalSubmittedEmail';
 export * from './emails/PhaseTransitionEmail';
 export * from './emails/VoteSubmittedEmail';
+export * from './emails/ReviewReceiptEmail';
 export * from './emails/RevisionResubmittedEmail';
 export * from './emails/RevisionRequestedEmail';
 export * from './emails/DecisionUpdateNotificationEmail';

@@ -4,7 +4,8 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { describe, expect, it } from 'vitest';
+import { event } from '@op/events';
+import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
@@ -210,6 +211,44 @@ describe.concurrent('updateReview', () => {
         reviewData: { answers: { impact: 2 }, rationales: {} },
       }),
     ).rejects.toThrow("don't have access to this review assignment");
+  });
+});
+
+// Sequential on purpose: the emission assertions read the shared `event.send`
+// mock, which the global beforeEach clears — concurrent siblings could wipe
+// the recorded call between the mutation and the assertion.
+describe('updateReview event emission', () => {
+  it('emits review/updated with the assignment and instance ids', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const mockSend = event.send as unknown as MockInstance;
+
+    await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 2 },
+        rationales: {},
+      },
+    });
+
+    const updatedCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string }).name === 'review/updated' &&
+        (call[0] as { data: { assignmentId: string } }).data.assignmentId ===
+          created.assignment.id,
+    );
+    expect(updatedCalls).toHaveLength(1);
+    expect(updatedCalls[0]![0]).toMatchObject({
+      name: 'review/updated',
+      data: {
+        assignmentId: created.assignment.id,
+        processInstanceId: created.context.instance.instance.id,
+      },
+    });
   });
 });
 
