@@ -1,48 +1,123 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import type { ReviewTranslation } from '@op/common/client';
 import { type ReactNode, createContext, useContext, useMemo } from 'react';
 
 import type { ProposalTranslation } from '../ProposalPreview';
 import { TranslateBanner } from '../TranslateBanner';
 import type { RubricTranslatedMeta } from '../rubricTemplate';
-import { useProposalRubricTranslation } from '../useProposalRubricTranslation';
+import {
+  type ReviewsTarget,
+  type RubricTarget,
+  useProposalRubricTranslation,
+} from '../useProposalRubricTranslation';
 import { useReviewForm } from './ReviewFormContext';
+import type { PreviousReviewPhase } from './ReviewTabs';
 
 interface ReviewTranslationValue {
   /** Passed straight to `ProposalPreview`; undefined until translated. */
   proposal?: ProposalTranslation;
-  /** Applied to the rubric template; null until translated. */
-  rubricMeta: RubricTranslatedMeta | null;
+  /**
+   * Rubric copy per phase id. Keyed rather than single because the reviewer's
+   * screen can show an earlier phase's rubric in a "Reviews from {phase}" tab.
+   */
+  rubricMetaByPhase: Record<string, RubricTranslatedMeta>;
+  /** Reviewer prose per review id — ids are unique, so no phase key is needed. */
+  reviewTranslations: Record<string, ReviewTranslation>;
 }
 
 /** Stable identity so consumers outside a provider don't re-render on it. */
-const NO_TRANSLATION: ReviewTranslationValue = { rubricMeta: null };
+const NO_TRANSLATION: ReviewTranslationValue = {
+  rubricMetaByPhase: {},
+  reviewTranslations: {},
+};
 
 const ReviewTranslationContext = createContext<ReviewTranslationValue | null>(
   null,
 );
 
 /**
- * Machine translation for the review screen — the proposal in the left pane and
- * the rubric in the right one, translated together by the single banner this
- * mounts.
+ * Machine translation for the review screen — the proposal in the left pane, the
+ * rubric in the right one, and any peer reviews shown beside them, translated
+ * together by the single banner this mounts.
  *
- * The two panes are siblings under `SplitPane`, so the state lives here rather
- * than in either of them: one "Translate to X" click has to move both, and
- * "View original" has to put both back.
+ * The panes are siblings under `SplitPane`, so the state lives here rather than
+ * in either of them: one "Translate to X" click has to move all of them, and
+ * "View original" has to put them all back.
  */
 export function ReviewTranslationProvider({
   assignmentId,
+  openReviews,
+  previousReviewPhases,
   children,
 }: {
   assignmentId: string;
+  /** Whether this phase's peer reviews are readable — they are a translate target only then. */
+  openReviews: boolean;
+  previousReviewPhases: PreviousReviewPhase[];
   children: ReactNode;
 }) {
   const { assignment, rubricTemplate } = useReviewForm();
 
+  // The same gate `ReviewRubricForm` applies to the tabs themselves: with the
+  // flag off no peer review is reachable, so translating one would be paying
+  // for copy this screen cannot show.
+  const reviewsV2Enabled = useFeatureFlag('reviews-v2') ?? false;
+
+  const previousPhaseIds = useMemo(
+    () =>
+      reviewsV2Enabled ? previousReviewPhases.map((phase) => phase.id) : [],
+    [previousReviewPhases, reviewsV2Enabled],
+  );
+
+  /** Phases whose peer reviews this screen can show. */
+  const peerPhaseIds = useMemo(
+    () => [
+      ...(reviewsV2Enabled && openReviews ? [assignment.phaseId] : []),
+      ...previousPhaseIds,
+    ],
+    [assignment.phaseId, openReviews, previousPhaseIds, reviewsV2Enabled],
+  );
+
+  const rubricTargets = useMemo<RubricTarget[]>(
+    () => [
+      { assignmentId, phaseId: assignment.phaseId },
+      // An earlier phase scores against its own rubric, which this screen shows
+      // above that phase's reviews — addressed by phase, since the reviewer
+      // holds no assignment in it.
+      ...previousPhaseIds.map((phaseId) => ({
+        processInstanceId: assignment.processInstanceId,
+        phaseId,
+      })),
+    ],
+    [
+      assignmentId,
+      assignment.phaseId,
+      assignment.processInstanceId,
+      previousPhaseIds,
+    ],
+  );
+
+  const reviewsTargets = useMemo<ReviewsTarget[]>(
+    () =>
+      peerPhaseIds.map((phaseId) => ({
+        processInstanceId: assignment.processInstanceId,
+        proposalId: assignment.proposal.id,
+        phaseId,
+      })),
+    [assignment.processInstanceId, assignment.proposal.id, peerPhaseIds],
+  );
+
+  const rubricTemplates = useMemo(
+    () => ({ [assignment.phaseId]: rubricTemplate }),
+    [assignment.phaseId, rubricTemplate],
+  );
+
   const {
     proposal,
-    rubricMeta,
+    rubricMetaByPhase,
+    reviewTranslations,
     showBanner,
     isTranslating,
     targetLanguageName,
@@ -50,17 +125,20 @@ export function ReviewTranslationProvider({
     dismissBanner,
   } = useProposalRubricTranslation({
     proposal: assignment.proposal,
-    rubricTemplate,
-    rubricTarget: { assignmentId },
+    rubricTemplates,
+    rubricTargets,
+    reviewsTargets,
+    // Peer reviews load lazily, once their tab is opened, so this screen has
+    // none in hand to detect on — the banner is raised by the proposal and the
+    // rubric, and a click then covers the tabs too.
   });
 
-  const value = useMemo<ReviewTranslationValue>(
-    () => ({ proposal, rubricMeta }),
-    [proposal, rubricMeta],
-  );
-
   return (
-    <ReviewTranslationContext.Provider value={value}>
+    <ReviewTranslationScope
+      proposal={proposal}
+      rubricMetaByPhase={rubricMetaByPhase}
+      reviewTranslations={reviewTranslations}
+    >
       {children}
 
       {showBanner && (
@@ -71,6 +149,33 @@ export function ReviewTranslationProvider({
           languageName={targetLanguageName}
         />
       )}
+    </ReviewTranslationScope>
+  );
+}
+
+/**
+ * Shares a translation the host already holds with the review surfaces below it,
+ * without mounting a second banner of its own.
+ *
+ * The admin review summary owns both the banner and the rubric it translates,
+ * and the reviews panel and the reviewer's own form both render inside that
+ * screen. Without this they read an empty context and rendered in the authored
+ * language while the summary around them stayed translated.
+ */
+export function ReviewTranslationScope({
+  proposal,
+  rubricMetaByPhase,
+  reviewTranslations,
+  children,
+}: ReviewTranslationValue & { children: ReactNode }) {
+  const value = useMemo<ReviewTranslationValue>(
+    () => ({ proposal, rubricMetaByPhase, reviewTranslations }),
+    [proposal, rubricMetaByPhase, reviewTranslations],
+  );
+
+  return (
+    <ReviewTranslationContext.Provider value={value}>
+      {children}
     </ReviewTranslationContext.Provider>
   );
 }

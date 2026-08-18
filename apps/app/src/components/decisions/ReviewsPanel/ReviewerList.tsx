@@ -16,6 +16,10 @@ import { LuChevronRight } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
+import {
+  type RecommendationLabels,
+  useRecommendationLabels,
+} from '../useRecommendationLabels';
 import { AverageScoreBar } from './AverageScoreBar';
 import type { OwnReviewEntry, RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
@@ -56,12 +60,24 @@ export function ReviewerList({
     [hasOverallRecommendation, rubricTemplate],
   );
 
+  // The group headings are our copy, not the admin's, so they come from the
+  // dictionary; a value we don't recognize falls back to what the schema holds.
+  const recommendation = useRecommendationLabels();
   const groups = useMemo(() => {
     if (!hasOverallRecommendation) {
       return null;
     }
-    return getReviewsGroupedByRecommendation(reviews, recommendationOptions);
-  }, [reviews, hasOverallRecommendation, recommendationOptions]);
+    return getReviewsGroupedByRecommendation(
+      reviews,
+      recommendationOptions,
+      recommendation.label,
+    );
+  }, [
+    reviews,
+    hasOverallRecommendation,
+    recommendationOptions,
+    recommendation,
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -147,9 +163,12 @@ interface ReviewerGroup {
 function getReviewsGroupedByRecommendation(
   reviews: SubmittedReviewItem[],
   options: ReturnType<typeof parseSchemaOptions>,
+  localizedLabel: RecommendationLabels['label'],
 ): ReviewerGroup[] {
   const order = options.map((o) => String(o.value));
-  const titles = new Map(options.map((o) => [String(o.value), o.title]));
+  const titles = new Map(
+    options.map((o) => [String(o.value), localizedLabel(o.value) ?? o.title]),
+  );
 
   const buckets = new Map<string, SubmittedReviewItem[]>();
   for (const value of order) {

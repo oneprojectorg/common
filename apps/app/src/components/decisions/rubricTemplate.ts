@@ -17,6 +17,7 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   RECOMMENDATION_OPTION,
   isOverallRecommendationField,
+  isYesNoCriterionSchema,
 } from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
 
@@ -205,14 +206,13 @@ export function inferCriterionType(
     }
 
     if (schema.type === 'string') {
-      const values = getOneOfEntries(schema).map((e) => e.const);
-      if (
-        values.length === 2 &&
-        values.includes(YES_NO_VALUES.yes) &&
-        values.includes(YES_NO_VALUES.no)
-      ) {
+      // Shared with the translation layer, which has to know that a yes/no
+      // criterion's option labels are ours and not the admin's.
+      if (isYesNoCriterionSchema(schema)) {
         return 'yes_no';
       }
+
+      const values = getOneOfEntries(schema).map((e) => e.const);
 
       // Any other string dropdown with options is a single-select
       // "multiple choice" criterion. Note the overall recommendation field
@@ -624,18 +624,42 @@ export function translateRubricTemplate(
       continue;
     }
 
-    translated = updateProperty(translated, criterionId, (schema) => ({
-      ...schema,
-      ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
-      ...(Array.isArray(schema.oneOf) && (optionLabels || optionDescriptions)
-        ? {
-            oneOf: schema.oneOf.map((entry) =>
-              translateOptionEntry(entry, optionLabels, optionDescriptions),
-            ),
-          }
-        : {}),
-    }));
+    const hasOptionCopy = !!(optionLabels || optionDescriptions);
+
+    translated = updateProperty(translated, criterionId, (schema) => {
+      const translateOptions = (entries: (JSONSchema7 | boolean)[]) =>
+        entries.map((entry) =>
+          translateOptionEntry(entry, optionLabels, optionDescriptions),
+        );
+
+      // Options can also hang off `items` (an array-valued field). Rewritten
+      // here as well so everything `getTranslatableRubricCopy` collects can be
+      // put back — a translation the sender paid for and the renderer dropped
+      // would read as authored copy for no visible reason.
+      const itemSchema =
+        schema.items !== undefined &&
+        !Array.isArray(schema.items) &&
+        isSchemaObject(schema.items)
+          ? schema.items
+          : undefined;
+
+      return {
+        ...schema,
+        ...(title ? { title } : {}),
+        ...(description ? { description } : {}),
+        ...(hasOptionCopy && Array.isArray(schema.oneOf)
+          ? { oneOf: translateOptions(schema.oneOf) }
+          : {}),
+        ...(hasOptionCopy && Array.isArray(itemSchema?.oneOf)
+          ? {
+              items: {
+                ...itemSchema,
+                oneOf: translateOptions(itemSchema.oneOf),
+              },
+            }
+          : {}),
+      };
+    });
   }
 
   return translated;
@@ -678,6 +702,14 @@ export function hasOverallRecommendation(
   return OVERALL_RECOMMENDATION_KEY in (template.properties ?? {});
 }
 
+/**
+ * Adds the criterion, with English copy that is never rendered: the prompt and
+ * the option labels are ours, so every screen reads them from the dictionary
+ * through `useRecommendationLabels` and the translation pipeline skips the field
+ * (see `getTranslatableRubricCopy`). The titles below are kept so the schema is
+ * a valid, self-describing dropdown; don't localize them at authoring time, or
+ * the admin's locale is frozen into the rubric every reviewer then reads.
+ */
 export function enableOverallRecommendation(
   template: RubricTemplateSchema,
 ): RubricTemplateSchema {

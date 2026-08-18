@@ -17,6 +17,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
+import { ReviewTranslationScope } from '../Review/ReviewTranslationContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { TranslateBanner } from '../TranslateBanner';
@@ -86,9 +87,25 @@ export function ReviewSummaryView({
   // assignment reads are self-scoped so it cannot borrow a reviewer's. Every
   // reviewer of the phase scores against this one rubric, so both addressings
   // land on the same cache entry.
+  const rubricTemplates = useMemo(
+    () => (phaseId ? { [phaseId]: rubricTemplate } : {}),
+    [phaseId, rubricTemplate],
+  );
+  const rubricTargets = useMemo(
+    () => (phaseId ? [{ processInstanceId: instanceId, phaseId }] : []),
+    [instanceId, phaseId],
+  );
+  // The reviews are the point of this screen, so their prose is a target too —
+  // addressed exactly as the aggregates query above, which is also what gates it.
+  const reviewsTargets = useMemo(
+    () => [{ processInstanceId: instanceId, proposalId, phaseId }],
+    [instanceId, proposalId, phaseId],
+  );
+
   const {
     proposal: proposalTranslation,
-    rubricMeta,
+    rubricMetaByPhase,
+    reviewTranslations,
     showBanner,
     isTranslating,
     targetLanguageName,
@@ -96,16 +113,21 @@ export function ReviewSummaryView({
     dismissBanner,
   } = useProposalRubricTranslation({
     proposal,
-    rubricTemplate,
-    rubricTarget: phaseId ? { processInstanceId: instanceId, phaseId } : null,
+    rubricTemplates,
+    rubricTargets,
+    reviewsTargets,
+    reviews: proposalWithReviews.reviews,
   });
 
   const displayedRubricTemplate = useMemo(
     () =>
       rubricTemplate
-        ? translateRubricTemplate(rubricTemplate, rubricMeta)
+        ? translateRubricTemplate(
+            rubricTemplate,
+            (phaseId ? rubricMetaByPhase[phaseId] : null) ?? null,
+          )
         : null,
-    [rubricTemplate, rubricMeta],
+    [rubricTemplate, rubricMetaByPhase, phaseId],
   );
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useQueryState(
@@ -238,26 +260,37 @@ export function ReviewSummaryView({
             {isOwnFormOpen ? t('Review Proposal') : t('Review Progress')}
           </span>
 
-          {isOwnFormOpen && ownAssignment ? (
-            <OwnReviewPanel
-              decisionSlug={decisionSlug}
-              assignmentId={ownAssignment.assignment.id}
-              reviewSettings={reviewSettings}
-              onBack={closeOwnForm}
-              onCompleted={handleOwnReviewCompleted}
-              initiallyEditing={ownReviewIsSubmitted}
-              onStatusChange={setOwnFormStatus}
-            />
-          ) : (
-            <ReviewsPanel
-              proposalWithReviews={proposalWithReviews}
-              rubricTemplate={displayedRubricTemplate}
-              selectedAssignmentId={selectedAssignmentId}
-              onSelectAssignment={setSelectedAssignmentId}
-              title={isPhaseInProgress ? t('Review Progress') : undefined}
-              ownReview={ownReview}
-            />
-          )}
+          {/* Both branches read the translation from context — the reviewers'
+              prose in the panel, the rubric in the form — and this screen, not
+              either of them, owns the banner that produced it. Without the scope
+              the panel showed untranslated reviews under a translated rubric,
+              and opening the own-review form snapped it back to the authored
+              language. */}
+          <ReviewTranslationScope
+            rubricMetaByPhase={rubricMetaByPhase}
+            reviewTranslations={reviewTranslations}
+          >
+            {isOwnFormOpen && ownAssignment ? (
+              <OwnReviewPanel
+                decisionSlug={decisionSlug}
+                assignmentId={ownAssignment.assignment.id}
+                reviewSettings={reviewSettings}
+                onBack={closeOwnForm}
+                onCompleted={handleOwnReviewCompleted}
+                initiallyEditing={ownReviewIsSubmitted}
+                onStatusChange={setOwnFormStatus}
+              />
+            ) : (
+              <ReviewsPanel
+                proposalWithReviews={proposalWithReviews}
+                rubricTemplate={displayedRubricTemplate}
+                selectedAssignmentId={selectedAssignmentId}
+                onSelectAssignment={setSelectedAssignmentId}
+                title={isPhaseInProgress ? t('Review Progress') : undefined}
+                ownReview={ownReview}
+              />
+            )}
+          </ReviewTranslationScope>
         </SplitPane.Pane>
       </SplitPane>
 

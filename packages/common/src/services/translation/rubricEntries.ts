@@ -1,6 +1,6 @@
 import type { TranslatableEntry } from '@op/translation';
 
-import { parseSchemaOptions } from '../decision/proposalDataSchema';
+import { getTranslatableRubricCopy } from '../decision/rubricTranslatableCopy';
 import type { RubricTemplateSchema } from '../decision/types';
 
 /**
@@ -14,6 +14,9 @@ import type { RubricTemplateSchema } from '../decision/types';
  * The keys match how `translateProposal` keys a proposal's template metadata
  * (`field_title:` / `field_desc:` / `option:` / `option_desc:`), so callers run
  * the result through the shared `parseTranslatedMeta`.
+ *
+ * Covers the rubric's authored copy only — see `getTranslatableRubricCopy` for
+ * what that excludes and why.
  */
 export function buildRubricEntries({
   instanceId,
@@ -27,23 +30,26 @@ export function buildRubricEntries({
   const prefix = `rubric:${instanceId}:${phaseId}:`;
   const entries: TranslatableEntry[] = [];
 
-  for (const [criterionKey, property] of Object.entries(
-    rubricTemplate?.properties ?? {},
-  )) {
-    if (property.title) {
+  for (const {
+    criterionKey,
+    title,
+    description,
+    options,
+  } of getTranslatableRubricCopy(rubricTemplate)) {
+    if (title) {
       entries.push({
         contentKey: `${prefix}field_title:${criterionKey}`,
-        text: property.title,
+        text: title,
       });
     }
-    if (property.description) {
+    if (description) {
       entries.push({
         contentKey: `${prefix}field_desc:${criterionKey}`,
-        text: property.description,
+        text: description,
       });
     }
 
-    for (const option of parseSchemaOptions(property)) {
+    for (const option of options) {
       if (option.title) {
         entries.push({
           contentKey: `${prefix}option:${criterionKey}:${option.value}`,

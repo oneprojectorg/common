@@ -6,6 +6,8 @@ export { translateProposal } from './translateProposal';
 export { translateProposals } from './translateProposals';
 export type { ProposalTranslation } from './translateProposal';
 export { translatePhaseRubric } from './translatePhaseRubric';
+export { translateReviews } from './translateReviews';
+export type { ReviewTranslation } from './translateReviews';
 export { translateRubric } from './translateRubric';
 export { translateResources } from './translateResources';
 export type { ResourceTranslation } from './translateResources';
