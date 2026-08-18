@@ -72,3 +72,37 @@ const WholeItemDemo = () => {
 export const WholeItemDrag: Story = {
   render: () => <WholeItemDemo />,
 };
+
+// Rows are both the drag target and the scroll surface here. Check with device
+// emulation — a mouse wheel scrolls regardless of the rows' `touch-action`.
+const WholeItemDragInScrollingListDemo = () => {
+  const [phases, setPhases] = useState(
+    Array.from({ length: 12 }, (_, index) => ({
+      id: `phase-${index}`,
+      name: `Phase ${index + 1}`,
+    })),
+  );
+
+  return (
+    <div className="h-64 w-80 overflow-y-auto rounded-lg border p-2">
+      <Sortable
+        items={phases}
+        onChange={setPhases}
+        dragTrigger="item"
+        aria-label="Process phases"
+        className="gap-2"
+        getItemLabel={(phase) => phase.name}
+      >
+        {(phase) => (
+          <div className="rounded-lg border bg-background p-3 text-base">
+            {phase.name}
+          </div>
+        )}
+      </Sortable>
+    </div>
+  );
+};
+
+export const WholeItemDragInScrollingList: Story = {
+  render: () => <WholeItemDragInScrollingListDemo />,
+};
