@@ -1,6 +1,5 @@
 'use client';
 
-import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
@@ -46,6 +45,10 @@ import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { StickyFilterBar } from './StickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
+import {
+  useDecisionNeedsTranslation,
+  useRegisterTranslationSamples,
+} from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
@@ -116,7 +119,12 @@ export function ReviewAssignmentsList({
     () => assignedProposals.map(getProposalDetectionText),
     [assignedProposals],
   );
-  const needsTranslation = useAnyContentNeedsTranslation(proposalSamples);
+  // A review phase mounts this tab and unmounts the "Other proposals" list
+  // beside it, so this is the only proposal surface on the screen. Detecting
+  // from the queue alone left everything else the control translates — the
+  // decision copy, the updates, the resources — with no way to reach it.
+  useRegisterTranslationSamples('review-assignments', proposalSamples);
+  const needsTranslation = useDecisionNeedsTranslation();
   const translation = useTranslateDecision({
     proposals: assignedProposals,
     decisionProfileId,

@@ -1,6 +1,5 @@
 'use client';
 
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import {
   canEngageWithProposals,
   useProposalEngagement,
@@ -12,19 +11,10 @@ import {
   type Proposal,
   ProposalReviewRequestState,
   type ProposalSelection,
-  type ProposalTranslation,
-  type SupportedLocale,
 } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
-import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -35,7 +25,7 @@ import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
 import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
-import { getProposalDetectionText } from './translationDetectionText';
+import { useTranslateProposal } from './useTranslateProposal';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
 const DOCUMENT_POLL_INTERVAL_MS = 2500;
@@ -60,7 +50,6 @@ export function ProposalView({
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
-  const locale = useLocale();
 
   // When the document fetch failed server-side it comes back as
   // `{ type: 'unavailable' }`. That can be transient (still syncing from the
@@ -176,55 +165,14 @@ export function ProposalView({
     );
   }, [firstRevisionRequestId, reviewRevision, setQueryState]);
 
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-
-  /** Holds the translated HTML content + source locale after a successful translation request */
-  const [translatedHtmlContent, setTranslatedHtmlContent] = useState<{
-    translated: ProposalTranslation;
-    sourceLocale: string;
-  } | null>(null);
-
-  const translateMutation = trpc.translation.translateProposal.useMutation({
-    onSuccess: (data) => {
-      setTranslatedHtmlContent({
-        translated: data.translated,
-        sourceLocale: data.sourceLocale,
-      });
-    },
-  });
-
-  const handleTranslate = useCallback(() => {
-    translateMutation.mutate({
-      profileId: currentProposal.profileId,
-      targetLocale: locale as SupportedLocale,
-    });
-  }, [translateMutation, currentProposal.profileId, locale]);
-
-  const handleViewOriginal = () => setTranslatedHtmlContent(null);
-
-  /** Use the browser's Intl API to get localized language names — no translation keys needed */
-  const languageNames = new Intl.DisplayNames([locale], { type: 'language' });
-  const getLanguageName = (langCode: string) =>
-    languageNames.of(langCode) ?? langCode;
-
-  const sourceLanguageName = translatedHtmlContent
-    ? getLanguageName(
-        translatedHtmlContent.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      )
-    : '';
-
-  const targetLanguageName = getLanguageName(locale);
-
-  // Only offer translation when the proposal's own content is in a language
-  // other than the reader's locale — no badge for same-language proposals.
-  const detectionText = useMemo(
-    () => getProposalDetectionText(currentProposal),
-    [currentProposal],
-  );
-  const needsTranslation = useContentNeedsTranslation(detectionText);
-
-  const showBanner =
-    needsTranslation && !bannerDismissed && !translatedHtmlContent;
+  const {
+    translation,
+    showBanner,
+    isTranslating,
+    targetLanguageName,
+    handleTranslate,
+    dismissBanner,
+  } = useTranslateProposal(currentProposal);
 
   // Most recently responded revision (if any) — drives the "Revised on"
   // badge shown inline in the submitter metadata row.
@@ -248,15 +196,7 @@ export function ProposalView({
               }
             : undefined
         }
-        translation={
-          translatedHtmlContent
-            ? {
-                htmlContent: translatedHtmlContent.translated,
-                sourceLanguageName,
-                onViewOriginal: handleViewOriginal,
-              }
-            : undefined
-        }
+        translation={translation}
         submissionMetaSuffix={
           latestResponse?.respondedAt ? (
             <RevisedOnBadge respondedAt={latestResponse.respondedAt} />
@@ -321,8 +261,8 @@ export function ProposalView({
       {showBanner && (
         <TranslateBanner
           onTranslate={handleTranslate}
-          onDismiss={() => setBannerDismissed(true)}
-          isTranslating={translateMutation.isPending}
+          onDismiss={dismissBanner}
+          isTranslating={isTranslating}
           languageName={targetLanguageName}
         />
       )}

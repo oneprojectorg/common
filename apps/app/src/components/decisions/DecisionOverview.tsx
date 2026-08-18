@@ -1,7 +1,6 @@
 'use client';
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
@@ -38,6 +37,10 @@ import {
 } from './OverviewPinnedResources';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslateBanner } from './TranslateBanner';
+import {
+  useDecisionNeedsTranslation,
+  useRegisterTranslationSamples,
+} from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
 import { getOverviewDetectionText } from './translationDetectionText';
 import { useCreateProposal } from './useCreateProposal';
@@ -141,19 +144,22 @@ function DecisionOverviewContent({
 
   const overview = instance.instanceData?.overview;
 
-  // Detection sample from the authored overview so the banner only appears when
-  // the content is in a language other than the reader's locale.
-  const detectionText = useMemo(
-    () =>
+  // Register the authored overview as this screen's own detection sample. The
+  // side panel's updates and resources register separately, so the banner
+  // appears when any of them is in a language other than the reader's locale.
+  const detectionSamples = useMemo(
+    () => [
       getOverviewDetectionText({
         headline: overview?.headline ?? instance.name,
         description: overview?.description ?? instance.description ?? undefined,
         body: overview?.body,
       }),
+    ],
     [overview, instance.name, instance.description],
   );
 
-  const needsTranslation = useContentNeedsTranslation(detectionText);
+  useRegisterTranslationSamples('overview', detectionSamples);
+  const needsTranslation = useDecisionNeedsTranslation();
 
   const decisionTranslation = useTranslateDecision({
     proposals: NO_PROPOSALS,

@@ -1,6 +1,5 @@
 'use client';
 
-import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
@@ -39,6 +38,10 @@ import {
 } from './ProposalsMapView';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
+import {
+  useDecisionNeedsTranslation,
+  useRegisterTranslationSamples,
+} from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { getProposalDetectionText } from './translationDetectionText';
@@ -471,11 +474,23 @@ const ProposalsListContent = ({
   // Detect per proposal (not one concatenated sample) so proposals that
   // paginate in later are each checked — the badge can appear once a
   // different-language proposal loads further down the list.
-  const proposalSamples = useMemo(
-    () => allProposals.map(getProposalDetectionText),
-    [allProposals],
+  //
+  // The phase copy is sampled alongside them because this list owns the only
+  // trigger that translates it (`translateDecision` supplies the headline,
+  // phase description and additionalInfo the phase pages render). Sampling
+  // proposals alone hid the button on a foreign-language phase whose proposals
+  // happened to match the reader's locale, leaving that copy untranslatable.
+  const detectionSamples = useMemo(
+    () => [
+      ...allProposals.map(getProposalDetectionText),
+      currentPhase?.headline ?? '',
+      currentPhase?.description ?? '',
+    ],
+    [allProposals, currentPhase?.headline, currentPhase?.description],
   );
-  const needsTranslation = useAnyContentNeedsTranslation(proposalSamples);
+
+  useRegisterTranslationSamples('proposals', detectionSamples);
+  const needsTranslation = useDecisionNeedsTranslation();
 
   const translation = useTranslateDecision({
     proposals: allProposals,
