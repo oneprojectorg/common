@@ -11,11 +11,8 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-
 import { Suspense, useMemo } from 'react';
-
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
