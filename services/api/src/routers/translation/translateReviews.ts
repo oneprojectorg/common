@@ -10,7 +10,7 @@ const reviewTranslationSchema = z.object({
   answers: z.record(z.string(), z.string()),
 });
 
-export const translateReviewsOutput = z.object({
+const translateReviewsOutput = z.object({
   translations: z.record(z.uuid(), reviewTranslationSchema),
   sourceLocale: z.string(),
   targetLocale: z.enum(SUPPORTED_LOCALES),

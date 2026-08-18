@@ -1,17 +1,15 @@
 'use client';
 
+import { useTranslationBanner } from '@/hooks/useTranslationLocale';
 import { trpc } from '@op/api/client';
-import {
-  type PostTranslation,
-  type Proposal,
-  type ProposalTranslation,
-  type ResourceTranslation,
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
+import type {
+  PostTranslation,
+  Proposal,
+  ProposalTranslation,
+  ResourceTranslation,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -58,18 +56,22 @@ export const useTranslateDecision = ({
   needsTranslation: boolean;
 }) => {
   const t = useTranslations();
-  const locale = useLocale();
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
 
-  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translationState, setTranslationState] = useState<{
     translations: Record<string, ProposalTranslation>;
     sourceLocale: string;
   } | null>(null);
+
+  const {
+    targetLocale,
+    targetLanguageName,
+    getLanguageName,
+    showBanner,
+    dismissBanner,
+  } = useTranslationBanner({
+    needsTranslation,
+    isTranslated: !!translationState,
+  });
   const setDecisionTranslation = useSetDecisionTranslation();
   // Flipped true on Translate, false on View Original. Late mutation
   // responses check this before mutating state, so a click on View Original
@@ -187,7 +189,7 @@ export const useTranslateDecision = ({
     });
 
   const handleTranslate = useCallback(() => {
-    if (!supportedLocale) {
+    if (!targetLocale) {
       return;
     }
     translatingRef.current = true;
@@ -195,21 +197,21 @@ export const useTranslateDecision = ({
     for (const batch of chunk(profileIds, MAX_PROPOSALS_PER_TRANSLATE)) {
       translateBatchMutation.mutate({
         profileIds: batch,
-        targetLocale: supportedLocale,
+        targetLocale,
       });
     }
     if (decisionProfileId) {
       translateDecisionMutation.mutate({
         decisionProfileId,
-        targetLocale: supportedLocale,
+        targetLocale,
       });
       translatePostsMutation.mutate({
         profileId: decisionProfileId,
-        targetLocale: supportedLocale,
+        targetLocale,
       });
       translateResourcesMutation.mutate({
         profileId: decisionProfileId,
-        targetLocale: supportedLocale,
+        targetLocale,
       });
     }
   }, [
@@ -218,7 +220,7 @@ export const useTranslateDecision = ({
     translatePostsMutation,
     translateResourcesMutation,
     proposals,
-    supportedLocale,
+    targetLocale,
     decisionProfileId,
   ]);
 
@@ -228,31 +230,14 @@ export const useTranslateDecision = ({
     setDecisionTranslation(null);
   }, [setDecisionTranslation]);
 
-  const languageNames = useMemo(
-    () => new Intl.DisplayNames([locale], { type: 'language' }),
-    [locale],
-  );
-  const sourceLanguageName = translationState
-    ? (languageNames.of(
-        translationState.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      ) ?? '')
-    : '';
-  const targetLanguageName = languageNames.of(locale) ?? locale;
-
-  const showBanner =
-    !!supportedLocale &&
-    needsTranslation &&
-    !bannerDismissed &&
-    !translationState;
-
   return {
     translationState,
     showBanner,
-    sourceLanguageName,
+    sourceLanguageName: getLanguageName(translationState?.sourceLocale),
     targetLanguageName,
     handleTranslate,
     handleViewOriginal,
-    dismissBanner: () => setBannerDismissed(true),
+    dismissBanner,
     isTranslating:
       translateBatchMutation.isPending ||
       translateDecisionMutation.isPending ||

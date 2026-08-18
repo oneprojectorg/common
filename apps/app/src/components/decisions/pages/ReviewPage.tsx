@@ -28,6 +28,7 @@ import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
+import { getPhaseDetectionSamples } from '../translationDetectionText';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
@@ -108,8 +109,8 @@ export function ReviewPage({
   // that list unmounted (the reviewer's queue is the default tab), so the copy
   // on screen was undetectable — register it from the screen that renders it.
   const phaseSamples = useMemo(
-    () => [currentPhase.headline ?? '', currentPhase.description ?? ''],
-    [currentPhase.headline, currentPhase.description],
+    () => getPhaseDetectionSamples(currentPhase),
+    [currentPhase],
   );
   useRegisterTranslationSamples('review-phase', phaseSamples);
 

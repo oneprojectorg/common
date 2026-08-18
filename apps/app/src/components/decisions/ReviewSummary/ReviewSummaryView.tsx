@@ -17,11 +17,13 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
-import { ReviewTranslationScope } from '../Review/ReviewTranslationContext';
+import {
+  ReviewTranslationScope,
+  translateRubricForPhase,
+} from '../Review/ReviewTranslationContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { TranslateBanner } from '../TranslateBanner';
-import { translateRubricTemplate } from '../rubricTemplate';
 import { useProposalRubricTranslation } from '../useProposalRubricTranslation';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
@@ -120,10 +122,7 @@ export function ReviewSummaryView({
   const displayedRubricTemplate = useMemo(
     () =>
       rubricTemplate
-        ? translateRubricTemplate(
-            rubricTemplate,
-            (phaseId ? rubricMetaByPhase[phaseId] : null) ?? null,
-          )
+        ? translateRubricForPhase(rubricTemplate, rubricMetaByPhase, phaseId)
         : null,
     [rubricTemplate, rubricMetaByPhase, phaseId],
   );

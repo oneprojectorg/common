@@ -169,51 +169,9 @@ function RubricFieldResult({
   value: unknown;
   rationale?: string;
 }) {
-  const t = useTranslations();
-  const recommendation = useRecommendationLabels();
-
   if (field.format === 'dropdown') {
-    if (inferCriterionType(field.schema) === 'yes_no') {
-      const label =
-        value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
-      return <ResultCard value={label} rationale={rationale} />;
-    }
-
-    const selected = findSchemaOption(field.schema, value);
-
-    if (isOverallRecommendationField(field.key)) {
-      return (
-        <ResultCard
-          // Ours, so localized here; the stored label is only a fallback for a
-          // value we don't recognize.
-          value={
-            recommendation.label(selected?.value ?? value) ??
-            selected?.title ??
-            selected?.value
-          }
-          rationale={rationale}
-        />
-      );
-    }
-
-    // Single-select options store an opaque id as the value, so show the
-    // option's title instead.
-    if (inferCriterionType(field.schema) === 'single_select') {
-      return (
-        <ResultCard
-          value={selected ? selected.title || String(selected.value) : '—'}
-          description={selected?.description}
-          rationale={rationale}
-        />
-      );
-    }
-
     return (
-      <ResultCard
-        value={selected?.value}
-        description={selected?.title}
-        rationale={rationale}
-      />
+      <DropdownFieldResult field={field} value={value} rationale={rationale} />
     );
   }
 
@@ -223,4 +181,66 @@ function RubricFieldResult({
   }
 
   return null;
+}
+
+/**
+ * A dropdown answer, whose display depends on what kind of dropdown it is: a
+ * yes/no toggle, the overall recommendation (ours, so localized), a single
+ * select (whose stored value is an opaque option id), or a scored option.
+ */
+function DropdownFieldResult({
+  field,
+  value,
+  rationale,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+  rationale?: string;
+}) {
+  const t = useTranslations();
+  const recommendation = useRecommendationLabels();
+  const criterionType = inferCriterionType(field.schema);
+
+  if (criterionType === 'yes_no') {
+    const label =
+      value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
+    return <ResultCard value={label} rationale={rationale} />;
+  }
+
+  const selected = findSchemaOption(field.schema, value);
+
+  if (isOverallRecommendationField(field.key)) {
+    return (
+      <ResultCard
+        // Ours, so localized here; the stored label is only a fallback for a
+        // value we don't recognize.
+        value={
+          recommendation.label(selected?.value ?? value) ??
+          selected?.title ??
+          selected?.value
+        }
+        rationale={rationale}
+      />
+    );
+  }
+
+  // Single-select options store an opaque id as the value, so show the
+  // option's title instead.
+  if (criterionType === 'single_select') {
+    return (
+      <ResultCard
+        value={selected ? selected.title || String(selected.value) : '—'}
+        description={selected?.description}
+        rationale={rationale}
+      />
+    );
+  }
+
+  return (
+    <ResultCard
+      value={selected?.value}
+      description={selected?.title}
+      rationale={rationale}
+    />
+  );
 }

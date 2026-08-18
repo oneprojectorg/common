@@ -7,14 +7,13 @@ import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { usePostHog } from 'posthog-js/react';
-import { type ReactNode, Suspense, useMemo, useState } from 'react';
+import { type ReactNode, Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
-import { translateRubricTemplate } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
-import { useReviewTranslation } from './ReviewTranslationContext';
+import { useTranslatedRubric } from './ReviewTranslationContext';
 
 const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
@@ -234,16 +233,9 @@ function PhaseReviews({
   // Looked up by phase: each phase scores against its own rubric, and the
   // provider translates every phase whose reviews this screen can reach — the
   // current one and each earlier phase that kept its reviews open.
-  const { rubricMetaByPhase } = useReviewTranslation();
-  const displayedRubricTemplate = useMemo(
-    () =>
-      proposalWithReviews.rubricTemplate
-        ? translateRubricTemplate(
-            proposalWithReviews.rubricTemplate,
-            rubricMetaByPhase[phaseId] ?? null,
-          )
-        : null,
-    [proposalWithReviews.rubricTemplate, rubricMetaByPhase, phaseId],
+  const displayedRubricTemplate = useTranslatedRubric(
+    proposalWithReviews.rubricTemplate,
+    phaseId,
   );
 
   const visibleReviews = excludeProfileId

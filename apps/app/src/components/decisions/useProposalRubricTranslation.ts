@@ -1,19 +1,17 @@
 'use client';
 
 import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
+import { useTranslationBanner } from '@/hooks/useTranslationLocale';
 import { trpc } from '@op/api/client';
 import {
   type ReviewTranslation,
   type RubricTemplateSchema,
-  SUPPORTED_LOCALES,
   type SubmittedReviewItem,
-  type SupportedLocale,
   type TranslatedFields,
   parseTranslatedMeta,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -31,6 +29,13 @@ import {
  * so a fresh `{}` per render would re-render every review surface below it.
  */
 const NO_REVIEW_TRANSLATIONS: Record<string, ReviewTranslation> = {};
+
+/**
+ * Stable defaults for the surfaces that pass neither: a fresh `[]` per render
+ * would invalidate the `samples` memo below on every render of the screen.
+ */
+const NO_REVIEWS_TARGETS: readonly ReviewsTarget[] = [];
+const NO_REVIEWS: readonly SubmittedReviewItem[] = [];
 
 /** The proposal fields this needs: enough to detect, plus the translate target. */
 type TranslatableProposal = Parameters<typeof getProposalDetectionText>[0] & {
@@ -91,27 +96,19 @@ export const useProposalRubricTranslation = ({
   proposal,
   rubricTemplates,
   rubricTargets,
-  reviewsTargets = [],
-  reviews = [],
+  reviewsTargets = NO_REVIEWS_TARGETS,
+  reviews = NO_REVIEWS,
 }: {
   proposal: TranslatableProposal;
   /** Rubrics on screen, keyed by phase — the detection input for `rubricTargets`. */
   rubricTemplates?: Record<string, RubricTemplateSchema | null>;
   rubricTargets: RubricTarget[];
-  reviewsTargets?: ReviewsTarget[];
+  reviewsTargets?: readonly ReviewsTarget[];
   /** Reviews already loaded, for detection; the targets above decide what is translated. */
   reviews?: readonly SubmittedReviewItem[];
 }): ProposalRubricTranslation => {
   const t = useTranslations();
-  const locale = useLocale();
 
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
-
-  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translated, setTranslated] = useState<{
     proposal?: TranslatedFields;
@@ -157,8 +154,19 @@ export const useProposalRubricTranslation = ({
   );
   const needsTranslation = useAnyContentNeedsTranslation(samples);
 
+  const {
+    targetLocale,
+    targetLanguageName,
+    getLanguageName,
+    showBanner,
+    dismissBanner,
+  } = useTranslationBanner({
+    needsTranslation,
+    isTranslated: !!translated,
+  });
+
   const handleTranslate = useCallback(() => {
-    if (!supportedLocale) {
+    if (!targetLocale) {
       return;
     }
 
@@ -176,7 +184,7 @@ export const useProposalRubricTranslation = ({
           await Promise.all([
             translateProposalMutation.mutateAsync({
               profileId: proposal.profileId,
-              targetLocale: supportedLocale,
+              targetLocale,
             }),
             Promise.all(
               rubricTargets.map(async (target) => ({
@@ -185,12 +193,12 @@ export const useProposalRubricTranslation = ({
                   'assignmentId' in target
                     ? await translateRubricMutation.mutateAsync({
                         assignmentId: target.assignmentId,
-                        targetLocale: supportedLocale,
+                        targetLocale,
                       })
                     : await translatePhaseRubricMutation.mutateAsync({
                         processInstanceId: target.processInstanceId,
                         phaseId: target.phaseId,
-                        targetLocale: supportedLocale,
+                        targetLocale,
                       }),
               })),
             ),
@@ -198,7 +206,7 @@ export const useProposalRubricTranslation = ({
               reviewsTargets.map((target) =>
                 translateReviewsMutation.mutateAsync({
                   ...target,
-                  targetLocale: supportedLocale,
+                  targetLocale,
                 }),
               ),
             ),
@@ -243,7 +251,7 @@ export const useProposalRubricTranslation = ({
     proposal.profileId,
     reviewsTargets,
     rubricTargets,
-    supportedLocale,
+    targetLocale,
     t,
     translateProposalMutation,
     translatePhaseRubricMutation,
@@ -256,16 +264,6 @@ export const useProposalRubricTranslation = ({
     setTranslated(null);
   }, []);
 
-  const languageNames = useMemo(
-    () => new Intl.DisplayNames([locale], { type: 'language' }),
-    [locale],
-  );
-  const sourceLanguageName = translated
-    ? (languageNames.of(
-        translated.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      ) ?? '')
-    : '';
-
   const rubricMetaByPhase = useMemo(() => {
     const byPhase: Record<string, RubricTranslatedMeta> = {};
     for (const [phaseId, fields] of Object.entries(
@@ -276,21 +274,29 @@ export const useProposalRubricTranslation = ({
     return byPhase;
   }, [translated]);
 
+  // Memoized because `ReviewTranslationScope` memoizes its context value on
+  // this identity: a fresh literal per render would push a new context value to
+  // every review surface on each keystroke in the rubric form.
+  const proposalTranslation = useMemo(
+    () =>
+      translated?.proposal
+        ? {
+            htmlContent: translated.proposal,
+            sourceLanguageName: getLanguageName(translated.sourceLocale),
+            onViewOriginal: handleViewOriginal,
+          }
+        : undefined,
+    [translated, getLanguageName, handleViewOriginal],
+  );
+
   return {
-    proposal: translated?.proposal
-      ? {
-          htmlContent: translated.proposal,
-          sourceLanguageName,
-          onViewOriginal: handleViewOriginal,
-        }
-      : undefined,
+    proposal: proposalTranslation,
     rubricMetaByPhase,
     reviewTranslations: translated?.reviews ?? NO_REVIEW_TRANSLATIONS,
-    showBanner:
-      !!supportedLocale && needsTranslation && !bannerDismissed && !translated,
+    showBanner,
     isTranslating,
-    targetLanguageName: languageNames.of(locale) ?? locale,
+    targetLanguageName,
     handleTranslate,
-    dismissBanner: () => setBannerDismissed(true),
+    dismissBanner,
   };
 };
