@@ -1,5 +1,6 @@
 import { mergeRouters } from '../../trpcFactory';
 import { translateDecisionRouter } from './translateDecision';
+import { translatePhaseRubricRouter } from './translatePhaseRubric';
 import { translatePostsRouter } from './translatePosts';
 import { translateProposalRouter } from './translateProposal';
 import { translateProposalsRouter } from './translateProposals';
@@ -11,6 +12,7 @@ export const translationRouter = mergeRouters(
   translatePostsRouter,
   translateProposalRouter,
   translateProposalsRouter,
+  translatePhaseRubricRouter,
   translateResourcesRouter,
   translateRubricRouter,
 );

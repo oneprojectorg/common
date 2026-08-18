@@ -159,6 +159,26 @@ const RUBRIC_TEMPLATE = {
   },
 } as const satisfies RubricTemplateSchema;
 
+/** Same shape, authored in Spanish — the rubric is then the only foreign copy. */
+const RUBRIC_TEMPLATE_ES = {
+  type: 'object',
+  required: ['innovation'],
+  'x-field-order': ['innovation'],
+  properties: {
+    innovation: {
+      type: 'integer',
+      title: 'Innovación y originalidad de la propuesta vecinal',
+      description:
+        'Valore si la propuesta aporta una idea nueva para el barrio, si resuelve una necesidad que hoy no está cubierta y si podría repetirse en otros barrios de la ciudad.',
+      'x-format': 'dropdown',
+      oneOf: [
+        { const: 1, title: 'Insuficiente' },
+        { const: 2, title: 'Sobresaliente' },
+      ],
+    },
+  },
+} as const satisfies RubricTemplateSchema;
+
 /**
  * `signIn` opens a context per user and closes them in teardown, which runs
  * even when a test fails — a bare `ctx.close()` at the end of a test does not.
@@ -633,6 +653,68 @@ test.describe('UGC translation coverage', () => {
     await expect(
       page.getByRole('heading', { name: PROPOSAL_TITLE_ES }).first(),
     ).toBeAttached();
+
+    await expect(
+      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toBeVisible();
+  });
+
+  test('the admin review summary offers translation for a Spanish rubric', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-summary-rubric-${testInfo.workerIndex}-${Date.now()}`;
+
+    // The summary shows the proposal beside the rubric the reviewers scored it
+    // with. A Spanish rubric is unreadable copy on this screen whether or not
+    // the proposal happens to be English, so the control has to cover both.
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+      rubricTemplate: RUBRIC_TEMPLATE_ES,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    // English proposal — the rubric is the only foreign copy on the screen.
+    const { proposal } = await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+    });
+
+    const page = await signIn(org.adminUser);
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    await expect(
+      page.getByText(/Review (Progress|Summary)/).first(),
+    ).toBeAttached({ timeout: PAGE_READY_TIMEOUT });
 
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
