@@ -7,7 +7,7 @@ import { Button } from '@op/sense/Button';
 import { SplitPane } from '@op/sense/SplitPane';
 import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { LuCheck, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -20,7 +20,8 @@ import type { ReviewFormStatus } from '../Review/ReviewFormContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { TranslateBanner } from '../TranslateBanner';
-import { useTranslateProposal } from '../useTranslateProposal';
+import { translateRubricTemplate } from '../rubricTemplate';
+import { useProposalRubricTranslation } from '../useProposalRubricTranslation';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
 
@@ -72,25 +73,40 @@ export function ReviewSummaryView({
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
 
-  // This screen is the admin half of `/proposal/<id>/reviews`; the reviewer
-  // half gets its translation from `ReviewTranslationProvider`, which is keyed
-  // by an assignment this screen does not have. An admin reading a proposal in
-  // a language they don't speak had no control at all.
+  // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.
+  const ownAssignment = ownAssignments.assignments[0];
+
+  // This screen is the admin half of `/proposal/<id>/reviews`, and it shows the
+  // same proposal and rubric the reviewer's half does — so it offers the same
+  // control, through the same hook. Only the reviewer's half was ever wired,
+  // which made translation depend on the reader's role rather than on the copy
+  // in front of them.
   //
-  // Scoped to the proposal deliberately. `translateRubric` takes an assignment
-  // id, and reviewer-authored notes have no endpoint, so detection stays on the
-  // proposal rather than offering a control that cannot move what triggered it.
+  // Addressed by phase, not by assignment: this screen has none of its own, and
+  // assignment reads are self-scoped so it cannot borrow a reviewer's. Every
+  // reviewer of the phase scores against this one rubric, so both addressings
+  // land on the same cache entry.
   const {
-    translation,
+    proposal: proposalTranslation,
+    rubricMeta,
     showBanner,
     isTranslating,
     targetLanguageName,
     handleTranslate,
     dismissBanner,
-  } = useTranslateProposal(proposal);
+  } = useProposalRubricTranslation({
+    proposal,
+    rubricTemplate,
+    rubricTarget: phaseId ? { processInstanceId: instanceId, phaseId } : null,
+  });
 
-  // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.
-  const ownAssignment = ownAssignments.assignments[0];
+  const displayedRubricTemplate = useMemo(
+    () =>
+      rubricTemplate
+        ? translateRubricTemplate(rubricTemplate, rubricMeta)
+        : null,
+    [rubricTemplate, rubricMeta],
+  );
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useQueryState(
     'assignment',
@@ -201,7 +217,10 @@ export function ReviewSummaryView({
           id="proposal"
           label={<TranslatedText text="Proposal" />}
         >
-          <ProposalPreview proposal={proposal} translation={translation} />
+          <ProposalPreview
+            proposal={proposal}
+            translation={proposalTranslation}
+          />
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
@@ -232,7 +251,7 @@ export function ReviewSummaryView({
           ) : (
             <ReviewsPanel
               proposalWithReviews={proposalWithReviews}
-              rubricTemplate={rubricTemplate}
+              rubricTemplate={displayedRubricTemplate}
               selectedAssignmentId={selectedAssignmentId}
               onSelectAssignment={setSelectedAssignmentId}
               title={isPhaseInProgress ? t('Review Progress') : undefined}
