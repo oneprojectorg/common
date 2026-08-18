@@ -7,6 +7,7 @@ import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { type DecisionAccess } from '@op/api/encoders';
 import {
+  type Proposal,
   ProposalReviewAssignmentStatus,
   REVIEW_ASSIGNMENT_SORTS,
   getPhaseReviewSettings,
@@ -22,7 +23,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -35,15 +36,19 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
+import { ProposalViewToggle } from './ProposalViewToggle';
+import { ProposalsMapView } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { StickyFilterBar } from './StickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
 import { getProposalDetectionText } from './translationDetectionText';
+import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
 const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
@@ -158,6 +163,77 @@ export function ReviewAssignmentsList({
     ? (reviewerCategories?.length ?? 0) > 1
     : true;
 
+  // Map mode is offered on the same terms as browse (location field + GIS
+  // flag), but leads with the grid: reviewing a queue is sequential work and
+  // the map is the secondary lens.
+  const {
+    hasLocationField,
+    mapView,
+    effectiveView,
+    isMapMode,
+    handleViewChange,
+  } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
+    defaultView: 'grid',
+  });
+
+  // The proposal-keyed URL resolves per viewer (own review screen for a
+  // reviewer, review progress for an admin). Card, pin and hovercard all use
+  // it, so they can't disagree about where a proposal leads.
+  const reviewsHref = useCallback(
+    (proposal: Pick<Proposal, 'profileId'>) =>
+      `/decisions/${decisionSlug}/proposal/${proposal.profileId}/reviews`,
+    [decisionSlug],
+  );
+
+  const reviewersByProposalId = useMemo(
+    () =>
+      new Map(
+        (aggregatesData?.items ?? []).map((item) => [
+          item.proposal.id,
+          item.aggregates.reviewers,
+        ]),
+      ),
+    [aggregatesData],
+  );
+
+  // The tab is the filter: pins come from the assignments themselves, so the
+  // map never plots a proposal this reviewer isn't assigned.
+  const assignmentByProposalId = useMemo(
+    () =>
+      new Map(assignments.map((item) => [item.assignment.proposal.id, item])),
+    [assignments],
+  );
+
+  // `useCallback` is load-bearing: the map view's list rows are memoized on
+  // this function, so a fresh one every render would re-render the whole
+  // column on each hover.
+  const renderCard = useCallback(
+    (proposal: Proposal, { className }: { className: string }) => {
+      const assignment = assignmentByProposalId.get(proposal.id);
+      if (!assignment) {
+        return null;
+      }
+      return (
+        <ReviewAssignmentCard
+          assignment={assignment}
+          viewHref={reviewsHref(proposal)}
+          reviewsHref={reviewsHref(proposal)}
+          reviewers={reviewersByProposalId.get(proposal.id)}
+          access={access}
+          showCategory={showCategory}
+          className={className}
+        />
+      );
+    },
+    [
+      assignmentByProposalId,
+      reviewersByProposalId,
+      reviewsHref,
+      access,
+      showCategory,
+    ],
+  );
+
   // Match the "Other proposals" tab: no toolbar when the queue is genuinely
   // empty. A filtered-to-empty result keeps it so the filter can be cleared.
   const showToolbar = assignments.length > 0 || Boolean(statusFilter);
@@ -253,6 +329,17 @@ export function ReviewAssignmentsList({
                 { id: 'oldest', label: t('Oldest First') },
               ]}
             />
+            {hasLocationField && (
+              // Desktop control; below `sm` the floating MobileViewSwitch
+              // below takes over (same split as the proposals list).
+              <div className="hidden items-center gap-4 sm:flex">
+                <span aria-hidden className="h-6 w-px bg-border" />
+                <ProposalViewToggle
+                  value={effectiveView}
+                  onChange={handleViewChange}
+                />
+              </div>
+            )}
           </div>
         </StickyFilterBar>
       )}
@@ -291,25 +378,33 @@ export function ReviewAssignmentsList({
         <ProposalTranslationProvider
           translations={translation.translationState?.translations ?? {}}
         >
-          <ProposalMasonry>
-            {assignments.map((item) => (
-              <ReviewAssignmentCard
-                key={item.assignment.id}
-                assignment={item}
-                // The proposal-keyed URL resolves per viewer (own review screen
-                // for a reviewer, review progress for an admin).
-                viewHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
-                reviewers={
-                  aggregatesData?.items.find(
-                    (i) => i.proposal.id === item.assignment.proposal.id,
-                  )?.aggregates.reviewers
-                }
-                reviewsHref={`/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`}
-                access={access}
-                showCategory={showCategory}
-              />
-            ))}
-          </ProposalMasonry>
+          {isMapMode ? (
+            // Same array for the list column and the pins — the queue is
+            // unpaginated, so there is no wider pin set to fetch.
+            <ProposalsMapView
+              proposals={assignedProposals}
+              pinProposals={assignedProposals}
+              renderCard={renderCard}
+              hrefFor={reviewsHref}
+              mapView={mapView}
+            />
+          ) : (
+            <ProposalMasonry>
+              {assignments.map((item) => (
+                <ReviewAssignmentCard
+                  key={item.assignment.id}
+                  assignment={item}
+                  viewHref={reviewsHref(item.assignment.proposal)}
+                  reviewers={reviewersByProposalId.get(
+                    item.assignment.proposal.id,
+                  )}
+                  reviewsHref={reviewsHref(item.assignment.proposal)}
+                  access={access}
+                  showCategory={showCategory}
+                />
+              ))}
+            </ProposalMasonry>
+          )}
         </ProposalTranslationProvider>
       )}
 
@@ -320,6 +415,10 @@ export function ReviewAssignmentsList({
           isTranslating={translation.isTranslating}
           languageName={translation.targetLanguageName}
         />
+      )}
+
+      {hasLocationField && (
+        <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>
   );

@@ -38,6 +38,8 @@ interface ReviewAssignmentCardProps {
   access?: DecisionAccess;
   /** Whether to show the proposal's category tag (see ReviewAssignmentsList). */
   showCategory?: boolean;
+  /** Forwarded to the card — carries the map view's active-pin highlight. */
+  className?: string;
 }
 
 export function ReviewAssignmentCard({
@@ -47,6 +49,7 @@ export function ReviewAssignmentCard({
   reviewsHref,
   access,
   showCategory = true,
+  className,
 }: ReviewAssignmentCardProps) {
   const t = useTranslations();
   const { proposal, status } = assignment;
@@ -56,6 +59,7 @@ export function ReviewAssignmentCard({
 
   return (
     <SenseProposalCard
+      className={className}
       title={titleText}
       href={viewHref}
       linkComponent={Link}
