@@ -2,6 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
+  type FieldDescriptor,
   formatProposalCategories,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
@@ -23,7 +24,6 @@ import {
   CollaborativeTitleField,
 } from '../../collaboration';
 import { LabeledFieldSet } from '../forms/LabeledFieldSet';
-import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
 import {
   ReadonlyBudgetField,

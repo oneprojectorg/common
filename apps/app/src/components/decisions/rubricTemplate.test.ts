@@ -1,9 +1,10 @@
+import {
+  type RubricCriterionType,
+  inferCriterionType,
+} from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
-import type {
-  RubricCriterionType,
-  RubricTemplateSchema,
-} from './rubricTemplate';
+import type { RubricTemplateSchema } from './rubricTemplate';
 import {
   addCriterion,
   changeCriterionType,
@@ -13,7 +14,6 @@ import {
   getCriterion,
   getCriterionOptions,
   getCriterionType,
-  inferCriterionType,
   setCriterionRequired,
   setSelectOptions,
   translateRubricTemplate,

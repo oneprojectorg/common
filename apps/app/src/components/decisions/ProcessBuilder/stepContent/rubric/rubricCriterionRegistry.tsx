@@ -1,6 +1,6 @@
-import type { TranslationKey } from '@/lib/i18n/routing';
+import type { RubricCriterionType } from '@op/common/client';
 
-import type { RubricCriterionType } from '@/components/decisions/rubricTemplate';
+import type { TranslationKey } from '@/lib/i18n/routing';
 
 /**
  * Display metadata for each rubric criterion type.
