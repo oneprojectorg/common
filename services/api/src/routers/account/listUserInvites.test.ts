@@ -1,6 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
+  ProcessStatus,
   ProposalStatus,
   profileInvites,
   proposals,
@@ -23,6 +24,19 @@ import {
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 import accountRouter from './index';
+
+const getUserProfileId = async (authUserId: string) => {
+  const [row] = await db
+    .select({ profileId: users.profileId })
+    .from(users)
+    .where(eq(users.authUserId, authUserId));
+
+  if (!row?.profileId) {
+    throw new Error('No profile found for test user');
+  }
+
+  return row.profileId;
+};
 
 describe.concurrent('account.listUserInvites', () => {
   const createCaller = createCallerFactory(accountRouter);
@@ -313,6 +327,7 @@ describe.concurrent('account.listUserInvites', () => {
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
     });
     const invitee = await inviteData.createStandaloneUser();
     const instance = setup.instance;
@@ -372,6 +387,195 @@ describe.concurrent('account.listUserInvites', () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.proposalCount).toBe(1);
     expect(result[0]?.participantCount).toBe(1);
+  });
+
+  it('should return an invite whose email delivery never completed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const invitee = await testData.createStandaloneUser();
+
+    // notifiedAt stays null when the send fails; the invite must still show.
+    await db.insert(profileInvites).values({
+      email: invitee.email,
+      profileId: profile.id,
+      profileEntityType: EntityType.ORG,
+      accessRoleId: ROLES.MEMBER.id,
+      invitedBy: adminUser.userProfileId,
+    });
+
+    testData.trackProfileInvite(invitee.email, profile.id);
+
+    const { session } = await createIsolatedSession(invitee.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listUserInvites({ pending: true });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.notifiedAt).toBeNull();
+  });
+
+  it('should hide invites to a draft process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const inviteData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.DRAFT,
+    });
+
+    const invitee = await inviteData.createStandaloneUser();
+    const inviterProfileId = await getUserProfileId(setup.user.id);
+
+    await db.insert(profileInvites).values({
+      email: invitee.email,
+      profileId: setup.instance.profileId,
+      profileEntityType: EntityType.DECISION,
+      accessRoleId: ROLES.MEMBER.id,
+      invitedBy: inviterProfileId,
+    });
+
+    inviteData.trackProfileInvite(invitee.email, setup.instance.profileId);
+
+    const { session } = await createIsolatedSession(invitee.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listUserInvites({ pending: true });
+
+    expect(result).toHaveLength(0);
+  });
+
+  it('should return draft-process invites that were already emailed (decision admins)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const inviteData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.DRAFT,
+    });
+
+    const invitee = await inviteData.createStandaloneUser();
+    const inviterProfileId = await getUserProfileId(setup.user.id);
+
+    // Admins are emailed during draft; an already-notified invite is
+    // released regardless of the draft status.
+    await db.insert(profileInvites).values({
+      email: invitee.email,
+      profileId: setup.instance.profileId,
+      profileEntityType: EntityType.DECISION,
+      accessRoleId: ROLES.ADMIN.id,
+      invitedBy: inviterProfileId,
+      notifiedAt: new Date().toISOString(),
+    });
+
+    inviteData.trackProfileInvite(invitee.email, setup.instance.profileId);
+
+    const { session } = await createIsolatedSession(invitee.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listUserInvites({ pending: true });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.profileId).toBe(setup.instance.profileId);
+  });
+
+  it('should return invites to a published process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const inviteData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    const invitee = await inviteData.createStandaloneUser();
+    const inviterProfileId = await getUserProfileId(setup.user.id);
+
+    await db.insert(profileInvites).values({
+      email: invitee.email,
+      profileId: setup.instance.profileId,
+      profileEntityType: EntityType.DECISION,
+      accessRoleId: ROLES.MEMBER.id,
+      invitedBy: inviterProfileId,
+    });
+
+    inviteData.trackProfileInvite(invitee.email, setup.instance.profileId);
+
+    const { session } = await createIsolatedSession(invitee.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listUserInvites({ pending: true });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.profileId).toBe(setup.instance.profileId);
+  });
+
+  it('should return proposal invites even while the parent process is a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const inviteData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.DRAFT,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Draft process proposal' },
+    });
+
+    const invitee = await inviteData.createStandaloneUser();
+    const inviterProfileId = await getUserProfileId(setup.user.id);
+
+    if (!proposal.profileId) {
+      throw new Error('Proposal was created without a profile');
+    }
+
+    // A proposal profile has no process instance of its own, so the draft
+    // gate does not apply.
+    await db.insert(profileInvites).values({
+      email: invitee.email,
+      profileId: proposal.profileId,
+      profileEntityType: EntityType.PROPOSAL,
+      accessRoleId: ROLES.MEMBER.id,
+      invitedBy: inviterProfileId,
+    });
+
+    inviteData.trackProfileInvite(invitee.email, proposal.profileId);
+
+    const { session } = await createIsolatedSession(invitee.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listUserInvites({
+      entityType: EntityType.PROPOSAL,
+      pending: true,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.profileId).toBe(proposal.profileId);
   });
 
   it('should not return invites for other users', async ({
