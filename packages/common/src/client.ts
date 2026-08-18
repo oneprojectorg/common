@@ -155,6 +155,12 @@ export {
   isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
 export {
+  getFreeTextCriterionKeys,
+  getTranslatableRubricCopy,
+  isYesNoCriterionSchema,
+  type TranslatableRubricCriterion,
+} from './services/decision/rubricTranslatableCopy';
+export {
   REVIEWS_POLICIES,
   REVIEWS_SCOPES,
   phaseReviewSettingsSchema,
@@ -205,6 +211,7 @@ export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta'
 export type { PostTranslation } from './services/translation/translatePosts';
 export type { ProposalTranslation } from './services/translation/translateProposal';
 export type { ResourceTranslation } from './services/translation/translateResources';
+export type { ReviewTranslation } from './services/translation/translateReviews';
 export type {
   TranslatedFieldValue,
   TranslatedFields,

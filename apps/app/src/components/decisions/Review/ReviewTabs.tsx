@@ -7,12 +7,14 @@ import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { usePostHog } from 'posthog-js/react';
-import { type ReactNode, Suspense, useState } from 'react';
+import { type ReactNode, Suspense, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
+import { translateRubricTemplate } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
+import { useReviewTranslation } from './ReviewTranslationContext';
 
 const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
@@ -224,6 +226,26 @@ function PhaseReviews({
       phaseId,
     });
 
+  // The banner belongs to the whole screen, so a peer's review has to read in
+  // the same language the reviewer's own form switched to — the criterion
+  // prompts here are the same authored copy, and the reviewers' own words are
+  // swapped by `SubmittedReviewView` from the same context.
+  //
+  // Looked up by phase: each phase scores against its own rubric, and the
+  // provider translates every phase whose reviews this screen can reach — the
+  // current one and each earlier phase that kept its reviews open.
+  const { rubricMetaByPhase } = useReviewTranslation();
+  const displayedRubricTemplate = useMemo(
+    () =>
+      proposalWithReviews.rubricTemplate
+        ? translateRubricTemplate(
+            proposalWithReviews.rubricTemplate,
+            rubricMetaByPhase[phaseId] ?? null,
+          )
+        : null,
+    [proposalWithReviews.rubricTemplate, rubricMetaByPhase, phaseId],
+  );
+
   const visibleReviews = excludeProfileId
     ? proposalWithReviews.reviews.filter(
         (review) => review.reviewer.id !== excludeProfileId,
@@ -241,7 +263,7 @@ function PhaseReviews({
   return (
     <ReviewsPanel
       proposalWithReviews={proposalWithReviews}
-      rubricTemplate={proposalWithReviews.rubricTemplate}
+      rubricTemplate={displayedRubricTemplate}
       selectedAssignmentId={selectedAssignmentId}
       onSelectAssignment={handleSelectAssignment}
       excludeProfileId={excludeProfileId}

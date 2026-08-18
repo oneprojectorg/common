@@ -1,16 +1,15 @@
 'use client';
 
-import {
-  OVERALL_RECOMMENDATION_KEY,
-  type RubricTemplateSchema,
-  type SubmittedReviewItem,
-  findSchemaOption,
+import type {
+  RubricTemplateSchema,
+  SubmittedReviewItem,
 } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 import { StatusDot } from '@op/sense/StatusDot';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
 import { SubmittedReviewView } from '../Review/SubmittedReviewView';
+import { useRecommendationLabels } from '../useRecommendationLabels';
 import { BackToReviewers } from './BackToReviewers';
 import type { RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
@@ -29,17 +28,15 @@ export function ReviewerDetail({
   onBack,
 }: ReviewerDetailProps) {
   const { hasOverallRecommendation, hasScoring, totalPoints } = rubricSummary;
+  const recommendation = useRecommendationLabels();
 
-  const recommendationLabel = (() => {
-    if (!hasOverallRecommendation || !item.overallRecommendation) {
-      return null;
-    }
-    const match = findSchemaOption(
-      rubricTemplate.properties?.[OVERALL_RECOMMENDATION_KEY],
-      item.overallRecommendation,
-    );
-    return match?.title ?? item.overallRecommendation;
-  })();
+  // Our copy, not the admin's — read from the dictionary, with the stored value
+  // as the fallback for an answer we don't recognize.
+  const recommendationLabel =
+    hasOverallRecommendation && item.overallRecommendation
+      ? (recommendation.label(item.overallRecommendation) ??
+        item.overallRecommendation)
+      : null;
 
   return (
     <div className="flex flex-col gap-6">

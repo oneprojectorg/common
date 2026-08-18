@@ -348,4 +348,35 @@ describe('translateRubricTemplate', () => {
     const template = rubric();
     expect(translateRubricTemplate(template, null)).toBe(template);
   });
+
+  // `getTranslatableRubricCopy` collects options from `items.oneOf` too, so
+  // everything paid for has to be applied — a dropped translation reads as
+  // authored copy with no way to tell why.
+  it('replaces option labels stored under `items`', () => {
+    const template: RubricTemplateSchema = {
+      type: 'object',
+      'x-field-order': ['themes'],
+      properties: {
+        themes: {
+          type: 'array',
+          'x-format': 'dropdown',
+          items: {
+            type: 'string',
+            oneOf: [{ const: 'water', title: 'Water' }],
+          },
+        },
+      },
+    };
+
+    const translated = translateRubricTemplate(template, {
+      fieldTitles: {},
+      fieldDescriptions: {},
+      optionLabels: { themes: { water: 'Agua' } },
+      optionDescriptions: {},
+    });
+
+    expect(translated.properties?.themes?.items).toMatchObject({
+      oneOf: [{ const: 'water', title: 'Agua' }],
+    });
+  });
 });

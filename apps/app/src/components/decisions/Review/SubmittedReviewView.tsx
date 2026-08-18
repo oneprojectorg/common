@@ -1,3 +1,5 @@
+'use client';
+
 import {
   type ProposalReview,
   type RubricTemplateSchema,
@@ -14,6 +16,8 @@ import { useTranslations } from '@/lib/i18n';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { inferCriterionType } from '../rubricTemplate';
+import { useRecommendationLabels } from '../useRecommendationLabels';
+import { useReviewTranslation } from './ReviewTranslationContext';
 
 /**
  * A submitted review, read-only: each criterion's prompt above a bordered card
@@ -22,6 +26,11 @@ import { inferCriterionType } from '../rubricTemplate';
  * Field chrome matches `ReviewRubricForm` so the panel doesn't change shape on
  * submit. Rendered for the reviewer's own review, a peer's, and the admin
  * drill-in; only the first passes a total score, hence `scoreSlot`.
+ *
+ * The reviewer's own words — notes, free-text answers, feedback to the author —
+ * are swapped for their translation when the screen has one. They are read from
+ * context rather than taken as a prop because this renders four levels below the
+ * banner, and the prompts around them are already translated the same way.
  */
 export function SubmittedReviewView({
   rubricTemplate,
@@ -36,6 +45,9 @@ export function SubmittedReviewView({
   scoreSlot?: ReactNode;
 }) {
   const t = useTranslations();
+  const { reviewTranslations } = useReviewTranslation();
+  const translation = reviewTranslations[review.id];
+  const recommendation = useRecommendationLabels();
   const fields = compileRubricSchema(rubricTemplate);
   const { answers, rationales } = review.reviewData;
 
@@ -44,14 +56,22 @@ export function SubmittedReviewView({
       {fields.map((field) => (
         <ResultSection
           key={field.key}
-          title={field.schema.title}
+          title={
+            isOverallRecommendationField(field.key)
+              ? recommendation.title
+              : field.schema.title
+          }
           description={field.schema.description}
           required={field.required}
         >
           <RubricFieldResult
             field={field}
-            value={answers[field.key]}
-            rationale={rationales[field.key]?.trim() || undefined}
+            value={translation?.answers[field.key] ?? answers[field.key]}
+            rationale={
+              (
+                translation?.rationales[field.key] ?? rationales[field.key]
+              )?.trim() || undefined
+            }
           />
         </ResultSection>
       ))}
@@ -65,7 +85,9 @@ export function SubmittedReviewView({
             'Shared anonymously with the author after the review phase',
           )}
         >
-          <ResultCard description={review.overallComment} />
+          <ResultCard
+            description={translation?.overallComment ?? review.overallComment}
+          />
         </ResultSection>
       )}
     </div>
@@ -148,6 +170,7 @@ function RubricFieldResult({
   rationale?: string;
 }) {
   const t = useTranslations();
+  const recommendation = useRecommendationLabels();
 
   if (field.format === 'dropdown') {
     if (inferCriterionType(field.schema) === 'yes_no') {
@@ -161,7 +184,13 @@ function RubricFieldResult({
     if (isOverallRecommendationField(field.key)) {
       return (
         <ResultCard
-          value={selected?.title ?? selected?.value}
+          // Ours, so localized here; the stored label is only a fallback for a
+          // value we don't recognize.
+          value={
+            recommendation.label(selected?.value ?? value) ??
+            selected?.title ??
+            selected?.value
+          }
           rationale={rationale}
         />
       );
