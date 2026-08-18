@@ -505,14 +505,15 @@ const ProposalsListContent = ({
     selectedCategory !== 'all-categories' ||
     proposalFilter !== ProposalFilter.ALL;
 
-  // With nothing to filter, sort, or export, the control bar is just noise —
-  // collapse to the empty state alone. Keep it when a filter is active (so a
-  // zero-result filter can still be cleared) and in map mode (where the bar
-  // hosts the view toggle).
-  const showFilterBar = isMapMode || allProposals.length > 0 || hasActiveFilter;
-
   // Empty + unfiltered falls through to the grid's empty state instead of a blank map.
   const isEmptyUnfiltered = allProposals.length === 0 && !hasActiveFilter;
+
+  // With nothing to filter, sort, or export, the control bar is just noise —
+  // collapse to the empty state alone. A zero-result FILTERED list keeps the
+  // bar so the filter can be cleared. Map mode is not an exception:
+  // unfiltered-empty renders the grid empty state, so the bar would only
+  // toggle between two empty states.
+  const showFilterBar = !isEmptyUnfiltered;
 
   return (
     <div
