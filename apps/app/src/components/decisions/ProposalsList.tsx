@@ -14,10 +14,8 @@ import {
 import {
   type Proposal,
   ProposalReviewRequestState,
-  getLocationFieldMapView,
   isReviewPhase,
   isVotingPhase,
-  templateCollectsLocation,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/sense/lib/utils';
@@ -28,12 +26,12 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
 import { MobileViewSwitch } from './MobileViewSwitch';
+import { ProposalBrowseCard } from './ProposalBrowseCard';
 import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { ProposalsGrid } from './ProposalsGrid';
 import {
   ProposalsMapView,
@@ -42,8 +40,9 @@ import {
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
-import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
+import { proposalHref } from './proposalHrefs';
 import { getProposalDetectionText } from './translationDetectionText';
+import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
 export interface ProposalsListProps {
@@ -393,36 +392,18 @@ const ProposalsListContent = ({
 
   const categories = categoriesData.categories;
 
-  // Nullable so the default below can depend on whether the process collects a
-  // location; the contextual default is stripped from the URL in setView.
-  const [view, setView] = useQueryState(
-    'view',
-    parseAsStringLiteral(PROPOSAL_VIEWS),
-  );
-
   // Map browse mode is offered only when the process collects a location and
-  // the GIS flag is on. The map fits the proposal markers; this default view
-  // (`x-map-default`) is the fallback camera for when none have a location.
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
-  const proposalTemplate = instance.instanceData?.proposalTemplate;
-  const hasLocationField =
-    !!gisMapsEnabled && templateCollectsLocation(proposalTemplate);
-  const mapView =
-    getLocationFieldMapView(proposalTemplate) ??
-    DEFAULT_LOCATION_FIELD_MAP_VIEW;
-  // Lead with the map when the process has one — users came here to see places,
-  // not titles — and fall back to grid otherwise. Ignores a stale `?view=map`
-  // when this process has no map.
-  const defaultView: ProposalView = hasLocationField ? 'map' : 'grid';
-  const effectiveView: ProposalView = hasLocationField
-    ? (view ?? defaultView)
-    : 'grid';
-  const isMapMode = hasLocationField && effectiveView === 'map';
-
-  const handleViewChange = (next: ProposalView) => {
-    // Strip the param when picking the contextual default so the URL stays clean.
-    void setView(next === defaultView ? null : next);
-  };
+  // the GIS flag is on. Browse leads with the map when the process has one —
+  // users came here to see places, not titles.
+  const {
+    hasLocationField,
+    mapView,
+    effectiveView,
+    isMapMode,
+    handleViewChange,
+  } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
+    defaultView: 'map',
+  });
 
   const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
@@ -450,6 +431,41 @@ const ProposalsListContent = ({
         ),
       ),
     [revisionRequestsData],
+  );
+
+  const hrefFor = useCallback(
+    (proposal: Proposal) =>
+      proposalHref({
+        profileId: proposal.profileId,
+        decisionSlug,
+        slug,
+        instanceId,
+      }),
+    [decisionSlug, slug, instanceId],
+  );
+
+  // `useCallback` is load-bearing: the map view's list rows are memoized on
+  // this function, so a fresh one every render would re-render the whole
+  // column on each hover.
+  const renderCard = useCallback(
+    (proposal: Proposal, { className }: { className: string }) => (
+      <ProposalBrowseCard
+        proposal={proposal}
+        instanceId={instanceId}
+        slug={slug}
+        decisionSlug={decisionSlug}
+        permissions={permissions}
+        revisionRequestId={revisionRequestIdByProposalId.get(proposal.id)}
+        className={className}
+      />
+    ),
+    [
+      instanceId,
+      slug,
+      decisionSlug,
+      permissions,
+      revisionRequestIdByProposalId,
+    ],
   );
 
   // Detect per proposal (not one concatenated sample) so proposals that
@@ -555,11 +571,8 @@ const ProposalsListContent = ({
             <ProposalsMapView
               proposals={allProposals}
               pinProposals={allProposals}
-              instanceId={instanceId}
-              slug={slug}
-              decisionSlug={decisionSlug}
-              permissions={permissions}
-              revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+              renderCard={renderCard}
+              hrefFor={hrefFor}
               mapView={mapView}
               listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
             />
@@ -578,11 +591,8 @@ const ProposalsListContent = ({
               <Suspense fallback={<ProposalListSkeletonGrid />}>
                 <ProposalsMapWithLocations
                   proposals={allProposals}
-                  instanceId={instanceId}
-                  slug={slug}
-                  decisionSlug={decisionSlug}
-                  permissions={permissions}
-                  revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+                  renderCard={renderCard}
+                  hrefFor={hrefFor}
                   mapView={mapView}
                   // Pins come from a dedicated all-locations query (not the
                   // loaded list pages) so the map isn't capped by the page
