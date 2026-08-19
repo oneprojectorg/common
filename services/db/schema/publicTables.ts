@@ -245,6 +245,13 @@ export { decisionTransitionProposals } from './tables/decisionTransitionProposal
 export type { DecisionTransitionProposal } from './tables/decisionTransitionProposals.sql';
 
 export {
+  ProposalExportStatus,
+  proposalExportStatusEnum,
+  proposalExports,
+} from './tables/proposalExports.sql';
+export type { ProposalExport } from './tables/proposalExports.sql';
+
+export {
   decisionProcessTransitions,
   decisionProcessTransitionsRelations,
 } from './tables/processTransitions.sql';

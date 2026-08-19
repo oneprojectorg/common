@@ -2,11 +2,9 @@
  * Shared configuration for the proposal export pipeline.
  *
  * The API service, the `@op/common` service layer, and the Inngest workflow all
- * read and write the same export record and the same storage object, so the
- * bucket name, key format, and TTLs have to agree across all three. They
- * previously drifted — the workflow minted a 2 hour signed URL but recorded a
- * 24 hour expiry, so `getExportStatus` served a dead URL for the 22 hours in
- * between.
+ * read and write the same export record (the `proposal_exports` table) and the
+ * same storage object, so the bucket name and key format have to agree across
+ * all three.
  */
 
 import { ASSETS_BUCKET } from '../../../utils/storage';
@@ -38,9 +36,9 @@ export const EXPORTS_BUCKET = ASSETS_BUCKET;
 /**
  * Lifetime of a generated signed download URL.
  *
- * Deliberately shorter than {@link EXPORT_CACHE_TTL_SECONDS}: the export record
- * outlives any single URL, so an admin returning to a finished export gets a
- * freshly minted URL from `getExportStatus` instead of a 404.
+ * The export record (`proposal_exports`) is durable and does not expire, so a
+ * lapsed URL is always re-signable: an admin returning to a finished export
+ * gets a freshly minted URL from `getExportStatus` instead of a 404.
  *
  * Note this bounds the *signed* URL only. Objects live in the public `assets`
  * bucket (see {@link EXPORTS_BUCKET}), so expiry does not revoke access to the
@@ -49,19 +47,15 @@ export const EXPORTS_BUCKET = ASSETS_BUCKET;
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
 /**
- * Lifetime of the cached export status record.
+ * Expiry to record for a signed URL minted just now.
  *
- * Export state is cache-only — there is no backing table — so this is also how
- * long a completed export stays downloadable. Must stay longer than
- * {@link EXPORT_URL_TTL_SECONDS} or the signed-URL refresh path in
- * `getExportStatus` is unreachable, because the record would expire before the
- * URL it holds.
+ * Both the Inngest workflow (minting the first URL) and `getExportStatus`
+ * (re-signing a lapsed one) compute this; sharing it keeps the two mint sites
+ * from drifting the way the bucket/TTL constants once did (see the module
+ * comment above).
  */
-export const EXPORT_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
-
-/** Cache key for an export's status record. */
-export const exportStatusCacheKey = (exportId: string) =>
-  `export:proposal:${exportId}`;
+export const nextUrlExpiresAt = () =>
+  new Date(Date.now() + EXPORT_URL_TTL_SECONDS * 1000);
 
 /**
  * Storage key for an export's generated file, relative to

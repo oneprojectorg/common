@@ -1,16 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mocks: getExportStatus is orchestration over the cache, the access
-// gate, and Supabase storage. We drive those and assert what it does with a
-// completed export whose signed URL has lapsed — the refresh path that was
-// unreachable before the record was made longer-lived than the URL.
-vi.mock('@op/cache', () => ({
-  get: vi.fn(),
-  set: vi.fn(),
-}));
-
+// Boundary mocks: getExportStatus is orchestration over the durable export
+// record, the access gate, and Supabase storage. We drive those and assert
+// what it does with a completed export whose signed URL has lapsed — the
+// refresh path that was unreachable before the record outlived the URL.
 vi.mock('@op/db/client', () => ({
-  db: { select: vi.fn() },
+  db: {
+    query: { proposalExports: { findFirst: vi.fn() } },
+    update: vi.fn(),
+  },
   eq: vi.fn(),
 }));
 
@@ -22,16 +20,14 @@ vi.mock('../assert', () => ({
   assertProfileAccess: vi.fn(),
 }));
 
-import { get, set } from '@op/cache';
 import { db } from '@op/db/client';
+import { ProposalExportStatus } from '@op/db/schema';
 import { createSBServerClient } from '@op/supabase/server';
 
+import { UnauthorizedError } from '../../utils';
 import { ASSETS_BUCKET } from '../../utils/storage';
-import {
-  EXPORT_CACHE_TTL_SECONDS,
-  EXPORT_URL_TTL_SECONDS,
-  exportFilePath,
-} from './exports';
+import { assertProfileAccess } from '../assert';
+import { EXPORT_URL_TTL_SECONDS, exportFilePath } from './exports';
 import { getExportStatus } from './getExportStatus';
 
 const EXPORT_ID = '11111111-1111-4111-8111-111111111111';
@@ -40,37 +36,61 @@ const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const NOW = new Date('2026-08-10T12:00:00.000Z');
 
 const user = { id: AUTH_USER_ID } as never;
-const logger = { info: vi.fn() };
+const logger = { info: vi.fn(), warn: vi.fn() };
 
 const createSignedUrl = vi.fn();
+const updateSet = vi.fn(() => ({ where: async () => undefined }));
 
-/** A completed export record whose signed URL lapsed an hour ago. */
-const expiredRecord = () => ({
-  exportId: EXPORT_ID,
+/** Shape of a `proposalExports` row, widened to match the nullable columns
+ * `expiredRow()` seeds — a bare object-literal return type would infer each
+ * nullable field as the literal it happens to be seeded with, rejecting a
+ * test's `null` override of a field seeded non-null (or vice versa). */
+interface ExpiredExportRow {
+  id: string;
+  processInstanceId: string;
+  requestedByUserId: string | null;
+  format: string;
+  status: ProposalExportStatus;
+  fileName: string | null;
+  signedUrl: string | null;
+  urlExpiresAt: Date;
+  errorMessage: string | null;
+  createdAt: Date;
+  completedAt: Date;
+}
+
+/** A completed export row whose signed URL lapsed an hour ago. */
+const expiredRow = (): ExpiredExportRow => ({
+  id: EXPORT_ID,
   processInstanceId: INSTANCE_ID,
-  userId: AUTH_USER_ID,
+  requestedByUserId: AUTH_USER_ID,
   format: 'csv',
-  status: 'completed' as const,
-  filters: {},
+  status: ProposalExportStatus.COMPLETED,
   fileName: 'proposals_export_123.csv',
   signedUrl: 'https://storage.example/stale-url',
-  urlExpiresAt: new Date(NOW.getTime() - 60 * 60 * 1000).toISOString(),
-  createdAt: new Date(NOW.getTime() - 3 * 60 * 60 * 1000).toISOString(),
+  urlExpiresAt: new Date(NOW.getTime() - 60 * 60 * 1000),
+  errorMessage: null,
+  createdAt: new Date(NOW.getTime() - 3 * 60 * 60 * 1000),
+  completedAt: new Date(NOW.getTime() - 3 * 60 * 60 * 1000),
 });
 
+/** Stubs the single `db.query.proposalExports.findFirst` call, joined to a
+ * process instance whose profile is `profile-1`. */
+const setupRow = (row: ExpiredExportRow | null) => {
+  vi.mocked(db.query.proposalExports.findFirst).mockResolvedValue(
+    (row
+      ? { ...row, processInstance: { profileId: 'profile-1' } }
+      : undefined) as never,
+  );
+};
+
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
 
-  // The instance lookup that backs the access check.
-  vi.mocked(db.select).mockReturnValue({
-    from: () => ({
-      where: () => ({
-        limit: () => Promise.resolve([{ profileId: 'profile-1' }]),
-      }),
-    }),
-  } as never);
+  updateSet.mockImplementation(() => ({ where: async () => undefined }));
+  vi.mocked(db.update).mockReturnValue({ set: updateSet } as never);
 
   createSignedUrl.mockResolvedValue({
     data: { signedUrl: 'https://storage.example/fresh-url' },
@@ -82,8 +102,8 @@ beforeEach(() => {
 });
 
 describe('getExportStatus', () => {
-  it('returns not_found when the record has aged out of the cache', async () => {
-    vi.mocked(get).mockResolvedValue(null);
+  it('returns not_found when no record exists', async () => {
+    setupRow(null);
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
@@ -92,7 +112,7 @@ describe('getExportStatus', () => {
   });
 
   it('re-signs a completed export whose URL has expired', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
+    setupRow(expiredRow());
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
@@ -110,7 +130,7 @@ describe('getExportStatus', () => {
   // share the public bucket, and why the unguessable file name — not the
   // signature — is what limits access to them.
   it('signs against the shared public bucket, at the instance-scoped path', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
+    setupRow(expiredRow());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
     vi.mocked(createSBServerClient).mockResolvedValue({
       storage: { from: storageFrom },
@@ -127,8 +147,10 @@ describe('getExportStatus', () => {
 
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
+  // The durable record has no TTL of its own now, but the recorded expiry must
+  // still match the signed URL it was just minted alongside.
   it('records an expiry that matches the URL it just minted', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
+    setupRow(expiredRow());
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
@@ -141,30 +163,29 @@ describe('getExportStatus', () => {
     expect(recordedExpiry.getTime()).toBe(NOW.getTime() + signedFor * 1000);
   });
 
-  it('writes the refreshed record back under the longer record TTL', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
+  it('writes the refreshed URL back onto the durable record', async () => {
+    setupRow(expiredRow());
 
     await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(set).toHaveBeenCalledWith(
-      `export:proposal:${EXPORT_ID}`,
-      expect.objectContaining({
-        signedUrl: 'https://storage.example/fresh-url',
-      }),
-      EXPORT_CACHE_TTL_SECONDS,
-    );
+    expect(db.update).toHaveBeenCalled();
+    expect(updateSet).toHaveBeenCalledWith({
+      signedUrl: 'https://storage.example/fresh-url',
+      urlExpiresAt: expect.any(Date),
+    });
   });
 
   it('leaves a still-valid URL alone', async () => {
-    vi.mocked(get).mockResolvedValue({
-      ...expiredRecord(),
+    setupRow({
+      ...expiredRow(),
       signedUrl: 'https://storage.example/live-url',
-      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
+      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000),
     });
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
     expect(createSignedUrl).not.toHaveBeenCalled();
+    expect(db.update).not.toHaveBeenCalled();
     expect(result).toMatchObject({
       signedUrl: 'https://storage.example/live-url',
     });
@@ -176,9 +197,9 @@ describe('getExportStatus', () => {
   // export stays undownloadable for the rest of its life despite the object
   // sitting in the bucket.
   it('refreshes a completed export that has a file but no URL', async () => {
-    vi.mocked(get).mockResolvedValue({
-      ...expiredRecord(),
-      signedUrl: undefined,
+    setupRow({
+      ...expiredRow(),
+      signedUrl: null,
     });
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
@@ -193,11 +214,11 @@ describe('getExportStatus', () => {
   });
 
   it('does not attempt a refresh for an export that never produced a file', async () => {
-    vi.mocked(get).mockResolvedValue({
-      ...expiredRecord(),
-      status: 'failed',
-      fileName: undefined,
-      signedUrl: undefined,
+    setupRow({
+      ...expiredRow(),
+      status: ProposalExportStatus.FAILED,
+      fileName: null,
+      signedUrl: null,
       errorMessage: 'Storage upload failed',
     });
 
@@ -207,14 +228,47 @@ describe('getExportStatus', () => {
   });
 
   it('rejects a caller who does not own the export', async () => {
-    vi.mocked(get).mockResolvedValue({
-      ...expiredRecord(),
-      userId: 'someone-else',
+    setupRow({
+      ...expiredRow(),
+      requestedByUserId: 'someone-else',
     });
 
     await expect(
       getExportStatus({ exportId: EXPORT_ID, user, logger }),
     ).rejects.toThrow();
     expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  // `requestedByUserId` is `ON DELETE SET NULL`: once the requesting account
+  // is deleted, no caller could ever match it, so a hard rejection here would
+  // make an otherwise-complete, durable export permanently unrecoverable —
+  // exactly the failure mode this table was built to eliminate. The caller's
+  // standing access to the decision profile is what should govern instead.
+  it('falls through to the profile check when the export has no attributed requester', async () => {
+    setupRow({
+      ...expiredRow(),
+      requestedByUserId: null,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(assertProfileAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ profileId: 'profile-1' }),
+    );
+    expect(result).toMatchObject({ userId: null });
+  });
+
+  it('still rejects a caller without profile access when the export has no attributed requester', async () => {
+    setupRow({
+      ...expiredRow(),
+      requestedByUserId: null,
+    });
+    vi.mocked(assertProfileAccess).mockRejectedValue(
+      new UnauthorizedError('Not authorized'),
+    );
+
+    await expect(
+      getExportStatus({ exportId: EXPORT_ID, user, logger }),
+    ).rejects.toThrow();
   });
 });
