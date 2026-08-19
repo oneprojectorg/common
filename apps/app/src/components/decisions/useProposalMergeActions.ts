@@ -14,8 +14,12 @@ export interface MergeTarget {
 }
 
 export interface ProposalMergeActions {
-  merge: (target: MergeTarget) => void;
-  unmerge: (source: { sourceProposalId: string; sourceTitle: string }) => void;
+  /** Rejects on failure (after toasting it), so the caller can keep its dialog open. */
+  merge: (target: MergeTarget) => Promise<void>;
+  unmerge: (source: {
+    sourceProposalId: string;
+    sourceTitle: string;
+  }) => Promise<void>;
   isMerging: boolean;
   isUnmerging: boolean;
 }
@@ -58,7 +62,7 @@ export function useProposalMergeActions(): ProposalMergeActions {
       targetProposalId,
       targetTitle,
     }: MergeTarget) =>
-      mergeMutation.mutate(
+      mergeMutation.mutateAsync(
         { sourceProposalId, targetProposalId },
         {
           // Per-call rather than on the mutation, so the toast can name both
@@ -73,7 +77,7 @@ export function useProposalMergeActions(): ProposalMergeActions {
         },
       ),
     unmerge: ({ sourceProposalId, sourceTitle }) =>
-      unmergeMutation.mutate(
+      unmergeMutation.mutateAsync(
         { sourceProposalId },
         {
           onSuccess: () =>

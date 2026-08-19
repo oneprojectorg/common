@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -71,18 +72,28 @@ export function MergeProposalDialog({
     onOpenChange(nextOpen);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!target) {
       return;
     }
 
-    merge({
-      sourceProposalId: proposal.id,
-      sourceTitle,
-      targetProposalId: target.id,
-      targetTitle: target.title,
-    });
-    handleOpenChange(false);
+    try {
+      await merge({
+        sourceProposalId: proposal.id,
+        sourceTitle,
+        targetProposalId: target.id,
+        targetTitle: target.title,
+      });
+      handleOpenChange(false);
+    } catch (error) {
+      // The hook already toasted it. Staying open keeps the selection, which is
+      // what a retry needs after a conflict ("already merged", "unmerge those
+      // first") — the only failures this mutation has.
+      logger.error('Failed to merge proposal', {
+        error,
+        context: 'MergeProposalDialog',
+      });
+    }
   };
 
   return (

@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { type ReactNode, Suspense, useState } from 'react';
@@ -82,9 +83,24 @@ function ProposalMergeNoticeSuspense({
     return null;
   }
 
-  const handleUnmerge = (sourceProposalId: string, sourceTitle: string) => {
+  const handleUnmerge = async (
+    sourceProposalId: string,
+    sourceTitle: string,
+  ) => {
     setUnmergingProposalId(sourceProposalId);
-    unmerge({ sourceProposalId, sourceTitle });
+    try {
+      // On success the edge is gone, so this row (or the whole notice) is
+      // dropped by the invalidation the mutation broadcasts.
+      await unmerge({ sourceProposalId, sourceTitle });
+    } catch (error) {
+      // The hook already toasted it; the row stays so it can be retried.
+      logger.error('Failed to unmerge proposal', {
+        error,
+        context: 'ProposalMergeNotice',
+      });
+    } finally {
+      setUnmergingProposalId(null);
+    }
   };
 
   const proposalTitle = getProposalDisplayTitle(
