@@ -56,6 +56,7 @@ export function ProposalEditor({
   backHref,
   proposal,
   isEditMode = false,
+  isNewProposal = false,
   asideHeaderIcons,
   revisionRequest = null,
 }: {
@@ -63,6 +64,12 @@ export function ProposalEditor({
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
+  /**
+   * The author's first visit to the draft that "Start a proposal" just created,
+   * flagged by `?new=true`. Only the page title depends on it: reopening the
+   * same draft later reads as editing, not creating.
+   */
+  isNewProposal?: boolean;
   asideHeaderIcons?: ReactNode;
   revisionRequest?: ProposalReviewRequest | null;
 }) {
@@ -103,6 +110,7 @@ export function ProposalEditor({
       backHref={backHref}
       proposal={proposal}
       isEditMode={isEditMode}
+      isNewProposal={isNewProposal}
       asideHeaderIcons={asideHeaderIcons}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
@@ -134,6 +142,7 @@ function ProposalEditorInner({
   backHref,
   proposal,
   isEditMode,
+  isNewProposal,
   asideHeaderIcons,
   collaborationDocId,
   proposalTemplate,
@@ -143,6 +152,7 @@ function ProposalEditorInner({
   backHref: string;
   proposal: Proposal;
   isEditMode: boolean;
+  isNewProposal: boolean;
   asideHeaderIcons?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
@@ -167,6 +177,9 @@ function ProposalEditorInner({
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
+  // A bookmarked or shared editor URL keeps `?new=true`, so only title the page
+  // "Create proposal" while the proposal is still an unsubmitted draft.
+  const isCreating = isNewProposal && isDraft;
 
   // Look up the optional form attached to this decision profile for the
   // current phase. A profile can attach a form per phase (tagged with
@@ -506,7 +519,7 @@ function ProposalEditorInner({
             <div className="px-4 py-8 sm:px-6 sm:py-14">
               <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
                 <Header2>
-                  {isEditMode ? t('Edit proposal') : t('Create proposal')}
+                  {isCreating ? t('Create proposal') : t('Edit proposal')}
                 </Header2>
                 {editorBody}
               </div>

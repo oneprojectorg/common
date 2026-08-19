@@ -41,6 +41,10 @@ import {
   proposalEditorReviewRevisionParser,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
+import {
+  PROPOSAL_EDITOR_NEW_PARAM,
+  proposalEditorNewParser,
+} from '@/components/decisions/proposalEditor/proposalEditorNewParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
 /**
@@ -66,10 +70,14 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
+  const [
+    { aside, versionId, reviewRevision, new: isNewProposal },
+    setQueryState,
+  ] = useQueryStates({
     aside: proposalEditorAsideParser,
     versionId: proposalEditorVersionIdParser,
     reviewRevision: proposalEditorReviewRevisionParser,
+    [PROPOSAL_EDITOR_NEW_PARAM]: proposalEditorNewParser,
   });
   const t = useTranslations();
 
@@ -243,6 +251,7 @@ function EditProposalPageContent() {
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
           revisionRequest={revisionRequest}
+          isNewProposal={isNewProposal}
         />
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
@@ -265,6 +274,7 @@ function ProposalEditorContent({
   setAsideState,
   asideHeaderIcons,
   revisionRequest,
+  isNewProposal,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -274,6 +284,8 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   revisionRequest: ProposalReviewRequest | null;
+  /** The author arrived here straight from creating this draft (`?new=true`). */
+  isNewProposal: boolean;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -327,6 +339,7 @@ function ProposalEditorContent({
         backHref={`/decisions/${slug}/current`}
         proposal={proposal}
         isEditMode
+        isNewProposal={isNewProposal}
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
