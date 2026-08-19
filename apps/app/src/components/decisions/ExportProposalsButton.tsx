@@ -7,7 +7,7 @@ import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
 import { useEffect, useState } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
-import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
+import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -106,7 +106,7 @@ const ExportStatusUnreadable = ({
   }, [error, t]);
 
   return (
-    <Button variant="secondary" size="sm" onClick={onRetry}>
+    <Button variant="outline" onClick={onRetry}>
       <LuTriangleAlert aria-hidden />
       {t('Try again')}
     </Button>
@@ -207,8 +207,7 @@ const ExportProposalsButtonContent = ({
   if (isResolved && status.signedUrl) {
     return (
       <Button
-        variant="secondary"
-        size="sm"
+        variant="outline"
         // Rendered as an anchor so the browser owns the download. Base UI needs
         // both flags to stop emitting button semantics over the link.
         nativeButton={false}
@@ -235,8 +234,7 @@ const ExportProposalsButtonContent = ({
 
   return (
     <Button
-      variant="secondary"
-      size="sm"
+      variant="outline"
       // Disabled rather than `loading` once a run is under way: that prop
       // draws a spinner over the label and renders the label invisible, so the
       // state the label reports would never be readable. A spinner only says
@@ -261,7 +259,7 @@ const ExportProposalsButtonContent = ({
         })
       }
     >
-      <LuDownload aria-hidden />
+      <LuArrowDownToLine aria-hidden />
       {/* Named for what it covers, not for where it sits. The control lives in
           the filter bar and no longer follows it, so a bare "Export" beside an
           active filter would read as exporting that selection. */}
