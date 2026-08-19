@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
@@ -108,7 +107,6 @@ function PhaseDetailForm({
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
-  const reviewsV2Enabled = useFeatureFlag('reviews-v2');
   const posthog = usePostHog();
   // Open reviews opt-in is confirmed via a dialog (enabling it changes reviewer
   // behavior), so turning it ON opens this dialog first.
@@ -440,7 +438,7 @@ function PhaseDetailForm({
             }}
           />
         </ToggleRow>
-        {reviewsV2Enabled && isReviewPhase(phase) && (
+        {isReviewPhase(phase) && (
           <ToggleRow
             label={t('Open reviews')}
             description={t(
