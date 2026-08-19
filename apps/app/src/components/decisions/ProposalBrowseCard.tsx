@@ -4,6 +4,7 @@ import { canEngageWithProposals } from '@/hooks/useProposalEngagement';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
+import type { ReactNode } from 'react';
 
 import {
   ProposalCardMenu,
@@ -22,6 +23,8 @@ interface ProposalBrowseCardProps {
   permissions?: DecisionAccess | null;
   /** Id of this proposal's open revision request, if it has one. */
   revisionRequestId?: string;
+  /** Status-row slot — the review-progress count on the review surface. */
+  reviewedLabel?: ReactNode;
   className?: string;
 }
 
@@ -40,6 +43,7 @@ export function ProposalBrowseCard({
   decisionSlug,
   permissions,
   revisionRequestId,
+  reviewedLabel,
   className,
 }: ProposalBrowseCardProps) {
   const canManageProposals = permissions?.admin ?? false;
@@ -98,6 +102,7 @@ export function ProposalBrowseCard({
       // excluded because they carry no metrics at all.
       canEngage={canEngage && !isDraft}
       revisionRequested={hasRevisionRequest}
+      reviewedLabel={reviewedLabel}
       className={cn(isDraft && 'bg-muted', className)}
     />
   );

@@ -19,6 +19,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
+import { AdminReviewProposalsList } from '../AdminReviewProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
@@ -67,7 +68,9 @@ export function ReviewPage({
   const t = useTranslations();
 
   // The tab lives in the URL so a reload or a shared link lands on the tab the
-  // reviewer was on, and so the per-tab params (`?sort=`) are unambiguous.
+  // reviewer was on, and so the per-tab params (`?sort=`) are unambiguous. The
+  // pair is the reviewer's: the single-list admin variant below has no tab, so
+  // it never reads or writes the param.
   const [tab, setTab] = useQueryState(
     'tab',
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
@@ -198,11 +201,23 @@ export function ReviewPage({
                       currentPhase={currentPhase}
                       pinOffset={pinOffset}
                       excludeAssignedForReview
+                      showReviewCounts
                     />
                   </Suspense>
                 </APIErrorBoundary>
               </TabsContent>
             </Tabs>
+          ) : isAdmin ? (
+            // An admin without the review capability has no assignment queue to
+            // tab against: the whole surface is the progress list, which owns
+            // its own loading and error states.
+            <AdminReviewProposalsList
+              processInstanceId={instance.id}
+              decisionSlug={decisionSlug}
+              decisionProfileId={decisionProfileId}
+              access={instance.access}
+              pinOffset={pinOffset}
+            />
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
               <Suspense fallback={<ProposalListSkeleton />}>

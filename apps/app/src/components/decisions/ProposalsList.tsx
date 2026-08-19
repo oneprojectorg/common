@@ -31,6 +31,7 @@ import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
+import { ProposalReviewsCount } from './ProposalReviewsCount';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ProposalsGrid } from './ProposalsGrid';
 import {
@@ -64,6 +65,12 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
   /** Exclude proposals the current user is assigned to review (Other proposals tab). */
   excludeAssignedForReview?: boolean;
+  /**
+   * Review surface: put each card's completed-review count on its status row.
+   * Honoured for admins only — an admin needs no `openReviews` to see counts,
+   * while a reviewer's counts follow that policy (a separate change).
+   */
+  showReviewCounts?: boolean;
   /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
@@ -356,6 +363,7 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   excludeAssignedForReview,
+  showReviewCounts,
   pinOffset,
   phase,
   queryParams,
@@ -433,6 +441,36 @@ const ProposalsListContent = ({
     [revisionRequestsData],
   );
 
+  // Counts are an admin affordance here: `listWithReviewAggregates` is
+  // admin-only, and the filtered mode takes the ids this page already loaded,
+  // so no proposal is fetched twice. Reviewer-facing counts follow the
+  // `openReviews` policy and arrive separately.
+  const canSeeReviewCounts = Boolean(showReviewCounts && permissions?.admin);
+  const loadedProposalIds = useMemo(
+    () => allProposals.map((proposal) => proposal.id),
+    [allProposals],
+  );
+  const { data: aggregatesData } =
+    trpc.decision.listWithReviewAggregates.useQuery(
+      {
+        processInstanceId: instanceId,
+        proposalIds: loadedProposalIds,
+      },
+      {
+        enabled: canSeeReviewCounts && loadedProposalIds.length > 0,
+      },
+    );
+  const reviewersByProposalId = useMemo(
+    () =>
+      new Map(
+        (aggregatesData?.items ?? []).map((item) => [
+          item.proposal.id,
+          item.aggregates.reviewers,
+        ]),
+      ),
+    [aggregatesData],
+  );
+
   const hrefFor = useCallback(
     (proposal: Proposal) =>
       proposalHref({
@@ -442,6 +480,29 @@ const ProposalsListContent = ({
         instanceId,
       }),
     [decisionSlug, slug, instanceId],
+  );
+
+  // The proposal-keyed reviews URL resolves per viewer — the Review Progress
+  // screen for an admin. Same target as the count's link on the queue tab, so
+  // the two tabs can't disagree about where a count leads.
+  const reviewedLabelFor = useCallback(
+    (proposal: Proposal) => {
+      const reviewers = reviewersByProposalId.get(proposal.id);
+
+      if (!canSeeReviewCounts || !reviewers) {
+        return null;
+      }
+
+      return (
+        <ProposalReviewsCount
+          reviewers={reviewers}
+          href={`/decisions/${decisionSlug}/proposal/${proposal.profileId}/reviews`}
+          access={permissions ?? undefined}
+          variant="reviewed"
+        />
+      );
+    },
+    [canSeeReviewCounts, reviewersByProposalId, decisionSlug, permissions],
   );
 
   // `useCallback` is load-bearing: the map view's list rows are memoized on
@@ -456,6 +517,7 @@ const ProposalsListContent = ({
         decisionSlug={decisionSlug}
         permissions={permissions}
         revisionRequestId={revisionRequestIdByProposalId.get(proposal.id)}
+        reviewedLabel={reviewedLabelFor(proposal)}
         className={className}
       />
     ),
@@ -465,6 +527,7 @@ const ProposalsListContent = ({
       decisionSlug,
       permissions,
       revisionRequestIdByProposalId,
+      reviewedLabelFor,
     ],
   );
 
@@ -625,6 +688,7 @@ const ProposalsListContent = ({
             proposalsHidden={proposalsHidden}
             excludeAssignedForReview={excludeAssignedForReview}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+            reviewedLabelFor={reviewedLabelFor}
             isFetchingNextPage={isFetchingNextPage}
           />
         )}

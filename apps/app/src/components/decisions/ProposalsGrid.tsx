@@ -61,9 +61,15 @@ export interface ProposalsProps {
 
 export const ProposalsGrid = ({
   revisionRequestIdByProposalId,
+  reviewedLabelFor,
   ...props
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
+  /**
+   * Status-row slot per proposal — the review-progress count on the review
+   * surface. Only the non-voting grid renders it: a review phase never votes.
+   */
+  reviewedLabelFor?: (proposal: Proposal) => ReactNode;
 }) => {
   const { instanceId, isVotingPhase } = props;
 
@@ -85,6 +91,7 @@ export const ProposalsGrid = ({
     <ViewProposalsList
       {...props}
       revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+      reviewedLabelFor={reviewedLabelFor}
     />
   );
 };
@@ -493,8 +500,10 @@ const ViewProposalsList = ({
   excludeAssignedForReview,
   isFetchingNextPage,
   revisionRequestIdByProposalId,
+  reviewedLabelFor,
 }: ProposalsProps & {
   revisionRequestIdByProposalId?: Map<string, string>;
+  reviewedLabelFor?: (proposal: Proposal) => ReactNode;
 }) => {
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
@@ -519,6 +528,7 @@ const ViewProposalsList = ({
           decisionSlug={decisionSlug}
           permissions={permissions}
           revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
+          reviewedLabel={reviewedLabelFor?.(proposal)}
         />
       ))}
     </ProposalMasonry>
