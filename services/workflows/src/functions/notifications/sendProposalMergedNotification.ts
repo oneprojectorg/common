@@ -1,8 +1,10 @@
 import { listProposalMergeRecipients } from '@op/common';
 import { OPURLConfig } from '@op/core';
-import { OPBatchSend, ProposalMergedEmail } from '@op/emails';
+import { ProposalMergedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
+
+import { sendNotificationEmails } from './sendNotificationEmails';
 
 const { proposalMerged } = Events;
 
@@ -52,9 +54,9 @@ export const sendProposalMergedNotification = inngest.createFunction(
     const proposalUrl = `${proposalBaseUrl}/${sourceProposalProfileId}`;
     const targetProposalUrl = `${proposalBaseUrl}/${targetProposalProfileId}`;
 
-    const sendResult = await step.run('send-emails', async () => {
-      try {
-        const emails = recipients.map(({ email }) => ({
+    const sendResult = await step.run('send-emails', async () =>
+      sendNotificationEmails({
+        emails: recipients.map(({ email }) => ({
           to: email,
           subject: ProposalMergedEmail.subject(sourceProposalName),
           component: () =>
@@ -65,24 +67,11 @@ export const sendProposalMergedNotification = inngest.createFunction(
               proposalUrl,
               targetProposalUrl,
             }),
-        }));
-
-        const { data, errors } = await OPBatchSend(emails);
-
-        if (errors.length > 0) {
-          throw Error(`Email batch failed: ${JSON.stringify(errors)}`);
-        }
-
-        return { sent: data.length };
-      } catch (error) {
-        logger.error('Failed to send proposal merged notifications', {
-          error,
-          relationshipId,
-        });
-
-        throw error;
-      }
-    });
+        })),
+        failureMessage: 'proposal merged notifications',
+        context: { relationshipId },
+      }),
+    );
 
     return {
       message: `${sendResult.sent} proposal merged notification(s) sent`,
