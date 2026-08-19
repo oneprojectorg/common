@@ -1237,7 +1237,6 @@
   "Sent {date}": "Envoyé le {date}",
   "Close": "Fermer",
   "Feedback to Author": "Commentaires à l'auteur",
-  "Shared anonymously with the author after the review phase ends": "Partagé anonymement avec l'auteur à la fin de la phase de révision",
   "Total Score": "Score total",
   "Proposal {current} of {total}": "Proposition {current} sur {total}",
   "{current} of {total}": "{current} sur {total}",
@@ -1544,5 +1543,8 @@
   "Couldn't check the export's status. It may still be running.": "Impossible de vérifier l'état de l'exportation. Elle est peut-être toujours en cours.",
   "Export all": "Tout exporter",
   "Proposals in review · {count}": "Propositions en cours d’examen · {count}",
-  "{count} Reviewed": "{count} examinées"
+  "{count} Reviewed": "{count} examinées",
+  "Feedback": "Retours",
+  "Notes reviewers shared while this proposal was under review": "Notes partagées par les évaluateurs pendant l'examen de cette proposition",
+  "Reviewer · {timeAgo}": "Évaluateur · {timeAgo}"
 }

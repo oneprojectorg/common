@@ -183,16 +183,15 @@ test.describe('Proposal View — revision submitted panel', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    // Plain URL — toggle button is visible because a RESUBMITTED request exists.
+    // Plain URL — the header's "Feedback" toggle is visible because a
+    // RESUBMITTED request exists.
     await page.goto(
       proposalUrl(scenario.instance.slug, scenario.proposal.profileId),
     );
     await expect(
       page.getByRole('heading', { name: 'Community Solar Initiative' }),
     ).toBeVisible({ timeout: 30_000 });
-    await expect(
-      page.getByRole('button', { name: 'Revision request' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Feedback' })).toBeVisible();
 
     // Panel open — author sees the submitted-revision content.
     await page.goto(
@@ -300,7 +299,7 @@ test.describe('Proposal View — revision submitted panel', () => {
     ).not.toBeVisible();
     await expect(page.getByText(REQUEST_COMMENT)).not.toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Revision request' }),
+      page.getByRole('button', { name: 'Feedback' }),
     ).not.toBeVisible();
   });
 });

@@ -32,6 +32,7 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       canSeeRevisions={false}
+      canSeeFeedback={false}
       decisionRoot={decisionRoot}
       selection={null}
     />

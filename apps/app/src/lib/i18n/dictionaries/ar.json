@@ -1151,7 +1151,6 @@
   "Sent {date}": "أُرسل في {date}",
   "Close": "إغلاق",
   "Feedback to Author": "ملاحظات إلى المؤلف",
-  "Shared anonymously with the author after the review phase ends": "يتم مشاركتها بشكل مجهول مع المؤلف بعد انتهاء مرحلة المراجعة",
   "Total Score": "النتيجة الإجمالية",
   "Proposal {current} of {total}": "المقترح {current} من {total}",
   "{current} of {total}": "{current} من {total}",
@@ -1544,5 +1543,8 @@
   "Couldn't check the export's status. It may still be running.": "تعذّر التحقق من حالة التصدير. قد تكون لا تزال قيد التنفيذ.",
   "Export all": "تصدير الكل",
   "Proposals in review · {count}": "المقترحات قيد المراجعة · {count}",
-  "{count} Reviewed": "تمت مراجعة {count}"
+  "{count} Reviewed": "تمت مراجعة {count}",
+  "Feedback": "الملاحظات",
+  "Notes reviewers shared while this proposal was under review": "ملاحظات شاركها المراجعون أثناء مراجعة هذا المقترح",
+  "Reviewer · {timeAgo}": "مراجع · {timeAgo}"
 }

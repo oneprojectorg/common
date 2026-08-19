@@ -1238,7 +1238,6 @@
   "Sent {date}": "{date} পাঠানো হয়েছে",
   "Close": "বন্ধ করুন",
   "Feedback to Author": "লেখকের কাছে মতামত",
-  "Shared anonymously with the author after the review phase ends": "পর্যালোচনা পর্ব শেষ হওয়ার পর বেনামে লেখকের সাথে শেয়ার করা হবে",
   "Total Score": "মোট স্কোর",
   "Proposal {current} of {total}": "প্রস্তাব {current} এর মধ্যে {total}",
   "{current} of {total}": "{current} এর মধ্যে {total}",
@@ -1547,5 +1546,8 @@
   "Couldn't check the export's status. It may still be running.": "রপ্তানির স্ট্যাটাস যাচাই করা যায়নি। এটি এখনও চলতে পারে।",
   "Export all": "সব রপ্তানি করুন",
   "Proposals in review · {count}": "পর্যালোচনাধীন প্রস্তাবনা · {count}",
-  "{count} Reviewed": "{count} পর্যালোচিত"
+  "{count} Reviewed": "{count} পর্যালোচিত",
+  "Feedback": "মতামত",
+  "Notes reviewers shared while this proposal was under review": "এই প্রস্তাবটি পর্যালোচনার সময় পর্যালোচকরা যে নোটগুলি শেয়ার করেছেন",
+  "Reviewer · {timeAgo}": "পর্যালোচক · {timeAgo}"
 }
