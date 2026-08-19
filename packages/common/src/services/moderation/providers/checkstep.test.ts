@@ -137,9 +137,7 @@ describe('createCheckstepProvider', () => {
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     // Checkstep requires a reporter; a sessionless report must still queue.
     expect(body.reporter).toBe('anonymous');
-    // `reason` is the only free-text field on the moderator's case, and no
-    // Report entry point collects one today — so it must never go out empty,
-    // or every real case arrives with nothing explaining why it was raised.
+    // The only free-text field on the case, and no entry point collects one.
     expect(body.reason).toMatch(/in-app Report action/);
   });
 
@@ -152,8 +150,6 @@ describe('createCheckstepProvider', () => {
       itemId: '44444444-4444-4444-8444-444444444444',
       roundId: ROUND_ID,
       reporterId: 'profile-9',
-      // Whitespace-only is treated as absent: it would render as a blank
-      // reason in the moderation UI, which is the case the default exists for.
       reason: '   ',
     });
 
@@ -177,8 +173,7 @@ describe('createCheckstepProvider', () => {
       }),
     ).rejects.toThrow('503');
 
-    // The endpoint isn't idempotent (a retry after a late accept files a
-    // second report), and this runs inside a user-facing mutation.
+    // Not idempotent: a retry after a late accept files a second report.
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -191,8 +186,7 @@ describe('createCheckstepProvider', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    // Must not throw: `flagItem` logs a report rejection for ops to chase, and
-    // an accepted call surfacing as one would send them after a phantom.
+    // Must not throw — ops would chase a report Checkstep accepted.
     await expect(
       createCheckstepProvider({ apiKey: 'k' }).reportForReview!({
         itemType: 'post',
@@ -212,8 +206,7 @@ describe('createCheckstepProvider', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    // Must not throw on `result.id`: the content IS ingested at this point, and
-    // a throw here would roll the flag back and drop the round.
+    // Must not throw on `result.id` — the content is already ingested.
     const ref = await createCheckstepProvider({ apiKey: 'k' }).submitForReview!(
       {
         itemType: 'post',
@@ -518,9 +511,7 @@ describe('createCheckstepProvider', () => {
       headers: {},
     });
 
-    // `overturn` is a real `ContentDecisionType` value and the reversal
-    // partner of `uphold`. Unmapped it would yield no verdict at all, leaving
-    // an overturned item hidden forever with no path back.
+    // Unmapped this yields no verdict, leaving the item hidden with no way back.
     expect(verdict?.verdict).toBe('clear');
   });
 

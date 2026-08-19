@@ -82,8 +82,6 @@ describe('flagItem', () => {
       reporterId: 'profile-9',
       reason: 'this is abuse',
     });
-    // The provider associates a report with content of the same ref that it
-    // has already ingested — reporting first would leave it isolated.
     expect(deps.submitForReview.mock.invocationCallOrder[0]).toBeLessThan(
       deps.reportForReview.mock.invocationCallOrder[0] ?? 0,
     );
@@ -106,10 +104,8 @@ describe('flagItem', () => {
 
     const result = await flagItem(input, deps);
 
-    // The content is already ingested and can't be un-ingested: rolling back
-    // here would delete the round and leave the provider's automated verdict
-    // with nowhere to land, so the item would end up neither flagged nor
-    // hidden. The flag stays, the analysis path stays live, ops gets told.
+    // The content is already ingested: rolling back would drop the round and
+    // leave the classifier verdict with nowhere to land.
     expect(deps.rollback).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
     expect(errorSpy).toHaveBeenCalledWith(
@@ -127,8 +123,7 @@ describe('flagItem', () => {
     expect(deps.createPendingFlag).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
     expect(deps.recordRound).not.toHaveBeenCalled();
-    // Holds the "at most one report per item" invariant: 50 users reporting
-    // the same post must not file 50 community reports.
+    // At most one report per item, however many users report it.
     expect(deps.reportForReview).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });

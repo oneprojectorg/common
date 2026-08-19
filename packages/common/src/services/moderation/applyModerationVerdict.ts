@@ -144,9 +144,9 @@ export const applyModerationVerdict = async (
   });
 
   // Unknown task: nothing we submitted is waiting on this verdict — a forged
-  // ref, or a task from a round a later submission superseded. (Resolving a
-  // flag does NOT clear its submission rows, so a redelivery after resolution
-  // still matches and is handled below.) Recording nothing, deciding nothing.
+  // ref, or a task from a round a later submission superseded. (Resolution does
+  // NOT clear submission rows, so a redelivery still matches.) Deciding
+  // nothing.
   // The round-match deliberately gates the detach too: honouring a detach on
   // an unmatched ref would let anyone holding the callback URL detach
   // arbitrary content. A superseded round isn't a coverage hole — the

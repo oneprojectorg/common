@@ -70,12 +70,9 @@ export const submitUserFlag = async (
 
   const provider = getModerationProvider();
   const callbackUrl = getModerationCallbackUrl();
-  // One gate for both provider calls so they can't drift apart: hand them over
-  // only when a provider exposing the full async surface AND a callback URL are
-  // configured. Without that the flag is recorded locally and nothing is sent —
-  // a report can only attach to content we actually ingested, and a case whose
-  // decision webhook we can't receive can't be enforced on our side (see the
-  // gating note in `flagItem`).
+  // One gate for both calls so they can't drift: a report can only attach to
+  // content we ingested, and a case whose decision webhook we can't receive
+  // can't be enforced. Without both, the flag stays local.
   const asyncReview =
     provider?.submitForReview && provider.planReviewRefs && callbackUrl
       ? {

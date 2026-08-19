@@ -61,8 +61,7 @@ describe('submitUserFlag provider gating', () => {
 
     await submitUserFlag(input);
 
-    // Both or neither: a submit without a report is the exact bug this
-    // feature exists to fix (content analysed, no human-review case raised).
+    // Both or neither — a submit without a report is the bug being fixed.
     expect(handedDeps().submitForReview).toBeInstanceOf(Function);
     expect(handedDeps().reportForReview).toBeInstanceOf(Function);
   });
@@ -73,8 +72,7 @@ describe('submitUserFlag provider gating', () => {
 
     await submitUserFlag(input);
 
-    // A case whose decision webhook can't reach us can't be enforced on our
-    // side, so it must not be filed — and the submit goes with it.
+    // A case whose decision webhook can't reach us can't be enforced.
     expect(handedDeps().reportForReview).toBeUndefined();
     expect(handedDeps().submitForReview).toBeUndefined();
   });
