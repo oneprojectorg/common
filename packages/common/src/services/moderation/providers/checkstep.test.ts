@@ -97,6 +97,142 @@ describe('createCheckstepProvider', () => {
     ]);
   });
 
+  it('reportForReview files a community report on the submitted content ref', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okEmpty());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createCheckstepProvider({ apiKey: 'k' }).reportForReview!({
+      itemType: 'proposal',
+      itemId: '33333333-3333-4333-8333-333333333333',
+      roundId: ROUND_ID,
+      reporterId: 'profile-9',
+      reason: 'Remove this hateful post please!',
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.checkstep.com/api/v2/content/report');
+    const body = JSON.parse(init.body);
+    // Same ref + complex type as the submit, which is how Checkstep
+    // associates the report with the ingested content.
+    expect(body.id).toBe(
+      `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+    );
+    expect(body.type).toBe('comment');
+    expect(body.reporter).toBe('profile-9');
+    expect(body.reason).toBe('Remove this hateful post please!');
+    expect(body.tags).toEqual(['#user-report']);
+  });
+
+  it('reportForReview falls back to an anonymous reporter and a default reason', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okEmpty());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createCheckstepProvider({ apiKey: 'k' }).reportForReview!({
+      itemType: 'post',
+      itemId: '44444444-4444-4444-8444-444444444444',
+      roundId: ROUND_ID,
+      reporterId: null,
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    // Checkstep requires a reporter; a sessionless report must still queue.
+    expect(body.reporter).toBe('anonymous');
+    // `reason` is the only free-text field on the moderator's case, and no
+    // Report entry point collects one today — so it must never go out empty,
+    // or every real case arrives with nothing explaining why it was raised.
+    expect(body.reason).toMatch(/in-app Report action/);
+  });
+
+  it('reportForReview treats a whitespace-only reason as absent', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okEmpty());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createCheckstepProvider({ apiKey: 'k' }).reportForReview!({
+      itemType: 'post',
+      itemId: '44444444-4444-4444-8444-444444444444',
+      roundId: ROUND_ID,
+      reporterId: 'profile-9',
+      // Whitespace-only is treated as absent: it would render as a blank
+      // reason in the moderation UI, which is the case the default exists for.
+      reason: '   ',
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).reason).toMatch(
+      /in-app Report action/,
+    );
+  });
+
+  it('reportForReview does not retry a 5xx: one attempt, no duplicate report', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 503, text: async () => '' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      createCheckstepProvider({ apiKey: 'k' }).reportForReview!({
+        itemType: 'post',
+        itemId: '44444444-4444-4444-8444-444444444444',
+        roundId: ROUND_ID,
+        reporterId: 'profile-9',
+      }),
+    ).rejects.toThrow('503');
+
+    // The endpoint isn't idempotent (a retry after a late accept files a
+    // second report), and this runs inside a user-facing mutation.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats a 2xx with a non-JSON body as accepted, not as a failure', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      // A bare `OK`, or an HTML page injected by a proxy in front of the API.
+      text: async () => 'OK',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    // Must not throw: `flagItem` logs a report rejection for ops to chase, and
+    // an accepted call surfacing as one would send them after a phantom.
+    await expect(
+      createCheckstepProvider({ apiKey: 'k' }).reportForReview!({
+        itemType: 'post',
+        itemId: '44444444-4444-4444-8444-444444444444',
+        roundId: ROUND_ID,
+        reporterId: 'profile-9',
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('treats a 2xx body of literal null as accepted rather than throwing', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      // Parses fine, but `null` — the caller would throw on `result.id`.
+      text: async () => 'null',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    // Must not throw on `result.id`: the content IS ingested at this point, and
+    // a throw here would roll the flag back and drop the round.
+    const ref = await createCheckstepProvider({ apiKey: 'k' }).submitForReview!(
+      {
+        itemType: 'post',
+        itemId: '44444444-4444-4444-8444-444444444444',
+        roundId: ROUND_ID,
+        content: 'review me',
+        callbackUrl: 'https://us/webhook',
+      },
+    );
+
+    // Falls back to our own content ref, exactly as for an empty 202 body.
+    expect(ref.providerRecordId).toBe(
+      `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+    );
+    expect(ref.submittedRefs).toEqual([
+      `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+    ]);
+  });
+
   it('parseWebhook maps a flagging decision to a flagged verdict for our item', () => {
     const contentId = `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`;
     const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
@@ -366,6 +502,25 @@ describe('createCheckstepProvider', () => {
       headers: {},
     });
 
+    expect(verdict?.verdict).toBe('clear');
+  });
+
+  it('parseWebhook maps an overturn decision to a clear verdict', () => {
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'overturn',
+        content: {
+          id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+          type: 'comment',
+        },
+      }),
+      headers: {},
+    });
+
+    // `overturn` is a real `ContentDecisionType` value and the reversal
+    // partner of `uphold`. Unmapped it would yield no verdict at all, leaving
+    // an overturned item hidden forever with no path back.
     expect(verdict?.verdict).toBe('clear');
   });
 

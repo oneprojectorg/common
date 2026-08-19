@@ -1,5 +1,6 @@
 import type { ModerationFlag } from '@op/db/schema';
-import { describe, expect, it, vi } from 'vitest';
+import { logger } from '@op/logging';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { flagItem } from './flagItem';
 
@@ -28,10 +29,13 @@ const fullDeps = () => ({
     providerRecordId: 'r1',
     submittedRefs: plannedRefs,
   }),
+  reportForReview: vi.fn().mockResolvedValue(undefined),
   planRefs: vi.fn().mockReturnValue(plannedRefs),
   recordRound: vi.fn().mockResolvedValue(undefined),
   rollback: vi.fn().mockResolvedValue(undefined),
 });
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('flagItem', () => {
   it('creates a pending flag, records the planned round, then submits', async () => {
@@ -66,6 +70,54 @@ describe('flagItem', () => {
     expect(result).toEqual({ flag: pendingRow });
   });
 
+  it('files the user report after the submit so it attaches to the ingested content', async () => {
+    const deps = fullDeps();
+
+    await flagItem({ ...input, reason: 'this is abuse' }, deps);
+
+    expect(deps.reportForReview).toHaveBeenCalledWith({
+      itemType: 'post',
+      itemId: 'p1',
+      roundId: ROUND_ID,
+      reporterId: 'profile-9',
+      reason: 'this is abuse',
+    });
+    // The provider associates a report with content of the same ref that it
+    // has already ingested — reporting first would leave it isolated.
+    expect(deps.submitForReview.mock.invocationCallOrder[0]).toBeLessThan(
+      deps.reportForReview.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('passes a null reporter through for a sessionless report', async () => {
+    const deps = fullDeps();
+
+    await flagItem({ ...input, flaggedByProfileId: null }, deps);
+
+    expect(deps.reportForReview).toHaveBeenCalledWith(
+      expect.objectContaining({ reporterId: null }),
+    );
+  });
+
+  it('keeps the flag and round when the report fails, and tells ops', async () => {
+    const deps = fullDeps();
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    deps.reportForReview.mockRejectedValue(new Error('report rejected'));
+
+    const result = await flagItem(input, deps);
+
+    // The content is already ingested and can't be un-ingested: rolling back
+    // here would delete the round and leave the provider's automated verdict
+    // with nowhere to land, so the item would end up neither flagged nor
+    // hidden. The flag stays, the analysis path stays live, ops gets told.
+    expect(deps.rollback).not.toHaveBeenCalled();
+    expect(result).toEqual({ flag: pendingRow });
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('user report failed to file'),
+      expect.objectContaining({ itemId: 'p1', roundId: ROUND_ID }),
+    );
+  });
+
   it('is idempotent: returns the existing open flag without creating or submitting', async () => {
     const deps = fullDeps();
     deps.findOpenFlag.mockResolvedValue(pendingRow);
@@ -75,6 +127,9 @@ describe('flagItem', () => {
     expect(deps.createPendingFlag).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
     expect(deps.recordRound).not.toHaveBeenCalled();
+    // Holds the "at most one report per item" invariant: 50 users reporting
+    // the same post must not file 50 community reports.
+    expect(deps.reportForReview).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 
@@ -91,6 +146,8 @@ describe('flagItem', () => {
     // the existing flag.
     expect(deps.recordRound).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
+    // The race winner owns the single report for this item.
+    expect(deps.reportForReview).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 
@@ -113,6 +170,8 @@ describe('flagItem', () => {
 
     expect(deps.recordRound).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
+    // No ingested content for a report to attach to.
+    expect(deps.reportForReview).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 

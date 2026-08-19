@@ -69,6 +69,26 @@ export interface ModerationSubmission {
   callbackUrl: string;
 }
 
+/**
+ * A user-initiated report filed against content already submitted for review.
+ * Distinct from {@link ModerationSubmission}: the submission ingests the
+ * content for automated analysis, while the report is what tells the provider
+ * a human complained — providers queue a case for human review off the report,
+ * not off a clean analysis.
+ */
+export interface ModerationReport {
+  itemType: ModerationItemType;
+  itemId: string;
+  /** The round whose submitted content this report is filed against, so the
+   *  report lands on the same provider-side record. */
+  roundId: string;
+  /** Stable id of the reporting user, or `null` for a sessionless report. */
+  reporterId: string | null;
+  /** The reporter's own words, surfaced verbatim in the provider's
+   *  moderation UI. */
+  reason?: string;
+}
+
 /** Raw inbound provider webhook, before vendor-specific parsing. */
 export interface ModerationWebhookInput {
   rawBody: string;
@@ -114,6 +134,7 @@ export interface ModerationVerdict {
 /**
  * Submits content for async review and parses the resulting webhook.
  * `submitForReview`/`planReviewRefs`/`parseWebhook` form the async review path;
+ * `reportForReview` adds the user-report signal on top of it, and
  * `verifyWebhook` guards inbound callbacks for vendors that sign them.
  */
 export interface ModerationProvider {
@@ -132,6 +153,15 @@ export interface ModerationProvider {
   submitForReview?(
     input: ModerationSubmission,
   ): Promise<ModerationProviderReference>;
+  /**
+   * Files a user report against the content `submitForReview` just submitted,
+   * so the provider raises a case for a human moderator. Required for user
+   * reports to reach a review queue at all: ingestion alone only triggers the
+   * vendor's classifiers, which raise nothing when they read the content as
+   * clean — exactly the case a human report exists to catch. Called after
+   * `submitForReview` so the report attaches to the ingested content.
+   */
+  reportForReview?(input: ModerationReport): Promise<void>;
   /**
    * Extracts the verdicts a webhook delivery carries. Checkstep sends one
    * verdict per callback and also ships non-verdict webhook types (author

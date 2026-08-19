@@ -35,6 +35,12 @@ describe('getModerationProvider', () => {
     expect(provider).not.toBeNull();
     expect(provider!.submitForReview).toBeInstanceOf(Function);
     expect(provider!.parseWebhook).toBeInstanceOf(Function);
+    // `reportForReview` is optional on the interface, and `flagItem` calls it
+    // with `?.()`. Dropping it from the factory would still typecheck, and the
+    // provider's own unit tests would be the only thing standing between that
+    // and silently never raising a human-review case again. This asserts the
+    // wiring itself.
+    expect(provider!.reportForReview).toBeInstanceOf(Function);
   });
 
   it('accepts MODERATION_PROVIDER=checkstep as an explicit no-op', () => {
