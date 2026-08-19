@@ -1,12 +1,9 @@
 import type { User } from '@op/supabase/lib';
-import type { TranslatableEntry } from '@op/translation';
 
-import { parseSchemaOptions } from '../decision/proposalDataSchema';
 import { assertReviewAssignmentContext } from '../decision/reviewHelpers';
 import type { SupportedLocale } from './locales';
-import { runTranslateBatch } from './runTranslateBatch';
+import { translateRubricEntries } from './rubricEntries';
 import type { TranslatedFields } from './translatedFields';
-import { unflattenTranslatedFields } from './translatedFields';
 
 /**
  * Translates the rubric a review assignment is scored against — every
@@ -36,55 +33,10 @@ export async function translateRubric({
   const { assignment, instance, rubricTemplate } =
     await assertReviewAssignmentContext({ assignmentId, user });
 
-  if (!rubricTemplate?.properties) {
-    return { translated: {}, sourceLocale: '', targetLocale };
-  }
-
-  // Keyed by phase, not by assignment: every reviewer of a phase scores against
-  // the same rubric, so they share one cache entry rather than one each.
-  const prefix = `rubric:${instance.id}:${assignment.phaseId}:`;
-  const entries: TranslatableEntry[] = [];
-
-  for (const [criterionKey, property] of Object.entries(
-    rubricTemplate.properties,
-  )) {
-    if (property.title) {
-      entries.push({
-        contentKey: `${prefix}field_title:${criterionKey}`,
-        text: property.title,
-      });
-    }
-    if (property.description) {
-      entries.push({
-        contentKey: `${prefix}field_desc:${criterionKey}`,
-        text: property.description,
-      });
-    }
-
-    for (const option of parseSchemaOptions(property)) {
-      if (option.title) {
-        entries.push({
-          contentKey: `${prefix}option:${criterionKey}:${option.value}`,
-          text: option.title,
-        });
-      }
-      if (option.description) {
-        entries.push({
-          contentKey: `${prefix}option_desc:${criterionKey}:${option.value}`,
-          text: option.description,
-        });
-      }
-    }
-  }
-
-  if (entries.length === 0) {
-    return { translated: {}, sourceLocale: '', targetLocale };
-  }
-
-  const results = await runTranslateBatch(entries, targetLocale);
-
-  return {
-    ...unflattenTranslatedFields(prefix, results),
+  return translateRubricEntries({
+    instanceId: instance.id,
+    phaseId: assignment.phaseId,
+    rubricTemplate,
     targetLocale,
-  };
+  });
 }

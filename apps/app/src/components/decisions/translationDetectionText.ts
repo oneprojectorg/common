@@ -2,7 +2,9 @@ import {
   type Proposal,
   type ProposalTemplateSchema,
   type RubricTemplateSchema,
-  parseSchemaOptions,
+  type SubmittedReviewItem,
+  getFreeTextCriterionKeys,
+  getTranslatableRubricCopy,
   serverExtensions,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
@@ -86,31 +88,104 @@ const getProposalBodyText = (proposal: ProposalTextSource): string => {
 
 /**
  * Plain-text sample of a rubric — every criterion's prompt and description, and
- * each option's label. The reviewer reads this alongside the proposal, so a
- * foreign-language rubric has to offer translation even when the proposal
- * itself is already in the reader's language.
+ * each option's label and description. The reviewer reads this alongside the
+ * proposal, so a foreign-language rubric has to offer translation even when the
+ * proposal itself is already in the reader's language.
+ *
+ * Reads the same authored copy `buildRubricEntries` sends, through the shared
+ * `getTranslatableRubricCopy`: copy the banner can move has to be able to raise
+ * it (a rubric whose only foreign text sat in an option description used to read
+ * as "nothing to translate"), and copy it cannot move must not raise it (our own
+ * English Yes/No labels used to make an all-Spanish rubric look foreign).
  */
 export const getRubricDetectionText = (
   rubricTemplate: RubricTemplateSchema | null | undefined,
 ): string => {
   const parts: string[] = [];
 
-  for (const property of Object.values(rubricTemplate?.properties ?? {})) {
-    if (property.title) {
-      parts.push(property.title);
+  for (const criterion of getTranslatableRubricCopy(rubricTemplate)) {
+    if (criterion.title) {
+      parts.push(criterion.title);
     }
-    if (property.description) {
-      parts.push(property.description);
+    if (criterion.description) {
+      parts.push(criterion.description);
     }
-    for (const option of parseSchemaOptions(property)) {
+    for (const option of criterion.options) {
       if (option.title) {
         parts.push(option.title);
+      }
+      if (option.description) {
+        parts.push(option.description);
       }
     }
   }
 
   return joinSample(parts);
 };
+
+/**
+ * Plain-text sample of what reviewers wrote about a proposal — each criterion
+ * note, each free-text answer, and the feedback to the author.
+ *
+ * Its own sample rather than part of the rubric's: the reviews carry the
+ * judgement an admin reads the summary for, and they are routinely in a
+ * different language from both the rubric and the proposal. Dropdown answers are
+ * option ids, not prose, so they contribute nothing.
+ */
+export const getReviewsDetectionText = (
+  reviews: readonly SubmittedReviewItem[],
+  rubricTemplate: RubricTemplateSchema | null | undefined,
+): string => {
+  const freeTextKeys = getFreeTextCriterionKeys(rubricTemplate);
+  const parts: string[] = [];
+
+  for (const { review } of reviews) {
+    if (review.overallComment) {
+      parts.push(review.overallComment);
+    }
+    parts.push(...Object.values(review.reviewData.rationales));
+    for (const criterionKey of freeTextKeys) {
+      const answer = review.reviewData.answers[criterionKey];
+      if (typeof answer === 'string') {
+        parts.push(answer);
+      }
+    }
+  }
+
+  return joinSample(parts.map((part) => part.trim()));
+};
+
+/**
+ * Detection samples for a phase's authored hero copy.
+ *
+ * `additionalInfo` is included because `translateDecision` moves it and the
+ * phase pages render it in the "About this phase" bar — a phase whose only
+ * foreign copy lived there hid the control while a click would have translated
+ * it.
+ *
+ * Returned as separate samples rather than one joined string so each is judged
+ * on its own; a short foreign headline is not drowned out by a long English
+ * description.
+ */
+export const getPhaseDetectionSamples = (
+  phase:
+    | {
+        headline?: string | null;
+        description?: string | null;
+        additionalInfo?: string | null;
+      }
+    | null
+    | undefined,
+): string[] => [
+  phase?.headline ?? '',
+  phase?.description ?? '',
+  phase?.additionalInfo ?? '',
+];
+
+/** Detection samples for a list of resources (each title and description). */
+export const getResourceDetectionSamples = (
+  items: readonly { title: string; description?: string | null }[],
+): string[] => items.flatMap((item) => [item.title, item.description ?? '']);
 
 /** Plain-text sample of a decision overview (headline + description + body). */
 export const getOverviewDetectionText = ({

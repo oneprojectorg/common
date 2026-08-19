@@ -32,22 +32,19 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
-import { useId, useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import {
-  getCriterionMaxPoints,
-  inferCriterionType,
-  translateRubricTemplate,
-} from '../rubricTemplate';
+import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
+import { useRecommendationLabels } from '../useRecommendationLabels';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
-import { useReviewTranslation } from './ReviewTranslationContext';
+import { useTranslatedRubric } from './ReviewTranslationContext';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
@@ -94,6 +91,7 @@ export function ReviewRubricForm({
 function MyReviewForm() {
   const t = useTranslations();
   const {
+    assignment,
     rubricTemplate: authoredTemplate,
     values,
     rationales,
@@ -105,14 +103,9 @@ function MyReviewForm() {
     isEditing,
     review,
   } = useReviewForm();
-  const { rubricMeta } = useReviewTranslation();
-
   // Display copy only — option values, bounds and the required list are
   // untouched, so the answers this form collects are identical either way.
-  const template = useMemo(
-    () => translateRubricTemplate(authoredTemplate, rubricMeta),
-    [authoredTemplate, rubricMeta],
-  );
+  const template = useTranslatedRubric(authoredTemplate, assignment.phaseId);
   const fields = compileRubricSchema(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(
@@ -239,6 +232,7 @@ function RubricCriterionSection({
   rationalePlaceholder: string;
 }) {
   const t = useTranslations();
+  const recommendation = useRecommendationLabels();
   const controlId = useId();
   const labelId = useId();
   const descriptionId = useId();
@@ -250,13 +244,19 @@ function RubricCriterionSection({
     field.format === 'short-text' || field.format === 'long-text';
   const describedBy = field.schema.description ? descriptionId : undefined;
 
+  // The recommendation criterion's prompt is our copy, not the admin's, so it
+  // comes from the dictionary rather than from the schema it is stored in.
+  const title = isOverallRecommendationField(field.key)
+    ? recommendation.title
+    : field.schema.title;
+
   // `labelId` goes on the title text, not the whole row: the badge is inside
   // the heading, and a control named by the row would announce "Innovation
   // 5 pts".
   const label = (
     <>
       <span id={labelId}>
-        {field.schema.title}
+        {title}
         {field.required ? <RequiredAsterisk /> : null}
       </span>
       {badgeLabel ? <Badge variant="secondary">{badgeLabel}</Badge> : null}
@@ -427,6 +427,7 @@ function RubricFieldInput({
   describedBy?: string;
 }) {
   const t = useTranslations();
+  const recommendation = useRecommendationLabels();
 
   switch (field.format) {
     case 'dropdown': {
@@ -468,7 +469,11 @@ function RubricFieldInput({
                 >
                   <RadioGroupItem id={optionId} value={optionValue} />
                   <FieldLabel htmlFor={optionId} className="font-normal">
-                    {option.title || optionValue}
+                    {/* Ours, so localized here; the schema's English label is
+                        only a fallback for a value we don't recognize. */}
+                    {recommendation.label(option.value) ??
+                      option.title ??
+                      optionValue}
                   </FieldLabel>
                 </Field>
               );

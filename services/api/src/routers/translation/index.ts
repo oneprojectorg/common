@@ -1,9 +1,11 @@
 import { mergeRouters } from '../../trpcFactory';
 import { translateDecisionRouter } from './translateDecision';
+import { translatePhaseRubricRouter } from './translatePhaseRubric';
 import { translatePostsRouter } from './translatePosts';
 import { translateProposalRouter } from './translateProposal';
 import { translateProposalsRouter } from './translateProposals';
 import { translateResourcesRouter } from './translateResources';
+import { translateReviewsRouter } from './translateReviews';
 import { translateRubricRouter } from './translateRubric';
 
 export const translationRouter = mergeRouters(
@@ -11,6 +13,8 @@ export const translationRouter = mergeRouters(
   translatePostsRouter,
   translateProposalRouter,
   translateProposalsRouter,
+  translatePhaseRubricRouter,
   translateResourcesRouter,
+  translateReviewsRouter,
   translateRubricRouter,
 );

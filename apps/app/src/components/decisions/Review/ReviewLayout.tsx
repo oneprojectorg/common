@@ -92,8 +92,14 @@ export async function ReviewLayout({
         allowRevisions={allowRevisions}
       >
         {/* Inside ReviewFormProvider: the proposal and the rubric it translates
-            both come from the assignment that provider loads. */}
-        <ReviewTranslationProvider assignmentId={assignmentId}>
+            both come from the assignment that provider loads. The phase settings
+            travel with it so one Translate click also covers the peer reviews
+            and the earlier phases' rubrics shown in the tabs below. */}
+        <ReviewTranslationProvider
+          assignmentId={assignmentId}
+          openReviews={openReviews}
+          previousReviewPhases={previousReviewPhases}
+        >
           <div className="flex h-dvh flex-col overflow-hidden bg-white">
             <ReviewNavbar decisionSlug={decisionSlug} />
 

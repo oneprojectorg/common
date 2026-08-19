@@ -13,6 +13,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { useReviewForm } from './ReviewFormContext';
+import { useTranslatedRubric } from './ReviewTranslationContext';
 
 const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
@@ -224,6 +225,19 @@ function PhaseReviews({
       phaseId,
     });
 
+  // The banner belongs to the whole screen, so a peer's review has to read in
+  // the same language the reviewer's own form switched to — the criterion
+  // prompts here are the same authored copy, and the reviewers' own words are
+  // swapped by `SubmittedReviewView` from the same context.
+  //
+  // Looked up by phase: each phase scores against its own rubric, and the
+  // provider translates every phase whose reviews this screen can reach — the
+  // current one and each earlier phase that kept its reviews open.
+  const displayedRubricTemplate = useTranslatedRubric(
+    proposalWithReviews.rubricTemplate,
+    phaseId,
+  );
+
   const visibleReviews = excludeProfileId
     ? proposalWithReviews.reviews.filter(
         (review) => review.reviewer.id !== excludeProfileId,
@@ -241,7 +255,7 @@ function PhaseReviews({
   return (
     <ReviewsPanel
       proposalWithReviews={proposalWithReviews}
-      rubricTemplate={proposalWithReviews.rubricTemplate}
+      rubricTemplate={displayedRubricTemplate}
       selectedAssignmentId={selectedAssignmentId}
       onSelectAssignment={handleSelectAssignment}
       excludeProfileId={excludeProfileId}
