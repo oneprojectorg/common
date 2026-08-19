@@ -1,0 +1,1 @@
+CREATE INDEX "proposal_review_assignments_phase_proposal_status_idx" ON "decision_proposal_review_assignments" ("process_instance_id","phase_id","proposal_id","status");

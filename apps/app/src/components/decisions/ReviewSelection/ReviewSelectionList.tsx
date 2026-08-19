@@ -55,6 +55,10 @@ export function ReviewSelectionList({
     trpc.decision.listWithReviewAggregates.useSuspenseQuery({
       processInstanceId,
       phaseId: previousPhaseId,
+      // Pinned: the endpoint defaults to `leastReviewed` for the admin review
+      // list, but this screen is a selection sheet — newest first is the order
+      // admins already know it by.
+      sort: 'newest',
     });
   const utils = trpc.useUtils();
 

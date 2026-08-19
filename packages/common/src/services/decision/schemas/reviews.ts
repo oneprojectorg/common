@@ -22,7 +22,11 @@ export {
   ProposalReviewState,
 };
 
-/** The sort modes offered by the reviewer's "Proposals to review" list. */
+/**
+ * The sort modes offered by the reviewer's "Proposals to review" list and by
+ * the admin's "Proposals in review" list — the same three modes, so both
+ * surfaces share one vocabulary.
+ */
 export const REVIEW_ASSIGNMENT_SORTS = [
   'leastReviewed',
   'newest',
@@ -30,6 +34,30 @@ export const REVIEW_ASSIGNMENT_SORTS = [
 ] as const;
 
 export type ReviewAssignmentSort = (typeof REVIEW_ASSIGNMENT_SORTS)[number];
+
+/**
+ * Per-proposal review-progress rollup, derived from assignment statuses plus
+ * draft review state — no stored column:
+ *   - `reviewed`: ≥1 COMPLETED assignment (same rule as the "N Reviewed" count),
+ *   - `in_progress`: no COMPLETED assignment, but ≥1 IN_PROGRESS /
+ *     AWAITING_AUTHOR_REVISION / READY_FOR_RE_REVIEW assignment, or a persisted
+ *     draft review,
+ *   - `not_started`: everything else.
+ */
+export const PROPOSAL_REVIEW_STATUSES = [
+  'not_started',
+  'in_progress',
+  'reviewed',
+] as const;
+
+export type ProposalReviewStatus = (typeof PROPOSAL_REVIEW_STATUSES)[number];
+
+/** Assignment statuses that mean "someone has started, nobody has finished". */
+export const IN_PROGRESS_ASSIGNMENT_STATUSES = [
+  ProposalReviewAssignmentStatus.IN_PROGRESS,
+  ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+  ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+] as const;
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
@@ -160,10 +188,14 @@ export const proposalRevisionRequestListSchema = z.object({
  * `overallRecommendationCount` is a tally of submitted answers to the
  * well-known overall-recommendation criterion (e.g. `{ yes: 2, no: 1 }`).
  * Empty when the rubric doesn't include the field or no reviews are in.
+ *
+ * `reviewStatus` is the three-way progress rollup — see
+ * `PROPOSAL_REVIEW_STATUSES`.
  */
 export const proposalReviewAggregatesSchema = z.object({
   assignmentsCount: z.number().int(),
   reviewsSubmittedCount: z.number().int(),
+  reviewStatus: z.enum(PROPOSAL_REVIEW_STATUSES),
   averageScore: z.number(),
   overallRecommendationCount: z.record(z.string(), z.number().int()),
   reviewers: z.array(

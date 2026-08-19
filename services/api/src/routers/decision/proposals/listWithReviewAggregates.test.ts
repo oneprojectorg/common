@@ -1,13 +1,14 @@
 import type { RubricTemplateSchema } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
   proposals as proposalsTable,
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview } from '@op/test';
+import { createProposalReview, createReviewAssignment } from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -280,6 +281,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const page1 = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       limit: 2,
+      sort: 'newest',
     });
 
     expect(page1.total).toBe(3);
@@ -289,6 +291,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const page2 = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       limit: 2,
+      sort: 'newest',
       cursor: page1.next!,
     });
 
@@ -371,6 +374,235 @@ describe.concurrent('listWithReviewAggregates', () => {
       overallRecommendationCount: {},
     });
     expect(result.items[0]?.aggregates.reviewers.length).toBeGreaterThan(0);
+  });
+
+  it('derives the per-proposal reviewStatus rollup', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const [notStarted, started, drafted, reviewed] = await Promise.all([
+      testData.createReviewAssignment({ context, title: 'Not Started' }),
+      testData.createReviewAssignment({
+        context,
+        title: 'Started',
+        status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+      }),
+      testData.createReviewAssignment({ context, title: 'Drafted' }),
+      testData.createReviewAssignment({
+        context,
+        title: 'Reviewed',
+        status: ProposalReviewAssignmentStatus.COMPLETED,
+      }),
+    ]);
+
+    // A saved draft counts as in progress even while the assignment is pending.
+    await createProposalReview({
+      assignmentId: drafted.assignment.id,
+      state: ProposalReviewState.DRAFT,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    const statusByProposalId = new Map(
+      result.items.map((item) => [
+        item.proposal.id,
+        item.aggregates.reviewStatus,
+      ]),
+    );
+
+    expect(statusByProposalId.get(notStarted.proposal.id)).toBe('not_started');
+    expect(statusByProposalId.get(started.proposal.id)).toBe('in_progress');
+    expect(statusByProposalId.get(drafted.proposal.id)).toBe('in_progress');
+    expect(statusByProposalId.get(reviewed.proposal.id)).toBe('reviewed');
+  });
+
+  it('filters by reviewStatus in SQL so total matches the page', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const [notStarted, started, reviewed] = await Promise.all([
+      testData.createReviewAssignment({ context, title: 'Not Started' }),
+      testData.createReviewAssignment({
+        context,
+        title: 'Started',
+        status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+      }),
+      testData.createReviewAssignment({
+        context,
+        title: 'Reviewed',
+        status: ProposalReviewAssignmentStatus.COMPLETED,
+      }),
+    ]);
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const expectations = [
+      { reviewStatus: 'not_started' as const, expected: notStarted },
+      { reviewStatus: 'in_progress' as const, expected: started },
+      { reviewStatus: 'reviewed' as const, expected: reviewed },
+    ];
+
+    for (const { reviewStatus, expected } of expectations) {
+      const result = await adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        reviewStatus,
+      });
+
+      expect(result.items.map((item) => item.proposal.id)).toEqual([
+        expected.proposal.id,
+      ]);
+      // `total` comes from the same SQL predicate — a JS-side filter would
+      // leave it at 3 and make the header disagree with the list.
+      expect(result.total).toBe(1);
+    }
+  });
+
+  it('filters by categoryIds', async ({ task, onTestFinished }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const [tagged] = await Promise.all([
+      testData.createReviewAssignment({ context, title: 'Tagged' }),
+      testData.createReviewAssignment({ context, title: 'Untagged' }),
+    ]);
+
+    const term = await attachCategoryToProposal({
+      proposalId: tagged!.proposal.id,
+      label: 'Housing',
+    });
+    onTestFinished(async () => {
+      await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, term.id));
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      categoryIds: [term.id],
+    });
+
+    expect(result.items.map((item) => item.proposal.id)).toEqual([
+      tagged!.proposal.id,
+    ]);
+    expect(result.total).toBe(1);
+  });
+
+  it('sorts by fewest completed reviews and pages with a keyset cursor', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Completed-review counts of 0, 1 and 2 — the leastReviewed order.
+    const zeroCompleted = await testData.createReviewAssignment({
+      context,
+      title: 'Zero Completed',
+    });
+    const oneCompleted = await testData.createReviewAssignment({
+      context,
+      title: 'One Completed',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    const twoCompleted = await testData.createReviewAssignment({
+      context,
+      title: 'Two Completed',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+
+    // The unique constraint is (instance, proposal, reviewer, phase), so the
+    // second completed assignment needs a second reviewer.
+    const secondReviewer = await testData.createReviewer(context);
+    await createReviewAssignment({
+      processInstanceId: context.instance.instance.id,
+      proposalId: twoCompleted.proposal.id,
+      reviewerProfileId: secondReviewer.profileId,
+      phaseId: 'review',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const page1 = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      limit: 2,
+    });
+
+    expect(page1.total).toBe(3);
+    expect(page1.items.map((item) => item.proposal.id)).toEqual([
+      zeroCompleted.proposal.id,
+      oneCompleted.proposal.id,
+    ]);
+    expect(page1.next).not.toBeNull();
+
+    const page2 = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      limit: 2,
+      cursor: page1.next!,
+    });
+
+    // The keyset resumes on (completedCount, id) — no repeats, no gaps.
+    expect(page2.items.map((item) => item.proposal.id)).toEqual([
+      twoCompleted.proposal.id,
+    ]);
+    expect(page2.next).toBeNull();
+  });
+
+  it('sorts by newest and oldest creation date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const created = [];
+    for (const title of ['First', 'Second', 'Third']) {
+      created.push(await testData.createReviewAssignment({ context, title }));
+    }
+    const creationOrder = created.map((item) => item.proposal.id);
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const [oldest, newest] = await Promise.all([
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        sort: 'oldest',
+      }),
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        sort: 'newest',
+      }),
+    ]);
+
+    expect(oldest.items.map((item) => item.proposal.id)).toEqual(creationOrder);
+    expect(newest.items.map((item) => item.proposal.id)).toEqual(
+      [...creationOrder].reverse(),
+    );
   });
 });
 

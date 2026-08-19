@@ -1,12 +1,16 @@
-import { and, db, eq, inArray, isNull } from '@op/db/client';
+import { and, db, eq, gt, inArray, isNull, or, sql } from '@op/db/client';
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
+  proposalReviewAssignments,
+  proposalReviews,
   proposals,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
+import { type SQL, count as countFn } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 
 import {
@@ -23,8 +27,13 @@ import {
 } from './getRubricScoringInfo';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
+  IN_PROGRESS_ASSIGNMENT_STATUSES,
+  PROPOSAL_REVIEW_STATUSES,
   type ProposalCategoryItem,
+  type ProposalReviewStatus,
   type ProposalsWithReviewAggregatesList,
+  REVIEW_ASSIGNMENT_SORTS,
+  type ReviewAssignmentSort,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
 import type { RubricTemplateSchema } from './types';
@@ -34,8 +43,9 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /**
  * Single union schema for both dispatch modes:
- *   - filtered: caller passes `proposalIds`, no pagination.
- *   - paginated: phase-scoped, cursor-paginated.
+ *   - filtered: caller passes `proposalIds`, no pagination, no filters/sort —
+ *     the caller already decided the set and its order.
+ *   - paginated: phase-scoped, filterable, sortable, cursor-paginated.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
@@ -44,6 +54,11 @@ export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
     limit: z.number().int().min(1).max(100).default(50),
     cursor: z.string().optional(),
+    /** Taxonomy term ids — keeps only proposals tagged with any of them. */
+    categoryIds: z.array(z.uuid()).optional(),
+    /** Keeps only proposals whose progress rollup matches. */
+    reviewStatus: z.enum(PROPOSAL_REVIEW_STATUSES).optional(),
+    sort: z.enum(REVIEW_ASSIGNMENT_SORTS).default('leastReviewed'),
   }),
 ]);
 
@@ -58,7 +73,8 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
  * modes determined by input shape:
  *
  *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
- *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated.
+ *   - paginated: phase-scoped, filtered by category / review status, sorted by
+ *     `sort` (default fewest completed reviews first), cursor-paginated.
  *
  * Both modes share the auth + instance + rubric setup; the split happens
  * after the admin check.
@@ -108,6 +124,9 @@ export async function listProposalsWithReviewAggregates(
     phaseProposalIds,
     limit: input.limit,
     cursor: input.cursor,
+    categoryIds: input.categoryIds,
+    reviewStatus: input.reviewStatus,
+    sort: input.sort,
     scoredCriterionKeys,
     rubricTemplate,
   });
@@ -181,6 +200,9 @@ async function listProposalsPaginated({
   phaseProposalIds,
   limit,
   cursor,
+  categoryIds,
+  reviewStatus,
+  sort,
   scoredCriterionKeys,
   rubricTemplate,
 }: {
@@ -189,12 +211,43 @@ async function listProposalsPaginated({
   phaseProposalIds: string[];
   limit: number;
   cursor: string | undefined;
+  categoryIds: string[] | undefined;
+  reviewStatus: ProposalReviewStatus | undefined;
+  sort: ReviewAssignmentSort;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
+  const emptyPage = { items: [], total: 0, next: null, rubricTemplate };
+
   if (phaseProposalIds.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
+    return emptyPage;
   }
+
+  // Categories are resolved to an ID-set constraint (same approach as
+  // listReviewAssignments) rather than a join, so the page query keeps its
+  // single `proposals.id IN (…)` shape.
+  const candidateProposalIds = categoryIds?.length
+    ? await filterProposalIdsByCategories({
+        proposalIds: phaseProposalIds,
+        processInstanceId,
+        categoryIds,
+      })
+    : phaseProposalIds;
+
+  if (candidateProposalIds.length === 0) {
+    return emptyPage;
+  }
+
+  const { completedCount, reviewStatusCondition } = reviewProgressSql({
+    processInstanceId,
+    phaseId,
+  });
+
+  // The rollup filter has to run in SQL: applied after the page is fetched it
+  // would shrink pages below `limit` and make `total` lie.
+  const statusCondition = reviewStatus
+    ? reviewStatusCondition(proposals.id, reviewStatus)
+    : undefined;
 
   const decodedCursor = cursor
     ? decodeCursor<{ value: string; id: string }>(cursor)
@@ -208,20 +261,31 @@ async function listProposalsPaginated({
       where: {
         RAW: (table) =>
           and(
-            inArray(table.id, phaseProposalIds),
+            inArray(table.id, candidateProposalIds),
             isNull(table.moderationDetachedAt),
-            decodedCursor
-              ? getCursorCondition({
-                  column: table.createdAt,
-                  tieBreakerColumn: table.id,
-                  cursor: decodedCursor,
-                  direction: 'desc',
-                })
+            reviewStatus
+              ? reviewStatusCondition(table.id, reviewStatus)
               : undefined,
+            pageCursorCondition({
+              table,
+              cursor: decodedCursor,
+              sort,
+              completedCount,
+            }),
           )!,
       },
       with: proposalRelations({ processInstanceId, phaseId }),
-      orderBy: { createdAt: 'desc', id: 'desc' },
+      orderBy: (table, { asc, desc }) => {
+        if (sort === 'newest') {
+          return [desc(table.createdAt), desc(table.id)];
+        }
+        if (sort === 'oldest') {
+          return [asc(table.createdAt), asc(table.id)];
+        }
+        // 'leastReviewed': fewest completed reviews first. No reviewer shuffle —
+        // an admin list must page deterministically.
+        return [asc(completedCount(table.id)), asc(table.id)];
+      },
       limit: limit + 1,
     }),
     db
@@ -229,8 +293,9 @@ async function listProposalsPaginated({
       .from(proposals)
       .where(
         and(
-          inArray(proposals.id, phaseProposalIds),
+          inArray(proposals.id, candidateProposalIds),
           isNull(proposals.moderationDetachedAt),
+          statusCondition,
         ),
       ),
   ]);
@@ -259,7 +324,12 @@ async function listProposalsPaginated({
   if (hasMore) {
     const lastRow = pageRows[pageRows.length - 1]!;
     next = encodeCursor<{ value: string; id: string }>({
-      value: lastRow.createdAt ?? '',
+      // The assignments relation is scoped to the same instance + phase as the
+      // SQL count, so the keyset value can be read off the loaded page row.
+      value:
+        sort === 'leastReviewed'
+          ? String(countCompletedAssignments(lastRow.reviewAssignments))
+          : (lastRow.createdAt ?? ''),
       id: lastRow.id,
     });
   }
@@ -270,6 +340,131 @@ async function listProposalsPaginated({
     next,
     rubricTemplate,
   });
+}
+
+/** Keyset condition for the page query — one per sort mode. */
+function pageCursorCondition({
+  table,
+  cursor,
+  sort,
+  completedCount,
+}: {
+  table: { createdAt: PgColumn; id: PgColumn };
+  cursor: { value: string; id: string } | undefined;
+  sort: ReviewAssignmentSort;
+  completedCount: (proposalId: PgColumn) => SQL<number>;
+}): SQL | undefined {
+  if (!cursor) {
+    return undefined;
+  }
+
+  if (sort === 'newest' || sort === 'oldest') {
+    return getCursorCondition({
+      column: table.createdAt,
+      tieBreakerColumn: table.id,
+      cursor,
+      direction: sort === 'newest' ? 'desc' : 'asc',
+    });
+  }
+
+  // 'leastReviewed' ascends over `(completedCount, id)`. The count is an
+  // expression rather than a column, so the keyset is spelled out here instead
+  // of going through getCursorCondition.
+  const count = completedCount(table.id);
+  const cursorValue = Number(cursor.value);
+
+  return or(
+    sql`${count} > ${cursorValue}`,
+    and(sql`${count} = ${cursorValue}`, gt(table.id, cursor.id)),
+  );
+}
+
+/** Narrows `proposalIds` to the ones tagged with any of `categoryIds`. */
+async function filterProposalIdsByCategories({
+  proposalIds,
+  processInstanceId,
+  categoryIds,
+}: {
+  proposalIds: string[];
+  processInstanceId: string;
+  categoryIds: string[];
+}): Promise<string[]> {
+  const rows = await db.query.proposalCategories.findMany({
+    columns: { proposalId: true },
+    where: {
+      taxonomyTermId: { in: categoryIds },
+      // Taxonomy terms are shared across instances; scope the lookup so a term
+      // reused elsewhere can't widen this instance's page.
+      proposal: { processInstanceId },
+    },
+  });
+
+  const tagged = new Set(rows.map((row) => row.proposalId));
+  return proposalIds.filter((id) => tagged.has(id));
+}
+
+/**
+ * Phase-scoped review-progress SQL. Deliberately mirrors the JS rollup in
+ * `getComputedReviewAggregates`, so a filtered page can never disagree with the
+ * `reviewStatus` the same rows report.
+ */
+function reviewProgressSql({
+  processInstanceId,
+  phaseId,
+}: {
+  processInstanceId: string;
+  phaseId: string | undefined;
+}) {
+  const phaseFilter = (alias: string) =>
+    phaseId ? sql` AND ${sql.raw(alias)}.phase_id = ${phaseId}` : sql``;
+
+  const completedCount = (proposalId: PgColumn) => sql<number>`(
+    SELECT COUNT(*)::int
+    FROM ${proposalReviewAssignments} AS pra_completed
+    WHERE pra_completed.proposal_id = ${proposalId}
+      AND pra_completed.process_instance_id = ${processInstanceId}
+      AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}${phaseFilter('pra_completed')}
+  )`;
+
+  /** Someone has started but nobody has finished: an active assignment or a saved draft. */
+  const startedExists = (proposalId: PgColumn) => sql<boolean>`(
+    EXISTS (
+      SELECT 1
+      FROM ${proposalReviewAssignments} AS pra_started
+      WHERE pra_started.proposal_id = ${proposalId}
+        AND pra_started.process_instance_id = ${processInstanceId}
+        AND (${sql.join(
+          IN_PROGRESS_ASSIGNMENT_STATUSES.map(
+            (status) => sql`pra_started.status = ${status}`,
+          ),
+          sql` OR `,
+        )})${phaseFilter('pra_started')}
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM ${proposalReviews} AS pr_draft
+      JOIN ${proposalReviewAssignments} AS pra_draft
+        ON pra_draft.id = pr_draft.assignment_id
+      WHERE pra_draft.proposal_id = ${proposalId}
+        AND pra_draft.process_instance_id = ${processInstanceId}
+        AND pr_draft.state = ${ProposalReviewState.DRAFT}${phaseFilter('pra_draft')}
+    )
+  )`;
+
+  const reviewStatusCondition = (
+    proposalId: PgColumn,
+    reviewStatus: ProposalReviewStatus,
+  ): SQL => {
+    if (reviewStatus === 'reviewed') {
+      return sql`${completedCount(proposalId)} > 0`;
+    }
+    if (reviewStatus === 'in_progress') {
+      return sql`${completedCount(proposalId)} = 0 AND ${startedExists(proposalId)}`;
+    }
+    return sql`${completedCount(proposalId)} = 0 AND NOT ${startedExists(proposalId)}`;
+  };
+
+  return { completedCount, reviewStatusCondition };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -379,10 +574,49 @@ export function getComputedReviewAggregates(
   return {
     assignmentsCount: reviewAssignments.length,
     reviewsSubmittedCount,
+    reviewStatus: getReviewStatusRollup(reviewAssignments),
     averageScore,
     overallRecommendationCount,
     reviewers,
   };
+}
+
+/** Membership test over a `string` status without asserting the union. */
+const IN_PROGRESS_STATUS_SET: ReadonlySet<string> = new Set(
+  IN_PROGRESS_ASSIGNMENT_STATUSES,
+);
+
+/** COMPLETED assignments — the "N Reviewed" count, and the leastReviewed key. */
+function countCompletedAssignments(
+  reviewAssignments: Array<{ status: string }>,
+): number {
+  return reviewAssignments.filter(
+    (assignment) =>
+      assignment.status === ProposalReviewAssignmentStatus.COMPLETED,
+  ).length;
+}
+
+/**
+ * The three-way progress rollup. Kept in step with `reviewProgressSql`, which
+ * expresses the same rule for filtering and sorting.
+ */
+function getReviewStatusRollup(
+  reviewAssignments: Array<{
+    status: string;
+    reviews: Array<{ state: string }>;
+  }>,
+): ProposalReviewStatus {
+  if (countCompletedAssignments(reviewAssignments) > 0) {
+    return 'reviewed';
+  }
+
+  const started = reviewAssignments.some(
+    (assignment) =>
+      IN_PROGRESS_STATUS_SET.has(assignment.status) ||
+      assignment.reviews[0]?.state === ProposalReviewState.DRAFT,
+  );
+
+  return started ? 'in_progress' : 'not_started';
 }
 
 /** Returns `null` for non-submitted rows so callers can gate and score in one pass. */

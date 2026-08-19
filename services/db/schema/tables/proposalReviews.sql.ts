@@ -136,6 +136,14 @@ export const proposalReviewAssignments = pgTable(
       table.reviewerProfileId,
       table.status,
     ),
+    // Covers the per-proposal, phase-scoped status counts behind the admin
+    // review list's "N Reviewed" sort and its status-rollup filter.
+    index('proposal_review_assignments_phase_proposal_status_idx').on(
+      table.processInstanceId,
+      table.phaseId,
+      table.proposalId,
+      table.status,
+    ),
   ],
 );
 
