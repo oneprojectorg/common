@@ -147,6 +147,24 @@ export const proposalRevisionRequestListSchema = z.object({
   revisionRequests: z.array(proposalRevisionRequestItemSchema),
 });
 
+// ── Proposal-scoped author feedback schemas ───────────────────────────
+
+/**
+ * One anonymized reviewer note released to the proposal author. Deliberately
+ * narrower than `proposalReviewSchema`: no `reviewData`, and never a reviewer
+ * identity — anonymity is structural, not a runtime setting.
+ */
+export const proposalFeedbackItemSchema = z.object({
+  id: z.uuid(),
+  comment: z.string(),
+  phaseId: z.string(),
+  submittedAt: z.string().nullable(),
+});
+
+export const proposalFeedbackListSchema = z.object({
+  items: z.array(proposalFeedbackItemSchema),
+});
+
 // ── Per-proposal review aggregates ─────────────────────────────────────
 
 /**
@@ -253,6 +271,8 @@ export type ProposalRevisionRequestItem = z.infer<
 export type ProposalRevisionRequestList = z.infer<
   typeof proposalRevisionRequestListSchema
 >;
+export type ProposalFeedbackItem = z.infer<typeof proposalFeedbackItemSchema>;
+export type ProposalFeedbackList = z.infer<typeof proposalFeedbackListSchema>;
 export type ProposalReviewAggregates = z.infer<
   typeof proposalReviewAggregatesSchema
 >;
