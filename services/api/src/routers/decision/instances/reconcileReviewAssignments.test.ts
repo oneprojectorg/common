@@ -766,7 +766,15 @@ describe.concurrent('reconcileReviewAssignments — no-op guards', () => {
     const { setup, instance } = await createReviewInstance(testData, 'all');
     const [termA] = await seedTerms(1, onTestFinished);
 
-    // The creator-admin holds REVIEW, so full coverage produces a baseline.
+    // A reviewer other than the author, so full coverage produces a non-empty
+    // baseline the no-op guard can then be shown not to touch.
+    const reviewerRole = await createReviewerRole(instance.profileId);
+    await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+      roleIds: { [instance.profileId]: reviewerRole.id },
+    });
+
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -777,6 +785,9 @@ describe.concurrent('reconcileReviewAssignments — no-op guards', () => {
 
     await generateBaseline(instance.instance.id);
     const baseline = await getAssignments(instance.instance.id);
+    // Guard the guard: an empty baseline would make the length check below
+    // pass for the wrong reason.
+    expect(baseline.length).toBeGreaterThan(0);
 
     const result = await reconcileReviewAssignments({
       instanceId: instance.instance.id,

@@ -304,7 +304,7 @@ describe.concurrent('generateReviewAssignments — by_category scope', () => {
 
     // Full coverage ignores category scope: both reviewers cover both proposals
     // despite reviewerA's cat-A-only scope row (note reviewerA gets p2, not in
-    // cat A). Superset check — the creator-admin also holds REVIEW.
+    // cat A).
     for (const p of [p1!, p2!]) {
       const reviewers = byProposal.get(p.id);
       expect(reviewers?.has(reviewerA.profileId)).toBe(true);

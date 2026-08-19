@@ -22,14 +22,28 @@ export interface GetInstanceInput {
   user: User | undefined;
 }
 
-const ALL_TRUE_ACCESS: DecisionRolePermissions = {
+/**
+ * What a profile admin gets on a decision process without holding a
+ * decision-zone role: everything except `review`.
+ *
+ * `review` is deliberately absent. It is not a "can see more" bit — it marks a
+ * member as an assignment candidate and drives the reviewer surfaces (the
+ * assignment queue, the reviewer tab pair). Granting it to every profile admin
+ * would make them reviewers of every process they administer, which is the
+ * conflation the capability matrix removes. Admins keep their progress and
+ * aggregate reads through `admin`, which every such gate checks.
+ *
+ * A profile admin who is also a real reviewer keeps `review` — see
+ * `resolveInstanceAccess`, which ORs the actual grant back in.
+ */
+const PROFILE_ADMIN_ACCESS: DecisionRolePermissions = {
   delete: true,
   update: true,
   read: true,
   create: true,
   admin: true,
   inviteMembers: true,
-  review: true,
+  review: false,
   submitProposals: true,
   vote: true,
 };
@@ -43,11 +57,15 @@ const resolveInstanceAccess = async (
   profileRoles: NormalizedRole[],
 ): Promise<DecisionRolePermissions> => {
   if (profileRoles.length > 0) {
-    // Profile admins bypass decision-zone role checks — they have full access
+    const roleAccess = fromDecisionBitField(getRolesDecisionBits(profileRoles));
+
+    // Profile admins bypass decision-zone role checks. The bypass does not
+    // confer `review` (see PROFILE_ADMIN_ACCESS), but it must not take away a
+    // REVIEW grant the admin genuinely holds.
     if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
-      return ALL_TRUE_ACCESS;
+      return { ...PROFILE_ADMIN_ACCESS, review: roleAccess.review };
     }
-    return fromDecisionBitField(getRolesDecisionBits(profileRoles));
+    return roleAccess;
   }
 
   // Fall back to org-level roles

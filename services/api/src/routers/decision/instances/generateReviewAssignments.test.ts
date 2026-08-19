@@ -221,15 +221,15 @@ describe.concurrent('generateReviewAssignments', () => {
     }
 
     // Exact set of reviewers who should appear — and no one else.
-    // creatorAdmin has REVIEW via createDefaultDecisionRoles.
     // reviewerA and reviewerB have REVIEW via the custom Reviewer role.
     // memberC has only the Member role (no REVIEW) — must be absent.
+    // creatorAdmin holds the seeded Admin role, which does NOT carry REVIEW —
+    // administering a process does not make you one of its reviewers.
     const expectedReviewerIds = new Set([
-      creatorProfileId,
       reviewerA.profileId,
       reviewerB.profileId,
     ]);
-    const excludedProfileIds = [memberC.profileId];
+    const excludedProfileIds = [memberC.profileId, creatorProfileId];
 
     const actualReviewerIds = new Set(assignmentsByReviewer.keys());
     expect(actualReviewerIds).toEqual(expectedReviewerIds);
@@ -239,12 +239,6 @@ describe.concurrent('generateReviewAssignments', () => {
     }
 
     // Per-reviewer assignment breakdown:
-    // creatorAdmin: both proposals (authored neither)
-    expect(assignmentsByReviewer.get(creatorProfileId)).toHaveLength(2);
-    expect(assignmentsByReviewer.get(creatorProfileId)).toEqual(
-      expect.arrayContaining([proposalByA.id, proposalByC.id]),
-    );
-
     // reviewerA: only proposalByC (self-review excluded for proposalByA)
     expect(assignmentsByReviewer.get(reviewerA.profileId)).toEqual([
       proposalByC.id,
@@ -256,7 +250,7 @@ describe.concurrent('generateReviewAssignments', () => {
       expect.arrayContaining([proposalByA.id, proposalByC.id]),
     );
 
-    expect(assignments).toHaveLength(5);
+    expect(assignments).toHaveLength(3);
 
     // Every assignment should have a pinned proposal history snapshot
     for (const a of assignments) {
@@ -294,13 +288,21 @@ describe.concurrent('generateReviewAssignments', () => {
       reviewsPolicy: 'none',
     });
 
-    // The author is a plain member, not the creator-admin — so the admin's
-    // default REVIEW capability is not cancelled out by the self-review
-    // exclusion, and full_coverage would write one assignment here.
-    const author = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    // A reviewer who is not the author, so full_coverage would write one
+    // assignment here — policy 'none' has to be the only reason nothing is
+    // written, otherwise an empty result proves nothing.
+    const reviewerRole = await createReviewerRole(instance.profileId);
+    const [, author] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
     await testData.createProposal({
       userEmail: author.email,

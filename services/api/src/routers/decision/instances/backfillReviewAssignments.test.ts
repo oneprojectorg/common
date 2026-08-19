@@ -199,8 +199,17 @@ describe.concurrent('backfillReviewAssignments', () => {
     const { setup, instance } = await createReviewInstance(testData);
     const reviewerRole = await createReviewerRole(instance.profileId);
 
-    // reviewerA reviews from the start; lateReviewer joins mid-phase.
-    const [reviewerA, lateReviewer] = await Promise.all([
+    // reviewerA and reviewerB review from the start; lateReviewer joins
+    // mid-phase. reviewerB exists because reviewerA can't review their own
+    // proposal and the creator-admin holds no REVIEW — without them,
+    // proposalByA would come out of generation with no reviewer at all, and
+    // the snapshot-parity assertion below would have nothing to compare to.
+    const [reviewerA, , lateReviewer] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instance.profileId],

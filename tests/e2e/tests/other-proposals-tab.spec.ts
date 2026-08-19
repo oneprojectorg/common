@@ -6,6 +6,7 @@ import {
   createProposal,
   createReviewScenario,
   getSeededTemplate,
+  grantInstanceReviewerRole,
 } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
@@ -75,6 +76,15 @@ test.describe('Other proposals tab', () => {
       .update(processInstances)
       .set({ currentStateId: 'review' })
       .where(eq(processInstances.id, instance.instance.id));
+
+    // The tab pair is the `admin && review` cell of the capability matrix, and
+    // the seeded Admin role no longer carries REVIEW — so say out loud that
+    // this admin is also a reviewer.
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+    });
 
     const author = {
       profileId: org.organizationProfile.id,

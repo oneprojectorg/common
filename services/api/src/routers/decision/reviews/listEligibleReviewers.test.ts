@@ -43,7 +43,7 @@ async function createReviewerRole(instanceProfileId: string) {
 }
 
 describe.concurrent('listEligibleReviewers', () => {
-  it('returns role-holders (incl. the admin) and excludes non-reviewers', async ({
+  it('returns REVIEW role-holders only — not the creator-admin, not plain members', async ({
     task,
     onTestFinished,
   }) => {
@@ -83,10 +83,11 @@ describe.concurrent('listEligibleReviewers', () => {
 
     const ids = result.reviewers.map((r) => r.id);
 
-    // The admin's default decision role carries REVIEW, so the creator is
-    // eligible too.
-    expect(ids).toContain(creator!.profileId);
     expect(ids).toContain(reviewerA.profileId);
+    // Eligibility is the REVIEW bit and nothing else. The seeded Admin role
+    // does not carry it, so the creator-admin is not a candidate either — an
+    // admin who should review is given a role that grants REVIEW.
+    expect(ids).not.toContain(creator!.profileId);
     // A member without the REVIEW capability must never surface as a candidate.
     expect(ids).not.toContain(memberC.profileId);
 

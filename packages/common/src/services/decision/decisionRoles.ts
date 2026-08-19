@@ -161,7 +161,12 @@ export async function createDefaultDecisionRoles({
             delete: true,
             admin: true,
             inviteMembers: true,
-            review: true,
+            // Running a process is not reviewing for it: `admin` already opens
+            // every progress and aggregate read, and REVIEW is what makes a
+            // member an assignment candidate (getEligibleReviewerProfileIds).
+            // A process that wants its admins to review grants them a role
+            // that carries REVIEW.
+            review: false,
             submitProposals: true,
             vote: true,
           },

@@ -1,3 +1,4 @@
+import { createDecisionRole } from '@op/common';
 import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -23,7 +24,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('getInstance', () => {
-  it('should return full access for a profile admin', async ({
+  it('should return admin access without review for a profile admin', async ({
     task,
     onTestFinished,
   }) => {
@@ -45,6 +46,60 @@ describe.concurrent('getInstance', () => {
     expect(result.access?.admin).toBe(true);
     expect(result.access?.submitProposals).toBe(true);
     expect(result.access?.vote).toBe(true);
+    // Administering a process does not make you one of its reviewers: neither
+    // the seeded decision Admin role nor the profile-admin bypass grants
+    // REVIEW. Admin-only gates (progress, aggregates) check `admin`.
+    expect(result.access?.review).toBe(false);
+  });
+
+  it('should keep review for a profile admin who also holds a REVIEW role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const reviewerRole = await createDecisionRole({
+      name: 'Reviewer',
+      profileId: instance.profileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: true,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
+    });
+    await testData.assignRole(
+      setup.user.id,
+      instance.profileId,
+      reviewerRole.id,
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    // The profile-admin bypass must not swallow a REVIEW grant the admin
+    // genuinely holds — that is how a process makes its admins reviewers.
+    expect(result.access?.admin).toBe(true);
+    expect(result.access?.review).toBe(true);
   });
 
   it('should return limited access for a member (non-admin) user', async ({

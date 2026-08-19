@@ -13,7 +13,6 @@ import {
   ProcessStatus,
   ProposalStatus,
   categoryReviewers,
-  profileUserToAccessRoles,
   proposalCategories,
   proposalReviewAssignments,
   taxonomies,
@@ -249,24 +248,6 @@ async function tagProposal(proposalId: string, taxonomyTermId: string) {
     .onConflictDoNothing();
 }
 
-/**
- * Drops every decision-role assignment an auth user holds on the instance
- * profile. The creator-admin holds REVIEW by default, so this is how a test
- * builds an instance whose only eligible reviewer is the one it created.
- */
-async function revokeInstanceRoles(authUserId: string, profileId: string) {
-  const profileUser = await db.query.profileUsers.findFirst({
-    where: { authUserId, profileId },
-  });
-  if (!profileUser) {
-    throw new Error(`No profileUser for authUser=${authUserId}`);
-  }
-
-  await db
-    .delete(profileUserToAccessRoles)
-    .where(eq(profileUserToAccessRoles.profileUserId, profileUser.id));
-}
-
 /** Directly inserts a scope row (system context — no admin caller needed). */
 async function scopeReviewer({
   processInstanceId,
@@ -380,9 +361,15 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     );
     const reviewerRole = await createReviewerRole(instance.profileId);
 
-    // Two extra reviewers alongside the creator-admin (who holds REVIEW via
-    // createDefaultDecisionRoles) → three candidates for every proposal.
-    const [reviewerA, reviewerB, author] = await Promise.all([
+    // Three reviewers → three candidates for every proposal. The
+    // creator-admin is not one of them: the seeded Admin role carries no
+    // REVIEW bit.
+    const [reviewerA, reviewerB, reviewerC, author] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instance.profileId],
@@ -428,6 +415,7 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     expect([...load.values()]).toEqual([2, 2, 2]);
     expect(load.has(reviewerA.profileId)).toBe(true);
     expect(load.has(reviewerB.profileId)).toBe(true);
+    expect(load.has(reviewerC.profileId)).toBe(true);
 
     // The history snapshot is still pinned on the single row.
     for (const a of assignments) {
@@ -530,10 +518,8 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
       roleIds: { [instance.profileId]: reviewerRole.id },
     });
 
-    // Strip the creator-admin's REVIEW so soleReviewer is the whole eligible
-    // set — and have them author the proposal, emptying the candidate set.
-    await revokeInstanceRoles(setup.user.id, instance.profileId);
-
+    // soleReviewer is the whole eligible set — the creator-admin holds no
+    // REVIEW — and they author the proposal, emptying the candidate set.
     await testData.createProposal({
       userEmail: soleReviewer.email,
       processInstanceId: instance.instance.id,
@@ -615,18 +601,16 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     const { setup, instance } = await createTwoPhaseReviewInstance(testData);
     const reviewerRole = await createReviewerRole(instance.profileId);
 
-    await Promise.all([
-      testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [instance.profileId],
-        roleIds: { [instance.profileId]: reviewerRole.id },
-      }),
-      testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [instance.profileId],
-        roleIds: { [instance.profileId]: reviewerRole.id },
-      }),
-    ]);
+    // Three candidates, all explicit — the creator-admin holds no REVIEW.
+    await Promise.all(
+      Array.from({ length: 3 }, () =>
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+          roleIds: { [instance.profileId]: reviewerRole.id },
+        }),
+      ),
+    );
 
     const author = await testData.createMemberUser({
       organization: setup.organization,
@@ -683,7 +667,13 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     );
     const reviewerRole = await createReviewerRole(instance.profileId);
 
+    // Three candidates, all explicit — the creator-admin holds no REVIEW.
     const [reviewerA] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instance.profileId],
@@ -784,8 +774,7 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     ]);
 
     // Four cat-A proposals (both reviewers scoped) + one cat-B proposal (nobody
-    // scoped). The creator-admin holds REVIEW but has no scope row, so the
-    // candidate set is exactly {reviewerA, reviewerB} for cat A.
+    // scoped), so the candidate set is exactly {reviewerA, reviewerB} for cat A.
     const catAProposals = await Promise.all(
       Array.from({ length: 4 }, (_, i) =>
         testData.createProposal({
@@ -908,7 +897,13 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     );
     const reviewerRole = await createReviewerRole(instance.profileId);
 
+    // Three candidates, all explicit — the creator-admin holds no REVIEW.
     const [reviewerA, reviewerB] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instance.profileId],
@@ -941,7 +936,7 @@ describe.concurrent('generateReviewAssignments — single_reviewer policy', () =
     const assignments = await getAssignments(instance.instance.id);
     const byProposal = reviewersByProposal(assignments);
 
-    // 3 reviewers (creator-admin + A + B) × 3 proposals.
+    // 3 reviewers × 3 proposals.
     expect(assignments).toHaveLength(9);
     for (const proposal of proposals) {
       const reviewers = new Set(byProposal.get(proposal.id));
