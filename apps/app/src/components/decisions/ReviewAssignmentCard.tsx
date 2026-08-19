@@ -3,29 +3,17 @@
 import { type DecisionAccess } from '@op/api/encoders';
 import {
   type ProposalReviewAggregates,
-  type ProposalReviewAssignment,
   type ReviewAssignmentExtended,
 } from '@op/common/client';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
-import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
-import type { IconType } from 'react-icons';
-import {
-  LuCircleAlert,
-  LuCircleCheck,
-  LuCircleDashed,
-  LuRefreshCw,
-  LuTimer,
-} from 'react-icons/lu';
+import { StatusBadge } from '@op/sense/StatusBadge';
+import { LuRefreshCw } from 'react-icons/lu';
 
-import type { TranslationKey } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
-
-import { TranslatedText } from '@/components/TranslatedText';
 
 import { useProposalCardData } from './ProposalCard';
 import { ProposalReviewsCount } from './ProposalReviewsCount';
-
-type AssignmentStatus = ProposalReviewAssignment['status'];
+import { ReviewStatusBadge } from './ReviewStatusBadge';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
 
@@ -89,34 +77,5 @@ export function ReviewAssignmentCard({
         ) : undefined
       }
     />
-  );
-}
-
-const statusBadge: Record<
-  AssignmentStatus,
-  { variant: StatusBadgeProps['variant']; icon: IconType }
-> = {
-  pending: { variant: 'inactive', icon: LuCircleDashed },
-  in_progress: { variant: 'in-progress', icon: LuTimer },
-  completed: { variant: 'success', icon: LuCircleCheck },
-  awaiting_author_revision: { variant: 'revision', icon: LuRefreshCw },
-  ready_for_re_review: { variant: 'warning', icon: LuCircleAlert },
-};
-
-const statusLabels: Record<AssignmentStatus, TranslationKey> = {
-  pending: 'Not Started',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  awaiting_author_revision: 'Revision Requested',
-  ready_for_re_review: 'Needs Review',
-};
-
-function ReviewStatusBadge({ status }: { status: AssignmentStatus }) {
-  const { variant, icon } = statusBadge[status];
-
-  return (
-    <StatusBadge variant={variant} icon={icon}>
-      <TranslatedText text={statusLabels[status]} />
-    </StatusBadge>
   );
 }

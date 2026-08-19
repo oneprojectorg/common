@@ -1542,5 +1542,7 @@
   "Export failed": "A exportação falhou",
   "Export timed out. Please try again.": "A exportação expirou. Tente novamente.",
   "Couldn't check the export's status. It may still be running.": "Não foi possível verificar o estado da exportação. Pode ainda estar em execução.",
-  "Export all": "Exportar tudo"
+  "Export all": "Exportar tudo",
+  "Proposals in review · {count}": "Propostas em revisão · {count}",
+  "{count} Reviewed": "{count} revisadas"
 }

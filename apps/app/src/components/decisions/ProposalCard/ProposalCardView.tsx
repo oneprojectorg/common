@@ -23,6 +23,7 @@ import {
   getProposalContentPreview,
   resolveProposalSystemFields,
 } from '../proposalContentUtils';
+import { useProposalReviewDecoration } from '../proposalReviewDecoration';
 
 /**
  * Maps the app's `Proposal` into the presentational values the sense
@@ -146,6 +147,13 @@ export interface ProposalCardViewProps extends Omit<
   totalVotes?: number;
   /** Awarded badge for funded proposals — shown on the right of the votes row. */
   awardedLabel?: ReactNode;
+  /** Left of the status row — typically a `StatusBadge`. */
+  status?: ReactNode;
+  /**
+   * Right of the status row (e.g. a "3 Reviewed" count). Left unset, a review
+   * surface's decoration provider fills it (see `useProposalReviewDecoration`).
+   */
+  reviewedLabel?: ReactNode;
 }
 
 /**
@@ -167,6 +175,8 @@ export const ProposalCardView = ({
   selected,
   totalVotes,
   awardedLabel,
+  status,
+  reviewedLabel,
   className,
   ...rest
 }: ProposalCardViewProps) => {
@@ -174,6 +184,8 @@ export const ProposalCardView = ({
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);
   const engagement = useProposalEngagement({ proposal, canEngage });
+  // Empty unless a review surface provides it; an explicit slot always wins.
+  const decoration = useProposalReviewDecoration(proposal.id);
 
   const tags =
     revisionRequested || displayCategories.length === 0
@@ -228,6 +240,8 @@ export const ProposalCardView = ({
       totalVotes={totalVotes}
       totalVotesLabel={t('Total Votes')}
       awardedLabel={awardedLabel}
+      status={status}
+      reviewedLabel={reviewedLabel ?? decoration.reviewedLabel}
       actions={actions}
       {...rest}
     />

@@ -8,6 +8,8 @@ import { StickyFilterBar } from './StickyFilterBar';
 
 export interface ProposalsStickyFilterBarProps {
   hideFilters: boolean;
+  /** Replaces the proposal count on the left — e.g. the admin review title. */
+  header?: React.ReactNode;
   /** Full server-side proposal count for the active filter. */
   total: number;
   /** Unfiltered proposal count for the instance — the "of N" pool. */
@@ -42,6 +44,7 @@ export interface ProposalsStickyFilterBarProps {
 // scrolls up behind the toggle.
 export const ProposalsStickyFilterBar = ({
   hideFilters,
+  header,
   total,
   totalProposalCount,
   proposalFilter,
@@ -62,13 +65,15 @@ export const ProposalsStickyFilterBar = ({
 }: ProposalsStickyFilterBarProps) => {
   return (
     <StickyFilterBar pinOffset={pinOffset}>
-      <ProposalsListHeader
-        hideFilters={hideFilters}
-        // `total` is the server count for the active filter; totalProposalCount
-        // is the unfiltered pool ("6 of 328 proposals").
-        count={total}
-        total={totalProposalCount}
-      />
+      {header ?? (
+        <ProposalsListHeader
+          hideFilters={hideFilters}
+          // `total` is the server count for the active filter; totalProposalCount
+          // is the unfiltered pool ("6 of 328 proposals").
+          count={total}
+          total={totalProposalCount}
+        />
+      )}
       {!hideFilters && (
         <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
           <ProposalsFilterBar

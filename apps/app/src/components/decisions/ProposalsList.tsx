@@ -19,7 +19,13 @@ import {
 import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/sense/lib/utils';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
-import { type RefCallback, Suspense, useCallback, useMemo } from 'react';
+import {
+  type ReactNode,
+  type RefCallback,
+  Suspense,
+  useCallback,
+  useMemo,
+} from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -44,6 +50,7 @@ import {
 } from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
+import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -67,6 +74,12 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
   /** Exclude proposals the current user is assigned to review (Other proposals tab). */
   excludeAssignedForReview?: boolean;
+  /**
+   * Replaces the "N proposals" count in the filter bar; receives the count for
+   * the active filter. The admin review surface titles itself
+   * "Proposals in review · N".
+   */
+  header?: (count: number) => ReactNode;
   /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
@@ -359,6 +372,7 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   excludeAssignedForReview,
+  header,
   pinOffset,
   phase,
   queryParams,
@@ -435,6 +449,10 @@ const ProposalsListContent = ({
       ),
     [revisionRequestsData],
   );
+
+  // A review surface wraps this list in a decoration provider and needs the ids
+  // the list has loaded; everywhere else there is no provider and this is inert.
+  useReportProposalsForReviewDecoration(allProposals);
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
@@ -542,6 +560,7 @@ const ProposalsListContent = ({
         <ProposalsStickyFilterBar
           pinOffset={pinOffset}
           hideFilters={hideFilters}
+          header={header?.(total)}
           total={total}
           totalProposalCount={totalProposalCount}
           proposalFilter={proposalFilter}
