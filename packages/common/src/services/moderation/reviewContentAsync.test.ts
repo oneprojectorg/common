@@ -54,9 +54,11 @@ describe('reviewContentAsync', () => {
     });
     const planReviewRefs = vi.fn().mockReturnValue(refs);
     const recordRound = vi.fn();
+    const reportForReview = vi.fn();
     const provider: ModerationProvider = {
       planReviewRefs,
       submitForReview,
+      reportForReview,
     };
 
     const result = await reviewContentAsync(
@@ -68,6 +70,9 @@ describe('reviewContentAsync', () => {
     // Records the planned refs *before* the provider is called, so a verdict
     // can never arrive for an unrecorded task.
     expect(recordRound).toHaveBeenCalledWith('post', 'p1', ROUND_ID, refs);
+    // Edits and submissions are classifier-only: a community report is a user
+    // action, and filing one here would queue a case nobody reported.
+    expect(reportForReview).not.toHaveBeenCalled();
     expect(recordRound.mock.invocationCallOrder[0]).toBeLessThan(
       submitForReview.mock.invocationCallOrder[0] ?? 0,
     );

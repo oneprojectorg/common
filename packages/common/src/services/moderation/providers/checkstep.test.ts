@@ -111,6 +111,8 @@ describe('createCheckstepProvider', () => {
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://api.checkstep.com/api/v2/content/report');
+    expect(init.method).toBe('POST');
+    expect(init.headers.authorization).toBe('Bearer k');
     const body = JSON.parse(init.body);
     // Same ref + complex type as the submit, which is how Checkstep
     // associates the report with the ingested content.

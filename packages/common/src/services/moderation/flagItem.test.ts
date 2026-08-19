@@ -155,6 +155,8 @@ describe('flagItem', () => {
     // Without the rollback the flag would sit pending forever and the
     // open-flag idempotency check would swallow every retry.
     expect(deps.rollback).toHaveBeenCalledWith(pendingRow);
+    // Nothing was ingested, so a report would exist in isolation.
+    expect(deps.reportForReview).not.toHaveBeenCalled();
   });
 
   it('keeps the flag pending without submitting when nothing is reviewable', async () => {
@@ -170,13 +172,16 @@ describe('flagItem', () => {
     expect(result).toEqual({ flag: pendingRow });
   });
 
-  it('skips the provider entirely when async review is not configured', async () => {
+  it('records nothing and reports nothing when the submit is not configured', async () => {
     const deps = fullDeps();
     const result = await flagItem(input, {
-      findOpenFlag: deps.findOpenFlag,
-      createPendingFlag: deps.createPendingFlag,
+      ...deps,
+      submitForReview: undefined,
     });
 
+    expect(deps.recordRound).not.toHaveBeenCalled();
+    // A report with no ingested content attaches to nothing.
+    expect(deps.reportForReview).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 });
