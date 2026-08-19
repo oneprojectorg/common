@@ -193,58 +193,59 @@ function MergeCandidateListSuspense({
     [paginatedData.pages, proposal.id, untitledLabel],
   );
 
-  if (candidates.length === 0) {
-    return (
-      <Empty>
-        <EmptyHeader>
-          <EmptyTitle>{t('No other proposals yet')}</EmptyTitle>
-          <EmptyDescription>
-            {t(
-              'A proposal can only be merged into another one in this decision.',
-            )}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
-  }
-
   return (
     <>
-      <RadioGroup
-        value={selectedId}
-        onValueChange={(value) => {
-          const candidate = candidates.find((item) => item.id === value);
-          if (candidate) {
-            onSelect(candidate);
-          }
-        }}
-        aria-label={t('Proposal to merge into')}
-      >
-        {candidates.map((candidate) => (
-          <Field
-            key={candidate.id}
-            orientation="horizontal"
-            className="items-start rounded-md p-2 hover:bg-muted"
-          >
-            <RadioGroupItem
-              id={`merge-target-${candidate.id}`}
-              value={candidate.id}
-              className="mt-1"
-            />
-            <FieldLabel
-              htmlFor={`merge-target-${candidate.id}`}
-              className="flex flex-col items-start gap-0.5 font-normal"
+      {/* The empty state sits beside "Show more", not instead of it: a page can
+          filter down to nothing (all drafts, all hidden) while later pages still
+          hold candidates, and an early return would strand the picker there. */}
+      {candidates.length === 0 ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{t('No other proposals yet')}</EmptyTitle>
+            <EmptyDescription>
+              {t(
+                'A proposal can only be merged into another one in this decision.',
+              )}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <RadioGroup
+          value={selectedId}
+          onValueChange={(value) => {
+            const candidate = candidates.find((item) => item.id === value);
+            if (candidate) {
+              onSelect(candidate);
+            }
+          }}
+          aria-label={t('Proposal to merge into')}
+        >
+          {candidates.map((candidate) => (
+            <Field
+              key={candidate.id}
+              orientation="horizontal"
+              className="items-start rounded-md p-2 hover:bg-muted"
             >
-              <span className="text-foreground">{candidate.title}</span>
-              {candidate.authorName ? (
-                <span className="text-muted-foreground">
-                  {candidate.authorName}
-                </span>
-              ) : null}
-            </FieldLabel>
-          </Field>
-        ))}
-      </RadioGroup>
+              <RadioGroupItem
+                id={`merge-target-${candidate.id}`}
+                value={candidate.id}
+                className="mt-1"
+              />
+              <FieldLabel
+                htmlFor={`merge-target-${candidate.id}`}
+                className="flex flex-col items-start gap-0.5 font-normal"
+              >
+                <span className="text-foreground">{candidate.title}</span>
+                {candidate.authorName ? (
+                  <span className="text-muted-foreground">
+                    {candidate.authorName}
+                  </span>
+                ) : null}
+              </FieldLabel>
+            </Field>
+          ))}
+        </RadioGroup>
+      )}
 
       {query.hasNextPage ? (
         <Button
