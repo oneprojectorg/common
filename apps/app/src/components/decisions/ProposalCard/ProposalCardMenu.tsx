@@ -3,10 +3,11 @@
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuMerge, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { MergeProposalDialog } from '../MergeProposalDialog';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
@@ -26,6 +27,7 @@ export function ProposalCardMenu({
 }) {
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -33,11 +35,21 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
+  const canMerge = canManage && proposal.status !== ProposalStatus.DRAFT;
+
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
 
-    // Admin actions (hide) - not for drafts
-    if (canManage && proposal.status !== ProposalStatus.DRAFT) {
+    // Admin actions (merge, hide) - not for drafts. Merge leads, per Figma
+    // 15311:9078.
+    if (canMerge) {
+      items.push({
+        key: 'merge',
+        icon: <LuMerge className="size-5" />,
+        label: t('Merge with another proposal'),
+        onAction: () => setIsMergeModalOpen(true),
+        isDisabled: isLoading,
+      });
       items.push({
         key: 'visibility',
         icon: isHidden ? (
@@ -93,6 +105,13 @@ export function ProposalCardMenu({
           proposalId={proposal.id}
           open={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
+        />
+      )}
+      {canMerge && (
+        <MergeProposalDialog
+          proposal={proposal}
+          open={isMergeModalOpen}
+          onOpenChange={setIsMergeModalOpen}
         />
       )}
     </ProposalOptionsMenu>

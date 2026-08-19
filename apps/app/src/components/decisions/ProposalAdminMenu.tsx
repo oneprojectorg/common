@@ -3,10 +3,11 @@
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuMerge, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { MergeProposalDialog } from './MergeProposalDialog';
 import { DeleteProposalDialog } from './ProposalCard/DeleteProposalDialog';
 import {
   ProposalOptionsMenu,
@@ -38,6 +39,7 @@ export function ProposalAdminMenu({
   const t = useTranslations();
   const router = useRouter();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
@@ -52,6 +54,14 @@ export function ProposalAdminMenu({
   const triggerLabel = t('Proposal options');
 
   const items: ProposalOptionsMenuItem[] = [
+    // Merge leads, matching the card kebab's Figma order (15311:9078).
+    {
+      key: 'merge',
+      icon: <LuMerge className="size-5" />,
+      label: t('Merge with another proposal'),
+      onAction: () => setIsMergeModalOpen(true),
+      isDisabled: isLoading,
+    },
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -84,6 +94,11 @@ export function ProposalAdminMenu({
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
+      />
+      <MergeProposalDialog
+        proposal={proposal}
+        open={isMergeModalOpen}
+        onOpenChange={setIsMergeModalOpen}
       />
     </ProposalOptionsMenu>
   );

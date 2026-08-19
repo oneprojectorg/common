@@ -19,6 +19,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalComments } from './ProposalComments';
+import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
@@ -180,6 +181,13 @@ export function ProposalView({
 
   const proposalBody: ReactNode = (
     <>
+      {/* Above the proposal: for a superseded proposal this explains why it has
+          left every listing, and it is the only place a merge can be undone. */}
+      <ProposalMergeNotice
+        proposal={currentProposal}
+        decisionRoot={decisionRoot}
+      />
+
       <ProposalPreview
         proposal={currentProposal}
         selection={selection}
