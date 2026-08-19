@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   formatProposalCategories,
   isDistrictCategoryLabel,
@@ -508,15 +507,11 @@ export function ProposalFormRenderer({
   previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
-  // The location field lives behind the `gis_maps` flag.
-  const dynamicFields = fields.filter(
-    (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
-  );
+  const dynamicFields = fields.filter((f) => !f.isSystem);
 
   const render = (field: FieldDescriptor) =>
     renderField(
