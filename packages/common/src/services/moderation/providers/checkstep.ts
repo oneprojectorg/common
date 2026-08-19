@@ -226,8 +226,7 @@ const USER_REPORT_TAG = '#user-report';
 // The only free-text field a moderator sees, and no Report entry point collects
 // one — without this every case arrives with nothing explaining why. Shown in
 // Checkstep's UI, not ours, so deliberately untranslated.
-const DEFAULT_REPORT_REASON =
-  'Reported by a community member using the in-app Report action. No free-text reason is collected at this entry point.';
+const DEFAULT_REPORT_REASON = 'Reported from the app.';
 
 const contentBody = (
   contentId: string,

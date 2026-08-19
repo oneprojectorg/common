@@ -138,7 +138,7 @@ describe('createCheckstepProvider', () => {
     // Checkstep requires a reporter; a sessionless report must still queue.
     expect(body.reporter).toBe('anonymous');
     // The only free-text field on the case, and no entry point collects one.
-    expect(body.reason).toMatch(/in-app Report action/);
+    expect(body.reason).toBe('Reported from the app.');
   });
 
   it('reportForReview treats a whitespace-only reason as absent', async () => {
@@ -153,8 +153,8 @@ describe('createCheckstepProvider', () => {
       reason: '   ',
     });
 
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).reason).toMatch(
-      /in-app Report action/,
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).reason).toBe(
+      'Reported from the app.',
     );
   });
 
