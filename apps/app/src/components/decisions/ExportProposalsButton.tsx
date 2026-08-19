@@ -106,7 +106,7 @@ const ExportStatusUnreadable = ({
   }, [error, t]);
 
   return (
-    <Button variant="outline" size="sm" onClick={onRetry}>
+    <Button variant="outline" onClick={onRetry}>
       <LuTriangleAlert aria-hidden />
       {t('Try again')}
     </Button>
@@ -208,7 +208,6 @@ const ExportProposalsButtonContent = ({
     return (
       <Button
         variant="outline"
-        size="sm"
         // Rendered as an anchor so the browser owns the download. Base UI needs
         // both flags to stop emitting button semantics over the link.
         nativeButton={false}
@@ -236,7 +235,6 @@ const ExportProposalsButtonContent = ({
   return (
     <Button
       variant="outline"
-      size="sm"
       // Disabled rather than `loading` once a run is under way: that prop
       // draws a spinner over the label and renders the label invisible, so the
       // state the label reports would never be readable. A spinner only says
