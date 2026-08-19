@@ -1551,9 +1551,7 @@
   "Proposals in review · {count}": "Propositions en cours d’examen · {count}",
   "{count} Reviewed": "{count} examinées",
   "Merge with another proposal": "Fusionner avec une autre proposition",
-  "Merge": "Fusionner",
   "Unmerge": "Annuler la fusion",
-  "Choose the proposal to keep. {source} keeps its own page, but leaves the proposal list, voting, and review.": "Choisissez la proposition à conserver. {source} garde sa propre page, mais quitte la liste des propositions, le vote et l’évaluation.",
   "Proposal to merge into": "Proposition avec laquelle fusionner",
   "Show more proposals": "Afficher plus de propositions",
   "No other proposals yet": "Aucune autre proposition pour l’instant",
@@ -1567,5 +1565,12 @@
   "Other proposals merged into this one": "Autres propositions fusionnées avec celle-ci",
   "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "Cette proposition a quitté la liste, le vote et les files d’évaluation. Elle a été fusionnée avec <target>{name}</target>.",
   "Merge details unavailable": "Détails de la fusion indisponibles",
-  "Could not check whether this proposal is part of a merge.": "Impossible de vérifier si cette proposition fait partie d’une fusion."
+  "Could not check whether this proposal is part of a merge.": "Impossible de vérifier si cette proposition fait partie d’une fusion.",
+  "Merge proposals": "Fusionner des propositions",
+  "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Choisissez la proposition avec laquelle fusionner <source>{name}</source>. Elle garde sa propre page, mais quitte la liste des propositions, le vote et l’évaluation.",
+  "Merging from": "Fusion depuis",
+  "Merge into": "Fusionner avec",
+  "Search proposals…": "Rechercher des propositions…",
+  "Suggested proposals": "Propositions suggérées",
+  "No proposals match your search": "Aucune proposition ne correspond à votre recherche"
 }

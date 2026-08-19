@@ -3,12 +3,13 @@ import type { Proposal } from '@op/common/client';
 
 import { resolveProposalSystemFields } from './proposalContentUtils';
 
-/** One selectable row in the merge dialog's target list. */
+/** One selectable card in the merge dialog's target list. */
 export interface MergeCandidate {
   id: string;
+  /** Resolved once here so the footer's toast and the search filter agree on it. */
   title: string;
-  /** Submitter display name; absent for an anonymous or missing submitter. */
-  authorName?: string;
+  /** The card renders the proposal itself — title, author, tags, preview. */
+  proposal: Proposal;
 }
 
 /**
@@ -42,17 +43,25 @@ export function getProposalDisplayTitle(
  *
  * A proposal already merged into something else can't appear here — every list
  * read excludes it via `notSuperseded` — so there's nothing to filter for that.
+ *
+ * `searchTerm` narrows by title. It only sees the pages already fetched:
+ * `ListProposalsInput` declares a `search` field that nothing reads, so there is
+ * no server-side filter to defer to yet.
  */
 export function getMergeCandidates({
   proposals,
   sourceProposalId,
   untitledLabel,
+  searchTerm = '',
 }: {
   proposals: Proposal[];
   sourceProposalId: string;
   /** Fallback for a proposal carrying neither a title field nor a profile name. */
   untitledLabel: string;
+  searchTerm?: string;
 }): MergeCandidate[] {
+  const query = searchTerm.trim().toLocaleLowerCase();
+
   return proposals
     .filter(
       (proposal) =>
@@ -61,17 +70,13 @@ export function getMergeCandidates({
         proposal.visibility !== Visibility.HIDDEN &&
         !proposal.isFlagged,
     )
-    .map((proposal) => {
-      const title = getProposalDisplayTitle(proposal, untitledLabel);
-      const authorName =
-        proposal.submittedBy && !proposal.submittedBy.isAnonymous
-          ? proposal.submittedBy.name
-          : '';
-
-      return {
-        id: proposal.id,
-        title,
-        ...(authorName ? { authorName } : {}),
-      };
-    });
+    .map((proposal) => ({
+      id: proposal.id,
+      title: getProposalDisplayTitle(proposal, untitledLabel),
+      proposal,
+    }))
+    .filter(
+      (candidate) =>
+        !query || candidate.title.toLocaleLowerCase().includes(query),
+    );
 }

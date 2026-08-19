@@ -1551,9 +1551,7 @@
   "Proposals in review · {count}": "المقترحات قيد المراجعة · {count}",
   "{count} Reviewed": "تمت مراجعة {count}",
   "Merge with another proposal": "دمج مع مقترح آخر",
-  "Merge": "دمج",
   "Unmerge": "إلغاء الدمج",
-  "Choose the proposal to keep. {source} keeps its own page, but leaves the proposal list, voting, and review.": "اختر المقترح الذي سيبقى. يحتفظ {source} بصفحته الخاصة، لكنه يخرج من قائمة المقترحات ومن التصويت ومن المراجعة.",
   "Proposal to merge into": "المقترح المراد الدمج معه",
   "Show more proposals": "عرض مزيد من المقترحات",
   "No other proposals yet": "لا توجد مقترحات أخرى بعد",
@@ -1567,5 +1565,12 @@
   "Other proposals merged into this one": "مقترحات أخرى مدموجة مع هذا المقترح",
   "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "خرج هذا المقترح من القائمة ومن التصويت ومن قوائم المراجعة. وقد تم دمجه مع <target>{name}</target>.",
   "Merge details unavailable": "تفاصيل الدمج غير متاحة",
-  "Could not check whether this proposal is part of a merge.": "تعذّر التحقق مما إذا كان هذا المقترح جزءًا من عملية دمج."
+  "Could not check whether this proposal is part of a merge.": "تعذّر التحقق مما إذا كان هذا المقترح جزءًا من عملية دمج.",
+  "Merge proposals": "دمج المقترحات",
+  "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "اختر المقترح الذي سيُدمج معه <source>{name}</source>. يحتفظ بصفحته الخاصة، لكنه يخرج من قائمة المقترحات ومن التصويت ومن المراجعة.",
+  "Merging from": "الدمج من",
+  "Merge into": "الدمج مع",
+  "Search proposals…": "البحث في المقترحات…",
+  "Suggested proposals": "مقترحات مقترحة",
+  "No proposals match your search": "لا توجد مقترحات مطابقة لبحثك"
 }

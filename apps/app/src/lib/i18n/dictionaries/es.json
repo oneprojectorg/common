@@ -1551,9 +1551,7 @@
   "Proposals in review · {count}": "Propuestas en revisión · {count}",
   "{count} Reviewed": "{count} revisadas",
   "Merge with another proposal": "Combinar con otra propuesta",
-  "Merge": "Combinar",
   "Unmerge": "Separar",
-  "Choose the proposal to keep. {source} keeps its own page, but leaves the proposal list, voting, and review.": "Elige la propuesta que se conserva. {source} mantiene su propia página, pero sale de la lista de propuestas, de la votación y de la revisión.",
   "Proposal to merge into": "Propuesta con la que combinar",
   "Show more proposals": "Mostrar más propuestas",
   "No other proposals yet": "Todavía no hay otras propuestas",
@@ -1567,5 +1565,12 @@
   "Other proposals merged into this one": "Otras propuestas combinadas con esta",
   "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "Esta propuesta ha salido de la lista, de la votación y de las colas de revisión. Se combinó con <target>{name}</target>.",
   "Merge details unavailable": "Datos de la combinación no disponibles",
-  "Could not check whether this proposal is part of a merge.": "No se pudo comprobar si esta propuesta forma parte de una combinación."
+  "Could not check whether this proposal is part of a merge.": "No se pudo comprobar si esta propuesta forma parte de una combinación.",
+  "Merge proposals": "Combinar propuestas",
+  "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Elige la propuesta con la que combinar <source>{name}</source>. Mantiene su propia página, pero sale de la lista de propuestas, de la votación y de la revisión.",
+  "Merging from": "Se combina desde",
+  "Merge into": "Combinar con",
+  "Search proposals…": "Buscar propuestas…",
+  "Suggested proposals": "Propuestas sugeridas",
+  "No proposals match your search": "Ninguna propuesta coincide con tu búsqueda"
 }

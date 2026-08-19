@@ -1553,9 +1553,7 @@
   "Proposals in review · {count}": "Soo jeedimo dib-u-eegis ku jira · {count}",
   "{count} Reviewed": "{count} la dib u eegay",
   "Merge with another proposal": "Ku biiri soo-jeedin kale",
-  "Merge": "Ku biiri",
   "Unmerge": "Ka soocid",
-  "Choose the proposal to keep. {source} keeps its own page, but leaves the proposal list, voting, and review.": "Dooro soo-jeedinta la sii haynayo. {source} waxay sii haysanaysaa boggeeda, laakiin waxay ka baxaysaa liiska soo-jeedinnada, codbixinta, iyo dib-u-eegista.",
   "Proposal to merge into": "Soo-jeedinta lala biirinayo",
   "Show more proposals": "Muuji soo-jeedinno dheeraad ah",
   "No other proposals yet": "Weli ma jiraan soo-jeedinno kale",
@@ -1569,5 +1567,12 @@
   "Other proposals merged into this one": "Soo-jeedinno kale oo tan lala biiriyay",
   "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "Soo-jeedintan waxay ka baxday liiska, codbixinta, iyo safafka dib-u-eegista. Waxaa lala biiriyay <target>{name}</target>.",
   "Merge details unavailable": "Faahfaahinta biirinta lama helin",
-  "Could not check whether this proposal is part of a merge.": "Lama hubin karin in soo-jeedintan qayb ka tahay biirin."
+  "Could not check whether this proposal is part of a merge.": "Lama hubin karin in soo-jeedintan qayb ka tahay biirin.",
+  "Merge proposals": "Ku biiri soo-jeedinno",
+  "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Dooro soo-jeedinta lala biirinayo <source>{name}</source>. Waxay sii haysanaysaa boggeeda, laakiin waxay ka baxaysaa liiska soo-jeedinnada, codbixinta, iyo dib-u-eegista.",
+  "Merging from": "Laga biirinayo",
+  "Merge into": "Lala biirinayo",
+  "Search proposals…": "Raadi soo-jeedinno…",
+  "Suggested proposals": "Soo-jeedinno la soo jeediyay",
+  "No proposals match your search": "Ma jiro soo-jeedin u dhiganta raadintaada"
 }

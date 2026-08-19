@@ -142,32 +142,39 @@ describe('getMergeCandidates', () => {
     expect(candidate?.title).toBe(untitledLabel);
   });
 
-  it('names the submitter, but not an anonymous one', () => {
-    const [named, anonymous, absent] = getMergeCandidates({
+  it('narrows by title, case-insensitively, when a search term is set', () => {
+    const candidates = getMergeCandidates({
       proposals: [
-        proposal({ id: 'a', submittedBy: { name: 'Raphael Arar' } }),
-        proposal({
-          id: 'b',
-          submittedBy: { name: 'Maya Lin', isAnonymous: true },
-        }),
-        proposal({ id: 'c' }),
+        proposal({ id: 'a', title: 'Community Garden Expansion' }),
+        proposal({ id: 'b', title: 'Youth Tech Learning Hub' }),
+        proposal({ id: 'c', title: 'Riverside District GARDEN Plot' }),
       ],
       sourceProposalId: 'source',
       untitledLabel,
+      searchTerm: '  garden ',
     });
 
-    expect(named?.authorName).toBe('Raphael Arar');
-    expect(anonymous?.authorName).toBeUndefined();
-    expect(absent?.authorName).toBeUndefined();
+    expect(candidates.map((candidate) => candidate.id)).toEqual(['a', 'c']);
   });
 
-  it('omits an empty submitter name rather than rendering a blank author', () => {
+  it('keeps every candidate when the search term is blank', () => {
+    const candidates = getMergeCandidates({
+      proposals: [proposal({ id: 'a' }), proposal({ id: 'b' })],
+      sourceProposalId: 'source',
+      untitledLabel,
+      searchTerm: '   ',
+    });
+
+    expect(candidates).toHaveLength(2);
+  });
+
+  it('carries the proposal through so the card can render it', () => {
     const [candidate] = getMergeCandidates({
-      proposals: [proposal({ id: 'a', submittedBy: { name: '' } })],
+      proposals: [proposal({ id: 'a', title: 'Community Garden Expansion' })],
       sourceProposalId: 'source',
       untitledLabel,
     });
 
-    expect(candidate?.authorName).toBeUndefined();
+    expect(candidate?.proposal.id).toBe('a');
   });
 });

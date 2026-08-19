@@ -20,60 +20,68 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Field, FieldLabel } from '@op/sense/Field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@op/sense/InputGroup';
+import { ProposalCard } from '@op/sense/ProposalCard';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense, useMemo, useState } from 'react';
+import { type ReactNode, Suspense, useMemo, useState } from 'react';
+import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  type MergeCandidate,
-  getMergeCandidates,
-  getProposalDisplayTitle,
-} from './mergeCandidates';
+import { useProposalCardData } from './ProposalCard/ProposalCardView';
+import { getMergeCandidates, getProposalDisplayTitle } from './mergeCandidates';
 import { useProposalMergeActions } from './useProposalMergeActions';
 
 /**
- * Candidates per page. Larger than the browse grid's 24 — the picker is a list
- * of titles, and a merge is easier to finish in one pass than in three.
+ * Candidates per page. The dialog shows them as cards, so this is also how many
+ * cards a reviewer scrolls before reaching "Show more".
  */
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 
 /**
- * "Merge with another proposal": pick the proposal that survives, then confirm.
+ * "Merge proposals" — pick the proposal that survives, then confirm
+ * (Figma 15311:11482).
  *
- * Opened from the proposal card's `…` menu (Figma 15311:9078) and from the
- * proposal page's admin menu. Merging records an edge — no content moves and no
- * status changes — after which `proposal` drops out of every listing, the
- * voting pool, and the review queues.
+ * Opened from the proposal card's `…` menu and from the proposal page's admin
+ * menu. Merging records an edge — no content moves and no status changes — after
+ * which `proposal` drops out of every listing, the voting pool, and the review
+ * queues.
  */
 export function MergeProposalDialog({
   proposal,
   open,
   onOpenChange,
 }: {
-  /** The proposal being merged away. */
+  /** The proposal being merged away — the "Merging from" card. */
   proposal: Proposal;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations();
-  const [target, setTarget] = useState<MergeCandidate | null>(null);
+  const [targetProposalId, setTargetProposalId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { merge, isMerging } = useProposalMergeActions();
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      // The dialog unmounts its list, so a stale selection would otherwise
-      // survive into the next open.
-      setTarget(null);
+      // The dialog unmounts its list, so a stale selection or search term would
+      // otherwise survive into the next open.
+      setTargetProposalId(null);
+      setSearchTerm('');
     }
     onOpenChange(nextOpen);
   };
 
-  const handleConfirm = async () => {
-    if (!target) {
+  const handleConfirm = async (targetTitle: string) => {
+    if (!targetProposalId) {
       return;
     }
 
@@ -81,8 +89,8 @@ export function MergeProposalDialog({
       await merge({
         sourceProposalId: proposal.id,
         sourceTitle,
-        targetProposalId: target.id,
-        targetTitle: target.title,
+        targetProposalId,
+        targetTitle,
       });
       handleOpenChange(false);
     } catch (error) {
@@ -98,74 +106,108 @@ export function MergeProposalDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-116">
         <DialogHeader>
-          <DialogTitle>{t('Merge with another proposal')}</DialogTitle>
-          <DialogDescription>
-            {t(
-              'Choose the proposal to keep. {source} keeps its own page, but leaves the proposal list, voting, and review.',
-              { source: sourceTitle },
-            )}
-          </DialogDescription>
+          <DialogTitle className="text-center">
+            {t('Merge proposals')}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 py-4">
-          {/* Its own boundary: a failed candidate list must leave the dialog
-              (and its Cancel button) usable rather than taking the page down. */}
-          <APIErrorBoundary
-            fallbacks={{
-              default: () => (
-                <p className="text-destructive" role="alert">
-                  {t('Could not load the other proposals. Please try again.')}
-                </p>
-              ),
-            }}
-          >
-            <Suspense fallback={<MergeCandidateListSkeleton />}>
-              <MergeCandidateListSuspense
-                proposal={proposal}
-                selectedId={target?.id ?? null}
-                onSelect={setTarget}
-              />
-            </Suspense>
-          </APIErrorBoundary>
-        </div>
+        <div className="flex flex-col gap-4 px-6 py-6">
+          <DialogDescription>
+            {t.rich(
+              'Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.',
+              {
+                name: sourceTitle,
+                source: (chunks: ReactNode) => <em>{chunks}</em>,
+              },
+            )}
+          </DialogDescription>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            className="w-full sm:w-fit"
-            onClick={() => handleOpenChange(false)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            className="w-full sm:w-fit"
-            onClick={handleConfirm}
-            disabled={!target}
-            loading={isMerging}
-          >
-            {t('Merge')}
-          </Button>
-        </DialogFooter>
+          <section className="flex flex-col gap-2">
+            <h3 className="text-muted-foreground">{t('Merging from')}</h3>
+            <MergeProposalSummaryCard
+              proposal={proposal}
+              className="bg-muted"
+            />
+          </section>
+
+          <Separator />
+
+          <Field>
+            <FieldLabel htmlFor="merge-proposal-search">
+              {t('Merge into')}
+            </FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <LuSearch className="size-4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                id="merge-proposal-search"
+                type="search"
+                placeholder={t('Search proposals…')}
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </InputGroup>
+          </Field>
+
+          <section className="flex flex-col gap-2">
+            <h3 className="text-muted-foreground">
+              {t('Suggested proposals')}
+            </h3>
+            {/* Its own boundary: a failed candidate list must leave the dialog
+                (and its close button) usable rather than taking the page down. */}
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <p className="text-destructive" role="alert">
+                    {t('Could not load the other proposals. Please try again.')}
+                  </p>
+                ),
+              }}
+            >
+              <Suspense fallback={<MergeCandidateListSkeleton />}>
+                <MergeCandidateListSuspense
+                  proposal={proposal}
+                  searchTerm={searchTerm}
+                  selectedId={targetProposalId}
+                  onSelect={setTargetProposalId}
+                  onConfirm={handleConfirm}
+                  isMerging={isMerging}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </section>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
 /**
- * The decision's other proposals as a single-select list. Reads the same
- * `listProposals` query the browse list does, so the page already on screen is
- * served from cache and the picker can't offer a proposal the list doesn't show.
+ * The decision's other proposals as a single-select list of cards. Reads the
+ * same `listProposals` query the browse list does, so the page already on screen
+ * is served from cache and the picker can't offer a proposal the list doesn't
+ * show.
+ *
+ * Owns the footer too: "Continue" needs the selected candidate's title for the
+ * toast, and only this component has the loaded candidates to resolve it from.
  */
 function MergeCandidateListSuspense({
   proposal,
+  searchTerm,
   selectedId,
   onSelect,
+  onConfirm,
+  isMerging,
 }: {
   proposal: Proposal;
+  searchTerm: string;
   selectedId: string | null;
-  onSelect: (candidate: MergeCandidate) => void;
+  onSelect: (proposalId: string) => void;
+  onConfirm: (targetTitle: string) => void;
+  isMerging: boolean;
 }) {
   const t = useTranslations();
 
@@ -189,19 +231,26 @@ function MergeCandidateListSuspense({
         proposals: paginatedData.pages.flatMap((page) => page.proposals),
         sourceProposalId: proposal.id,
         untitledLabel,
+        searchTerm,
       }),
-    [paginatedData.pages, proposal.id, untitledLabel],
+    [paginatedData.pages, proposal.id, untitledLabel, searchTerm],
   );
+
+  const selected = candidates.find((candidate) => candidate.id === selectedId);
 
   return (
     <>
       {/* The empty state sits beside "Show more", not instead of it: a page can
-          filter down to nothing (all drafts, all hidden) while later pages still
-          hold candidates, and an early return would strand the picker there. */}
+          filter down to nothing (all drafts, all hidden, or no search match)
+          while later pages still hold candidates. */}
       {candidates.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>{t('No other proposals yet')}</EmptyTitle>
+            <EmptyTitle>
+              {searchTerm
+                ? t('No proposals match your search')
+                : t('No other proposals yet')}
+            </EmptyTitle>
             <EmptyDescription>
               {t(
                 'A proposal can only be merged into another one in this decision.',
@@ -212,35 +261,28 @@ function MergeCandidateListSuspense({
       ) : (
         <RadioGroup
           value={selectedId}
-          onValueChange={(value) => {
-            const candidate = candidates.find((item) => item.id === value);
-            if (candidate) {
-              onSelect(candidate);
-            }
-          }}
+          onValueChange={(value) => onSelect(String(value))}
           aria-label={t('Proposal to merge into')}
         >
           {candidates.map((candidate) => (
-            <Field
-              key={candidate.id}
-              orientation="horizontal"
-              className="items-start rounded-md p-2 hover:bg-muted"
-            >
+            <Field key={candidate.id}>
+              {/* The radio is the control but not the visual: the card carries
+                  the selected treatment, so the label IS the card (Figma shows
+                  no radio dot) while Base UI keeps the keyboard semantics. */}
               <RadioGroupItem
                 id={`merge-target-${candidate.id}`}
                 value={candidate.id}
-                className="mt-1"
+                className="sr-only"
               />
               <FieldLabel
                 htmlFor={`merge-target-${candidate.id}`}
-                className="flex flex-col items-start gap-0.5 font-normal"
+                className="font-normal"
               >
-                <span className="text-foreground">{candidate.title}</span>
-                {candidate.authorName ? (
-                  <span className="text-muted-foreground">
-                    {candidate.authorName}
-                  </span>
-                ) : null}
+                <MergeProposalSummaryCard
+                  proposal={candidate.proposal}
+                  selected={candidate.id === selectedId}
+                  showDescription
+                />
               </FieldLabel>
             </Field>
           ))}
@@ -250,24 +292,68 @@ function MergeCandidateListSuspense({
       {query.hasNextPage ? (
         <Button
           variant="outline"
-          className="mt-3 w-full"
+          className="w-full"
           onClick={() => query.fetchNextPage()}
           loading={query.isFetchingNextPage}
         >
           {t('Show more proposals')}
         </Button>
       ) : null}
+
+      <DialogFooter>
+        <Button
+          className="w-full sm:w-fit"
+          onClick={() => selected && onConfirm(selected.title)}
+          disabled={!selected}
+          loading={isMerging}
+        >
+          {t('Continue')}
+        </Button>
+      </DialogFooter>
     </>
   );
 }
 
-/** Three placeholder rows — the shape of a loaded radio row, not its content. */
+/**
+ * A proposal as the merge dialog shows it: the sense `ProposalCard` with the
+ * title, author, and category tags, and the body preview only for candidates
+ * (Figma gives the "Merging from" card no description).
+ */
+function MergeProposalSummaryCard({
+  proposal,
+  selected,
+  showDescription = false,
+  className,
+}: {
+  proposal: Proposal;
+  selected?: boolean;
+  showDescription?: boolean;
+  className?: string;
+}) {
+  const { titleText, budgetText, displayCategories, authors, description } =
+    useProposalCardData(proposal);
+
+  return (
+    <ProposalCard
+      title={titleText}
+      budget={budgetText}
+      tags={displayCategories}
+      // Dropping each author's `href`: an anchor inside the radio's label would
+      // be a second control competing with it for the click.
+      authors={authors?.map(({ name, avatarSrc }) => ({ name, avatarSrc }))}
+      description={showDescription ? description : undefined}
+      selected={selected}
+      className={className}
+    />
+  );
+}
+
+/** Two placeholder cards — the shape of a loaded candidate, not its content. */
 function MergeCandidateListSkeleton() {
   return (
     <div className="flex flex-col gap-2" aria-hidden>
-      <Skeleton className="h-9 w-full" />
-      <Skeleton className="h-9 w-full" />
-      <Skeleton className="h-9 w-full" />
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-32 w-full" />
     </div>
   );
 }
