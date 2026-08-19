@@ -1,4 +1,4 @@
-import { ProposalStatus } from '@op/api/encoders';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 
 import { resolveProposalSystemFields } from './proposalContentUtils';
@@ -31,10 +31,14 @@ export function getProposalDisplayTitle(
  * The proposals a given proposal may be merged into, keeping the order the list
  * query returned them in.
  *
- * Two exclusions, both of which the picker must apply itself:
- * - the proposal being merged, because `mergeProposals` rejects a self-merge;
- * - drafts, because an unsubmitted draft must not become the surviving
- *   proposal. Admins and owners do receive drafts from `listProposals`.
+ * The exclusions are the picker's job — `mergeProposals` only rejects a
+ * self-merge, and `listProposals` hands an admin more than it should survive:
+ * - the proposal being merged;
+ * - drafts, because an unsubmitted draft must not become the surviving proposal;
+ * - hidden and flagged proposals, which members can't see. Merging into one
+ *   removes the source from the list and leaves nothing visible in its place,
+ *   and `listProposalRelationships` won't name such a target either, so the
+ *   merge notice couldn't offer the way back.
  *
  * A proposal already merged into something else can't appear here — every list
  * read excludes it via `notSuperseded` — so there's nothing to filter for that.
@@ -53,7 +57,9 @@ export function getMergeCandidates({
     .filter(
       (proposal) =>
         proposal.id !== sourceProposalId &&
-        proposal.status !== ProposalStatus.DRAFT,
+        proposal.status !== ProposalStatus.DRAFT &&
+        proposal.visibility !== Visibility.HIDDEN &&
+        !proposal.isFlagged,
     )
     .map((proposal) => {
       const title = getProposalDisplayTitle(proposal, untitledLabel);

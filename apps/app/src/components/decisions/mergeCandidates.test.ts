@@ -1,4 +1,4 @@
-import { ProposalStatus } from '@op/api/encoders';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
@@ -14,12 +14,16 @@ const proposal = ({
   title,
   profileName = 'Profile name',
   status = ProposalStatus.SUBMITTED,
+  visibility = Visibility.VISIBLE,
+  isFlagged = false,
   submittedBy,
 }: {
   id: string;
   title?: string;
   profileName?: string;
   status?: string;
+  visibility?: string;
+  isFlagged?: boolean;
   submittedBy?: { name: string; isAnonymous?: boolean };
 }): Proposal =>
   ({
@@ -28,7 +32,8 @@ const proposal = ({
     profileId: `profile-${id}`,
     proposalData: { title, category: [] },
     status,
-    visibility: 'public',
+    visibility,
+    isFlagged,
     profile: { name: profileName },
     ...(submittedBy && {
       submittedBy: {
@@ -63,6 +68,32 @@ describe('getMergeCandidates', () => {
     });
 
     expect(candidates.map((candidate) => candidate.id)).toEqual(['submitted']);
+  });
+
+  it('excludes a hidden proposal, which would survive invisible to members', () => {
+    const candidates = getMergeCandidates({
+      proposals: [
+        proposal({ id: 'hidden', visibility: Visibility.HIDDEN }),
+        proposal({ id: 'visible' }),
+      ],
+      sourceProposalId: 'source',
+      untitledLabel,
+    });
+
+    expect(candidates.map((candidate) => candidate.id)).toEqual(['visible']);
+  });
+
+  it('excludes a flagged proposal, which members also cannot see', () => {
+    const candidates = getMergeCandidates({
+      proposals: [
+        proposal({ id: 'flagged', isFlagged: true }),
+        proposal({ id: 'clean' }),
+      ],
+      sourceProposalId: 'source',
+      untitledLabel,
+    });
+
+    expect(candidates.map((candidate) => candidate.id)).toEqual(['clean']);
   });
 
   it('keeps the order the list query returned', () => {
