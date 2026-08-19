@@ -21,6 +21,7 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
   type ProposalCategoryItem,
@@ -54,14 +55,13 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
 // ── Public entry ───────────────────────────────────────────────────────
 
 /**
- * Admin-only proposal list with per-proposal review aggregates. Two dispatch
- * modes determined by input shape:
+ * Proposal list with per-proposal review aggregates. Two dispatch modes
+ * determined by input shape:
  *
  *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
- *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated.
- *
- * Both modes share the auth + instance + rubric setup; the split happens
- * after the admin check.
+ *     Gated by `canReadPhaseReviews` — admins always, reviewers on a named
+ *     `openReviews` phase (the same gate as the per-proposal review set).
+ *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated. Admin-only.
  */
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
@@ -70,7 +70,10 @@ export async function listProposalsWithReviewAggregates(
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  if (!instance.access.admin) {
+  if ('proposalIds' in input) {
+    // Raw `phaseId`, not the effective one: a reviewer must name the phase.
+    assertCanReadPhaseReviews(instance, input.phaseId);
+  } else if (!instance.access.admin) {
     throw new UnauthorizedError(
       "You don't have admin access to this process instance",
     );
