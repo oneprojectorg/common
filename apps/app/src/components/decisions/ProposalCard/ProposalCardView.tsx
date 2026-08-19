@@ -146,6 +146,10 @@ export interface ProposalCardViewProps extends Omit<
   totalVotes?: number;
   /** Awarded badge for funded proposals — shown on the right of the votes row. */
   awardedLabel?: ReactNode;
+  /** Left of the status row — typically a `StatusBadge` (e.g. review progress). */
+  status?: ReactNode;
+  /** Right of the status row (e.g. a "3 Reviewed" count). */
+  reviewedLabel?: ReactNode;
 }
 
 /**
@@ -167,6 +171,8 @@ export const ProposalCardView = ({
   selected,
   totalVotes,
   awardedLabel,
+  status,
+  reviewedLabel,
   className,
   ...rest
 }: ProposalCardViewProps) => {
@@ -228,6 +234,8 @@ export const ProposalCardView = ({
       totalVotes={totalVotes}
       totalVotesLabel={t('Total Votes')}
       awardedLabel={awardedLabel}
+      status={status}
+      reviewedLabel={reviewedLabel}
       actions={actions}
       {...rest}
     />

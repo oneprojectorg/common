@@ -42,25 +42,50 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 // ── Input schema ───────────────────────────────────────────────────────
 
 /**
- * Single union schema for both dispatch modes:
+ * Single schema for both dispatch modes, kept exclusive by refinement:
  *   - filtered: caller passes `proposalIds`, no pagination, no filters/sort —
- *     the caller already decided the set and its order.
+ *     the caller already decided the set and its order, so the paging and
+ *     filter fields are rejected rather than silently ignored.
  *   - paginated: phase-scoped, filterable, sortable, cursor-paginated.
+ *
+ * One flat object rather than a `z.union` of the two modes: tRPC only decorates
+ * a query with `useInfiniteQuery` / `useSuspenseInfiniteQuery` when its input
+ * type carries `cursor`, and a union branch without one drops those hooks (and
+ * narrows the infinite-query input to the branches' common keys). The
+ * refinement keeps the modes as exclusive as the union made them.
  */
-export const listProposalsWithReviewAggregatesInputSchema = z.union([
-  instanceOptionalPhaseRefSchema.extend({
-    proposalIds: z.array(z.uuid()).min(1),
-  }),
-  instanceOptionalPhaseRefSchema.extend({
-    limit: z.number().int().min(1).max(100).default(50),
-    cursor: z.string().optional(),
-    /** Taxonomy term ids — keeps only proposals tagged with any of them. */
-    categoryIds: z.array(z.uuid()).optional(),
-    /** Keeps only proposals whose progress rollup matches. */
-    reviewStatus: z.enum(PROPOSAL_REVIEW_STATUSES).optional(),
-    sort: z.enum(REVIEW_ASSIGNMENT_SORTS).default('leastReviewed'),
-  }),
-]);
+export const listProposalsWithReviewAggregatesInputSchema =
+  instanceOptionalPhaseRefSchema
+    .extend({
+      proposalIds: z.array(z.uuid()).min(1).optional(),
+      /** Paginated mode only. Defaults to `DEFAULT_PAGE_LIMIT`. */
+      limit: z.number().int().min(1).max(100).optional(),
+      cursor: z.string().optional(),
+      /** Taxonomy term ids — keeps only proposals tagged with any of them. */
+      categoryIds: z.array(z.uuid()).optional(),
+      /** Keeps only proposals whose progress rollup matches. */
+      reviewStatus: z.enum(PROPOSAL_REVIEW_STATUSES).optional(),
+      /** Paginated mode only. Defaults to `leastReviewed`. */
+      sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
+    })
+    .refine(
+      (input) =>
+        !input.proposalIds ||
+        [
+          input.limit,
+          input.cursor,
+          input.categoryIds,
+          input.reviewStatus,
+          input.sort,
+        ].every((field) => field === undefined),
+      {
+        message:
+          'proposalIds cannot be combined with limit, cursor, categoryIds, reviewStatus or sort',
+      },
+    );
+
+/** Page size for paginated mode when the caller doesn't ask for one. */
+const DEFAULT_PAGE_LIMIT = 50;
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<
   typeof listProposalsWithReviewAggregatesInputSchema
@@ -107,7 +132,7 @@ export async function listProposalsWithReviewAggregates(
     phaseId,
   });
 
-  if ('proposalIds' in input) {
+  if (input.proposalIds) {
     return listProposalsFiltered({
       proposalIds: input.proposalIds,
       phaseProposalIds,
@@ -122,11 +147,11 @@ export async function listProposalsWithReviewAggregates(
     processInstanceId,
     phaseId,
     phaseProposalIds,
-    limit: input.limit,
+    limit: input.limit ?? DEFAULT_PAGE_LIMIT,
     cursor: input.cursor,
     categoryIds: input.categoryIds,
     reviewStatus: input.reviewStatus,
-    sort: input.sort,
+    sort: input.sort ?? 'leastReviewed',
     scoredCriterionKeys,
     rubricTemplate,
   });

@@ -16,6 +16,14 @@ interface ProposalReviewsCountProps {
   /** Review summary route for the proposal. */
   href: string;
   access?: DecisionAccess;
+  /**
+   * Which copy the count carries:
+   *   - `reviews` (default): "{count} Reviews", and nothing at all at zero —
+   *     the reviewer-facing label, where an empty count is just noise.
+   *   - `reviewed`: "{count} Reviewed", rendered at zero too — the admin
+   *     progress label, where "0 Reviewed" is exactly the signal being tracked.
+   */
+  variant?: 'reviews' | 'reviewed';
 }
 
 /**
@@ -26,26 +34,45 @@ export function ProposalReviewsCount({
   reviewers,
   href,
   access,
+  variant = 'reviews',
 }: ProposalReviewsCountProps) {
   const t = useTranslations();
 
   const completedReviewers = reviewers.filter(
     (reviewer) => reviewer.status === ProposalReviewAssignmentStatus.COMPLETED,
   );
+  const count = completedReviewers.length;
 
-  if (completedReviewers.length === 0) {
+  if (count === 0 && variant === 'reviews') {
     return null;
   }
 
-  const names = completedReviewers
-    .map((reviewer) => reviewer.profile.name)
-    .join(', ');
-  const label = t('{count} Reviews', { count: completedReviewers.length });
+  const label =
+    variant === 'reviewed'
+      ? t('{count} Reviewed', { count })
+      : t('{count} Reviews', { count });
   // Dotted underline reads as "explicable", not "navigable" — the tooltip is
   // the payload for everyone, and admins additionally get a real link. The ring
   // is the sense focus treatment, replacing react-aria's useFocusable.
   const className =
     'shrink-0 rounded-sm text-base text-muted-foreground underline decoration-dotted underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
+
+  // Nobody has finished, so there are no names to explain: drop the tooltip
+  // (and the underline that promises one) rather than open an empty popup. The
+  // admin link stays — "0 Reviewed" is still a way into the progress screen.
+  if (count === 0) {
+    return access?.admin ? (
+      <Link href={href} className={className}>
+        {label}
+      </Link>
+    ) : (
+      <span className="shrink-0 text-base text-muted-foreground">{label}</span>
+    );
+  }
+
+  const names = completedReviewers
+    .map((reviewer) => reviewer.profile.name)
+    .join(', ');
 
   return (
     // The root layout provides the tooltip group and delay.

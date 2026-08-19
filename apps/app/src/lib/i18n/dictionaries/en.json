@@ -1606,5 +1606,10 @@
   "Export failed": "Export failed",
   "Export timed out. Please try again.": "Export timed out. Please try again.",
   "Couldn't check the export's status. It may still be running.": "Couldn't check the export's status. It may still be running.",
-  "Export all": "Export all"
+  "Export all": "Export all",
+  "Proposals in review · {count}": "Proposals in review · {count}",
+  "Reviewed": "Reviewed",
+  "{count} Reviewed": "{count} Reviewed",
+  "No proposals in review yet": "No proposals in review yet",
+  "Proposals appear here once they reach this phase.": "Proposals appear here once they reach this phase."
 }

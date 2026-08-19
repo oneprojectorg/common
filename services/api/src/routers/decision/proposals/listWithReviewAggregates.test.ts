@@ -131,6 +131,28 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
+  it('rejects proposalIds combined with paginated-mode filters', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+
+    const adminCaller = await createAuthenticatedCaller(
+      created.context.defaultReviewer.email,
+    );
+
+    // Filtered mode owns its set and its order; the two modes stay exclusive so
+    // a caller can't pass a sort or a cursor that would be silently ignored.
+    await expect(
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: created.context.instance.instance.id,
+        proposalIds: [created.proposal.id],
+        sort: 'newest',
+      }),
+    ).rejects.toThrow();
+  });
+
   it('returns aggregates for the requested proposalIds in filtered mode', async ({
     task,
     onTestFinished,

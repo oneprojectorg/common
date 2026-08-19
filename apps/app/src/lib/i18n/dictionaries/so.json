@@ -1544,5 +1544,10 @@
   "Export failed": "Soo saaristu way fashilantay",
   "Export timed out. Please try again.": "Soo saaristu waqtigii way dhaaftay. Fadlan isku day mar kale.",
   "Couldn't check the export's status. It may still be running.": "Lama hubin karin xaaladda soo-saarka. Waxaa laga yaabaa inay weli socoto.",
-  "Export all": "Dhammaan soo saar"
+  "Export all": "Dhammaan soo saar",
+  "Proposals in review · {count}": "Soo jeedimo dib-u-eegis ku jira · {count}",
+  "Reviewed": "La dib u eegay",
+  "{count} Reviewed": "{count} la dib u eegay",
+  "No proposals in review yet": "Wali ma jiro soo jeedimo dib-u-eegis ku jira",
+  "Proposals appear here once they reach this phase.": "Soo jeedimooyinka waxay halkan ka muuqdaan marka ay gaaraan wejigan."
 }

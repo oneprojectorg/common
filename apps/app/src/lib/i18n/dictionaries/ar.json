@@ -1542,5 +1542,10 @@
   "Export failed": "فشل التصدير",
   "Export timed out. Please try again.": "انتهت مهلة التصدير. يرجى المحاولة مرة أخرى.",
   "Couldn't check the export's status. It may still be running.": "تعذّر التحقق من حالة التصدير. قد تكون لا تزال قيد التنفيذ.",
-  "Export all": "تصدير الكل"
+  "Export all": "تصدير الكل",
+  "Proposals in review · {count}": "المقترحات قيد المراجعة · {count}",
+  "Reviewed": "تمت المراجعة",
+  "{count} Reviewed": "تمت مراجعة {count}",
+  "No proposals in review yet": "لا توجد مقترحات قيد المراجعة بعد",
+  "Proposals appear here once they reach this phase.": "تظهر المقترحات هنا بمجرد وصولها إلى هذه المرحلة."
 }
