@@ -66,8 +66,9 @@ export function ProposalEditor({
   isEditMode?: boolean;
   /**
    * The author's first visit to the draft that "Start a proposal" just created,
-   * flagged by `?new=true`. Only the page title depends on it: reopening the
-   * same draft later reads as editing, not creating.
+   * flagged by `?new=true`, which the route snapshots and then clears. Only the
+   * page title depends on it: reopening the same draft later, by any route,
+   * reads as editing rather than creating.
    */
   isNewProposal?: boolean;
   asideHeaderIcons?: ReactNode;
@@ -177,8 +178,9 @@ function ProposalEditorInner({
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
-  // A bookmarked or shared editor URL keeps `?new=true`, so only title the page
-  // "Create proposal" while the proposal is still an unsubmitted draft.
+  // The route strips `?new=true` after the first render, so this draft check is
+  // belt and braces: never title the page "Create proposal" for a proposal that
+  // has already been submitted.
   const isCreating = isNewProposal && isDraft;
 
   // Look up the optional form attached to this decision profile for the

@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LuHistory, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -70,15 +70,18 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [
-    { aside, versionId, reviewRevision, new: isNewProposal },
-    setQueryState,
-  ] = useQueryStates({
-    aside: proposalEditorAsideParser,
-    versionId: proposalEditorVersionIdParser,
-    reviewRevision: proposalEditorReviewRevisionParser,
-    [PROPOSAL_EDITOR_NEW_PARAM]: proposalEditorNewParser,
-  });
+  const [{ aside, versionId, reviewRevision, new: newParam }, setQueryState] =
+    useQueryStates({
+      aside: proposalEditorAsideParser,
+      versionId: proposalEditorVersionIdParser,
+      reviewRevision: proposalEditorReviewRevisionParser,
+      [PROPOSAL_EDITOR_NEW_PARAM]: proposalEditorNewParser,
+    });
+  // The first-visit flag is single-use. Snapshot it on mount so the heading is
+  // stable for this visit, then strip it from the URL below: a draft can sit
+  // for days, and a refreshed, bookmarked or shared editor link is someone
+  // opening an existing proposal, not creating one.
+  const [isNewProposal] = useState(newParam);
   const t = useTranslations();
 
   // -- Data fetching ---------------------------------------------------------
@@ -103,6 +106,18 @@ function EditProposalPageContent() {
     ].filter(Boolean);
     document.title = parts.join(' | ');
   }, [proposalTitle, decisionProfile.name, t]);
+
+  // Replace rather than push, so Back doesn't return to the flagged URL.
+  useEffect(() => {
+    if (!newParam) {
+      return;
+    }
+
+    void setQueryState(
+      { [PROPOSAL_EDITOR_NEW_PARAM]: null },
+      { history: 'replace', scroll: false },
+    );
+  }, [newParam, setQueryState]);
 
   const { user } = useRequiredUser();
 
