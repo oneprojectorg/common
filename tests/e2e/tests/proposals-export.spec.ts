@@ -259,19 +259,15 @@ test.describe('Proposals CSV export', () => {
       Categories: 'Environment',
     });
 
-    // The submitter columns read the *profile* row, so they are asserted
-    // against it rather than against the account that signed in. `Submitter
-    // Email` reports `profiles.email`, which nothing in this fixture sets —
-    // the address lives on `users`/`profile_users` — so only the name is
-    // pinned here. A blank email column is the export reporting the profile
-    // faithfully, not a join that failed.
+    // The submitter column reads the *profile* row, so it is asserted against
+    // that rather than against the account that signed in.
     const [submitter] = await db
-      .select({ name: profiles.name, email: profiles.email })
+      .select({ name: profiles.name })
       .from(profiles)
       .where(eq(profiles.id, org.adminUser.profileId));
 
     expect(exported?.['Submitted By']).toBe(submitter?.name);
-    expect(exported?.['Submitter Email']).toBe(submitter?.email ?? '');
+    expect(exported).not.toHaveProperty('Submitter Email');
 
     // Description comes from the `summary` fragment. Reading only the legacy
     // `default` fragment — as this did — exported an empty column for every

@@ -131,3 +131,12 @@ describe('generateProposalsCsv description column', () => {
     expect(parseSingleRow(csv).Description).toBe('');
   });
 });
+
+describe('generateProposalsCsv submitter columns', () => {
+  it('does not include the submitter email, which is PII', async () => {
+    const csv = await generateProposalsCsv([makeProposal()]);
+
+    const [headers = []] = parseCsv(csv.trim());
+    expect(headers).not.toContain('Submitter Email');
+  });
+});
