@@ -46,3 +46,23 @@ export function getPreviousPhases<Phase extends { phaseId: string }>(
   }
   return (instanceData.phases ?? []).slice(0, index);
 }
+
+/**
+ * True when the phase `phaseId` is strictly before `currentStateId` in the
+ * phase ordering — i.e. the instance has moved past it, so anything the phase
+ * produced is final. False when either phase is not configured on the
+ * instance, or when `currentStateId` is unknown, so gates using this fail
+ * closed.
+ */
+export function hasPhaseEnded(
+  instanceData: PhaseOrderInstanceData<{ phaseId: string }>,
+  phaseId: string,
+  currentStateId: string | null | undefined,
+): boolean {
+  if (!currentStateId) {
+    return false;
+  }
+  const target = getPhaseIndex(instanceData, phaseId);
+  const current = getPhaseIndex(instanceData, currentStateId);
+  return target !== -1 && current !== -1 && target < current;
+}

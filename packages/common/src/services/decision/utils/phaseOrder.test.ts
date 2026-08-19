@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getPhaseIndex,
   getPreviousPhases,
+  hasPhaseEnded,
   isPhaseAtOrBefore,
 } from './phaseOrder';
 
@@ -86,5 +87,29 @@ describe('getPreviousPhases', () => {
     expect(getPreviousPhases(withRules, 'b')).toEqual([
       { phaseId: 'a', rules: { reviews: { submit: true } } },
     ]);
+  });
+});
+
+describe('hasPhaseEnded', () => {
+  it('is true for a phase the instance has moved past', () => {
+    expect(hasPhaseEnded(instanceData, 'feasibility', 'community')).toBe(true);
+  });
+
+  it('is false for the current phase', () => {
+    expect(hasPhaseEnded(instanceData, 'community', 'community')).toBe(false);
+  });
+
+  it('is false for a later phase', () => {
+    expect(hasPhaseEnded(instanceData, 'results', 'community')).toBe(false);
+  });
+
+  it('is false when either phase is not configured', () => {
+    expect(hasPhaseEnded(instanceData, 'missing', 'community')).toBe(false);
+    expect(hasPhaseEnded(instanceData, 'submission', 'missing')).toBe(false);
+  });
+
+  it('is false when the instance has no current phase', () => {
+    expect(hasPhaseEnded(instanceData, 'submission', null)).toBe(false);
+    expect(hasPhaseEnded(instanceData, 'submission', undefined)).toBe(false);
   });
 });
