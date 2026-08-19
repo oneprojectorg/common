@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  foreignKey,
   index,
   pgEnum,
   pgTable,
@@ -14,7 +15,7 @@ import {
   serviceRolePolicies,
   timestamps,
 } from '../../helpers';
-import { profiles } from './profiles.sql';
+import { proposals } from './proposals.sql';
 
 export enum ProposalRelationshipType {
   MERGED = 'merged',
@@ -26,59 +27,91 @@ export const proposalRelationshipTypeEnum = pgEnum(
 );
 
 /**
- * Directed edges between proposals, keyed on the profile each proposal owns
- * rather than on the `decision_proposals` row. Every proposal creates a profile
- * (`EntityType.PROPOSAL`) at submit time, and the profile is the root entity —
- * so relationships live at the profile level, the same level as
- * `profile_relationships`.
+ * Directed edges between proposals within one decision. Direction is always
+ * source -> target, read as "source is <relationship_type> into target". Merging
+ * six proposals into a new one writes six rows sharing a target.
  *
- * Direction is always source -> target, read as "source is <relationship_type>
- * into target". Merging six proposals into a new one writes six rows: each
- * original proposal's profile is a source, the new proposal's profile is the
- * shared target.
+ * `process_instance_id` is denormalized from the proposals so reads that exclude
+ * merged-away proposals can be scoped to one decision — unscoped, that anti-join
+ * consults every merge in the table. Composite foreign keys on
+ * `(process_instance_id, source_proposal_id)` and
+ * `(process_instance_id, target_proposal_id)` make that denormalization
+ * self-enforcing and additionally make a cross-decision edge unrepresentable.
  *
- * Kept separate from `profile_relationships` for the enum namespace — `merged`
- * shouldn't be a legal edge type between two organizations, and `following`
- * shouldn't be one here. The column shape is deliberately identical, so
- * folding the two together later is a rename plus an enum merge.
+ * Kept separate from `profile_relationships` because that table is a social
+ * graph between profiles: `merged` isn't a legal edge between two organizations,
+ * it hard-deletes behind a plain unique index where these soft-delete behind a
+ * partial one, and its endpoints are profiles rather than proposals.
  *
- * The endpoints are NOT constrained to proposal-type profiles. That's
- * intentional: a person or an organization referencing a proposal is the same
- * shape of edge, and this table should be able to hold it.
+ * A live `merged` edge is the only record that a proposal was superseded; there
+ * is deliberately no mirroring flag on `decision_proposals`.
  */
 export const proposalRelationships = pgTable(
   'decision_proposal_relationships',
   {
     id: autoId().primaryKey(),
-    sourceProfileId: uuid('source_profile_id')
-      .notNull()
-      .references(() => profiles.id, { onDelete: 'cascade' }),
-    targetProfileId: uuid('target_profile_id')
-      .notNull()
-      .references(() => profiles.id, { onDelete: 'cascade' }),
-    relationshipType:
-      proposalRelationshipTypeEnum('relationship_type').notNull(),
+    processInstanceId: uuid('process_instance_id').notNull(),
+    sourceProposalId: uuid('source_proposal_id').notNull(),
+    targetProposalId: uuid('target_proposal_id').notNull(),
+    // `$type` only narrows the TypeScript side — `enumToPgEnum` widens the
+    // generated column type to `string`, and this is the single boundary where
+    // it's pinned back to the enum so no consumer has to cast.
+    relationshipType: proposalRelationshipTypeEnum('relationship_type')
+      .$type<ProposalRelationshipType>()
+      .notNull(),
     ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,
-    // A profile linked to itself is meaningless and would render as its own
+    // Both ends must be proposals in the edge's own decision. The pair
+    // referenced here is `proposals_process_instance_uniq`, which exists for
+    // exactly this (`decision_transition_proposals` uses it the same way).
+    foreignKey({
+      name: 'proposal_rel_source_fkey',
+      columns: [table.processInstanceId, table.sourceProposalId],
+      foreignColumns: [proposals.processInstanceId, proposals.id],
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+    foreignKey({
+      name: 'proposal_rel_target_fkey',
+      columns: [table.processInstanceId, table.targetProposalId],
+      foreignColumns: [proposals.processInstanceId, proposals.id],
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+    // The index and constraint names differ from the profile-keyed originals on
+    // purpose: same-name redefinitions make drizzle emit the DROP after the
+    // column drops that already removed them, which fails.
+    //
+    // A proposal linked to itself is meaningless and would render as its own
     // ancestor, so reject the pair at the database rather than in every caller.
     check(
-      'proposal_relationships_no_self_link',
-      sql`${table.sourceProfileId} <> ${table.targetProfileId}`,
+      'proposal_rel_no_self_link',
+      sql`${table.sourceProposalId} <> ${table.targetProposalId}`,
     ),
     // Partial on purpose: the table soft-deletes, so a plain unique index would
     // permanently block re-linking a pair after it has been unlinked once.
-    uniqueIndex('proposal_rel_source_target_type_unique')
-      .on(table.sourceProfileId, table.targetProfileId, table.relationshipType)
+    uniqueIndex('proposal_rel_pair_type_unique')
+      .on(
+        table.sourceProposalId,
+        table.targetProposalId,
+        table.relationshipType,
+      )
       .where(sql`${table.deletedAt} IS NULL`),
-    // Serves the merge read: given the merged proposal, list everything merged
-    // into it. The unique index above already covers the source-leading side.
-    index('proposal_rel_target_type_idx').on(
-      table.targetProfileId,
+    // Serves the merge read: given the surviving proposal, list everything
+    // merged into it.
+    index('proposal_rel_target_proposal_type_idx').on(
+      table.targetProposalId,
       table.relationshipType,
     ),
+    // Enforces "superseded at most once per decision" and serves the
+    // supersession read. Scoped to `merged` so other types may fan out.
+    uniqueIndex('proposal_rel_instance_source_merged_unique')
+      .on(table.processInstanceId, table.sourceProposalId)
+      .where(
+        sql`${table.relationshipType} = 'merged' AND ${table.deletedAt} IS NULL`,
+      ),
   ],
 );
 

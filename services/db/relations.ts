@@ -55,20 +55,20 @@ export const relations = defineRelations(schema, (r) => ({
   /**
    * Proposal relationship relations
    *
-   * Directed edges between two proposals, keyed on the profile each proposal
-   * owns. Both profile ids are NOT NULL, so we mark them as optional: false.
+   * Directed edges between two proposals. Both ids are NOT NULL and carry a
+   * composite FK, so we mark them as optional: false.
    */
   proposalRelationships: {
-    sourceProfile: r.one.profiles({
-      from: r.proposalRelationships.sourceProfileId,
-      to: r.profiles.id,
-      alias: 'proposalRelationship_sourceProfile',
+    sourceProposal: r.one.proposals({
+      from: r.proposalRelationships.sourceProposalId,
+      to: r.proposals.id,
+      alias: 'proposalRelationship_sourceProposal',
       optional: false,
     }),
-    targetProfile: r.one.profiles({
-      from: r.proposalRelationships.targetProfileId,
-      to: r.profiles.id,
-      alias: 'proposalRelationship_targetProfile',
+    targetProposal: r.one.proposals({
+      from: r.proposalRelationships.targetProposalId,
+      to: r.proposals.id,
+      alias: 'proposalRelationship_targetProposal',
       optional: false,
     }),
   },
