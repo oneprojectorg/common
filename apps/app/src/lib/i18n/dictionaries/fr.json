@@ -1242,7 +1242,6 @@
   "Sent {date}": "Envoyé le {date}",
   "Close": "Fermer",
   "Feedback to Author": "Commentaires à l'auteur",
-  "Shared anonymously with the author after the review phase ends": "Partagé anonymement avec l'auteur à la fin de la phase de révision",
   "Total Score": "Score total",
   "Proposal {current} of {total}": "Proposition {current} sur {total}",
   "{current} of {total}": "{current} sur {total}",
@@ -1621,5 +1620,8 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposition affichée} other {# propositions affichées}}",
   "Contributing ideas": "Idées contributrices",
   "These participant ideas were merged into this proposal.": "Ces idées de participants ont été fusionnées avec cette proposition.",
-  "Contributing ideas could not be loaded": "Les idées contributrices n'ont pas pu être chargées"
+  "Contributing ideas could not be loaded": "Les idées contributrices n'ont pas pu être chargées",
+  "Feedback": "Retours",
+  "Notes reviewers shared while this proposal was under review": "Notes partagées par les évaluateurs pendant l'examen de cette proposition",
+  "Reviewer · {timeAgo}": "Évaluateur · {timeAgo}"
 }

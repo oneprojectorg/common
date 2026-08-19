@@ -1177,7 +1177,6 @@
   "Sent {date}": "La diray {date}",
   "Close": "Xidh",
   "Feedback to Author": "Jawaab-celin Qoraaga",
-  "Shared anonymously with the author after the review phase ends": "Si aan la aqoon la wadaagay qoraaga ka dib marka marxaladda dib-u-eegista dhamaato",
   "Total Score": "Wadarta Dhibcaha",
   "Proposal {current} of {total}": "Soo jeedinta {current} ee {total}",
   "{current} of {total}": "{current} ee {total}",
@@ -1623,5 +1622,8 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# soo jeedin la muujiyay} other {# soo jeedimo la muujiyay}}",
   "Contributing ideas": "Fikrado wax ku darsaday",
   "These participant ideas were merged into this proposal.": "Fikradahan ka-qaybgalayaasha waxaa lala biiriyay soo jeedintan.",
-  "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin"
+  "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin",
+  "Feedback": "Jawaab celin",
+  "Notes reviewers shared while this proposal was under review": "Qoraallada dib-u-eegayaashu wadaageen inta soo jeedintan la eegayay",
+  "Reviewer · {timeAgo}": "Dib-u-eege · {timeAgo}"
 }

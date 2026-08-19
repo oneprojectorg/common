@@ -12,8 +12,8 @@ import { ReactNode } from 'react';
 import {
   LuArrowLeft,
   LuMessageCircle,
+  LuMessageSquareText,
   LuPencil,
-  LuStickyNote,
 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -33,7 +33,7 @@ export function ProposalViewLayout({
   canEdit = false,
   canJoin = false,
   reportProposalId,
-  revisionToggle,
+  feedbackToggle,
   moderationProposal,
   notices,
 }: {
@@ -51,10 +51,15 @@ export function ProposalViewLayout({
    *  proposal with this id. */
   reportProposalId?: string;
   /**
-   * When provided, renders a sticky-note disclosure button in the header with
-   * an orange indicator dot. `isActive` reflects the aria-expanded state.
+   * When provided, renders the "Feedback" disclosure button in the header with
+   * an orange indicator dot. `isActive` reflects the aria-expanded state. The
+   * owner decides which pane it opens (reviewer feedback, or the revision the
+   * author submitted mid-phase) — the header only reports the toggle.
+   *
+   * The dot is static: Figma's red dot means "unread", and we hold no
+   * read-state for reviewer notes.
    */
-  revisionToggle?: {
+  feedbackToggle?: {
     onToggle: () => void;
     isActive: boolean;
   };
@@ -71,7 +76,7 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const revisionRequestLabel = t('Revision request');
+  const feedbackLabel = t('Feedback');
   const backLabel = t('Back to Proposals');
 
   return (
@@ -126,19 +131,19 @@ export function ProposalViewLayout({
             </ButtonLink>
             {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
-            {revisionToggle && (
+            {feedbackToggle && (
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={revisionToggle.onToggle}
-                      aria-label={revisionRequestLabel}
-                      aria-expanded={revisionToggle.isActive}
+                      onClick={feedbackToggle.onToggle}
+                      aria-label={feedbackLabel}
+                      aria-expanded={feedbackToggle.isActive}
                       className="relative"
                     >
-                      <LuStickyNote className="size-4" />
+                      <LuMessageSquareText className="size-4" />
                       <span
                         aria-hidden
                         className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
@@ -146,7 +151,7 @@ export function ProposalViewLayout({
                     </Button>
                   }
                 />
-                <TooltipContent>{revisionRequestLabel}</TooltipContent>
+                <TooltipContent>{feedbackLabel}</TooltipContent>
               </Tooltip>
             )}
             {moderationProposal ? (

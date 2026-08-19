@@ -20,13 +20,17 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
+import { ProposalFeedbackPanel } from './ProposalFeedbackPanel';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
-import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
+import {
+  proposalEditorReviewRevisionParser,
+  proposalFeedbackPanelParser,
+} from './proposalEditor/proposalEditorAsideParams';
 import { useTranslateProposal } from './useTranslateProposal';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
@@ -43,11 +47,18 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 export function ProposalView({
   proposal: initialProposal,
   canSeeRevisions,
+  canSeeFeedback,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
   canSeeRevisions: boolean;
+  /**
+   * Author, decision admin, or review access — with no phase condition. The
+   * server decides which notes are released (only ended review phases), so
+   * this flag only keeps the query off surfaces that would be denied anyway.
+   */
+  canSeeFeedback: boolean;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -122,9 +133,11 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  const [{ reviewRevision }, setQueryState] = useQueryStates({
-    reviewRevision: proposalEditorReviewRevisionParser,
-  });
+  const [{ reviewRevision, feedback: isFeedbackPanelOpen }, setQueryState] =
+    useQueryStates({
+      reviewRevision: proposalEditorReviewRevisionParser,
+      feedback: proposalFeedbackPanelParser,
+    });
 
   // The view panel is "Revision submitted" — only surface entries the author
   // has already responded to. Pending requests are handled by the editor.
@@ -150,6 +163,43 @@ export function ProposalView({
     ? (submittedRevisions.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
+
+  // What the feedback panel shows, fetched as one unit: the anonymized notes
+  // the server released once their review phase ended (no client phase math),
+  // and the whole revision history — resolved entries included, because the
+  // panel is the author's record of the review, not a to-do list.
+  // Same resilience pattern as the revision query above: an unauthorized
+  // viewer gets no panel, not a broken page.
+  const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
+    t.decision.listProposalFeedback(
+      { proposalId: currentProposal.id },
+      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+    ),
+    t.decision.listProposalRevisionRequests(
+      { proposalId: currentProposal.id },
+      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+    ),
+  ]);
+
+  const feedbackItems = feedbackQuery.error
+    ? []
+    : (feedbackQuery.data?.items ?? []);
+
+  const feedbackRevisionRequests = allRevisionQuery.error
+    ? []
+    : (allRevisionQuery.data?.revisionRequests ?? []).map(
+        (item) => item.revisionRequest,
+      );
+
+  const hasFeedback =
+    feedbackItems.length > 0 || feedbackRevisionRequests.length > 0;
+
+  const toggleFeedbackPanel = useCallback(() => {
+    void setQueryState(
+      { feedback: isFeedbackPanelOpen ? null : true },
+      { history: 'push', scroll: false },
+    );
+  }, [isFeedbackPanelOpen, setQueryState]);
 
   const toggleRevisionRequest = useCallback(() => {
     if (!firstRevisionRequestId) {
@@ -215,6 +265,36 @@ export function ProposalView({
     </>
   );
 
+  // At most one aside is open at a time: the mid-phase "Revision submitted"
+  // pane wins while it exists, the feedback panel takes over once the review
+  // phase has ended.
+  const asidePane: { label: string; content: ReactNode } | null =
+    activeRevisionRequest
+      ? {
+          label: t('Revision feedback'),
+          content: (
+            <ProposalRevisionSubmittedPanel
+              revisionRequest={activeRevisionRequest}
+            />
+          ),
+        }
+      : isFeedbackPanelOpen && hasFeedback
+        ? {
+            label: t('Feedback'),
+            content: (
+              <ProposalFeedbackPanel
+                feedbackItems={feedbackItems}
+                revisionRequests={feedbackRevisionRequests}
+                title={t('Feedback')}
+                subtitle={t(
+                  'Notes reviewers shared while this proposal was under review',
+                )}
+                revisionRequestLabel={t('Revision request')}
+              />
+            ),
+          }
+        : null;
+
   return (
     <ProposalViewLayout
       backHref={backHref}
@@ -235,29 +315,35 @@ export function ProposalView({
           decisionRoot={decisionRoot}
         />
       }
-      revisionToggle={
+      // One header disclosure. Mid-phase it keeps opening the "Revision
+      // submitted" pane (unchanged); once the review phase has ended
+      // `canSeeRevisions` is false and it opens the feedback panel instead.
+      feedbackToggle={
         firstRevisionRequestId
           ? {
               onToggle: toggleRevisionRequest,
               isActive: Boolean(activeRevisionRequest),
             }
-          : undefined
+          : hasFeedback
+            ? {
+                onToggle: toggleFeedbackPanel,
+                isActive: isFeedbackPanelOpen,
+              }
+            : undefined
       }
     >
-      {activeRevisionRequest ? (
+      {asidePane ? (
         <SplitPane className="mx-auto w-full max-w-6xl">
           <SplitPane.Pane id="proposal" label={t('Proposal')} className="gap-8">
             {proposalBody}
           </SplitPane.Pane>
           <SplitPane.Pane
             id="feedback"
-            label={t('Revision feedback')}
+            label={asidePane.label}
             className="bg-white"
             unpadded
           >
-            <ProposalRevisionSubmittedPanel
-              revisionRequest={activeRevisionRequest}
-            />
+            {asidePane.content}
           </SplitPane.Pane>
         </SplitPane>
       ) : (
