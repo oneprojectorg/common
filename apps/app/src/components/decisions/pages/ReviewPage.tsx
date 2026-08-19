@@ -19,6 +19,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
+import { AdminReviewProposalsList } from '../AdminReviewProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
@@ -28,6 +29,7 @@ import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
+import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
@@ -68,7 +70,9 @@ export function ReviewPage({
   const t = useTranslations();
 
   // The tab lives in the URL so a reload or a shared link lands on the tab the
-  // reviewer was on, and so the per-tab params (`?sort=`) are unambiguous.
+  // reviewer was on, and so the per-tab params (`?sort=`) are unambiguous. The
+  // pair is the reviewer's: the single-list admin variant below renders no tabs,
+  // so it neither uses nor updates the parsed value.
   const [tab, setTab] = useQueryState(
     'tab',
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
@@ -199,21 +203,49 @@ export function ReviewPage({
 
               <TabsContent value="other-proposals" className="grow sm:p-0">
                 <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <ProposalsList
-                      slug={slug}
-                      instanceId={instance.id}
-                      decisionSlug={decisionSlug}
-                      decisionProfileId={decisionProfileId}
-                      permissions={instance.access}
-                      currentPhase={currentPhase}
-                      pinOffset={pinOffset}
-                      excludeAssignedForReview
-                    />
-                  </Suspense>
+                  {/* An admin sees the review counts on these cards too — the
+                      same decoration, on the same terms, as the "Proposals in
+                      review" list: the gate is this surface's, because an admin
+                      needs no `openReviews` to track progress, while a
+                      reviewer's counts follow that policy separately. Outside
+                      the Suspense boundary so the provider's reported proposals
+                      survive a re-suspend (a filter change refetches the list,
+                      not the aggregates it already holds). */}
+                  <ProposalReviewDecorationProvider
+                    processInstanceId={instance.id}
+                    decisionSlug={decisionSlug}
+                    enabled={isAdmin}
+                    access={instance.access}
+                  >
+                    <Suspense fallback={<ProposalListSkeleton />}>
+                      <ProposalsList
+                        slug={slug}
+                        instanceId={instance.id}
+                        decisionSlug={decisionSlug}
+                        decisionProfileId={decisionProfileId}
+                        permissions={instance.access}
+                        currentPhase={currentPhase}
+                        pinOffset={pinOffset}
+                        excludeAssignedForReview
+                      />
+                    </Suspense>
+                  </ProposalReviewDecorationProvider>
                 </APIErrorBoundary>
               </TabsContent>
             </Tabs>
+          ) : isAdmin ? (
+            // An admin without the review capability has no assignment queue to
+            // tab against: the whole surface is the progress list, which owns
+            // its own loading and error states.
+            <AdminReviewProposalsList
+              processInstanceId={instance.id}
+              slug={slug}
+              decisionSlug={decisionSlug}
+              decisionProfileId={decisionProfileId}
+              access={instance.access}
+              currentPhase={currentPhase}
+              pinOffset={pinOffset}
+            />
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
               <Suspense fallback={<ProposalListSkeleton />}>
