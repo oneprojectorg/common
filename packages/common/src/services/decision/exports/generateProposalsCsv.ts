@@ -79,7 +79,6 @@ export async function generateProposalsCsv(
       Longitude: place?.lng ?? '',
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',
-      'Submitter Email': p.submittedBy?.email || '',
       'Profile ID': p.profileId,
       Likes: p.likesCount || 0,
       Comments: p.commentsCount || 0,

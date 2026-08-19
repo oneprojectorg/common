@@ -22,9 +22,8 @@ import { ASSETS_BUCKET } from '../../../utils/storage';
  * `assets` is public: `apps/app/next.config.mjs` rewrites `/assets/:path*` to
  * the bucket's public object root, and `getPublicUrl()` builds every avatar and
  * organization image URL from it. So an export object is readable by anyone who
- * has its path — the CSV carries submitter names and email addresses, and the
- * only thing standing between it and an anonymous reader is that the key is not
- * enumerable.
+ * has its path — the CSV carries submitter names, and the only thing standing
+ * between it and an anonymous reader is that the key is not enumerable.
  *
  * The signed URLs minted downstream are therefore a convenience (they expire,
  * so a shared link goes stale) rather than an access boundary: the unsigned
@@ -81,9 +80,9 @@ export const exportFilePath = (processInstanceId: string, fileName: string) =>
  *
  * The random component is the access control for these objects. They live in
  * the public {@link EXPORTS_BUCKET}, so anyone holding this name can read the
- * CSV — and the CSV carries submitter names and email addresses. A whole UUID
- * is used rather than a truncation of one: the timestamp beside it is largely
- * inferable, so the UUID has to carry the unguessability by itself.
+ * CSV — and the CSV carries submitter names. A whole UUID is used rather than
+ * a truncation of one: the timestamp beside it is largely inferable, so the
+ * UUID has to carry the unguessability by itself.
  *
  * `crypto.randomUUID()` is the global Web Crypto API, available in Node 19+ and
  * in browsers, so this module stays free of Node-only imports.
