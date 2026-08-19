@@ -1,5 +1,6 @@
 'use client';
 
+import type { RubricCriterionType } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   CollapsibleConfigCard,
@@ -33,7 +34,6 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
-  RubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
 

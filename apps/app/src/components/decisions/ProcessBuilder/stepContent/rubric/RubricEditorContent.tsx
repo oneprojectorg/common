@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type {
+  RubricCriterionType,
   RubricTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
@@ -22,7 +23,6 @@ import type { SectionProps } from '@/components/decisions/ProcessBuilder/content
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import type {
   CriterionView,
-  RubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
 import {

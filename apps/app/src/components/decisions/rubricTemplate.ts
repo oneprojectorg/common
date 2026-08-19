@@ -5,17 +5,22 @@
  * top-level `x-field-order` array. Per-criterion widget selection is driven by
  * `x-format` on each property (consumed by the renderer's rubric field logic).
  *
- * Generic JSON Schema operations are delegated to `templateUtils.ts`.
- * This file adds rubric-specific logic: criterion types, scored config, and
- * type inference from schema shape.
+ * Generic JSON Schema operations are delegated to `templateUtils.ts`; type
+ * inference from schema shape lives in `@op/common` (`inferCriterionType`).
+ * This file adds builder-specific logic: criterion creation, scored config,
+ * and immutable template mutators.
  */
 import type {
+  RubricCriterionType,
   RubricTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
 import {
   OVERALL_RECOMMENDATION_KEY,
   RECOMMENDATION_OPTION,
+  getCriterionMaxPoints,
+  getOneOfEntries,
+  inferCriterionType,
   isOverallRecommendationField,
 } from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
@@ -43,12 +48,6 @@ export type { RubricTemplateSchema };
 // ---------------------------------------------------------------------------
 // Criterion types
 // ---------------------------------------------------------------------------
-
-export type RubricCriterionType =
-  | 'scored'
-  | 'yes_no'
-  | 'single_select'
-  | 'long_text';
 
 /** A single admin-defined option on a single-select criterion. */
 export interface SelectOption {
@@ -87,17 +86,6 @@ export interface CriterionView {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_MAX_POINTS = 5;
-
-/**
- * Extract oneOf entries as typed `JSONSchema7[]`, filtering out boolean
- * definitions.
- */
-function getOneOfEntries(schema: XFormatPropertySchema): JSONSchema7[] {
-  if (!Array.isArray(schema.oneOf)) {
-    return [];
-  }
-  return schema.oneOf.filter(isSchemaObject);
-}
 
 /**
  * Extract `oneOf` option entries with string consts and string titles
@@ -177,50 +165,6 @@ export function createCriterionJsonSchema(
 }
 
 // ---------------------------------------------------------------------------
-// Type inference from schema shape
-// ---------------------------------------------------------------------------
-
-/**
- * Infer the `RubricCriterionType` from a raw JSON Schema property.
- */
-export function inferCriterionType(
-  schema: XFormatPropertySchema,
-): RubricCriterionType | undefined {
-  const xFormat = schema['x-format'];
-
-  if (xFormat === 'long-text') {
-    return 'long_text';
-  }
-
-  if (xFormat === 'dropdown') {
-    if (schema.type === 'integer' && schema.maximum != null) {
-      return 'scored';
-    }
-
-    if (schema.type === 'string') {
-      const values = getOneOfEntries(schema).map((e) => e.const);
-      if (
-        values.length === 2 &&
-        values.includes('yes') &&
-        values.includes('no')
-      ) {
-        return 'yes_no';
-      }
-
-      // Any other string dropdown with options is a single-select
-      // "multiple choice" criterion. Note the overall recommendation field
-      // matches this shape too — callers exclude it by key before relying
-      // on the inferred type.
-      if (values.some((value) => typeof value === 'string')) {
-        return 'single_select';
-      }
-    }
-  }
-
-  return undefined;
-}
-
-// ---------------------------------------------------------------------------
 // Readers (delegating to shared utils where possible)
 // ---------------------------------------------------------------------------
 
@@ -265,17 +209,6 @@ export function isCriterionRequired(
   criterionId: string,
 ): boolean {
   return isPropertyRequired(template, criterionId);
-}
-
-export function getCriterionMaxPoints(
-  template: RubricTemplateSchema,
-  criterionId: string,
-): number | undefined {
-  const schema = getCriterionSchema(template, criterionId);
-  if (!schema || schema.type !== 'integer') {
-    return undefined;
-  }
-  return schema.maximum;
 }
 
 export function getCriterionScoreLabels(

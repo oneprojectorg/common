@@ -155,6 +155,23 @@ export {
   isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
 export {
+  compileRubricSchema,
+  type FieldDescriptor,
+} from './services/decision/compileRubricSchema';
+export {
+  getCriterionMaxPoints,
+  getOneOfEntries,
+  inferCriterionType,
+  type RubricCriterionType,
+} from './services/decision/inferCriterionType';
+export {
+  resolveSubmittedReview,
+  type ResolvedReviewAnswer,
+  type ResolvedReviewAnswerType,
+  type ResolvedSubmittedReview,
+  type ResolveSubmittedReviewTranslator,
+} from './services/decision/resolveSubmittedReview';
+export {
   REVIEWS_POLICIES,
   REVIEWS_SCOPES,
   phaseReviewSettingsSchema,

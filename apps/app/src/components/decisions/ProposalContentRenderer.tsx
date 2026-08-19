@@ -1,7 +1,11 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
+import type {
+  FieldDescriptor,
+  LocationData,
+  ProposalTemplateSchema,
+} from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
 // re-exports a hook (useEffect) and importing it from a server-rendered tree
@@ -11,7 +15,6 @@ import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { compileProposalSchema } from './forms/proposal';
-import type { FieldDescriptor } from './forms/types';
 import { LocationMapView } from './location/LocationMapView';
 
 interface ProposalContentRendererProps {

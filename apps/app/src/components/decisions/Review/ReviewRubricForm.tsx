@@ -2,9 +2,13 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
+  type FieldDescriptor,
   ProposalReviewState,
   type SchemaOption,
   type XFormatPropertySchema,
+  compileRubricSchema,
+  getCriterionMaxPoints,
+  inferCriterionType,
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
@@ -37,13 +41,7 @@ import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { compileRubricSchema } from '../forms/rubric';
-import type { FieldDescriptor } from '../forms/types';
-import {
-  getCriterionMaxPoints,
-  inferCriterionType,
-  translateRubricTemplate,
-} from '../rubricTemplate';
+import { translateRubricTemplate } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
