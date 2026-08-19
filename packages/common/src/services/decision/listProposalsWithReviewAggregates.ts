@@ -1,5 +1,6 @@
 import { and, db, eq, inArray, isNull } from '@op/db/client';
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
   proposals,
@@ -23,7 +24,9 @@ import {
 } from './getRubricScoringInfo';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
+  IN_PROGRESS_ASSIGNMENT_STATUSES,
   type ProposalCategoryItem,
+  type ProposalReviewStatus,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
@@ -379,10 +382,43 @@ export function getComputedReviewAggregates(
   return {
     assignmentsCount: reviewAssignments.length,
     reviewsSubmittedCount,
+    reviewStatus: getReviewStatusRollup(reviewAssignments),
     averageScore,
     overallRecommendationCount,
     reviewers,
   };
+}
+
+/** Membership test over a `string` status without asserting the union. */
+const IN_PROGRESS_STATUS_SET: ReadonlySet<string> = new Set(
+  IN_PROGRESS_ASSIGNMENT_STATUSES,
+);
+
+/**
+ * The three-way progress rollup: any COMPLETED assignment means reviewed;
+ * otherwise an active assignment or a saved draft means someone has started.
+ */
+function getReviewStatusRollup(
+  reviewAssignments: Array<{
+    status: string;
+    reviews: Array<{ state: string }>;
+  }>,
+): ProposalReviewStatus {
+  const completed = reviewAssignments.some(
+    (assignment) =>
+      assignment.status === ProposalReviewAssignmentStatus.COMPLETED,
+  );
+  if (completed) {
+    return 'reviewed';
+  }
+
+  const started = reviewAssignments.some(
+    (assignment) =>
+      IN_PROGRESS_STATUS_SET.has(assignment.status) ||
+      assignment.reviews[0]?.state === ProposalReviewState.DRAFT,
+  );
+
+  return started ? 'in_progress' : 'not_started';
 }
 
 /** Returns `null` for non-submitted rows so callers can gate and score in one pass. */

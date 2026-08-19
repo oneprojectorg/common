@@ -1,6 +1,7 @@
 import type { RubricTemplateSchema } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
   proposals as proposalsTable,
@@ -371,6 +372,56 @@ describe.concurrent('listWithReviewAggregates', () => {
       overallRecommendationCount: {},
     });
     expect(result.items[0]?.aggregates.reviewers.length).toBeGreaterThan(0);
+  });
+
+  it('derives the per-proposal reviewStatus rollup', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const [notStarted, started, drafted, reviewed] = await Promise.all([
+      testData.createReviewAssignment({ context, title: 'Not Started' }),
+      testData.createReviewAssignment({
+        context,
+        title: 'Started',
+        status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+      }),
+      testData.createReviewAssignment({ context, title: 'Drafted' }),
+      testData.createReviewAssignment({
+        context,
+        title: 'Reviewed',
+        status: ProposalReviewAssignmentStatus.COMPLETED,
+      }),
+    ]);
+
+    // A saved draft counts as in progress even while the assignment is pending.
+    await createProposalReview({
+      assignmentId: drafted.assignment.id,
+      state: ProposalReviewState.DRAFT,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    const statusByProposalId = new Map(
+      result.items.map((item) => [
+        item.proposal.id,
+        item.aggregates.reviewStatus,
+      ]),
+    );
+
+    expect(statusByProposalId.get(notStarted.proposal.id)).toBe('not_started');
+    expect(statusByProposalId.get(started.proposal.id)).toBe('in_progress');
+    expect(statusByProposalId.get(drafted.proposal.id)).toBe('in_progress');
+    expect(statusByProposalId.get(reviewed.proposal.id)).toBe('reviewed');
   });
 });
 
