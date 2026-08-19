@@ -70,6 +70,7 @@ export * from './assertProposalEngagementAccess';
 export * from './mergeProposals';
 export * from './unmergeProposal';
 export * from './listProposalRelationships';
+export * from './listProposalMergeRecipients';
 
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
