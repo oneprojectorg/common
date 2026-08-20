@@ -114,10 +114,11 @@ describe('getExportStatus', () => {
     });
   });
 
-  // The client is as much the point as the bucket: `EXPORTS_BUCKET` is private
-  // and carries no `storage.objects` policies, so the `createSBServerClient`
-  // this used to call could never see the object. Authorization is already
-  // complete by the time we sign, so signing with the service role is safe.
+  // The client is as much the point as the bucket. Every `storage.objects`
+  // policy is scoped to `bucket_id = 'assets'`, so nothing grants a caller any
+  // access here and the `createSBServerClient` this used to call could never
+  // see the object. Authorization is already complete by the time we sign, so
+  // signing with the service role is safe.
   it('signs with the service-role client, in the export bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
@@ -161,8 +162,10 @@ describe('getExportStatus', () => {
   });
 
   // This used to be swallowed, leaving the lapsed URL on the record for the
-  // client to render as a download that 400s.
-  it('reports a failed re-sign instead of returning the lapsed URL', async () => {
+  // client to render as a download that 400s. Reported as `failed` rather than
+  // as a `completed` export with no URL, because the client treats completed as
+  // settled and would show neither a download nor an error.
+  it('reports a failed re-sign as a terminal failure, not a URL-less success', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
       data: null,
@@ -175,17 +178,21 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    expect(result).toMatchObject({ status: 'completed' });
+    expect(result).toMatchObject({
+      status: 'failed',
+      errorMessage: expect.any(String),
+    });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
-    // The stale record is left in the cache rather than rewritten, so the next
-    // read retries the refresh instead of persisting the failure.
+    // The cached record is left `completed` rather than rewritten, so a later
+    // read retries the refresh instead of persisting a transient failure.
     expect(set).not.toHaveBeenCalled();
   });
 
   // `createSBServiceClient` throws synchronously when SUPABASE_SERVICE_ROLE is
   // unset. An escaped throw 500s the query and costs the caller the record
-  // itself. Losing the download link is survivable. Losing the record is not.
-  it('keeps serving the record when the storage client cannot be built', async () => {
+  // itself. Reporting the export as failed is survivable. Losing the record is
+  // not.
+  it('reports a failure when the storage client cannot be built', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     vi.mocked(createSBServiceClient).mockImplementation(() => {
       throw new Error('SUPABASE_SERVICE_ROLE is not set.');
@@ -197,7 +204,7 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    expect(result).toMatchObject({ status: 'completed' });
+    expect(result).toMatchObject({ status: 'failed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 
@@ -274,7 +281,7 @@ describe('getExportStatus', () => {
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(result).toMatchObject({ status: 'completed' });
+    expect(result).toMatchObject({ status: 'failed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 

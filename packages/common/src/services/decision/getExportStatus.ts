@@ -159,9 +159,9 @@ const needsFreshUrl = ({
 /**
  * Sign an attachment-serving download URL for an export's stored file.
  *
- * Service-role client: the bucket is private with no `storage.objects`
- * policies, so a caller-scoped client cannot sign. Callers settle authorization
- * first, as they do for `getProposal`.
+ * Service-role client: every `storage.objects` policy is scoped to
+ * `bucket_id = 'assets'`, so a caller-scoped client cannot sign in this bucket.
+ * Callers settle authorization first, as they do for `getProposal`.
  *
  * Throws on failure, so one caller decides what a failed re-sign costs.
  */
@@ -191,9 +191,9 @@ const mintSignedDownloadUrl = async ({
 /**
  * Re-sign a stale export URL in place and cache the result.
  *
- * A still-good URL is left alone. A failed signature drops the URL from the
- * record — the bucket is private, so a lapsed signature is a dead link, not a
- * degraded one — and leaves the cache untouched so the next read retries. A
+ * A still-good URL is left alone. A failed signature marks the record `failed`,
+ * since the bucket is private and a lapsed signature is a dead link rather than
+ * a degraded one, and leaves the cache untouched so the next read retries. A
  * failed cache write still returns the fresh URL, and the next read re-signs
  * again.
  */
@@ -229,11 +229,19 @@ const refreshStaleSignedUrl = async ({
 
     await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
   } catch (error) {
-    // No signature means no usable link, so don't hand back the lapsed one for
-    // the client to render as a download that 400s. The cached record is left as
-    // it is, so the next read retries instead of persisting this.
+    // No signature means no usable link. Leaving the record `completed` with the
+    // URL dropped would be a silent dead end: the client treats a completed
+    // export as settled, so it stops waiting and shows neither a download nor an
+    // error. Report it as failed with a message instead — that is the one
+    // terminal state the client surfaces, and it returns the admin to a button
+    // they can press again.
+    //
+    // Deliberately not written back to the cache, so a later read retries the
+    // refresh rather than persisting a failure that may be transient.
     logger.error('Failed to re-sign export URL', { exportId, error });
 
     exportStatus.signedUrl = undefined;
+    exportStatus.status = 'failed';
+    exportStatus.errorMessage = 'Export download could not be prepared';
   }
 };
