@@ -4,7 +4,7 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuMerge, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -13,6 +13,7 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
+import { buildMergeMenuItem } from '../mergeMenuItem';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
@@ -45,13 +46,14 @@ export function ProposalCardMenu({
 
     // Merge leads, per Figma 15311:9078.
     if (canMerge) {
-      items.push({
-        key: 'merge',
-        icon: <LuMerge className="size-5" />,
-        label: t('Merge with another proposal'),
-        onAction: () => setIsMergeModalOpen(true),
-        isDisabled: isLoading,
-      });
+      items.push(
+        buildMergeMenuItem({
+          isDisabled: isLoading,
+          mergeLabel: t('Merge with another proposal'),
+          unmergeLabel: t('Unmerge'),
+          onMerge: () => setIsMergeModalOpen(true),
+        }),
+      );
       items.push({
         key: 'visibility',
         icon: isHidden ? (

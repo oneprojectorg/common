@@ -7,7 +7,7 @@ import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuMerge, LuTrash2 } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -18,6 +18,7 @@ import {
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
 import { getProposalDisplayTitle } from './mergeCandidates';
+import { buildMergeMenuItem } from './mergeMenuItem';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -39,6 +40,24 @@ export function ProposalAdminMenu({
 }: {
   proposal: Proposal;
   /** Where to go after deleting — this page is about to 404. */
+  backHref: string;
+}) {
+  const canModerate =
+    proposal.access?.admin === true && proposal.status !== ProposalStatus.DRAFT;
+
+  if (!canModerate) {
+    return null;
+  }
+
+  return <ProposalAdminMenuItems proposal={proposal} backHref={backHref} />;
+}
+
+/** Split from the gate so the hooks only run for a viewer who can act. */
+function ProposalAdminMenuItems({
+  proposal,
+  backHref,
+}: {
+  proposal: Proposal;
   backHref: string;
 }) {
   const t = useTranslations();
@@ -67,54 +86,38 @@ export function ProposalAdminMenu({
   // surface that can offer the undo. Gated with the item it feeds.
   const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
     { sourceProposalId: proposal.id },
-    { enabled: mergeEnabled && proposal.access?.admin === true },
+    { enabled: mergeEnabled },
   );
   const supersededBy = mergedAway?.relationships[0];
 
-  const canModerate =
-    proposal.access?.admin === true && proposal.status !== ProposalStatus.DRAFT;
-
-  if (!canModerate) {
-    return null;
-  }
-
   const triggerLabel = t('Proposal options');
+  const showMergeDialog = mergeEnabled && !supersededBy;
 
-  // Merge leads, matching the card kebab (Figma 15311:9078). Once merged the
-  // same slot offers the undo; the server rejects merging an already-merged
-  // proposal, so the two never apply at once.
-  const mergeItem: ProposalOptionsMenuItem | null = !mergeEnabled
-    ? null
-    : supersededBy
-      ? {
-          key: 'unmerge',
-          icon: <LuMerge className="size-5" />,
-          label: t('Unmerge'),
-          onAction: () =>
-            unmergeMutation.mutate(
-              { sourceProposalId: proposal.id },
-              {
-                // Per-call so the toast can name it; the input carries only an id.
-                onSuccess: () =>
-                  toast.success(
-                    t('{source} is listed on its own again.', {
-                      source: getProposalDisplayTitle(
-                        proposal,
-                        t('Untitled Proposal'),
-                      ),
-                    }),
-                  ),
-              },
-            ),
-          isDisabled: unmergeMutation.isPending,
-        }
-      : {
-          key: 'merge',
-          icon: <LuMerge className="size-5" />,
-          label: t('Merge with another proposal'),
-          onAction: () => setIsMergeModalOpen(true),
-          isDisabled: isLoading,
-        };
+  const handleUnmerge = () =>
+    unmergeMutation.mutate(
+      { sourceProposalId: proposal.id },
+      {
+        // Per-call so the toast can name it; the input carries only an id.
+        onSuccess: () =>
+          toast.success(
+            t('{source} is listed on its own again.', {
+              source: getProposalDisplayTitle(proposal, t('Untitled Proposal')),
+            }),
+          ),
+      },
+    );
+
+  // Merge leads, matching the card kebab (Figma 15311:9078).
+  const mergeItem = mergeEnabled
+    ? buildMergeMenuItem({
+        isSuperseded: Boolean(supersededBy),
+        isDisabled: isLoading || unmergeMutation.isPending,
+        mergeLabel: t('Merge with another proposal'),
+        unmergeLabel: t('Unmerge'),
+        onMerge: () => setIsMergeModalOpen(true),
+        onUnmerge: handleUnmerge,
+      })
+    : null;
 
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
@@ -151,13 +154,13 @@ export function ProposalAdminMenu({
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
       />
-      {!mergeEnabled || supersededBy ? null : (
+      {showMergeDialog ? (
         <MergeProposalDialog
           proposal={proposal}
           open={isMergeModalOpen}
           onOpenChange={setIsMergeModalOpen}
         />
-      )}
+      ) : null}
     </ProposalOptionsMenu>
   );
 }
