@@ -159,10 +159,9 @@ const needsFreshUrl = ({
 /**
  * Sign an attachment-serving download URL for an export's stored file.
  *
- * Uses the service client. {@link EXPORTS_BUCKET} is private and carries no
- * `storage.objects` policies, so a caller-scoped client cannot see the object
- * and gets "Object not found" instead. Callers settle authorization first, as
- * they do for `getProposal`.
+ * Service-role client: the bucket is private with no `storage.objects`
+ * policies, so a caller-scoped client cannot sign. Callers settle authorization
+ * first, as they do for `getProposal`.
  *
  * Throws on failure, so one caller decides what a failed re-sign costs.
  */
@@ -230,12 +229,9 @@ const refreshStaleSignedUrl = async ({
 
     await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
   } catch (error) {
-    // A signature is the only way to read a private export, so a failed refresh
-    // means there is no usable link. This used to be swallowed, leaving the
-    // lapsed URL on the record for the client to render as a download that
-    // 400s. Report it and drop the URL instead: the button falls back to its
-    // retryable state, and the cached record is left untouched so the next read
-    // tries again rather than persisting the failure.
+    // No signature means no usable link, so don't hand back the lapsed one for
+    // the client to render as a download that 400s. The cached record is left as
+    // it is, so the next read retries instead of persisting this.
     logger.error('Failed to re-sign export URL', { exportId, error });
 
     exportStatus.signedUrl = undefined;

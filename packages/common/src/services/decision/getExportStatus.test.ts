@@ -114,20 +114,10 @@ describe('getExportStatus', () => {
     });
   });
 
-  // The bucket is asserted through the constant rather than by name: which
-  // bucket is private is `EXPORTS_BUCKET`'s business (and its own test pins it
-  // away from the public one), while what this owns is that the refresh signs
-  // in the export bucket and at the instance-scoped path.
-  //
-  // The client matters as much as the bucket. `EXPORTS_BUCKET` is private and
-  // there are no `storage.objects` RLS policies, so a caller-scoped client
-  // cannot see the object at all and its `createSignedUrl` fails. This used to
-  // sign with `createSBServerClient` and got away with it only because the
-  // bucket was public. Authorization for this read is already complete by the
-  // time we sign — record ownership, then `assertProfileAccess` for
-  // `decisions: ADMIN` — so the service-role client is signing a request that
-  // has been checked, which is how every other signing site in the repository
-  // is built.
+  // The client is as much the point as the bucket: `EXPORTS_BUCKET` is private
+  // and carries no `storage.objects` policies, so the `createSBServerClient`
+  // this used to call could never see the object. Authorization is already
+  // complete by the time we sign, so signing with the service role is safe.
   it('signs with the service-role client, in the export bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
@@ -170,12 +160,8 @@ describe('getExportStatus', () => {
     });
   });
 
-  // A failed re-sign used to be swallowed, which left the lapsed URL on the
-  // record and handed the admin a download button that 400s — the signature is
-  // dead whether or not the bucket is public. Now that the signature is the
-  // only way to read the object, that silence is also the one way access can
-  // break, so it has to be visible in the logs and must not be dressed up as a
-  // working link. Dropping the URL returns the button to its retryable state.
+  // This used to be swallowed, leaving the lapsed URL on the record for the
+  // client to render as a download that 400s.
   it('reports a failed re-sign instead of returning the lapsed URL', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
