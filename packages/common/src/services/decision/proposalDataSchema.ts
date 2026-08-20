@@ -454,9 +454,13 @@ export function schemaAllowsMultipleSelection(
 
 /**
  * User-friendly display name for a template field: its schema `title`,
- * falling back to the field key capitalized. Shared by anything that turns
- * a template field key into a label a person reads (validation error
+ * falling back to the field key as-is. Shared by anything that turns a
+ * template field key into a label a person reads (validation error
  * messages, export column headers).
+ *
+ * Never imposes casing of its own — an author-set title (however they chose
+ * to capitalize it) is returned unchanged, and the fallback key isn't
+ * capitalized either.
  */
 export function getSchemaFieldTitle(
   schema: XFormatPropertySchema | null | undefined,
@@ -464,5 +468,5 @@ export function getSchemaFieldTitle(
 ): string {
   // `||`, not `??` — an explicitly empty `title` is as unusable as a missing
   // one, and should fall back the same way.
-  return schema?.title || key.charAt(0).toUpperCase() + key.slice(1);
+  return schema?.title || key;
 }
