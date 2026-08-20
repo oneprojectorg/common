@@ -138,32 +138,6 @@ describe('getMergeCandidates', () => {
     expect(candidate?.title).toBe(untitledLabel);
   });
 
-  it('narrows by title, case-insensitively, when a search term is set', () => {
-    const candidates = getMergeCandidates({
-      proposals: [
-        proposal({ id: 'a', title: 'Community Garden Expansion' }),
-        proposal({ id: 'b', title: 'Youth Tech Learning Hub' }),
-        proposal({ id: 'c', title: 'Riverside District GARDEN Plot' }),
-      ],
-      sourceProposalId: 'source',
-      untitledLabel,
-      searchTerm: '  garden ',
-    });
-
-    expect(candidates.map((candidate) => candidate.id)).toEqual(['a', 'c']);
-  });
-
-  it('keeps every candidate when the search term is blank', () => {
-    const candidates = getMergeCandidates({
-      proposals: [proposal({ id: 'a' }), proposal({ id: 'b' })],
-      sourceProposalId: 'source',
-      untitledLabel,
-      searchTerm: '   ',
-    });
-
-    expect(candidates).toHaveLength(2);
-  });
-
   it('carries the proposal through so the card can render it', () => {
     const [candidate] = getMergeCandidates({
       proposals: [proposal({ id: 'a', title: 'Community Garden Expansion' })],

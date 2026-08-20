@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { MERGE_NOTE_MAX_LENGTH, type Proposal } from '@op/common/client';
+import { useDebounce } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -70,6 +71,9 @@ export function MergeProposalDialog({
   const [step, setStep] = useState<MergeStep>('select');
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  // The candidate list is a suspense query, so an un-debounced term would
+  // re-suspend to the skeleton on every keystroke.
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 200);
   const [note, setNote] = useState('');
   // No invalidation needed: the endpoint registers the affected proposal channels.
   const mergeMutation = trpc.decision.mergeProposals.useMutation({
@@ -197,7 +201,7 @@ export function MergeProposalDialog({
                   <Suspense fallback={<MergeCandidateListSkeleton />}>
                     <MergeCandidateListSuspense
                       proposal={proposal}
-                      searchTerm={searchTerm}
+                      searchTerm={debouncedSearchTerm}
                       selected={target}
                       onSelect={setTarget}
                     />
@@ -363,6 +367,8 @@ function MergeCandidateListSuspense({
         processInstanceId: proposal.processInstanceId,
         dir: 'desc',
         limit: MERGE_CANDIDATE_PAGE_LIMIT,
+        // Server-side title search, so a match beyond the loaded pages is found.
+        search: searchTerm || undefined,
       },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
@@ -377,9 +383,8 @@ function MergeCandidateListSuspense({
         proposals: paginatedData.pages.flatMap((page) => page.proposals),
         sourceProposalId: proposal.id,
         untitledLabel,
-        searchTerm,
       }),
-    [paginatedData.pages, proposal.id, untitledLabel, searchTerm],
+    [paginatedData.pages, proposal.id, untitledLabel],
   );
 
   return (

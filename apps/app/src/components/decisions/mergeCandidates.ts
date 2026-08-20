@@ -29,22 +29,17 @@ export function getProposalDisplayTitle(
  * Drafts, hidden, and flagged proposals are excluded because merging into one
  * removes the source from every list and leaves nothing visible in its place.
  *
- * `searchTerm` only sees the pages already fetched — `ListProposalsInput`
- * declares a `search` field that nothing reads yet.
+ * Title search is the server's job — `listProposals` takes a `search` term.
  */
 export function getMergeCandidates({
   proposals,
   sourceProposalId,
   untitledLabel,
-  searchTerm = '',
 }: {
   proposals: Proposal[];
   sourceProposalId: string;
   untitledLabel: string;
-  searchTerm?: string;
 }): MergeCandidate[] {
-  const query = searchTerm.trim().toLocaleLowerCase();
-
   return proposals
     .filter(
       (proposal) =>
@@ -57,9 +52,5 @@ export function getMergeCandidates({
       id: proposal.id,
       title: getProposalDisplayTitle(proposal, untitledLabel),
       proposal,
-    }))
-    .filter(
-      (candidate) =>
-        !query || candidate.title.toLocaleLowerCase().includes(query),
-    );
+    }));
 }
