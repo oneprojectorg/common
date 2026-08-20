@@ -302,16 +302,18 @@ export const listAllProposals = async ({
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments.
+    const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
+      existingBudget: parsedProposalData.budget,
     });
 
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parseProposalData(proposal.proposalData),
+        ...parsedProposalData,
         ...systemFieldOverrides,
       },
       status: proposal.status,

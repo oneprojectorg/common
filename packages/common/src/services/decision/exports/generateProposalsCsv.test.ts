@@ -140,3 +140,281 @@ describe('generateProposalsCsv submitter columns', () => {
     expect(headers).not.toContain('Submitter Email');
   });
 });
+
+describe('generateProposalsCsv budget/category/location columns', () => {
+  const templateWithResolvableFields: ProposalTemplateSchema = {
+    ...template,
+    properties: {
+      ...template.properties,
+      category: {
+        type: 'string',
+        title: 'Category',
+        'x-format': 'dropdown',
+        oneOf: [
+          { const: 'Housing', title: 'Housing' },
+          { const: 'Transit', title: 'Transit' },
+        ],
+      },
+      location: { type: 'object', title: 'Location', 'x-format': 'location' },
+    },
+  };
+
+  // Legacy numeric budget schema: it can only ever resolve a bare amount
+  // (no currency), and a fragment that fails to parse into a real amount
+  // resolves to `0` via `extractBudgetValue` — the same value a
+  // genuinely-zero budget would produce.
+  const templateWithLegacyBudget: ProposalTemplateSchema = {
+    ...template,
+    properties: {
+      ...template.properties,
+      budget: { type: 'number', title: 'Budget', 'x-format': 'money' },
+    },
+  };
+
+  it('resolves budget/category/location from the live document over a stale snapshot', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithResolvableFields,
+        proposalData: {
+          category: ['Housing'],
+          budget: { amount: 100, currency: 'USD' },
+          location: { lat: 1, lng: 1, address: 'Old address' },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            budget: paragraph('{"amount":5000,"currency":"USD"}'),
+            category: paragraph('Transit'),
+            location: paragraph(
+              '{"lat":41.5,"lng":-81.6,"address":"456 Elm St"}',
+            ),
+          },
+        },
+      }),
+    ]);
+
+    const row = parseSingleRow(csv);
+    expect(row.Budget).toBe('5000');
+    expect(row.Categories).toBe('Transit');
+    expect(row.Address).toBe('456 Elm St');
+    expect(row.Latitude).toBe('41.5');
+    expect(row.Longitude).toBe('-81.6');
+  });
+
+  it('keeps the snapshot values when the template has no matching fields', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalData: {
+          category: ['Housing'],
+          budget: { amount: 100, currency: 'USD' },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+          },
+        },
+      }),
+    ]);
+
+    const row = parseSingleRow(csv);
+    expect(row.Budget).toBe('100');
+    expect(row.Categories).toBe('Housing');
+  });
+
+  it('keeps the snapshot budget when the document fragment is unparseable', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithResolvableFields,
+        proposalData: {
+          category: [],
+          budget: { amount: 100, currency: 'USD' },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            budget: paragraph('not json'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv).Budget).toBe('100');
+  });
+
+  it('keeps the snapshot categories when the document fragment resolves to a non-list value', async () => {
+    const templateWithUntypedCategory: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        // No `x-format` — the fragment falls through `assembleProposalData`'s
+        // generic JSON-parse branch, which can resolve to a number rather
+        // than a string or array.
+        category: { type: 'string', title: 'Category' },
+      },
+    };
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithUntypedCategory,
+        proposalData: {
+          category: ['Housing'],
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            category: paragraph('42'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv).Categories).toBe('Housing');
+  });
+
+  it('reflects the document when every category is deliberately cleared', async () => {
+    const templateWithMultiCategory: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        category: {
+          type: 'array',
+          title: 'Category',
+          'x-format': 'dropdown',
+          items: { type: 'string' },
+        },
+      },
+    };
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithMultiCategory,
+        proposalData: { category: ['Housing'], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            // A cleared multi-select resolves to a real (non-malformed)
+            // empty array, not an absent fragment.
+            category: paragraph('[]'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv).Categories).toBe('');
+  });
+
+  it('keeps the snapshot budget when a legacy numeric field resolves to the ambiguous zero sentinel', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithLegacyBudget,
+        proposalData: {
+          category: [],
+          budget: { amount: 5000, currency: 'USD' },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            budget: paragraph('null'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv).Budget).toBe('5000');
+  });
+
+  it('keeps the snapshot currency when a legacy numeric field resolves a new amount', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithLegacyBudget,
+        proposalData: {
+          category: [],
+          budget: { amount: 100, currency: 'EUR' },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            budget: paragraph('500'),
+          },
+        },
+      }),
+    ]);
+
+    const row = parseSingleRow(csv);
+    expect(row.Budget).toBe('500');
+    expect(row.Currency).toBe('EUR');
+  });
+
+  it('adopts a moved pin while keeping the old address until it re-geocodes', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithResolvableFields,
+        proposalData: {
+          category: [],
+          // A previously-geocoded place — `placeLat`/`placeLng` pin the old
+          // point and `getPlaceCoordinates` prefers them over `lat`/`lng`,
+          // so they must not survive into the moved-pin result below.
+          location: {
+            lat: 1,
+            lng: 1,
+            address: '456 Elm St',
+            placeLat: 1,
+            placeLng: 1,
+          },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            // No address — a pin dropped before the async reverse-geocode
+            // resolved, or one that never matched.
+            location: paragraph('{"lat":41.5,"lng":-81.6}'),
+          },
+        },
+      }),
+    ]);
+
+    const row = parseSingleRow(csv);
+    expect(row.Address).toBe('456 Elm St');
+    expect(row.Latitude).toBe('41.5');
+    expect(row.Longitude).toBe('-81.6');
+  });
+
+  it('keeps the old address when the document resolves a place id but no address', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithResolvableFields,
+        proposalData: {
+          category: [],
+          location: { lat: 1, lng: 1, address: '456 Elm St' },
+          attachmentIds: [],
+        },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            location: paragraph(
+              '{"lat":41.5,"lng":-81.6,"placeId":"place-123"}',
+            ),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv).Address).toBe('456 Elm St');
+  });
+});

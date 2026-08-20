@@ -29,6 +29,83 @@ const toTipTapDoc = (content: unknown[]): JSONContent => ({
   content: content as JSONContent[],
 });
 
+/**
+ * Resolves `keys` to values from the live document, falling back to nothing
+ * when a key's fragment is absent, empty, or malformed — the shared
+ * fragment-to-value walk behind both the list preview's `title`/`budget`
+ * override and the CSV export's `budget`/`category`/`location` override.
+ * `proposalData` is a creation-time snapshot that goes stale once a field is
+ * edited in the collab doc after submission; this recovers the authoritative
+ * value from the document instead.
+ */
+export function resolveDocumentFieldValues({
+  fragments,
+  proposalTemplate,
+  keys,
+}: {
+  fragments: TipTapFragmentResponse;
+  proposalTemplate: ProposalTemplateSchema | null;
+  keys: Iterable<string>;
+}): Record<string, unknown> {
+  if (!proposalTemplate) {
+    return {};
+  }
+
+  const fragmentTexts: Record<string, string> = {};
+  for (const key of keys) {
+    const content = fragments[key]?.content;
+    if (!content?.length) {
+      continue;
+    }
+
+    try {
+      const text = getFragmentTextFromTipTapDoc(toTipTapDoc(content)).trim();
+      if (text) {
+        fragmentTexts[key] = text;
+      }
+    } catch {
+      // Skip malformed fragments — same as the client-side walk.
+    }
+  }
+
+  return assembleProposalData(proposalTemplate, fragmentTexts);
+}
+
+/**
+ * `assembleProposalData`'s legacy `type: 'number'` budget branch
+ * (`extractBudgetValue`) resolves to a bare number, which never carries a
+ * currency — normalizing it through the canonical shape would default to
+ * `'USD'` and silently overwrite a real non-USD value a legacy schema was
+ * never able to express, so a bare-number override keeps `existing`'s
+ * currency instead. That same branch also returns `0` both for a
+ * genuinely-zero budget and for a fragment that failed to parse into a real
+ * amount — indistinguishable here, so `0` is treated as unresolved rather
+ * than risk zeroing out a real budget.
+ *
+ * Known residual gap, accepted rather than chased further: a *canonical*
+ * money field (`schema.type !== 'number'`) whose fragment text happens to be
+ * a bare JSON number hits `assembleProposalData`'s `normalizeBudget(parsed)`
+ * branch before this function ever sees it, which applies the identical
+ * legacy-number-to-USD coercion and hands us an already-built object — so
+ * `typeof raw === 'number'` never fires and the currency/zero guards don't
+ * apply. No known write path produces this (a canonical field's fragment is
+ * always the `{ amount, currency }` shape), and the coercion itself lives in
+ * the widely-shared `normalizeBudget`/`budgetValueSchema` — also used to
+ * parse the snapshot itself — so fixing it here without fixing it there
+ * would just relocate the inconsistency.
+ */
+export function resolveBudgetOverride(
+  raw: unknown,
+  existing: BudgetData | null | undefined,
+): BudgetData | undefined {
+  if (typeof raw === 'number') {
+    return raw === 0
+      ? (existing ?? undefined)
+      : { amount: raw, currency: existing?.currency ?? 'USD' };
+  }
+  return normalizeBudget(raw) ?? existing ?? undefined;
+}
+
 export interface ProposalListPreview {
   /**
    * Plain-text preview of the document body (`short-text`/`long-text`
@@ -94,9 +171,15 @@ export function collectProposalBodyDoc({
 export function buildProposalListPreview({
   documentContent,
   proposalTemplate,
+  existingBudget,
 }: {
   documentContent: ProposalDocumentContent | undefined;
   proposalTemplate: ProposalTemplateSchema | null;
+  /**
+   * The pre-merge snapshot budget, so a resolved override can preserve its
+   * currency — omit only when the caller has no snapshot to preserve from.
+   */
+  existingBudget?: BudgetData | null;
 }): ProposalListPreview {
   if (!documentContent || documentContent.type === 'unavailable') {
     return { previewText: null, systemFieldOverrides: {} };
@@ -134,34 +217,20 @@ export function buildProposalListPreview({
     }
   }
 
+  const resolved = resolveDocumentFieldValues({
+    fragments,
+    proposalTemplate,
+    keys: SYSTEM_FIELD_KEYS,
+  });
+
   const systemFieldOverrides: ProposalListPreview['systemFieldOverrides'] = {};
-  if (proposalTemplate) {
-    const fragmentTexts: Record<string, string> = {};
-    for (const key of SYSTEM_FIELD_KEYS) {
-      const content = fragments[key]?.content;
-      if (!content?.length) {
-        continue;
-      }
+  if (typeof resolved.title === 'string') {
+    systemFieldOverrides.title = resolved.title;
+  }
 
-      try {
-        const text = getFragmentTextFromTipTapDoc(toTipTapDoc(content)).trim();
-        if (text) {
-          fragmentTexts[key] = text;
-        }
-      } catch {
-        // Skip malformed fragments — same as the client-side walk.
-      }
-    }
-
-    const resolved = assembleProposalData(proposalTemplate, fragmentTexts);
-    if (typeof resolved.title === 'string') {
-      systemFieldOverrides.title = resolved.title;
-    }
-
-    const budget = normalizeBudget(resolved.budget);
-    if (budget) {
-      systemFieldOverrides.budget = budget;
-    }
+  const budget = resolveBudgetOverride(resolved.budget, existingBudget);
+  if (budget) {
+    systemFieldOverrides.budget = budget;
   }
 
   return { previewText, systemFieldOverrides };

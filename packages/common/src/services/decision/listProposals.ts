@@ -336,9 +336,11 @@ export const listProposals = async ({
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
+    const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
+      existingBudget: parsedProposalData.budget,
     });
 
     // `voteCount` only rides along as an extra when the count was requested.
@@ -350,7 +352,7 @@ export const listProposals = async ({
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parseProposalData(proposal.proposalData),
+        ...parsedProposalData,
         ...systemFieldOverrides,
       },
       status: proposal.status,
