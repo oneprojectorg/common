@@ -31,7 +31,7 @@ import {
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { useId, useMemo, useState } from 'react';
-import { LuCircleAlert, LuPlus } from 'react-icons/lu';
+import { LuCircleAlert, LuPlus, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -96,6 +96,7 @@ function MyReviewForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
+    isReviewOutOfDate,
     isEditing,
     review,
   } = useReviewForm();
@@ -114,21 +115,33 @@ function MyReviewForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  // Paused wins: a paused review can't be stale in practice (staleness needs a
+  // submitted review), but one alert at a time either way.
+  const showOutOfDate = isReviewOutOfDate && !isPausedForRevision;
+
   // A submitted review shows the read-only result unless the reviewer has
-  // switched it back into the form via "Edit review".
+  // switched it back into the form via "Edit review". The banner rides along so
+  // the reviewer knows why "Update review" is worth pressing.
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
-      <SubmittedReviewView
-        rubricTemplate={template}
-        review={review}
-        // Above the feedback block, per the design — hence the slot.
-        scoreSlot={<TotalScoreCard rubricTemplate={template} values={values} />}
-      />
+      <>
+        {showOutOfDate && <OutOfDateAlert />}
+        <SubmittedReviewView
+          rubricTemplate={template}
+          review={review}
+          // Above the feedback block, per the design — hence the slot.
+          scoreSlot={
+            <TotalScoreCard rubricTemplate={template} values={values} />
+          }
+        />
+      </>
     );
   }
 
   return (
     <>
+      {showOutOfDate && <OutOfDateAlert />}
+
       {isPausedForRevision && (
         <>
           <Alert variant="warning">
@@ -204,6 +217,29 @@ function MyReviewForm() {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * The reviewer's submitted review is behind the proposal's current version.
+ * Re-affirming is the existing "Update review" action, so this only explains
+ * why it matters — the copy is two keys so a future non-revision edit variant
+ * is a copy change alone.
+ */
+function OutOfDateAlert() {
+  const t = useTranslations();
+
+  return (
+    // `Alert` carries role="alert"; announced when it appears mid-session.
+    <Alert variant="warning">
+      <LuRefreshCw />
+      <AlertTitle>{t('Your review is out of date')}</AlertTitle>
+      <AlertDescription>
+        {t(
+          'The author submitted revisions to this proposal. Your previous responses have been carried over.',
+        )}
+      </AlertDescription>
+    </Alert>
   );
 }
 
