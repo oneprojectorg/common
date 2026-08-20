@@ -8,8 +8,6 @@ import { LuMerge } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { useMergeProposalsEnabled } from './useProposalMergeActions';
-
 /**
  * "Merged into <survivor>" in the proposal page's header (Figma 15367:51167).
  *
@@ -30,12 +28,6 @@ export function ProposalMergeNotice({
   /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
 }) {
-  const mergeEnabled = useMergeProposalsEnabled();
-
-  if (!mergeEnabled) {
-    return null;
-  }
-
   return (
     // Silent on failure: this is one line of context in a header, so a failed
     // read must not replace the page with an error, and there is nothing

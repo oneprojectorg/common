@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
@@ -16,10 +17,7 @@ import {
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
 import { getProposalDisplayTitle } from './mergeCandidates';
-import {
-  useMergeProposalsEnabled,
-  useProposalMergeActions,
-} from './useProposalMergeActions';
+import { useProposalMergeActions } from './useProposalMergeActions';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -51,12 +49,12 @@ export function ProposalAdminMenu({
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
   const { unmerge, isUnmerging } = useProposalMergeActions();
-  const mergeEnabled = useMergeProposalsEnabled();
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
   // Figma puts the merge record in the header as a plain link, so the way back
   // lives here: a superseded proposal is filtered out of every listing, and its
-  // own page is the only surface that can offer the undo. Skipped entirely
-  // behind the flag, so a flag-off page makes no extra request.
+  // own page is the only surface that can offer the undo. Gated on the flag
+  // too, since the item it feeds is.
   const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
     { sourceProposalId: proposal.id },
     { enabled: mergeEnabled && proposal.access?.admin === true },

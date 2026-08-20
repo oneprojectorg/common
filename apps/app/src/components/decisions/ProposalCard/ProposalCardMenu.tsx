@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
@@ -12,7 +13,6 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
-import { useMergeProposalsEnabled } from '../useProposalMergeActions';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
@@ -36,7 +36,7 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
-  const mergeEnabled = useMergeProposalsEnabled();
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
   const canMerge =
     mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
 
