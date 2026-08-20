@@ -3,7 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
-import { getPhaseReviewSettings } from '@op/common/client';
+import { canReadPhaseReviews } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -68,11 +68,16 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
-  // Client-side mirror of the service's `canReadPhaseReviews` gate.
-  const canSeeReviewCounts =
-    isAdmin ||
-    (canReview &&
-      getPhaseReviewSettings({ phases }, currentPhase.phaseId).openReviews);
+  // The endpoint's own gate, run here only to decide whether to fetch at
+  // all — the server enforces it regardless.
+  const canSeeReviewCounts = canReadPhaseReviews(
+    {
+      access: { admin: isAdmin, review: canReview },
+      currentStateId: instance.currentStateId,
+      instanceData: instance.instanceData ?? {},
+    },
+    currentPhase.phaseId,
+  );
 
   const t = useTranslations();
 
