@@ -137,11 +137,11 @@ describe('getExportStatus', () => {
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
     expect(logger.error).toHaveBeenCalled();
-    expect(result).toMatchObject({
-      status: 'failed',
-      errorMessage: expect.any(String),
-    });
+    expect(result).toMatchObject({ status: 'failed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+    // No server-minted message: the client renders `errorMessage` verbatim and
+    // only reaches its translated fallback when the field is absent.
+    expect((result as { errorMessage?: string }).errorMessage).toBeUndefined();
     // The cached record is left `completed` rather than rewritten, so a later
     // read retries the refresh instead of persisting a transient failure.
     expect(set).not.toHaveBeenCalled();

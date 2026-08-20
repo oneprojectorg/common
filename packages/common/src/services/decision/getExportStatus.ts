@@ -109,25 +109,25 @@ export const getExportStatus = async ({
       if (urlError || !urlData) {
         // No signature means no usable link. Reporting this as still `completed`
         // with the URL dropped would be a silent dead end: the client treats a
-        // completed export as settled, so it would stop waiting and show no
-        // download and no error. Report it as failed with a message instead —
-        // that is the one terminal state the client surfaces, and it returns the
-        // admin to a button they can press again.
+        // completed export as settled, so it would stop waiting and show neither
+        // a download nor an error. `failed` is the one terminal state the client
+        // surfaces, and it puts the admin back on a button they can press again —
+        // re-exporting rebuilds the file, so a fresh run is the recovery path
+        // rather than this record.
         //
-        // Deliberately not written back to the cache: the record stays
-        // `completed`, so a later read retries the refresh rather than
-        // persisting a failure that may be transient.
+        // No `errorMessage`: the client renders whatever is here verbatim and
+        // only falls back to a translated string when it is absent, so supplying
+        // one would put untranslated English in front of an Arabic or Spanish
+        // admin. The detail belongs in the log, which no user reads.
+        //
+        // The cached record is left `completed` rather than rewritten, so
+        // nothing is persisted about a failure that may be momentary.
         logger.error('Failed to refresh export signed URL', {
           error: urlError,
           exportId,
         });
 
-        return {
-          ...exportStatus,
-          status: 'failed',
-          signedUrl: undefined,
-          errorMessage: 'Export download could not be prepared',
-        };
+        return { ...exportStatus, status: 'failed', signedUrl: undefined };
       }
 
       exportStatus.signedUrl = urlData.signedUrl;
