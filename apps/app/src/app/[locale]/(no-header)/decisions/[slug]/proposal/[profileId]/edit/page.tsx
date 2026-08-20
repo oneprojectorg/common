@@ -70,13 +70,15 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId, reviewRevision, new: newParam }, setQueryState] =
-    useQueryStates({
-      aside: proposalEditorAsideParser,
-      versionId: proposalEditorVersionIdParser,
-      reviewRevision: proposalEditorReviewRevisionParser,
-      [PROPOSAL_EDITOR_NEW_PARAM]: proposalEditorNewParser,
-    });
+  const [
+    { aside, versionId, reviewRevision, newProposal: newParam },
+    setQueryState,
+  ] = useQueryStates({
+    aside: proposalEditorAsideParser,
+    versionId: proposalEditorVersionIdParser,
+    reviewRevision: proposalEditorReviewRevisionParser,
+    [PROPOSAL_EDITOR_NEW_PARAM]: proposalEditorNewParser,
+  });
   // The first-visit flag is single-use. Snapshot it on mount so the heading is
   // stable for this visit, then strip it from the URL below: a draft can sit
   // for days, and a refreshed, bookmarked or shared editor link is someone
@@ -299,7 +301,10 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   revisionRequest: ProposalReviewRequest | null;
-  /** The author arrived here straight from creating this draft (`?new=true`). */
+  /**
+   * The author arrived here straight from creating this draft
+   * (`?newProposal=true`).
+   */
   isNewProposal: boolean;
 }) {
   const versionPreview = useOptionalVersionPreview();
