@@ -37,6 +37,12 @@ const servesAsAttachment = (signedUrl: unknown): boolean => {
   return query !== undefined && new URLSearchParams(query).has('download');
 };
 
+/**
+ * Structurally the subset of `ContextLogger` this module needs.
+ *
+ * The meta object is `Record<string, unknown>` rather than `any`, so a malformed
+ * one is a type error instead of a log line that silently ships a missing field.
+ */
 type ExportLogger = {
   info: (message: string, data?: Record<string, unknown>) => void;
   error: (message: string, data?: Record<string, unknown>) => void;
