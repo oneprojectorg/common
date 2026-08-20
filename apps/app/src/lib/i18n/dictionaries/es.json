@@ -1559,7 +1559,6 @@
   "Could not load the other proposals. Please try again.": "No se pudieron cargar las demás propuestas. Inténtalo de nuevo.",
   "Could not merge this proposal. Please try again.": "No se pudo combinar esta propuesta. Inténtalo de nuevo.",
   "Could not unmerge this proposal. Please try again.": "No se pudo separar esta propuesta. Inténtalo de nuevo.",
-  "{source} was merged into {target}.": "{source} se combinó con {target}.",
   "{source} is listed on its own again.": "{source} vuelve a aparecer por separado.",
   "Merge proposals": "Combinar propuestas",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Elige la propuesta con la que combinar <source>{name}</source>. Mantiene su propia página, pero sale de la lista de propuestas, de la votación y de la revisión.",
@@ -1577,5 +1576,6 @@
   "Add a note for {name}": "Añade una nota para {name}",
   "Add a note": "Añade una nota",
   "Explain why these proposals were merged. This will be included in their notification.": "Explica por qué se combinaron estas propuestas. Se incluirá en su notificación.",
-  "{count} of {max} characters": "{count} de {max} caracteres"
+  "{count} of {max} characters": "{count} de {max} caracteres",
+  "{source} has now been merged with {target}": "{source} ya se ha combinado con {target}"
 }

@@ -1559,7 +1559,6 @@
   "Could not load the other proposals. Please try again.": "Impossible de charger les autres propositions. Veuillez réessayer.",
   "Could not merge this proposal. Please try again.": "Impossible de fusionner cette proposition. Veuillez réessayer.",
   "Could not unmerge this proposal. Please try again.": "Impossible d’annuler la fusion de cette proposition. Veuillez réessayer.",
-  "{source} was merged into {target}.": "{source} a été fusionnée avec {target}.",
   "{source} is listed on its own again.": "{source} apparaît de nouveau séparément.",
   "Merge proposals": "Fusionner des propositions",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Choisissez la proposition avec laquelle fusionner <source>{name}</source>. Elle garde sa propre page, mais quitte la liste des propositions, le vote et l’évaluation.",
@@ -1577,5 +1576,6 @@
   "Add a note for {name}": "Ajouter une note pour {name}",
   "Add a note": "Ajouter une note",
   "Explain why these proposals were merged. This will be included in their notification.": "Expliquez pourquoi ces propositions ont été fusionnées. Cela sera inclus dans leur notification.",
-  "{count} of {max} characters": "{count} sur {max} caractères"
+  "{count} of {max} characters": "{count} sur {max} caractères",
+  "{source} has now been merged with {target}": "{source} a maintenant été fusionnée avec {target}"
 }

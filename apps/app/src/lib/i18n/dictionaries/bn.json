@@ -1562,7 +1562,6 @@
   "Could not load the other proposals. Please try again.": "অন্য প্রস্তাবগুলি লোড করা যায়নি। আবার চেষ্টা করুন।",
   "Could not merge this proposal. Please try again.": "এই প্রস্তাবটি একত্র করা যায়নি। আবার চেষ্টা করুন।",
   "Could not unmerge this proposal. Please try again.": "এই প্রস্তাবের একত্রীকরণ বাতিল করা যায়নি। আবার চেষ্টা করুন।",
-  "{source} was merged into {target}.": "{source} {target}-এর সঙ্গে একত্র করা হয়েছে।",
   "{source} is listed on its own again.": "{source} আবার আলাদাভাবে তালিকাভুক্ত হয়েছে।",
   "Merge proposals": "প্রস্তাব একত্র করুন",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "<source>{name}</source> যে প্রস্তাবের সঙ্গে একত্র করা হবে সেটি বেছে নিন। এটি নিজের পাতাটি রাখবে, তবে প্রস্তাবের তালিকা, ভোট ও পর্যালোচনা থেকে সরে যাবে।",
@@ -1580,5 +1579,6 @@
   "Add a note for {name}": "{name}-এর জন্য একটি নোট যোগ করুন",
   "Add a note": "একটি নোট যোগ করুন",
   "Explain why these proposals were merged. This will be included in their notification.": "কেন এই প্রস্তাবগুলি একত্র করা হয়েছে তা ব্যাখ্যা করুন। এটি তাঁদের বিজ্ঞপ্তিতে অন্তর্ভুক্ত হবে।",
-  "{count} of {max} characters": "{max}-এর মধ্যে {count} অক্ষর"
+  "{count} of {max} characters": "{max}-এর মধ্যে {count} অক্ষর",
+  "{source} has now been merged with {target}": "{source} এখন {target}-এর সঙ্গে একত্র করা হয়েছে"
 }

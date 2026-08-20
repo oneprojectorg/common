@@ -75,7 +75,7 @@ export function useProposalMergeActions(): ProposalMergeActions {
           // ends: the mutation's own input carries ids, not titles.
           onSuccess: () =>
             toast.success(
-              t('{source} was merged into {target}.', {
+              t('{source} has now been merged with {target}', {
                 source: sourceTitle,
                 target: targetTitle,
               }),

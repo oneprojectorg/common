@@ -1561,7 +1561,6 @@
   "Could not load the other proposals. Please try again.": "Soo-jeedinnada kale lama soo geli karin. Fadlan isku day mar kale.",
   "Could not merge this proposal. Please try again.": "Soo-jeedintan lama biirin karin. Fadlan isku day mar kale.",
   "Could not unmerge this proposal. Please try again.": "Soo-jeedintan lama soocan karin. Fadlan isku day mar kale.",
-  "{source} was merged into {target}.": "{source} waxaa lala biiriyay {target}.",
   "{source} is listed on its own again.": "{source} mar kale gooni ahaan bay ku taxan tahay.",
   "Merge proposals": "Ku biiri soo-jeedinno",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Dooro soo-jeedinta lala biirinayo <source>{name}</source>. Waxay sii haysanaysaa boggeeda, laakiin waxay ka baxaysaa liiska soo-jeedinnada, codbixinta, iyo dib-u-eegista.",
@@ -1579,5 +1578,6 @@
   "Add a note for {name}": "Ku dar qoraal {name}",
   "Add a note": "Ku dar qoraal",
   "Explain why these proposals were merged. This will be included in their notification.": "Sharax sababta loo biiriyay soo-jeedinnadan. Tan waxaa lagu darayaa ogeysiiskooda.",
-  "{count} of {max} characters": "{count} ka mid ah {max} xaraf"
+  "{count} of {max} characters": "{count} ka mid ah {max} xaraf",
+  "{source} has now been merged with {target}": "{source} hadda waa lala biiriyay {target}"
 }
