@@ -97,26 +97,37 @@ export const getExportStatus = async ({
         exportStatus.fileName,
       );
 
-      // Service-role: the bucket is private with no `storage.objects` policies,
-      // so a caller-scoped client cannot sign. The ownership and `decisions:
-      // ADMIN` checks above are what authorize this read.
+      // Service-role: every `storage.objects` policy is scoped to
+      // `bucket_id = 'assets'`, so a caller-scoped client cannot sign in this
+      // bucket. The ownership and `decisions: ADMIN` checks above are what
+      // authorize this read.
       const supabase = createSBServiceClient();
       const { data: urlData, error: urlError } = await supabase.storage
         .from(EXPORTS_BUCKET)
         .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
 
       if (urlError || !urlData) {
-        // No signature means no usable link, so don't hand back the lapsed one
-        // for the client to render as a download that 400s. The cached record is
-        // left as it is, so the next read retries instead of persisting this.
+        // No signature means no usable link. Reporting this as still `completed`
+        // with the URL dropped would be a silent dead end: the client treats a
+        // completed export as settled, so it would stop waiting and show no
+        // download and no error. Report it as failed with a message instead —
+        // that is the one terminal state the client surfaces, and it returns the
+        // admin to a button they can press again.
+        //
+        // Deliberately not written back to the cache: the record stays
+        // `completed`, so a later read retries the refresh rather than
+        // persisting a failure that may be transient.
         logger.error('Failed to refresh export signed URL', {
           error: urlError,
           exportId,
         });
 
-        exportStatus.signedUrl = undefined;
-
-        return exportStatus;
+        return {
+          ...exportStatus,
+          status: 'failed',
+          signedUrl: undefined,
+          errorMessage: 'Export download could not be prepared',
+        };
       }
 
       exportStatus.signedUrl = urlData.signedUrl;

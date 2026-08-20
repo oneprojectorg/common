@@ -19,9 +19,11 @@
  * Do not point it back at the shared one.
  *
  * Provisioned `public: false` by `services/db/migrate.ts`, which also re-asserts
- * the visibility on every deploy. There are no `storage.objects` RLS policies,
- * so signing here needs the service-role client: a caller-scoped client cannot
- * see the object at all. Each signing site authorizes its own caller first.
+ * the visibility on every deploy. Signing here needs the service-role client:
+ * `storage.objects` has RLS enabled and every policy on it is scoped to
+ * `bucket_id = 'assets'`, so no policy grants a caller anything in this bucket
+ * and a caller-scoped client cannot see the object at all. Each signing site
+ * authorizes its own caller before it signs.
  */
 export const EXPORTS_BUCKET = 'exports';
 
