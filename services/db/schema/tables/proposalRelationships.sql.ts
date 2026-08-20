@@ -5,6 +5,7 @@ import {
   index,
   pgEnum,
   pgTable,
+  text,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -59,6 +60,17 @@ export const proposalRelationships = pgTable(
     relationshipType: proposalRelationshipTypeEnum('relationship_type')
       .$type<ProposalRelationshipType>()
       .notNull(),
+    /**
+     * Why the merge happened, in the admin's words. Optional, and kept on the
+     * edge rather than the proposals so it soft-deletes with the merge it
+     * explains — an unmerge shouldn't leave the rationale behind, and a re-merge
+     * of the same pair writes a fresh row with a fresh note.
+     *
+     * `text` rather than `varchar`: the length ceiling belongs to the input
+     * schema (`MERGE_NOTE_MAX_LENGTH`), which can be relaxed without a
+     * migration, and Postgres stores both identically.
+     */
+    note: text('note'),
     ...timestamps,
   },
   (table) => [
