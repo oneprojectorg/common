@@ -79,6 +79,7 @@ export {
   type ProposalSelection,
 } from './services/decision/schemas/selection';
 export {
+  MERGE_NOTE_MAX_LENGTH,
   mergeProposalsInputSchema,
   unmergeProposalInputSchema,
   listProposalRelationshipsInputSchema,

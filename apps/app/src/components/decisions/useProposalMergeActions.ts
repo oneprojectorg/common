@@ -11,6 +11,11 @@ export interface MergeTarget {
   sourceTitle: string;
   targetProposalId: string;
   targetTitle: string;
+  /**
+   * The admin's stated reason, stored on the edge. Blank is normalized away by
+   * the input schema, so passing the raw textarea value is safe.
+   */
+  note?: string;
 }
 
 export interface ProposalMergeActions {
@@ -61,9 +66,10 @@ export function useProposalMergeActions(): ProposalMergeActions {
       sourceTitle,
       targetProposalId,
       targetTitle,
+      note,
     }: MergeTarget) =>
       mergeMutation.mutateAsync(
-        { sourceProposalId, targetProposalId },
+        { sourceProposalId, targetProposalId, note },
         {
           // Per-call rather than on the mutation, so the toast can name both
           // ends: the mutation's own input carries ids, not titles.

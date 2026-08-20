@@ -1573,5 +1573,9 @@
   "What happens:": "Ce qui se passe :",
   "Merge <source>{name}</source> into <source>{target}</source>.": "Fusionner <source>{name}</source> avec <source>{target}</source>.",
   "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> sera retirée de la liste des propositions actives. Sa page reste consultable comme archive.",
-  "Merged into <target>{name}</target>": "Fusionnée avec <target>{name}</target>"
+  "Merged into <target>{name}</target>": "Fusionnée avec <target>{name}</target>",
+  "Add a note for {name}": "Ajouter une note pour {name}",
+  "Add a note": "Ajouter une note",
+  "Explain why these proposals were merged. This will be included in their notification.": "Expliquez pourquoi ces propositions ont été fusionnées. Cela sera inclus dans leur notification.",
+  "{count} of {max} characters": "{count} sur {max} caractères"
 }

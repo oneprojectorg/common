@@ -2,12 +2,32 @@ import { ProposalRelationshipType } from '@op/db/schema';
 import { z } from 'zod';
 
 /**
+ * Cap on the merge note, in characters.
+ *
+ * The column is `text`, so this is the only ceiling — raising it needs no
+ * migration. Sized for a paragraph of rationale that reads cleanly in an email,
+ * not for pasted proposal content.
+ */
+export const MERGE_NOTE_MAX_LENGTH = 2000;
+
+/**
  * Reads as "source merges into target": the source is superseded and hidden, the
  * target survives.
  */
 export const mergeProposalsInputSchema = z.object({
   sourceProposalId: z.uuid(),
   targetProposalId: z.uuid(),
+  /**
+   * Why the merge happened, shown to the superseded proposal's author. Trimmed
+   * and normalized to `undefined` when blank, so a whitespace-only textarea
+   * stores NULL rather than an empty string that reads as "a note was written".
+   */
+  note: z
+    .string()
+    .trim()
+    .max(MERGE_NOTE_MAX_LENGTH)
+    .optional()
+    .transform((value) => value || undefined),
 });
 
 export type MergeProposalsInput = z.infer<typeof mergeProposalsInputSchema>;

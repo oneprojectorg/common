@@ -1,3 +1,4 @@
+import { MERGE_NOTE_MAX_LENGTH } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
   ProposalRelationshipType,
@@ -98,6 +99,65 @@ describe.concurrent('mergeProposals', () => {
       // The exclusion predicate correlates on this, so it must be set.
       processInstanceId: instanceId,
     });
+  });
+
+  it('stores the note the admin wrote for the author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+      note: '  These describe the same garden plot.  ',
+    });
+
+    const [edge] = await db
+      .select()
+      .from(proposalRelationships)
+      .where(eq(proposalRelationships.sourceProposalId, source.id));
+
+    // Trimmed by the input schema, so the stored text is what an email would
+    // quote rather than whatever whitespace the textarea carried.
+    expect(edge?.note).toBe('These describe the same garden plot.');
+  });
+
+  it('stores NULL rather than an empty note for a blank textarea', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+      note: '   ',
+    });
+
+    const [edge] = await db
+      .select()
+      .from(proposalRelationships)
+      .where(eq(proposalRelationships.sourceProposalId, source.id));
+
+    // "No note" and "an empty note" have to stay distinguishable: a consumer
+    // asks whether a reason was given, not whether the string is truthy.
+    expect(edge?.note).toBeNull();
+  });
+
+  it('rejects a note past the length cap', async ({ task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await expect(
+      caller.decision.mergeProposals({
+        sourceProposalId: source.id,
+        targetProposalId: target.id,
+        note: 'x'.repeat(MERGE_NOTE_MAX_LENGTH + 1),
+      }),
+    ).rejects.toThrow();
   });
 
   it('lets the database reject a second live merged edge', async ({

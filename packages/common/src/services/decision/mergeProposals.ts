@@ -26,10 +26,15 @@ export type MergeProposalsResult = {
  * Links one proposal into another as `merged`, for admins of the parent
  * decision. No content moves and no status changes — recording the edge is the
  * entire effect, and it's what every read filters on via `notSuperseded`.
+ *
+ * `note` is the admin's stated reason, stored on the edge so it soft-deletes
+ * with the merge. Nothing mails it yet: there is no merge notification, so the
+ * note is currently a record rather than a message.
  */
 export async function mergeProposals({
   sourceProposalId,
   targetProposalId,
+  note,
   user,
 }: MergeProposalsInput & { user: User }): Promise<MergeProposalsResult> {
   if (sourceProposalId === targetProposalId) {
@@ -98,6 +103,10 @@ export async function mergeProposals({
       sourceProposalId,
       targetProposalId,
       relationshipType: ProposalRelationshipType.MERGED,
+      // The admin's rationale, carried to the author. `?? null` because the
+      // input schema normalizes a blank textarea to `undefined`, and the column
+      // distinguishes "no note" from "an empty note".
+      note: note ?? null,
     })
     .onConflictDoNothing()
     .returning({ id: proposalRelationships.id });

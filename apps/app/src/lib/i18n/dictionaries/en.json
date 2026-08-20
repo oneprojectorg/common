@@ -1637,5 +1637,9 @@
   "What happens:": "What happens:",
   "Merge <source>{name}</source> into <source>{target}</source>.": "Merge <source>{name}</source> into <source>{target}</source>.",
   "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.",
-  "Merged into <target>{name}</target>": "Merged into <target>{name}</target>"
+  "Merged into <target>{name}</target>": "Merged into <target>{name}</target>",
+  "Add a note for {name}": "Add a note for {name}",
+  "Add a note": "Add a note",
+  "Explain why these proposals were merged. This will be included in their notification.": "Explain why these proposals were merged. This will be included in their notification.",
+  "{count} of {max} characters": "{count} of {max} characters"
 }

@@ -1576,5 +1576,9 @@
   "What happens:": "কী ঘটবে:",
   "Merge <source>{name}</source> into <source>{target}</source>.": "<source>{name}</source> <source>{target}</source>-এর সঙ্গে একত্র করুন।",
   "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> সক্রিয় প্রস্তাবের তালিকা থেকে সরিয়ে দেওয়া হবে। এর পাতাটি নথি হিসেবে দেখা যাবে।",
-  "Merged into <target>{name}</target>": "<target>{name}</target>-এর সঙ্গে একত্র করা হয়েছে"
+  "Merged into <target>{name}</target>": "<target>{name}</target>-এর সঙ্গে একত্র করা হয়েছে",
+  "Add a note for {name}": "{name}-এর জন্য একটি নোট যোগ করুন",
+  "Add a note": "একটি নোট যোগ করুন",
+  "Explain why these proposals were merged. This will be included in their notification.": "কেন এই প্রস্তাবগুলি একত্র করা হয়েছে তা ব্যাখ্যা করুন। এটি তাঁদের বিজ্ঞপ্তিতে অন্তর্ভুক্ত হবে।",
+  "{count} of {max} characters": "{max}-এর মধ্যে {count} অক্ষর"
 }

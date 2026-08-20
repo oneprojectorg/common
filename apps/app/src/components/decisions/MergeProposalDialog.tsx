@@ -2,7 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { Proposal } from '@op/common/client';
+import { MERGE_NOTE_MAX_LENGTH, type Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -19,7 +19,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Field, FieldLabel } from '@op/sense/Field';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import {
   InputGroup,
   InputGroupAddon,
@@ -29,6 +29,7 @@ import { ProposalCard } from '@op/sense/ProposalCard';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
+import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
 import { type ReactNode, Suspense, useMemo, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
@@ -78,6 +79,7 @@ export function MergeProposalDialog({
   const [step, setStep] = useState<MergeStep>('select');
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [note, setNote] = useState('');
   const { merge, isMerging } = useProposalMergeActions();
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
@@ -89,6 +91,7 @@ export function MergeProposalDialog({
       setStep('select');
       setTarget(null);
       setSearchTerm('');
+      setNote('');
     }
     onOpenChange(nextOpen);
   };
@@ -104,6 +107,7 @@ export function MergeProposalDialog({
         sourceTitle,
         targetProposalId: target.id,
         targetTitle: target.title,
+        note,
       });
       handleOpenChange(false);
     } catch (error) {
@@ -214,6 +218,9 @@ export function MergeProposalDialog({
           <ConfirmMergeStep
             sourceTitle={sourceTitle}
             targetTitle={target?.title ?? ''}
+            authorName={proposal.submittedBy?.name}
+            note={note}
+            onNoteChange={setNote}
             isMerging={isMerging}
             onBack={() => setStep('select')}
             onConfirm={handleConfirm}
@@ -236,12 +243,19 @@ export function MergeProposalDialog({
 function ConfirmMergeStep({
   sourceTitle,
   targetTitle,
+  authorName,
+  note,
+  onNoteChange,
   isMerging,
   onBack,
   onConfirm,
 }: {
   sourceTitle: string;
   targetTitle: string;
+  /** Superseded proposal's author, named in the note's label. Absent when anonymous. */
+  authorName?: string;
+  note: string;
+  onNoteChange: (note: string) => void;
   isMerging: boolean;
   onBack: () => void;
   onConfirm: () => void;
@@ -274,6 +288,35 @@ function ConfirmMergeStep({
             </li>
           </ul>
         </div>
+
+        <Separator />
+
+        <Field>
+          <FieldLabel htmlFor="merge-note">
+            {authorName
+              ? t('Add a note for {name}', { name: authorName })
+              : t('Add a note')}{' '}
+            <span className="font-normal text-muted-foreground">
+              {t('Optional')}
+            </span>
+          </FieldLabel>
+          <Textarea
+            id="merge-note"
+            value={note}
+            maxLength={MERGE_NOTE_MAX_LENGTH}
+            onChange={(event) => onNoteChange(event.target.value)}
+            placeholder={t(
+              'Explain why these proposals were merged. This will be included in their notification.',
+            )}
+            className="min-h-24"
+          />
+          <FieldDescription>
+            {t('{count} of {max} characters', {
+              count: note.length,
+              max: MERGE_NOTE_MAX_LENGTH,
+            })}
+          </FieldDescription>
+        </Field>
       </div>
 
       <DialogFooter>

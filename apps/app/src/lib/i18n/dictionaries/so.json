@@ -1575,5 +1575,9 @@
   "What happens:": "Waxa dhacaya:",
   "Merge <source>{name}</source> into <source>{target}</source>.": "Ku biiri <source>{name}</source> <source>{target}</source>.",
   "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> waxaa laga saarayaa liiska soo-jeedinnada firfircoon. Boggeeda wuu sii muuqdayaa diiwaan ahaan.",
-  "Merged into <target>{name}</target>": "Lala biiriyay <target>{name}</target>"
+  "Merged into <target>{name}</target>": "Lala biiriyay <target>{name}</target>",
+  "Add a note for {name}": "Ku dar qoraal {name}",
+  "Add a note": "Ku dar qoraal",
+  "Explain why these proposals were merged. This will be included in their notification.": "Sharax sababta loo biiriyay soo-jeedinnadan. Tan waxaa lagu darayaa ogeysiiskooda.",
+  "{count} of {max} characters": "{count} ka mid ah {max} xaraf"
 }

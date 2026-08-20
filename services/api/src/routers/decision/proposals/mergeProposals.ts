@@ -17,6 +17,7 @@ export const mergeProposalsRouter = router({
         await mergeProposals({
           sourceProposalId: input.sourceProposalId,
           targetProposalId: input.targetProposalId,
+          note: input.note,
           user: ctx.user,
         });
 
