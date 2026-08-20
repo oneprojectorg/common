@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ASSETS_BUCKET } from '../../../utils/storage';
 import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
@@ -16,13 +17,19 @@ import {
 // is what produced the dead-download-link bug these tests pin down.
 
 describe('EXPORTS_BUCKET', () => {
-  // Exports share the public `assets` bucket by deliberate choice: no separate
-  // bucket has to be provisioned per environment. The trade is that an export
-  // object is readable by anyone holding its path — next.config.mjs rewrites
-  // /assets/* to the bucket's public object root — so the unguessable file name
-  // is the access control, and the signed URLs are only link expiry.
-  it('is the shared `assets` bucket', () => {
-    expect(EXPORTS_BUCKET).toBe('assets');
+  // An export CSV carries proposal submitter names, so it gets its own private
+  // bucket. It used to share `assets`, which is public — next.config.mjs
+  // rewrites /assets/* to that bucket's public object root — so an export was
+  // readable by any anonymous caller holding the path and the signed URLs
+  // downstream gated nothing. Keeping these two assertions separate is
+  // deliberate: the second is the security property, and it must keep failing
+  // if someone re-aliases this back to the shared bucket.
+  it('is the private `exports` bucket', () => {
+    expect(EXPORTS_BUCKET).toBe('exports');
+  });
+
+  it('is not the public assets bucket', () => {
+    expect(EXPORTS_BUCKET).not.toBe(ASSETS_BUCKET);
   });
 });
 

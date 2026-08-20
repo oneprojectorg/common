@@ -2,7 +2,7 @@ import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { createSBServerClient } from '@op/supabase/server';
+import { createSBServiceClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -36,7 +36,10 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
-  logger: { info: (message: string, meta?: any) => void };
+  logger: {
+    info: (message: string, meta?: any) => void;
+    error: (message: string, meta?: any) => void;
+  };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache
   const key = exportStatusCacheKey(exportId);
@@ -94,19 +97,39 @@ export const getExportStatus = async ({
         exportStatus.fileName,
       );
 
-      const supabase = await createSBServerClient();
+      // Service-role client: `EXPORTS_BUCKET` is private and carries no
+      // `storage.objects` policies, so a caller-scoped client cannot see the
+      // object and its `createSignedUrl` fails. Signing here is safe because
+      // everything this read has to authorize is already done above — the
+      // record's own ownership check, then `assertProfileAccess` for
+      // `decisions: ADMIN` on the owning profile.
+      const supabase = createSBServiceClient();
       const { data: urlData, error: urlError } = await supabase.storage
         .from(EXPORTS_BUCKET)
         .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
 
-      if (!urlError && urlData) {
-        exportStatus.signedUrl = urlData.signedUrl;
-        exportStatus.urlExpiresAt = new Date(
-          Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
-        ).toISOString();
+      if (urlError || !urlData) {
+        // A signature is the only way to read a private export, so a failed
+        // refresh means there is no usable link — and this used to be swallowed,
+        // leaving the lapsed URL on the record for the client to render as a
+        // download that 400s. Report it and drop the URL instead: the button
+        // falls back to its retryable state, and the cached record is left
+        // untouched so the next read tries again rather than persisting the
+        // failure.
+        logger.error('Failed to refresh export signed URL', {
+          error: urlError,
+          exportId,
+        });
 
-        await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
+        return { ...exportStatus, signedUrl: undefined };
       }
+
+      exportStatus.signedUrl = urlData.signedUrl;
+      exportStatus.urlExpiresAt = new Date(
+        Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
+      ).toISOString();
+
+      await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
     }
   }
 

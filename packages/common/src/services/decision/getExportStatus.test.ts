@@ -15,7 +15,7 @@ vi.mock('@op/db/client', () => ({
 }));
 
 vi.mock('@op/supabase/server', () => ({
-  createSBServerClient: vi.fn(),
+  createSBServiceClient: vi.fn(),
 }));
 
 vi.mock('../assert', () => ({
@@ -24,10 +24,10 @@ vi.mock('../assert', () => ({
 
 import { get, set } from '@op/cache';
 import { db } from '@op/db/client';
-import { createSBServerClient } from '@op/supabase/server';
+import { createSBServiceClient } from '@op/supabase/server';
 
-import { ASSETS_BUCKET } from '../../utils/storage';
 import {
+  EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
   exportFilePath,
@@ -40,7 +40,7 @@ const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const NOW = new Date('2026-08-10T12:00:00.000Z');
 
 const user = { id: AUTH_USER_ID } as never;
-const logger = { info: vi.fn() };
+const logger = { info: vi.fn(), error: vi.fn() };
 
 const createSignedUrl = vi.fn();
 
@@ -76,7 +76,7 @@ beforeEach(() => {
     data: { signedUrl: 'https://storage.example/fresh-url' },
     error: null,
   });
-  vi.mocked(createSBServerClient).mockResolvedValue({
+  vi.mocked(createSBServiceClient).mockReturnValue({
     storage: { from: () => ({ createSignedUrl }) },
   } as never);
 });
@@ -101,28 +101,58 @@ describe('getExportStatus', () => {
     });
   });
 
-  // Pinned against the shared bucket by name rather than against the export
-  // constant, which would compare it to itself and hold whatever it was
-  // changed to. Repointing exports at a bucket of their own is what this has
-  // to catch: it reads as a security improvement, but nothing in the
-  // repository provisions such a bucket, so every hosted environment silently
-  // loses the feature until someone creates it by hand. That is why exports
-  // share the public bucket, and why the unguessable file name — not the
-  // signature — is what limits access to them.
-  it('signs against the shared public bucket, at the instance-scoped path', async () => {
+  // The bucket is asserted through the constant rather than by name: which
+  // bucket is private is `EXPORTS_BUCKET`'s business (and its own test pins it
+  // away from the public one), while what this owns is that the refresh signs
+  // in the export bucket and at the instance-scoped path.
+  //
+  // The client matters as much as the bucket. `EXPORTS_BUCKET` is private and
+  // there are no `storage.objects` RLS policies, so a caller-scoped client
+  // cannot see the object at all and its `createSignedUrl` fails. This used to
+  // sign with `createSBServerClient` and got away with it only because the
+  // bucket was public. Authorization for this read is already complete by the
+  // time we sign — record ownership, then `assertProfileAccess` for
+  // `decisions: ADMIN` — so the service-role client is signing a request that
+  // has been checked, which is how every other signing site in the repository
+  // is built.
+  it('signs with the service-role client, in the export bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
-    vi.mocked(createSBServerClient).mockResolvedValue({
+    vi.mocked(createSBServiceClient).mockReturnValue({
       storage: { from: storageFrom },
     } as never);
 
     await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(storageFrom).toHaveBeenCalledWith(ASSETS_BUCKET);
+    expect(createSBServiceClient).toHaveBeenCalled();
+    expect(storageFrom).toHaveBeenCalledWith(EXPORTS_BUCKET);
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
     );
+  });
+
+  // A failed re-sign used to be swallowed, which left the lapsed URL on the
+  // record and handed the admin a download button that 400s — the signature is
+  // dead whether or not the bucket is public. Now that the signature is the
+  // only way to read the object, that silence is also the one way access can
+  // break, so it has to be visible in the logs and must not be dressed up as a
+  // working link. Dropping the URL returns the button to its retryable state.
+  it('reports a failed re-sign instead of returning the lapsed URL', async () => {
+    vi.mocked(get).mockResolvedValue(expiredRecord());
+    createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(logger.error).toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 'completed' });
+    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+    // The stale record is left in the cache rather than rewritten, so the next
+    // read retries the refresh instead of persisting the failure.
+    expect(set).not.toHaveBeenCalled();
   });
 
   // The original bug: the recorded expiry claimed 24h while the URL itself was
