@@ -18,7 +18,6 @@ import {
   collectProposalBodyDoc,
   resolveBudgetOverride,
   resolveDocumentFieldValues,
-  TEXT_FORMATS,
 } from '../proposalListPreview';
 import { tiptapDocToPlainText } from '../tiptapDocToPlainText';
 import type { ProposalTemplateSchema, XFormatPropertySchema } from '../types';
@@ -142,17 +141,27 @@ interface CustomFieldColumn {
 
 /**
  * A process's custom template fields — anything beyond the fixed
- * title/description/budget/category/location columns above, e.g. a dropdown
- * or a second money field a process author added. These previously had no
- * column at all, so their values were silently dropped from the export:
- * every process "with multiple parts to their template" lost everything but
- * its default fields.
+ * title/description/budget/category/location columns above, e.g. a second
+ * long-text question, a dropdown, or a money field a process author added.
+ * These previously had no column at all, so their values were silently
+ * dropped from the export: every process "with multiple parts to their
+ * template" lost everything but its default fields.
+ *
+ * Every `rest` field gets its own column here, including `short-text`/
+ * `long-text` ones — the template builder's "Add field" always starts a new
+ * field as `short-text`, so the ordinary way a process ends up with
+ * "multiple parts" is a second or third text question ("Problem statement",
+ * "Proposed solution", ...), not a dropdown or money field. Excluding text
+ * formats here on the theory that `collectProposalBodyDoc` already covers
+ * them was the bug: that function folds every text-format field into one
+ * `Description` cell with no separator between them, so a second text field
+ * is not merely duplicated by omitting it here — it disappears as anything
+ * a reader could attribute to its own question. This deliberately duplicates
+ * that field's text into both `Description` (unchanged, for backward
+ * compatibility) and its own column.
  *
  * `location`-keyed fields are excluded: that key already has dedicated
- * Address/Latitude/Longitude columns above. Text-format fields (`short-text`/
- * `long-text`, and any field with no `x-format` at all) are excluded too —
- * `collectProposalBodyDoc` already folds those into `Description`, and
- * duplicating them here would just repeat the same content in two columns.
+ * Address/Latitude/Longitude columns above.
  */
 function getCustomFieldColumns(
   proposalTemplate: ProposalTemplateSchema | null | undefined,
@@ -165,10 +174,6 @@ function getCustomFieldColumns(
 
   return getProposalTemplateFieldOrder(proposalTemplate)
     .rest.filter((key) => key !== 'location')
-    .filter((key) => {
-      const format = properties[key]?.['x-format'];
-      return format !== undefined && !TEXT_FORMATS.has(format);
-    })
     .map((key) => ({
       key,
       header: getSchemaFieldTitle(properties[key], key),
@@ -216,12 +221,14 @@ function formatCustomFieldValue(
   }
 
   if (typeof value === 'object') {
-    // `getCustomFieldColumns` only ever hands this an `x-format` of `money`
-    // or `location` — dispatch on it explicitly, the same way
-    // `assembleProposalData` does for the live-document path, rather than
-    // guessing the shape by trying both normalizers in turn: a malformed
-    // `money` value that happens to have `lat`/`lng`-shaped junk should fall
-    // through to the JSON dump below, not get misread as a location.
+    // A resolved value only reaches this branch as an object for `money`/
+    // `location` fields (every other format resolves to a string or array,
+    // handled above) — dispatch on the field's own `x-format` explicitly,
+    // the same way `assembleProposalData` does for the live-document path,
+    // rather than guessing the shape by trying both normalizers in turn: a
+    // malformed `money` value that happens to have `lat`/`lng`-shaped junk
+    // should fall through to the JSON dump below, not get misread as a
+    // location.
     if (schema?.['x-format'] === 'money') {
       const budget = normalizeBudget(value);
       if (budget) {

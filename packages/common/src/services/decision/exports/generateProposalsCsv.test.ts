@@ -450,6 +450,52 @@ describe('generateProposalsCsv custom template fields', () => {
     'x-field-order': ['title', 'budget', 'summary', 'priority', 'stipend'],
   };
 
+  /**
+   * The real-world shape behind the bug report: the template builder's "Add
+   * field" always starts a new field as `short-text`, so the ordinary way an
+   * author adds "multiple parts to their template" is a second (or third)
+   * long-text/short-text question — "Problem statement", "Proposed
+   * solution", "Budget justification" — not a dropdown or money field.
+   * `collectProposalBodyDoc` mashes every text-format field into one
+   * unlabeled `Description` blob with no separator, so from the author's
+   * side this is indistinguishable from every field but one going missing.
+   */
+  const templateWithTwoTextFields: ProposalTemplateSchema = {
+    ...template,
+    properties: {
+      ...template.properties,
+      details: {
+        type: 'string',
+        title: 'Details',
+        'x-format': 'long-text',
+      },
+    },
+    'x-field-order': ['title', 'budget', 'summary', 'details'],
+  };
+
+  it('gives a second long-text field its own column instead of only merging it into Description', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithTwoTextFields,
+        proposalData: { category: [], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            details: paragraph('Full budget breakdown attached.'),
+          },
+        },
+      }),
+    ]);
+
+    const row = parseSingleRow(csv);
+    expect(row['Details']).toBe('Full budget breakdown attached.');
+    // Description keeps its existing merged-blob behavior for
+    // backward compatibility — this isn't a replacement for it.
+    expect(row.Description).toContain('Protected lanes from 1st to 9th.');
+    expect(row.Description).toContain('Full budget breakdown attached.');
+  });
+
   it('exports a custom dropdown field resolved from the live document', async () => {
     const csv = await generateProposalsCsv([
       makeProposal({
