@@ -1,9 +1,23 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { toast } from '@op/sense/Toast';
 
 import { useTranslations } from '@/lib/i18n';
+
+/**
+ * Gates the whole merge feature: both `…` menu entries and the "Merged into"
+ * record in the proposal header.
+ *
+ * One hook rather than three inlined flag reads, so the surfaces can't disagree
+ * about whether merging exists and retiring the flag is a single deletion.
+ * Defaults to off — `useFeatureFlagEnabled` returns `undefined` until PostHog
+ * has loaded, and an admin action shouldn't flicker into view.
+ */
+export function useMergeProposalsEnabled(): boolean {
+  return useFeatureFlag('merge-proposals') ?? false;
+}
 
 /** Reads as "source merges into target": the source is superseded, the target survives. */
 export interface MergeTarget {

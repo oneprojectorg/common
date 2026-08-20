@@ -16,7 +16,10 @@ import {
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
 import { getProposalDisplayTitle } from './mergeCandidates';
-import { useProposalMergeActions } from './useProposalMergeActions';
+import {
+  useMergeProposalsEnabled,
+  useProposalMergeActions,
+} from './useProposalMergeActions';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -48,13 +51,15 @@ export function ProposalAdminMenu({
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
   const { unmerge, isUnmerging } = useProposalMergeActions();
+  const mergeEnabled = useMergeProposalsEnabled();
 
   // Figma puts the merge record in the header as a plain link, so the way back
   // lives here: a superseded proposal is filtered out of every listing, and its
-  // own page is the only surface that can offer the undo.
+  // own page is the only surface that can offer the undo. Skipped entirely
+  // behind the flag, so a flag-off page makes no extra request.
   const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
     { sourceProposalId: proposal.id },
-    { enabled: proposal.access?.admin === true },
+    { enabled: mergeEnabled && proposal.access?.admin === true },
   );
   const supersededBy = mergedAway?.relationships[0];
 
@@ -67,11 +72,12 @@ export function ProposalAdminMenu({
 
   const triggerLabel = t('Proposal options');
 
-  const items: ProposalOptionsMenuItem[] = [
-    // Merge leads, matching the card kebab's Figma order (15311:9078). Once
-    // merged, the same slot offers the undo — the server rejects merging a
-    // proposal that already has an outgoing edge, so both would never apply.
-    supersededBy
+  // Merge leads, matching the card kebab's Figma order (15311:9078). Once
+  // merged, the same slot offers the undo — the server rejects merging a
+  // proposal that already has an outgoing edge, so the two never apply at once.
+  const mergeItem: ProposalOptionsMenuItem | null = !mergeEnabled
+    ? null
+    : supersededBy
       ? {
           key: 'unmerge',
           icon: <LuMerge className="size-5" />,
@@ -98,7 +104,10 @@ export function ProposalAdminMenu({
           label: t('Merge with another proposal'),
           onAction: () => setIsMergeModalOpen(true),
           isDisabled: isLoading,
-        },
+        };
+
+  const items: ProposalOptionsMenuItem[] = [
+    ...(mergeItem ? [mergeItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -132,7 +141,7 @@ export function ProposalAdminMenu({
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
       />
-      {supersededBy ? null : (
+      {!mergeEnabled || supersededBy ? null : (
         <MergeProposalDialog
           proposal={proposal}
           open={isMergeModalOpen}

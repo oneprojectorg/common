@@ -12,6 +12,7 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
+import { useMergeProposalsEnabled } from '../useProposalMergeActions';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
@@ -35,7 +36,9 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
-  const canMerge = canManage && proposal.status !== ProposalStatus.DRAFT;
+  const mergeEnabled = useMergeProposalsEnabled();
+  const canMerge =
+    mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
 
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
