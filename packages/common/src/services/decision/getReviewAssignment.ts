@@ -19,6 +19,10 @@ import {
   resolveAssignmentProposal,
 } from './reviewHelpers';
 import {
+  getCurrentProposalHistoryId,
+  isReviewOutOfDate,
+} from './reviewStaleness';
+import {
   type ReviewAssignmentExtended,
   reviewAssignmentExtendedSchema,
 } from './schemas/reviews';
@@ -44,27 +48,32 @@ export async function getReviewAssignment({
     instance.process.id,
   );
 
-  const [relationshipInfo, documentContentMap, proposalAttachments] =
-    await Promise.all([
-      getProposalRelationshipInfo({
-        profileId: assignment.proposal.profileId,
-        viewerProfileId: assignment.reviewerProfileId,
-      }),
-      getProposalDocumentsContent(
-        [
-          {
-            id: proposalSnapshot.id,
-            proposalData: proposalSnapshot.proposalData,
-            proposalTemplate,
-            collaborationDocVersionId:
-              proposalSnapshot.proposalData.collaborationDocVersionId,
-          },
-        ],
-        // Tolerate an unavailable document rather than failing the review view.
-        { onFetchError: 'omit' },
-      ),
-      getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
-    ]);
+  const [
+    relationshipInfo,
+    documentContentMap,
+    proposalAttachments,
+    currentProposalHistoryId,
+  ] = await Promise.all([
+    getProposalRelationshipInfo({
+      profileId: assignment.proposal.profileId,
+      viewerProfileId: assignment.reviewerProfileId,
+    }),
+    getProposalDocumentsContent(
+      [
+        {
+          id: proposalSnapshot.id,
+          proposalData: proposalSnapshot.proposalData,
+          proposalTemplate,
+          collaborationDocVersionId:
+            proposalSnapshot.proposalData.collaborationDocVersionId,
+        },
+      ],
+      // Tolerate an unavailable document rather than failing the review view.
+      { onFetchError: 'omit' },
+    ),
+    getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
+    getCurrentProposalHistoryId(assignment.proposalId, db),
+  ]);
 
   const documentContent = documentContentMap.get(proposalSnapshot.id);
 
@@ -97,6 +106,11 @@ export async function getReviewAssignment({
     review,
     revisionRequest,
     canEditReview: canEditSubmittedReview({ assignment, instance, review }),
+    isReviewOutOfDate: isReviewOutOfDate({
+      assignment,
+      review,
+      currentProposalHistoryId,
+    }),
   });
 }
 

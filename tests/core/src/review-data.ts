@@ -6,6 +6,7 @@ import {
   categoryReviewers,
   decisionProcesses,
   proposalCategories,
+  proposalHistory,
   proposalReviewAssignments,
   proposalReviewRequests,
   proposalReviews,
@@ -13,7 +14,7 @@ import {
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { and, db, eq } from '@op/db/test';
+import { and, db, eq, sql } from '@op/db/test';
 
 import { type CreateProposalResult, createProposal } from './decision-data';
 
@@ -84,6 +85,65 @@ export async function getLatestProposalHistoryId(opts: {
   }
 
   return latestHistory.historyId;
+}
+
+/**
+ * Returns the proposal's *current* history row ID — the open temporal range
+ * (`upper(valid_during) IS NULL`) the history trigger keeps in step with the
+ * live proposal row. This is the row review staleness is measured against.
+ */
+export async function getCurrentProposalHistoryId(opts: {
+  proposalId: string;
+}): Promise<string> {
+  const [current] = await db
+    .select({ historyId: proposalHistory.historyId })
+    .from(proposalHistory)
+    .where(
+      and(
+        eq(proposalHistory.id, opts.proposalId),
+        sql`upper(${proposalHistory.validDuring}) IS NULL`,
+      ),
+    )
+    .limit(1);
+
+  if (!current?.historyId) {
+    throw new Error(
+      `Expected an open proposal history row for proposal: ${opts.proposalId}`,
+    );
+  }
+
+  return current.historyId;
+}
+
+/**
+ * Edits a proposal's `proposalData`, which fires the history trigger: the
+ * current snapshot closes and a new open one takes its place. This is how a
+ * proposal moves on from what a reviewer already reviewed. Returns the new
+ * current history row ID.
+ */
+export async function reviseProposal(opts: {
+  proposalId: string;
+  proposalData?: Record<string, unknown>;
+}): Promise<string> {
+  const existing = await db.query.proposals.findFirst({
+    where: { id: opts.proposalId },
+  });
+
+  if (!existing) {
+    throw new Error(`Proposal not found: ${opts.proposalId}`);
+  }
+
+  await db
+    .update(proposals)
+    .set({
+      proposalData: {
+        ...(existing.proposalData as Record<string, unknown>),
+        ...(opts.proposalData ?? { revisedAt: new Date().toISOString() }),
+      },
+    })
+    .where(eq(proposals.id, opts.proposalId));
+
+  return getCurrentProposalHistoryId({ proposalId: opts.proposalId });
 }
 
 export interface CreateReviewAssignmentOptions {
