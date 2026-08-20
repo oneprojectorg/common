@@ -48,6 +48,11 @@ interface ReviewFormState {
   /** Update button is enabled — editing an already-submitted review with a valid rubric. */
   canUpdate: boolean;
   isPausedForRevision: boolean;
+  /**
+   * The submitted review predates the proposal's current version — the reviewer
+   * has to re-affirm it (via "Update review") for it to count as current.
+   */
+  isReviewOutOfDate: boolean;
   revisionRequest: ProposalReviewRequest | null;
   isOwnRevisionRequest: boolean;
   canRequestRevision: boolean;
@@ -128,8 +133,14 @@ function ReviewFormProviderInner({
     { refetchOnMount: 'always' },
   );
 
-  const { rubricTemplate, review, revisionRequest, assignment, canEditReview } =
-    reviewAssignment;
+  const {
+    rubricTemplate,
+    review,
+    revisionRequest,
+    assignment,
+    canEditReview,
+    isReviewOutOfDate,
+  } = reviewAssignment;
 
   if (!rubricTemplate) {
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
@@ -341,6 +352,7 @@ function ReviewFormProviderInner({
       isUpdating: updateReview.isPending,
       canUpdate,
       isPausedForRevision,
+      isReviewOutOfDate,
       revisionRequest: effectiveRevisionRequest,
       isOwnRevisionRequest,
       canRequestRevision,
@@ -369,6 +381,7 @@ function ReviewFormProviderInner({
       isEditing,
       updateReview.isPending,
       isPausedForRevision,
+      isReviewOutOfDate,
       effectiveRevisionRequest,
       isOwnRevisionRequest,
       canRequestRevision,
