@@ -1,5 +1,3 @@
-import { processInstances } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import { createDecisionInstance, getSeededTemplate } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
@@ -17,33 +15,18 @@ test('current-phase hero falls back to default copy when the phase headline is c
 }) => {
   const template = await getSeededTemplate();
 
+  // createDecisionInstance opens on the first phase, so that's the one whose
+  // headline has to be cleared for the current-phase hero to render it.
+  const currentPhaseId = template.processSchema.phases[0].id;
+
   const instance = await createDecisionInstance({
     processId: template.id,
     ownerProfileId: org.organizationProfile.id,
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
     schema: template.processSchema,
+    phaseHeadlines: { [currentPhaseId]: '' },
   });
-
-  const phases = (
-    instance.instance.instanceData as { phases: { phaseId: string }[] }
-  ).phases;
-
-  // Simulate an admin clearing the current phase's headline field —
-  // mirroring a select-all-and-delete in the process builder.
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...(instance.instance.instanceData as Record<string, unknown>),
-        phases: phases.map((phase) =>
-          phase.phaseId === instance.instance.currentStateId
-            ? { ...phase, headline: '' }
-            : phase,
-        ),
-      },
-    })
-    .where(eq(processInstances.id, instance.instance.id));
 
   await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
     waitUntil: 'domcontentloaded',
