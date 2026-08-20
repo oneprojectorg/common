@@ -451,3 +451,18 @@ export function schemaAllowsMultipleSelection(
     (Array.isArray(schema.type) && schema.type.includes('array'))
   );
 }
+
+/**
+ * User-friendly display name for a template field: its schema `title`,
+ * falling back to the field key capitalized. Shared by anything that turns
+ * a template field key into a label a person reads (validation error
+ * messages, export column headers).
+ */
+export function getSchemaFieldTitle(
+  schema: XFormatPropertySchema | null | undefined,
+  key: string,
+): string {
+  // `||`, not `??` — an explicitly empty `title` is as unusable as a missing
+  // one, and should fall back the same way.
+  return schema?.title || key.charAt(0).toUpperCase() + key.slice(1);
+}

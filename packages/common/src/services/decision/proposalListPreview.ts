@@ -18,7 +18,10 @@ import type { ProposalTemplateSchema, XFormat } from './types';
 export const PROPOSAL_PREVIEW_MAX_LENGTH = 2000;
 
 /** `x-format` values that represent rich-text editor content suitable for preview. */
-const TEXT_FORMATS: ReadonlySet<XFormat> = new Set(['short-text', 'long-text']);
+export const TEXT_FORMATS: ReadonlySet<XFormat> = new Set([
+  'short-text',
+  'long-text',
+]);
 
 /**
  * Single cast point at the TipTap REST boundary: the API types fragment

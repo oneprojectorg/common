@@ -418,3 +418,190 @@ describe('generateProposalsCsv budget/category/location columns', () => {
     expect(parseSingleRow(csv).Address).toBe('456 Elm St');
   });
 });
+
+describe('generateProposalsCsv custom template fields', () => {
+  /**
+   * A process author added a "Priority Level" dropdown and a "Volunteer
+   * Stipend" money field on top of the default title/summary/budget
+   * fields — the "process that has multiple parts to their template"
+   * shape reported as broken: any template field beyond the fixed
+   * title/description/budget/category/location set had no column at all,
+   * so its value never made it into the export.
+   */
+  const templateWithCustomFields: ProposalTemplateSchema = {
+    ...template,
+    properties: {
+      ...template.properties,
+      priority: {
+        type: 'string',
+        title: 'Priority Level',
+        'x-format': 'dropdown',
+        oneOf: [
+          { const: 'high', title: 'High' },
+          { const: 'low', title: 'Low' },
+        ],
+      },
+      stipend: {
+        type: 'object',
+        title: 'Volunteer Stipend',
+        'x-format': 'money',
+      },
+    },
+    'x-field-order': ['title', 'budget', 'summary', 'priority', 'stipend'],
+  };
+
+  it('exports a custom dropdown field resolved from the live document', async () => {
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithCustomFields,
+        proposalData: { category: [], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            priority: paragraph('high'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv)['Priority Level']).toBe('High');
+  });
+
+  it('falls back to the snapshot for a custom field with no document fragment', async () => {
+    // Custom template fields aren't known `ProposalData` keys, so this can't
+    // be a plain object literal without failing the excess-property check;
+    // `Object.assign` builds the same shape without tripping it.
+    const proposalDataWithStipend = Object.assign(
+      { category: [], attachmentIds: [] },
+      { stipend: { amount: 250, currency: 'USD' } },
+    );
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithCustomFields,
+        proposalData: proposalDataWithStipend,
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv)['Volunteer Stipend']).toBe('250 USD');
+  });
+
+  it('disambiguates a custom field header that collides with a fixed column', async () => {
+    const templateWithStatusField: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        status: {
+          type: 'string',
+          title: 'Status',
+          'x-format': 'dropdown',
+          oneOf: [{ const: 'green', title: 'Green' }],
+        },
+      },
+      'x-field-order': ['title', 'budget', 'summary', 'status'],
+    };
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithStatusField,
+        proposalData: { category: [], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            status: paragraph('green'),
+          },
+        },
+      }),
+    ]);
+
+    const [headers = [], values = []] = parseCsv(csv.trim());
+    // The real proposal status ("submitted") keeps the plain "Status"
+    // header; the custom field that happens to share that title must not
+    // silently overwrite it in a header-keyed reader.
+    expect(values[headers.indexOf('Status')]).toBe('submitted');
+    expect(values[headers.indexOf('Status (status)')]).toBe('Green');
+  });
+
+  it('disambiguates two custom fields that share the same display title', async () => {
+    const templateWithDuplicateTitles: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        notesA: {
+          type: 'string',
+          title: 'Notes',
+          'x-format': 'dropdown',
+          oneOf: [{ const: 'a', title: 'Option A' }],
+        },
+        notesB: {
+          type: 'string',
+          title: 'Notes',
+          'x-format': 'dropdown',
+          oneOf: [{ const: 'b', title: 'Option B' }],
+        },
+      },
+      'x-field-order': ['title', 'budget', 'summary', 'notesA', 'notesB'],
+    };
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithDuplicateTitles,
+        proposalData: { category: [], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            notesA: paragraph('a'),
+            notesB: paragraph('b'),
+          },
+        },
+      }),
+    ]);
+
+    const [headers = [], values = []] = parseCsv(csv.trim());
+    expect(values[headers.indexOf('Notes')]).toBe('Option A');
+    expect(values[headers.indexOf('Notes (notesB)')]).toBe('Option B');
+  });
+
+  it('resolves a numeric-looking option const to its display title', async () => {
+    const templateWithRadioField: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        likelihood: {
+          type: 'string',
+          title: 'Likelihood to recommend',
+          'x-format': 'radio',
+          oneOf: [{ const: '5', title: 'Extremely likely' }],
+        },
+      },
+      'x-field-order': ['title', 'budget', 'summary', 'likelihood'],
+    };
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithRadioField,
+        proposalData: { category: [], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            likelihood: paragraph('5'),
+          },
+        },
+      }),
+    ]);
+
+    expect(parseSingleRow(csv)['Likelihood to recommend']).toBe(
+      'Extremely likely',
+    );
+  });
+});
