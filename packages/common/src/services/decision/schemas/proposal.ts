@@ -170,23 +170,15 @@ export const proposalListSchema = z.object({
 export type ProposalList = z.infer<typeof proposalListSchema>;
 
 /**
- * Cap on a proposal title search, in characters.
- *
- * Bounds the LIKE pattern the query builds. Matches the title cap it searches
- * against — a term longer than any title it could match is only cost. The
- * endpoint truncates a longer query rather than rejecting it, so a paste past
- * the limit still searches on its first {@link PROPOSAL_SEARCH_MAX_LENGTH}
- * characters.
+ * Cap on a proposal title search, in characters. Matches the title cap it
+ * searches against — a term longer than any title it could match is only cost.
  */
 export const PROPOSAL_SEARCH_MAX_LENGTH = PROPOSAL_TITLE_MAX_LENGTH;
 
 /**
- * Free-text proposal title search.
- *
- * Truncated rather than rejected: an over-long paste is a normal thing to do in
- * a search field, and the tail past a full title's worth of characters could
- * not have matched anything anyway. The word cap in the query builder truncates
- * on the same principle. Shared by every proposal list endpoint's filter.
+ * Free-text proposal title search, shared by every list endpoint's filter.
+ * Truncated rather than rejected: an over-long paste is normal in a search
+ * field, and the tail past a full title's length could not have matched.
  */
 export const proposalSearchSchema = z
   .string()

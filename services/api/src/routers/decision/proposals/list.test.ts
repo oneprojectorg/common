@@ -2616,8 +2616,7 @@ describe.concurrent('listProposals: search', () => {
     });
 
     expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
-    // `total` is the count for the active filter, not the pool — the grid's
-    // "N of M" header and keyset pagination both read it.
+    // `total` counts the filtered set, not the whole pool.
     expect(result.total).toBe(1);
     expect(result.proposals.map((p) => p.id)).not.toContain(second.id);
   });
@@ -2690,9 +2689,8 @@ describe.concurrent('listProposals: search', () => {
       createAuthenticatedCaller(setup.userEmail),
     ]);
 
-    // The editor's autosave sends `title` alongside `proposalData` and never
-    // rewrites `proposalData.title` — so the row's JSON keeps the creation-time
-    // value while the real title moves on.
+    // Autosave sends `title` alongside `proposalData` but never rewrites
+    // `proposalData.title`, so the row's JSON keeps the creation-time value.
     await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: { title: 'Bicycle Parking Expansion' },
@@ -2742,17 +2740,16 @@ describe.concurrent('listProposals: search', () => {
       'Downtown Mural',
     ]);
 
-    // The 11th word matches nothing, but is dropped before it becomes a
-    // predicate — so the proposal still comes back. Were the cap absent this
-    // would (correctly) return zero rows; the assertion pins the truncation.
+    // The 11th word matches nothing but is dropped before it becomes a
+    // predicate, so the proposal still comes back.
     const overCap = await caller.decision.listProposals({
       processInstanceId: instanceId,
       search: `${tenWords} zzzznomatch`,
     });
     expect(overCap.proposals.map((p) => p.id)).toEqual([first.id]);
 
-    // Within the cap the same unmatched word is honoured, proving the widening
-    // above comes from the cap and not from the word being ignored generally.
+    // Inside the cap the same word does filter — so it was the cap, not the
+    // word being ignored generally.
     const underCap = await caller.decision.listProposals({
       processInstanceId: instanceId,
       search: 'one zzzznomatch',
@@ -2770,8 +2767,8 @@ describe.concurrent('listProposals: search', () => {
       'Community Garden',
     ]);
 
-    // Padded so the non-matching word sits entirely past the cap. Truncation
-    // drops it and the title still matches; rejection would throw instead.
+    // The non-matching word sits entirely past the cap: truncation drops it
+    // and the title still matches, rejection would throw.
     const overCap =
       `Bike`.padEnd(PROPOSAL_SEARCH_MAX_LENGTH, ' ') + 'zzzznomatch';
     expect(overCap.length).toBeGreaterThan(PROPOSAL_SEARCH_MAX_LENGTH);
@@ -2782,8 +2779,7 @@ describe.concurrent('listProposals: search', () => {
     });
     expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
 
-    // The same word inside the cap does filter — so the match above is the
-    // truncation at work, not the word being ignored generally.
+    // Inside the cap the same word does filter — so it was the truncation.
     const withinCap = await caller.decision.listProposals({
       processInstanceId: instanceId,
       search: 'Bike zzzznomatch',

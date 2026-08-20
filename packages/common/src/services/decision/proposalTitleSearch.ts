@@ -1,50 +1,33 @@
 import { SQL, and, db, eq, exists, ilike } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
 
-// Match the query literally — unescaped, `%` matches every title.
+// Unescaped, `%` and `_` in the query act as wildcards.
 const escapeLikePattern = (value: string): string =>
   value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
-/**
- * Cap on the number of words a single query can turn into predicates.
- *
- * Past it the extra words are dropped rather than the query rejected, matching
- * how `PROPOSAL_SEARCH_MAX_LENGTH` truncates an over-long query. Both cuts only
- * ever widen an already-narrow match — dropping a word removes a conjunct, and
- * a character cut that lands mid-word leaves a shorter substring — so the
- * result stays a superset of what was asked for rather than silently losing
- * rows.
- */
+// Extra words are dropped, not rejected. Dropping a conjunct only widens the
+// match, so the result stays a superset of what was asked for.
 const MAX_SEARCH_WORDS = 10;
 
 const splitSearchWords = (search: string | undefined): string[] =>
   (search ?? '').split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_WORDS);
 
 /**
- * Builds the title-search predicate for a proposal list query, or `undefined`
- * when the query is empty or whitespace-only.
+ * Title-search predicate for a proposal list query; `undefined` for an empty or
+ * whitespace-only query.
  *
- * Shared by every proposal list endpoint so their search semantics — and the
- * counts they report alongside the page — can't diverge. Parameterized on the
- * table reference so callers can pass either the schema table or the
- * relationally-aliased table from a v2 `RAW` callback.
- *
- * Title lives in `profiles.name` (kept current by updateProposal's autosave).
+ * Titles live in `profiles.name`, kept current by updateProposal's autosave.
  * `proposalData.title` is frozen at creation — collab-doc titles resolve from a
  * TipTap fragment — so matching the JSON would match dead titles.
  *
- * Matching is `ILIKE '%word%'` per word, ANDed. `profiles_name_trgm_idx`
- * (GIN `gin_trgm_ops` on `profiles.name`) is what makes that affordable, and is
- * the reason this beats the `profiles.search` tsvector here: full-text search
- * matches only from word starts, so it could never find `ike` in "Bike", and
- * its vector is weighted over bio and mission as well as the name. A word under
- * three characters has no full trigram and falls back to a scan — bounded by
- * the phase-scoped proposal set the predicate correlates against.
+ * Per-word `ILIKE '%word%'`, ANDed: order-independent and mid-word, neither of
+ * which `profiles.search` can do (full-text matches from word starts, and its
+ * vector covers bio and mission too). `profiles_name_trgm_idx` is what makes
+ * the leading wildcard affordable; a word under three characters yields no
+ * trigram and falls back to a scan of the already phase-scoped set.
  *
- * Postgres normalizes the EXISTS into a semi-join and picks the driving side by
- * cost. The correlating equality is on `profiles`' primary key, so in practice
- * it drives from the already phase-scoped proposals, probes `profiles_pkey`,
- * and applies the ILIKE as a filter.
+ * `t` is a parameter so callers can pass the relational `RAW` alias as well as
+ * the schema table.
  */
 export const buildProposalTitleSearchCondition = (
   t: typeof proposals,
