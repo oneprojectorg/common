@@ -1,5 +1,5 @@
 import {
-  PROPOSAL_SEARCH_MAX_LENGTH,
+  proposalSearchSchema,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
   checkpointVersionSchema,
@@ -673,12 +673,6 @@ export const instanceFilterSchema = z
     search: z.string().optional(),
   })
   .extend(paginationInputSchema.shape);
-
-/** Free-text proposal title search. */
-const proposalSearchSchema = z
-  .string()
-  .max(PROPOSAL_SEARCH_MAX_LENGTH)
-  .optional();
 
 export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),

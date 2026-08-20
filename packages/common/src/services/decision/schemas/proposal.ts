@@ -174,10 +174,24 @@ export type ProposalList = z.infer<typeof proposalListSchema>;
  *
  * Bounds the LIKE pattern the query builds. Matches the title cap it searches
  * against — a term longer than any title it could match is only cost. The
- * search field enforces the same limit, so a paste past it is trimmed rather
- * than rejected by the endpoint.
+ * endpoint truncates a longer query rather than rejecting it, so a paste past
+ * the limit still searches on its first {@link PROPOSAL_SEARCH_MAX_LENGTH}
+ * characters.
  */
 export const PROPOSAL_SEARCH_MAX_LENGTH = PROPOSAL_TITLE_MAX_LENGTH;
+
+/**
+ * Free-text proposal title search.
+ *
+ * Truncated rather than rejected: an over-long paste is a normal thing to do in
+ * a search field, and the tail past a full title's worth of characters could
+ * not have matched anything anyway. The word cap in the query builder truncates
+ * on the same principle. Shared by every proposal list endpoint's filter.
+ */
+export const proposalSearchSchema = z
+  .string()
+  .transform((value) => value.slice(0, PROPOSAL_SEARCH_MAX_LENGTH))
+  .optional();
 
 /**
  * Response from `decision.listProposalLocations`. Every located proposal in the
@@ -202,6 +216,7 @@ export const allProposalsFilterSchema = z.object({
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
   submittedByProfileId: z.uuid().optional(),
+  search: proposalSearchSchema,
   // Restrict to the caller's ballot (self-only); used by the "My ballot" filter.
   votedByProfileId: z.uuid().optional(),
   dir: z.enum(['asc', 'desc']).optional(),
