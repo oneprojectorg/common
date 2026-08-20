@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
@@ -42,16 +41,12 @@ export function ProposalContentRenderer({
   location,
   translatedMeta,
 }: ProposalContentRendererProps) {
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
   const dynamicFields = useMemo(() => {
     if (!proposalTemplate) {
       return [];
     }
-    // The location field renders a map behind the `gis_maps` flag.
-    return compileProposalSchema(proposalTemplate).filter(
-      (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
-    );
-  }, [proposalTemplate, gisMapsEnabled]);
+    return compileProposalSchema(proposalTemplate).filter((f) => !f.isSystem);
+  }, [proposalTemplate]);
 
   if (dynamicFields.length === 0) {
     return null;

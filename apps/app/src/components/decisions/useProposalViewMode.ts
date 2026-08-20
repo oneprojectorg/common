@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { MapDefaultView, ProposalTemplateSchema } from '@op/common/client';
 import {
   getLocationFieldMapView,
@@ -13,8 +12,8 @@ import { PROPOSAL_VIEWS, type ProposalView } from './ProposalViewToggle';
 import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
 
 interface ProposalViewMode {
-  /** The process collects a location and the GIS flag is on — the only case
-   * where the map view (and its toggle) is offered at all. */
+  /** The process collects a location — the only case where the map view (and
+   * its toggle) is offered at all. */
   hasLocationField: boolean;
   /** Fallback camera for when no proposal has a location to fit. */
   mapView: MapDefaultView;
@@ -27,7 +26,7 @@ interface ProposalViewMode {
 /**
  * Grid/map view state for a list of proposals, backed by the shared `?view=`
  * query param. Every surface offering the toggle derives it the same way, so
- * the flag, the location check, and the URL contract can't drift apart.
+ * the location check and the URL contract can't drift apart.
  *
  * `defaultView` is the view to lead with when the process has a map: browse
  * passes `map` (users came for places, not titles), the review queue passes
@@ -45,9 +44,7 @@ export function useProposalViewMode(
     parseAsStringLiteral(PROPOSAL_VIEWS),
   );
 
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
-  const hasLocationField =
-    !!gisMapsEnabled && templateCollectsLocation(proposalTemplate);
+  const hasLocationField = templateCollectsLocation(proposalTemplate);
   const mapView =
     getLocationFieldMapView(proposalTemplate) ??
     DEFAULT_LOCATION_FIELD_MAP_VIEW;
