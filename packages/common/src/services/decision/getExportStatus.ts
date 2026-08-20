@@ -36,9 +36,12 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
+  // Structurally the subset of `ContextLogger` this needs. Typed as
+  // `Record<string, unknown>` rather than `any` so a malformed meta object is a
+  // type error instead of a log line that silently ships a missing field.
   logger: {
-    info: (message: string, meta?: any) => void;
-    error: (message: string, meta?: any) => void;
+    info: (message: string, meta?: Record<string, unknown>) => void;
+    error: (message: string, meta?: Record<string, unknown>) => void;
   };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache
