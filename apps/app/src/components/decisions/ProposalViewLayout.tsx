@@ -35,7 +35,7 @@ export function ProposalViewLayout({
   reportProposalId,
   revisionToggle,
   moderationProposal,
-  mergeNotice,
+  notices,
 }: {
   children: ReactNode;
   backHref: string;
@@ -64,11 +64,15 @@ export function ProposalViewLayout({
    */
   moderationProposal?: Proposal;
   /**
-   * "Merged into <survivor>" for a superseded proposal (Figma 15367:51167).
-   * A slot rather than a `Proposal`, so the layout doesn't need the decision
-   * route to build the survivor's link. Renders nothing when unmerged.
+   * Read-only status about this proposal, shown at the head of the action
+   * cluster — currently "Merged into <survivor>" (Figma 15367:51167).
+   *
+   * A node rather than typed props so the layout stays out of the business of
+   * whatever each notice needs (the merge one wants the decision route to build
+   * its link). Pass a fragment to render more than one; each is expected to
+   * render nothing when it has nothing to say.
    */
-  mergeNotice?: ReactNode;
+  notices?: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -96,9 +100,9 @@ export function ProposalViewLayout({
         {/* One tooltip group for the row — `delay` exists on Provider alone. */}
         <TooltipProvider delay={500}>
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Leads the action cluster: it's a record, not an action, so it
-              reads before the buttons rather than among them. */}
-            {mergeNotice}
+            {/* Lead the action cluster: these are records, not actions, so they
+              read before the buttons rather than among them. */}
+            {notices}
             {canEdit && editHref && (
               <Button
                 variant="outline"

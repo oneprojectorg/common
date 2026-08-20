@@ -223,7 +223,7 @@ export function ProposalView({
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
-      mergeNotice={
+      notices={
         <ProposalMergeNotice
           proposal={currentProposal}
           decisionRoot={decisionRoot}
