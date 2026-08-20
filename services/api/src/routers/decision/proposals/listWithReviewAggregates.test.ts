@@ -1,6 +1,7 @@
 import type { RubricTemplateSchema } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
   proposals as proposalsTable,
@@ -14,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { createGatingCallers } from '../../../test/helpers/gating/callers';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -110,7 +112,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('rejects callers without admin access on the instance (filtered)', async ({
+  it('rejects a reviewer who does not name a phase (filtered)', async ({
     task,
     onTestFinished,
   }) => {
@@ -371,6 +373,189 @@ describe.concurrent('listWithReviewAggregates', () => {
       overallRecommendationCount: {},
     });
     expect(result.items[0]?.aggregates.reviewers.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Filtered mode is gated on `canReadPhaseReviews`: reviewers need a named
+ * `openReviews` phase, admins need nothing. Paginated mode stays admin-only.
+ */
+describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
+  /** A phase-`review` proposal carrying one COMPLETED assignment + submitted review. */
+  async function createReviewedProposal(testData: TestReviewsDataManager) {
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const created = await testData.createReviewAssignment({
+      context,
+      title: 'Reviewed Proposal',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createProposalReview({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    return { context, proposal: created.proposal };
+  }
+
+  it('returns counts to a reviewer on an openReviews phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    // A process reviewer who holds REVIEW but not ADMIN, and who is not
+    // assigned to this proposal — the "Other proposals" tab's viewer.
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    const result = await reviewerCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      proposalIds: [proposal.id],
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.aggregates).toMatchObject({
+      assignmentsCount: 1,
+      reviewsSubmittedCount: 1,
+    });
+    // One COMPLETED assignment — the "N Reviewed" count the card renders.
+    expect(
+      result.items[0]?.aggregates.reviewers.filter(
+        (r) => r.status === ProposalReviewAssignmentStatus.COMPLETED,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('rejects a reviewer when the named phase is not open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      false,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects a reviewer without the review capability on an open phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    // READ only — openReviews widens the reviewer grant, not the member one.
+    const member = await testData.createInstanceMember(context);
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('keeps the paginated mode admin-only for a reviewer on an open phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('admits an admin in filtered mode with openReviews off and no phaseId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      false,
+    );
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalIds: [proposal.id],
+    });
+
+    expect(result.items.map((item) => item.proposal.id)).toEqual([proposal.id]);
+  });
+
+  it('rejects an anonymous caller in filtered mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    const callers = createGatingCallers(onTestFinished);
+    const anonCaller = await callers.anonJwt();
+
+    await expectFailsAccessTierGate(
+      anonCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        proposalIds: [proposal.id],
+      }),
+      'anon',
+    );
   });
 });
 

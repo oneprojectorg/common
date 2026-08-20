@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
+import { getPhaseReviewSettings } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -66,6 +67,12 @@ export function ReviewPage({
 
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
+
+  // Client-side mirror of the service's `canReadPhaseReviews` gate.
+  const canSeeReviewCounts =
+    isAdmin ||
+    (canReview &&
+      getPhaseReviewSettings({ phases }, currentPhase.phaseId).openReviews);
 
   const t = useTranslations();
 
@@ -203,18 +210,14 @@ export function ReviewPage({
 
               <TabsContent value="other-proposals" className="grow sm:p-0">
                 <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
-                  {/* An admin sees the review counts on these cards too — the
-                      same decoration, on the same terms, as the "Proposals in
-                      review" list: the gate is this surface's, because an admin
-                      needs no `openReviews` to track progress, while a
-                      reviewer's counts follow that policy separately. Outside
-                      the Suspense boundary so the provider's reported proposals
-                      survive a re-suspend (a filter change refetches the list,
-                      not the aggregates it already holds). */}
+                  {/* Outside the Suspense boundary so the provider's reported
+                      proposals survive a re-suspend (a filter change refetches
+                      the list, not the aggregates it already holds). */}
                   <ProposalReviewDecorationProvider
                     processInstanceId={instance.id}
                     decisionSlug={decisionSlug}
-                    enabled={isAdmin}
+                    phaseId={currentPhase.phaseId}
+                    enabled={canSeeReviewCounts}
                     access={instance.access}
                   >
                     <Suspense fallback={<ProposalListSkeleton />}>
