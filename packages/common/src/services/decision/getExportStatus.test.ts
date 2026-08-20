@@ -137,6 +137,9 @@ describe('getExportStatus', () => {
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
     expect(logger.error).toHaveBeenCalled();
+    // Retried once before reporting failure, so a momentary Storage error does
+    // not cost the admin a re-export.
+    expect(createSignedUrl).toHaveBeenCalledTimes(2);
     expect(result).toMatchObject({ status: 'failed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
     // No server-minted message: the client renders `errorMessage` verbatim and
@@ -175,6 +178,24 @@ describe('getExportStatus', () => {
       }),
       EXPORT_CACHE_TTL_SECONDS,
     );
+  });
+
+  it('recovers from a transient signing failure on the retry', async () => {
+    vi.mocked(get).mockResolvedValue(expiredRecord());
+    createSignedUrl
+      .mockResolvedValueOnce({ data: null, error: { message: 'try again' } })
+      .mockResolvedValueOnce({
+        data: { signedUrl: 'https://storage.example/fresh-url' },
+        error: null,
+      });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toMatchObject({
+      status: 'completed',
+      signedUrl: 'https://storage.example/fresh-url',
+    });
+    expect(logger.error).not.toHaveBeenCalled();
   });
 
   it('leaves a still-valid URL alone', async () => {

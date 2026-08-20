@@ -105,9 +105,24 @@ export const getExportStatus = async ({
       // bucket. The ownership and `decisions: ADMIN` checks above are what
       // authorize this read.
       const supabase = createSBServiceClient();
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from(EXPORTS_BUCKET)
-        .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
+
+      const signUrl = () =>
+        supabase.storage
+          .from(EXPORTS_BUCKET)
+          .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
+
+      // One retry before giving up. Failing here is expensive out of proportion
+      // to the cause: the client drops the export id when it sees a terminal
+      // state, so a momentary Storage error on an object that is present and
+      // signable a second later costs the admin a whole re-export.
+      let signed = await signUrl();
+
+      if (signed.error || !signed.data) {
+        logger.info('Retrying export signed URL refresh', { exportId });
+        signed = await signUrl();
+      }
+
+      const { data: urlData, error: urlError } = signed;
 
       if (urlError || !urlData) {
         // No signature means no usable link. Reporting this as still `completed`
