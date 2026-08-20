@@ -56,6 +56,11 @@ interface ReviewFormState {
   ownRevisionRequest: ProposalReviewRequest | null;
   /** Own latest request in any state. */
   ownLatestRevisionRequest: ProposalReviewRequest | null;
+  /**
+   * The submitted review predates the proposal's current version — the reviewer
+   * has to re-affirm it (via "Update review") for it to count as current.
+   */
+  isReviewOutOfDate: boolean;
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
@@ -134,8 +139,14 @@ function ReviewFormProviderInner({
     { refetchOnMount: 'always' },
   );
 
-  const { rubricTemplate, review, revisionRequest, assignment, canEditReview } =
-    reviewAssignment;
+  const {
+    rubricTemplate,
+    review,
+    revisionRequest,
+    assignment,
+    canEditReview,
+    isReviewOutOfDate,
+  } = reviewAssignment;
 
   if (!rubricTemplate) {
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
@@ -352,6 +363,7 @@ function ReviewFormProviderInner({
       openRevisionRequests,
       ownRevisionRequest,
       ownLatestRevisionRequest: revisionRequest,
+      isReviewOutOfDate,
       canRequestRevision,
       rubricTemplate,
       review,
@@ -381,6 +393,7 @@ function ReviewFormProviderInner({
       openRevisionRequests,
       ownRevisionRequest,
       revisionRequest,
+      isReviewOutOfDate,
       canRequestRevision,
       rubricTemplate,
       review,

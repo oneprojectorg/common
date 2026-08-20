@@ -31,7 +31,7 @@ interface ReviewAssignmentCardProps {
 }
 
 export function ReviewAssignmentCard({
-  assignment: { assignment },
+  assignment: { assignment, isReviewOutOfDate },
   viewHref,
   reviewers,
   reviewsHref,
@@ -42,6 +42,9 @@ export function ReviewAssignmentCard({
   const t = useTranslations();
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
+  // `ready_for_re_review` already tells the reviewer to look again, and says it
+  // louder — its treatment wins, so the staleness pill stands down.
+  const showOutOfDate = isReviewOutOfDate && !isRevised;
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);
 
@@ -66,7 +69,15 @@ export function ReviewAssignmentCard({
           </StatusBadge>
         ) : undefined
       }
-      status={<ReviewStatusBadge status={status} />}
+      status={
+        showOutOfDate ? (
+          <StatusBadge variant="warning" icon={LuRefreshCw}>
+            {t('Review out of date')}
+          </StatusBadge>
+        ) : (
+          <ReviewStatusBadge status={status} />
+        )
+      }
       reviewedLabel={
         reviewers ? (
           <ProposalReviewsCount

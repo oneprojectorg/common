@@ -114,6 +114,7 @@ function MyReviewForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     openRevisionRequests,
+    isReviewOutOfDate,
     isEditing,
     review,
   } = useReviewForm();
@@ -163,10 +164,12 @@ function MyReviewForm() {
     ) : null;
 
   // A submitted review shows the read-only result unless the reviewer has
-  // switched it back into the form via "Edit review".
+  // switched it back into the form via "Edit review". The banner rides along so
+  // the reviewer knows why "Update review" is worth pressing.
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
       <>
+        {isReviewOutOfDate && <OutOfDateAlert />}
         {revisionAlert}
         <SubmittedReviewView
           rubricTemplate={template}
@@ -181,6 +184,8 @@ function MyReviewForm() {
 
   return (
     <>
+      {isReviewOutOfDate && <OutOfDateAlert />}
+
       {revisionAlert}
 
       <div className="flex flex-col gap-6">
@@ -224,6 +229,29 @@ function MyReviewForm() {
         ) : null}
       </div>
     </>
+  );
+}
+
+/**
+ * The reviewer's submitted review is behind the proposal's current version.
+ * Re-affirming is the existing "Update review" action, so this only explains
+ * why it matters — the copy is two keys so a future non-revision edit variant
+ * is a copy change alone.
+ */
+function OutOfDateAlert() {
+  const t = useTranslations();
+
+  return (
+    // `Alert` carries role="alert"; announced when it appears mid-session.
+    <Alert variant="warning">
+      <LuRefreshCw />
+      <AlertTitle>{t('Your review is out of date')}</AlertTitle>
+      <AlertDescription>
+        {t(
+          'The author submitted revisions to this proposal. Your previous responses have been carried over.',
+        )}
+      </AlertDescription>
+    </Alert>
   );
 }
 
