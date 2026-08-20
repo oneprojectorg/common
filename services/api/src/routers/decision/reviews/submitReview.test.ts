@@ -4,6 +4,7 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
+import { reviseProposal } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -276,6 +277,47 @@ describe.concurrent('submitReview', () => {
     expect(assignment?.status).not.toBe(
       ProposalReviewAssignmentStatus.COMPLETED,
     );
+  });
+
+  it("stamps the assignment's version pin to the proposal's current history row", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    // The author edits after the assignment was created, so the pin the
+    // assignment carries is already behind the proposal.
+    const currentHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+    expect(assignmentBefore?.assignedProposalHistoryId).not.toBe(
+      currentHistoryId,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    // The pin now records the version the reviewer actually reviewed.
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(currentHistoryId);
   });
 
   it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {

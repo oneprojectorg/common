@@ -4,6 +4,7 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
+import { reviseProposal } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -107,6 +108,85 @@ describe.concurrent('updateReview', () => {
     expect(assignment?.reviews[0]?.reviewData).toMatchObject({
       answers: { impact: 2 },
     });
+  });
+
+  it('re-affirms an out-of-date review: re-stamps the pin and advances submittedAt', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const before = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+
+    // The author edits the proposal, so the submitted review falls behind.
+    const currentHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+
+    const staleAssignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(staleAssignment?.assignedProposalHistoryId).not.toBe(
+      currentHistoryId,
+    );
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+      overallComment: 'Still supportive after the revision',
+    });
+
+    // A re-affirm is a fresh judgement of the current version.
+    expect(result.submittedAt).not.toBe(before?.submittedAt);
+    expect(new Date(result.submittedAt ?? 0).getTime()).toBeGreaterThanOrEqual(
+      new Date(before?.submittedAt ?? 0).getTime(),
+    );
+
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(currentHistoryId);
+    // The review stays a normal completed review underneath.
+    expect(assignmentAfter?.status).toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('leaves the pin and submittedAt alone when the review is already current', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+    const before = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 1 }, rationales: {} },
+    });
+
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(result.submittedAt).toBe(before?.submittedAt);
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
   });
 
   it('rejects editing a review that has not been submitted', async ({

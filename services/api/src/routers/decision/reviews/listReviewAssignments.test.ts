@@ -17,6 +17,7 @@ import {
   createProposalReview,
   createReviewAssignment as createReviewAssignmentRow,
   createRevisionRequest,
+  reviseProposal,
 } from '@op/test';
 import { inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -202,6 +203,67 @@ describe.concurrent('listReviewAssignments', () => {
         },
       },
     });
+  });
+
+  it('derives isReviewOutOfDate from the version pin: false, true after an edit, false after a re-affirm', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Staleness Review',
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const listOne = async () => {
+      const result = await reviewerCaller.decision.listReviewAssignments({
+        processInstanceId: created.context.instance.instance.id,
+      });
+      const item = result.assignments.find(
+        (a) => a.assignment.id === created.assignment.id,
+      );
+      if (!item) {
+        throw new Error('assignment missing from the review queue');
+      }
+      return item;
+    };
+
+    // Nothing submitted yet — a pending assignment is never out of date.
+    expect(await listOne()).toMatchObject({ isReviewOutOfDate: false });
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+    });
+
+    // Freshly submitted against the current version.
+    expect(await listOne()).toMatchObject({ isReviewOutOfDate: false });
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Staleness Review (revised)' },
+    });
+
+    expect(await listOne()).toMatchObject({ isReviewOutOfDate: true });
+
+    // Re-affirming through the normal edit path clears it.
+    await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 1 }, rationales: {} },
+    });
+
+    const reaffirmed = await listOne();
+    expect(reaffirmed).toMatchObject({ isReviewOutOfDate: false });
+    // A stale review is still a completed one underneath.
+    expect(reaffirmed.assignment.status).toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
   });
 
   it('returns all assignments for the reviewer in the current phase', async ({
