@@ -1,4 +1,5 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
+import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -2727,5 +2728,66 @@ describe.concurrent('listProposals: search', () => {
       });
       expect(result.total).toBe(2);
     }
+  });
+
+  it('drops words past the cap, widening the match rather than rejecting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Exactly the 10 words the cap allows.
+    const tenWords = 'one two three four five six seven eight nine ten';
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      tenWords,
+      'Downtown Mural',
+    ]);
+
+    // The 11th word matches nothing, but is dropped before it becomes a
+    // predicate — so the proposal still comes back. Were the cap absent this
+    // would (correctly) return zero rows; the assertion pins the truncation.
+    const overCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: `${tenWords} zzzznomatch`,
+    });
+    expect(overCap.proposals.map((p) => p.id)).toEqual([first.id]);
+
+    // Within the cap the same unmatched word is honoured, proving the widening
+    // above comes from the cap and not from the word being ignored generally.
+    const underCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'one zzzznomatch',
+    });
+    expect(underCap.proposals).toHaveLength(0);
+  });
+
+  it('truncates an over-long query instead of rejecting it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      'Bike Lanes on Fifth',
+      'Community Garden',
+    ]);
+
+    // Padded so the non-matching word sits entirely past the cap. Truncation
+    // drops it and the title still matches; rejection would throw instead.
+    const overCap =
+      `Bike`.padEnd(PROPOSAL_SEARCH_MAX_LENGTH, ' ') + 'zzzznomatch';
+    expect(overCap.length).toBeGreaterThan(PROPOSAL_SEARCH_MAX_LENGTH);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: overCap,
+    });
+    expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
+
+    // The same word inside the cap does filter — so the match above is the
+    // truncation at work, not the word being ignored generally.
+    const withinCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Bike zzzznomatch',
+    });
+    expect(withinCap.proposals).toHaveLength(0);
   });
 });
