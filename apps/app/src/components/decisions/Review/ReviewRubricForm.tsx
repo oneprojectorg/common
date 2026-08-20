@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   ProposalReviewState,
   type SchemaOption,
@@ -52,11 +51,10 @@ import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
- * Right-hand "Review Proposal" panel. Behind the reviews-v2 flag, the
- * reviewer's own form is shown under a "My review" tab alongside an "Other
- * reviews" tab (when the current phase's `openReviews` is on) and one
- * "Reviews from {phase}" tab per earlier open review phase. With no tab
- * beyond "My review", the form renders on its own exactly as before.
+ * Right-hand "Review Proposal" panel. The reviewer's own form is shown under a
+ * "My review" tab alongside an "Other reviews" tab (when the current phase's
+ * `openReviews` is on) and one "Reviews from {phase}" tab per earlier open
+ * review phase. With no tab beyond "My review", the form renders on its own.
  */
 export function ReviewRubricForm({
   openReviews,
@@ -65,11 +63,7 @@ export function ReviewRubricForm({
   openReviews: boolean;
   previousReviewPhases: PreviousReviewPhase[];
 }) {
-  const reviewsV2Enabled = useFeatureFlag('reviews-v2') ?? false;
-  const showOtherReviews = reviewsV2Enabled && openReviews;
-  const previousPhases = reviewsV2Enabled ? previousReviewPhases : [];
-
-  if (!showOtherReviews && previousPhases.length === 0) {
+  if (!openReviews && previousReviewPhases.length === 0) {
     return (
       <FormShell>
         <MyReviewForm />
@@ -81,8 +75,8 @@ export function ReviewRubricForm({
     <FormShell>
       <ReviewTabs
         myReview={<MyReviewForm />}
-        showOtherReviews={showOtherReviews}
-        previousPhases={previousPhases}
+        showOtherReviews={openReviews}
+        previousPhases={previousReviewPhases}
       />
     </FormShell>
   );

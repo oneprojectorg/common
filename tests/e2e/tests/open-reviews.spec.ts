@@ -189,7 +189,7 @@ test.describe('Open Reviews', () => {
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       // Review already enabled on the middle phase so the "Open reviews" row
-      // renders immediately (it is gated behind reviews-v2 + isReviewPhase).
+      // renders immediately (it is gated behind isReviewPhase).
       schema: makeReviewSchema(false),
       // Draft so the builder autosaves to the server on every edit. (Published
       // processes hold edits in memory until an explicit "Update Process".)
