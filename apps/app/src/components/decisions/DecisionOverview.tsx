@@ -168,7 +168,7 @@ function DecisionOverviewContent({
   });
 
   const headline =
-    translation?.overviewHeadline ?? overview?.headline ?? instance.name;
+    translation?.overviewHeadline || overview?.headline || instance.name;
   const subhead = translation?.overviewDescription ?? overview?.description;
   const profileId = instance.profileId;
 

@@ -108,7 +108,7 @@ export function ReviewPage({
     : undefined;
   // Admins get the static "Review Progress" heading; only the reviewer-facing
   // phase copy is author-written, so only it goes through translation.
-  const heroHeadline = translation?.headline ?? currentPhase.headline;
+  const heroHeadline = translation?.headline || currentPhase.headline;
   const heroDescription =
     translation?.phaseDescription ?? currentPhase.description;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
@@ -151,7 +151,7 @@ export function ReviewPage({
               isAdmin ? (
                 <TranslatedText text="Review Progress" />
               ) : (
-                (heroHeadline ?? <TranslatedText text="Review proposals." />)
+                heroHeadline || <TranslatedText text="Review proposals." />
               )
             }
             description={
