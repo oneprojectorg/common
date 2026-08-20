@@ -38,7 +38,7 @@ public = true
 public = true
 objects_path = "./storage/avatars"
 
-# Private — proposal exports will be read through a signed URL.
+# Private — reads go through a signed URL. See EXPORTS_BUCKET in @op/common.
 [storage.buckets.exports]
 public = false
 

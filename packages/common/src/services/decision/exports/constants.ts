@@ -13,25 +13,15 @@
  * Exports are written to their own private bucket.
  *
  * An export CSV carries proposal submitter names, so it must not be readable
- * without a signature. This deliberately does *not* reuse the shared `assets`
- * bucket, which is public: `apps/app/next.config.mjs` rewrites `/assets/:path*`
- * to that bucket's public object root, and `getPublicUrl()` builds every avatar
- * and organization image URL from it. An export written there was readable by
- * any anonymous caller who held the path, which made the signed URLs downstream
- * link expiry rather than an access boundary — the unsigned public URL for the
- * same object resolved regardless of signature.
+ * without a signature. That rules out the shared `assets` bucket, which is
+ * public — `apps/app/next.config.mjs` rewrites `/assets/:path*` to its public
+ * object root — and is why this is a bucket of its own rather than a prefix.
+ * Do not point it back at the shared one.
  *
- * The bucket is provisioned with `public: false` in three places that have to
- * agree: `services/db/migrate.ts` for hosted environments, the
- * `[storage.buckets.exports]` block in each `supabase/*.toml` for local and CI
- * stacks, and `services/db/seed-test.ts` for test runs. A signed URL is
- * therefore the only way to read an object. Do not point this back at the
- * shared bucket.
- *
- * There are no `storage.objects` RLS policies, so signing an object here needs
- * the service-role client — a caller-scoped client cannot see the object and
- * its `createSignedUrl` fails. Both signing sites use it, and each authorizes
- * the request itself before signing.
+ * Provisioned `public: false` by `services/db/migrate.ts`, which also re-asserts
+ * the visibility on every deploy. There are no `storage.objects` RLS policies,
+ * so signing here needs the service-role client: a caller-scoped client cannot
+ * see the object at all. Each signing site authorizes its own caller first.
  */
 export const EXPORTS_BUCKET = 'exports';
 
@@ -42,9 +32,8 @@ export const EXPORTS_BUCKET = 'exports';
  * outlives any single URL, so an admin returning to a finished export gets a
  * freshly minted URL from `getExportStatus` instead of a 404.
  *
- * Objects live in a private bucket (see {@link EXPORTS_BUCKET}), so this is a
- * real revocation window rather than cosmetic link rot: once the signature
- * lapses there is no unsigned URL that still resolves.
+ * Because {@link EXPORTS_BUCKET} is private, this is a real revocation window:
+ * once the signature lapses, no unsigned URL still resolves.
  */
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
@@ -67,11 +56,10 @@ export const exportStatusCacheKey = (exportId: string) =>
  * Storage key for an export's generated file, relative to
  * {@link EXPORTS_BUCKET}.
  *
- * Shaped `<entity>/<id>/<sub-resource>/<file>` to match the other writers
- * sharing this bucket — `profile/${profileId}/resources/` and
- * `profiles/${profileId}/${imageType}/`. Leading with `proposals/` (as this
- * did) reads as though the owning entity were a proposal, when the export is
- * scoped to a process instance and covers many proposals.
+ * Shaped `<entity>/<id>/<sub-resource>/<file>`, matching the convention the
+ * other storage writers follow. Leading with `proposals/` (as this did) reads
+ * as though the owning entity were a proposal, when the export is scoped to a
+ * process instance and covers many proposals.
  */
 export const exportFilePath = (processInstanceId: string, fileName: string) =>
   `process/${processInstanceId}/proposals/${fileName}`;
@@ -79,12 +67,10 @@ export const exportFilePath = (processInstanceId: string, fileName: string) =>
 /**
  * File name for a generated export.
  *
- * {@link EXPORTS_BUCKET} is private, so the signed URL — not this name — is the
- * access control. The random component is kept as defence in depth: it means a
- * leaked object path is not by itself enough to name another instance's export
- * if the bucket is ever misconfigured back to public. A whole UUID is used
- * rather than a truncation of one, since the timestamp beside it is largely
- * inferable and cannot contribute unguessability.
+ * The signed URL is the access control, not this name — {@link EXPORTS_BUCKET}
+ * is private. The full UUID stays as defence in depth against the bucket ever
+ * being flipped back to public; the timestamp beside it is largely inferable and
+ * contributes no unguessability of its own.
  *
  * `crypto.randomUUID()` is the global Web Crypto API, available in Node 19+ and
  * in browsers, so this module stays free of Node-only imports.

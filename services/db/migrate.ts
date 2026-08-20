@@ -41,13 +41,9 @@ await supabase.storage.createBucket('avatars', {
 });
 
 // Proposal exports, kept out of the public buckets above because an export CSV
-// carries proposal submitter names: reading one requires a signed URL. Nothing
-// writes here yet — the export pipeline still targets `assets` and is repointed
-// at this bucket in a follow-up. Provisioning lands first so the bucket already
-// exists in every environment by the time that code ships. The name must match
-// the `EXPORTS_BUCKET` constant that follow-up sets, spelled out here the same
-// way `assets` and `avatars` are — `services/db` does not depend on
-// `@op/common`.
+// carries proposal submitter names: reading one requires a signed URL. The name
+// must match `EXPORTS_BUCKET` in @op/common, spelled out here the same way
+// `assets` and `avatars` are — `services/db` does not depend on `@op/common`.
 const EXPORTS_BUCKET_CONFIG = {
   public: false,
   fileSizeLimit: 50 * 1024 * 1024,

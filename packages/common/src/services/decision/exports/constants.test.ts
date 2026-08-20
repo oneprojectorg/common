@@ -17,18 +17,13 @@ import {
 // is what produced the dead-download-link bug these tests pin down.
 
 describe('EXPORTS_BUCKET', () => {
-  // An export CSV carries proposal submitter names, so it gets its own private
-  // bucket. It used to share `assets`, which is public — next.config.mjs
-  // rewrites /assets/* to that bucket's public object root — so an export was
-  // readable by any anonymous caller holding the path and the signed URLs
-  // downstream gated nothing. Keeping these two assertions separate is
-  // deliberate: the second is the security property, and it must keep failing
-  // if someone re-aliases this back to the shared bucket.
-  it('is the private `exports` bucket', () => {
+  // Exports get a bucket of their own so that reads need a signature. The
+  // second assertion is the one that matters: `assets` is served publicly, so
+  // re-aliasing this back to it would silently un-fix that. Note this only pins
+  // the *name* — that the bucket is actually private is asserted end-to-end in
+  // tests/e2e/tests/proposals-export.spec.ts, against a real one.
+  it('is a private bucket of its own, not the public assets bucket', () => {
     expect(EXPORTS_BUCKET).toBe('exports');
-  });
-
-  it('is not the public assets bucket', () => {
     expect(EXPORTS_BUCKET).not.toBe(ASSETS_BUCKET);
   });
 });
@@ -76,9 +71,8 @@ describe('exportFilePath', () => {
     );
   });
 
-  // Exports share `assets` with profile images and resources, so the key has to
-  // follow the same `<entity>/<id>/<sub-resource>/` shape those writers use or
-  // the bucket's top level accumulates a prefix per feature.
+  // Keeps the `<entity>/<id>/<sub-resource>/` shape the other storage writers
+  // use, so the bucket's top level does not accumulate a prefix per feature.
   it('leads with the owning entity, not the sub-resource', () => {
     expect(exportFilePath('instance-1', 'f.csv')).toMatch(
       /^process\/instance-1\/proposals\//,
@@ -86,7 +80,7 @@ describe('exportFilePath', () => {
   });
 
   // The path is relative to the bucket. Prefixing the bucket name would nest
-  // the object at assets/assets/... once Supabase resolves it.
+  // the object at exports/exports/... once Supabase resolves it.
   it('does not re-prefix the bucket name into the key', () => {
     expect(exportFilePath('instance-1', 'f.csv')).not.toMatch(
       new RegExp(`^${EXPORTS_BUCKET}/`),
