@@ -43,8 +43,7 @@ export function ProposalCardMenu({
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
 
-    // Admin actions (merge, hide) - not for drafts. Merge leads, per Figma
-    // 15311:9078.
+    // Merge leads, per Figma 15311:9078.
     if (canMerge) {
       items.push({
         key: 'merge',

@@ -119,8 +119,6 @@ describe.concurrent('mergeProposals', () => {
       .from(proposalRelationships)
       .where(eq(proposalRelationships.sourceProposalId, source.id));
 
-    // Trimmed by the input schema, so the stored text is what an email would
-    // quote rather than whatever whitespace the textarea carried.
     expect(edge?.note).toBe('These describe the same garden plot.');
   });
 
@@ -142,8 +140,7 @@ describe.concurrent('mergeProposals', () => {
       .from(proposalRelationships)
       .where(eq(proposalRelationships.sourceProposalId, source.id));
 
-    // "No note" and "an empty note" have to stay distinguishable: a consumer
-    // asks whether a reason was given, not whether the string is truthy.
+    // Distinguishable from an empty note: consumers ask whether a reason exists.
     expect(edge?.note).toBeNull();
   });
 

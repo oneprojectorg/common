@@ -4,11 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getMergeCandidates } from './mergeCandidates';
 
-/**
- * Builds the slice of a proposal the candidate list reads, so each case states
- * only the fields it exercises. `title` lives behind `proposalData` and the
- * display name behind `profile` on the real payload.
- */
+/** Lifts `title` and `profileName` out of their real nesting so cases stay flat. */
 const proposal = ({
   id,
   title,

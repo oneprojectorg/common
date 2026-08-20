@@ -11,14 +11,9 @@ import { Link, useTranslations } from '@/lib/i18n';
 /**
  * "Merged into <survivor>" in the proposal page's header (Figma 15367:51167).
  *
- * A superseded proposal keeps its own page but is filtered out of every listing,
- * so without this the page reads as a normal proposal that has silently stopped
- * appearing anywhere. Pinned in the header rather than the body so it stays
- * visible at any scroll position.
- *
- * Renders nothing when the proposal hasn't been merged. Not admin-gated: the
- * link is the record of what happened, and `listProposalRelationships` is
- * READ-gated for exactly this render.
+ * A superseded proposal keeps its page but leaves every listing, so without this
+ * it reads as a normal proposal that silently stopped appearing anywhere.
+ * Renders nothing when the proposal hasn't been merged.
  */
 export function ProposalMergeNotice({
   proposal,
@@ -29,9 +24,7 @@ export function ProposalMergeNotice({
   decisionRoot: string;
 }) {
   return (
-    // Silent on failure: this is one line of context in a header, so a failed
-    // read must not replace the page with an error, and there is nothing
-    // actionable to say about it either.
+    // Silent on failure: one line of header context shouldn't take the page down.
     <APIErrorBoundary fallbacks={{ default: () => null }}>
       <Suspense fallback={null}>
         <ProposalMergeNoticeSuspense
@@ -52,8 +45,7 @@ function ProposalMergeNoticeSuspense({
 }) {
   const t = useTranslations();
 
-  // Pinning the source end asks "what did this proposal get merged into?" — at
-  // most one row, since a proposal is superseded at most once.
+  // Pinning the source end asks what this was merged into: at most one row.
   const [mergedAway] = trpc.decision.listProposalRelationships.useSuspenseQuery(
     {
       sourceProposalId: proposal.id,

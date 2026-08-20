@@ -44,33 +44,24 @@ import {
   getProposalDisplayTitle,
 } from './mergeCandidates';
 
-/**
- * Candidates per page. The dialog shows them as cards, so this is also how many
- * cards a reviewer scrolls before reaching "Show more".
- */
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 
-/**
- * Merging is two dialogs in Figma: pick the survivor (15311:11482), then confirm
- * what the merge does (15313:12547). One `Dialog` swaps its content between
- * them, so the backdrop doesn't flash and Back keeps the selection.
- */
+/** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
+ *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
 type MergeStep = 'select' | 'confirm';
 
 /**
  * "Merge proposals" — pick the proposal that survives, then confirm.
  *
- * Opened from the proposal card's `…` menu and from the proposal page's admin
- * menu. Merging records an edge — no content moves and no status changes — after
- * which `proposal` drops out of every listing, the voting pool, and the review
- * queues.
+ * Merging records an edge: no content moves and no status changes, but
+ * `proposal` drops out of every listing, the voting pool, and review.
  */
 export function MergeProposalDialog({
   proposal,
   open,
   onOpenChange,
 }: {
-  /** The proposal being merged away — the "Merging from" card. */
+  /** The proposal being merged away. */
   proposal: Proposal;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -80,8 +71,7 @@ export function MergeProposalDialog({
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
-  // Nothing is invalidated here: the mutation registers the affected proposal
-  // channels server-side, so the lists and the proposal page refresh themselves.
+  // No invalidation needed: the endpoint registers the affected proposal channels.
   const mergeMutation = trpc.decision.mergeProposals.useMutation({
     onError: (error) => {
       toast.error(
@@ -94,8 +84,7 @@ export function MergeProposalDialog({
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      // The dialog unmounts its content, so a stale step, selection, or search
-      // term would otherwise survive into the next open.
+      // The content unmounts, so state would otherwise survive into the next open.
       setStep('select');
       setTarget(null);
       setSearchTerm('');
@@ -117,8 +106,7 @@ export function MergeProposalDialog({
           note,
         },
         {
-          // Per-call rather than on the mutation, so the toast can name both
-          // ends: the mutation's own input carries ids, not titles.
+          // Per-call so the toast can name both ends; the input carries only ids.
           onSuccess: () =>
             toast.success(
               t('{source} has now been merged with {target}', {
@@ -130,9 +118,8 @@ export function MergeProposalDialog({
       );
       handleOpenChange(false);
     } catch (error) {
-      // `onError` already toasted it. Staying on the confirm step keeps the
-      // selection, which is what a retry needs after a conflict ("already
-      // merged", "unmerge those first") — the only failures this mutation has.
+      // Already toasted by `onError`; staying on this step keeps the selection
+      // for a retry, which is what the conflict failures need.
       logger.error('Failed to merge proposal', {
         error,
         context: 'MergeProposalDialog',
@@ -142,9 +129,7 @@ export function MergeProposalDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* `overflow-hidden p-0` + a `min-h-0 flex-1` body is the modal pattern
-          from ProcessSurveyModal: the header and footer stay put and only the
-          middle scrolls. */}
+      {/* ProcessSurveyModal's pattern: header and footer stay put, body scrolls. */}
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-116">
         <DialogHeader>
           <DialogTitle className="text-center">
@@ -197,9 +182,7 @@ export function MergeProposalDialog({
                 <h3 className="text-muted-foreground">
                   {t('Suggested proposals')}
                 </h3>
-                {/* Its own boundary: a failed candidate list must leave the
-                    dialog (and its close button) usable rather than taking the
-                    page down. */}
+                {/* Scoped boundary: a failed list must leave the dialog usable. */}
                 <APIErrorBoundary
                   fallbacks={{
                     default: () => (
@@ -253,11 +236,8 @@ export function MergeProposalDialog({
 /**
  * Step two (Figma 15313:12547): spell out what the merge does, then commit.
  *
- * Figma also promises that likes, comments, and followers transfer, that
- * followers are notified, and that both activity logs record it, plus an
- * optional note for the author. `mergeProposals` does none of that — it inserts
- * one edge and takes no note — so only the consequence that is real is listed
- * here. The rest waits on the service.
+ * Figma also lists engagement transfer, follower notification, and activity-log
+ * entries. `mergeProposals` does none of those, so they aren't claimed here.
  */
 function ConfirmMergeStep({
   sourceTitle,
@@ -271,7 +251,7 @@ function ConfirmMergeStep({
 }: {
   sourceTitle: string;
   targetTitle: string;
-  /** Superseded proposal's author, named in the note's label. Absent when anonymous. */
+  /** Named in the note's label. Absent when the author is anonymous. */
   authorName?: string;
   note: string;
   onNoteChange: (note: string) => void;
@@ -360,10 +340,9 @@ function ConfirmMergeStep({
 }
 
 /**
- * The decision's other proposals as a single-select list of cards. Reads the
- * same `listProposals` query the browse list does, so the page already on screen
- * is served from cache and the picker can't offer a proposal the list doesn't
- * show.
+ * The decision's other proposals as a single-select list of cards. Shares the
+ * browse list's `listProposals` query, so the loaded page comes from cache and
+ * the picker can't offer something the list doesn't show.
  */
 function MergeCandidateListSuspense({
   proposal,
@@ -405,9 +384,8 @@ function MergeCandidateListSuspense({
 
   return (
     <>
-      {/* The empty state sits beside "Show more", not instead of it: a page can
-          filter down to nothing (all drafts, all hidden, or no search match)
-          while later pages still hold candidates. */}
+      {/* Beside "Show more", not instead of it: a page can filter down to
+          nothing while later pages still hold candidates. */}
       {candidates.length === 0 ? (
         <Empty>
           <EmptyHeader>
@@ -436,9 +414,8 @@ function MergeCandidateListSuspense({
         >
           {candidates.map((candidate) => (
             <Field key={candidate.id} className="w-full">
-              {/* The radio is the control but not the visual: the card carries
-                  the selected treatment, so the label IS the card (Figma shows
-                  no radio dot) while Base UI keeps the keyboard semantics. */}
+              {/* Figma shows no radio dot, so the card is the label and carries
+                  the selected treatment; the radio keeps the keyboard semantics. */}
               <RadioGroupItem
                 id={`merge-target-${candidate.id}`}
                 value={candidate.id}
@@ -473,11 +450,7 @@ function MergeCandidateListSuspense({
   );
 }
 
-/**
- * A proposal as the merge dialog shows it: the sense `ProposalCard` with the
- * title, author, and category tags, and the body preview only for candidates
- * (Figma gives the "Merging from" card no description).
- */
+/** Figma gives the "Merging from" card no description, hence `showDescription`. */
 function MergeProposalSummaryCard({
   proposal,
   selected,
@@ -497,8 +470,7 @@ function MergeProposalSummaryCard({
       title={titleText}
       budget={budgetText}
       tags={displayCategories}
-      // Dropping each author's `href`: an anchor inside the radio's label would
-      // be a second control competing with it for the click.
+      // Without `href`: an anchor inside the label would compete for the click.
       authors={authors?.map(({ name, avatarSrc }) => ({ name, avatarSrc }))}
       description={showDescription ? description : undefined}
       selected={selected}
@@ -507,7 +479,7 @@ function MergeProposalSummaryCard({
   );
 }
 
-/** Two placeholder cards — the shape of a loaded candidate, not its content. */
+/** Two placeholder cards, matching a loaded candidate's height. */
 function MergeCandidateListSkeleton() {
   return (
     <div className="flex flex-col gap-2" aria-hidden>

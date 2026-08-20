@@ -48,8 +48,7 @@ export function ProposalAdminMenu({
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
-  // Nothing is invalidated here: the mutation registers the affected proposal
-  // channels server-side, so the lists and the proposal page refresh themselves.
+  // No invalidation needed: the endpoint registers the affected proposal channels.
   const unmergeMutation = trpc.decision.unmergeProposal.useMutation({
     onError: (error) => {
       toast.error(
@@ -64,10 +63,8 @@ export function ProposalAdminMenu({
   });
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
-  // Figma puts the merge record in the header as a plain link, so the way back
-  // lives here: a superseded proposal is filtered out of every listing, and its
-  // own page is the only surface that can offer the undo. Gated on the flag
-  // too, since the item it feeds is.
+  // A superseded proposal leaves every listing, so its own page is the only
+  // surface that can offer the undo. Gated with the item it feeds.
   const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
     { sourceProposalId: proposal.id },
     { enabled: mergeEnabled && proposal.access?.admin === true },
@@ -83,9 +80,9 @@ export function ProposalAdminMenu({
 
   const triggerLabel = t('Proposal options');
 
-  // Merge leads, matching the card kebab's Figma order (15311:9078). Once
-  // merged, the same slot offers the undo — the server rejects merging a
-  // proposal that already has an outgoing edge, so the two never apply at once.
+  // Merge leads, matching the card kebab (Figma 15311:9078). Once merged the
+  // same slot offers the undo; the server rejects merging an already-merged
+  // proposal, so the two never apply at once.
   const mergeItem: ProposalOptionsMenuItem | null = !mergeEnabled
     ? null
     : supersededBy
@@ -97,8 +94,7 @@ export function ProposalAdminMenu({
             unmergeMutation.mutate(
               { sourceProposalId: proposal.id },
               {
-                // Per-call rather than on the mutation, so the toast can name
-                // the proposal: the input carries an id, not a title.
+                // Per-call so the toast can name it; the input carries only an id.
                 onSuccess: () =>
                   toast.success(
                     t('{source} is listed on its own again.', {

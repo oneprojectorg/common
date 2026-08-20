@@ -64,13 +64,8 @@ export function ProposalViewLayout({
    */
   moderationProposal?: Proposal;
   /**
-   * Read-only status about this proposal, shown at the head of the action
-   * cluster — currently "Merged into <survivor>" (Figma 15367:51167).
-   *
-   * A node rather than typed props so the layout stays out of the business of
-   * whatever each notice needs (the merge one wants the decision route to build
-   * its link). Pass a fragment to render more than one; each is expected to
-   * render nothing when it has nothing to say.
+   * Read-only status shown at the head of the action cluster. Pass a fragment
+   * for more than one; each renders nothing when it has nothing to say.
    */
   notices?: ReactNode;
 }) {
@@ -100,8 +95,6 @@ export function ProposalViewLayout({
         {/* One tooltip group for the row — `delay` exists on Provider alone. */}
         <TooltipProvider delay={500}>
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Lead the action cluster: these are records, not actions, so they
-              read before the buttons rather than among them. */}
             {notices}
             {canEdit && editHref && (
               <Button
