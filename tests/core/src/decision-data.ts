@@ -449,20 +449,59 @@ export async function makeDecisionPublic(
 }
 
 /**
- * Grants the user a custom "Reviewer" role on the instance profile with
- * READ + REVIEW on the decisions zone (plus the implicit profile READ).
- * Creates the role on the fly and inserts/reuses a profileUser row.
- *
- * Mirrors the capabilities surfaced by `createDecisionRole` in @op/common
- * without importing it (keeps this package free of server-only deps).
+ * Bit values duplicated from access-zones / @op/common so this package pulls in
+ * no server-only deps at runtime: ACRUD bits 0–4 (DELETE 1, UPDATE 2, READ 4,
+ * CREATE 8, ADMIN 16) plus the decision bits 5–8 (INVITE_MEMBERS 32, REVIEW 64,
+ * SUBMIT_PROPOSALS 128, VOTE 256).
  */
-export async function grantInstanceReviewerRole(opts: {
+export const TEST_PERMISSION_BITS = {
+  DELETE: 1,
+  UPDATE: 2,
+  READ: 4,
+  CREATE: 8,
+  ADMIN: 16,
+  INVITE_MEMBERS: 32,
+  REVIEW: 64,
+  SUBMIT_PROPOSALS: 128,
+  VOTE: 256,
+} as const;
+
+export interface GrantInstanceRoleOptions {
   instanceProfileId: string;
   authUserId: string;
   email: string;
-  roleName?: string;
-}): Promise<void> {
-  const { instanceProfileId, authUserId, email, roleName = 'Reviewer' } = opts;
+  /** Role name, as it would appear in the process role editor. */
+  roleName: string;
+  /** Bitfield granted on the `decisions` zone — see `TEST_PERMISSION_BITS`. */
+  decisionsPermission: number;
+  /**
+   * Bitfield granted on the `profile` zone (defaults to READ). Keep the ADMIN
+   * bit out unless the role really is a profile admin: `getInstance` lets a
+   * profile admin bypass decision-zone resolution and returns every capability,
+   * which makes a deliberately narrowed decisions bitfield unobservable.
+   */
+  profilePermission?: number;
+}
+
+/**
+ * Grants a user a custom role on a decision instance profile, with explicit
+ * `decisions` and `profile` zone bitfields. Creates the role on the fly and
+ * inserts/reuses a profileUser row.
+ *
+ * Mirrors what `createDecisionRole` in @op/common writes, without importing it
+ * (keeps this package free of server-only deps).
+ */
+export async function grantInstanceRole(
+  opts: GrantInstanceRoleOptions,
+): Promise<void> {
+  const {
+    instanceProfileId,
+    authUserId,
+    email,
+    roleName,
+    decisionsPermission,
+    profilePermission = TEST_PERMISSION_BITS.READ,
+  } = opts;
 
   const [decisionsZone, profileZone] = await Promise.all([
     db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
@@ -481,29 +520,26 @@ export async function grantInstanceReviewerRole(opts: {
     .returning();
 
   if (!role) {
-    throw new Error(`Failed to create Reviewer role on ${instanceProfileId}`);
+    throw new Error(
+      `Failed to create "${roleName}" role on ${instanceProfileId}`,
+    );
   }
-
-  // permission.READ = 4 (ACRUD bit 2), decisionPermission.REVIEW = 0b10_00000 = 64.
-  // Duplicated to avoid pulling in access-zones/@op/common at runtime.
-  const READ = 4;
-  const REVIEW = 64;
 
   await db.insert(accessRolePermissionsOnAccessZones).values([
     {
       accessRoleId: role.id,
       accessZoneId: decisionsZone.id,
-      permission: READ | REVIEW,
+      permission: decisionsPermission,
     },
     {
       accessRoleId: role.id,
       accessZoneId: profileZone.id,
-      permission: READ,
+      permission: profilePermission,
     },
   ]);
 
   // Reuse an existing profileUsers row (e.g. created by createInstanceMember)
-  // or insert a fresh one. Either way, attach the Reviewer role to it.
+  // or insert a fresh one. Either way, attach the new role to it.
   const existing = await db.query.profileUsers.findFirst({
     where: { profileId: instanceProfileId, authUserId },
     columns: { id: true },
@@ -528,6 +564,67 @@ export async function grantInstanceReviewerRole(opts: {
   await db
     .insert(profileUserToAccessRoles)
     .values({ profileUserId, accessRoleId: role.id });
+}
+
+/**
+ * Grants the user a custom "Reviewer" role on the instance profile with
+ * READ + REVIEW on the decisions zone (plus the implicit profile READ).
+ */
+export async function grantInstanceReviewerRole(opts: {
+  instanceProfileId: string;
+  authUserId: string;
+  email: string;
+  roleName?: string;
+}): Promise<void> {
+  await grantInstanceRole({
+    ...opts,
+    roleName: opts.roleName ?? 'Reviewer',
+    decisionsPermission:
+      TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.REVIEW,
+  });
+}
+
+/**
+ * Grants the user a process-admin role that deliberately lacks the REVIEW
+ * capability — the "admin who is not a reviewer" the single-list
+ * "Proposals in review" surface is for.
+ *
+ * Both halves matter. The decisions bitfield is everything *except* REVIEW, and
+ * the profile bitfield is CRUD without ADMIN: with the profile ADMIN bit set,
+ * `getInstance` short-circuits to all-true capabilities and the caller would
+ * come back as a reviewer after all.
+ */
+export async function grantInstanceAdminWithoutReviewRole(opts: {
+  instanceProfileId: string;
+  authUserId: string;
+  email: string;
+  roleName?: string;
+}): Promise<void> {
+  const {
+    ADMIN,
+    CREATE,
+    DELETE,
+    INVITE_MEMBERS,
+    READ,
+    SUBMIT_PROPOSALS,
+    UPDATE,
+    VOTE,
+  } = TEST_PERMISSION_BITS;
+
+  await grantInstanceRole({
+    ...opts,
+    roleName: opts.roleName ?? 'Admin (no review)',
+    decisionsPermission:
+      DELETE |
+      UPDATE |
+      READ |
+      CREATE |
+      ADMIN |
+      INVITE_MEMBERS |
+      SUBMIT_PROPOSALS |
+      VOTE,
+    profilePermission: DELETE | UPDATE | READ | CREATE,
+  });
 }
 
 export interface CreateInstanceMemberOptions {

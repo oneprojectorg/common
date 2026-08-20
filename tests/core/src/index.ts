@@ -18,10 +18,13 @@ export {
   getDecisionInstance,
   getSeededTemplate,
   grantDecisionProfileAccess,
+  grantInstanceAdminWithoutReviewRole,
   grantInstanceReviewerRole,
+  grantInstanceRole,
   makeDecisionPublic,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
   SEEDED_TEMPLATE_PROFILE_SLUG,
+  TEST_PERMISSION_BITS,
   testMinimalSchema,
   testSimpleVotingSchema,
   type CreateDecisionInstanceOptions,
@@ -33,6 +36,7 @@ export {
   type CreateProposalOptions,
   type CreateProposalResult,
   type GrantDecisionProfileAccessOptions,
+  type GrantInstanceRoleOptions,
   type MakeDecisionPublicOptions,
 } from './decision-data';
 
