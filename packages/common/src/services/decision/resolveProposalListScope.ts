@@ -3,8 +3,6 @@ import {
   and,
   db,
   eq,
-  exists,
-  ilike,
   inArray,
   isNull,
   ne,
@@ -19,7 +17,6 @@ import {
   decisionsVoteSubmissions,
   processInstances,
   profileUsers,
-  profiles,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
@@ -40,6 +37,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
+import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -138,17 +136,6 @@ type ReviewAssignmentExclusion = {
   phaseId: string;
 };
 
-// Match the query literally — unescaped, `%` matches every title.
-const escapeLikePattern = (value: string): string =>
-  value.replace(/[\\%_]/g, (char) => `\\${char}`);
-
-// One predicate per word, so the cap bounds the work a single query can ask for.
-// Past it the extra words are dropped, which only widens an already-narrow match.
-const MAX_SEARCH_WORDS = 10;
-
-const splitSearchWords = (search: string | undefined): string[] =>
-  (search ?? '').split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_WORDS);
-
 // Shared function to build WHERE conditions for both count and data queries.
 // Parameterized on the table reference so callers can pass either the schema
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
@@ -179,37 +166,9 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  const searchWords = splitSearchWords(search);
-  if (searchWords.length > 0) {
-    // Title lives in `profiles.name` (kept current by updateProposal's autosave).
-    // `proposalData.title` is frozen at creation — collab-doc titles resolve from
-    // a TipTap fragment — so matching the JSON would match dead titles.
-    //
-    // One substring match per word, ANDed: keeps `ike` finding "Bike" (which
-    // full-text search can't, matching only from word starts) while making word
-    // order irrelevant, which a single `%a b%` match can't.
-    //
-    // Postgres normalizes this EXISTS into a semi-join and picks the driving
-    // side by cost. The correlating equality is on `profiles`' primary key, so
-    // in practice it drives from the already phase-scoped proposals, probes
-    // `profiles_pkey`, and applies the ILIKE as a filter — bounded by the
-    // phase, not by the profiles table. `profiles_name_trgm_idx` stays
-    // available if a plan ever wants to lead with the name instead.
-    conditions.push(
-      exists(
-        db
-          .select({ id: profiles.id })
-          .from(profiles)
-          .where(
-            and(
-              eq(profiles.id, t.profileId),
-              ...searchWords.map((word) =>
-                ilike(profiles.name, `%${escapeLikePattern(word)}%`),
-              ),
-            ),
-          ),
-      ),
-    );
+  const searchCondition = buildProposalTitleSearchCondition(t, search);
+  if (searchCondition) {
+    conditions.push(searchCondition);
   }
 
   // "Other proposals" tab: exclude proposals the caller is assigned to review
