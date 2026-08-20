@@ -195,6 +195,38 @@ const mintSignedDownloadUrl = async ({
 };
 
 /**
+ * Sign, and try once more if the first attempt fails.
+ *
+ * Failing is expensive out of proportion to its cause. The caller reports a
+ * terminal `failed`, and the client drops the export id when it sees one, so a
+ * momentary Storage error on an object that is present and signable a second
+ * later costs the admin a whole re-export.
+ *
+ * The first error is dropped rather than logged: either the retry succeeds, in
+ * which case nothing failed that the caller can act on, or it throws in turn and
+ * that error is the one the caller reports.
+ */
+const signWithOneRetry = async ({
+  processInstanceId,
+  fileName,
+  exportId,
+  logger,
+}: {
+  processInstanceId: string;
+  fileName: string;
+  exportId: string;
+  logger: ExportLogger;
+}): Promise<string> => {
+  try {
+    return await mintSignedDownloadUrl({ processInstanceId, fileName });
+  } catch {
+    logger.info('Retrying export signed URL refresh', { exportId });
+
+    return await mintSignedDownloadUrl({ processInstanceId, fileName });
+  }
+};
+
+/**
  * Re-sign a stale export URL in place and cache the result.
  *
  * A still-good URL is left alone. A failed signature marks the record `failed`,
@@ -225,9 +257,11 @@ const refreshStaleSignedUrl = async ({
   // the whole record, which sends the button to its error boundary.
   // `createSBServiceClient` throws synchronously, so it is inside the try.
   try {
-    exportStatus.signedUrl = await mintSignedDownloadUrl({
+    exportStatus.signedUrl = await signWithOneRetry({
       processInstanceId: exportStatus.processInstanceId,
       fileName,
+      exportId,
+      logger,
     });
     exportStatus.urlExpiresAt = new Date(
       Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
