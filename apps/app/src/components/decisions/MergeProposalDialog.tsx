@@ -30,6 +30,7 @@ import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Textarea } from '@op/sense/Textarea';
+import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { type ReactNode, Suspense, useMemo, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
@@ -42,7 +43,6 @@ import {
   getMergeCandidates,
   getProposalDisplayTitle,
 } from './mergeCandidates';
-import { useProposalMergeActions } from './useProposalMergeActions';
 
 /**
  * Candidates per page. The dialog shows them as cards, so this is also how many
@@ -80,7 +80,15 @@ export function MergeProposalDialog({
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
-  const { merge, isMerging } = useProposalMergeActions();
+  // Nothing is invalidated here: the mutation registers the affected proposal
+  // channels server-side, so the lists and the proposal page refresh themselves.
+  const mergeMutation = trpc.decision.mergeProposals.useMutation({
+    onError: (error) => {
+      toast.error(
+        error.message || t('Could not merge this proposal. Please try again.'),
+      );
+    },
+  });
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
 
@@ -102,16 +110,27 @@ export function MergeProposalDialog({
     }
 
     try {
-      await merge({
-        sourceProposalId: proposal.id,
-        sourceTitle,
-        targetProposalId: target.id,
-        targetTitle: target.title,
-        note,
-      });
+      await mergeMutation.mutateAsync(
+        {
+          sourceProposalId: proposal.id,
+          targetProposalId: target.id,
+          note,
+        },
+        {
+          // Per-call rather than on the mutation, so the toast can name both
+          // ends: the mutation's own input carries ids, not titles.
+          onSuccess: () =>
+            toast.success(
+              t('{source} has now been merged with {target}', {
+                source: sourceTitle,
+                target: target.title,
+              }),
+            ),
+        },
+      );
       handleOpenChange(false);
     } catch (error) {
-      // The hook already toasted it. Staying on the confirm step keeps the
+      // `onError` already toasted it. Staying on the confirm step keeps the
       // selection, which is what a retry needs after a conflict ("already
       // merged", "unmerge those first") — the only failures this mutation has.
       logger.error('Failed to merge proposal', {
@@ -221,7 +240,7 @@ export function MergeProposalDialog({
             authorName={proposal.submittedBy?.name}
             note={note}
             onNoteChange={setNote}
-            isMerging={isMerging}
+            isMerging={mergeMutation.isPending}
             onBack={() => setStep('select')}
             onConfirm={handleConfirm}
           />

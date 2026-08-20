@@ -96,6 +96,9 @@ export function ProposalViewLayout({
         {/* One tooltip group for the row — `delay` exists on Provider alone. */}
         <TooltipProvider delay={500}>
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Leads the action cluster: it's a record, not an action, so it
+              reads before the buttons rather than among them. */}
+            {mergeNotice}
             {canEdit && editHref && (
               <Button
                 variant="outline"
@@ -149,9 +152,6 @@ export function ProposalViewLayout({
                 <TooltipContent>{revisionRequestLabel}</TooltipContent>
               </Tooltip>
             )}
-            {/* Left of the overflow menu, per Figma: the merge record sits with
-              the page's actions rather than in the scrolling body. */}
-            {mergeNotice}
             {moderationProposal ? (
               <ProposalAdminMenu
                 proposal={moderationProposal}

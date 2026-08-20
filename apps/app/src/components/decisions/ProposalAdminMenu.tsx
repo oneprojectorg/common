@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuEye, LuEyeOff, LuMerge, LuTrash2 } from 'react-icons/lu';
 
@@ -17,7 +18,6 @@ import {
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
 import { getProposalDisplayTitle } from './mergeCandidates';
-import { useProposalMergeActions } from './useProposalMergeActions';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -48,7 +48,20 @@ export function ProposalAdminMenu({
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
-  const { unmerge, isUnmerging } = useProposalMergeActions();
+  // Nothing is invalidated here: the mutation registers the affected proposal
+  // channels server-side, so the lists and the proposal page refresh themselves.
+  const unmergeMutation = trpc.decision.unmergeProposal.useMutation({
+    onError: (error) => {
+      toast.error(
+        error.message ||
+          t('Could not unmerge this proposal. Please try again.'),
+      );
+      logger.error('Failed to unmerge proposal', {
+        error,
+        context: 'ProposalAdminMenu',
+      });
+    },
+  });
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
   // Figma puts the merge record in the header as a plain link, so the way back
@@ -81,20 +94,23 @@ export function ProposalAdminMenu({
           icon: <LuMerge className="size-5" />,
           label: t('Unmerge'),
           onAction: () =>
-            unmerge({
-              sourceProposalId: proposal.id,
-              sourceTitle: getProposalDisplayTitle(
-                proposal,
-                t('Untitled Proposal'),
-              ),
-            }).catch((error: unknown) => {
-              // The hook already toasted it; the menu item stays for a retry.
-              logger.error('Failed to unmerge proposal', {
-                error,
-                context: 'ProposalAdminMenu',
-              });
-            }),
-          isDisabled: isUnmerging,
+            unmergeMutation.mutate(
+              { sourceProposalId: proposal.id },
+              {
+                // Per-call rather than on the mutation, so the toast can name
+                // the proposal: the input carries an id, not a title.
+                onSuccess: () =>
+                  toast.success(
+                    t('{source} is listed on its own again.', {
+                      source: getProposalDisplayTitle(
+                        proposal,
+                        t('Untitled Proposal'),
+                      ),
+                    }),
+                  ),
+              },
+            ),
+          isDisabled: unmergeMutation.isPending,
         }
       : {
           key: 'merge',
