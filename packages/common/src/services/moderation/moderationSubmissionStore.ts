@@ -97,8 +97,8 @@ export const recordSubmissionRound = async (
  *
  * Update-only and round-matched: the verdict must hit a recorded task of the
  * round it was issued for, otherwise `null` is returned and nothing is
- * written — that covers forged refs, verdicts for superseded rounds, and
- * redeliveries after the flag was resolved and its submissions cleared. The
+ * written — that covers forged refs and verdicts for superseded rounds. (A
+ * redelivery after resolution still matches: the rows are left in place.) The
  * item's rows are locked for the duration so concurrent task verdicts
  * serialize; otherwise two final `clear` verdicts could each see the other
  * still pending and neither would dismiss the flag.
@@ -173,9 +173,9 @@ export const recordSubmissionVerdict = async ({
   });
 };
 
-/** Clears an item's submission rows. Called when a flag is resolved so a
- *  redelivered webhook for the old round can't act on it, and when a failed
- *  submit is rolled back. */
+/** Clears an item's submission rows. Only caller today is the rollback of a
+ *  failed submit — resolving a flag deliberately leaves the rows, so a later
+ *  decision on the same round still lands. */
 export const clearSubmissions = async (
   itemType: ModerationItemType,
   itemId: string,

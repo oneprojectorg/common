@@ -48,8 +48,8 @@ export interface FlagVerdictPatch {
  *  - `recordTaskVerdict` stores this task's verdict and returns the item's
  *    aggregate across all its tasks (an item fans out into several provider
  *    tasks; see `moderationSubmissionStore`). `null` means the task was never
- *    submitted (forged ref, or a redelivery after the flag was resolved and
- *    its submissions cleared) and nothing was recorded.
+ *    submitted (a forged ref, or a ref from a round that a later submission
+ *    superseded) and nothing was recorded.
  *  - `findOpenFlag` returns the item's open flag (`pending` or `flagged`) if any.
  *  - `markFlagged` is compare-and-set on `pending`, `markDismissed` on the
  *    open statuses (`pending`/`flagged`); they return `undefined` when the
@@ -144,8 +144,9 @@ export const applyModerationVerdict = async (
   });
 
   // Unknown task: nothing we submitted is waiting on this verdict — a forged
-  // ref, a task from a superseded round, or a redelivery after the flag was
-  // resolved and its submissions cleared. Recording nothing, deciding nothing.
+  // ref, or a task from a round a later submission superseded. (Resolution does
+  // NOT clear submission rows, so a redelivery still matches.) Deciding
+  // nothing.
   // The round-match deliberately gates the detach too: honouring a detach on
   // an unmatched ref would let anyone holding the callback URL detach
   // arbitrary content. A superseded round isn't a coverage hole — the
