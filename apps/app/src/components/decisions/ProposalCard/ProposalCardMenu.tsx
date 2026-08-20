@@ -50,7 +50,6 @@ export function ProposalCardMenu({
         buildMergeMenuItem({
           isDisabled: isLoading,
           mergeLabel: t('Merge with another proposal'),
-          unmergeLabel: t('Unmerge'),
           onMerge: () => setIsMergeModalOpen(true),
         }),
       );

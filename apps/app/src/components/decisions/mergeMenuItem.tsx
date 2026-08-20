@@ -4,30 +4,27 @@ import type { ProposalOptionsMenuItem } from './ProposalOptionsMenu';
 
 /**
  * The merge slot both `…` menus render, so the card kebab and the proposal page
- * can't drift. Offers the undo once superseded — the server rejects merging a
- * proposal that already has an outgoing edge, so the two never apply at once.
+ * can't drift. Only the proposal page can undo a merge, so `unmerge` is optional
+ * — and the server rejects merging an already-merged proposal, so the two never
+ * apply at once.
  */
 export function buildMergeMenuItem({
-  isSuperseded = false,
   isDisabled,
   mergeLabel,
-  unmergeLabel,
   onMerge,
-  onUnmerge,
+  unmerge,
 }: {
-  isSuperseded?: boolean;
   isDisabled: boolean;
   mergeLabel: string;
-  unmergeLabel: string;
   onMerge: () => void;
-  onUnmerge?: () => void;
+  unmerge?: { isSuperseded: boolean; label: string; onAction: () => void };
 }): ProposalOptionsMenuItem {
-  return isSuperseded && onUnmerge
+  return unmerge?.isSuperseded
     ? {
         key: 'unmerge',
         icon: <LuMerge className="size-5" />,
-        label: unmergeLabel,
-        onAction: onUnmerge,
+        label: unmerge.label,
+        onAction: unmerge.onAction,
         isDisabled,
       }
     : {

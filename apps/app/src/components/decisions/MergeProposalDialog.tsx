@@ -73,7 +73,7 @@ export function MergeProposalDialog({
   const [searchTerm, setSearchTerm] = useState('');
   // The candidate list is a suspense query, so an un-debounced term would
   // re-suspend to the skeleton on every keystroke.
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 200);
+  const [debouncedSearchTerm] = useDebounce(searchTerm.trim(), 200);
   const [note, setNote] = useState('');
   // No invalidation needed: the endpoint registers the affected proposal channels.
   const mergeMutation = trpc.decision.mergeProposals.useMutation({
@@ -177,7 +177,12 @@ export function MergeProposalDialog({
                     type="search"
                     placeholder={t('Search proposals…')}
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(event) => {
+                      setSearchTerm(event.target.value);
+                      // A new search can hide the selected card; keeping it
+                      // would leave Continue enabled on an invisible choice.
+                      setTarget(null);
+                    }}
                   />
                 </InputGroup>
               </Field>
@@ -344,9 +349,9 @@ function ConfirmMergeStep({
 }
 
 /**
- * The decision's other proposals as a single-select list of cards. Shares the
- * browse list's `listProposals` query, so the loaded page comes from cache and
- * the picker can't offer something the list doesn't show.
+ * The decision's other proposals as a single-select list of cards. Reads
+ * `listProposals`, so the picker is scoped exactly like the browse list and
+ * can't offer something that list wouldn't show.
  */
 function MergeCandidateListSuspense({
   proposal,
@@ -367,7 +372,7 @@ function MergeCandidateListSuspense({
         processInstanceId: proposal.processInstanceId,
         dir: 'desc',
         limit: MERGE_CANDIDATE_PAGE_LIMIT,
-        // Server-side title search, so a match beyond the loaded pages is found.
+        // Server-side, so a match beyond the loaded pages is still found.
         search: searchTerm || undefined,
       },
       {

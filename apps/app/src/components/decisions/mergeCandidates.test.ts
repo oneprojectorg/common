@@ -12,7 +12,6 @@ const proposal = ({
   status = ProposalStatus.SUBMITTED,
   visibility = Visibility.VISIBLE,
   isFlagged = false,
-  submittedBy,
 }: {
   id: string;
   title?: string;
@@ -20,7 +19,6 @@ const proposal = ({
   status?: string;
   visibility?: string;
   isFlagged?: boolean;
-  submittedBy?: { name: string; isAnonymous?: boolean };
 }): Proposal =>
   ({
     id,
@@ -31,13 +29,6 @@ const proposal = ({
     visibility,
     isFlagged,
     profile: { name: profileName },
-    ...(submittedBy && {
-      submittedBy: {
-        id: `submitter-${id}`,
-        slug: `submitter-${id}`,
-        ...submittedBy,
-      },
-    }),
   }) as unknown as Proposal;
 
 const untitledLabel = 'Untitled Proposal';

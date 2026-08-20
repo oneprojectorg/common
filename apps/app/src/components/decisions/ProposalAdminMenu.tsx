@@ -110,12 +110,14 @@ function ProposalAdminMenuItems({
   // Merge leads, matching the card kebab (Figma 15311:9078).
   const mergeItem = mergeEnabled
     ? buildMergeMenuItem({
-        isSuperseded: Boolean(supersededBy),
         isDisabled: isLoading || unmergeMutation.isPending,
         mergeLabel: t('Merge with another proposal'),
-        unmergeLabel: t('Unmerge'),
         onMerge: () => setIsMergeModalOpen(true),
-        onUnmerge: handleUnmerge,
+        unmerge: {
+          isSuperseded: Boolean(supersededBy),
+          label: t('Unmerge'),
+          onAction: handleUnmerge,
+        },
       })
     : null;
 
