@@ -181,13 +181,6 @@ export function ProposalView({
 
   const proposalBody: ReactNode = (
     <>
-      {/* Above the proposal: for a superseded proposal this explains why it has
-          left every listing, and it is the only place a merge can be undone. */}
-      <ProposalMergeNotice
-        proposal={currentProposal}
-        decisionRoot={decisionRoot}
-      />
-
       <ProposalPreview
         proposal={currentProposal}
         selection={selection}
@@ -230,6 +223,12 @@ export function ProposalView({
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
+      mergeNotice={
+        <ProposalMergeNotice
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      }
       revisionToggle={
         firstRevisionRequestId
           ? {

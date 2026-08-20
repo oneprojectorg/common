@@ -1563,16 +1563,17 @@
   "Could not unmerge this proposal. Please try again.": "Soo-jeedintan lama soocan karin. Fadlan isku day mar kale.",
   "{source} was merged into {target}.": "{source} waxaa lala biiriyay {target}.",
   "{source} is listed on its own again.": "{source} mar kale gooni ahaan bay ku taxan tahay.",
-  "Merged into another proposal": "Lala biiriyay soo-jeedin kale",
-  "Other proposals merged into this one": "Soo-jeedinno kale oo tan lala biiriyay",
-  "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "Soo-jeedintan waxay ka baxday liiska, codbixinta, iyo safafka dib-u-eegista. Waxaa lala biiriyay <target>{name}</target>.",
-  "Merge details unavailable": "Faahfaahinta biirinta lama helin",
-  "Could not check whether this proposal is part of a merge.": "Lama hubin karin in soo-jeedintan qayb ka tahay biirin.",
   "Merge proposals": "Ku biiri soo-jeedinno",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Dooro soo-jeedinta lala biirinayo <source>{name}</source>. Waxay sii haysanaysaa boggeeda, laakiin waxay ka baxaysaa liiska soo-jeedinnada, codbixinta, iyo dib-u-eegista.",
   "Merging from": "Laga biirinayo",
   "Merge into": "Lala biirinayo",
   "Search proposals…": "Raadi soo-jeedinno…",
   "Suggested proposals": "Soo-jeedinno la soo jeediyay",
-  "No proposals match your search": "Ma jiro soo-jeedin u dhiganta raadintaada"
+  "No proposals match your search": "Ma jiro soo-jeedin u dhiganta raadintaada",
+  "Confirm merge": "Xaqiiji biirinta",
+  "Confirm Merge": "Xaqiiji",
+  "What happens:": "Waxa dhacaya:",
+  "Merge <source>{name}</source> into <source>{target}</source>.": "Ku biiri <source>{name}</source> <source>{target}</source>.",
+  "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> waxaa laga saarayaa liiska soo-jeedinnada firfircoon. Boggeeda wuu sii muuqdayaa diiwaan ahaan.",
+  "Merged into <target>{name}</target>": "Lala biiriyay <target>{name}</target>"
 }

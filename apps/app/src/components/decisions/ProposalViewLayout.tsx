@@ -35,6 +35,7 @@ export function ProposalViewLayout({
   reportProposalId,
   revisionToggle,
   moderationProposal,
+  mergeNotice,
 }: {
   children: ReactNode;
   backHref: string;
@@ -62,6 +63,12 @@ export function ProposalViewLayout({
    * `proposal.access.admin`, so it's safe to pass for any viewer.
    */
   moderationProposal?: Proposal;
+  /**
+   * "Merged into <survivor>" for a superseded proposal (Figma 15367:51167).
+   * A slot rather than a `Proposal`, so the layout doesn't need the decision
+   * route to build the survivor's link. Renders nothing when unmerged.
+   */
+  mergeNotice?: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -142,6 +149,9 @@ export function ProposalViewLayout({
                 <TooltipContent>{revisionRequestLabel}</TooltipContent>
               </Tooltip>
             )}
+            {/* Left of the overflow menu, per Figma: the merge record sits with
+              the page's actions rather than in the scrolling body. */}
+            {mergeNotice}
             {moderationProposal ? (
               <ProposalAdminMenu
                 proposal={moderationProposal}

@@ -1561,16 +1561,17 @@
   "Could not unmerge this proposal. Please try again.": "تعذّر إلغاء دمج هذا المقترح. يُرجى المحاولة مرة أخرى.",
   "{source} was merged into {target}.": "تم دمج {source} مع {target}.",
   "{source} is listed on its own again.": "أصبح {source} مدرجًا بشكل منفصل مرة أخرى.",
-  "Merged into another proposal": "مدموج مع مقترح آخر",
-  "Other proposals merged into this one": "مقترحات أخرى مدموجة مع هذا المقترح",
-  "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "خرج هذا المقترح من القائمة ومن التصويت ومن قوائم المراجعة. وقد تم دمجه مع <target>{name}</target>.",
-  "Merge details unavailable": "تفاصيل الدمج غير متاحة",
-  "Could not check whether this proposal is part of a merge.": "تعذّر التحقق مما إذا كان هذا المقترح جزءًا من عملية دمج.",
   "Merge proposals": "دمج المقترحات",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "اختر المقترح الذي سيُدمج معه <source>{name}</source>. يحتفظ بصفحته الخاصة، لكنه يخرج من قائمة المقترحات ومن التصويت ومن المراجعة.",
   "Merging from": "الدمج من",
   "Merge into": "الدمج مع",
   "Search proposals…": "البحث في المقترحات…",
   "Suggested proposals": "مقترحات مقترحة",
-  "No proposals match your search": "لا توجد مقترحات مطابقة لبحثك"
+  "No proposals match your search": "لا توجد مقترحات مطابقة لبحثك",
+  "Confirm merge": "تأكيد الدمج",
+  "Confirm Merge": "تأكيد الدمج",
+  "What happens:": "ما الذي سيحدث:",
+  "Merge <source>{name}</source> into <source>{target}</source>.": "دمج <source>{name}</source> مع <source>{target}</source>.",
+  "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "سيُزال <source>{name}</source> من قائمة المقترحات النشطة. وتبقى صفحته متاحة للعرض كسجل.",
+  "Merged into <target>{name}</target>": "مدموج مع <target>{name}</target>"
 }

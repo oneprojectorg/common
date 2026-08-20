@@ -1625,16 +1625,17 @@
   "Could not unmerge this proposal. Please try again.": "Could not unmerge this proposal. Please try again.",
   "{source} was merged into {target}.": "{source} was merged into {target}.",
   "{source} is listed on its own again.": "{source} is listed on its own again.",
-  "Merged into another proposal": "Merged into another proposal",
-  "Other proposals merged into this one": "Other proposals merged into this one",
-  "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.",
-  "Merge details unavailable": "Merge details unavailable",
-  "Could not check whether this proposal is part of a merge.": "Could not check whether this proposal is part of a merge.",
   "Merge proposals": "Merge proposals",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.",
   "Merging from": "Merging from",
   "Merge into": "Merge into",
   "Search proposals…": "Search proposals…",
   "Suggested proposals": "Suggested proposals",
-  "No proposals match your search": "No proposals match your search"
+  "No proposals match your search": "No proposals match your search",
+  "Confirm merge": "Confirm merge",
+  "Confirm Merge": "Confirm Merge",
+  "What happens:": "What happens:",
+  "Merge <source>{name}</source> into <source>{target}</source>.": "Merge <source>{name}</source> into <source>{target}</source>.",
+  "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.",
+  "Merged into <target>{name}</target>": "Merged into <target>{name}</target>"
 }

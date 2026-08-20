@@ -1,7 +1,9 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { useState } from 'react';
 import { LuEye, LuEyeOff, LuMerge, LuTrash2 } from 'react-icons/lu';
 
@@ -13,6 +15,8 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
+import { getProposalDisplayTitle } from './mergeCandidates';
+import { useProposalMergeActions } from './useProposalMergeActions';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -43,6 +47,16 @@ export function ProposalAdminMenu({
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
+  const { unmerge, isUnmerging } = useProposalMergeActions();
+
+  // Figma puts the merge record in the header as a plain link, so the way back
+  // lives here: a superseded proposal is filtered out of every listing, and its
+  // own page is the only surface that can offer the undo.
+  const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
+    { sourceProposalId: proposal.id },
+    { enabled: proposal.access?.admin === true },
+  );
+  const supersededBy = mergedAway?.relationships[0];
 
   const canModerate =
     proposal.access?.admin === true && proposal.status !== ProposalStatus.DRAFT;
@@ -54,14 +68,37 @@ export function ProposalAdminMenu({
   const triggerLabel = t('Proposal options');
 
   const items: ProposalOptionsMenuItem[] = [
-    // Merge leads, matching the card kebab's Figma order (15311:9078).
-    {
-      key: 'merge',
-      icon: <LuMerge className="size-5" />,
-      label: t('Merge with another proposal'),
-      onAction: () => setIsMergeModalOpen(true),
-      isDisabled: isLoading,
-    },
+    // Merge leads, matching the card kebab's Figma order (15311:9078). Once
+    // merged, the same slot offers the undo — the server rejects merging a
+    // proposal that already has an outgoing edge, so both would never apply.
+    supersededBy
+      ? {
+          key: 'unmerge',
+          icon: <LuMerge className="size-5" />,
+          label: t('Unmerge'),
+          onAction: () =>
+            unmerge({
+              sourceProposalId: proposal.id,
+              sourceTitle: getProposalDisplayTitle(
+                proposal,
+                t('Untitled Proposal'),
+              ),
+            }).catch((error: unknown) => {
+              // The hook already toasted it; the menu item stays for a retry.
+              logger.error('Failed to unmerge proposal', {
+                error,
+                context: 'ProposalAdminMenu',
+              });
+            }),
+          isDisabled: isUnmerging,
+        }
+      : {
+          key: 'merge',
+          icon: <LuMerge className="size-5" />,
+          label: t('Merge with another proposal'),
+          onAction: () => setIsMergeModalOpen(true),
+          isDisabled: isLoading,
+        },
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -95,11 +132,13 @@ export function ProposalAdminMenu({
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
       />
-      <MergeProposalDialog
-        proposal={proposal}
-        open={isMergeModalOpen}
-        onOpenChange={setIsMergeModalOpen}
-      />
+      {supersededBy ? null : (
+        <MergeProposalDialog
+          proposal={proposal}
+          open={isMergeModalOpen}
+          onOpenChange={setIsMergeModalOpen}
+        />
+      )}
     </ProposalOptionsMenu>
   );
 }

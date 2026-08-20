@@ -1564,16 +1564,17 @@
   "Could not unmerge this proposal. Please try again.": "এই প্রস্তাবের একত্রীকরণ বাতিল করা যায়নি। আবার চেষ্টা করুন।",
   "{source} was merged into {target}.": "{source} {target}-এর সঙ্গে একত্র করা হয়েছে।",
   "{source} is listed on its own again.": "{source} আবার আলাদাভাবে তালিকাভুক্ত হয়েছে।",
-  "Merged into another proposal": "অন্য একটি প্রস্তাবের সঙ্গে একত্র করা হয়েছে",
-  "Other proposals merged into this one": "এই প্রস্তাবের সঙ্গে একত্র করা অন্য প্রস্তাবগুলি",
-  "This proposal has left the list, the voting pool, and the review queues. It was merged into <target>{name}</target>.": "এই প্রস্তাবটি তালিকা, ভোট ও পর্যালোচনার সারি থেকে সরে গেছে। এটি <target>{name}</target>-এর সঙ্গে একত্র করা হয়েছে।",
-  "Merge details unavailable": "একত্রীকরণের তথ্য পাওয়া যাচ্ছে না",
-  "Could not check whether this proposal is part of a merge.": "এই প্রস্তাবটি কোনো একত্রীকরণের অংশ কিনা তা যাচাই করা যায়নি।",
   "Merge proposals": "প্রস্তাব একত্র করুন",
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "<source>{name}</source> যে প্রস্তাবের সঙ্গে একত্র করা হবে সেটি বেছে নিন। এটি নিজের পাতাটি রাখবে, তবে প্রস্তাবের তালিকা, ভোট ও পর্যালোচনা থেকে সরে যাবে।",
   "Merging from": "একত্র করা হচ্ছে",
   "Merge into": "যার সঙ্গে একত্র করা হবে",
   "Search proposals…": "প্রস্তাব খুঁজুন…",
   "Suggested proposals": "প্রস্তাবিত প্রস্তাব",
-  "No proposals match your search": "আপনার অনুসন্ধানের সঙ্গে মেলে এমন কোনো প্রস্তাব নেই"
+  "No proposals match your search": "আপনার অনুসন্ধানের সঙ্গে মেলে এমন কোনো প্রস্তাব নেই",
+  "Confirm merge": "একত্রীকরণ নিশ্চিত করুন",
+  "Confirm Merge": "নিশ্চিত করুন",
+  "What happens:": "কী ঘটবে:",
+  "Merge <source>{name}</source> into <source>{target}</source>.": "<source>{name}</source> <source>{target}</source>-এর সঙ্গে একত্র করুন।",
+  "<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.": "<source>{name}</source> সক্রিয় প্রস্তাবের তালিকা থেকে সরিয়ে দেওয়া হবে। এর পাতাটি নথি হিসেবে দেখা যাবে।",
+  "Merged into <target>{name}</target>": "<target>{name}</target>-এর সঙ্গে একত্র করা হয়েছে"
 }
