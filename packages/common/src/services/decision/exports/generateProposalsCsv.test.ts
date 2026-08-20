@@ -617,6 +617,49 @@ describe('generateProposalsCsv custom template fields', () => {
     expect(values[headers.indexOf('Notes (notesB)')]).toBe('Option B');
   });
 
+  it('disambiguates a header even when the single-shot fallback string is itself already taken', async () => {
+    // Field "c" is (deliberately, for this test) titled with the exact
+    // string field "b"'s fallback would produce, and is ordered before "a"
+    // and "b" — so by the time "b" collides with "a"'s plain "Notes" and
+    // computes its one-shot fallback "Notes (b)", that string is already
+    // reserved by "c". A single disambiguation pass can't see that; it has
+    // to keep retrying until the result is actually free.
+    const templateWithChainedCollision: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        c: { type: 'string', title: 'Notes (b)', 'x-format': 'short-text' },
+        a: { type: 'string', title: 'Notes', 'x-format': 'short-text' },
+        b: { type: 'string', title: 'Notes', 'x-format': 'short-text' },
+      },
+      'x-field-order': ['title', 'budget', 'summary', 'c', 'a', 'b'],
+    };
+
+    const csv = await generateProposalsCsv([
+      makeProposal({
+        proposalTemplate: templateWithChainedCollision,
+        proposalData: { category: [], attachmentIds: [] },
+        documentContent: {
+          type: 'json',
+          fragments: {
+            summary: paragraph('Protected lanes from 1st to 9th.'),
+            c: paragraph('field c value'),
+            a: paragraph('field a value'),
+            b: paragraph('field b value'),
+          },
+        },
+      }),
+    ]);
+
+    const [headers = [], values = []] = parseCsv(csv.trim());
+    // Every header must be unique — no header-keyed reader silently loses
+    // a value to a same-named column.
+    expect(new Set(headers).size).toBe(headers.length);
+    expect(values[headers.indexOf('Notes (b)')]).toBe('field c value');
+    expect(values[headers.indexOf('Notes')]).toBe('field a value');
+    expect(values[headers.indexOf('Notes (b) (b)')]).toBe('field b value');
+  });
+
   it('resolves a numeric-looking option const to its display title', async () => {
     const templateWithRadioField: ProposalTemplateSchema = {
       ...template,

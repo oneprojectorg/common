@@ -387,9 +387,15 @@ function collectCustomFieldColumns(
         continue;
       }
 
-      const header = usedHeaders.has(column.header)
-        ? `${column.header} (${column.key})`
-        : column.header;
+      // A loop, not a single check-and-append: the one-shot fallback
+      // `${header} (${key})` can itself already be taken by an unrelated
+      // field that happens to carry that exact title, so it has to keep
+      // retrying until the result is actually free rather than trusting the
+      // first attempt.
+      let header = column.header;
+      while (usedHeaders.has(header)) {
+        header = `${header} (${column.key})`;
+      }
       usedHeaders.add(header);
       columns.set(column.key, { key: column.key, header });
     }
