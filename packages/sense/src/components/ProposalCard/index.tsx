@@ -228,8 +228,10 @@ export function ProposalCard({
             {status}
             {/* `relative z-10` lifts the label above the title's stretched
                 link overlay so an interactive `reviewedLabel` (e.g. a
-                reviewers tooltip trigger) stays hoverable/clickable. */}
-            <span className="relative z-10 text-sm text-muted-foreground">
+                reviewers tooltip trigger) stays hoverable/clickable.
+                `ms-auto` keeps it at the end of the row when it is the only
+                thing in it — a card with a count but no status badge. */}
+            <span className="relative z-10 ms-auto text-sm text-muted-foreground">
               {reviewedLabel}
             </span>
           </div>
