@@ -193,9 +193,9 @@ const mintSignedDownloadUrl = async ({
  *
  * A still-good URL is left alone. A failed signature marks the record `failed`,
  * since the bucket is private and a lapsed signature is a dead link rather than
- * a degraded one, and leaves the cache untouched so the next read retries. A
- * failed cache write still returns the fresh URL, and the next read re-signs
- * again.
+ * a degraded one, and leaves the cache untouched so nothing is persisted about
+ * it. A failed cache write still returns the fresh URL, and the next read
+ * re-signs again.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
@@ -232,16 +232,20 @@ const refreshStaleSignedUrl = async ({
     // No signature means no usable link. Leaving the record `completed` with the
     // URL dropped would be a silent dead end: the client treats a completed
     // export as settled, so it stops waiting and shows neither a download nor an
-    // error. Report it as failed with a message instead — that is the one
-    // terminal state the client surfaces, and it returns the admin to a button
-    // they can press again.
+    // error. `failed` is the one terminal state the client surfaces, and it puts
+    // the admin back on a button they can press again — re-exporting rebuilds
+    // the file, so a fresh run is the recovery path rather than this record.
     //
-    // Deliberately not written back to the cache, so a later read retries the
-    // refresh rather than persisting a failure that may be transient.
+    // No `errorMessage`: the client renders whatever is here verbatim and only
+    // falls back to a translated string when it is absent, so supplying one
+    // would put untranslated English in front of an Arabic or Spanish admin. The
+    // detail belongs in the log, which no user reads.
+    //
+    // The cached record is left `completed` rather than rewritten, so nothing is
+    // persisted about a failure that may be momentary.
     logger.error('Failed to re-sign export URL', { exportId, error });
 
     exportStatus.signedUrl = undefined;
     exportStatus.status = 'failed';
-    exportStatus.errorMessage = 'Export download could not be prepared';
   }
 };

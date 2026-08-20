@@ -178,13 +178,13 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    expect(result).toMatchObject({
-      status: 'failed',
-      errorMessage: expect.any(String),
-    });
+    expect(result).toMatchObject({ status: 'failed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
-    // The cached record is left `completed` rather than rewritten, so a later
-    // read retries the refresh instead of persisting a transient failure.
+    // No server-minted message: the client renders `errorMessage` verbatim and
+    // only reaches its translated fallback when the field is absent.
+    expect((result as { errorMessage?: string }).errorMessage).toBeUndefined();
+    // The cached record is left `completed` rather than rewritten, so nothing is
+    // persisted about a failure that may be momentary.
     expect(set).not.toHaveBeenCalled();
   });
 
