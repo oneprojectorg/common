@@ -117,6 +117,48 @@ describe.concurrent('listAllProposals', () => {
     expect(allValid.next).toBeNull();
   });
 
+  it('filters by title search, matching the phase-scoped list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const { userEmail } = setup;
+
+    const [matching] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Riverside Bike Path' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Downtown Mural' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.listAllProposals({
+      processInstanceId: instanceId,
+      search: 'bike',
+    });
+    expect(result.items.map((p) => p.id)).toEqual([matching.id]);
+
+    // Same word-order independence as the phase-scoped list.
+    const reversed = await caller.decision.listAllProposals({
+      processInstanceId: instanceId,
+      search: 'path riverside',
+    });
+    expect(reversed.items.map((p) => p.id)).toEqual([matching.id]);
+  });
+
   it('excludes REJECTED and DUPLICATE proposals for non-admin viewers', async ({
     task,
     onTestFinished,

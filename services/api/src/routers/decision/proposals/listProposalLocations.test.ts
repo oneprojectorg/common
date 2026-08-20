@@ -141,6 +141,47 @@ describe.concurrent('listProposalLocations', () => {
     // who can't see it in the list.
     expect(result.proposals.map((p) => p.id)).toEqual([visible.id]);
   });
+
+  it('applies the search filter so pins match the list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [matching, other, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Riverside Bike Path' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Downtown Mural' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    await Promise.all([
+      setLocation(matching.id, { lat: 40.7, lng: -74 }),
+      setLocation(other.id, { lat: 34, lng: -118.2 }),
+    ]);
+
+    const result = await caller.decision.listProposalLocations({
+      processInstanceId: instanceId,
+      search: 'bike',
+    });
+
+    expect(result.proposals.map((p) => p.id)).toEqual([matching.id]);
+  });
 });
 
 describeDecisionAccessTierGating('listProposalLocations', {

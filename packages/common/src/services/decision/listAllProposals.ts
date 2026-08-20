@@ -44,6 +44,7 @@ import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { proposalProfileColumns } from './listProposals';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
@@ -149,6 +150,7 @@ export const listAllProposals = async ({
   const buildBaseConditions = (t: typeof proposals): SQL =>
     and(
       eq(t.processInstanceId, processInstanceId),
+      buildProposalTitleSearchCondition(t, input.search),
       status ? eq(t.status, status) : undefined,
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)

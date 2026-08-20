@@ -1,4 +1,5 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
+import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -2565,5 +2566,224 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       .filter((id) => id !== p1.id);
     expect(excluded.proposals.map((p) => p.id)).toEqual(expectedIds);
     expect(expectedIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
+  });
+});
+
+describe.concurrent('listProposals: search', () => {
+  /** Two proposals with distinct titles, on their own instance. */
+  async function setupTitledProposals(
+    testData: TestDecisionsDataManager,
+    titles: [string, string],
+  ) {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [first, second, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: titles[0] },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: titles[1] },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    return { setup, instanceId, caller, first, second };
+  }
+
+  it('matches titles case-insensitively and reflects the filter in total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first, second } = await setupTitledProposals(
+      testData,
+      ['Bike Lanes on Fifth', 'Community Garden'],
+    );
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'bIkE',
+    });
+
+    expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
+    // `total` counts the filtered set, not the whole pool.
+    expect(result.total).toBe(1);
+    expect(result.proposals.map((p) => p.id)).not.toContain(second.id);
+  });
+
+  it('matches words in any order, and requires all of them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      'Riverside Bike Path',
+      'Downtown Mural',
+    ]);
+
+    // Reversed word order still finds it — a single substring match would not,
+    // since "path riverside" never appears in the title.
+    const reversed = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'path riverside',
+    });
+    expect(reversed.proposals.map((p) => p.id)).toEqual([first.id]);
+
+    // Words are ANDed, so a term drawn from two different titles matches neither.
+    const mixed = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'bike mural',
+    });
+    expect(mixed.proposals).toHaveLength(0);
+    expect(mixed.total).toBe(0);
+  });
+
+  it('treats LIKE wildcards in the query as literal characters', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupTitledProposals(testData, [
+      'Alpha Project',
+      'Beta Project',
+    ]);
+
+    // Unescaped, `%` and `_` are both wildcards that match every title.
+    for (const search of ['%', '_', 'Alpha%Project']) {
+      const result = await caller.decision.listProposals({
+        processInstanceId: instanceId,
+        search,
+      });
+      expect(result.proposals).toHaveLength(0);
+      expect(result.total).toBe(0);
+    }
+  });
+
+  it('finds a proposal by its current title after a rename', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [proposal, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Placeholder Draft' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    // Autosave sends `title` alongside `proposalData` but never rewrites
+    // `proposalData.title`, so the row's JSON keeps the creation-time value.
+    await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Bicycle Parking Expansion' },
+    });
+
+    const byNewTitle = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Bicycle Parking',
+    });
+    expect(byNewTitle.proposals.map((p) => p.id)).toEqual([proposal.id]);
+
+    const byStaleTitle = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Placeholder',
+    });
+    expect(byStaleTitle.proposals).toHaveLength(0);
+  });
+
+  it('ignores an empty or whitespace-only query', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupTitledProposals(testData, [
+      'Alpha Project',
+      'Beta Project',
+    ]);
+
+    for (const search of ['', '   ']) {
+      const result = await caller.decision.listProposals({
+        processInstanceId: instanceId,
+        search,
+      });
+      expect(result.total).toBe(2);
+    }
+  });
+
+  it('drops words past the cap, widening the match rather than rejecting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Exactly the 10 words the cap allows.
+    const tenWords = 'one two three four five six seven eight nine ten';
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      tenWords,
+      'Downtown Mural',
+    ]);
+
+    // The 11th word matches nothing but is dropped before it becomes a
+    // predicate, so the proposal still comes back.
+    const overCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: `${tenWords} zzzznomatch`,
+    });
+    expect(overCap.proposals.map((p) => p.id)).toEqual([first.id]);
+
+    // Inside the cap the same word does filter — so it was the cap, not the
+    // word being ignored generally.
+    const underCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'one zzzznomatch',
+    });
+    expect(underCap.proposals).toHaveLength(0);
+  });
+
+  it('truncates an over-long query instead of rejecting it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      'Bike Lanes on Fifth',
+      'Community Garden',
+    ]);
+
+    // The non-matching word sits entirely past the cap: truncation drops it
+    // and the title still matches, rejection would throw.
+    const overCap =
+      `Bike`.padEnd(PROPOSAL_SEARCH_MAX_LENGTH, ' ') + 'zzzznomatch';
+    expect(overCap.length).toBeGreaterThan(PROPOSAL_SEARCH_MAX_LENGTH);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: overCap,
+    });
+    expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
+
+    // Inside the cap the same word does filter — so it was the truncation.
+    const withinCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Bike zzzznomatch',
+    });
+    expect(withinCap.proposals).toHaveLength(0);
   });
 });

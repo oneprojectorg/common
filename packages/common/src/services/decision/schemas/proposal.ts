@@ -1,7 +1,10 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { proposalDataSchema } from '../proposalDataSchema';
+import {
+  PROPOSAL_TITLE_MAX_LENGTH,
+  proposalDataSchema,
+} from '../proposalDataSchema';
 
 export const storageItemSchema = z.object({
   id: z.string(),
@@ -167,6 +170,22 @@ export const proposalListSchema = z.object({
 export type ProposalList = z.infer<typeof proposalListSchema>;
 
 /**
+ * Cap on a proposal title search, in characters. Matches the title cap it
+ * searches against — a term longer than any title it could match is only cost.
+ */
+export const PROPOSAL_SEARCH_MAX_LENGTH = PROPOSAL_TITLE_MAX_LENGTH;
+
+/**
+ * Free-text proposal title search, shared by every list endpoint's filter.
+ * Truncated rather than rejected: an over-long paste is normal in a search
+ * field, and the tail past a full title's length could not have matched.
+ */
+export const proposalSearchSchema = z
+  .string()
+  .transform((value) => value.slice(0, PROPOSAL_SEARCH_MAX_LENGTH))
+  .optional();
+
+/**
  * Response from `decision.listProposalLocations`. Every located proposal in the
  * instance (not just the loaded list page) so the map can plot all pins. Reuses
  * the full `proposalSchema` shape — the heavy fields (documents, counts) are
@@ -189,6 +208,7 @@ export const allProposalsFilterSchema = z.object({
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
   submittedByProfileId: z.uuid().optional(),
+  search: proposalSearchSchema,
   // Restrict to the caller's ballot (self-only); used by the "My ballot" filter.
   votedByProfileId: z.uuid().optional(),
   dir: z.enum(['asc', 'desc']).optional(),

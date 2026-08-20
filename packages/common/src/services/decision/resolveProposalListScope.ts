@@ -3,7 +3,6 @@ import {
   and,
   db,
   eq,
-  ilike,
   inArray,
   isNull,
   ne,
@@ -38,6 +37,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
+import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -166,9 +166,9 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  if (search) {
-    // Search in proposal data (JSONB) - convert to text for searching
-    conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
+  const searchCondition = buildProposalTitleSearchCondition(t, search);
+  if (searchCondition) {
+    conditions.push(searchCondition);
   }
 
   // "Other proposals" tab: exclude proposals the caller is assigned to review

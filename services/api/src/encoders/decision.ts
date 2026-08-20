@@ -1,4 +1,5 @@
 import {
+  proposalSearchSchema,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
   checkpointVersionSchema,
@@ -677,6 +678,7 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
+  search: proposalSearchSchema,
   dir: z.enum(['asc', 'desc']).optional(),
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
@@ -707,6 +709,7 @@ export const proposalLocationsFilterSchema =
     submittedByProfileId: z.uuid().optional(),
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
+    search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
     excludeAssignedForReview: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
