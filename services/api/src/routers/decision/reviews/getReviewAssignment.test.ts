@@ -5,7 +5,11 @@ import {
   ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
-import { createProposalReview, createRevisionRequest } from '@op/test';
+import {
+  createProposalReview,
+  createRevisionRequest,
+  reviseProposal,
+} from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -91,6 +95,69 @@ describe.concurrent('getReviewAssignment', () => {
       review: null,
       revisionRequest: null,
     });
+  });
+
+  it('flags a submitted review as out of date once the proposal moves on, and serves the live content', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Community Garden Expansion',
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'review',
+    );
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+    });
+
+    const fresh = await reviewerCaller.decision.getReviewAssignment({
+      assignmentId: created.assignment.id,
+    });
+    expect(fresh.isReviewOutOfDate).toBe(false);
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+
+    const stale = await reviewerCaller.decision.getReviewAssignment({
+      assignmentId: created.assignment.id,
+    });
+
+    expect(stale.isReviewOutOfDate).toBe(true);
+    // The pane resolves the live proposal, not the pinned snapshot.
+    expect(stale.assignment.proposal.proposalData.title).toBe(
+      'Community Garden Expansion (revised)',
+    );
+    // Still a completed review underneath.
+    expect(stale.assignment.status).toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+
+    await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 1 }, rationales: {} },
+    });
+
+    const reaffirmed = await reviewerCaller.decision.getReviewAssignment({
+      assignmentId: created.assignment.id,
+    });
+    expect(reaffirmed.isReviewOutOfDate).toBe(false);
   });
 
   it('returns the reviewer assignment with rubric and saved draft', async ({

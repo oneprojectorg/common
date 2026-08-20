@@ -1,22 +1,37 @@
+import { trackReviewUpdated } from '@op/analytics';
 import { and, db, eq } from '@op/db/client';
 import {
   type ProposalReview,
   ProposalReviewState,
+  proposalReviewAssignments,
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import { ValidationError } from '../../utils';
+import { getRubricScoringInfo } from './getRubricScoringInfo';
+import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
 import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  getCurrentProposalHistoryId,
+  isReviewOutOfDate,
+} from './reviewStaleness';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 import { isInstanceCurrentPhase } from './utils/instance';
 
 /**
  * Edits an already-submitted review in place — no version history — leaving
- * `submittedAt`, `state`, and the assignment status untouched (`updatedAt`
- * advances, so an edit stays derivable). Only while the assignment's phase is
- * still the instance's current phase; frozen once the process advances past it.
+ * `state` and the assignment status untouched (`updatedAt` advances, so an edit
+ * stays derivable). Only while the assignment's phase is still the instance's
+ * current phase; frozen once the process advances past it.
+ *
+ * This is also the re-affirm path. The assignment's version pin is re-stamped
+ * to the proposal's current history row on every edit, so an out-of-date review
+ * (pin behind the proposal) becomes current again. When the review *was* out of
+ * date, `submittedAt` advances too: the reviewer has now judged this version.
+ * An edit of an already-current review leaves `submittedAt` alone.
  */
 export async function updateReview({
   assignmentId,
@@ -62,26 +77,79 @@ export async function updateReview({
 
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
-  const [updatedReview] = await db
-    .update(proposalReviews)
-    .set({
-      reviewData,
-      overallComment: overallComment ?? null,
-    })
-    // Defensive: the row must still be SUBMITTED (nothing un-submits today).
-    .where(
-      and(
-        eq(proposalReviews.assignmentId, assignmentId),
-        eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
-      ),
-    )
-    .returning();
+  const { review: updatedReview, wasStale } = await db.transaction(
+    async (tx) => {
+      const currentProposalHistoryId = await getCurrentProposalHistoryId(
+        context.assignment.proposalId,
+        tx,
+      );
 
-  if (!updatedReview) {
-    throw new ValidationError(
-      'This review can no longer be edited; please refresh and try again',
-    );
-  }
+      // Read the staleness *before* the pin moves — the edit is a re-affirm
+      // only if the review was behind the proposal when it started.
+      const stale = isReviewOutOfDate({
+        assignment: context.assignment,
+        review: context.review,
+        currentProposalHistoryId,
+      });
+
+      const [row] = await tx
+        .update(proposalReviews)
+        .set({
+          reviewData,
+          overallComment: overallComment ?? null,
+          // A re-affirm is a fresh judgement of the current version.
+          ...(stale && { submittedAt: new Date().toISOString() }),
+        })
+        // Defensive: the row must still be SUBMITTED (nothing un-submits today).
+        .where(
+          and(
+            eq(proposalReviews.assignmentId, assignmentId),
+            eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
+          ),
+        )
+        .returning();
+
+      if (!row) {
+        throw new ValidationError(
+          'This review can no longer be edited; please refresh and try again',
+        );
+      }
+
+      // Re-stamp the pin: this edit reviewed the proposal as it stands now.
+      if (
+        currentProposalHistoryId &&
+        currentProposalHistoryId !==
+          context.assignment.assignedProposalHistoryId
+      ) {
+        await tx
+          .update(proposalReviewAssignments)
+          .set({ assignedProposalHistoryId: currentProposalHistoryId })
+          .where(eq(proposalReviewAssignments.id, assignmentId));
+      }
+
+      return { review: row, wasStale: stale };
+    },
+  );
+
+  const scoredCriterionKeys = getRubricScoringInfo(context.rubricTemplate)
+    .criteria.filter((criterion) => criterion.scored)
+    .map((criterion) => criterion.key);
+  const scored = getSubmittedReviewScore(updatedReview, scoredCriterionKeys);
+
+  waitUntil(
+    trackReviewUpdated(
+      user.id,
+      context.assignment.processInstanceId,
+      context.assignment.proposalId,
+      {
+        assignment_id: assignmentId,
+        phase_id: context.assignment.phaseId,
+        recommendation: scored?.overallRecommendation ?? null,
+        score: scored?.score ?? null,
+        was_stale: wasStale,
+      },
+    ),
+  );
 
   return {
     review: updatedReview,
