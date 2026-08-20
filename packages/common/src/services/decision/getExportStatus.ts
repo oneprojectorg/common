@@ -159,10 +159,10 @@ const needsFreshUrl = ({
 /**
  * Sign an attachment-serving download URL for an export's stored file.
  *
- * Uses the service client. The only SELECT policy on the assets bucket requires
- * the first path segment to equal the caller's uid, and exports live under
- * `process/<instanceId>/`. An anon-key client gets "Object not found" instead.
- * Callers settle authorization first, as they do for `getProposal`.
+ * Uses the service client. {@link EXPORTS_BUCKET} is private and carries no
+ * `storage.objects` policies, so a caller-scoped client cannot see the object
+ * and gets "Object not found" instead. Callers settle authorization first, as
+ * they do for `getProposal`.
  *
  * Throws on failure, so one caller decides what a failed re-sign costs.
  */
@@ -192,9 +192,11 @@ const mintSignedDownloadUrl = async ({
 /**
  * Re-sign a stale export URL in place and cache the result.
  *
- * A still-good URL is left alone. A failed signature leaves the record as it
- * arrived. A failed cache write still returns the fresh URL, and the next read
- * re-signs again.
+ * A still-good URL is left alone. A failed signature drops the URL from the
+ * record — the bucket is private, so a lapsed signature is a dead link, not a
+ * degraded one — and leaves the cache untouched so the next read retries. A
+ * failed cache write still returns the fresh URL, and the next read re-signs
+ * again.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
@@ -214,9 +216,9 @@ const refreshStaleSignedUrl = async ({
   logger.info('Refreshing signed URL', { exportId });
 
   // Broad on purpose: this is a degradation boundary, not error handling. A
-  // failed re-sign costs the caller a fresher URL. An escaped throw costs the
-  // record, which sends the button to its error boundary and removes the
-  // download link. `createSBServiceClient` throws synchronously, so it is here.
+  // failed re-sign costs the caller the download link. An escaped throw costs
+  // the whole record, which sends the button to its error boundary.
+  // `createSBServiceClient` throws synchronously, so it is inside the try.
   try {
     exportStatus.signedUrl = await mintSignedDownloadUrl({
       processInstanceId: exportStatus.processInstanceId,
@@ -228,8 +230,14 @@ const refreshStaleSignedUrl = async ({
 
     await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
   } catch (error) {
-    // `error`, not `warn`: the admin still sees an enabled download link, and
-    // it either 404s or renders inline.
+    // A signature is the only way to read a private export, so a failed refresh
+    // means there is no usable link. This used to be swallowed, leaving the
+    // lapsed URL on the record for the client to render as a download that
+    // 400s. Report it and drop the URL instead: the button falls back to its
+    // retryable state, and the cached record is left untouched so the next read
+    // tries again rather than persisting the failure.
     logger.error('Failed to re-sign export URL', { exportId, error });
+
+    exportStatus.signedUrl = undefined;
   }
 };

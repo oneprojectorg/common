@@ -31,8 +31,8 @@ import {
   createSBServiceClient,
 } from '@op/supabase/server';
 
-import { ASSETS_BUCKET } from '../../utils/storage';
 import {
+  EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
   exportFilePath,
@@ -114,13 +114,21 @@ describe('getExportStatus', () => {
     });
   });
 
-  // Named literal, not the export constant, which would compare it to itself.
+  // The bucket is asserted through the constant rather than by name: which
+  // bucket is private is `EXPORTS_BUCKET`'s business (and its own test pins it
+  // away from the public one), while what this owns is that the refresh signs
+  // in the export bucket and at the instance-scoped path.
   //
-  // The literal is temporary. `services/db/migrate.ts` provisions a private
-  // `exports` bucket and says the pipeline is repointed at it in a follow-up.
-  // This assertion is expected to fail then: update the literal, and do not
-  // read the failure as evidence the repoint is wrong.
-  it('signs against the configured bucket, at the instance-scoped path', async () => {
+  // The client matters as much as the bucket. `EXPORTS_BUCKET` is private and
+  // there are no `storage.objects` RLS policies, so a caller-scoped client
+  // cannot see the object at all and its `createSignedUrl` fails. This used to
+  // sign with `createSBServerClient` and got away with it only because the
+  // bucket was public. Authorization for this read is already complete by the
+  // time we sign — record ownership, then `assertProfileAccess` for
+  // `decisions: ADMIN` — so the service-role client is signing a request that
+  // has been checked, which is how every other signing site in the repository
+  // is built.
+  it('signs with the service-role client, in the export bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
     vi.mocked(createSBServiceClient).mockReturnValue({
@@ -129,7 +137,9 @@ describe('getExportStatus', () => {
 
     await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(storageFrom).toHaveBeenCalledWith(ASSETS_BUCKET);
+    expect(createSBServiceClient).toHaveBeenCalled();
+    expect(createSBServerClient).not.toHaveBeenCalled();
+    expect(storageFrom).toHaveBeenCalledWith(EXPORTS_BUCKET);
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
@@ -160,21 +170,13 @@ describe('getExportStatus', () => {
     });
   });
 
-  // The assets bucket's only SELECT policy requires the first path segment to
-  // equal the caller's uid, and exports live under `process/<instanceId>/`. An
-  // anon-key client cannot see the object, so the re-sign silently no-oped.
-  it('signs with the service client, which RLS does not block', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
-
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
-
-    expect(createSBServiceClient).toHaveBeenCalled();
-    expect(createSBServerClient).not.toHaveBeenCalled();
-  });
-
-  // The re-sign rescues every record cached before the download option existed.
-  // An unlogged failure there reports success and still serves an inline URL.
-  it('reports a failed re-sign instead of failing quietly', async () => {
+  // A failed re-sign used to be swallowed, which left the lapsed URL on the
+  // record and handed the admin a download button that 400s — the signature is
+  // dead whether or not the bucket is public. Now that the signature is the
+  // only way to read the object, that silence is also the one way access can
+  // break, so it has to be visible in the logs and must not be dressed up as a
+  // working link. Dropping the URL returns the button to its retryable state.
+  it('reports a failed re-sign instead of returning the lapsed URL', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
       data: null,
@@ -187,16 +189,16 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    // The stale URL is still returned — a dead link beats no link — but the
-    // failure is now visible.
-    expect(result).toMatchObject({
-      signedUrl: 'https://storage.example/stale-url',
-    });
+    expect(result).toMatchObject({ status: 'completed' });
+    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+    // The stale record is left in the cache rather than rewritten, so the next
+    // read retries the refresh instead of persisting the failure.
+    expect(set).not.toHaveBeenCalled();
   });
 
   // `createSBServiceClient` throws synchronously when SUPABASE_SERVICE_ROLE is
-  // unset. An escaped throw 500s the query and removes the download link.
-  // Losing the re-sign is survivable. Losing the record is not.
+  // unset. An escaped throw 500s the query and costs the caller the record
+  // itself. Losing the download link is survivable. Losing the record is not.
   it('keeps serving the record when the storage client cannot be built', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     vi.mocked(createSBServiceClient).mockImplementation(() => {
@@ -209,9 +211,8 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    expect(result).toMatchObject({
-      signedUrl: 'https://storage.example/stale-url',
-    });
+    expect(result).toMatchObject({ status: 'completed' });
+    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 
   // A record with a file but no expiry used to skip the re-sign, so the export
