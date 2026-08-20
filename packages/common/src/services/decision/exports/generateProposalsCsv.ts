@@ -140,28 +140,11 @@ interface CustomFieldColumn {
 }
 
 /**
- * A process's custom template fields — anything beyond the fixed
- * title/description/budget/category/location columns above, e.g. a second
- * long-text question, a dropdown, or a money field a process author added.
- * These previously had no column at all, so their values were silently
- * dropped from the export: every process "with multiple parts to their
- * template" lost everything but its default fields.
- *
- * Every `rest` field gets its own column here, including `short-text`/
- * `long-text` ones — the template builder's "Add field" always starts a new
- * field as `short-text`, so the ordinary way a process ends up with
- * "multiple parts" is a second or third text question ("Problem statement",
- * "Proposed solution", ...), not a dropdown or money field. Excluding text
- * formats here on the theory that `collectProposalBodyDoc` already covers
- * them was the bug: that function folds every text-format field into one
- * `Description` cell with no separator between them, so a second text field
- * is not merely duplicated by omitting it here — it disappears as anything
- * a reader could attribute to its own question. This deliberately duplicates
- * that field's text into both `Description` (unchanged, for backward
- * compatibility) and its own column.
- *
- * `location`-keyed fields are excluded: that key already has dedicated
- * Address/Latitude/Longitude columns above.
+ * One column per template field beyond the fixed set above, including
+ * `short-text`/`long-text` fields: `collectProposalBodyDoc` folds those into
+ * `Description` with no separator between them, so a second text field still
+ * needs its own column to stay attributable to its own question.
+ * `location` is excluded — it already has dedicated Address/Lat/Lng columns.
  */
 function getCustomFieldColumns(
   proposalTemplate: ProposalTemplateSchema | null | undefined,
@@ -181,15 +164,10 @@ function getCustomFieldColumns(
 }
 
 /**
- * A custom field's resolved value as CSV text. A string or list of strings
- * is resolved through the field's own schema first, since a `dropdown`/
- * `radio` value is stored as its `oneOf` `const` (e.g. `"high"`) rather than
- * the human-readable `title` (`"High"`) a reader of the export expects; a
- * field with no matching option (a plain text-ish custom field, or a value
- * that predates an option being renamed) keeps the raw string. Objects reuse
- * the same budget/location shape checks as the fixed columns above, since a
- * custom field can use the `money`/`location` `x-format` too; anything else
- * falls back to a JSON dump rather than dropping the value.
+ * A custom field's value as CSV text: strings/numbers resolve through the
+ * field's schema options first (a `dropdown`/`radio` value is its raw
+ * `const`, not its display title); money/location values render as
+ * readable text; anything else falls back to a JSON dump.
  */
 function formatCustomFieldValue(
   value: unknown,
@@ -199,11 +177,9 @@ function formatCustomFieldValue(
     return '';
   }
 
-  // `findSchemaOption` stringifies both sides before comparing, so it
-  // matches a numeric `const` too — needed because `assembleProposalData`
-  // has no dedicated case for `radio`, so a numeric-looking option (an
-  // NPS-style scale's `"5"`) falls through its generic `JSON.parse` branch
-  // as a number rather than staying a string.
+  // `findSchemaOption` stringifies both sides, so it also matches a `radio`
+  // scale's numeric-looking `const` (e.g. `"5"`), which resolves as a
+  // number rather than a string.
   if (typeof value === 'string' || typeof value === 'number') {
     return findSchemaOption(schema, value)?.title ?? String(value);
   }
@@ -221,14 +197,10 @@ function formatCustomFieldValue(
   }
 
   if (typeof value === 'object') {
-    // A resolved value only reaches this branch as an object for `money`/
-    // `location` fields (every other format resolves to a string or array,
-    // handled above) — dispatch on the field's own `x-format` explicitly,
-    // the same way `assembleProposalData` does for the live-document path,
-    // rather than guessing the shape by trying both normalizers in turn: a
-    // malformed `money` value that happens to have `lat`/`lng`-shaped junk
-    // should fall through to the JSON dump below, not get misread as a
-    // location.
+    // Only `money`/`location` fields resolve to an object here — dispatch
+    // on the field's own `x-format` rather than guessing via both
+    // normalizers, so a malformed value can't get misread as the other
+    // shape.
     if (schema?.['x-format'] === 'money') {
       const budget = normalizeBudget(value);
       if (budget) {
@@ -248,11 +220,8 @@ function formatCustomFieldValue(
 }
 
 /**
- * Resolves every custom field column's value for one proposal from a single
- * shared `resolveDocumentFieldValues` result (see `buildProposalRow`): the
- * live document wherever its fragment resolved, falling back to the
- * creation-time snapshot — the same staleness rule the fixed
- * budget/category/location columns above follow.
+ * Every custom column's value for one proposal, from the shared `overrides`
+ * result (see `buildProposalRow`), falling back to the snapshot.
  */
 function resolveCustomFieldValues(
   snapshot: ProposalData,
@@ -262,11 +231,9 @@ function resolveCustomFieldValues(
 ): Record<string, string> {
   const values: Record<string, string> = {};
   for (const { key } of columns) {
-    // `Object.hasOwn`, not `key in overrides` — `overrides` is a plain
-    // object, so `in` also matches inherited `Object.prototype` keys
-    // (`toString`, `constructor`, ...), which a slugified field title could
-    // collide with and would otherwise resolve to a prototype method instead
-    // of falling through to the snapshot.
+    // `Object.hasOwn`, not `key in` — `in` also matches inherited
+    // `Object.prototype` keys (`toString`, ...), which a field key could
+    // collide with.
     const raw = Object.hasOwn(overrides, key) ? overrides[key] : snapshot[key];
     values[key] = formatCustomFieldValue(
       raw,
@@ -288,10 +255,7 @@ function buildProposalRow(
   const documentContent = p.documentContent;
   const proposalTemplate = p.proposalTemplate ?? null;
 
-  // One shared fragment walk for every overridable key — the fixed
-  // budget/category/location columns and every custom column both read out
-  // of this, rather than each re-running `assembleProposalData`'s per-property
-  // scan of the whole template.
+  // One shared fragment walk for every overridable key, fixed and custom.
   const overrides =
     documentContent?.type === 'json'
       ? resolveDocumentFieldValues({
@@ -343,26 +307,14 @@ function buildProposalRow(
 }
 
 /**
- * Every custom-field column across all proposals in the export, keyed and
- * ordered by first appearance. All proposals share one template today (one
- * export covers a single process instance), but computing the union rather
- * than reading only `proposals[0]`'s template keeps this correct even if
- * that ever changes — `csv-stringify` only infers columns from the first
- * record, silently dropping any later row's extra keys.
+ * Every custom-field column across all proposals, deduped and ordered by
+ * first appearance, with headers disambiguated against collisions (a custom
+ * field's title colliding with a fixed column or another field's title).
  *
- * `getCustomFieldColumns` is cached by `processInstanceId`, not by
- * `proposalTemplate` object identity: this export runs inside an Inngest
- * step function, where the proposals list is itself the durable, checkpointed
- * result of an earlier step — a boundary that can hand every proposal a
- * freshly-deserialized `proposalTemplate` even though they all describe the
- * same instance, which would defeat an identity-keyed cache on every row.
- *
- * A field's header must also be unique across the whole export: if a custom
- * field's title collides with a fixed column (a process author naming a
- * field "Status") or with another custom field's title, `csv-stringify`
- * would emit two identically-headed columns and any header-keyed reader
- * silently loses one of them. Colliding headers get the field's key appended
- * to disambiguate.
+ * Cached by `processInstanceId`, not `proposalTemplate` identity: this
+ * export runs inside an Inngest step function, where the proposals list can
+ * cross a checkpoint boundary that hands back a freshly-deserialized
+ * template per row even when they all describe the same instance.
  */
 function collectCustomFieldColumns(
   proposals: ProposalFromList[],
@@ -387,11 +339,8 @@ function collectCustomFieldColumns(
         continue;
       }
 
-      // A loop, not a single check-and-append: the one-shot fallback
-      // `${header} (${key})` can itself already be taken by an unrelated
-      // field that happens to carry that exact title, so it has to keep
-      // retrying until the result is actually free rather than trusting the
-      // first attempt.
+      // Loop, not a single check-and-append — the fallback itself can
+      // already be taken by another field's literal title.
       let header = column.header;
       while (usedHeaders.has(header)) {
         header = `${header} (${column.key})`;
