@@ -1,9 +1,11 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { addCategoryReviewerRouter } from './addCategoryReviewer';
+import { assignReviewsRouter } from './assignReviews';
 import { cancelRevisionRequestRouter } from './cancelRevisionRequest';
 import { getReviewAssignmentRouter } from './getReviewAssignment';
 import { listCategoryReviewersRouter } from './listCategoryReviewers';
 import { listEligibleReviewersRouter } from './listEligibleReviewers';
+import { listPhaseReviewAssignmentsRouter } from './listPhaseReviewAssignments';
 import { listProposalRevisionRequestsRouter } from './listProposalRevisionRequests';
 import { listProposalsRevisionRequestsRouter } from './listProposalsRevisionRequests';
 import { listReviewAssignmentsRouter } from './listReviewAssignments';
@@ -17,6 +19,7 @@ import { updateReviewRouter } from './updateReview';
 
 export const reviewsRouter = mergeRouters(
   addCategoryReviewerRouter,
+  assignReviewsRouter,
   cancelRevisionRequestRouter,
   getReviewAssignmentRouter,
   listCategoryReviewersRouter,
@@ -24,6 +27,7 @@ export const reviewsRouter = mergeRouters(
   listReviewerCategoriesRouter,
   listProposalRevisionRequestsRouter,
   listProposalsRevisionRequestsRouter,
+  listPhaseReviewAssignmentsRouter,
   listReviewAssignmentsRouter,
   removeCategoryReviewerRouter,
   requestRevisionRouter,
