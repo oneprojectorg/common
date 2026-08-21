@@ -289,3 +289,22 @@ const refreshStaleSignedUrl = async ({
     exportStatus.status = 'failed';
   }
 };
+
+/**
+ * Whether a completed export's download URL needs re-signing.
+ *
+ * A missing or unparseable expiry counts as lapsed. `new Date('nonsense') <
+ * new Date()` is false, so treating the comparison as the whole test would read
+ * a garbled timestamp as *fresh* and keep serving whatever `signedUrl` the
+ * record holds — a dead one, or none at all — for the rest of its 24h life.
+ * Erring towards a re-sign costs one signing call and is self-correcting.
+ */
+const isSignedUrlLapsed = (urlExpiresAt: string | undefined): boolean => {
+  if (!urlExpiresAt) {
+    return true;
+  }
+
+  const expiresAt = Date.parse(urlExpiresAt);
+
+  return Number.isNaN(expiresAt) || expiresAt < Date.now();
+};
