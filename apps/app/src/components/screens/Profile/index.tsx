@@ -36,27 +36,33 @@ const ProfileWithData = async ({
       profile.name + 'C' || 'Common',
     );
 
+    // Identical in both layouts — the header is keyed off the profile, which
+    // both branches share; only what follows it differs.
+    const imageHeader = (
+      <ImageHeader
+        headerImage={
+          headerUrl ? (
+            <Image src={headerUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className={cn('h-full w-full', gradientBgHeader)} />
+          )
+        }
+        avatarImage={
+          avatarUrl ? (
+            <Image src={avatarUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className={cn('h-full w-full', gradientBg)} />
+          )
+        }
+      />
+    );
+
     if (profileScreenData.kind === 'organization') {
       const { organization } = profileScreenData;
 
       return (
         <>
-          <ImageHeader
-            headerImage={
-              headerUrl ? (
-                <Image src={headerUrl} alt="" fill className="object-cover" />
-              ) : (
-                <div className={cn('h-full w-full', gradientBgHeader)} />
-              )
-            }
-            avatarImage={
-              avatarUrl ? (
-                <Image src={avatarUrl} alt="" fill className="object-cover" />
-              ) : (
-                <div className={cn('h-full w-full', gradientBg)} />
-              )
-            }
-          />
+          {imageHeader}
 
           <ProfileDetails organization={organization} />
           <ProfileTabsRenderer
@@ -97,22 +103,7 @@ const ProfileWithData = async ({
 
     return (
       <>
-        <ImageHeader
-          headerImage={
-            headerUrl ? (
-              <Image src={headerUrl} alt="" fill className="object-cover" />
-            ) : (
-              <div className={cn('h-full w-full', gradientBgHeader)} />
-            )
-          }
-          avatarImage={
-            avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
-            ) : (
-              <div className={cn('h-full w-full', gradientBg)} />
-            )
-          }
-        />
+        {imageHeader}
 
         <ProfileDetails organization={userProfile} />
         <IndividualProfileTabsRenderer
