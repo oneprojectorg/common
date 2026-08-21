@@ -15,8 +15,6 @@ import { useProposalFilterItems } from './useProposalFilters';
 export interface ProposalControls {
   search: string;
   setSearch: (value: string) => void;
-  /** False on the results tab, whose endpoint can't filter on a search term. */
-  canSearch: boolean;
   /** A query is in flight — results on screen are for an earlier term. */
   isSearchPending: boolean;
   proposalFilter: ProposalFilter;
@@ -66,10 +64,10 @@ export const ProposalsListHeader = ({
  * toggle on the other.
  *
  * Two boxes rather than one wrapping row, so the split is an element boundary
- * and not a measurement: below `xl` the count/search box takes a full row and
- * the selects drop beneath it, right-aligned by `ms-auto`; from `xl` it grows
+ * and not a measurement: below `2xl` the count/search box takes a full row and
+ * the selects drop beneath it, right-aligned by `ms-auto`; from `2xl` it grows
  * instead, putting everything on one line with search against the selects.
- * Inside the box, `ms-auto` holds search to the end, and below `lg` its
+ * Inside the box, `ms-auto` holds search to the end, and below `md` the field's
  * `w-full` wraps it under the count while the selects break out edge-to-edge
  * and scroll. One search instance at every width, so focus survives a
  * breakpoint change.
@@ -108,14 +106,12 @@ export const ProposalsFilterBar = ({
         {header ?? (
           <ProposalsListHeader showCount count={count} total={total} />
         )}
-        {controls.canSearch && (
-          <ProposalSearchField
-            className="ms-auto"
-            value={controls.search}
-            onChange={controls.setSearch}
-            isPending={controls.isSearchPending}
-          />
-        )}
+        <ProposalSearchField
+          className="ms-auto"
+          value={controls.search}
+          onChange={controls.setSearch}
+          isPending={controls.isSearchPending}
+        />
       </div>
       {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
           slack to push against; at 2xl it's content-width beside the count.

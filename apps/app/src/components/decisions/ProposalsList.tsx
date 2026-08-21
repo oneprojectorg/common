@@ -229,6 +229,7 @@ const ResultsPhaseProposalsLoader = ({
         dir: queryParams.dir,
         limit: queryParams.limit,
         categoryId: queryParams.categoryId,
+        search: queryParams.search,
         status: queryParams.status,
         submittedByProfileId: queryParams.submittedByProfileId,
         votedByProfileId: queryParams.votedByProfileId,
@@ -343,9 +344,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
       params.categoryId = appliedCategory;
     }
 
-    // Blank is omitted to keep the untouched query key. `listAllProposals`
-    // (results phase) has no search support and would silently drop the term.
-    if (appliedSearch && phase !== 'results') {
+    // Blank is omitted to keep the untouched query key.
+    if (appliedSearch) {
       params.search = appliedSearch;
     }
 
@@ -369,8 +369,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
   ]);
 
   // Applied, not live: reading the controls would flash "no proposals yet" for a
-  // frame when clearing a filter that had returned nothing. Via `queryParams` so
-  // the search half keeps the results-phase gate.
+  // frame when clearing a filter that had returned nothing.
   const hasActiveFilter =
     !!queryParams.search ||
     appliedCategory !== 'all-categories' ||
@@ -640,8 +639,6 @@ const ProposalsListContent = ({
   const controls: ProposalControls = {
     search,
     setSearch,
-    // `listAllProposals` (results phase) has no search support.
-    canSearch: phase !== 'results',
     isSearchPending: isSearchFetching,
     proposalFilter,
     setProposalFilter,
