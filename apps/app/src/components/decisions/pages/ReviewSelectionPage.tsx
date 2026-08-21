@@ -1,6 +1,10 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
 import {
+  getPhaseRubricTemplate,
+  getRubricScoringInfo,
+} from '@op/common/client';
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -30,6 +34,15 @@ export function ReviewSelectionPage({
   const previousPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === previousPhaseId,
   );
+
+  // Match the loaded table's column set so the skeleton doesn't flash an
+  // extra Score column that shifts away when Suspense resolves.
+  const rubricTemplate = instance.instanceData
+    ? getPhaseRubricTemplate(instance.instanceData, previousPhaseId)
+    : null;
+  const showScore = rubricTemplate
+    ? getRubricScoringInfo(rubricTemplate).criteria.some((c) => c.scored)
+    : false;
 
   return (
     <div className="min-h-full pt-8">
@@ -70,7 +83,9 @@ export function ReviewSelectionPage({
               ),
             }}
           >
-            <Suspense fallback={<ReviewSelectionListSkeleton />}>
+            <Suspense
+              fallback={<ReviewSelectionListSkeleton showScore={showScore} />}
+            >
               <ReviewSelectionList
                 instance={instance}
                 previousPhaseId={previousPhaseId}

@@ -58,11 +58,16 @@ export function ReviewSelectionList({
     });
   const utils = trpc.useUtils();
 
-  const totalPoints = useMemo(
-    () =>
-      rubricTemplate ? getRubricScoringInfo(rubricTemplate).totalPoints : 0,
-    [rubricTemplate],
-  );
+  const { totalPoints, hasScoring } = useMemo(() => {
+    if (!rubricTemplate) {
+      return { totalPoints: 0, hasScoring: false };
+    }
+    const info = getRubricScoringInfo(rubricTemplate);
+    return {
+      totalPoints: info.totalPoints,
+      hasScoring: info.criteria.some((c) => c.scored),
+    };
+  }, [rubricTemplate]);
 
   const selectedProposals = useMemo(
     () =>
@@ -127,6 +132,7 @@ export function ReviewSelectionList({
         <ReviewSelectionTable
           items={items}
           totalPoints={totalPoints}
+          showScore={hasScoring}
           onAdvance={handleAdvanceToggle}
           advancingIds={advancing}
           decisionSlug={decisionSlug}
@@ -151,11 +157,15 @@ export function ReviewSelectionList({
   );
 }
 
-export function ReviewSelectionListSkeleton() {
+export function ReviewSelectionListSkeleton({
+  showScore = true,
+}: {
+  showScore?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-6">
       <div className="h-8 w-32 animate-pulse rounded bg-secondary" />
-      <ReviewSelectionTableSkeleton />
+      <ReviewSelectionTableSkeleton showScore={showScore} />
     </div>
   );
 }

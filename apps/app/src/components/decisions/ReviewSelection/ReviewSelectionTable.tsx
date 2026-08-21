@@ -18,6 +18,7 @@ import {
   TableRow,
   TableRowHeader,
 } from '@op/sense/Table';
+import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -35,6 +36,7 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 export function ReviewSelectionTable({
   items,
   totalPoints,
+  showScore,
   onAdvance,
   advancingIds,
   decisionSlug,
@@ -42,6 +44,8 @@ export function ReviewSelectionTable({
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
   totalPoints: number;
+  /** Rubrics without scored criteria always aggregate to 0, so hide the column. */
+  showScore: boolean;
   onAdvance: (proposalId: string) => void;
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
@@ -60,6 +64,7 @@ export function ReviewSelectionTable({
               <ProposalCard
                 item={item}
                 advancing={advancing}
+                showScore={showScore}
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
               />
@@ -80,11 +85,13 @@ export function ReviewSelectionTable({
           <TableHead scope="col">{t('Budget')}</TableHead>
           <TableHead scope="col">{t('Category')}</TableHead>
           <TableHead scope="col">{t('Overall recommendation')}</TableHead>
-          <TableHead scope="col">
-            <span className="underline decoration-dotted">
-              {t('Score ({pts}pts)', { pts: totalPoints })}
-            </span>
-          </TableHead>
+          {showScore && (
+            <TableHead scope="col">
+              <span className="underline decoration-dotted">
+                {t('Score ({pts}pts)', { pts: totalPoints })}
+              </span>
+            </TableHead>
+          )}
           <TableHead scope="col" className="w-28">
             <span className="sr-only">{t('Advance')}</span>
           </TableHead>
@@ -136,11 +143,13 @@ export function ReviewSelectionTable({
                   counts={item.aggregates.overallRecommendationCount}
                 />
               </TableCell>
-              <TableCell>
-                <span className="text-base">
-                  <ScoreText value={item.aggregates.averageScore} />
-                </span>
-              </TableCell>
+              {showScore && (
+                <TableCell>
+                  <span className="text-base">
+                    <ScoreText value={item.aggregates.averageScore} />
+                  </span>
+                </TableCell>
+              )}
               <TableCell>
                 <AdvanceToggleButton
                   isSelected={advancing}
@@ -157,7 +166,11 @@ export function ReviewSelectionTable({
   );
 }
 
-export function ReviewSelectionTableSkeleton() {
+export function ReviewSelectionTableSkeleton({
+  showScore = true,
+}: {
+  showScore?: boolean;
+}) {
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full items-center justify-between border-b border-border py-2">
@@ -166,7 +179,7 @@ export function ReviewSelectionTableSkeleton() {
           <Skeleton className="h-4 w-12" />
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-20" />
+          {showScore && <Skeleton className="h-4 w-20" />}
           <Skeleton className="h-4 w-16" />
         </div>
       </div>
@@ -182,7 +195,7 @@ export function ReviewSelectionTableSkeleton() {
           <Skeleton className="hidden h-4 w-12 md:block" />
           <Skeleton className="hidden h-5 w-32 md:block" />
           <Skeleton className="hidden h-4 w-32 md:block" />
-          <Skeleton className="hidden h-4 w-12 md:block" />
+          {showScore && <Skeleton className="hidden h-4 w-12 md:block" />}
           <Skeleton className="h-8 w-28" />
         </div>
       ))}
@@ -193,11 +206,13 @@ export function ReviewSelectionTableSkeleton() {
 function ProposalCard({
   item,
   advancing,
+  showScore,
   onAdvance,
   decisionSlug,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
+  showScore: boolean;
   onAdvance: () => void;
   decisionSlug: string;
 }) {
@@ -233,10 +248,17 @@ function ProposalCard({
         counts={item.aggregates.overallRecommendationCount}
       />
 
-      <div className="flex items-center justify-between">
-        <span className="text-base">
-          <ScoreText value={item.aggregates.averageScore} />
-        </span>
+      <div
+        className={cn(
+          'flex items-center',
+          showScore ? 'justify-between' : 'justify-end',
+        )}
+      >
+        {showScore && (
+          <span className="text-base">
+            <ScoreText value={item.aggregates.averageScore} />
+          </span>
+        )}
         <AdvanceToggleButton
           isSelected={advancing}
           onPress={onAdvance}
