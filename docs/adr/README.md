@@ -20,8 +20,9 @@ those.
 If you are unsure, ask in review. A reviewer who cannot tell why a structural
 change was made will ask for an ADR.
 
-This paragraph is the single definition of the threshold. Elsewhere — in
-`CONTRIBUTING.md`, `CLAUDE.md`, or an ADR — link here rather than restating it.
+This section is the single definition of that threshold. Elsewhere — in
+`CONTRIBUTING.md`, `CLAUDE.md`, or an ADR — link here rather than restate it, so
+there is only one place to edit when it changes.
 
 ## How to write one
 

@@ -31,7 +31,7 @@ the code, in a form that survives staff changes?
 
 ## Considered Options
 
-* MADR (Markdown Any Decision Records)
+* MADR (Markdown Architectural Decision Records)
 * Nygard's original five-section ADR
 * Y-statements
 * Status quo — pull request descriptions and Asana threads
