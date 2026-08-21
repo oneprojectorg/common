@@ -15,6 +15,7 @@ import { ButtonLink } from '@/components/ButtonLink';
 import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
 import { ProgressIndicator } from './components/ProgressIndicator';
+import { toOverviewInput, toPhasesInput } from './headlinePatch';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -110,8 +111,8 @@ export const ProcessBuilderFooter = ({
         name: dirtyFields?.name || undefined,
         description: dirtyFields?.description,
         stewardProfileId: dirtyFields?.stewardProfileId || undefined,
-        overview: dirtyFields?.overview,
-        phases: dirtyFields?.phases,
+        overview: toOverviewInput(dirtyFields?.overview),
+        phases: toPhasesInput(dirtyFields?.phases),
         proposalTemplate: dirtyFields?.proposalTemplate,
         rubricTemplate: dirtyFields?.rubricTemplate,
         config: dirtyFields?.config,
