@@ -10,6 +10,7 @@ import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@op/sense/Dialog';
 import {
   Empty,
+  EmptyContent,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
@@ -49,6 +50,12 @@ export interface ProposalsProps {
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
+  /** Applied search term — named in the empty state when it returns nothing. */
+  searchQuery?: string;
+  /** Machine translation is showing; tailors the empty state's search copy. */
+  isTranslated?: boolean;
+  /** Resets every filter from the empty state. */
+  onClearFilters?: () => void;
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
@@ -89,13 +96,33 @@ export const ProposalsGrid = ({
   );
 };
 
-const NoProposalsFound = ({
-  hasFilter,
-  excludeAssignedForReview,
-}: {
+export interface NoProposalsFoundProps {
   hasFilter: boolean;
   excludeAssignedForReview?: boolean;
-}) => {
+  /** The applied search term, quoted back so the miss names itself. */
+  searchQuery?: string;
+  /**
+   * Machine translation is showing. Search matched the untranslated titles, so
+   * a term read off a translated card can miss — say so rather than imply the
+   * proposal isn't there.
+   */
+  isTranslated?: boolean;
+  /** Resets search, category and the All/Mine/Shortlisted filter. */
+  onClearFilters?: () => void;
+}
+
+/**
+ * Empty state for every filtered proposal surface — the grid, the voting list,
+ * and the map's list column. Names the search term that missed, and offers the
+ * way out of a filter that returned nothing.
+ */
+export const NoProposalsFound = ({
+  hasFilter,
+  excludeAssignedForReview,
+  searchQuery,
+  isTranslated = false,
+  onClearFilters,
+}: NoProposalsFoundProps) => {
   const t = useTranslations();
 
   if (excludeAssignedForReview && !hasFilter) {
@@ -114,23 +141,41 @@ const NoProposalsFound = ({
     );
   }
 
+  // A search names itself; the generic filter copy only has to cover the rest.
+  // Curly quotes, not straight: ICU reads `'{` as the start of an escaped
+  // literal, which would print the placeholder instead of the term.
+  const title = searchQuery
+    ? t('No proposals match “{query}”', { query: searchQuery })
+    : hasFilter
+      ? t('No proposals found matching the current filters.')
+      : t('No proposals yet');
+
+  // Under a search the term is already in the title, so the only line worth
+  // adding is the one that explains a miss the reader can see is wrong.
+  const description = searchQuery
+    ? isTranslated
+      ? t('Search matches the original titles, not the translations.')
+      : null
+    : hasFilter
+      ? t('Try adjusting your filter selection above.')
+      : t('You could be the first one to submit a proposal');
+
   return (
     <Empty className="border-0">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>
-          {hasFilter
-            ? t('No proposals found matching the current filters.')
-            : t('No proposals yet')}
-        </EmptyTitle>
-        <EmptyDescription>
-          {hasFilter
-            ? t('Try adjusting your filter selection above.')
-            : t('You could be the first one to submit a proposal')}
-        </EmptyDescription>
+        <EmptyTitle>{title}</EmptyTitle>
+        {description && <EmptyDescription>{description}</EmptyDescription>}
       </EmptyHeader>
+      {hasFilter && onClearFilters && (
+        <EmptyContent>
+          <Button variant="link" size="inline" onClick={onClearFilters}>
+            {t('Clear filters')}
+          </Button>
+        </EmptyContent>
+      )}
     </Empty>
   );
 };
@@ -160,6 +205,9 @@ const VotingProposalsList = ({
   permissions,
   votedProposalIds = [],
   hasFilter,
+  searchQuery,
+  isTranslated,
+  onClearFilters,
   proposalsHidden,
   excludeAssignedForReview,
   isFetchingNextPage,
@@ -290,6 +338,9 @@ const VotingProposalsList = ({
       <NoProposalsFound
         hasFilter={hasFilter}
         excludeAssignedForReview={excludeAssignedForReview}
+        searchQuery={searchQuery}
+        isTranslated={isTranslated}
+        onClearFilters={onClearFilters}
       />
     );
   }
@@ -489,6 +540,9 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
+  searchQuery,
+  isTranslated,
+  onClearFilters,
   proposalsHidden,
   excludeAssignedForReview,
   isFetchingNextPage,
@@ -504,6 +558,9 @@ const ViewProposalsList = ({
       <NoProposalsFound
         hasFilter={hasFilter}
         excludeAssignedForReview={excludeAssignedForReview}
+        searchQuery={searchQuery}
+        isTranslated={isTranslated}
+        onClearFilters={onClearFilters}
       />
     );
   }

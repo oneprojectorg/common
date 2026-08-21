@@ -19,6 +19,7 @@ import { useMapStyleUrl } from './location/mapConfig';
 interface ProposalLocationFilter {
   processInstanceId: string;
   categoryId?: string;
+  search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;
@@ -52,6 +53,11 @@ interface ProposalsMapViewProps {
    * sentinel inside the list column so loading more never adds space below
    * the sticky map. Mobile (map only, no list) never renders it. */
   listFooter?: React.ReactNode;
+  /**
+   * Takes the list column's place when a filter matched nothing. The map stays
+   * — it's the other half of the answer, and its pins are gone too.
+   */
+  emptyState?: React.ReactNode;
 }
 
 /**
@@ -73,6 +79,7 @@ export function ProposalsMapView({
   hrefFor,
   mapView,
   listFooter,
+  emptyState,
 }: ProposalsMapViewProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -194,19 +201,25 @@ export function ProposalsMapView({
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(320px,720px)_minmax(60%,1fr)]">
-      <ul className="flex min-w-0 flex-col gap-6">
-        {proposals.map((proposal) => (
-          <MapListRow
-            key={proposal.id}
-            proposal={proposal}
-            isActive={activeId === proposal.id}
-            onEnter={handleRowEnter}
-            onLeave={handleRowLeave}
-            renderCard={renderCard}
-          />
-        ))}
-        {listFooter && <li>{listFooter}</li>}
-      </ul>
+      {emptyState && proposals.length === 0 ? (
+        // `items-start` so the state sits at the top of the column rather than
+        // centring itself against the full height of the map beside it.
+        <div className="flex min-w-0 items-start">{emptyState}</div>
+      ) : (
+        <ul className="flex min-w-0 flex-col gap-6">
+          {proposals.map((proposal) => (
+            <MapListRow
+              key={proposal.id}
+              proposal={proposal}
+              isActive={activeId === proposal.id}
+              onEnter={handleRowEnter}
+              onLeave={handleRowLeave}
+              renderCard={renderCard}
+            />
+          ))}
+          {listFooter && <li>{listFooter}</li>}
+        </ul>
+      )}
       <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-border sm:block">
         {map}
       </aside>

@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 // Nearest scrollable ancestor — the IntersectionObserver root, so pin detection
 // is measured against the content scroll container rather than the viewport.
-const getScrollParent = (node: Element | null): Element | null => {
+export const getScrollParent = (node: Element | null): Element | null => {
   let el = node?.parentElement ?? null;
   while (el) {
     const overflowY = getComputedStyle(el).overflowY;
@@ -35,7 +35,9 @@ export interface StickyFilterBarProps {
  * the bar locks; once pinned, the full-bleed hairlines and white backing fade
  * in. Requires a `relative` ancestor for the sentinel to anchor to. Callers
  * supply the bar's content — typically a header on the left, filters on the
- * right (the shell lays them out with `justify-between`).
+ * right (the shell lays them out with `justify-between`). A caller that needs a
+ * different arrangement overrides it through `className`; the layout defaults
+ * live here only because two of the three callers want them.
  */
 export const StickyFilterBar = ({
   pinOffset = 0,
