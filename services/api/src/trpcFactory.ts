@@ -18,6 +18,7 @@ import withNetworkAuthenticatedUser from './middlewares/withNetworkAuthenticated
 import withRateLimited from './middlewares/withRateLimited';
 import withRequestCache from './middlewares/withRequestCache';
 import withResolvedUser from './middlewares/withResolvedUser';
+import withTransientRetry from './middlewares/withTransientRetry';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -64,10 +65,15 @@ export const { router } = t;
 export const { middleware } = t;
 export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
+// `withTransientRetry` sits inside `withLogger` so a replayed query still
+// produces one log line for the request, and outside everything the procedure
+// factories append, so an auth lookup that loses the same database socket is
+// replayed alongside the resolver.
 export const commonProcedure = t.procedure
   .use(withRequestCache)
   .use(withChannelMeta)
-  .use(withLogger);
+  .use(withLogger)
+  .use(withTransientRetry);
 
 const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
 
