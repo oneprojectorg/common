@@ -24,7 +24,8 @@ const ProfileWithData = async ({
   initialTab?: string;
 }) => {
   try {
-    const { profile, organization } = await fetchProfileScreenData(slug);
+    const profileScreenData = await fetchProfileScreenData(slug);
+    const { profile } = profileScreenData;
 
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);
@@ -35,8 +36,9 @@ const ProfileWithData = async ({
       profile.name + 'C' || 'Common',
     );
 
-    // Only an org slug resolves an organization, so this doubles as the type check.
-    if (organization) {
+    if (profileScreenData.kind === 'organization') {
+      const { organization } = profileScreenData;
+
       return (
         <>
           <ImageHeader

@@ -15,7 +15,7 @@ vi.mock('@op/api/serverClient', () => ({
   }),
 }));
 
-// Derived rather than listed so a new entity type is covered the day it lands.
+// Derived rather than listed so a new entity type has to be classified here too.
 const nonOrgTypes = Object.values(EntityType).filter(
   (type) => type !== EntityType.ORG,
 );
@@ -34,9 +34,8 @@ describe('fetchProfileScreenData', () => {
     vi.clearAllMocks();
   });
 
-  // The organization lookup throws for every slug that isn't an org, and the
-  // throw is logged as a server error before the caller ever sees it — so the
-  // screen has to know the profile type before asking for the organization.
+  // The org lookup throws for every slug that isn't an org, and tRPC logs that
+  // throw as a server error before the caller ever sees it.
   it.each(nonOrgTypes)(
     'skips the organization lookup for a %s profile',
     async (type) => {
@@ -45,7 +44,7 @@ describe('fetchProfileScreenData', () => {
 
       const result = await fetchProfileScreenData('kathy');
 
-      expect(result).toEqual({ profile, organization: null });
+      expect(result).toEqual({ kind: 'individual', profile });
       expect(getOrganizationBySlug).not.toHaveBeenCalled();
     },
   );
@@ -56,20 +55,27 @@ describe('fetchProfileScreenData', () => {
 
     const result = await fetchProfileScreenData('justtransitions');
 
-    expect(result).toEqual({ profile: organizationProfile, organization });
+    expect(result).toEqual({
+      kind: 'organization',
+      profile: organizationProfile,
+      organization,
+    });
     expect(getOrganizationBySlug).toHaveBeenCalledWith({
       slug: 'justtransitions',
     });
   });
 
-  it('surfaces a missing organization instead of rendering the profile without it', async () => {
-    getProfileBySlug.mockResolvedValue(organizationProfile);
+  it('propagates a failed organization lookup instead of returning null', async () => {
+    getProfileBySlug.mockResolvedValue({
+      ...organizationProfile,
+      slug: 'ialamesoamerica',
+    });
     getOrganizationBySlug.mockRejectedValue(
-      new Error('Organization not found'),
+      new Error("Organization with ID 'ialamesoamerica' not found."),
     );
 
-    await expect(fetchProfileScreenData('justtransitions')).rejects.toThrow(
-      'Organization not found',
+    await expect(fetchProfileScreenData('ialamesoamerica')).rejects.toThrow(
+      'not found',
     );
   });
 });

@@ -23,15 +23,19 @@ const fetchOrganizationBySlug = cache(async (slug: string) => {
  * server error before the caller can swallow it. So the profile type has to be
  * resolved first and the organization fetched only when the slug is an org.
  *
- * A null `organization` therefore means "this slug is not an org", never "the
- * org lookup failed" — a genuinely missing organization row propagates.
+ * Tagged so the org branch carries a non-nullable organization: the caller can't
+ * fall through to the individual layout for an org whose lookup came back empty.
  */
-export const fetchProfileScreenData = async (slug: string) => {
+export const fetchProfileScreenData = cache(async (slug: string) => {
   const profile = await fetchProfileBySlug(slug);
-  const organization =
-    profile.type === EntityType.ORG
-      ? await fetchOrganizationBySlug(slug)
-      : null;
 
-  return { profile, organization };
-};
+  if (profile.type !== EntityType.ORG) {
+    return { kind: 'individual' as const, profile };
+  }
+
+  return {
+    kind: 'organization' as const,
+    profile,
+    organization: await fetchOrganizationBySlug(slug),
+  };
+});
