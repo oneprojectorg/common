@@ -115,17 +115,26 @@ otherwise be ADR material — the design-system boundary, the authorization mode
 database access patterns — and its Governance section claims to supersede "all
 other development practices and guidelines".
 
-In practice its scope is the `.specify` spec-kit workflows that reference it
-(`/analyze`, `/constitution`); nothing else in the repo reads it, and it has
-drifted from current practice since it was last amended on 2025-09-26. This ADR
-does not attempt to reconcile the two. Which document governs, and whether the
-constitution's principles should be migrated into ADRs or left as they are, is
-an open question for the team — worth its own ADR.
+In practice it is read by the `.specify` spec-kit workflows — `/analyze`,
+`/plan` and `/constitution` — and enforced through the "Constitution Check" gate
+in `.specify/templates/plan-template.md`. It has also drifted from current
+practice since it was last amended on 2025-09-26.
 
-Until that is settled, treat the constitution as authoritative inside
-`/analyze`-driven spec work and ADRs as authoritative elsewhere.
+This ADR does not attempt to reconcile the two. Which document governs, and
+whether the constitution's principles should be migrated into ADRs or left where
+they are, is an open question for the team — worth its own ADR.
+
+Until that is settled: the constitution stays authoritative within every
+`.specify` workflow that reads it, including its Constitution Check gate. ADRs
+are authoritative for everything else. Where the two genuinely conflict, raise
+it rather than picking a winner.
 
 ### Status
 
-Status is `proposed`, not `accepted` — merging this file is the team's signal to
-change it. See [README.md](./README.md) for the process.
+This ADR is `proposed`, which [README.md](./README.md) treats as the exception
+rather than the norm. It is deliberate here: the convention was drafted as
+scaffolding, and adopting it is the team's call, not the author's.
+
+Approving this PR is that call. Whoever merges it should flip `status` to
+`accepted` and bump `date` — until then, by its own definition, none of this is
+in force.

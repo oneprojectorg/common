@@ -1,6 +1,8 @@
 ---
-# These are optional metadata elements. Feel free to remove any of them.
-status: "{proposed | rejected | accepted | deprecated | … | superseded by ADR-0123}"
+# `status` and `date` are required here — the lifecycle and the superseding
+# procedure in README.md both read them. The three below them are optional;
+# remove any you do not need.
+status: "{proposed | accepted | rejected | deprecated | superseded by ADR-0123}"
 date: {YYYY-MM-DD when the decision was last updated}
 decision-makers: {list everyone involved in the decision}
 consulted: {list everyone whose opinions are sought (typically subject-matter experts); and with whom there is a two-way communication}
