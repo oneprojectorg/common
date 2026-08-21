@@ -4,8 +4,10 @@
  * The export is a background workflow, so the mutation only returns an id. The
  * workflow broadcasts on `proposalExport:<exportId>` when it picks the job up
  * and again when the run settles, and the button re-reads its status on each —
- * there is no polling, so this timeout is the only bound on the wait. The
- * button re-arms it per reported state rather than applying it to the whole run.
+ * there is no polling, so this timeout is the only bound on the wait. The button
+ * re-arms it whenever the run reports a state it has not already seen, which on
+ * a run whose first read arrives before `processing` is written buys a second
+ * period — but it is not yet a general bound on silence.
  *
  * That makes it the last line of defence rather than a formality. A broadcast
  * that never arrives — the workflow died without writing a terminal status, the
