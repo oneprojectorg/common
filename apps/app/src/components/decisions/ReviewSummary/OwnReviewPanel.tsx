@@ -53,7 +53,12 @@ export function OwnReviewPanel({
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            <ReviewRubricForm openReviews={false} previousReviewPhases={[]} />
+            {/* Hardcoded: this surface has no `instanceData` to resolve the
+                phase's settings from. */}
+            <ReviewRubricForm
+              settings={{ anonymousFeedback: true, openReviews: false }}
+              previousReviewPhases={[]}
+            />
           </div>
         </ReviewFormProvider>
       </Suspense>

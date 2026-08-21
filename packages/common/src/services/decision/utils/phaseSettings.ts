@@ -41,13 +41,18 @@ export function hasVotingPhase(
   return phases.some(isVotingPhase);
 }
 
-/** `PhaseReviewSettings` with defaults applied (`anonymousFeedback` has none). */
+/** `PhaseReviewSettings` with defaults applied. */
 export type ReviewSettings = Required<
   Pick<
     PhaseReviewSettings,
-    'submit' | 'policy' | 'scope' | 'allowRevisions' | 'openReviews'
+    | 'submit'
+    | 'policy'
+    | 'scope'
+    | 'allowRevisions'
+    | 'anonymousFeedback'
+    | 'openReviews'
   >
-> & { anonymousFeedback: PhaseReviewSettings['anonymousFeedback'] };
+>;
 
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
 export function getPhaseReviewSettings(
@@ -73,8 +78,10 @@ export function getPhaseReviewSettings(
     scope: reviews?.scope ?? DEFAULT_REVIEWS_SCOPE,
     allowRevisions:
       reviews?.allowRevisions ?? config?.reviewsAllowRevisions ?? true,
+    // Defaults on: the feedback-to-author field rendered unconditionally before
+    // this setting was wired to it, so an unconfigured process keeps that field.
     anonymousFeedback:
-      reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback,
+      reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback ?? true,
     // Open reviews is phase-only (no legacy config counterpart), like scope,
     // and defaults to false.
     openReviews: reviews?.openReviews ?? false,
