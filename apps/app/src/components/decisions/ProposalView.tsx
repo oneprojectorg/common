@@ -18,6 +18,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
@@ -203,6 +204,11 @@ export function ProposalView({
             <RevisedOnBadge respondedAt={latestResponse.respondedAt} />
           ) : undefined
         }
+      />
+
+      <ContributingIdeas
+        proposal={currentProposal}
+        decisionRoot={decisionRoot}
       />
 
       <ProposalComments proposal={currentProposal} />

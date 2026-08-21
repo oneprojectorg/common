@@ -1,7 +1,8 @@
-import { type SQL, and, db, eq, isNull, ne } from '@op/db/client';
+import { type SQL, and, db, eq, inArray, isNull, ne } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
+  objectsInStorage,
   profiles,
   proposalRelationships,
   proposals,
@@ -13,8 +14,10 @@ import { NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getLinkedProposal } from './getLinkedProposal';
+import { parseProposalData } from './proposalDataSchema';
 import type {
   ListProposalRelationshipsInput,
+  ProposalRelationshipAuthor,
   ProposalRelationshipList,
 } from './schemas/proposalRelationships';
 
@@ -107,6 +110,8 @@ export async function listProposalRelationships({
         createdAt: proposalRelationships.createdAt,
         proposalId: proposals.id,
         proposalStatus: proposals.status,
+        proposalData: proposals.proposalData,
+        submittedByProfileId: proposals.submittedByProfileId,
         profile: {
           id: profiles.id,
           name: profiles.name,
@@ -134,20 +139,76 @@ export async function listProposalRelationships({
     throw new NotFoundError('Proposal', pinnedProposalId);
   }
 
+  const submitters = await getRelationshipSubmitters(rows);
+
   return {
     queriedProposal: {
       id: proposal.proposalId,
       processInstanceId: proposal.processInstanceId,
     },
-    relationships: rows.map((row) => ({
-      id: row.id,
-      relationshipType: row.relationshipType,
-      createdAt: row.createdAt,
-      proposal: {
-        id: row.proposalId,
-        status: row.proposalStatus,
-        profile: row.profile,
-      },
-    })),
+    relationships: rows.map((row) => {
+      const { budget, category } = parseProposalData(row.proposalData);
+
+      return {
+        id: row.id,
+        relationshipType: row.relationshipType,
+        createdAt: row.createdAt,
+        proposal: {
+          id: row.proposalId,
+          status: row.proposalStatus,
+          profile: row.profile,
+          // `null` rather than the parser's `undefined`, so "no budget" survives
+          // serialization as an explicit absence.
+          budget: budget ?? null,
+          categories: category,
+          submittedBy: row.submittedByProfileId
+            ? (submitters.get(row.submittedByProfileId) ?? null)
+            : null,
+        },
+      };
+    }),
   };
+}
+
+/**
+ * Submitter name + avatar for a page of relationship rows, keyed by profile id.
+ *
+ * A second query rather than a join: the edge query already joins `profiles`
+ * for the far proposal's own profile, and Drizzle's join-nullability mapping
+ * collapses the whole row type to `never` when one base table is joined twice
+ * (aliased or not). The fan-in is one admin's merges, so this reads a handful
+ * of rows.
+ */
+async function getRelationshipSubmitters(
+  rows: Array<{ submittedByProfileId: string | null }>,
+): Promise<Map<string, ProposalRelationshipAuthor>> {
+  const submitterIds = [
+    ...new Set(
+      rows
+        .map((row) => row.submittedByProfileId)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+
+  if (submitterIds.length === 0) {
+    return new Map();
+  }
+
+  const submitterRows = await db
+    .select({
+      id: profiles.id,
+      name: profiles.name,
+      // Left join: a submitter needn't have an avatar.
+      avatarImageName: objectsInStorage.name,
+    })
+    .from(profiles)
+    .leftJoin(objectsInStorage, eq(objectsInStorage.id, profiles.avatarImageId))
+    .where(inArray(profiles.id, submitterIds));
+
+  return new Map(
+    submitterRows.map((row) => [
+      row.id,
+      { name: row.name, avatarImageName: row.avatarImageName },
+    ]),
+  );
 }

@@ -1,6 +1,8 @@
 import { ProposalRelationshipType } from '@op/db/schema';
 import { z } from 'zod';
 
+import { moneyAmountSchema } from '../../../money';
+
 /** The column is `text`, so this is the only ceiling; raising it needs no migration. */
 export const MERGE_NOTE_MAX_LENGTH = 2000;
 
@@ -48,6 +50,22 @@ export type ListProposalRelationshipsInput = z.infer<
   typeof listProposalRelationshipsInputSchema
 >;
 
+/**
+ * The far proposal's submitter, as rendered on a relationship card's facepile.
+ * Deliberately narrower than `proposalProfileSchema`: the card shows the name
+ * and avatar as plain text — the card's only link is its title — so there is no
+ * profile link to gate on the submitter's anonymity.
+ */
+export const proposalRelationshipAuthorSchema = z.object({
+  name: z.string(),
+  /** Storage object name, resolved to a public URL by the client. */
+  avatarImageName: z.string().nullish(),
+});
+
+export type ProposalRelationshipAuthor = z.infer<
+  typeof proposalRelationshipAuthorSchema
+>;
+
 export const proposalRelationshipItemSchema = z.object({
   id: z.uuid(),
   relationshipType: z.enum(ProposalRelationshipType),
@@ -61,6 +79,16 @@ export const proposalRelationshipItemSchema = z.object({
       name: z.string(),
       slug: z.string(),
     }),
+    /**
+     * Budget and categories from the creation-time `proposalData` snapshot, so
+     * a relationship card carries the same badges as a proposal card. Unlike
+     * the list surfaces these aren't re-resolved from the live document — a
+     * merged-away proposal is frozen in practice, and a fan-in of them isn't
+     * worth a fragment fetch each.
+     */
+    budget: moneyAmountSchema.nullish(),
+    categories: z.array(z.string()),
+    submittedBy: proposalRelationshipAuthorSchema.nullish(),
   }),
 });
 
