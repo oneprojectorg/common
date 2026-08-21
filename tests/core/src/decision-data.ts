@@ -238,8 +238,8 @@ export interface CreateDecisionInstanceOptions {
   /**
    * Per-phase `headline` overrides, keyed by phase id. `headline` is an
    * instance-level override (it has no place in the schema's PhaseDefinition),
-   * so this is the only way to seed one. An empty string is meaningful — it's
-   * the state an admin persists by clearing the field in the process builder.
+   * so this is the only way to seed one. An empty string is meaningful — the
+   * API rejects one now, but rows written before it does still hold `''`.
    */
   phaseHeadlines?: Record<string, string>;
 }

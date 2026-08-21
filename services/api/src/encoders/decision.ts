@@ -188,15 +188,30 @@ export const decisionProcessWithSchemaListEncoder = z.object({
 });
 
 /**
- * A stored headline, read back. An admin clears a headline to fall back to the
- * default copy, so a blank value decodes to `undefined` and the fallback chains
- * that render it (`currentPhase?.headline ?? t('...')`) take the default. Writes
- * no longer persist `''` (see `stripBlankHeadline` in `updateDecisionInstance`);
- * this covers rows written before that.
+ * A stored headline, read back. Writes reject an empty title, so a blank value
+ * here is a row from before that: decode it as absent, and the fallback chains
+ * that render it (`currentPhase?.headline ?? t('...')`) take the default copy
+ * instead of rendering a blank heading.
  */
 const storedHeadlineEncoder = z
   .string()
   .transform((headline) => (headline.trim() ? headline : undefined))
+  .optional();
+
+/**
+ * A headline on the way in. An empty (or whitespace-only) title is not valid
+ * content, so it is rejected rather than coerced. `null` is how a caller says
+ * "clear this headline" — the stored value is deleted and the page falls back
+ * to its default copy — and `undefined` leaves it unchanged.
+ */
+const nonBlankHeadline = z.string().trim().min(1, 'Headline cannot be empty');
+
+const phaseHeadlineInputEncoder = nonBlankHeadline.nullable().optional();
+
+/** Capped at the length the overview editor's character counter enforces. */
+const overviewHeadlineInputEncoder = nonBlankHeadline
+  .max(50)
+  .nullable()
   .optional();
 
 /** Instance-specific phase data (overrides for dates, rules, settings) */
@@ -280,7 +295,7 @@ const instanceOverviewEncoder = z.object({
  * writes.
  */
 const instanceOverviewInputEncoder = z.object({
-  headline: z.string().max(50).optional(),
+  headline: overviewHeadlineInputEncoder,
   description: z.string().max(500).optional(),
   body: overviewBodyInputEncoder.optional(),
   // `heroImage` is intentionally NOT accepted here: it's a storage path that
@@ -543,10 +558,9 @@ export const createInstanceFromTemplateInputSchema = z.object({
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
-  // Raw on the way in: `''` is how the editor says "clear this headline", and
-  // the service turns that into the absence of a headline. Normalizing it to
-  // `undefined` here would instead mean "leave it unchanged".
-  headline: z.string().optional(),
+  // Overrides the read-path encoder: `''` is rejected here rather than decoded
+  // as absent, and `null` is the explicit "clear this headline".
+  headline: phaseHeadlineInputEncoder,
   // `null` clears the phase-level rubric; omitted leaves it unchanged.
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });

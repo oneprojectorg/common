@@ -5,9 +5,9 @@ import { expect, test } from '../fixtures/index.js';
 /**
  * An admin clearing a phase's headline field (select-all, delete) used to
  * persist `''`, which the hero title's `??` fallback treated as content and
- * rendered as a blank `<h1>`. The API no longer writes a blank headline, and
- * decodes a stored one as absent — so a row written before that fix (seeded
- * here straight into `instanceData`) also renders the default copy.
+ * rendered as a blank `<h1>`. The API now rejects an empty title outright, and
+ * decodes a stored one as absent — so a row written before that (seeded here
+ * straight into `instanceData`) renders the default copy too.
  */
 test('current-phase hero falls back to default copy when the phase headline is cleared to an empty string', async ({
   authenticatedPage,

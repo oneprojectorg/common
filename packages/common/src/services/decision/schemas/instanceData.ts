@@ -65,6 +65,18 @@ export interface InstanceOverview {
 }
 
 /**
+ * Overview patch accepted by `updateDecisionInstance`. Same headline rule as
+ * `PhaseOverride`: `null` clears it, `undefined` leaves it unchanged, and `''`
+ * never reaches here.
+ */
+export interface InstanceOverviewUpdate extends Omit<
+  InstanceOverview,
+  'headline'
+> {
+  headline?: string | null;
+}
+
+/**
  * Instance data stored in processInstances table for new DecisionSchemaDefinition-based instances.
  * This structure must match instanceDataWithSchemaEncoder in the API encoders.
  */
@@ -87,7 +99,12 @@ export interface PhaseOverride {
   phaseId: string;
   name?: string;
   description?: string;
-  headline?: string;
+  /**
+   * Phase headline override. `null` clears it (the phase page falls back to its
+   * default copy), `undefined` leaves it unchanged. `''` is rejected at the API
+   * boundary — an empty title is not valid content.
+   */
+  headline?: string | null;
   additionalInfo?: string;
   rules?: PhaseRules;
   startDate?: string;

@@ -21,6 +21,7 @@ import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
   InstanceOverview,
+  InstanceOverviewUpdate,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -51,7 +52,7 @@ export const updateDecisionInstance = async ({
   /** Process-level configuration (e.g., hideBudget) */
   config?: ProcessConfig;
   /** Public-facing overview content (headline, short description, rich text body) */
-  overview?: InstanceOverview;
+  overview?: InstanceOverviewUpdate;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
@@ -182,11 +183,16 @@ export const updateDecisionInstance = async ({
 
     // Apply overview updates (merge with existing overview)
     if (hasOverviewUpdate) {
-      const mergedOverview = {
+      const { headline, ...overviewPatch } = overview ?? {};
+      const mergedOverview: InstanceOverview = {
         ...existingInstanceData.overview,
-        ...overview,
+        ...overviewPatch,
+        ...(typeof headline === 'string' && { headline }),
       };
-      stripBlankHeadline(mergedOverview);
+      // `null` clears the headline; so does a legacy `''` on the stored row.
+      if (headline === null || isBlankHeadline(mergedOverview.headline)) {
+        delete mergedOverview.headline;
+      }
       updatedInstanceData.overview = mergedOverview;
     }
 
@@ -222,7 +228,9 @@ export const updateDecisionInstance = async ({
           ...(phase.description !== undefined && {
             description: phase.description,
           }),
-          ...(phase.headline !== undefined && { headline: phase.headline }),
+          ...(typeof phase.headline === 'string' && {
+            headline: phase.headline,
+          }),
           ...(phase.additionalInfo !== undefined && {
             additionalInfo: phase.additionalInfo,
           }),
@@ -238,7 +246,11 @@ export const updateDecisionInstance = async ({
         if (phase.rubricTemplate === null) {
           delete merged.rubricTemplate;
         }
-        stripBlankHeadline(merged);
+        // Same for the headline — `null` clears it, and a legacy `''` on the
+        // stored phase clears with it.
+        if (phase.headline === null || isBlankHeadline(merged.headline)) {
+          delete merged.headline;
+        }
         return merged;
       });
     }
@@ -413,15 +425,9 @@ export const updateDecisionInstance = async ({
 };
 
 /**
- * Deletes a blank headline in place instead of storing `''`.
- *
- * Admins clear a headline to fall back to the default copy, so the cleared
- * state is the *absence* of a headline — persisting `''` renders a blank title
- * on the public page. Also heals a legacy `''` on any phase or overview that
- * gets written again.
+ * True for a stored headline of `''` (or whitespace only) — the shape rows
+ * written before the API rejected an empty title still hold. Dropping it on the
+ * next write keeps a blank title from rendering where the default copy belongs.
  */
-const stripBlankHeadline = (target: { headline?: string }) => {
-  if (target.headline?.trim() === '') {
-    delete target.headline;
-  }
-};
+const isBlankHeadline = (headline: string | undefined) =>
+  headline?.trim() === '';
