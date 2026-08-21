@@ -15,7 +15,10 @@ const exportStatusOutputSchema = z.union([
   z.object({
     exportId: z.string(),
     processInstanceId: z.string(),
-    userId: z.string(),
+    // Nullable: the requester's auth account can be deleted after the export
+    // was created, at which point the export is no longer attributed to
+    // anyone (still readable by any admin on the decision profile).
+    userId: z.string().nullable(),
     format: z.string(),
     status: z.enum(['pending', 'processing', 'completed', 'failed']),
     fileName: z.string().optional(),

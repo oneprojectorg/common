@@ -83,9 +83,10 @@ const statusUnreadableFallbacks = {
  * and saying "the export failed" would claim knowledge it does not have.
  *
  * Retrying resets the boundary, which remounts the button at idle. That drops
- * the id of the run in flight, and export state is cache-only with no history,
- * so a file it goes on to write is unreachable. That cost is real and already
- * paid by the timeout path; it is not introduced here.
+ * the id of the run in flight from this component's local state, and there is
+ * no export-history UI yet to look it up by, so a file it goes on to write is
+ * unreachable from here even though it is durably recorded. That cost is real
+ * and already paid by the timeout path; it is not introduced here.
  */
 const ExportStatusUnreadable = ({
   error,
@@ -147,9 +148,9 @@ const ExportProposalsButtonContent = ({
       // into something that says so.
       //
       // A completed record is exempt. Its signed URL is the only route to the
-      // file — export state is cache-only, with no history to recover it from
-      // — so discarding a good link because a later background refetch failed
-      // would cost the admin the entire run.
+      // file from this button — there is no export-history UI yet to recover
+      // it from — so discarding a good link because a later background
+      // refetch failed would cost the admin the entire run.
       throwOnError: (_error, query) => query.state.data?.status !== 'completed',
     },
   );

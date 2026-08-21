@@ -1,17 +1,16 @@
-import { get, set } from '@op/cache';
 import {
   EXPORTS_BUCKET,
-  EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
-  type ExportStatusData,
   assertUserByAuthId,
   exportFileName,
   exportFilePath,
-  exportStatusCacheKey,
   generateProposalsCsv,
   listProposals,
+  nextUrlExpiresAt,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
+import { db, eq } from '@op/db/client';
+import { ProposalExportStatus, proposalExports } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { realtime } from '@op/realtime/server';
 import { createSBServiceClient } from '@op/supabase/server';
@@ -20,24 +19,24 @@ type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
-// Helper to merge a partial update into the cached export status. The record is
-// seeded in full when the export is requested, so every write here is a patch
-// over an existing record rather than a fresh one.
+// Helper to patch the export's durable record. Each step only touches the
+// columns it owns, so — unlike the read-merge-write this replaced against the
+// cache — this is a plain partial UPDATE with no read step.
 const updateExportStatus = async (
   exportId: string,
-  updates: Partial<ExportStatusData>,
+  updates: Partial<typeof proposalExports.$inferInsert>,
 ) => {
-  const key = exportStatusCacheKey(exportId);
-  const existing = (await get(key)) as ExportStatusData | null;
-  const updated = { ...(existing ?? {}), ...updates };
-  await set(key, updated, EXPORT_CACHE_TTL_SECONDS);
+  await db
+    .update(proposalExports)
+    .set(updates)
+    .where(eq(proposalExports.id, exportId));
 };
 
 /**
  * Tell any admin waiting on this export that it has reached a terminal state.
  *
- * Broadcast-only: the cached record written just before this is the source of
- * truth, and the message carries no payload — subscribers re-read
+ * Broadcast-only: the durable record written just before this is the source
+ * of truth, and the message carries no payload — subscribers re-read
  * `getExportStatus` on receipt.
  *
  * Nothing polls behind this, so a lost broadcast costs correctness rather than
@@ -74,12 +73,7 @@ export const exportProposals = inngest.createFunction(
     // Step 1: Update status to processing
     await step.run('update-status-processing', async () => {
       await updateExportStatus(exportId, {
-        status: 'processing',
-        exportId,
-        processInstanceId,
-        userId,
-        format,
-        createdAt: new Date().toISOString(),
+        status: ProposalExportStatus.PROCESSING,
       });
     });
 
@@ -179,13 +173,17 @@ export const exportProposals = inngest.createFunction(
       // Step 5: Update status to completed
       await step.run('update-status-completed', async () => {
         await updateExportStatus(exportId, {
-          status: 'completed',
+          status: ProposalExportStatus.COMPLETED,
           fileName,
           signedUrl,
-          urlExpiresAt: new Date(
-            Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
-          ).toISOString(),
-          completedAt: new Date().toISOString(),
+          urlExpiresAt: nextUrlExpiresAt(),
+          completedAt: new Date(),
+          // Clears a message from an earlier failed attempt of this same run
+          // (Inngest retries the whole function on a rethrown error, and each
+          // step here writes only the columns it owns) — otherwise a run that
+          // fails once and then succeeds on retry would durably read
+          // `completed` with a stale, contradictory error attached.
+          errorMessage: null,
         });
       });
 
@@ -198,10 +196,10 @@ export const exportProposals = inngest.createFunction(
       // Update status to failed
       await step.run('update-status-failed', async () => {
         await updateExportStatus(exportId, {
-          status: 'failed',
+          status: ProposalExportStatus.FAILED,
           errorMessage:
             error instanceof Error ? error.message : 'Unknown error',
-          completedAt: new Date().toISOString(),
+          completedAt: new Date(),
         });
       });
 

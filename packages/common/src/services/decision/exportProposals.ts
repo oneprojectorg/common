@@ -1,14 +1,11 @@
-import { set } from '@op/cache';
-import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { proposalExports } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
-import { randomUUID } from 'crypto';
 
-import { NotFoundError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { EXPORT_CACHE_TTL_SECONDS, exportStatusCacheKey } from './exports';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -32,19 +29,16 @@ export const exportProposals = async ({
   // unrepresentable, but it also collapses "no such instance" and "instance has
   // no profile" into one indistinguishable miss. Kept as two lookups until we
   // decide which error those callers should see.
-  const result = await db
-    .select({
-      profileId: processInstances.profileId,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, processInstanceId))
-    .limit(1);
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { profileId: true },
+  });
 
-  if (!result[0]) {
+  if (!instance) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const { profileId } = result[0];
+  const { profileId } = instance;
 
   if (!profileId) {
     throw new NotFoundError('Decision profile', processInstanceId);
@@ -57,24 +51,23 @@ export const exportProposals = async ({
     permissions: [{ decisions: permission.ADMIN }],
   });
 
-  const exportId = randomUUID();
-
-  // Seeded in full rather than as an id and a state: the status contract
-  // requires `format`, so a partial record fails the first read instead of
-  // answering it. This cache is the only store of export state — no table
-  // stands behind it — so nothing else can supply what the seed omits.
-  await set(
-    exportStatusCacheKey(exportId),
-    {
-      exportId,
+  // The row is the durable record of who requested this export and for what
+  // — its id becomes the exportId, so the workflow and the first status read
+  // both address the same row. `status` defaults to `pending` in the schema.
+  const [record] = await db
+    .insert(proposalExports)
+    .values({
       processInstanceId: input.processInstanceId,
-      userId: user.id,
+      requestedByUserId: user.id,
       format: input.format,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    },
-    EXPORT_CACHE_TTL_SECONDS,
-  );
+    })
+    .returning({ id: proposalExports.id });
+
+  if (!record) {
+    throw new CommonError('Failed to create export record');
+  }
+
+  const { id: exportId } = record;
 
   // Trigger workflow
   await event.send({

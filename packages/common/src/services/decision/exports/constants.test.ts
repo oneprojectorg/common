@@ -2,11 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   EXPORTS_BUCKET,
-  EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
   exportFileName,
   exportFilePath,
-  exportStatusCacheKey,
+  nextUrlExpiresAt,
 } from './constants';
 
 // Regression: these constants are read by three independent call sites — the
@@ -26,38 +25,25 @@ describe('EXPORTS_BUCKET', () => {
   });
 });
 
-describe('export TTLs', () => {
-  // THE invariant. The signed URL must expire before the record that holds it,
-  // so that a lapsed URL is still attached to a live record and can be
-  // re-signed on read. Invert this and the record dies first: `getExportStatus`
-  // returns `not_found` and the refresh branch becomes unreachable code.
-  it('expires the signed URL strictly before the cached record', () => {
-    expect(EXPORT_URL_TTL_SECONDS).toBeLessThan(EXPORT_CACHE_TTL_SECONDS);
-  });
-
-  it('keeps a completed export downloadable for a full day', () => {
-    expect(EXPORT_CACHE_TTL_SECONDS).toBe(24 * 60 * 60);
-  });
-
+describe('EXPORT_URL_TTL_SECONDS', () => {
   it('mints short-lived signed URLs', () => {
     expect(EXPORT_URL_TTL_SECONDS).toBe(6 * 60 * 60);
   });
 });
 
-describe('exportStatusCacheKey', () => {
-  it('namespaces the key by export id', () => {
-    expect(exportStatusCacheKey('abc-123')).toBe('export:proposal:abc-123');
-  });
+describe('nextUrlExpiresAt', () => {
+  // Shared by the workflow's first mint and getExportStatus's re-sign so the
+  // two can't drift the way the bucket/TTL constants once did.
+  it('is EXPORT_URL_TTL_SECONDS in the future', () => {
+    const before = Date.now();
+    const expiresAt = nextUrlExpiresAt();
+    const after = Date.now();
 
-  it('is stable for the same id across calls', () => {
-    expect(exportStatusCacheKey('abc-123')).toBe(
-      exportStatusCacheKey('abc-123'),
+    expect(expiresAt.getTime()).toBeGreaterThanOrEqual(
+      before + EXPORT_URL_TTL_SECONDS * 1000,
     );
-  });
-
-  it('distinguishes different exports', () => {
-    expect(exportStatusCacheKey('abc-123')).not.toBe(
-      exportStatusCacheKey('abc-124'),
+    expect(expiresAt.getTime()).toBeLessThanOrEqual(
+      after + EXPORT_URL_TTL_SECONDS * 1000,
     );
   });
 });
