@@ -16,6 +16,8 @@ import {
   exportFilePath,
   exportStatusCacheKey,
 } from './exports';
+import type { ExportStatusData } from './schemas/exportStatus';
+import { exportStatusRecordSchema } from './schemas/exportStatus';
 
 /**
  * Does a stored signed URL ask Supabase for an attachment?
@@ -24,9 +26,9 @@ import {
  * makes the CSV save instead of render. Expiry alone therefore does not report
  * whether a stored URL still works.
  *
- * The parameter is `unknown` because the cached record is an unvalidated cast
- * over Redis JSON. This runs outside the re-sign's catch, so a non-string must
- * return false rather than throw.
+ * `exportStatusRecordSchema` already rejects a record whose `signedUrl` is not
+ * a string, so this only reads a URL the schema passed. It still runs outside
+ * the re-sign's catch, so it returns false rather than throws.
  */
 const servesAsAttachment = (signedUrl: unknown): boolean => {
   if (typeof signedUrl !== 'string') {
@@ -38,19 +40,10 @@ const servesAsAttachment = (signedUrl: unknown): boolean => {
   return query !== undefined && new URLSearchParams(query).has('download');
 };
 
-export interface ExportStatusData {
-  exportId: string;
-  processInstanceId: string;
-  userId: string;
-  format: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  fileName?: string;
-  signedUrl?: string;
-  urlExpiresAt?: string;
-  errorMessage?: string;
-  createdAt: string;
-  completedAt?: string;
-}
+// Re-exported here because this module is where callers already look for it.
+// `schemas/exportStatus.ts` derives the type from the schema that validates the
+// record, so the type and the check cannot drift.
+export type { ExportStatusData } from './schemas/exportStatus';
 
 /**
  * The logging methods this module needs.
@@ -83,12 +76,33 @@ export const getExportStatus = async ({
     throw new CommonError('Could not read the export record.');
   }
 
-  const exportStatus =
-    cached.status === 'hit' ? (cached.data as ExportStatusData) : null;
-
-  if (!exportStatus) {
+  if (cached.status !== 'hit') {
     return { status: 'not_found' as const };
   }
+
+  // Parse the cached value rather than assert its type. Redis holds the only
+  // copy of this record, so nothing else checks the shape this path depends on.
+  //
+  // A malformed record is reachable. The workflow patches the record by merging
+  // over the copy it reads, and it writes the patch alone when that read misses.
+  // A cache eviction, or one unreachable Redis, therefore leaves a record that
+  // holds a status and nothing else.
+  //
+  // Such a record describes no export, and no later read repairs it. This
+  // reports `not_found`, so the client returns to idle and the admin starts a
+  // fresh run.
+  const parsed = exportStatusRecordSchema.safeParse(cached.data);
+
+  if (!parsed.success) {
+    logger.error('Cached export record does not match its schema', {
+      exportId,
+      error: parsed.error,
+    });
+
+    return { status: 'not_found' as const };
+  }
+
+  const exportStatus = parsed.data;
 
   // Verify user owns this export (basic ownership check)
   if (exportStatus.userId !== user.id) {
@@ -118,12 +132,6 @@ export const getExportStatus = async ({
     profileId: instance[0].profileId,
     permissions: [{ decisions: permission.ADMIN }],
   });
-
-  // Callers declare `signedUrl` as a string and reject the whole record if it
-  // is not one. The re-sign skips records that never completed, so scrub here.
-  if (typeof exportStatus.signedUrl !== 'string') {
-    exportStatus.signedUrl = undefined;
-  }
 
   // Mutates `exportStatus` in place, so the record returned below is current.
   await refreshStaleSignedUrl({ exportStatus, cacheKey: key, logger });

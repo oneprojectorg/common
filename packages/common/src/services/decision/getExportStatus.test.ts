@@ -287,67 +287,23 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
-  // The staleness test runs outside the degradation boundary. A non-string
-  // `signedUrl` has to read as "cannot download" there rather than throw.
-  it('treats a non-string cached URL as unusable rather than throwing', async () => {
-    givenCachedRecord({
-      ...expiredRecord(),
-      signedUrl: 42,
-      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
-    });
+  // A record can hold a field of the wrong type as easily as a missing one:
+  // nothing but this schema describes what Redis holds. Both of these fields
+  // once reached the staleness check as they were, where a non-string URL had to
+  // read as "cannot download" and a numeric expiry read as the year 2042.
+  // Rejecting the record is stronger and covers every status, not only the one
+  // the re-sign handles.
+  it.each([
+    ['a non-string signed URL', { signedUrl: 42 }],
+    ['a non-string expiry', { urlExpiresAt: 42 }],
+  ])('reports not_found for a record with %s', async (_label, corruption) => {
+    givenCachedRecord({ ...expiredRecord(), ...corruption });
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(createSignedUrl).toHaveBeenCalled();
-    expect(result).toMatchObject({ signedUrl: FRESH_URL });
-  });
-
-  // Narrowing only stops the staleness test throwing. A non-string that survives
-  // a failed re-sign is still returned, and the tRPC output schema rejects it.
-  it('drops a non-string cached URL even when the re-sign fails', async () => {
-    givenCachedRecord({
-      ...expiredRecord(),
-      signedUrl: 42,
-      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
-    });
-    createSignedUrl.mockResolvedValue({
-      data: null,
-      error: { message: 'Storage is having a moment' },
-    });
-
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
-
-    expect(result).toMatchObject({ status: 'completed' });
-    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
-  });
-
-  // The scrub covers every status, not just the one the re-sign handles. A
-  // record that never completed reaches the caller too.
-  it('drops a non-string cached URL on a record that never completed', async () => {
-    givenCachedRecord({
-      ...expiredRecord(),
-      status: 'processing',
-      signedUrl: 42,
-    });
-
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
-
-    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+    expect(result).toEqual({ status: 'not_found' });
+    expect(logger.error).toHaveBeenCalled();
     expect(createSignedUrl).not.toHaveBeenCalled();
-  });
-
-  // `Date.parse` stringifies its argument, so a numeric expiry reads as the year
-  // 2042 rather than NaN.
-  it('re-signs when the expiry is not a string at all', async () => {
-    givenCachedRecord({
-      ...expiredRecord(),
-      signedUrl: FRESH_URL,
-      urlExpiresAt: 42,
-    });
-
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
-
-    expect(createSignedUrl).toHaveBeenCalled();
   });
 
   // No retry recreates a missing object, so a retry would loop until the
@@ -556,6 +512,30 @@ describe('getExportStatus', () => {
     ).rejects.toThrow('not a decision admin');
     expect(createSBServiceClient).not.toHaveBeenCalled();
     expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  // The workflow patches the record by merging over the copy it reads, and it
+  // writes the patch alone when that read misses. One evicted key therefore
+  // leaves a record holding a status and nothing else. No later read repairs
+  // it, so this reports `not_found` and the admin starts a fresh run.
+  it('reports not_found for a cached record that does not match the schema', async () => {
+    givenCachedRecord({ status: 'processing' });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toEqual({ status: 'not_found' });
+    expect(logger.error).toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  // A record that parses must not be trusted past its owner. The schema checks
+  // the shape; the ownership check below is what checks the caller.
+  it('still rejects a caller who does not own a well-formed record', async () => {
+    givenCachedRecord({ ...expiredRecord(), userId: 'someone-else' });
+
+    await expect(
+      getExportStatus({ exportId: EXPORT_ID, user, logger }),
+    ).rejects.toThrow();
   });
 
   // The cache must answer before this reports absence. Export state lives only
