@@ -17,6 +17,8 @@ export type MergeProposalsResult = {
   processInstanceId: string;
   sourceProposalId: string;
   targetProposalId: string;
+  /** The edge just written, so the caller can announce this specific merge. */
+  relationshipId: string;
 };
 
 /**
@@ -29,8 +31,9 @@ export type MergeProposalsResult = {
  * makes a cycle unrepresentable: a proposal that has merged away can never
  * become a target.
  *
- * `note` is stored on the edge so it soft-deletes with the merge. Nothing mails
- * it yet — there is no merge notification.
+ * `note` is stored on the edge so it soft-deletes with the merge, and the merge
+ * notification quotes it back to the authors of the proposal that was merged
+ * away.
  */
 export async function mergeProposals({
   sourceProposalId,
@@ -102,5 +105,6 @@ export async function mergeProposals({
     processInstanceId: source.processInstanceId,
     sourceProposalId: source.proposalId,
     targetProposalId: target.proposalId,
+    relationshipId: inserted.id,
   };
 }
