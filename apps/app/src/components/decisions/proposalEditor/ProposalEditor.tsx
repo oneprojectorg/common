@@ -7,6 +7,7 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalDataInput,
+  type ProposalFeedbackItem,
   type ProposalReviewRequest,
   type ProposalTemplateSchema,
   parseProposalData,
@@ -36,6 +37,7 @@ import {
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
+import { ProposalFeedbackPanel } from '../ProposalFeedbackPanel';
 import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
@@ -58,6 +60,7 @@ export function ProposalEditor({
   isEditMode = false,
   asideHeaderIcons,
   revisionRequest = null,
+  feedbackPanel = null,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -65,6 +68,16 @@ export function ProposalEditor({
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
   revisionRequest?: ProposalReviewRequest | null;
+  /**
+   * Reviewer feedback for the aside pane, supplied by the route once the
+   * author opened the panel and the server released something to show. The
+   * owner decides what is in it — the editor only places it beside the
+   * document.
+   */
+  feedbackPanel?: {
+    items: Array<ProposalFeedbackItem>;
+    revisionRequests: Array<ProposalReviewRequest>;
+  } | null;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -107,6 +120,7 @@ export function ProposalEditor({
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       revisionRequest={revisionRequest}
+      feedbackPanel={feedbackPanel}
     />
   );
 
@@ -138,6 +152,7 @@ function ProposalEditorInner({
   collaborationDocId,
   proposalTemplate,
   revisionRequest,
+  feedbackPanel,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -147,6 +162,10 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   revisionRequest: ProposalReviewRequest | null;
+  feedbackPanel: {
+    items: Array<ProposalFeedbackItem>;
+    revisionRequests: Array<ProposalReviewRequest>;
+  } | null;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -458,6 +477,31 @@ function ProposalEditorInner({
     </>
   );
 
+  // At most one aside pane: a pending revision request is the actionable one
+  // and keeps the slot, and the released reviewer feedback takes it otherwise.
+  const asidePane: { label: string; content: ReactNode } | null =
+    revisionRequest
+      ? {
+          label: t('Revision feedback'),
+          content: <RevisionFeedbackPanel revisionRequest={revisionRequest} />,
+        }
+      : feedbackPanel
+        ? {
+            label: t('Feedback'),
+            content: (
+              <ProposalFeedbackPanel
+                feedbackItems={feedbackPanel.items}
+                revisionRequests={feedbackPanel.revisionRequests}
+                title={t('Feedback')}
+                subtitle={t(
+                  'Notes reviewers shared while this proposal was under review',
+                )}
+                revisionRequestLabel={t('Revision request')}
+              />
+            ),
+          }
+        : null;
+
   return (
     <ProposalEditorLayout
       backHref={backHref}
@@ -484,7 +528,7 @@ function ProposalEditorInner({
           menu on the selection, so there is no toolbar row above the form. */}
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
-          {revisionRequest ? (
+          {asidePane ? (
             <SplitPane className="mx-auto w-full max-w-6xl">
               <SplitPane.Pane
                 id="proposal"
@@ -495,11 +539,11 @@ function ProposalEditorInner({
               </SplitPane.Pane>
               <SplitPane.Pane
                 id="feedback"
-                label={t('Revision feedback')}
+                label={asidePane.label}
                 className="bg-background"
                 unpadded
               >
-                <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+                {asidePane.content}
               </SplitPane.Pane>
             </SplitPane>
           ) : (

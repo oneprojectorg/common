@@ -7,6 +7,7 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
+  type ProposalFeedbackItem,
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   getProposalFragmentNames,
@@ -19,7 +20,7 @@ import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
-import { LuHistory, LuStickyNote } from 'react-icons/lu';
+import { LuHistory, LuMessageSquareText, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -40,6 +41,7 @@ import {
   proposalEditorAsideValues,
   proposalEditorReviewRevisionParser,
   proposalEditorVersionIdParser,
+  proposalFeedbackPanelParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
@@ -66,10 +68,14 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
+  const [
+    { aside, versionId, reviewRevision, feedback: isFeedbackPanelOpen },
+    setQueryState,
+  ] = useQueryStates({
     aside: proposalEditorAsideParser,
     versionId: proposalEditorVersionIdParser,
     reviewRevision: proposalEditorReviewRevisionParser,
+    feedback: proposalFeedbackPanelParser,
   });
   const t = useTranslations();
 
@@ -117,6 +123,43 @@ function EditProposalPageContent() {
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
+
+  // Author, decision admin, or explicit review access. The server decides
+  // which notes are released (only ended review phases), so this flag just
+  // keeps the queries off callers who would be denied anyway.
+  const canSeeFeedback =
+    proposal.submittedBy?.id === user.currentProfile?.id ||
+    instance.access?.admin === true ||
+    instance.access?.review === true;
+
+  // The panel's two reads: the anonymized notes the server released once their
+  // review phase ended (no client phase math here), and the whole revision
+  // history — resolved entries included, since the panel is the author's record
+  // of the review rather than the pending to-do list above. Same resilience
+  // pattern as the revision query: no panel rather than a broken editor.
+  const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
+    t.decision.listProposalFeedback(
+      { proposalId: proposal.id },
+      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+    ),
+    t.decision.listProposalRevisionRequests(
+      { proposalId: proposal.id },
+      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+    ),
+  ]);
+
+  const feedbackItems = feedbackQuery.error
+    ? []
+    : (feedbackQuery.data?.items ?? []);
+
+  const feedbackRevisionRequests = allRevisionQuery.error
+    ? []
+    : (allRevisionQuery.data?.revisionRequests ?? []).map(
+        (item) => item.revisionRequest,
+      );
+
+  const hasFeedback =
+    feedbackItems.length > 0 || feedbackRevisionRequests.length > 0;
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -170,11 +213,19 @@ function EditProposalPageContent() {
     );
   };
 
+  const toggleFeedbackPanel = () => {
+    void setQueryState(
+      { feedback: isFeedbackPanelOpen ? null : true },
+      { history: 'push', scroll: false },
+    );
+  };
+
   // The version-history and revision-request controls are interactive editing
   // surfaces — hide them from anonymous accounts and logged-out visitors.
   const canInteract = userCanInteract(user);
 
   const revisionRequestLabel = t('Revision request');
+  const feedbackLabel = t('Feedback');
   const headerIcons = !canInteract
     ? []
     : firstRevisionRequestId
@@ -204,7 +255,36 @@ function EditProposalPageContent() {
           </Tooltip>,
           ...asideHeaderIcons,
         ]
-      : asideHeaderIcons;
+      : hasFeedback
+        ? [
+            // No pending revision request, but reviewers left notes the phase
+            // has released: the same header slot opens the feedback panel.
+            <Tooltip key="feedback">
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={toggleFeedbackPanel}
+                    aria-label={feedbackLabel}
+                    aria-expanded={isFeedbackPanelOpen}
+                    className="relative"
+                  >
+                    <LuMessageSquareText className="size-4" />
+                    {/* Static, not an unread badge: we hold no read state for
+                        reviewer notes. */}
+                    <span
+                      aria-hidden
+                      className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
+                    />
+                  </Button>
+                }
+              />
+              <TooltipContent>{feedbackLabel}</TooltipContent>
+            </Tooltip>,
+            ...asideHeaderIcons,
+          ]
+        : asideHeaderIcons;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -243,6 +323,14 @@ function EditProposalPageContent() {
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
           revisionRequest={revisionRequest}
+          feedbackPanel={
+            isFeedbackPanelOpen && hasFeedback
+              ? {
+                  items: feedbackItems,
+                  revisionRequests: feedbackRevisionRequests,
+                }
+              : null
+          }
         />
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
@@ -265,6 +353,7 @@ function ProposalEditorContent({
   setAsideState,
   asideHeaderIcons,
   revisionRequest,
+  feedbackPanel,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -274,6 +363,10 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   revisionRequest: ProposalReviewRequest | null;
+  feedbackPanel: {
+    items: Array<ProposalFeedbackItem>;
+    revisionRequests: Array<ProposalReviewRequest>;
+  } | null;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -331,6 +424,7 @@ function ProposalEditorContent({
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
         revisionRequest={revisionRequest}
+        feedbackPanel={feedbackPanel}
       />
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays
           visible and scrollable beside it. Mobile: a modal drawer, which covers
