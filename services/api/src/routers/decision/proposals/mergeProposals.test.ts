@@ -523,6 +523,39 @@ describe.concurrent('unmergeProposal', () => {
       caller.decision.unmergeProposal({ sourceProposalId: source.id }),
     ).rejects.toThrow();
   });
+
+  it('rejects a non-admin member of the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, setup, source, target, caller } =
+      await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.unmergeProposal({ sourceProposalId: source.id }),
+    ).rejects.toThrow();
+
+    // Undoing a merge is as admin-only as making one: the source stays hidden.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
+      target.id,
+    ]);
+  });
 });
 
 describe.concurrent('listProposalRelationships', () => {

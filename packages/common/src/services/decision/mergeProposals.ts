@@ -42,9 +42,22 @@ export async function mergeProposals({
     throw new ValidationError('A proposal cannot be merged into itself');
   }
 
-  const [source, target] = await Promise.all([
-    getLinkedProposal(sourceProposalId),
+  // The source is read first because its decision is what admin is asserted
+  // against; everything the target could reveal waits behind that assert.
+  const source = await getLinkedProposal(sourceProposalId);
+
+  await assertProfileAccess({
+    user,
+    profileId: source.instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
+
+  const [target, targetAlreadyMerged] = await Promise.all([
     getLinkedProposal(targetProposalId),
+    findLiveMergedEdge({
+      processInstanceId: source.processInstanceId,
+      sourceProposalId: targetProposalId,
+    }),
   ]);
 
   // The composite foreign keys make a cross-decision edge unrepresentable; this
@@ -54,20 +67,6 @@ export async function mergeProposals({
       'Proposals can only be merged within the same decision',
     );
   }
-
-  // `Promise.all` rejects with the assert's error the moment it throws, so an
-  // unauthorized caller learns nothing from the parallel lookup.
-  const [, targetAlreadyMerged] = await Promise.all([
-    assertProfileAccess({
-      user,
-      profileId: source.instance.profileId,
-      permissions: { decisions: permission.ADMIN },
-    }),
-    findLiveMergedEdge({
-      processInstanceId: source.processInstanceId,
-      sourceProposalId: targetProposalId,
-    }),
-  ]);
 
   if (source.status === ProposalStatus.DRAFT) {
     throw new ValidationError('A draft proposal cannot be merged');
