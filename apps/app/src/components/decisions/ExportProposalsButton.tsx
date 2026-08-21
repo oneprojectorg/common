@@ -153,6 +153,12 @@ const ExportProposalsButtonContent = ({
       // — so discarding a good link because a later background refetch failed
       // would cost the admin the entire run.
       throwOnError: (_error, query) => query.state.data?.status !== 'completed',
+      // The provider disables retries globally, which would make a single
+      // dropped request terminal: it escalates to the boundary, the button
+      // remounts at idle, and `exportId` goes with it — so a run that is still
+      // working writes a file nothing can reach. A blip is not the "we cannot
+      // tell" the escalation above is for, so absorb it first.
+      retry: 2,
     },
   );
 
@@ -242,11 +248,12 @@ const ExportProposalsButtonContent = ({
 
   return (
     <>
-      {/* The label below sits on a natively disabled button, which most screen
-          readers drop from the accessibility tree — so the state this component
-          exists to report would never be spoken, and `aria-busy` on a disabled
-          element is not surfaced either. Announced from here instead. Emptied
-          when idle so the region has nothing to re-announce on the way out. */}
+      {/* Disabling the button that started the run takes focus with it, and
+          nothing reads the control again afterwards, so the label moving from
+          "Preparing..." to "Generating..." would otherwise be silent for a
+          screen reader. (The button stays in the accessibility tree while
+          disabled — it is focus, not exposure, that is lost.) Announced from
+          here instead. */}
       <span role="status" aria-live="polite" className="sr-only">
         {isRunning ? runningLabel : ''}
       </span>
