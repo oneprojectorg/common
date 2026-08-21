@@ -35,6 +35,7 @@ export function ProposalViewLayout({
   reportProposalId,
   revisionToggle,
   moderationProposal,
+  notices,
 }: {
   children: ReactNode;
   backHref: string;
@@ -62,6 +63,11 @@ export function ProposalViewLayout({
    * `proposal.access.admin`, so it's safe to pass for any viewer.
    */
   moderationProposal?: Proposal;
+  /**
+   * Read-only status shown at the head of the action cluster. Pass a fragment
+   * for more than one; each renders nothing when it has nothing to say.
+   */
+  notices?: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -89,6 +95,7 @@ export function ProposalViewLayout({
         {/* One tooltip group for the row — `delay` exists on Provider alone. */}
         <TooltipProvider delay={500}>
           <div className="flex items-center gap-2 sm:gap-4">
+            {notices}
             {canEdit && editHref && (
               <Button
                 variant="outline"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useState } from 'react';
@@ -7,10 +8,12 @@ import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { MergeProposalDialog } from '../MergeProposalDialog';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
+import { buildMergeMenuItem } from '../proposals/merge';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
@@ -26,6 +29,7 @@ export function ProposalCardMenu({
 }) {
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -33,11 +37,22 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
+  const canMerge =
+    mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
 
-    // Admin actions (hide) - not for drafts
-    if (canManage && proposal.status !== ProposalStatus.DRAFT) {
+    // Merge leads, per Figma 15311:9078.
+    if (canMerge) {
+      items.push(
+        buildMergeMenuItem({
+          isDisabled: isLoading,
+          mergeLabel: t('Merge with another proposal'),
+          onMerge: () => setIsMergeModalOpen(true),
+        }),
+      );
       items.push({
         key: 'visibility',
         icon: isHidden ? (
@@ -93,6 +108,13 @@ export function ProposalCardMenu({
           proposalId={proposal.id}
           open={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
+        />
+      )}
+      {canMerge && (
+        <MergeProposalDialog
+          proposal={proposal}
+          open={isMergeModalOpen}
+          onOpenChange={setIsMergeModalOpen}
         />
       )}
     </ProposalOptionsMenu>

@@ -1,17 +1,23 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { MergeProposalDialog } from './MergeProposalDialog';
 import { DeleteProposalDialog } from './ProposalCard/DeleteProposalDialog';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
+import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -35,13 +41,6 @@ export function ProposalAdminMenu({
   /** Where to go after deleting — this page is about to 404. */
   backHref: string;
 }) {
-  const t = useTranslations();
-  const router = useRouter();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  const { toggleVisibility, isHidden, isLoading } =
-    useProposalModerationActions(proposal);
-
   const canModerate =
     proposal.access?.admin === true && proposal.status !== ProposalStatus.DRAFT;
 
@@ -49,9 +48,80 @@ export function ProposalAdminMenu({
     return null;
   }
 
+  return <ProposalAdminMenuItems proposal={proposal} backHref={backHref} />;
+}
+
+/** Split from the gate so the hooks only run for a viewer who can act. */
+function ProposalAdminMenuItems({
+  proposal,
+  backHref,
+}: {
+  proposal: Proposal;
+  backHref: string;
+}) {
+  const t = useTranslations();
+  const router = useRouter();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+
+  const { toggleVisibility, isHidden, isLoading } =
+    useProposalModerationActions(proposal);
+  // No invalidation needed: the endpoint registers the affected proposal channels.
+  const unmergeMutation = trpc.decision.unmergeProposal.useMutation({
+    onError: (error) => {
+      toast.error(
+        error.message ||
+          t('Could not unmerge this proposal. Please try again.'),
+      );
+      logger.error('Failed to unmerge proposal', {
+        error,
+        context: 'ProposalAdminMenu',
+      });
+    },
+  });
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
+
+  // A superseded proposal leaves every listing, so its own page is the only
+  // surface that can offer the undo. Gated with the item it feeds.
+  const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
+    { sourceProposalId: proposal.id },
+    { enabled: mergeEnabled },
+  );
+  const supersededBy = mergedAway?.relationships[0];
+
   const triggerLabel = t('Proposal options');
+  const showMergeDialog = mergeEnabled && !supersededBy;
+
+  const handleUnmerge = () =>
+    unmergeMutation.mutate(
+      { sourceProposalId: proposal.id },
+      {
+        // Per-call so the toast can name it; the input carries only an id.
+        onSuccess: () =>
+          toast.success(
+            t('{source} is listed on its own again.', {
+              source: getProposalDisplayTitle(proposal, t('Untitled Proposal')),
+            }),
+          ),
+      },
+    );
+
+  // Merge leads, matching the card kebab (Figma 15311:9078).
+  const mergeItem = mergeEnabled
+    ? buildMergeMenuItem({
+        isDisabled: isLoading || unmergeMutation.isPending,
+        mergeLabel: t('Merge with another proposal'),
+        onMerge: () => setIsMergeModalOpen(true),
+        unmerge: {
+          isSuperseded: Boolean(supersededBy),
+          label: t('Unmerge'),
+          onAction: handleUnmerge,
+        },
+      })
+    : null;
 
   const items: ProposalOptionsMenuItem[] = [
+    ...(mergeItem ? [mergeItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -85,6 +155,13 @@ export function ProposalAdminMenu({
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
       />
+      {showMergeDialog ? (
+        <MergeProposalDialog
+          proposal={proposal}
+          open={isMergeModalOpen}
+          onOpenChange={setIsMergeModalOpen}
+        />
+      ) : null}
     </ProposalOptionsMenu>
   );
 }

@@ -1,6 +1,9 @@
 import { ProposalRelationshipType } from '@op/db/schema';
 import { z } from 'zod';
 
+/** The column is `text`, so this is the only ceiling; raising it needs no migration. */
+export const MERGE_NOTE_MAX_LENGTH = 2000;
+
 /**
  * Reads as "source merges into target": the source is superseded and hidden, the
  * target survives.
@@ -8,6 +11,13 @@ import { z } from 'zod';
 export const mergeProposalsInputSchema = z.object({
   sourceProposalId: z.uuid(),
   targetProposalId: z.uuid(),
+  /** Blank normalizes to `undefined` so it stores NULL, not an empty note. */
+  note: z
+    .string()
+    .trim()
+    .max(MERGE_NOTE_MAX_LENGTH)
+    .optional()
+    .transform((value) => value || undefined),
 });
 
 export type MergeProposalsInput = z.infer<typeof mergeProposalsInputSchema>;

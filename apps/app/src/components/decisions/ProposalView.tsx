@@ -19,6 +19,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalComments } from './ProposalComments';
+import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
@@ -222,6 +223,12 @@ export function ProposalView({
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
+      notices={
+        <ProposalMergeNotice
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      }
       revisionToggle={
         firstRevisionRequestId
           ? {

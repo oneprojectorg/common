@@ -1,3 +1,4 @@
+import { MERGE_NOTE_MAX_LENGTH } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
   ProposalRelationshipType,
@@ -98,6 +99,62 @@ describe.concurrent('mergeProposals', () => {
       // The exclusion predicate correlates on this, so it must be set.
       processInstanceId: instanceId,
     });
+  });
+
+  it('stores the note the admin wrote for the author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+      note: '  These describe the same garden plot.  ',
+    });
+
+    const [edge] = await db
+      .select()
+      .from(proposalRelationships)
+      .where(eq(proposalRelationships.sourceProposalId, source.id));
+
+    expect(edge?.note).toBe('These describe the same garden plot.');
+  });
+
+  it('stores NULL rather than an empty note for a blank textarea', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+      note: '   ',
+    });
+
+    const [edge] = await db
+      .select()
+      .from(proposalRelationships)
+      .where(eq(proposalRelationships.sourceProposalId, source.id));
+
+    // Distinguishable from an empty note: consumers ask whether a reason exists.
+    expect(edge?.note).toBeNull();
+  });
+
+  it('rejects a note past the length cap', async ({ task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await expect(
+      caller.decision.mergeProposals({
+        sourceProposalId: source.id,
+        targetProposalId: target.id,
+        note: 'x'.repeat(MERGE_NOTE_MAX_LENGTH + 1),
+      }),
+    ).rejects.toThrow();
   });
 
   it('lets the database reject a second live merged edge', async ({
@@ -256,7 +313,7 @@ describe.concurrent('mergeProposals', () => {
     ).rejects.toThrow(/itself been merged/i);
   });
 
-  it('rejects merging away a proposal that has proposals merged into it', async ({
+  it('merges a proposal that has proposals merged into it, forming a chain', async ({
     task,
     onTestFinished,
   }) => {
@@ -275,15 +332,18 @@ describe.concurrent('mergeProposals', () => {
       sourceProposalId: source.id,
       targetProposalId: target.id,
     });
+    await caller.decision.mergeProposals({
+      sourceProposalId: target.id,
+      targetProposalId: third.id,
+    });
 
-    // Merging the survivor onward would leave source pointing at a hidden
-    // intermediate, and nothing traverses a chain. Keeps the graph one level.
-    await expect(
-      caller.decision.mergeProposals({
-        sourceProposalId: target.id,
-        targetProposalId: third.id,
-      }),
-    ).rejects.toThrow(/merged into it/i);
+    // Every proposal with an outgoing edge leaves the listing, so a chain
+    // resolves to its one live end without anything traversing it.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.proposals.map((proposal) => proposal.id)).toEqual([third.id]);
   });
 
   it('rejects merging a draft proposal', async ({ task, onTestFinished }) => {
@@ -462,6 +522,39 @@ describe.concurrent('unmergeProposal', () => {
     await expect(
       caller.decision.unmergeProposal({ sourceProposalId: source.id }),
     ).rejects.toThrow();
+  });
+
+  it('rejects a non-admin member of the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, setup, source, target, caller } =
+      await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.unmergeProposal({ sourceProposalId: source.id }),
+    ).rejects.toThrow();
+
+    // Undoing a merge is as admin-only as making one: the source stays hidden.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
+      target.id,
+    ]);
   });
 });
 
