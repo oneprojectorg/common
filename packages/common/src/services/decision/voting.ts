@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
+import { getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
@@ -378,11 +378,15 @@ export const getVotingStatus = async ({
       throw new NotFoundError('Process instance', data.processInstanceId);
     }
 
-    await assertInstanceProfileAccess({
+    // No org fallback: voting access comes from a grant on the instance's own
+    // profile, which legacy instances may not have — fail closed there.
+    if (!processInstance.profileId) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+    await assertProfileAccess({
       user,
-      instance: processInstance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: [{ decisions: permission.READ }],
+      profileId: processInstance.profileId,
+      permissions: { decisions: permission.READ },
     });
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);

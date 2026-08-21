@@ -17,8 +17,8 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { getProfileAccessRoles } from '../access';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import type {
@@ -85,13 +85,17 @@ export const updateProposal = async ({
     );
   }
 
-  // Status and visibility changes only require instance-level decisions: ADMIN
+  // Status and visibility changes only require instance-level decisions: ADMIN.
+  // No org fallback: instance access comes from a grant on its own profile,
+  // which legacy instances may not have — fail closed there.
   if (data.status || data.visibility) {
-    await assertInstanceProfileAccess({
+    if (!processInstance.profileId) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+    await assertProfileAccess({
       user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: { decisions: permission.ADMIN },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
+      profileId: processInstance.profileId,
+      permissions: { decisions: permission.ADMIN },
     });
   } else {
     // Data updates require profile-level update permission on the proposal's profile
@@ -106,11 +110,13 @@ export const updateProposal = async ({
     );
 
     if (!hasProposalUpdate) {
-      await assertInstanceProfileAccess({
+      if (!processInstance.profileId) {
+        throw new UnauthorizedError("You don't have access to do this");
+      }
+      await assertProfileAccess({
         user: { id: user.id },
-        instance: processInstance,
-        profilePermissions: { decisions: permission.UPDATE },
-        orgFallbackPermissions: [{ decisions: permission.ADMIN }],
+        profileId: processInstance.profileId,
+        permissions: { decisions: permission.UPDATE },
       });
     }
   }

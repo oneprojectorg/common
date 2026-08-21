@@ -1,9 +1,8 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
-import { NotFoundError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import { NotFoundError, UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 
 type ProposalEngagementTarget = {
@@ -44,14 +43,15 @@ export async function assertProposalEngagementAccess({
     throw new NotFoundError('Proposal', profileId);
   }
 
-  await assertInstanceProfileAccess({
+  // No org fallback: engagement access comes from a grant on the instance's
+  // own profile, which legacy instances may not have — fail closed there.
+  if (!proposal.processInstance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+  await assertProfileAccess({
     user,
-    instance: proposal.processInstance,
-    profilePermissions: { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    orgFallbackPermissions: [
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      { decisions: permission.ADMIN },
-    ],
+    profileId: proposal.processInstance.profileId,
+    permissions: { decisions: decisionPermission.SUBMIT_PROPOSALS },
   });
 
   return {
