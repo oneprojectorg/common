@@ -1547,6 +1547,7 @@
   "Download CSV": "Soo dejiso CSV",
   "Failed to start export": "Lama bilaabi karin soo saarista",
   "Export failed": "Soo saaristu way fashilantay",
+  "Retry download": "Isku day soo dejinta mar kale",
   "Export timed out. Please try again.": "Soo saaristu waqtigii way dhaaftay. Fadlan isku day mar kale.",
   "Couldn't check the export's status. It may still be running.": "Lama hubin karin xaaladda soo-saarka. Waxaa laga yaabaa inay weli socoto.",
   "Export all": "Dhammaan soo saar",

@@ -113,6 +113,64 @@ const ExportStatusUnreadable = ({
   );
 };
 
+/**
+ * What a finished export offers: the download, or a retry when its URL could
+ * not be signed.
+ *
+ * The URL-less case is a real state, not an edge case to ignore. The run
+ * succeeded and the object is in the bucket — only the signature is missing —
+ * so the server reports a completed export without a URL rather than a terminal
+ * failure, and re-reading the record is the whole recovery. Falling through to
+ * the idle button instead would leave the admin with no download and no reason
+ * given.
+ */
+const CompletedExportAction = ({
+  signedUrl,
+  fileName,
+  isRetrying,
+  onRetry,
+  onTaken,
+}: {
+  signedUrl?: string;
+  fileName?: string;
+  isRetrying: boolean;
+  onRetry: () => void;
+  onTaken: () => void;
+}) => {
+  const t = useTranslations();
+
+  if (!signedUrl) {
+    return (
+      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
+        <LuDownload aria-hidden />
+        {isRetrying ? t('Preparing...') : t('Retry download')}
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="outline"
+      // Rendered as an anchor so the browser owns the download. Base UI needs
+      // both flags to stop emitting button semantics over the link.
+      nativeButton={false}
+      role={undefined}
+      render={
+        <a
+          href={signedUrl}
+          download={fileName}
+          target="_blank"
+          rel="noopener noreferrer"
+        />
+      }
+      onClick={onTaken}
+    >
+      <LuDownload aria-hidden />
+      {t('Download CSV')}
+    </Button>
+  );
+};
+
 const ExportProposalsButtonContent = ({
   processInstanceId,
   isEmpty = false,
@@ -135,7 +193,11 @@ const ExportProposalsButtonContent = ({
   // No polling: the workflow broadcasts on this export's channel when the run
   // settles, and the subscriber re-reads on its own once the channel is live —
   // which is what covers an export finishing before the socket join lands.
-  const { data: status } = trpc.decision.getExportStatus.useQuery(
+  const {
+    data: status,
+    refetch: refetchStatus,
+    isFetching: isFetchingStatus,
+  } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId ?? '' },
     {
       enabled: Boolean(exportId) && !hasTimedOut,
@@ -204,31 +266,19 @@ const ExportProposalsButtonContent = ({
     return () => clearTimeout(timer);
   }, [isRunning, reportedState, t]);
 
-  if (isResolved && status.signedUrl) {
+  if (isResolved) {
     return (
-      <Button
-        variant="outline"
-        // Rendered as an anchor so the browser owns the download. Base UI needs
-        // both flags to stop emitting button semantics over the link.
-        nativeButton={false}
-        role={undefined}
-        render={
-          <a
-            href={status.signedUrl}
-            download={status.fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-          />
-        }
-        onClick={() => {
-          // One file per run: once taken, fall back to the idle button so a
-          // later export is not confused with this one.
-          setExportId(null);
+      <CompletedExportAction
+        signedUrl={status.signedUrl}
+        fileName={status.fileName}
+        isRetrying={isFetchingStatus}
+        onRetry={() => {
+          void refetchStatus();
         }}
-      >
-        <LuDownload aria-hidden />
-        {t('Download CSV')}
-      </Button>
+        // One file per run: once taken, fall back to the idle button so a later
+        // export is not confused with this one.
+        onTaken={() => setExportId(null)}
+      />
     );
   }
 

@@ -132,43 +132,26 @@ const refreshSignedUrl = async ({
   // authorize this read.
   const supabase = createSBServiceClient();
 
-  const signUrl = () =>
-    supabase.storage
-      .from(EXPORTS_BUCKET)
-      .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
-
-  // One retry before giving up. Failing here is expensive out of proportion to
-  // the cause: the client drops the export id when it sees a terminal state, so
-  // a momentary Storage error on an object that is present and signable a second
-  // later costs the admin a whole re-export.
-  let signed = await signUrl();
+  const signed = await supabase.storage
+    .from(EXPORTS_BUCKET)
+    .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
 
   if (signed.error || !signed.data) {
-    logger.info('Retrying export signed URL refresh', { exportId });
-    signed = await signUrl();
-  }
-
-  if (signed.error || !signed.data) {
-    // No signature means no usable link. Reporting this as still `completed`
-    // with the URL dropped would be a silent dead end: the client treats a
-    // completed export as settled, so it would show neither a download nor an
-    // error. `failed` is the one terminal state the client surfaces, and it puts
-    // the admin back on a button they can press again — re-exporting rebuilds
-    // the file, so a fresh run is the recovery path rather than this record.
+    // A completed export with no usable URL, reported as exactly that.
     //
-    // No `errorMessage`: the client renders whatever is here verbatim and only
-    // falls back to a translated string when it is absent, so supplying one
-    // would put untranslated English in front of an Arabic or Spanish admin.
-    // The detail belongs in the log, which no user reads.
-    //
-    // The cached record is left `completed` rather than rewritten, so nothing is
-    // persisted about a failure that may be momentary.
+    // Not `failed`: the run did succeed and the object is still in the bucket,
+    // so the only thing missing is a signature — and reporting a terminal
+    // failure makes the client discard the export id, turning one unlucky
+    // signing call into a full re-export of up to a thousand proposals. Not the
+    // lapsed URL either, which renders as a download that 400s. The client
+    // offers a retry for this state, and the cached record is left untouched so
+    // that retry re-reads a record still marked `completed`.
     logger.error('Failed to refresh export signed URL', {
       error: signed.error,
       exportId,
     });
 
-    return { ...exportStatus, status: 'failed', signedUrl: undefined };
+    return { ...exportStatus, signedUrl: undefined };
   }
 
   const refreshed: ExportStatusData = {
