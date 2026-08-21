@@ -66,8 +66,9 @@ one before approving.
 
 ### MADR
 
-The template published at <https://adr.github.io/adr-templates/>, maintained at
-<https://github.com/adr/madr>.
+Published at <https://adr.github.io/madr/>, maintained at
+<https://github.com/adr/madr>. The formats below were compared using the ADR
+org's survey at <https://adr.github.io/adr-templates/>.
 
 * Good, because it asks for considered options and pros and cons by name.
 * Good, because YAML frontmatter carries status and date as data, not prose.
@@ -124,8 +125,10 @@ This ADR does not attempt to reconcile the two. Which document governs, and
 whether the constitution's principles should be migrated into ADRs or left where
 they are, is an open question for the team — worth its own ADR.
 
-Until that is settled: the constitution stays authoritative within every
-`.specify` workflow that reads it, including its Constitution Check gate. ADRs
+Until that is settled: the constitution stays authoritative throughout the
+`.specify` workflows — including those that cite a numbered principle without
+loading the file, such as the `pnpm w:app lint` requirement in
+`.claude/commands/implement.md` and `.specify/templates/tasks-template.md`. ADRs
 are authoritative for everything else. Where the two genuinely conflict, raise
 it rather than picking a winner.
 
@@ -136,5 +139,10 @@ rather than the norm. It is deliberate here: the convention was drafted as
 scaffolding, and adopting it is the team's call, not the author's.
 
 Approving this PR is that call. Whoever merges it should flip `status` to
-`accepted` and bump `date` — until then, by its own definition, none of this is
-in force.
+`accepted` and bump `date` in a follow-up PR.
+
+To be clear about what `proposed` does and does not withhold: the process in
+[README.md](./README.md) — the template, the numbering, the status lifecycle —
+is usable the moment this merges, and `CLAUDE.md` points at it as such. What is
+still open is the commitment: whether recording ADRs is *expected* of a
+structural change, or merely available for one. Ratifying this ADR closes that.

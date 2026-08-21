@@ -4,13 +4,14 @@ An ADR records one architecture decision: the problem, the options we weighed,
 what we chose, and what we accepted in return. It captures the reasoning that
 the code itself cannot show.
 
-The format is [MADR](https://adr.github.io/adr-templates/). See
+The format is [MADR](https://adr.github.io/madr/). See
 [ADR 0001](./0001-record-architecture-decisions.md) for why.
 
 [`adr-template.md`](./adr-template.md) is upstream MADR with one local change:
 the frontmatter marks `status` and `date` as required and lists only the five
 statuses below, because the lifecycle here depends on both. Keep that change if
-you re-sync the template from upstream.
+you re-sync from
+[`adr/madr:template/adr-template.md`](https://github.com/adr/madr/blob/develop/template/adr-template.md).
 
 ## When to write one
 
@@ -63,7 +64,7 @@ table and to the template in the same PR, and say why:
 Most ADRs should be `accepted` when they merge — approving the PR *is* the
 decision. Open one as `proposed` only when you want the discussion without the
 commitment; whoever merges it is then responsible for flipping it to `accepted`
-in a follow-up commit, or the decision silently never takes effect.
+in a follow-up PR, or the decision silently never takes effect.
 
 ## Superseding a decision
 
