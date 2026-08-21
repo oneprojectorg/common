@@ -13,7 +13,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import { inferCriterionType } from '../rubricTemplate';
+import { YES_NO_VALUES, inferCriterionType } from '../rubricTemplate';
 
 /**
  * A submitted review, read-only: each criterion's prompt above a bordered card
@@ -152,7 +152,11 @@ function RubricFieldResult({
   if (field.format === 'dropdown') {
     if (inferCriterionType(field.schema) === 'yes_no') {
       const label =
-        value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
+        value === YES_NO_VALUES.yes
+          ? t('Yes')
+          : value === YES_NO_VALUES.no
+            ? t('No')
+            : undefined;
       return <ResultCard value={label} rationale={rationale} />;
     }
 

@@ -5,6 +5,7 @@ import type {
   RubricTemplateSchema,
 } from './rubricTemplate';
 import {
+  YES_NO_VALUES,
   addCriterion,
   changeCriterionType,
   createCriterionJsonSchema,
@@ -18,6 +19,7 @@ import {
   setSelectOptions,
   translateRubricTemplate,
   updateCriterionDescription,
+  withYesNoDefaults,
 } from './rubricTemplate';
 
 const ALL_TYPES: RubricCriterionType[] = [
@@ -347,5 +349,46 @@ describe('translateRubricTemplate', () => {
   it('returns the template unchanged with no translation', () => {
     const template = rubric();
     expect(translateRubricTemplate(template, null)).toBe(template);
+  });
+});
+
+describe('withYesNoDefaults', () => {
+  function template(): RubricTemplateSchema {
+    let t = templateWithCriterion('yes_no', 'boundaries');
+    t = addCriterion(t, 'impact', 'scored', 'Impact');
+    t = addCriterion(t, 'notes', 'long_text', 'Notes');
+    return t;
+  }
+
+  it('seeds a missing yes/no answer with no', () => {
+    expect(withYesNoDefaults(template(), {})).toEqual({
+      boundaries: YES_NO_VALUES.no,
+    });
+  });
+
+  it('leaves an existing yes/no answer alone', () => {
+    expect(
+      withYesNoDefaults(template(), { boundaries: YES_NO_VALUES.yes }),
+    ).toEqual({ boundaries: YES_NO_VALUES.yes });
+  });
+
+  it('never seeds non-yes/no criteria', () => {
+    const seeded = withYesNoDefaults(template(), {});
+    expect(seeded).not.toHaveProperty('impact');
+    expect(seeded).not.toHaveProperty('notes');
+  });
+
+  it('preserves already-defined values, including a stored null', () => {
+    // Only a truly absent answer is seeded; a legacy null is left for the
+    // form to surface rather than silently rewritten to "no".
+    expect(
+      withYesNoDefaults(template(), { boundaries: null, impact: 3 }),
+    ).toEqual({ boundaries: null, impact: 3 });
+  });
+
+  it('does not mutate the answers it is given', () => {
+    const answers = {};
+    withYesNoDefaults(template(), answers);
+    expect(answers).toEqual({});
   });
 });

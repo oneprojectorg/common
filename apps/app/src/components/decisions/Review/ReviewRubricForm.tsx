@@ -38,6 +38,7 @@ import { useTranslations } from '@/lib/i18n';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import {
+  YES_NO_VALUES,
   getCriterionMaxPoints,
   inferCriterionType,
   translateRubricTemplate,
@@ -275,8 +276,7 @@ function RubricCriterionSection({
         // One `dir="auto"` for the whole field rather than one per part:
         // resolved separately, each element reads from its own text, so the
         // title (which also carries the points badge) can land on the opposite
-        // side from its own description. The controls inherit this; the portaled
-        // select popup can't, and sets its own below.
+        // side from its own description.
         <Field dir="auto">
           <FieldTitle
             render={<h4 />}
@@ -433,9 +433,9 @@ function RubricFieldInput({
             id={controlId}
             aria-labelledby={labelledBy}
             aria-describedby={describedBy}
-            checked={value === 'yes'}
+            checked={value === YES_NO_VALUES.yes}
             onCheckedChange={(checked) => {
-              onChange(checked ? 'yes' : 'no');
+              onChange(checked ? YES_NO_VALUES.yes : YES_NO_VALUES.no);
             }}
           />
         );
