@@ -251,11 +251,12 @@ export const getProfileAccessRolesWithOrgFallback = async ({
 };
 
 /**
- * Asserts profile-level access, falling back to org-level access if the user
- * doesn't have a profileUser role on the given profile.
- *
- * Uses `instance.profileId` for the profile-level check and
- * `instance.ownerProfileId` for the org-level fallback lookup.
+ * LEGACY — do not add call sites. The org fallback exists only for legacy
+ * instances whose org admins never got profile-level grants: a caller with
+ * no grant on `instance.profileId` is re-checked against their org roles on
+ * `instance.ownerProfileId`. An org must not automatically gain access to a
+ * new process, so new code asserts with `assertProfileAccess` on
+ * `instance.profileId` directly (failing closed when it is null).
  */
 export const assertInstanceProfileAccess = async ({
   user,

@@ -14,9 +14,14 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
-import { assertGlobalRole } from '../assert';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
+import { getCurrentProfileId } from '../access';
+import { assertGlobalRole, assertProfileAccess } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { decisionPermission } from './permissions';
@@ -54,14 +59,18 @@ export const createProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  await assertInstanceProfileAccess({
+  // No org fallback: access comes from a grant on the instance's own profile.
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  await assertProfileAccess({
     user: { id: authUserId },
-    instance,
-    profilePermissions: [
+    profileId: instance.profileId,
+    permissions: [
       { profile: permission.ADMIN },
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
     ],
-    orgFallbackPermissions: { profile: permission.ADMIN },
   });
 
   const instanceData = instance.instanceData as DecisionInstanceData;
