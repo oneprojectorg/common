@@ -83,6 +83,9 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
 /**
  * A `td` by default. Pass `render={<th scope="row" />}` for the cell that names
  * its row — `TableHead` would apply column-header styling.
+ *
+ * Deviation from registry output: `text-start font-normal` undoes the
+ * browser's centered-bold `th` defaults on row-header cells.
  */
 function TableCell({
   className,
@@ -95,7 +98,7 @@ function TableCell({
     props: mergeProps<'td'>(
       {
         className: cn(
-          'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
+          'p-2 text-start align-middle font-normal whitespace-nowrap [&:has([role=checkbox])]:pe-0',
           className,
         ),
       },

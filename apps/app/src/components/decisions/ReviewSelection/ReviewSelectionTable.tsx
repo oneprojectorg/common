@@ -103,7 +103,7 @@ export function ReviewSelectionTable({
             >
               {/* The cell that names the row, so grid navigation can announce
                   which proposal a value belongs to. */}
-              <TableCell render={<th scope="row" />} className="font-normal">
+              <TableCell render={<th scope="row" />}>
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}

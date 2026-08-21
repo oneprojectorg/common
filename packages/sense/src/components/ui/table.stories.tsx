@@ -108,6 +108,33 @@ export const WithBadges: Story = {
   ),
 };
 
+// A row-header cell (`th scope="row"`) must look identical to a `td` —
+// TableCell's base classes undo the browser's centered-bold `th` defaults.
+export const WithRowHeaders: Story = {
+  render: () => (
+    <Table className="max-w-2xl">
+      <TableHeader>
+        <TableRow>
+          <TableHead scope="col">Invoice</TableHead>
+          <TableHead scope="col">Status</TableHead>
+          <TableHead scope="col" className="text-end">
+            Amount
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {invoices.map((invoice) => (
+          <TableRow key={invoice.id}>
+            <TableCell render={<th scope="row" />}>{invoice.id}</TableCell>
+            <TableCell>{invoice.status}</TableCell>
+            <TableCell className="text-end">{invoice.amount}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  ),
+};
+
 // Per-row overflow menu, mirroring the upstream "With Actions" example.
 export const WithActions: Story = {
   render: () => (
