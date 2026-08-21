@@ -9,6 +9,8 @@ import { useTransition } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { withNewProposalParam } from './proposalEditor/proposalEditorNewParams';
+
 /**
  * Creates an empty draft proposal for the instance and navigates to the href
  * the caller builds from the created proposal. `isCreating` stays true through
@@ -64,7 +66,9 @@ export function useCreateProposal({
           proposalData: {}, // Empty draft - user will fill in via edit page
         });
 
-        router.push(navigateTo(proposal));
+        // Flag the destination as a first visit so the editor titles itself
+        // "Create proposal" rather than "Edit proposal".
+        router.push(withNewProposalParam(navigateTo(proposal)));
       } catch (error) {
         toast.error(t('Failed to create proposal'), {
           description: error instanceof Error ? error.message : undefined,

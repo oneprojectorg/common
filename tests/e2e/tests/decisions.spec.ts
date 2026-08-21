@@ -63,6 +63,26 @@ test.describe('Decisions', () => {
     await expect(
       authenticatedPage.getByRole('button', { name: 'Submit', exact: true }),
     ).toBeVisible({ timeout: 5000 });
+
+    // 8. The first visit titles the page "Create proposal" — `useCreateProposal`
+    // flags the destination it pushes and the editor reads that flag once.
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'Create proposal',
+        level: 2,
+      }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // 9. The flag is single-use: the editor strips it from the URL, so reopening
+    // the same link reads as editing an existing proposal, not creating one.
+    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'Edit proposal',
+        level: 2,
+      }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('vanity URL `/[locale]/columbus` renders the decision page', async ({

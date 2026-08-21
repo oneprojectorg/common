@@ -1,0 +1,34 @@
+import { createSerializer, parseAsBoolean } from 'nuqs';
+
+/**
+ * First-visit flag for the proposal editor (`?newProposal=true`).
+ *
+ * "Start a proposal" creates an empty draft and sends the author straight to
+ * the editor, so the editor can't tell that visit apart from the author
+ * reopening a draft later — both load an existing proposal. `useCreateProposal`
+ * sets this flag on the destination it pushes, and the editor reads it to title
+ * the page "Create proposal" rather than "Edit proposal".
+ *
+ * The flag is single-use: the editor snapshots it on mount and then strips it
+ * from the URL, so refreshing, bookmarking or sharing that link reads as
+ * editing an existing proposal, which is what it is.
+ *
+ * Named `newProposal` rather than `new` on purpose: `?new=1` is already an
+ * app-wide convention read by `NewlyJoinedModal` and the org-creation flow via
+ * a truthiness check, and a shared name would silently merge the two meanings
+ * if either reader ever moved into a layout the editor renders under.
+ */
+export const PROPOSAL_EDITOR_NEW_PARAM = 'newProposal';
+
+export const proposalEditorNewParser = parseAsBoolean.withDefault(false);
+
+const serializeNewProposalParam = createSerializer({
+  [PROPOSAL_EDITOR_NEW_PARAM]: proposalEditorNewParser,
+});
+
+/** Adds the first-visit flag to a freshly created draft's editor href. */
+export function withNewProposalParam(href: string): string {
+  return serializeNewProposalParam(href, {
+    [PROPOSAL_EDITOR_NEW_PARAM]: true,
+  });
+}
