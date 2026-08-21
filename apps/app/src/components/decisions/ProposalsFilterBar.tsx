@@ -36,27 +36,28 @@ export interface ProposalViewControls {
 }
 
 export const ProposalsListHeader = ({
-  showCount,
   count,
   total,
 }: {
-  showCount: boolean;
   count: number;
   total: number;
-}) => {
+}) => (
+  // Filtering swaps the results in place, so the count is the only feedback a
+  // screen reader gets that a search or filter landed. Announce it.
+  <span role="status" aria-live="polite">
+    <ProposalCount count={count} total={total} />
+  </span>
+);
+
+/**
+ * Stands in for the count where the phase hides proposals from non-admins:
+ * there is nothing to count that the reader is allowed to see, and no filters
+ * to change it, so it is a plain label rather than a live region.
+ */
+export const MyProposalsHeader = () => {
   const t = useTranslations();
 
-  return (
-    // Filtering swaps the results in place, so the count is the only feedback a
-    // screen reader gets that a search or filter landed. Announce it.
-    <span role="status" aria-live="polite">
-      {showCount ? (
-        <ProposalCount count={count} total={total} />
-      ) : (
-        <span className="font-serif text-title">{t('My proposals')}</span>
-      )}
-    </span>
-  );
+  return <span className="font-serif text-title">{t('My proposals')}</span>;
 };
 
 /**
@@ -103,9 +104,7 @@ export const ProposalsFilterBar = ({
           from 2xl it grows instead, taking the slack that pushes search to the
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
-        {header ?? (
-          <ProposalsListHeader showCount count={count} total={total} />
-        )}
+        {header ?? <ProposalsListHeader count={count} total={total} />}
         <ProposalSearchField
           className="ms-auto"
           value={controls.search}

@@ -1,9 +1,9 @@
 'use client';
 
 import {
+  MyProposalsHeader,
   type ProposalControls,
   ProposalsFilterBar,
-  ProposalsListHeader,
   type ProposalViewControls,
 } from './ProposalsFilterBar';
 import { StickyFilterBar } from './StickyFilterBar';
@@ -57,9 +57,7 @@ export const ProposalsStickyFilterBar = ({
         exportControl={exportControl}
       />
     ) : (
-      (header ?? (
-        <ProposalsListHeader showCount={false} count={count} total={total} />
-      ))
+      (header ?? <MyProposalsHeader />)
     )}
   </StickyFilterBar>
 );
