@@ -1,11 +1,12 @@
-import { get, set } from '@op/cache';
+import { getWithStatus, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
+import type { Logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import {
   EXPORTS_BUCKET,
@@ -29,6 +30,14 @@ export interface ExportStatusData {
   completedAt?: string;
 }
 
+/**
+ * The logging surface this module needs, taken from the real {@link Logger} so
+ * the two signatures cannot drift from what callers actually pass. A structural
+ * literal would also have accepted `Record<string, unknown>` for the metadata,
+ * which is the escape hatch this codebase avoids.
+ */
+type ExportStatusLogger = Pick<Logger, 'info' | 'error'>;
+
 export const getExportStatus = async ({
   exportId,
   user,
@@ -36,17 +45,24 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
-  // Structurally the subset of `ContextLogger` this needs. Typed as
-  // `Record<string, unknown>` rather than `any` so a malformed meta object is a
-  // type error instead of a log line that silently ships a missing field.
-  logger: {
-    info: (message: string, meta?: Record<string, unknown>) => void;
-    error: (message: string, meta?: Record<string, unknown>) => void;
-  };
+  logger: ExportStatusLogger;
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
-  // Get export data from cache
   const key = exportStatusCacheKey(exportId);
-  const exportStatus = (await get(key)) as ExportStatusData | null;
+
+  // Read the cache in a way that keeps "no such export" apart from "the cache
+  // could not answer". Both used to arrive as `null`, and reporting the second
+  // as `not_found` is not a cosmetic error: export state lives only here, and
+  // the client retires the export id on that answer. One Redis timeout would
+  // discard a finished run of up to a thousand proposals, with the toast beside
+  // it telling the admin to retry something no longer on screen.
+  const cached = await getWithStatus(key);
+
+  if (cached.status === 'timeout' || cached.status === 'error') {
+    throw new CommonError('Could not read the export record.');
+  }
+
+  const exportStatus =
+    cached.status === 'hit' ? (cached.data as ExportStatusData) : null;
 
   if (!exportStatus) {
     return { status: 'not_found' as const };
@@ -83,18 +99,17 @@ export const getExportStatus = async ({
 
   // Signed URLs are shorter-lived than the export record, so a completed export
   // is re-signed on read once its current URL has lapsed.
+  //
+  // A missing `fileName` is handled inside rather than skipped here. Skipping
+  // returned the record untouched, which the client reads as a completed export
+  // it can retry — and every retry takes this same branch back out again, so the
+  // button never resolves and never clears. Absent a file name there is nothing
+  // to sign and no read that changes that, which is the terminal case.
   if (
     exportStatus.status === 'completed' &&
-    exportStatus.fileName &&
     isSignedUrlLapsed(exportStatus.urlExpiresAt)
   ) {
-    return refreshSignedUrl({
-      exportStatus,
-      fileName: exportStatus.fileName,
-      cacheKey: key,
-      exportId,
-      logger,
-    });
+    return refreshSignedUrl({ exportStatus, exportId, logger });
   }
 
   return exportStatus;
@@ -108,23 +123,28 @@ export const getExportStatus = async ({
  */
 const refreshSignedUrl = async ({
   exportStatus,
-  fileName,
-  cacheKey,
   exportId,
   logger,
 }: {
   exportStatus: ExportStatusData;
-  fileName: string;
-  cacheKey: string;
   exportId: string;
-  logger: {
-    info: (message: string, meta?: Record<string, unknown>) => void;
-    error: (message: string, meta?: Record<string, unknown>) => void;
-  };
+  logger: ExportStatusLogger;
 }): Promise<ExportStatusData> => {
+  if (!exportStatus.fileName) {
+    // Should not happen: the workflow writes `fileName` and `completed` in one
+    // update. Logged rather than passed over silently, because reaching it means
+    // a record was written by something that does not agree with that.
+    logger.error('Completed export has no file name', { exportId });
+
+    return { ...exportStatus, status: 'failed', signedUrl: undefined };
+  }
+
   logger.info('Refreshing expired signed URL', { exportId });
 
-  const filePath = exportFilePath(exportStatus.processInstanceId, fileName);
+  const filePath = exportFilePath(
+    exportStatus.processInstanceId,
+    exportStatus.fileName,
+  );
 
   // Service-role: every `storage.objects` policy is scoped to
   // `bucket_id = 'assets'`, so a caller-scoped client cannot sign in this
@@ -180,7 +200,11 @@ const refreshSignedUrl = async ({
     ).toISOString(),
   };
 
-  await set(cacheKey, refreshed, EXPORT_CACHE_TTL_SECONDS);
+  await set(
+    exportStatusCacheKey(exportId),
+    refreshed,
+    EXPORT_CACHE_TTL_SECONDS,
+  );
 
   return refreshed;
 };
