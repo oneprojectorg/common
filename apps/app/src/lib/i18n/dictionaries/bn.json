@@ -1552,5 +1552,6 @@
   "Couldn't check the export's status. It may still be running.": "রপ্তানির স্ট্যাটাস যাচাই করা যায়নি। এটি এখনও চলতে পারে।",
   "Export all": "সব রপ্তানি করুন",
   "Proposals in review · {count}": "পর্যালোচনাধীন প্রস্তাবনা · {count}",
-  "{count} Reviewed": "{count} পর্যালোচিত"
+  "{count} Reviewed": "{count} পর্যালোচিত",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "{appName} কেবলমাত্র আমন্ত্রণের মাধ্যমে! আপনি এখন অপেক্ষমাণ তালিকায় আছেন। আপডেটের জন্য আপনার ইনবক্সে নজর রাখুন।"
 }

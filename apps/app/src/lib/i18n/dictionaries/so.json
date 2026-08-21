@@ -1551,5 +1551,6 @@
   "Couldn't check the export's status. It may still be running.": "Lama hubin karin xaaladda soo-saarka. Waxaa laga yaabaa inay weli socoto.",
   "Export all": "Dhammaan soo saar",
   "Proposals in review · {count}": "Soo jeedimo dib-u-eegis ku jira · {count}",
-  "{count} Reviewed": "{count} la dib u eegay"
+  "{count} Reviewed": "{count} la dib u eegay",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "{appName} waa martiqaad kaliya! Hadda waxaad ku jirtaa liiska sugitaanka. Sanduuqaaga soo dhaca ila soco warbixinno cusub."
 }

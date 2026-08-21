@@ -43,6 +43,11 @@ export const LoginPanel = () => {
   const { mounted } = useMount();
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
+  // Machine-readable outcome forwarded by the OAuth callback route, which
+  // consumes the tRPC result server-side and can only redirect here. The values
+  // are `account.login`'s `reason` literals — kept separate from `?error=`,
+  // which carries a message rendered verbatim.
+  const reason = searchParams.get('reason');
   const isSignup = searchParams.get('signup');
   const redirectParam = getSafeRedirectPath(searchParams.get('redirect'));
 
@@ -57,6 +62,8 @@ export const LoginPanel = () => {
     setTokenError,
     loginSuccess,
     setLoginSuccess,
+    waitlisted,
+    setWaitlisted,
   } = useAuthPanelStore();
 
   const handleLogin = async () => {
@@ -91,18 +98,30 @@ export const LoginPanel = () => {
     {
       enabled: false,
       staleTime: 0,
-      initialData: false,
     },
   );
 
   const combinedError = (login.error?.message || error) ?? undefined;
 
+  // Being waitlisted is an expected outcome, not an error — it arrives as a
+  // successful tagged-union result on the OTP path and as `?reason=` on the
+  // OAuth path. Either way the copy is rendered here so it can be localized.
+  //
+  // Latched from the submit rather than read off `login.data`: a successful
+  // query result is dehydrated into localStorage for 24h (TRPCProvider's
+  // `shouldDehydrateQuery`), and the query key carries the email being typed.
+  // Reading it per-render would replay a stale verdict as soon as the address
+  // matches again — locking a since-invited user out of the form.
+  const isWaitlisted = reason === 'waitlisted' || waitlisted;
+
   const emailParser = z.email();
 
   const requestEmailCode = () => {
     void login.refetch().then(({ data }) => {
-      if (data) {
+      if (data?.ok) {
         setLoginSuccess(true);
+      } else if (data?.ok === false && data.reason === 'waitlisted') {
+        setWaitlisted(true);
       }
     });
   };
@@ -134,19 +153,16 @@ export const LoginPanel = () => {
   }
 
   const isConnectionError = user?.error?.name === 'AuthRetryableFetchError';
-  const isErrorState = login.isError || !!combinedError;
+  const isErrorState = login.isError || !!combinedError || isWaitlisted;
 
   const title = (() => {
     if (isConnectionError) {
       return t('Connection issue');
     }
+    if (isWaitlisted) {
+      return t('Stay tuned!');
+    }
     if (login.isError || error || tokenError) {
-      if (
-        combinedError?.includes('invite') ||
-        combinedError?.includes('waitlist')
-      ) {
-        return t('Stay tuned!');
-      }
       return t('Oops!');
     }
     if (!loginSuccess) {
@@ -176,6 +192,12 @@ export const LoginPanel = () => {
     if (isConnectionError) {
       return t(
         "{appName} can't connect to the internet. Please check your internet connection and try again.",
+        { appName: APP_NAME },
+      );
+    }
+    if (isWaitlisted) {
+      return t(
+        '{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.',
         { appName: APP_NAME },
       );
     }

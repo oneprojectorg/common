@@ -1613,5 +1613,6 @@
   "Couldn't check the export's status. It may still be running.": "Couldn't check the export's status. It may still be running.",
   "Export all": "Export all",
   "Proposals in review · {count}": "Proposals in review · {count}",
-  "{count} Reviewed": "{count} Reviewed"
+  "{count} Reviewed": "{count} Reviewed",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates."
 }

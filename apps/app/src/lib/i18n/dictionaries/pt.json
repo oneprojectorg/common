@@ -1549,5 +1549,6 @@
   "Couldn't check the export's status. It may still be running.": "Não foi possível verificar o estado da exportação. Pode ainda estar em execução.",
   "Export all": "Exportar tudo",
   "Proposals in review · {count}": "Propostas em revisão · {count}",
-  "{count} Reviewed": "{count} revisadas"
+  "{count} Reviewed": "{count} revisadas",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "O {appName} é apenas por convite! Você agora está na lista de espera. Fique de olho na sua caixa de entrada para novidades."
 }

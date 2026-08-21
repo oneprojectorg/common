@@ -32,6 +32,8 @@ interface AuthPanelState {
   setTokenError: (tokenError: string | undefined) => void;
   loginSuccess: boolean;
   setLoginSuccess: (loginSuccess: boolean) => void;
+  waitlisted: boolean;
+  setWaitlisted: (waitlisted: boolean) => void;
   reset: () => void;
 }
 
@@ -51,6 +53,8 @@ export const useAuthPanelStore = create<AuthPanelState>((set) => ({
   setTokenError: (tokenError) => set({ tokenError }),
   loginSuccess: false,
   setLoginSuccess: (loginSuccess) => set({ loginSuccess }),
+  waitlisted: false,
+  setWaitlisted: (waitlisted) => set({ waitlisted }),
   reset: () =>
     set({
       email: '',
@@ -58,6 +62,7 @@ export const useAuthPanelStore = create<AuthPanelState>((set) => ({
       token: undefined,
       tokenError: undefined,
       loginSuccess: false,
+      waitlisted: false,
     }),
 }));
 

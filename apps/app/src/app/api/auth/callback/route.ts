@@ -41,12 +41,24 @@ export const GET = async (request: NextRequest) => {
       // when Supabase creates the auth.users record
       try {
         const client = await createClient();
-        await client.account.login({
+        const result = await client.account.login({
           email: authData.user.email,
           usingOAuth: true,
         });
+
+        if (!result.ok) {
+          // Turned away by the invite gate. The code exchange already minted a
+          // session, so drop it. `reason` is machine-readable — LoginPanel owns
+          // the localized copy for it, so no English message travels in the URL.
+          await supabase.auth.signOut();
+
+          return NextResponse.redirect(
+            `${errorRedirect}?reason=${encodeURIComponent(result.reason)}`,
+          );
+        }
       } catch (error) {
-        // If the user is not invited or not registered, sign them out
+        // The gate itself failed (the invite decision is handled above), so we
+        // never established whether this visitor may be here — sign them out.
         await supabase.auth.signOut();
 
         if (error instanceof Error) {
