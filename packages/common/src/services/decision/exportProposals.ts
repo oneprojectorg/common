@@ -24,14 +24,14 @@ export const exportProposals = async ({
 }): Promise<{ exportId: string }> => {
   const { processInstanceId } = input;
 
-  // Resolve the decision profile the export belongs to. Authorization hangs off
-  // this profile; there is no organization lookup because the export's storage
-  // path is keyed by process instance, not by owning org.
+  // Resolve the decision profile that owns the export. Authorization depends on
+  // this profile. There is no organization lookup, because the export's storage
+  // path uses the process instance, not the owning organization.
   //
-  // Deferred: joining `profiles` would make the null-profileId branch below
-  // unrepresentable, but it also collapses "no such instance" and "instance has
-  // no profile" into one indistinguishable miss. Kept as two lookups until we
-  // decide which error those callers should see.
+  // A join on `profiles` would make the null `profileId` branch below
+  // unrepresentable. It would also collapse "no such instance" and "instance
+  // has no profile" into one miss that a caller cannot tell apart. This stays
+  // as two lookups until we choose which error those callers see.
   const result = await db
     .select({
       profileId: processInstances.profileId,

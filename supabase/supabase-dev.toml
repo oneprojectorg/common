@@ -51,7 +51,7 @@ public = true
 public = true
 objects_path = "./storage/avatars"
 
-# Private — reads go through a signed URL. See EXPORTS_BUCKET in @op/common.
+# Private. A reader needs a signed URL. See EXPORTS_BUCKET in @op/common.
 [storage.buckets.exports]
 public = false
 

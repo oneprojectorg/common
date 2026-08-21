@@ -17,11 +17,12 @@ import {
 // is what produced the dead-download-link bug these tests pin down.
 
 describe('EXPORTS_BUCKET', () => {
-  // Exports get a bucket of their own so that reads need a signature. The
-  // second assertion is the one that matters: `assets` is served publicly, so
-  // re-aliasing this back to it would silently un-fix that. Note this only pins
-  // the *name* — that the bucket is actually private is asserted end-to-end in
-  // tests/e2e/tests/proposals-export.spec.ts, against a real one.
+  // Exports use a bucket of their own, so a read needs a signature. The second
+  // assertion carries the weight. Supabase serves `assets` publicly, so an
+  // alias back to it would undo the fix without any test failing.
+  //
+  // This test pins the name only. `tests/e2e/tests/proposals-export.spec.ts`
+  // asserts against a real bucket that the bucket is private.
   it('is a private bucket of its own, not the public assets bucket', () => {
     expect(EXPORTS_BUCKET).toBe('exports');
     expect(EXPORTS_BUCKET).not.toBe(ASSETS_BUCKET);
@@ -71,8 +72,8 @@ describe('exportFilePath', () => {
     );
   });
 
-  // Keeps the `<entity>/<id>/<sub-resource>/` shape the other storage writers
-  // use, so the bucket's top level does not accumulate a prefix per feature.
+  // This keeps the `<entity>/<id>/<sub-resource>/` shape the other storage
+  // writers use. The bucket's top level then gains no prefix per feature.
   it('leads with the owning entity, not the sub-resource', () => {
     expect(exportFilePath('instance-1', 'f.csv')).toMatch(
       /^process\/instance-1\/proposals\//,

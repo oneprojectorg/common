@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mocks: getExportStatus is orchestration over the cache, the access
-// gate, and Supabase storage. We drive those and assert what it does with a
-// completed export whose signed URL has lapsed — the refresh path that was
-// unreachable before the record was made longer-lived than the URL.
+// These mocks stand in for the boundaries. `getExportStatus` orchestrates the
+// cache, the access gate, and Supabase storage. These tests drive those three
+// and assert what the function does with a completed export whose signed URL
+// has lapsed. That refresh path was unreachable until the record outlived the
+// URL.
 vi.mock('@op/cache', () => ({
   getWithStatus: vi.fn(),
   set: vi.fn(),
@@ -48,9 +49,9 @@ const logger = { info: vi.fn(), error: vi.fn() };
 const createSignedUrl = vi.fn();
 
 /**
- * Stage what the cache answers. `null` is Redis answering that it holds
- * nothing, which is a different claim from the unreachable cases below — see
- * the tests around `getWithStatus`.
+ * Stages what the cache answers. `null` means Redis answered and held nothing.
+ * That is a different claim from the unreachable cases. See the tests around
+ * `getWithStatus`.
  */
 const givenCachedRecord = (record: unknown | null) =>
   vi
@@ -60,9 +61,9 @@ const givenCachedRecord = (record: unknown | null) =>
     );
 
 /**
- * Narrow away the `not_found` arm so a test can read record fields directly.
- * Throwing here keeps the assertion at the line that cares, rather than letting
- * a wrong shape surface as `undefined` two lines later.
+ * Narrows away the `not_found` arm, so a test can read record fields directly.
+ * A throw here fails at the line that cares. A wrong shape would otherwise
+ * appear as `undefined` two lines later.
  */
 const expectRecord = (
   result: Awaited<ReturnType<typeof getExportStatus>>,
@@ -112,8 +113,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // `clearAllMocks` does not restore timers, and leaving them installed leaks
-  // a frozen clock into anything that runs after this file.
+  // `clearAllMocks` does not restore timers. Timers left installed leak a
+  // frozen clock into whatever runs after this file.
   vi.useRealTimers();
 });
 
@@ -137,11 +138,11 @@ describe('getExportStatus', () => {
     });
   });
 
-  // The client is as much the point as the bucket. Every `storage.objects`
-  // policy is scoped to `bucket_id = 'assets'`, so nothing grants a caller any
-  // access here and the `createSBServerClient` this used to call could never
-  // see the object. Authorization is already complete by the time we sign, so
-  // signing with the service role is safe.
+  // The client matters as much as the bucket. Every `storage.objects` policy
+  // scopes to `bucket_id = 'assets'`, so no policy grants a caller access here.
+  // The `createSBServerClient` this once called could never see the object.
+  // Authorization completes before the signing call, so the service role is
+  // safe to use.
   it('signs with the service-role client, in the export bucket, at the instance-scoped path', async () => {
     givenCachedRecord(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
@@ -159,10 +160,11 @@ describe('getExportStatus', () => {
     );
   });
 
-  // A signing failure that may pass on a second look. Keeping the lapsed URL
-  // would render a download that 400s, and reporting `failed` would make the
-  // client discard the export id — a full re-export of a run that succeeded —
-  // so this stays `completed` with no URL, which the button offers to retry.
+  // This signing failure may pass on a second look. The lapsed URL would
+  // render a download that answers 400. A `failed` status would make the client
+  // discard the export id, and cost a re-export of a run that succeeded. The
+  // record therefore stays `completed` with no URL, and the button offers a
+  // retry.
   it('reports a completed export with no URL when signing fails transiently', async () => {
     givenCachedRecord(expiredRecord());
     createSignedUrl.mockResolvedValue({
@@ -175,17 +177,17 @@ describe('getExportStatus', () => {
     expect(logger.error).toHaveBeenCalled();
     expect(result).toMatchObject({ status: 'completed' });
     expect(expectRecord(result).signedUrl).toBeUndefined();
-    // No server-minted message: the client renders `errorMessage` verbatim and
-    // only reaches its translated fallback when the field is absent.
+    // The server sends no message. The client renders `errorMessage` verbatim,
+    // and reaches its translated fallback only when the field is absent.
     expect(expectRecord(result).errorMessage).toBeUndefined();
-    // The record is left as it is, so the retry re-reads one still marked
-    // `completed` and signs again.
+    // This leaves the record alone. The retry re-reads a record still marked
+    // `completed`, and signs again.
     expect(set).not.toHaveBeenCalled();
   });
 
-  // A missing object cannot be retried into existence, so offering a retry
-  // would loop until the record's TTL ran out. Every export cached across the
-  // deploy that moved buckets lands here: its file is still in `assets`.
+  // No retry recreates a missing object, so a retry would loop until the
+  // record's TTL expired. Every export cached across the deploy that moved
+  // buckets reaches this branch, because its file remains in `assets`.
   it.each([['Object not found'], ['Bucket not found']])(
     'reports a terminal failure when signing says %s',
     async (message) => {
@@ -204,8 +206,8 @@ describe('getExportStatus', () => {
     },
   );
 
-  // The original bug: the recorded expiry claimed 24h while the URL itself was
-  // minted for 2h, so callers trusted a link that had been dead for 22 hours.
+  // The original bug: the record claimed a 24 hour expiry, and the workflow
+  // signed the URL for 2 hours. Callers trusted a link dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
     givenCachedRecord(expiredRecord());
 
@@ -234,8 +236,8 @@ describe('getExportStatus', () => {
     );
   });
 
-  // The recovery path the client's retry drives: the same record, read again,
-  // signs successfully and comes back with a live URL.
+  // This is the recovery path the client's retry drives. A second read of the
+  // same record signs successfully and returns a live URL.
   it('signs successfully when a later read finds storage healthy', async () => {
     givenCachedRecord(expiredRecord());
     createSignedUrl
@@ -264,9 +266,9 @@ describe('getExportStatus', () => {
     });
   });
 
-  // `new Date('nonsense') < new Date()` is false, so a comparison alone reads a
-  // garbled expiry as still fresh and the record keeps serving a URL nobody has
-  // checked for the rest of its life.
+  // `new Date('nonsense') < new Date()` is false. A bare comparison therefore
+  // reads a garbled expiry as fresh, and the record serves an unchecked URL for
+  // the rest of its life.
   it.each([
     ['missing', undefined],
     ['unparseable', 'not-a-timestamp'],
@@ -288,9 +290,9 @@ describe('getExportStatus', () => {
     },
   );
 
-  // A URL with seconds left is worse than an expired one: it passes the check
-  // and then dies in the admin's hands, and taking the download clears the
-  // export id so nothing is left to retry.
+  // A URL with seconds left is worse than an expired one. It passes the check,
+  // then fails in the admin's hands. Taking the download also clears the export
+  // id, so nothing remains to retry.
   it('re-signs a URL that is about to expire', async () => {
     givenCachedRecord({
       ...expiredRecord(),
@@ -356,9 +358,9 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
 
-  // Split from the case above, which set a non-completed status *and* dropped
-  // the file name — so it passed whichever guard was doing the work. This one
-  // keeps the file name, leaving the status as the only thing under test.
+  // This test splits from the case above. That case set a non-completed status
+  // and dropped the file name, so it passed whichever guard did the work. This
+  // one keeps the file name, and tests the status alone.
   it('does not attempt a refresh for a run that has not settled', async () => {
     givenCachedRecord({ ...expiredRecord(), status: 'processing' });
 
@@ -368,10 +370,10 @@ describe('getExportStatus', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
-  // Nothing can be signed without a file name, and no later read grows one, so
-  // this is terminal. Returning the record untouched instead — which skipping
-  // the refresh used to do — reads to the client as a completed export it can
-  // retry, and every retry lands back here: a button that never resolves.
+  // Without a file name there is nothing to sign, and no later read supplies
+  // one, so this state is terminal. Skipping the refresh returned the record
+  // untouched. The client read that as a completed export it could retry, and
+  // every retry returned here. The button never resolved.
   it('reports a terminal failure for a completed export with no file name', async () => {
     givenCachedRecord({
       ...expiredRecord(),
@@ -399,10 +401,10 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
 
-  // The ownership check above is the weaker of the two gates. This one is what
-  // stands between an authenticated caller and a service-role-signed URL to a
-  // CSV of submitter names: signing bypasses RLS, so nothing below the storage
-  // layer will catch a caller who should not be here.
+  // The ownership check above is the weaker of the two gates. This gate stands
+  // between an authenticated caller and a signed URL to a CSV of submitter
+  // names. The signing call bypasses row level security, so no layer below
+  // storage catches a caller who should not be here.
   it('demands decision admin on the profile that owns the export', async () => {
     givenCachedRecord(expiredRecord());
 
@@ -428,10 +430,10 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
 
-  // Absence has to be answered for, not assumed. Export state lives only in the
-  // cache, and the client retires the export id on `not_found` — so reporting a
-  // cache it could not reach as "no such export" discards a finished run of up
-  // to a thousand proposals on one Redis blip.
+  // The cache must answer before this reports absence. Export state lives only
+  // in the cache, and the client retires the export id on `not_found`. A cache
+  // it could not reach, reported as "no such export", discards a finished run
+  // of up to a thousand proposals.
   it.each([['timeout'], ['error']] as const)(
     'refuses to call an export missing when the cache answers %s',
     async (status) => {

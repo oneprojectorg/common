@@ -1,33 +1,34 @@
 /**
- * What a "Retry download" click should do, given what re-reading the export
- * record returned.
+ * What a "Retry download" click does, for each result of re-reading the export
+ * record.
  *
- * Kept apart from the component so the four outcomes can be tested directly:
- * `apps/app` runs Vitest under `environment: 'node'`, so a component test would
- * need a DOM this workspace does not install, and the branch that matters most
- * here — refusing to retire an export id the client cannot prove is gone — is
- * exactly the one that never fires in a happy-path render.
+ * This lives apart from the component so a test can drive the four outcomes
+ * directly. `apps/app` runs Vitest under `environment: 'node'`, and this
+ * workspace installs no DOM, so it supports no component test.
+ *
+ * The outcome that matters most also never appears in a happy-path render. The
+ * client must refuse to retire an export id it cannot prove is gone.
  */
 export type ExportRetryOutcome =
-  /** A URL was minted. The download is on screen; say nothing. */
+  /** The server minted a URL. The download is on screen. Report nothing. */
   | { kind: 'recovered' }
   /**
-   * The run itself failed. The `isFailed` effect already toasts and resets the
-   * button, so a second message here would duplicate it — and misdescribe it,
-   * since that state needs a fresh export rather than another retry.
+   * The run failed. The `isFailed` effect already shows a toast and resets the
+   * button. A second message would duplicate it, and would also misdescribe it:
+   * that state needs a fresh export, not another retry.
    */
   | { kind: 'failure-already-reported' }
   /**
-   * The record is genuinely absent: it aged out of its 24h life. Nothing will
-   * bring it back, and holding the id would flip `isRunning` back to true —
-   * reverting to "Preparing..." and eventually timing out a run that finished.
+   * The record is absent, because it aged out of its 24 hour life. Nothing
+   * returns it. Holding the id would set `isRunning` back to true, revert the
+   * label to "Preparing...", and time out a run that finished.
    */
   | { kind: 'record-gone' }
   /**
-   * Something stopped the read from settling — a failed request, a signing
-   * error, a record still in flight. Report it, but keep the export id: the
-   * object is most likely still in the bucket, and discarding the only handle
-   * to it costs a re-export of up to a thousand proposals.
+   * The read did not settle. A request failed, or signing failed, or the run is
+   * still in flight. Report it and keep the export id. The object is most
+   * likely still in the bucket, and discarding the only handle to it costs a
+   * re-export of up to a thousand proposals.
    */
   | { kind: 'still-unavailable' };
 
@@ -49,9 +50,9 @@ export const resolveExportRetryOutcome = ({
     return { kind: 'failure-already-reported' };
   }
 
-  // Only an answered read proves absence. `errored` covers the case where the
-  // server could not reach the cache at all, which now arrives as a thrown
-  // error rather than as `not_found` — see `getExportStatus`.
+  // Only an answered read proves absence. `errored` covers a server that could
+  // not reach the cache. `getExportStatus` throws in that case, so it no longer
+  // arrives here as `not_found`.
   if (!errored && status === 'not_found') {
     return { kind: 'record-gone' };
   }

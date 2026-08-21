@@ -26,17 +26,17 @@ describe('resolveExportRetryOutcome', () => {
   });
 
   it('keeps the export id when the read itself failed', () => {
-    // The regression this pins: a request error used to be indistinguishable
-    // from an answered `not_found`, so one unreachable cache retired a finished
-    // export permanently.
+    // This pins the regression. A request error once looked the same as an
+    // answered `not_found`, so one unreachable cache retired a finished export
+    // for good.
     expect(
       resolveExportRetryOutcome({ errored: true, status: 'not_found' }),
     ).toEqual({ kind: 'still-unavailable' });
   });
 
   it('keeps the export id when a completed record still has no URL', () => {
-    // The signing call failed transiently. The object is in the bucket, so the
-    // next retry can still succeed.
+    // The signing call failed for a moment. The object remains in the bucket,
+    // so the next retry can succeed.
     expect(
       resolveExportRetryOutcome({ errored: false, status: 'completed' }),
     ).toEqual({ kind: 'still-unavailable' });
@@ -58,8 +58,8 @@ describe('resolveExportRetryOutcome', () => {
   });
 
   it('does not treat a stale URL on an errored read as recovery', () => {
-    // react-query hands back the last good data when a refetch fails, so a
-    // signed URL can be present on a read that did not settle.
+    // react-query returns the last good data when a refetch fails. A signed
+    // URL can therefore appear on a read that did not settle.
     expect(
       resolveExportRetryOutcome({
         errored: true,
