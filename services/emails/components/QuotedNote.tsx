@@ -12,7 +12,9 @@ export const QuotedNote = ({
   authorName?: string | null;
 }) => (
   <Section className="border-neutral-gray1 my-8 rounded-lg border border-solid bg-neutral-50 px-6 py-2">
-    <Text className="text-neutral-charcoal my-2 text-lg italic">
+    {/* `pre-line` keeps the author's paragraph breaks: the note comes from a
+        textarea, and HTML would otherwise collapse it into one run-on block. */}
+    <Text className="text-neutral-charcoal my-2 text-lg whitespace-pre-line italic">
       {children}
     </Text>
     {authorName ? (
