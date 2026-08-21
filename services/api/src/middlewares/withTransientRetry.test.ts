@@ -12,7 +12,7 @@ type NextResult = { ok: true; data: unknown } | { ok: false; error: unknown };
  * tRPC hands it to a middleware: the driver error is only ever reachable
  * through the wrapping `TRPCError`'s `cause`.
  */
-function droppedSocketResult(): NextResult {
+function droppedSocketError(): TRPCError {
   const driverError = Object.assign(
     new Error(
       'write CONNECTION_CLOSED aws-0-us-east-1.pooler.supabase.com:6543',
@@ -20,13 +20,7 @@ function droppedSocketResult(): NextResult {
     { code: 'CONNECTION_CLOSED' },
   );
 
-  return {
-    ok: false,
-    error: new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      cause: driverError,
-    }),
-  };
+  return new TRPCError({ code: 'INTERNAL_SERVER_ERROR', cause: driverError });
 }
 
 function makeLoggerContext() {
@@ -75,7 +69,10 @@ describe('withTransientRetry', () => {
     const { next, result } = runRetry({
       ctx,
       type: 'query',
-      results: [droppedSocketResult(), { ok: true, data: 'proposal' }],
+      results: [
+        { ok: false, error: droppedSocketError() },
+        { ok: true, data: 'proposal' },
+      ],
     });
 
     await expect(result).resolves.toEqual({ ok: true, data: 'proposal' });
@@ -87,7 +84,10 @@ describe('withTransientRetry', () => {
     const { result } = runRetry({
       ctx,
       type: 'query',
-      results: [droppedSocketResult(), { ok: true, data: 'proposal' }],
+      results: [
+        { ok: false, error: droppedSocketError() },
+        { ok: true, data: 'proposal' },
+      ],
     });
     await result;
 
@@ -99,20 +99,25 @@ describe('withTransientRetry', () => {
 
   it('gives up after one replay instead of looping', async () => {
     const ctx = makeLoggerContext();
-    const failure = droppedSocketResult();
+    const lastError = droppedSocketError();
     const { next, result } = runRetry({
       ctx,
       type: 'query',
-      results: [droppedSocketResult(), failure],
+      results: [
+        { ok: false, error: droppedSocketError() },
+        { ok: false, error: lastError },
+      ],
     });
 
-    await expect(result).resolves.toBe(failure);
+    // The final failure is re-thrown rather than returned; tRPC catches it and
+    // rebuilds the same `{ ok: false }` result for the caller.
+    await expect(result).rejects.toBe(lastError);
     expect(next).toHaveBeenCalledTimes(2);
   });
 
   it('never replays a mutation, which may already have committed', async () => {
     const ctx = makeLoggerContext();
-    const failure = droppedSocketResult();
+    const failure: NextResult = { ok: false, error: droppedSocketError() };
     const { next, result } = runRetry({
       ctx,
       type: 'mutation',
