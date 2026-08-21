@@ -186,6 +186,16 @@ const refreshSignedUrl = async ({
 };
 
 /**
+ * How close to expiry a URL is treated as already lapsed.
+ *
+ * Without a margin a URL with seconds left is judged fresh and handed to the
+ * client, which then 400s when the admin clicks — silently, because taking the
+ * download clears the export id. A small lead also absorbs clock skew between
+ * this process and storage. The cost of being wrong is one signing call.
+ */
+const URL_EXPIRY_GRACE_MS = 60 * 1000;
+
+/**
  * Whether a completed export's download URL needs re-signing.
  *
  * A missing or unparseable expiry counts as lapsed. `new Date('nonsense') <
@@ -201,5 +211,7 @@ const isSignedUrlLapsed = (urlExpiresAt: string | undefined): boolean => {
 
   const expiresAt = Date.parse(urlExpiresAt);
 
-  return Number.isNaN(expiresAt) || expiresAt < Date.now();
+  return (
+    Number.isNaN(expiresAt) || expiresAt - URL_EXPIRY_GRACE_MS < Date.now()
+  );
 };

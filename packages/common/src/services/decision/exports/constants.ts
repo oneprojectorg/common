@@ -34,8 +34,10 @@ export const EXPORTS_BUCKET = 'exports';
  * outlives any single URL, so an admin returning to a finished export gets a
  * freshly minted URL from `getExportStatus` instead of a 404.
  *
- * Because {@link EXPORTS_BUCKET} is private, this is a real revocation window:
- * once the signature lapses, no unsigned URL still resolves.
+ * Because {@link EXPORTS_BUCKET} is private, expiry actually revokes access to
+ * anything stored there. It says nothing about exports written before the move:
+ * those objects are still in the public `assets` bucket and remain readable by
+ * path until they are deleted, which is tracked separately.
  */
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 

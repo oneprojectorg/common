@@ -252,6 +252,23 @@ describe('getExportStatus', () => {
     },
   );
 
+  // A URL with seconds left is worse than an expired one: it passes the check
+  // and then dies in the admin's hands, and taking the download clears the
+  // export id so nothing is left to retry.
+  it('re-signs a URL that is about to expire', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      urlExpiresAt: new Date(NOW.getTime() + 5_000).toISOString(),
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalled();
+    expect(result).toMatchObject({
+      signedUrl: 'https://storage.example/fresh-url',
+    });
+  });
+
   it('leaves a still-valid URL alone', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),

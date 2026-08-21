@@ -299,7 +299,13 @@ const ExportProposalsButtonContent = ({
             return;
           }
 
-          toast.error(t('Could not prepare the download. Please try again.'));
+          // `failed` is the one outcome that reports itself: the effect above
+          // toasts and resets the button. Saying "please try again" beside it
+          // would be both duplicated and wrong — that path needs a fresh export,
+          // not a retry.
+          if (data?.status !== 'failed') {
+            toast.error(t('Could not prepare the download. Please try again.'));
+          }
 
           // A record that has aged out of the 24h cache is not coming back, and
           // leaving the id set would put `isRunning` back to true — reverting to
