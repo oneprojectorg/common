@@ -14,7 +14,7 @@ import {
   IndividualProfileTabsRenderer,
   ProfileTabsRenderer,
 } from './ProfileTabsRenderer';
-import { fetchOrganizationBySlug, fetchProfileBySlug } from './cachedFetches';
+import { fetchProfileScreenData } from './cachedFetches';
 
 const ProfileWithData = async ({
   slug,
@@ -24,14 +24,7 @@ const ProfileWithData = async ({
   initialTab?: string;
 }) => {
   try {
-    // Fire profile + organization in parallel. The org lookup throws
-    // NotFoundError for user-profile slugs; swallow it to null and gate
-    // on profile.type below. profile.getBySlug is the source of truth for
-    // whether the slug is an org — the org fetch is only consumed when it is.
-    const [profile, organization] = await Promise.all([
-      fetchProfileBySlug(slug),
-      fetchOrganizationBySlug(slug).catch(() => null),
-    ]);
+    const { profile, organization } = await fetchProfileScreenData(slug);
 
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);
@@ -42,8 +35,9 @@ const ProfileWithData = async ({
       profile.name + 'C' || 'Common',
     );
 
-    if (profile.type === 'org') {
-      return organization ? (
+    // Only an org slug resolves an organization, so this doubles as the type check.
+    if (organization) {
+      return (
         <>
           <ImageHeader
             headerImage={
@@ -69,7 +63,7 @@ const ProfileWithData = async ({
             initialTab={initialTab}
           />
         </>
-      ) : null;
+      );
     }
 
     // For user profiles, create a simplified profile object based on the profile data
