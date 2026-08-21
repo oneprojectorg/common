@@ -12,7 +12,6 @@ import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldLabel,
   FieldTitle,
@@ -39,6 +38,7 @@ import { useTranslations } from '@/lib/i18n';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import {
+  YES_NO_VALUES,
   getCriterionMaxPoints,
   inferCriterionType,
   translateRubricTemplate,
@@ -270,28 +270,28 @@ function RubricCriterionSection({
 
   return (
     <section className="border-b pb-6">
-      {/* Yes/no reads as a setting: prompt on the left, switch on the right. */}
+      {/* Yes/no reads as a setting: badge top-right in the header row, then
+          the switch beside the description, top-aligned. */}
       {criterionType === 'yes_no' ? (
         // One `dir="auto"` for the whole field rather than one per part:
         // resolved separately, each element reads from its own text, so the
         // title (which also carries the points badge) can land on the opposite
-        // side from its own description. The controls inherit this; the portaled
-        // select popup can't, and sets its own below.
-        <Field orientation="horizontal" dir="auto">
-          <FieldContent>
-            <FieldTitle
-              render={<h4 />}
-              className="flex w-full items-start justify-between gap-2"
-            >
-              {label}
-            </FieldTitle>
+        // side from its own description.
+        <Field dir="auto">
+          <FieldTitle
+            render={<h4 />}
+            className="flex w-full items-start justify-between gap-2"
+          >
+            {label}
+          </FieldTitle>
+          <div className="flex w-full items-start justify-end gap-3">
             {field.schema.description ? (
-              <FieldDescription id={descriptionId}>
+              <FieldDescription id={descriptionId} className="flex-1">
                 {field.schema.description}
               </FieldDescription>
             ) : null}
-          </FieldContent>
-          {control}
+            {control}
+          </div>
         </Field>
       ) : (
         <Field dir="auto">
@@ -433,9 +433,9 @@ function RubricFieldInput({
             id={controlId}
             aria-labelledby={labelledBy}
             aria-describedby={describedBy}
-            checked={value === 'yes'}
+            checked={value === YES_NO_VALUES.yes}
             onCheckedChange={(checked) => {
-              onChange(checked ? 'yes' : 'no');
+              onChange(checked ? YES_NO_VALUES.yes : YES_NO_VALUES.no);
             }}
           />
         );

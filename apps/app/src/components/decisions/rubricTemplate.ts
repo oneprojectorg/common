@@ -50,6 +50,13 @@ export type RubricCriterionType =
   | 'single_select'
   | 'long_text';
 
+/**
+ * Stored encoding of a yes/no criterion's answer. These literals define the
+ * criterion's schema options, drive `inferCriterionType`, and are what the
+ * review form reads and writes — stored answers go stale if they change.
+ */
+export const YES_NO_VALUES = { yes: 'yes', no: 'no' } as const;
+
 /** A single admin-defined option on a single-select criterion. */
 export interface SelectOption {
   /** Stable generated id stored as the answer value. */
@@ -153,8 +160,8 @@ export function createCriterionJsonSchema(
         type: 'string',
         'x-format': 'dropdown',
         oneOf: [
-          { const: 'yes', title: 'Yes' },
-          { const: 'no', title: 'No' },
+          { const: YES_NO_VALUES.yes, title: 'Yes' },
+          { const: YES_NO_VALUES.no, title: 'No' },
         ],
       };
     case 'single_select': {
@@ -201,8 +208,8 @@ export function inferCriterionType(
       const values = getOneOfEntries(schema).map((e) => e.const);
       if (
         values.length === 2 &&
-        values.includes('yes') &&
-        values.includes('no')
+        values.includes(YES_NO_VALUES.yes) &&
+        values.includes(YES_NO_VALUES.no)
       ) {
         return 'yes_no';
       }
@@ -218,6 +225,28 @@ export function inferCriterionType(
   }
 
   return undefined;
+}
+
+/**
+ * Fill unanswered yes/no criteria with 'no'. The switch has no unset state —
+ * it already reads as "No" before the reviewer touches it — so a required
+ * criterion would otherwise demand a Yes→No round trip just to record the
+ * value the UI was showing all along.
+ *
+ * Optional criteria are seeded too, on purpose: the switch shows "No" either
+ * way, so "skipped" is not a state the reviewer can see or express.
+ */
+export function withYesNoDefaults(
+  template: RubricTemplateSchema,
+  answers: Record<string, unknown>,
+): Record<string, unknown> {
+  const seeded = { ...answers };
+  for (const [key, schema] of Object.entries(template.properties ?? {})) {
+    if (seeded[key] === undefined && inferCriterionType(schema) === 'yes_no') {
+      seeded[key] = YES_NO_VALUES.no;
+    }
+  }
+  return seeded;
 }
 
 // ---------------------------------------------------------------------------
