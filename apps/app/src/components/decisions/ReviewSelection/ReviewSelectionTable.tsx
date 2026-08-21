@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowHeader,
 } from '@op/sense/Table';
 import { screens } from '@op/styles/constants';
 
@@ -103,7 +104,7 @@ export function ReviewSelectionTable({
             >
               {/* The cell that names the row, so grid navigation can announce
                   which proposal a value belongs to. */}
-              <TableCell render={<th scope="row" />}>
+              <TableRowHeader>
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
@@ -117,7 +118,7 @@ export function ReviewSelectionTable({
                     </span>
                   )}
                 </div>
-              </TableCell>
+              </TableRowHeader>
               <TableCell>
                 <span className="text-base">
                   {budget

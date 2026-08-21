@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowHeader,
 } from '@op/sense/Table';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuEllipsis } from 'react-icons/lu';
@@ -108,8 +109,7 @@ export const WithBadges: Story = {
   ),
 };
 
-// A row-header cell (`th scope="row"`) must look identical to a `td` —
-// TableCell's base classes undo the browser's centered-bold `th` defaults.
+// A row header names its row without taking on column-header styling.
 export const WithRowHeaders: Story = {
   render: () => (
     <Table className="max-w-2xl">
@@ -125,7 +125,7 @@ export const WithRowHeaders: Story = {
       <TableBody>
         {invoices.map((invoice) => (
           <TableRow key={invoice.id}>
-            <TableCell render={<th scope="row" />}>{invoice.id}</TableCell>
+            <TableRowHeader>{invoice.id}</TableRowHeader>
             <TableCell>{invoice.status}</TableCell>
             <TableCell className="text-end">{invoice.amount}</TableCell>
           </TableRow>
