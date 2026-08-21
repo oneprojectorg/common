@@ -198,6 +198,30 @@ describe('getExportStatus', () => {
     expect(logger.error).not.toHaveBeenCalled();
   });
 
+  // `new Date('nonsense') < new Date()` is false, so a comparison alone reads a
+  // garbled expiry as still fresh and the record keeps serving a URL nobody has
+  // checked for the rest of its life.
+  it.each([
+    ['missing', undefined],
+    ['unparseable', 'not-a-timestamp'],
+  ])(
+    're-signs when the recorded expiry is %s',
+    async (_label, urlExpiresAt) => {
+      vi.mocked(get).mockResolvedValue({ ...expiredRecord(), urlExpiresAt });
+
+      const result = await getExportStatus({
+        exportId: EXPORT_ID,
+        user,
+        logger,
+      });
+
+      expect(createSignedUrl).toHaveBeenCalled();
+      expect(result).toMatchObject({
+        signedUrl: 'https://storage.example/fresh-url',
+      });
+    },
+  );
+
   it('leaves a still-valid URL alone', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
