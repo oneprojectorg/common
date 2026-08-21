@@ -27,7 +27,13 @@ export function TotalScoreCard({
   values: RubricReviewData['answers'];
 }) {
   const criteria = getCriteria(rubricTemplate);
-  const { totalPoints } = getRubricScoringInfo(rubricTemplate);
+  const scoringInfo = getRubricScoringInfo(rubricTemplate);
+  const { totalPoints } = scoringInfo;
+
+  // A rubric with no scored criteria (all qualitative) has no total to show.
+  if (!scoringInfo.criteria.some((criterion) => criterion.scored)) {
+    return null;
+  }
 
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
     const value = values[criterion.id];
