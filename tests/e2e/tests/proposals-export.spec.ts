@@ -236,6 +236,16 @@ test.describe('Proposals CSV export', () => {
     const download = await request.get(signedUrl as string);
     expect(download.ok()).toBe(true);
 
+    // The reported bug. Supabase serves a signed URL inline unless the URL asks
+    // for an attachment, so the CSV arrived as something the browser was free
+    // to display — Safari painted it as text in a new window rather than saving
+    // it. The anchor's `download` attribute cannot cover this: it is ignored
+    // cross-origin, and the link points at the Supabase host. This is the only
+    // test that reaches a real signed URL, so it is where the workflow's own
+    // signing site (which has no unit test behind it) gets covered.
+    expect(download.headers()['content-disposition']).toContain('attachment');
+    expect(download.headers()['content-type']).toContain('text/csv');
+
     const rows = parse(await download.text(), {
       columns: true,
     }) as Record<string, string>[];

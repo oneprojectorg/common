@@ -89,3 +89,26 @@ export const exportFilePath = (processInstanceId: string, fileName: string) =>
  */
 export const exportFileName = (extension: string) =>
   `proposals_export_${crypto.randomUUID()}_${Date.now()}.${extension}`;
+
+/**
+ * `createSignedUrl` options that make an export download rather than render.
+ *
+ * Supabase serves a storage object with the `Content-Type` recorded at upload
+ * and `Content-Disposition: inline` unless the signed URL asks otherwise, so a
+ * `text/csv` export arrives as something the browser is invited to display.
+ * Safari accepts that invitation and paints the CSV as text in a new window;
+ * Chrome happens to download it, which is why this went unnoticed.
+ *
+ * The download button's `download` attribute cannot cover this: the HTML
+ * attribute is ignored for cross-origin URLs, and these links point at the
+ * Supabase host rather than the app's own. The disposition has to come from the
+ * signed URL, which is what naming the file here does.
+ *
+ * Shared by both signing sites — the export workflow's first URL and the
+ * refresh in `getExportStatus` — because either one alone leaves the other
+ * serving inline, and the refresh path mints most of the links an admin
+ * actually clicks.
+ */
+export const exportDownloadOptions = (fileName: string) => ({
+  download: fileName,
+});

@@ -4,6 +4,7 @@ import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
+  exportDownloadOptions,
   exportFileName,
   exportFilePath,
   exportStatusCacheKey,
@@ -111,5 +112,25 @@ describe('exportFileName', () => {
     expect(exportFilePath('instance-1', exportFileName('csv'))).toMatch(
       /^[a-zA-Z0-9!\-_.*'()/]+$/,
     );
+  });
+});
+
+describe('exportDownloadOptions', () => {
+  // The reported bug. Supabase serves a signed URL with `Content-Disposition:
+  // inline` unless asked otherwise, and the anchor's `download` attribute is
+  // inert cross-origin — so Safari navigated to the CSV and rendered it as
+  // text instead of saving it. Naming the file here is what turns the response
+  // into an attachment.
+  it('asks Supabase to serve the object as an attachment', () => {
+    expect(exportDownloadOptions('proposals_export_123.csv')).toEqual({
+      download: 'proposals_export_123.csv',
+    });
+  });
+
+  // `download: true` would also force the attachment, but Supabase then names
+  // the file after the storage key's last segment. Passing the name keeps the
+  // saved file named by the record's `fileName`, which is what the UI shows.
+  it('names the saved file rather than passing a bare flag', () => {
+    expect(exportDownloadOptions('f.csv').download).not.toBe(true);
   });
 });

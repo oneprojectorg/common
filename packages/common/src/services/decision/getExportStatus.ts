@@ -11,6 +11,7 @@ import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
+  exportDownloadOptions,
   exportFilePath,
   exportStatusCacheKey,
 } from './exports';
@@ -97,7 +98,11 @@ export const getExportStatus = async ({
       const supabase = await createSBServerClient();
       const { data: urlData, error: urlError } = await supabase.storage
         .from(EXPORTS_BUCKET)
-        .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
+        .createSignedUrl(
+          filePath,
+          EXPORT_URL_TTL_SECONDS,
+          exportDownloadOptions(exportStatus.fileName),
+        );
 
       if (!urlError && urlData) {
         exportStatus.signedUrl = urlData.signedUrl;

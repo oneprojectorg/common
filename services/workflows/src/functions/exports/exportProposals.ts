@@ -5,6 +5,7 @@ import {
   EXPORT_URL_TTL_SECONDS,
   type ExportStatusData,
   assertUserByAuthId,
+  exportDownloadOptions,
   exportFileName,
   exportFilePath,
   exportStatusCacheKey,
@@ -161,7 +162,11 @@ export const exportProposals = inngest.createFunction(
 
           const { data: urlData, error: urlError } = await supabase.storage
             .from(EXPORTS_BUCKET)
-            .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
+            .createSignedUrl(
+              filePath,
+              EXPORT_URL_TTL_SECONDS,
+              exportDownloadOptions(fileName),
+            );
 
           if (urlError || !urlData) {
             throw new Error(
