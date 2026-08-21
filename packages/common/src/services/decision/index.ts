@@ -65,6 +65,12 @@ export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';
 export * from './assertProposalEngagementAccess';
+
+// Proposal relationships (merge / unmerge / list)
+export * from './mergeProposals';
+export * from './unmergeProposal';
+export * from './listProposalRelationships';
+
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
 export * from './listProposalLocations';

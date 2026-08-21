@@ -10,6 +10,7 @@ import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   canEditSubmittedReview,
@@ -142,6 +143,13 @@ export async function listReviewAssignments({
       ...(proposalProfileId && {
         proposal: { profileId: proposalProfileId },
       }),
+      // Merging doesn't delete assignments, so a proposal merged mid-review
+      // would otherwise stay in its reviewer's queue.
+      RAW: (table) =>
+        notSuperseded({
+          proposalId: table.proposalId,
+          processInstanceId,
+        }),
     },
     with: reviewAssignmentWithConfig,
     // The `id` tie-break gives a deterministic order when the primary keys are

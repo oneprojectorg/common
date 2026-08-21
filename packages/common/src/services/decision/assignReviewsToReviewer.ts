@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { notSuperseded } from './proposalSupersession';
 import { getPhaseIndex } from './utils/phaseOrder';
 
 const phaseOrderData = z
@@ -109,6 +110,12 @@ export async function assignReviewsToReviewer({
         and(
           inArray(proposals.id, proposalIds),
           eq(proposals.processInstanceId, instanceId),
+          // Assigning a merged-away proposal would create a row its reviewer
+          // can never see, since the queue filters them out.
+          notSuperseded({
+            proposalId: proposals.id,
+            processInstanceId: instanceId,
+          }),
         ),
       ),
     db

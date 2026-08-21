@@ -37,6 +37,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
+import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 
 type InstanceScopeRow = Pick<
@@ -156,6 +157,9 @@ const buildBaseConditions = (
     // including admins and even trusted background contexts. Applied in the
     // base conditions so every branch of the query builder inherits it.
     isNull(t.moderationDetachedAt),
+    // Hidden from every listing, admins included; in the base conditions so no
+    // caller-supplied filter can reach around it.
+    notSuperseded({ proposalId: t.id, processInstanceId }),
   ];
 
   if (submittedByProfileId) {
