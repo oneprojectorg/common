@@ -93,8 +93,13 @@ export interface ProposalCardProps extends Omit<
   awardedLabel?: ReactNode;
   /** Action row — e.g. Revise / Edit / Delete buttons. */
   actions?: ReactNode;
-  /** Compact map-pin variant: title + author + tags only. */
-  variant?: 'default' | 'pin';
+  /**
+   * - `pin` — compact map-pin form: title + author + tags only.
+   * - `contribution` — the "merged into this proposal" card: author and tags
+   *   share one meta row separated by a dot, and the preview clamps to two
+   *   lines instead of three. No metrics, status, votes, or actions.
+   */
+  variant?: 'default' | 'pin' | 'contribution';
 }
 
 /**
@@ -148,10 +153,57 @@ export function ProposalCard({
           </TitleLink>
         </h3>
         {authors?.length ? (
-          <AuthorRow authors={authors} linkComponent={linkComponent} compact />
+          <AuthorRow
+            authors={authors}
+            linkComponent={linkComponent}
+            size="sm"
+          />
         ) : null}
         {hasTags ? (
           <TagRow budget={budget} tags={tags} maxTags={maxTags} />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (variant === 'contribution') {
+    return (
+      <div
+        className={cn(
+          'relative flex flex-col gap-3 rounded-lg border bg-card p-6',
+          className,
+        )}
+        {...rest}
+      >
+        <h3 className="font-serif text-title text-foreground">
+          <TitleLink href={href} linkComponent={linkComponent}>
+            {title}
+          </TitleLink>
+        </h3>
+        {authors?.length || hasTags ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {authors?.length ? (
+              <AuthorRow
+                authors={authors}
+                linkComponent={linkComponent}
+                size="lg"
+              />
+            ) : null}
+            {authors?.length && hasTags ? (
+              // Decorative: the name and the tags are already separate labels.
+              <span aria-hidden className="text-sm text-muted-foreground">
+                &bull;
+              </span>
+            ) : null}
+            {hasTags ? (
+              <TagRow budget={budget} tags={tags} maxTags={maxTags} />
+            ) : null}
+          </div>
+        ) : null}
+        {description ? (
+          <p className="line-clamp-2 text-base text-foreground">
+            {description}
+          </p>
         ) : null}
       </div>
     );
@@ -280,28 +332,37 @@ function TitleLink({
   );
 }
 
+/**
+ * Avatar and label sizing per card variant. `lg` also darkens the name: on the
+ * `contribution` card the author is primary content beside the tags, not the
+ * secondary byline it is under a default card's title.
+ */
+const AUTHOR_ROW_SIZES = {
+  sm: { avatar: 'size-4', label: 'text-sm text-muted-foreground' },
+  md: { avatar: 'size-6', label: 'text-sm text-muted-foreground' },
+  lg: { avatar: 'size-8', label: 'text-base text-foreground' },
+} as const;
+
 function AuthorRow({
   authors,
   linkComponent: Link = 'a',
-  compact,
+  size = 'md',
 }: {
   authors: ProposalCardAuthor[];
   linkComponent?: ElementType<ProposalCardLinkProps>;
-  compact?: boolean;
+  size?: keyof typeof AUTHOR_ROW_SIZES;
 }) {
   const first = authors[0];
   const label =
     authors.length > 1 ? `${first?.name} +${authors.length - 1}` : first?.name;
+  const { avatar: avatarClass, label: labelClass } = AUTHOR_ROW_SIZES[size];
   return (
     <div className="flex items-center gap-1.5">
       <FacePile
         items={authors.map((author, index) => (
           <Avatar
             key={index}
-            className={cn(
-              compact ? 'size-4' : 'size-6',
-              'ring-2 ring-background',
-            )}
+            className={cn(avatarClass, 'ring-2 ring-background')}
           >
             {author.avatarSrc ? (
               <AvatarImage src={author.avatarSrc} alt="" />
@@ -315,12 +376,15 @@ function AuthorRow({
         // overlay so it stays independently clickable (clickable-card pattern).
         <Link
           href={first.href}
-          className="relative z-10 w-fit rounded-sm text-sm text-muted-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          className={cn(
+            'relative z-10 w-fit rounded-sm outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50',
+            labelClass,
+          )}
         >
           {label}
         </Link>
       ) : (
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className={labelClass}>{label}</span>
       )}
     </div>
   );

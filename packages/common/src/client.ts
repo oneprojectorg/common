@@ -90,6 +90,12 @@ export {
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
+  listContributingProposalsInputSchema,
+  contributingProposalListSchema,
+  type ListContributingProposalsInput,
+  type ContributingProposalList,
+} from './services/decision/schemas/contributingProposals';
+export {
   profileUserSchema,
   profileUserWithProfileSchema,
   profileUserWithRolesSchema,

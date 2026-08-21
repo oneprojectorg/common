@@ -272,3 +272,36 @@ export const ProposalMiniCard = ({
     />
   );
 };
+
+/**
+ * "Contributing ideas" card: a proposal merged into the one being viewed.
+ * Author and categories share one meta row above a two-line preview.
+ *
+ * Goes through `useProposalCardData` like every other card surface, so the
+ * anonymity rule (no profile link for an anonymous submitter), the
+ * profile-linking gate, the per-card translation, and the title/budget
+ * resolution are the shared ones rather than a second implementation.
+ */
+export const ContributingIdeaCard = ({
+  proposal,
+  href,
+}: {
+  proposal: Proposal;
+  /** Detail link — the title becomes the card's stretched primary link. */
+  href: string;
+}) => {
+  const { titleText, displayCategories, authors, description } =
+    useProposalCardData(proposal);
+
+  return (
+    <SenseProposalCard
+      variant="contribution"
+      title={titleText}
+      href={href}
+      linkComponent={Link}
+      tags={displayCategories.length > 0 ? displayCategories : undefined}
+      authors={authors}
+      description={description}
+    />
+  );
+};

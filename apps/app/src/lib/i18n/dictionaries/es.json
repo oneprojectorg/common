@@ -1577,5 +1577,7 @@
   "Add a note": "Añade una nota",
   "Explain why these proposals were merged. This will be included in their notification.": "Explica por qué se combinaron estas propuestas. Se incluirá en su notificación.",
   "{count} of {max} characters": "{count} de {max} caracteres",
-  "{source} has now been merged with {target}": "{source} ya se ha combinado con {target}"
+  "{source} has now been merged with {target}": "{source} ya se ha combinado con {target}",
+  "Contributing ideas": "Ideas que contribuyen",
+  "These participant ideas were merged into this proposal.": "Estas ideas de participantes se combinaron con esta propuesta."
 }

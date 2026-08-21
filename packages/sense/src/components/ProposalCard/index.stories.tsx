@@ -252,3 +252,29 @@ export const MapPin: Story = {
     </div>
   ),
 };
+
+// "Contributing ideas": a proposal merged into the one being viewed. Author and
+// category share one meta row, and the body preview clamps to two lines.
+export const Contribution: Story = {
+  render: () => (
+    <div className="w-[34rem] space-y-4">
+      <ProposalCard
+        variant="contribution"
+        href="#"
+        title="Community Garden Expansion"
+        authors={[{ name: 'Raphael Arar' }]}
+        tags={['Council District 5']}
+        description="Our community faces significant challenges with food security and access to fresh, healthy produce. Many families in the Eastside Commons and Riverside District neighbourhoods travel more than two miles to reach a grocery store."
+      />
+      {/* A merged proposal that never got a category, and whose author left no
+          avatar — the meta row drops the separator rather than stranding it. */}
+      <ProposalCard
+        variant="contribution"
+        href="#"
+        title="Weekend Tool Library"
+        authors={[{ name: 'Amara Okoye' }]}
+        description="Neighbours already lend each other ladders and hedge trimmers over the fence."
+      />
+    </div>
+  ),
+};

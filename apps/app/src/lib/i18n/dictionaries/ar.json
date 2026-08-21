@@ -1577,5 +1577,7 @@
   "Add a note": "أضف ملاحظة",
   "Explain why these proposals were merged. This will be included in their notification.": "اشرح سبب دمج هذين المقترحين. سيُضاف ذلك إلى الإشعار المُرسل إليه.",
   "{count} of {max} characters": "{count} من {max} حرفًا",
-  "{source} has now been merged with {target}": "تم الآن دمج {source} مع {target}"
+  "{source} has now been merged with {target}": "تم الآن دمج {source} مع {target}",
+  "Contributing ideas": "أفكار مساهِمة",
+  "These participant ideas were merged into this proposal.": "تم دمج أفكار المشاركين هذه في هذا المقترح."
 }
