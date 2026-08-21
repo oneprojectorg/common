@@ -1621,5 +1621,7 @@
   "{submitted} of {assigned} submitted": "{assigned}-এর মধ্যে {submitted}টি জমা দেওয়া হয়েছে",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {#টি পর্যালোচনা নিয়োগ তৈরি হয়েছে} other {#টি পর্যালোচনা নিয়োগ তৈরি হয়েছে}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "এই পর্যালোচকের আর পর্যালোচক ভূমিকা নেই, তাই তাঁকে নতুন প্রস্তাবনা দেওয়া যাবে না।",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {#টি প্রস্তাবনা দেখানো হচ্ছে} other {#টি প্রস্তাবনা দেখানো হচ্ছে}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {#টি প্রস্তাবনা দেখানো হচ্ছে} other {#টি প্রস্তাবনা দেখানো হচ্ছে}}",
+  "Contributing ideas": "অবদানকারী ধারণা",
+  "These participant ideas were merged into this proposal.": "অংশগ্রহণকারীদের এই ধারণাগুলি এই প্রস্তাবের সঙ্গে একত্র করা হয়েছে।"
 }

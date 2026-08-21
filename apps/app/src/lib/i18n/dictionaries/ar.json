@@ -1618,5 +1618,7 @@
   "{submitted} of {assigned} submitted": "{submitted} من {assigned} مُرسَلة",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {تم إنشاء تعيين مراجعة واحد} other {تم إنشاء # تعيينات مراجعة}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "لم يعد هذا المراجع يملك دور المراجع، لذا لا يمكن تعيين مقترحات جديدة له.",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {يُعرض مقترح واحد} other {تُعرض # مقترحات}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {يُعرض مقترح واحد} other {تُعرض # مقترحات}}",
+  "Contributing ideas": "أفكار مساهِمة",
+  "These participant ideas were merged into this proposal.": "تم دمج أفكار المشاركين هذه في هذا المقترح."
 }
