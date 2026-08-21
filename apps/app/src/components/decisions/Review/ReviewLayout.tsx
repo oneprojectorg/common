@@ -33,6 +33,7 @@ export async function ReviewLayout({
   ]);
 
   let allowRevisions: boolean;
+  let anonymousFeedback: boolean;
   let openReviews: boolean;
   let previousReviewPhases: PreviousReviewPhase[];
   try {
@@ -46,10 +47,8 @@ export async function ReviewLayout({
 
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
-    ({ allowRevisions, openReviews } = getPhaseReviewSettings(
-      instanceData,
-      assignmentPhaseId,
-    ));
+    ({ allowRevisions, anonymousFeedback, openReviews } =
+      getPhaseReviewSettings(instanceData, assignmentPhaseId));
 
     // Earlier review phases whose `openReviews` keeps their reviews readable
     // from this screen. Strictly before the assignment's phase in the
@@ -112,6 +111,7 @@ export async function ReviewLayout({
                 label={<TranslatedText text="Review" />}
               >
                 <ReviewRubricForm
+                  anonymousFeedback={anonymousFeedback}
                   openReviews={openReviews}
                   previousReviewPhases={previousReviewPhases}
                 />

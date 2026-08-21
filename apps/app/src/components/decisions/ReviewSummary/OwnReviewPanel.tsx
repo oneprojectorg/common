@@ -53,7 +53,15 @@ export function OwnReviewPanel({
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            <ReviewRubricForm openReviews={false} previousReviewPhases={[]} />
+            {/* Unlike revisions, feedback to author is part of the review
+                content this panel renders in full, so it stays on. Not yet
+                resolved from the phase's `anonymousFeedback`: this surface has
+                no `instanceData`, and fetching it here is its own change. */}
+            <ReviewRubricForm
+              anonymousFeedback
+              openReviews={false}
+              previousReviewPhases={[]}
+            />
           </div>
         </ReviewFormProvider>
       </Suspense>

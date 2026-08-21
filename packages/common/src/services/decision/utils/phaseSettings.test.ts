@@ -74,7 +74,9 @@ describe('getPhaseReviewSettings', () => {
       policy: 'full_coverage',
       scope: 'all',
       allowRevisions: true,
-      anonymousFeedback: undefined,
+      // Defaults on: the feedback-to-author field rendered unconditionally
+      // before this setting was wired up, so an unconfigured process keeps it.
+      anonymousFeedback: true,
       openReviews: false,
     });
   });
@@ -185,6 +187,35 @@ describe('getPhaseReviewSettings', () => {
     );
 
     expect(result.allowRevisions).toBe(false);
+  });
+
+  it('turns anonymousFeedback off from the phase rules, over a truthy config', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAnonymousFeedback: true },
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { anonymousFeedback: false } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
+  });
+
+  it('turns anonymousFeedback off from the legacy config alone', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAnonymousFeedback: false },
+        phases: [{ phaseId: 'review' }],
+      },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
   });
 
   it('reads the matching phase, not the first one', () => {

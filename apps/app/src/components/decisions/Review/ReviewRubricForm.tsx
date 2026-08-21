@@ -57,16 +57,18 @@ import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
  * review phase. With no tab beyond "My review", the form renders on its own.
  */
 export function ReviewRubricForm({
+  anonymousFeedback,
   openReviews,
   previousReviewPhases,
 }: {
+  anonymousFeedback: boolean;
   openReviews: boolean;
   previousReviewPhases: PreviousReviewPhase[];
 }) {
   if (!openReviews && previousReviewPhases.length === 0) {
     return (
       <FormShell>
-        <MyReviewForm />
+        <MyReviewForm anonymousFeedback={anonymousFeedback} />
       </FormShell>
     );
   }
@@ -74,7 +76,7 @@ export function ReviewRubricForm({
   return (
     <FormShell>
       <ReviewTabs
-        myReview={<MyReviewForm />}
+        myReview={<MyReviewForm anonymousFeedback={anonymousFeedback} />}
         showOtherReviews={openReviews}
         previousPhases={previousReviewPhases}
       />
@@ -84,8 +86,13 @@ export function ReviewRubricForm({
 
 /**
  * Schema-driven review rubric form renderer (the reviewer's own review).
+ *
+ * `anonymousFeedback` off drops the feedback-to-author section: the phase
+ * collects rubric scores and per-criterion notes only. An `overallComment`
+ * written while it was on is left alone rather than cleared — hiding an input
+ * shouldn't destroy what the reviewer already wrote.
  */
-function MyReviewForm() {
+function MyReviewForm({ anonymousFeedback }: { anonymousFeedback: boolean }) {
   const t = useTranslations();
   const {
     rubricTemplate: authoredTemplate,
@@ -184,23 +191,24 @@ function MyReviewForm() {
 
           <TotalScoreCard rubricTemplate={template} values={values} />
 
-          {isFeedbackOpen ? (
-            <section className="border-t pt-6">
-              <FeedbackToAuthorField
-                value={overallComment}
-                onChange={handleOverallCommentChange}
-              />
-            </section>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setIsFeedbackOpen(true)}
-            >
-              <LuPlus className="size-4" />
-              {t('Feedback to author')}
-            </Button>
-          )}
+          {anonymousFeedback &&
+            (isFeedbackOpen ? (
+              <section className="border-t pt-6">
+                <FeedbackToAuthorField
+                  value={overallComment}
+                  onChange={handleOverallCommentChange}
+                />
+              </section>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsFeedbackOpen(true)}
+              >
+                <LuPlus className="size-4" />
+                {t('Feedback to author')}
+              </Button>
+            ))}
         </div>
       </div>
     </>
