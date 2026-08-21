@@ -3,11 +3,11 @@ import { createDecisionInstance, getSeededTemplate } from '@op/test';
 import { expect, test } from '../fixtures/index.js';
 
 /**
- * An admin clearing a phase's headline field (select-all, delete) persists it
- * as `''`, not `undefined` — the API explicitly supports this as a "reset to
- * the default copy" affordance. The current-phase hero title used `??` to
- * fall back to default copy, which only fires on `null`/`undefined`, so a
- * cleared headline rendered as a blank title instead of the intended default.
+ * An admin clearing a phase's headline field (select-all, delete) used to
+ * persist `''`, which the hero title's `??` fallback treated as content and
+ * rendered as a blank `<h1>`. The API no longer writes a blank headline, and
+ * decodes a stored one as absent — so a row written before that fix (seeded
+ * here straight into `instanceData`) also renders the default copy.
  */
 test('current-phase hero falls back to default copy when the phase headline is cleared to an empty string', async ({
   authenticatedPage,

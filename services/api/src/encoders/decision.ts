@@ -187,12 +187,24 @@ export const decisionProcessWithSchemaListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
+/**
+ * A stored headline, read back. An admin clears a headline to fall back to the
+ * default copy, so a blank value decodes to `undefined` and the fallback chains
+ * that render it (`currentPhase?.headline ?? t('...')`) take the default. Writes
+ * no longer persist `''` (see `stripBlankHeadline` in `updateDecisionInstance`);
+ * this covers rows written before that.
+ */
+const storedHeadlineEncoder = z
+  .string()
+  .transform((headline) => (headline.trim() ? headline : undefined))
+  .optional();
+
 /** Instance-specific phase data (overrides for dates, rules, settings) */
 export const instancePhaseDataEncoder = z.object({
   phaseId: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
-  headline: z.string().optional(),
+  headline: storedHeadlineEncoder,
   additionalInfo: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -255,7 +267,7 @@ const overviewBodyInputEncoder = z.union([
  * Length is enforced only on the input encoder below.
  */
 const instanceOverviewEncoder = z.object({
-  headline: z.string().optional(),
+  headline: storedHeadlineEncoder,
   description: z.string().optional(),
   // Scope the read-path degradation to `body` alone: a malformed stored body
   // becomes undefined without taking headline/description down with it.
@@ -531,6 +543,10 @@ export const createInstanceFromTemplateInputSchema = z.object({
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
+  // Raw on the way in: `''` is how the editor says "clear this headline", and
+  // the service turns that into the absence of a headline. Normalizing it to
+  // `undefined` here would instead mean "leave it unchanged".
+  headline: z.string().optional(),
   // `null` clears the phase-level rubric; omitted leaves it unchanged.
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });

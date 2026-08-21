@@ -182,10 +182,12 @@ export const updateDecisionInstance = async ({
 
     // Apply overview updates (merge with existing overview)
     if (hasOverviewUpdate) {
-      updatedInstanceData.overview = {
+      const mergedOverview = {
         ...existingInstanceData.overview,
         ...overview,
       };
+      stripBlankHeadline(mergedOverview);
+      updatedInstanceData.overview = mergedOverview;
     }
 
     // Apply phase updates — replaces the full phases array to accommodate
@@ -236,6 +238,7 @@ export const updateDecisionInstance = async ({
         if (phase.rubricTemplate === null) {
           delete merged.rubricTemplate;
         }
+        stripBlankHeadline(merged);
         return merged;
       });
     }
@@ -407,4 +410,18 @@ export const updateDecisionInstance = async ({
   }
 
   return { profile, phaseEndDateChanges };
+};
+
+/**
+ * Deletes a blank headline in place instead of storing `''`.
+ *
+ * Admins clear a headline to fall back to the default copy, so the cleared
+ * state is the *absence* of a headline — persisting `''` renders a blank title
+ * on the public page. Also heals a legacy `''` on any phase or overview that
+ * gets written again.
+ */
+const stripBlankHeadline = (target: { headline?: string }) => {
+  if (target.headline?.trim() === '') {
+    delete target.headline;
+  }
 };

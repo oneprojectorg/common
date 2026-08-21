@@ -379,8 +379,114 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
 
-    expect(instanceData.overview?.headline).toBe('');
+    // A cleared headline is the *absence* of a headline — storing `''` would
+    // render a blank hero title instead of the default copy. The description
+    // has no default copy behind it, so `''` stays as written.
+    expect(instanceData.overview).not.toHaveProperty('headline');
     expect(instanceData.overview?.description).toBe('');
+  });
+
+  it('should drop a cleared phase headline instead of storing an empty string', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const seeded = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const firstPhaseId = (seeded!.instanceData as DecisionInstanceData)
+      .phases[0]?.phaseId;
+
+    if (!firstPhaseId) {
+      throw new Error('No phases found in instance');
+    }
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [{ phaseId: firstPhaseId, headline: 'To be cleared' }],
+    });
+
+    // Whitespace-only is the same clear — the process builder trims nothing.
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [{ phaseId: firstPhaseId, headline: '   ' }],
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const storedPhase = (
+      dbInstance!.instanceData as DecisionInstanceData
+    ).phases.find((phase) => phase.phaseId === firstPhaseId);
+
+    expect(storedPhase).not.toHaveProperty('headline');
+    // Sibling phase data survives the clear.
+    expect(storedPhase?.name).toBeDefined();
+  });
+
+  it('should read a stored blank headline as absent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    // Rows written before the write-side fix hold `headline: ''`. Plant one
+    // directly (the API no longer produces it) and read it back.
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const seededData = dbInstance!.instanceData as DecisionInstanceData;
+    const firstPhase = seededData.phases[0];
+
+    if (!firstPhase) {
+      throw new Error('No phases found in instance');
+    }
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...seededData,
+          overview: { headline: '', description: 'Kept' },
+          phases: [
+            { ...firstPhase, headline: '' },
+            ...seededData.phases.slice(1),
+          ],
+        },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const fetched = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    // Absent, so the hero-title fallback chains reach the default copy.
+    expect(fetched.instanceData?.overview?.headline).toBeUndefined();
+    expect(fetched.instanceData?.overview?.description).toBe('Kept');
+    expect(
+      fetched.instanceData?.phases?.find(
+        (phase) => phase.phaseId === firstPhase.phaseId,
+      )?.headline,
+    ).toBeUndefined();
   });
 
   it('should degrade a malformed stored overview body without dropping sibling fields', async ({

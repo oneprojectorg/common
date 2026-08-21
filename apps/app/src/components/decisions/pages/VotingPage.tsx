@@ -60,7 +60,7 @@ export function VotingPage({
 
   const heroTitle = hasVoted
     ? t('Your ballot is in.')
-    : translation?.headline || currentPhase?.headline || t('TIME TO VOTE.');
+    : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
 
   const resultsDate = nextPhase?.startDate
     ? new Date(nextPhase.startDate).toLocaleDateString(locale, {
