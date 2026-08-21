@@ -79,6 +79,28 @@ const supabase = createServerClient(
 
 await supabase.storage.emptyBucket('assets');
 await supabase.storage.emptyBucket('avatars');
+// Exports are disposable by design — the status record they hang off is
+// cache-only — so a reseed should not leave orphaned CSVs behind.
+//
+// Created first, unlike the two above. `exports` is new, its
+// `[storage.buckets.exports]` block only takes effect when the local stack is
+// started fresh, and developers are told never to run `pnpm w:db migrate` — so
+// on an already-running stack this is the only thing that provisions it. Without
+// it the export workflow fails at upload with "Bucket not found" once it is
+// repointed at this bucket.
+// `updateBucket` follows the create for the same reason it does in migrate.ts:
+// create only decides what a *new* bucket looks like, so a local `exports` bucket
+// that already exists as public would stay public and every local test of the
+// export flow would run against an access boundary that is not there.
+await supabase.storage.createBucket('exports', {
+  public: false,
+  fileSizeLimit: 50 * 1024 * 1024,
+});
+await supabase.storage.updateBucket('exports', {
+  public: false,
+  fileSizeLimit: 50 * 1024 * 1024,
+});
+await supabase.storage.emptyBucket('exports');
 
 const createdUsers: User[] = [];
 

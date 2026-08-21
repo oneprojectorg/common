@@ -38,6 +38,10 @@ public = true
 public = true
 objects_path = "./storage/avatars"
 
+# Private — proposal exports will be read through a signed URL.
+[storage.buckets.exports]
+public = false
+
 [auth]
 enabled = true
 site_url = "http://localhost:4100/"

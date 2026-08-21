@@ -251,29 +251,42 @@ const supabase = createServerClient(
 );
 
 /**
- * Ensures a storage bucket exists, creating it if necessary
+ * Ensures a storage bucket exists, is empty, and has the visibility
+ * `migrate.ts` gives it.
+ *
+ * `isPublic` is required rather than defaulted, because a bucket that is private
+ * in production and public here lets a test pass against an access boundary that
+ * does not exist.
+ *
+ * All three calls run unconditionally, which is both simpler and stricter than
+ * branching on a `listBuckets` lookup: `createBucket` fails harmlessly when the
+ * bucket is already there, `updateBucket` then makes the visibility right even
+ * for a bucket that survived the reset with the wrong one, and `emptyBucket`
+ * clears whatever it held.
  */
-async function ensureBucket(name: string): Promise<void> {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  const exists = buckets?.some((b) => b.name === name);
+async function ensureBucket(name: string, isPublic: boolean): Promise<void> {
+  await supabase.storage.createBucket(name, { public: isPublic });
 
-  if (!exists) {
-    const { error } = await supabase.storage.createBucket(name, {
-      public: true,
-    });
-    if (error) {
-      console.warn(`  ⚠ Warning creating ${name} bucket:`, error.message);
-    } else {
-      console.log(`  ✓ Created ${name} bucket`);
-    }
+  const { error: visibilityError } = await supabase.storage.updateBucket(name, {
+    public: isPublic,
+  });
+
+  if (visibilityError) {
+    // Warn and carry on rather than returning: emptying is the part a test run
+    // depends on, and skipping it leaves the previous run's objects in place
+    // behind nothing but this line.
+    console.warn(
+      `  ⚠ Warning setting ${name} bucket visibility:`,
+      visibilityError.message,
+    );
+  }
+
+  const { error } = await supabase.storage.emptyBucket(name);
+
+  if (error) {
+    console.warn(`  ⚠ Warning emptying ${name} bucket:`, error.message);
   } else {
-    // Bucket exists, empty it
-    const { error } = await supabase.storage.emptyBucket(name);
-    if (error) {
-      console.warn(`  ⚠ Warning emptying ${name} bucket:`, error.message);
-    } else {
-      console.log(`  ✓ Emptied ${name} bucket`);
-    }
+    console.log(`  ✓ Ready ${name} bucket (public=${isPublic})`);
   }
 }
 
@@ -289,8 +302,9 @@ async function wipeDatabase() {
   console.log('✅ Database wipe completed\n');
 
   // Ensure storage buckets exist and are empty
-  await ensureBucket('assets');
-  await ensureBucket('avatars');
+  await ensureBucket('assets', true);
+  await ensureBucket('avatars', true);
+  await ensureBucket('exports', false);
 }
 
 /**
