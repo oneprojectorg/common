@@ -9,3 +9,4 @@ export * from './proposalRelationships';
 export * from './selection';
 export * from './adminDecisionInstance';
 export * from './transitionData';
+export * from './exportStatus';

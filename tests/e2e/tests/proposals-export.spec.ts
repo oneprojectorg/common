@@ -236,6 +236,28 @@ test.describe('Proposals CSV export', () => {
     const download = await request.get(signedUrl as string);
     expect(download.ok()).toBe(true);
 
+    // This is the property the private bucket exists for. A reader without the
+    // signature must not get the object. Exports lived in `assets` before, and
+    // next.config.mjs serves that bucket from its public object root. This same
+    // fetch then returned the CSV, submitter names included, to any reader who
+    // held the path.
+    //
+    // This belongs here rather than in a unit test. Three places provision the
+    // bucket's visibility: `supabase/*.toml`, `migrate.ts`, and the test seed.
+    // Only a provisioned bucket confirms that the three agree.
+    const unsignedUrl = new URL(signedUrl as string);
+    unsignedUrl.search = '';
+    unsignedUrl.pathname = unsignedUrl.pathname.replace(
+      '/object/sign/',
+      '/object/public/',
+    );
+    // This guards the rewrite above. A change to the signed-URL shape fails
+    // this assertion, instead of fetching the signed URL again in silence.
+    expect(unsignedUrl.pathname).toContain('/object/public/');
+
+    const unsigned = await request.get(unsignedUrl.toString());
+    expect(unsigned.ok()).toBe(false);
+
     const rows = parse(await download.text(), {
       columns: true,
     }) as Record<string, string>[];

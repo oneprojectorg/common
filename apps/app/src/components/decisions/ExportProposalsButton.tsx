@@ -11,6 +11,7 @@ import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { resolveExportRetryOutcome } from './exportRetry';
 import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
 export interface ExportProposalsButtonProps {
@@ -113,6 +114,95 @@ const ExportStatusUnreadable = ({
   );
 };
 
+/**
+ * Renders what a finished export offers. That is the download, or a retry when
+ * the server could not sign a URL.
+ *
+ * The state without a URL is a real state. The run succeeded and the object
+ * remains in the bucket, and only the signature is missing. The server
+ * therefore reports a completed export with no URL instead of a failure, and
+ * re-reading the record recovers it.
+ *
+ * A fall through to the idle button would leave the admin with no download and
+ * no stated reason.
+ */
+const CompletedExportAction = ({
+  signedUrl,
+  fileName,
+  isRetrying,
+  onRetry,
+  onTaken,
+}: {
+  signedUrl?: string;
+  fileName?: string;
+  isRetrying: boolean;
+  onRetry: () => void | Promise<void>;
+  onTaken: () => void;
+}) => {
+  const t = useTranslations();
+
+  // The export settles without a navigation. Settling also swaps this control
+  // for a different element, so a screen reader that follows the button gets no
+  // reason to look again. This region announces both settled states, so the two
+  // branches below do not each need one.
+  const settledAnnouncement = signedUrl
+    ? t('Export ready')
+    : t('Could not prepare the download. Please try again.');
+
+  const announcement = (
+    <span role="status" aria-live="polite" className="sr-only">
+      {settledAnnouncement}
+    </span>
+  );
+
+  if (!signedUrl) {
+    return (
+      <>
+        {announcement}
+        <Button
+          variant="outline"
+          onClick={() => {
+            void onRetry();
+          }}
+          disabled={isRetrying}
+          // The idle button below sets this for the same reason. A screen
+          // reader reports `disabled` on its own as "unavailable", and a retry
+          // in flight is not unavailable.
+          aria-busy={isRetrying}
+        >
+          <LuDownload aria-hidden />
+          {isRetrying ? t('Preparing...') : t('Retry download')}
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {announcement}
+      <Button
+        variant="outline"
+        // Rendered as an anchor so the browser owns the download. Base UI needs
+        // both flags to stop emitting button semantics over the link.
+        nativeButton={false}
+        role={undefined}
+        render={
+          <a
+            href={signedUrl}
+            download={fileName}
+            target="_blank"
+            rel="noopener noreferrer"
+          />
+        }
+        onClick={onTaken}
+      >
+        <LuDownload aria-hidden />
+        {t('Download CSV')}
+      </Button>
+    </>
+  );
+};
+
 const ExportProposalsButtonContent = ({
   processInstanceId,
   isEmpty = false,
@@ -135,7 +225,11 @@ const ExportProposalsButtonContent = ({
   // No polling: the workflow broadcasts on this export's channel when the run
   // settles, and the subscriber re-reads on its own once the channel is live —
   // which is what covers an export finishing before the socket join lands.
-  const { data: status } = trpc.decision.getExportStatus.useQuery(
+  const {
+    data: status,
+    refetch: refetchStatus,
+    isFetching: isFetchingStatus,
+  } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId ?? '' },
     {
       enabled: Boolean(exportId) && !hasTimedOut,
@@ -204,31 +298,42 @@ const ExportProposalsButtonContent = ({
     return () => clearTimeout(timer);
   }, [isRunning, reportedState, t]);
 
-  if (isResolved && status.signedUrl) {
+  // `throwOnError` above stops escalating once a record is `completed`. A
+  // failed retry therefore lands here instead of on the error boundary. This
+  // handler must report it, or the button looks like it did nothing.
+  const handleRetryDownload = async () => {
+    const { data, error } = await refetchStatus();
+    const outcome = resolveExportRetryOutcome({
+      errored: Boolean(error),
+      status: data?.status,
+      signedUrl: data && 'signedUrl' in data ? data.signedUrl : undefined,
+    });
+
+    if (
+      outcome.kind === 'recovered' ||
+      outcome.kind === 'failure-already-reported'
+    ) {
+      return;
+    }
+
+    toast.error(t('Could not prepare the download. Please try again.'));
+
+    if (outcome.kind === 'record-gone') {
+      setExportId(null);
+    }
+  };
+
+  if (isResolved) {
     return (
-      <Button
-        variant="outline"
-        // Rendered as an anchor so the browser owns the download. Base UI needs
-        // both flags to stop emitting button semantics over the link.
-        nativeButton={false}
-        role={undefined}
-        render={
-          <a
-            href={status.signedUrl}
-            download={status.fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-          />
-        }
-        onClick={() => {
-          // One file per run: once taken, fall back to the idle button so a
-          // later export is not confused with this one.
-          setExportId(null);
-        }}
-      >
-        <LuDownload aria-hidden />
-        {t('Download CSV')}
-      </Button>
+      <CompletedExportAction
+        signedUrl={status.signedUrl}
+        fileName={status.fileName}
+        isRetrying={isFetchingStatus}
+        onRetry={handleRetryDownload}
+        // Each run produces one file. Once the admin takes it, the control
+        // returns to idle, so a later export cannot be confused with this one.
+        onTaken={() => setExportId(null)}
+      />
     );
   }
 

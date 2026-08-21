@@ -1,60 +1,59 @@
 /**
  * Shared configuration for the proposal export pipeline.
  *
- * The API service, the `@op/common` service layer, and the Inngest workflow all
- * read and write the same export record and the same storage object, so the
- * bucket name, key format, and TTLs have to agree across all three. They
- * previously drifted — the workflow minted a 2 hour signed URL but recorded a
- * 24 hour expiry, so `getExportStatus` served a dead URL for the 22 hours in
- * between.
+ * The API service, the `@op/common` service layer, and the Inngest workflow
+ * share one export record and one storage object. The bucket name, the key
+ * format, and the time-to-live (TTL) values must agree across all three.
+ *
+ * These values drifted once. The workflow signed a URL for 2 hours. It recorded
+ * a 24 hour expiry. `getExportStatus` then served a dead URL for 22 hours.
  */
 
-import { ASSETS_BUCKET } from '../../../utils/storage';
-
 /**
- * Exports are written to the shared `assets` bucket.
+ * The private bucket that holds every generated export.
  *
- * Aliased from {@link ASSETS_BUCKET} rather than repeating the literal, so a
- * future migration to per-feature buckets stays the single-file change that
- * constant promises. Renaming the bucket in one place and not the other would
- * strand every export.
+ * An export CSV carries proposal submitter names. A reader must present a
+ * signature to get one. The shared `assets` bucket cannot hold these files,
+ * because `apps/app/next.config.mjs` rewrites `/assets/:path*` to its public
+ * object root. Use a separate bucket, not a prefix inside `assets`. Do not
+ * point this constant back at `assets`.
  *
- * `assets` is public: `apps/app/next.config.mjs` rewrites `/assets/:path*` to
- * the bucket's public object root, and `getPublicUrl()` builds every avatar and
- * organization image URL from it. So an export object is readable by anyone who
- * has its path — the CSV carries submitter names, and the only thing standing
- * between it and an anonymous reader is that the key is not enumerable.
+ * `services/db/migrate.ts` creates this bucket with `public: false`. It also
+ * re-asserts the visibility on every deploy.
  *
- * The signed URLs minted downstream are therefore a convenience (they expire,
- * so a shared link goes stale) rather than an access boundary: the unsigned
- * public URL for the same object resolves regardless of signature. Treat the
- * random component of the generated file name — minted in the export
- * workflow's `upload-to-storage` step — as the actual control, and do not
- * weaken it.
+ * A signing call needs the service-role client. Supabase enables row level
+ * security (RLS) on `storage.objects`, and every policy scopes to
+ * `bucket_id = 'assets'`. No policy grants a caller any access here, so a
+ * caller-scoped client cannot see the object. Authorization runs before each
+ * signing call: in `getExportStatus` for a read, and in the export mutation for
+ * the workflow.
  */
-export const EXPORTS_BUCKET = ASSETS_BUCKET;
+export const EXPORTS_BUCKET = 'exports';
 
 /**
- * Lifetime of a generated signed download URL.
+ * The lifetime of a generated signed download URL.
  *
- * Deliberately shorter than {@link EXPORT_CACHE_TTL_SECONDS}: the export record
- * outlives any single URL, so an admin returning to a finished export gets a
- * freshly minted URL from `getExportStatus` instead of a 404.
+ * This value is shorter than {@link EXPORT_CACHE_TTL_SECONDS} on purpose. The
+ * export record outlives any single URL. An admin who returns to a finished
+ * export gets a new URL from `getExportStatus` instead of a 404.
  *
- * Note this bounds the *signed* URL only. Objects live in the public `assets`
- * bucket (see {@link EXPORTS_BUCKET}), so expiry does not revoke access to the
- * underlying file — it only invalidates the signature on this particular link.
+ * {@link EXPORTS_BUCKET} is private, so expiry revokes access to the objects it
+ * holds. Expiry does not cover the exports written before the move. Those
+ * objects stay in the public `assets` bucket, and a reader who knows the path
+ * can still read them. Asana 1217696316242182 tracks the deletion. This comment
+ * is the only record of that exposure in the tree.
  */
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
 /**
- * Lifetime of the cached export status record.
+ * The lifetime of the cached export status record.
  *
- * Export state is cache-only — there is no backing table — so this is also how
- * long a completed export stays downloadable. Must stay longer than
- * {@link EXPORT_URL_TTL_SECONDS} or the signed-URL refresh path in
- * `getExportStatus` is unreachable, because the record would expire before the
- * URL it holds.
+ * Export state lives only in the cache. No table backs it. This value is
+ * therefore also how long a completed export stays downloadable.
+ *
+ * Keep this value longer than {@link EXPORT_URL_TTL_SECONDS}. A shorter value
+ * expires the record before the URL it holds. That makes the refresh path in
+ * `getExportStatus` unreachable.
  */
 export const EXPORT_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
@@ -63,29 +62,29 @@ export const exportStatusCacheKey = (exportId: string) =>
   `export:proposal:${exportId}`;
 
 /**
- * Storage key for an export's generated file, relative to
+ * The storage key for an export's generated file, relative to
  * {@link EXPORTS_BUCKET}.
  *
- * Shaped `<entity>/<id>/<sub-resource>/<file>` to match the other writers
- * sharing this bucket — `profile/${profileId}/resources/` and
- * `profiles/${profileId}/${imageType}/`. Leading with `proposals/` (as this
- * did) reads as though the owning entity were a proposal, when the export is
- * scoped to a process instance and covers many proposals.
+ * The shape is `<entity>/<id>/<sub-resource>/<file>`. It matches the shape the
+ * other storage writers use.
+ *
+ * This key led with `proposals/` before. That shape reads as though a proposal
+ * owned the export. A process instance owns the export, and one export covers
+ * many proposals.
  */
 export const exportFilePath = (processInstanceId: string, fileName: string) =>
   `process/${processInstanceId}/proposals/${fileName}`;
 
 /**
- * File name for a generated export.
+ * The file name for a generated export.
  *
- * The random component is the access control for these objects. They live in
- * the public {@link EXPORTS_BUCKET}, so anyone holding this name can read the
- * CSV — and the CSV carries submitter names. A whole UUID is used rather than
- * a truncation of one: the timestamp beside it is largely inferable, so the
- * UUID has to carry the unguessability by itself.
+ * The signed URL controls access, not this name. {@link EXPORTS_BUCKET} is
+ * private. The full UUID stays as defence in depth, in case someone makes the
+ * bucket public again. A reader can infer the timestamp beside it, so the
+ * timestamp adds no unguessability.
  *
- * `crypto.randomUUID()` is the global Web Crypto API, available in Node 19+ and
- * in browsers, so this module stays free of Node-only imports.
+ * `crypto.randomUUID()` is the global Web Crypto API. Node 19 and later provide
+ * it, and browsers provide it. This module therefore needs no Node-only import.
  */
 export const exportFileName = (extension: string) =>
   `proposals_export_${crypto.randomUUID()}_${Date.now()}.${extension}`;
