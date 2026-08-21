@@ -161,16 +161,15 @@ describe('getExportStatus', () => {
     });
   });
 
-  // Three shapes were possible here and two are wrong: keeping the lapsed URL
-  // renders a download that 400s, and reporting `failed` makes the client
-  // discard the export id — turning one unlucky signing call into a full
-  // re-export of a run that actually succeeded. What is left is a completed
-  // export with no URL, which the button renders as a retry.
-  it('reports a completed export with no URL when signing fails', async () => {
+  // A signing failure that may pass on a second look. Keeping the lapsed URL
+  // would render a download that 400s, and reporting `failed` would make the
+  // client discard the export id — a full re-export of a run that succeeded —
+  // so this stays `completed` with no URL, which the button offers to retry.
+  it('reports a completed export with no URL when signing fails transiently', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
       data: null,
-      error: { message: 'Object not found' },
+      error: { message: 'Storage is having a moment' },
     });
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
@@ -276,7 +275,7 @@ describe('getExportStatus', () => {
     });
     createSignedUrl.mockResolvedValue({
       data: null,
-      error: { message: 'Object not found' },
+      error: { message: 'Storage is having a moment' },
     });
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
@@ -314,6 +313,23 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
+  // A missing object cannot be retried into existence, so offering a retry would
+  // loop until the record's TTL ran out. Every export cached across the deploy
+  // that moved buckets lands here: its file is still in `assets`.
+  it('reports a terminal failure when the object is gone', async () => {
+    vi.mocked(get).mockResolvedValue(expiredRecord());
+    createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toMatchObject({ status: 'failed' });
+    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+    expect(set).not.toHaveBeenCalled();
+  });
+
   // The original bug. The record claimed a 24h expiry while the URL was minted
   // for 2h, so callers trusted a link dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
@@ -349,7 +365,10 @@ describe('getExportStatus', () => {
   it('signs successfully when a later read finds storage healthy', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl
-      .mockResolvedValueOnce({ data: null, error: { message: 'try again' } })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Storage is having a moment' },
+      })
       .mockResolvedValueOnce({
         data: { signedUrl: 'https://storage.example/fresh-url' },
         error: null,

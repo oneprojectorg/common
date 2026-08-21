@@ -235,17 +235,44 @@ const refreshStaleSignedUrl = async ({
 
     await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
   } catch (error) {
-    // A completed export with no usable URL, reported as exactly that.
-    //
-    // Not `failed`: the run did succeed and the object is still in the bucket,
-    // so the only thing missing is a signature — and reporting a terminal
-    // failure makes the client discard the export id, turning one unlucky
-    // signing call into a full re-export of up to a thousand proposals. Not the
-    // lapsed URL either, which renders as a download that 400s. The client
-    // offers a retry for this state, and the cached record is left untouched so
-    // that retry re-reads a record still marked `completed`.
     logger.error('Failed to re-sign export URL', { exportId, error });
 
+    // Whatever happened, the lapsed URL does not go back on the record: it
+    // renders as a download that 400s.
     exportStatus.signedUrl = undefined;
+
+    // A missing object is permanent for this record — retrying can only fail the
+    // same way — so report a terminal failure and let the admin start a fresh
+    // run. Without this, a record whose file is genuinely gone (every export
+    // cached across the deploy that moved buckets, for one) would offer a retry
+    // that could never succeed until its 24h TTL ran out.
+    //
+    // Anything else may be momentary. The run succeeded and the object is still
+    // there, so the record stays `completed` with no URL, which the client
+    // offers to retry — rather than a terminal failure that would make it
+    // discard the export id and cost a re-export of up to a thousand proposals.
+    // The cached record is left untouched either way, so a retry re-reads one
+    // still marked `completed`.
+    if (isMissingObjectError(error)) {
+      exportStatus.status = 'failed';
+    }
   }
+};
+
+/**
+ * Is a signing failure a missing object rather than a momentary fault?
+ *
+ * Matched on the message because nothing else distinguishes the two: this
+ * Supabase build answers `status` 400 for every signing failure, and this is
+ * confirmed to be the wording for both a missing object and a missing bucket. A
+ * mismatch degrades to the retryable branch, which is the safe way round.
+ */
+const isMissingObjectError = (error: unknown): boolean => {
+  if (typeof error !== 'object' || error === null || !('message' in error)) {
+    return false;
+  }
+
+  const { message } = error;
+
+  return typeof message === 'string' && message.includes('Object not found');
 };

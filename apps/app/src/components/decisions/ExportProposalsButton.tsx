@@ -145,14 +145,20 @@ const CompletedExportAction = ({
   signedUrl?: string;
   fileName?: string;
   isRetrying: boolean;
-  onRetry: () => void;
+  onRetry: () => void | Promise<void>;
   onTaken: () => void;
 }) => {
   const t = useTranslations();
 
   if (!signedUrl) {
     return (
-      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
+      <Button
+        variant="outline"
+        onClick={() => {
+          void onRetry();
+        }}
+        disabled={isRetrying}
+      >
         <LuDownload aria-hidden />
         {isRetrying ? t('Preparing...') : t('Retry download')}
       </Button>
@@ -300,8 +306,16 @@ const ExportProposalsButtonContent = ({
         signedUrl={status.signedUrl}
         fileName={status.fileName}
         isRetrying={isFetchingStatus}
-        onRetry={() => {
-          void refetchStatus();
+        onRetry={async () => {
+          // Report the outcome. `throwOnError` above deliberately stops
+          // escalating once a record is `completed`, so without this a retry
+          // that fails leaves the button exactly as it was — a control that
+          // looks like it did nothing.
+          const { data, error } = await refetchStatus();
+
+          if (error || (data?.status === 'completed' && !data.signedUrl)) {
+            toast.error(t('Could not prepare the download. Please try again.'));
+          }
         }}
         // One file per run: once taken, fall back to the idle button so a later
         // export is not confused with this one.
