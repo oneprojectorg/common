@@ -28,6 +28,8 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { withYesNoDefaults } from '../rubricTemplate';
+
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
@@ -163,8 +165,11 @@ function ReviewFormProviderInner({
     null;
   const isOwnRevisionRequest = !!ownRevisionRequest;
 
-  const [values, setValues] = useState<RubricReviewData['answers']>(
-    review?.reviewData.answers ?? {},
+  // Seed 'no' for untouched yes/no criteria — the switch already shows "No"
+  // before it is touched, so a required criterion must not need a Yes→No
+  // double-tap just to record that.
+  const [values, setValues] = useState<RubricReviewData['answers']>(() =>
+    withYesNoDefaults(rubricTemplate, review?.reviewData.answers ?? {}),
   );
   const [rationales, setRationales] = useState<RubricReviewData['rationales']>(
     review?.reviewData.rationales ?? {},

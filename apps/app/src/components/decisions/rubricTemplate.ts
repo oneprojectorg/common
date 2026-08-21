@@ -220,6 +220,25 @@ export function inferCriterionType(
   return undefined;
 }
 
+/**
+ * Fill unanswered yes/no criteria with 'no'. The switch has no unset state —
+ * it already reads as "No" before the reviewer touches it — so a required
+ * criterion would otherwise demand a Yes→No round trip just to record the
+ * value the UI was showing all along.
+ */
+export function withYesNoDefaults(
+  template: RubricTemplateSchema,
+  answers: Record<string, unknown>,
+): Record<string, unknown> {
+  const seeded = { ...answers };
+  for (const [key, schema] of Object.entries(template.properties ?? {})) {
+    if (seeded[key] === undefined && inferCriterionType(schema) === 'yes_no') {
+      seeded[key] = 'no';
+    }
+  }
+  return seeded;
+}
+
 // ---------------------------------------------------------------------------
 // Readers (delegating to shared utils where possible)
 // ---------------------------------------------------------------------------
