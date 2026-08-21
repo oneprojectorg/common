@@ -2,147 +2,92 @@
 status: "proposed"
 date: 2026-08-21
 decision-makers: Engineering
-consulted: Engineering
-informed: Engineering, Product
 ---
 
-# Record architecture decisions as ADRs in the repository
+# Record architecture decisions as ADRs
 
 ## Context and Problem Statement
 
-This monorepo carries many long-lived architecture decisions — Drizzle
-relations v2 over v1, one tRPC procedure per file, Base UI under `@op/sense`,
-access-zones for authorization. The code shows *what* we chose. It does not
-show what else we considered, or which constraint ruled the alternatives out.
+The code shows what we chose. It does not show what we rejected, or why.
 
-Today that reasoning lives in pull request descriptions and Asana threads. Both
-are hard to search months later, and neither is visible from the code it
-governs. So the same question gets re-litigated, and a decision gets reversed by
-someone who never saw the constraint behind it. How do we keep the "why" next to
-the code, in a form that survives staff changes?
+That reasoning now lives in pull requests and Asana threads. Neither is in the
+checkout. So we re-argue settled questions, and we reverse decisions without
+seeing the original constraint.
 
 ## Decision Drivers
 
-* The reasoning must be readable from a checkout, with no access to Asana or GitHub.
-* It must be greppable by the coding agents that do much of the work in this repo.
-* Writing one must cost minutes, not hours, or nobody writes one.
-* The record must be immutable — a reversal is a new decision, not an edit.
-* Format changes must not need a tool or a service to render them.
+* A reader must find the reasoning in a checkout, with no tool and no login.
+* Coding agents must be able to grep it.
+* Writing a record must take minutes.
+* A record must be immutable. A reversal is a new decision.
 
 ## Considered Options
 
 * MADR (Markdown Architectural Decision Records)
-* Nygard's original five-section ADR
+* Nygard's five-section ADR
 * Y-statements
-* Status quo — pull request descriptions and Asana threads
+* Status quo: pull request descriptions and Asana threads
 
 ## Decision Outcome
 
-Chosen option: "MADR", because it is the only option that prompts the author for
-the considered options and their trade-offs. That section is the part a future
-reader needs and the part every free-form write-up omits. It is plain markdown in
-the repo, so it satisfies the checkout, grep and no-tooling drivers as well.
+Chosen option: MADR. It is the only option that asks the author for the
+considered options and their trade-offs, which is what a future reader needs. It
+is plain Markdown in the repository, so it meets the other drivers.
 
 ### Consequences
 
-* Good, because the rationale sits in the repository, versioned with the code it explains.
-* Good, because the "Considered Options" prompt makes a rejected alternative
-  explicit, which is what stops the decision being re-argued.
-* Good, because agents and people read the same file.
-* Bad, because a record that nobody updates when reality moves becomes
-  misleading. Superseding is cheap, but it has to actually happen.
-* Bad, because the full template is long enough to deter a small decision. The
-  optional sections exist to be deleted; see the README.
-* Neutral, because ADRs duplicate some context that also appears in a PR
-  description. The ADR is the durable copy.
+* Good, because the reasoning sits next to the code, under version control.
+* Good, because the template forces a rejected option into the record.
+* Bad, because a stale record misleads. Superseding is cheap, but someone must do it.
+* Bad, because the full template deters a small decision. Delete what you do not need.
 
 ### Confirmation
 
 Code review is the check. [README.md](./README.md) defines when an ADR is
-warranted; a reviewer who cannot tell why a structural change was made asks for
-one before approving.
+warranted.
 
-## Pros and Cons of the Options
+## Pros and Cons of the Rejected Options
 
-### MADR
+### Nygard's five-section ADR
 
-Published at <https://adr.github.io/madr/>, maintained at
-<https://github.com/adr/madr>. The formats below were compared using the ADR
-org's survey at <https://adr.github.io/adr-templates/>.
-
-* Good, because it asks for considered options and pros and cons by name.
-* Good, because YAML frontmatter carries status and date as data, not prose.
-* Good, because it is widely used, so the shape is familiar to new hires.
-
-### Nygard's original five-section ADR
-
-Title, Status, Context, Decision, Consequences — from "Documenting Architecture
-Decisions" (2011).
-
-* Good, because it is short, and short templates get filled in.
-* Good, because it is the format most engineers have seen before.
-* Bad, because nothing in it asks what else was considered. In practice the
-  rejected options go unrecorded, which is the failure we are trying to fix.
+* Good, because it is short, so authors finish it.
+* Bad, because it never asks what else we considered. That omission is the
+  failure we want to fix.
 
 ### Y-statements
 
-One sentence: "In the context of X, facing Y, we decided for Z to achieve Q,
-accepting D."
+* Good, because one sentence is the cheapest record.
+* Bad, because one sentence cannot hold a week of evidence.
 
-* Good, because it is the cheapest possible record.
-* Good, because it forces the author to name the trade-off accepted.
-* Bad, because one sentence cannot hold the evidence for a decision that took a
-  week to reach.
-* Neutral, because it works well *inside* another template as a summary line.
+### Status quo
 
-### Status quo — pull request descriptions and Asana threads
-
-* Good, because it costs nothing new.
-* Bad, because neither is in the checkout, so neither is greppable from the code.
-* Bad, because a PR description is scoped to one diff; a decision that spans
-  several PRs has no single home.
-* Bad, because Asana access is not universal and threads are not versioned.
+* Good, because it costs nothing.
+* Bad, because neither a pull request nor an Asana thread is in the checkout.
+* Bad, because a pull request covers one diff. A decision can span several.
 
 ## More Information
 
-The parent proposal is tracked in Asana as "ADR Proposal". This record is the
-first ADR, and its own subject: it uses the template it adopts.
+We compared the formats with the ADR org's
+[survey](https://adr.github.io/adr-templates/). MADR lives at
+<https://github.com/adr/madr>.
 
-### Relationship to `.specify/memory/constitution.md`
+### The constitution overlaps this
 
-A second normative document already exists at
-`.specify/memory/constitution.md`. It encodes several standing rules that would
-otherwise be ADR material — the design-system boundary, the authorization model,
-database access patterns — and its Governance section claims to supersede "all
-other development practices and guidelines".
+`.specify/memory/constitution.md` claims to supersede "all other development
+practices and guidelines". It encodes rules that are ADR material: the
+design-system boundary, the authorization model, and database access patterns.
+Three `.specify` workflows read it, `plan-template.md` gates on it, and it has
+drifted from practice since 2025-09-26.
 
-In practice it is read by the `.specify` spec-kit workflows — `/analyze`,
-`/plan` and `/constitution` — and enforced through the "Constitution Check" gate
-in `.specify/templates/plan-template.md`. It has also drifted from current
-practice since it was last amended on 2025-09-26.
-
-This ADR does not attempt to reconcile the two. Which document governs, and
-whether the constitution's principles should be migrated into ADRs or left where
-they are, is an open question for the team — worth its own ADR.
-
-Until that is settled: the constitution stays authoritative throughout the
-`.specify` workflows — including those that cite a numbered principle without
-loading the file, such as the `pnpm w:app lint` requirement in
-`.claude/commands/implement.md` and `.specify/templates/tasks-template.md`. ADRs
-are authoritative for everything else. Where the two genuinely conflict, raise
-it rather than picking a winner.
+This ADR does not reconcile the two. Until the team decides, the constitution
+governs the `.specify` workflows and ADRs govern everything else. Raise a real
+conflict instead of picking a winner.
 
 ### Status
 
-This ADR is `proposed`, which [README.md](./README.md) treats as the exception
-rather than the norm. It is deliberate here: the convention was drafted as
-scaffolding, and adopting it is the team's call, not the author's.
+This ADR is `proposed`, because adopting the convention is the team's decision,
+not the author's. Approving this pull request makes it. Whoever merges then
+flips `status` to `accepted` in a follow-up pull request.
 
-Approving this PR is that call. Whoever merges it should flip `status` to
-`accepted` and bump `date` in a follow-up PR.
-
-To be clear about what `proposed` does and does not withhold: the process in
-[README.md](./README.md) — the template, the numbering, the status lifecycle —
-is usable the moment this merges, and `CLAUDE.md` points at it as such. What is
-still open is the commitment: whether recording ADRs is *expected* of a
-structural change, or merely available for one. Ratifying this ADR closes that.
+The template and the process work either way. `proposed` withholds one thing:
+whether a structural change must have an ADR.

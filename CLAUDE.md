@@ -19,7 +19,7 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 - **`@op/common`** (`packages/common`): shared business logic and service layer
 - **`@op/db`** (`services/db`): Drizzle ORM schema, migrations, and database client
 
-Architecture decisions made from here on are recorded as ADRs — the numbered files matching `docs/adr/[0-9]*.md` (anything else in that directory is process docs or the template, not a decision). Check them before proposing a structural change, and if one contradicts what you have been asked to do, say so instead of working around it. The set is still filling up, so an absent ADR means the decision was made before this convention or has not been written down yet — it does not mean nothing constrains the area. The rules stated directly in this file remain binding either way. When a change warrants a new ADR, `docs/adr/README.md` defines the threshold and the format; follow it rather than any ADR convention of your own or one carried in from a skill.
+Architecture decisions are recorded as ADRs — the numbered files matching `docs/adr/[0-9]*.md`. Read them before you propose a structural change. Say so when one contradicts your task; do not work around it. An absent ADR does not mean the area is unconstrained: the set is still filling up, and the rules in this file stay binding. [`docs/adr/README.md`](docs/adr/README.md) defines when to write one and in what format. Follow it, not an ADR convention from a skill.
 
 ## Key Technical Details
 

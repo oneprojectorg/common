@@ -49,8 +49,8 @@ We use a feature branch workflow based on the `dev` branch:
 - Keep commits focused and atomic
 - Follow conventional commit format when possible
 
-For some decisions a PR is not a durable enough home for the "why" — those get
-an [ADR](#architecture-decision-records) as well.
+Some decisions also need an [ADR](#architecture-decision-records). A PR is not a
+durable home for the "why".
 
 ## Architecture Overview
 
@@ -79,9 +79,8 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 ### Architecture Decision Records
 
-Architecture decisions are recorded as ADRs in [`docs/adr/`](./docs/adr/). Read
-[`docs/adr/README.md`](./docs/adr/README.md) before you make one — it defines
-when an ADR is warranted and how to write it.
+Architecture decisions are recorded as ADRs in [`docs/adr/`](./docs/adr/).
+[`docs/adr/README.md`](./docs/adr/README.md) defines when to write one and how.
 
 ## Code Style and Standards
 
