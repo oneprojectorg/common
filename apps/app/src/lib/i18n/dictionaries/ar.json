@@ -1546,6 +1546,7 @@
   "Failed to start export": "تعذّر بدء التصدير",
   "Export failed": "فشل التصدير",
   "Export timed out. Please try again.": "انتهت مهلة التصدير. يرجى المحاولة مرة أخرى.",
+  "Only {rowCount, number} of {total, number} proposals are in this file.": "يحتوي هذا الملف على {rowCount, number} من {total, number} مقترح فقط.",
   "Couldn't check the export's status. It may still be running.": "تعذّر التحقق من حالة التصدير. قد تكون لا تزال قيد التنفيذ.",
   "Export all": "تصدير الكل",
   "Proposals in review · {count}": "المقترحات قيد المراجعة · {count}",

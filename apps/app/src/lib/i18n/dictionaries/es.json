@@ -1546,6 +1546,7 @@
   "Failed to start export": "No se pudo iniciar la exportación",
   "Export failed": "La exportación falló",
   "Export timed out. Please try again.": "La exportación tardó demasiado. Inténtalo de nuevo.",
+  "Only {rowCount, number} of {total, number} proposals are in this file.": "Este archivo solo contiene {rowCount, number} de {total, number} propuestas.",
   "Couldn't check the export's status. It may still be running.": "No se pudo comprobar el estado de la exportación. Es posible que siga en curso.",
   "Export all": "Exportar todo",
   "Proposals in review · {count}": "Propuestas en revisión · {count}",

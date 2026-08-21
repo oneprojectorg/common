@@ -63,6 +63,33 @@ export const exportStatusCacheKey = (exportId: string) =>
   `export:proposal:${exportId}`;
 
 /**
+ * Rows requested per `listProposals` call while assembling an export.
+ *
+ * Sized for the round trip, not the result. Export reads set
+ * `includeDocumentContent`, so every row carries the proposal's full TipTap
+ * fragments — by far the heaviest column we select. A larger page buys fewer
+ * queries at a steep cost in peak memory per query, and the queries are not the
+ * expensive part.
+ */
+export const EXPORT_PAGE_SIZE = 500;
+
+/**
+ * Hard ceiling on the rows one export may contain.
+ *
+ * Not a bound on process memory. The binding constraint is that the generated
+ * CSV crosses an Inngest step boundary on its way to `upload-to-storage`, so
+ * Inngest serializes it into function state; this bounds that payload. Raising
+ * it means moving CSV generation and upload into one step and appending per
+ * page, so no complete copy is ever held.
+ *
+ * Reaching it is never silent. `listProposalsForExport` logs a warning and
+ * returns `truncated: true`, which travels through the export record to the
+ * admin's download so the person holding the file learns it is short. A
+ * plausible-but-incomplete CSV is worse than a failed export.
+ */
+export const EXPORT_MAX_ROWS = 5_000;
+
+/**
  * Storage key for an export's generated file, relative to
  * {@link EXPORTS_BUCKET}.
  *

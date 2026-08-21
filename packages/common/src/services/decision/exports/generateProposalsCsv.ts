@@ -22,8 +22,11 @@ import {
 import { tiptapDocToPlainText } from '../tiptapDocToPlainText';
 import type { ProposalTemplateSchema, XFormatPropertySchema } from '../types';
 
-// Infer the proposal type from the listProposals return value
-type ProposalFromList = Awaited<
+// Infer the proposal type from the listProposals return value. Exported as the
+// row contract for this CSV: `listProposalsForExport` returns it and the export
+// workflow passes it straight through, so all three agree on one definition
+// instead of each re-deriving its own.
+export type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 

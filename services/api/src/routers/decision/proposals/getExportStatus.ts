@@ -24,6 +24,12 @@ const exportStatusOutputSchema = z.union([
     errorMessage: z.string().optional(),
     createdAt: z.string(),
     completedAt: z.string().optional(),
+    // Row counts for a finished export. Optional rather than defaulted: a
+    // record seeded before the export ran has no counts yet, and a zero would
+    // read as "exported nothing" instead of "not known yet".
+    rowCount: z.number().optional(),
+    total: z.number().optional(),
+    truncated: z.boolean().optional(),
   }),
 ]);
 
