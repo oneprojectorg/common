@@ -149,11 +149,17 @@ const refreshSignedUrl = async ({
     // retry that could never succeed until its 24h TTL ran out.
     //
     // Matched on the message because nothing else distinguishes it: this
-    // Supabase build answers `status` 400 for every signing failure. Confirmed
-    // to be the wording for both a missing object and a missing bucket. A
-    // mismatch degrades to the retryable branch below, which is the safe way
-    // round.
-    if (signed.error?.message.includes('Object not found')) {
+    // Supabase build answers `status` 400 for every signing failure, with no
+    // code to key on. Both wordings are checked — this build answers "Object not
+    // found" even for a missing bucket, but storage-api has a distinct
+    // `NoSuchBucket` that reads "Bucket not found", and either way the file is
+    // unreachable for good. A wording this misses degrades to the retryable
+    // branch, which is the safe direction.
+    const permanentlyGone = ['Object not found', 'Bucket not found'].some(
+      (reason) => signed.error?.message.includes(reason),
+    );
+
+    if (permanentlyGone) {
       return { ...exportStatus, status: 'failed', signedUrl: undefined };
     }
 

@@ -147,6 +147,10 @@ const CompletedExportAction = ({
           void onRetry();
         }}
         disabled={isRetrying}
+        // Said explicitly for the same reason the idle button below says it: on
+        // its own, `disabled` reads as "unavailable" to a screen reader, which
+        // is not what a retry in flight is.
+        aria-busy={isRetrying}
       >
         <LuDownload aria-hidden />
         {isRetrying ? t('Preparing...') : t('Retry download')}
@@ -283,10 +287,26 @@ const ExportProposalsButtonContent = ({
           // escalating once a record is `completed`, so without this a retry
           // that fails leaves the button exactly as it was — a control that
           // looks like it did nothing.
+          //
+          // Written as "did it recover?" rather than enumerating the failures,
+          // so a shape not thought of here reports a problem instead of passing
+          // silently.
           const { data, error } = await refetchStatus();
+          const recovered =
+            !error && data?.status === 'completed' && Boolean(data.signedUrl);
 
-          if (error || (data?.status === 'completed' && !data.signedUrl)) {
-            toast.error(t('Could not prepare the download. Please try again.'));
+          if (recovered) {
+            return;
+          }
+
+          toast.error(t('Could not prepare the download. Please try again.'));
+
+          // A record that has aged out of the 24h cache is not coming back, and
+          // leaving the id set would put `isRunning` back to true — reverting to
+          // "Preparing..." and eventually reporting a timeout for a run that
+          // finished. Drop it and return to idle instead.
+          if (!error && data?.status === 'not_found') {
+            setExportId(null);
           }
         }}
         // One file per run: once taken, fall back to the idle button so a later
