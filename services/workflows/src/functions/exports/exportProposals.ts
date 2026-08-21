@@ -34,15 +34,20 @@ const updateExportStatus = async (
 };
 
 /**
- * Tell any admin waiting on this export that it has reached a terminal state.
+ * Tell any admin waiting on this export that its status record has moved.
  *
- * Broadcast-only: the cached record written just before this is the source of
- * truth, and the message carries no payload — subscribers re-read
- * `getExportStatus` on receipt.
+ * Broadcast-only: the record written just before this is the source of truth,
+ * and the message carries no payload — subscribers re-read `getExportStatus`
+ * on receipt.
+ *
+ * Sent for the intermediate `processing` write as well as for the terminal one.
+ * Publishing only at the end left `processing` written but unannounced, so the
+ * button sat on "Preparing..." for the whole run and reached "Generating..."
+ * only when a re-read happened to land inside that window.
  *
  * Nothing polls behind this, so a lost broadcast costs correctness, not latency.
- * The client never sees a terminal state, and the wait reports a timeout for an
- * export that worked.
+ * Lose the terminal one and the client never sees a terminal state: the wait
+ * reports a timeout for an export that worked.
  *
  * One way to lose it is to publish before the client finishes subscribing. An
  * export that settles in under a second can do that easily.
@@ -54,11 +59,13 @@ const updateExportStatus = async (
  * `realtime.publish` logs and swallows its own failures, so this cannot fail
  * the run or trigger a retry that would rewrite a settled status.
  */
-const notifyExportFinished = (exportId: string) =>
+const notifyExportStatusChanged = (exportId: string) =>
   realtime.publish(Channels.proposalExport(exportId), {
-    // Identifies the broadcast for client-side dedup; the export id is stable
-    // across this run's terminal write, which is the only thing published here.
-    mutationId: `export:${exportId}`,
+    // A fresh id per publish, as the codebase's other publishers mint one. The
+    // client drops a broadcast carrying an id it has already handled, so any id
+    // shared across this run's two reports would let `processing` suppress the
+    // terminal one and cost the admin the download link outright.
+    mutationId: crypto.randomUUID(),
   });
 
 const { proposalExportRequested } = Events;
@@ -84,6 +91,10 @@ export const exportProposals = inngest.createFunction(
         createdAt: new Date().toISOString(),
       });
     });
+
+    await step.run('notify-export-processing', () =>
+      notifyExportStatusChanged(exportId),
+    );
 
     try {
       // Step 2: Fetch proposals
@@ -206,7 +217,7 @@ export const exportProposals = inngest.createFunction(
       });
 
       await step.run('notify-export-finished', () =>
-        notifyExportFinished(exportId),
+        notifyExportStatusChanged(exportId),
       );
 
       return { exportId, status: 'completed' };
@@ -222,7 +233,7 @@ export const exportProposals = inngest.createFunction(
       });
 
       await step.run('notify-export-failed', () =>
-        notifyExportFinished(exportId),
+        notifyExportStatusChanged(exportId),
       );
 
       throw error;

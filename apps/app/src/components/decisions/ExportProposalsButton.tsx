@@ -39,10 +39,12 @@ export interface ExportProposalsButtonProps {
  * instance's whole history. The same button produces a different one once the
  * instance advances.
  *
- * Kick off → wait to be told it finished → hand back a download link.
+ * Kick off → wait to be told how it is going and then that it finished → hand
+ * back a download link.
  *
- * A broadcast on the run's own channel drives the wait, not polling. The file
- * appears as soon as it exists, instead of on the next tick.
+ * Broadcasts on the run's own channel drive the wait, not polling. The label
+ * follows the run, and the file appears as soon as it exists, instead of on the
+ * next tick.
  *
  * Offered as an explicit link, not an automatic download. The file is built in
  * the background, so downloading it on arrival would fire a save dialog at an
@@ -141,9 +143,10 @@ const ExportProposalsButtonContent = ({
     },
   });
 
-  // No polling. The workflow broadcasts on this export's channel when the run
-  // settles, and the subscriber re-reads once the channel is live. That covers
-  // an export finishing before the socket join lands.
+  // No polling. The workflow broadcasts on this export's channel when it picks
+  // the job up and again when the run settles, and the subscriber re-reads once
+  // the channel is live. That covers an export reaching either of those before
+  // the socket join lands.
   const { data: status } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId ?? '' },
     {
@@ -189,6 +192,10 @@ const ExportProposalsButtonContent = ({
   // Bounding total elapsed time would abort a healthy run for being large.
   // Generation scales with proposal count, and that ceiling is due to be
   // lifted. It would also wait the full period on a job that died at once.
+  //
+  // The run speaks twice — `processing`, then a terminal state — so in practice
+  // this bounds silence since the job started working. A single generation step
+  // that outlasts the period is still cut off.
   const reportedState = status?.status;
 
   // The run distinguishes accepted-but-not-started from actually-running. One
