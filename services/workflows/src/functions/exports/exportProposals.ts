@@ -92,11 +92,11 @@ export const exportProposals = inngest.createFunction(
       });
     });
 
-    await step.run('notify-export-processing', () =>
-      notifyExportStatusChanged(exportId),
-    );
-
     try {
+      await step.run('notify-export-processing', () =>
+        notifyExportStatusChanged(exportId),
+      );
+
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
         // Confirm the requester still exists, then hand `listProposals` an

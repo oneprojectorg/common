@@ -193,9 +193,11 @@ const ExportProposalsButtonContent = ({
   // Generation scales with proposal count, and that ceiling is due to be
   // lifted. It would also wait the full period on a job that died at once.
   //
-  // The run speaks twice — `processing`, then a terminal state — so in practice
-  // this bounds silence since the job started working. A single generation step
-  // that outlasts the period is still cut off.
+  // How much that buys depends on the run reporting a state the client has not
+  // already seen. It reports two, but the first read often lands after the
+  // workflow has written `processing`, in which case there is one arm rather
+  // than two and this is still a bound on the whole run. A single generation
+  // step that outlasts the period is cut off either way.
   const reportedState = status?.status;
 
   // The run distinguishes accepted-but-not-started from actually-running. One
@@ -253,38 +255,48 @@ const ExportProposalsButtonContent = ({
   }
 
   return (
-    <Button
-      variant="outline"
-      // Disabled rather than `loading` once a run is under way. That prop draws
-      // a spinner over the label and hides it, so the state the label reports
-      // would never be readable.
-      //
-      // A spinner only says "busy", which being disabled already says. The label
-      // says which part is busy. That is the only thing here that separates a
-      // job nothing picked up from one that is working.
-      //
-      // The spinner is kept for the request that starts the run, where there
-      // is no state to report yet and nothing to hide.
-      disabled={isEmpty || isRunning}
-      loading={startExport.isPending}
-      // Disabled reads as "unavailable", which is not what a run in progress
-      // is — the spinner this replaces carried that meaning on its own. Said
-      // explicitly so a screen reader still reports the control as working
-      // rather than as switched off. (`loading` sets `aria-busy` itself, but
-      // it is deliberately not in use for this state.)
-      aria-busy={isRunning}
-      onClick={() =>
-        startExport.mutate({
-          processInstanceId,
-          format: 'csv',
-        })
-      }
-    >
-      <LuArrowDownToLine aria-hidden />
-      {/* Named for what it covers, not for where it sits. The control lives in
+    <>
+      {/* The label below sits on a natively disabled button, which most screen
+          readers drop from the accessibility tree — so the state this component
+          exists to report would never be spoken, and `aria-busy` on a disabled
+          element is not surfaced either. Announced from here instead. Emptied
+          when idle so the region has nothing to re-announce on the way out. */}
+      <span role="status" aria-live="polite" className="sr-only">
+        {isRunning ? runningLabel : ''}
+      </span>
+      <Button
+        variant="outline"
+        // Disabled rather than `loading` once a run is under way. That prop
+        // draws a spinner over the label and hides it, so the state the label
+        // reports would never be readable.
+        //
+        // A spinner only says "busy", which being disabled already says. The
+        // label says which part is busy. That is the only thing here that
+        // separates a job nothing picked up from one that is working.
+        //
+        // The spinner is kept for the request that starts the run, where there
+        // is no state to report yet and nothing to hide.
+        disabled={isEmpty || isRunning}
+        loading={startExport.isPending}
+        // Disabled reads as "unavailable", which is not what a run in progress
+        // is — the spinner this replaces carried that meaning on its own. Said
+        // explicitly so a screen reader still reports the control as working
+        // rather than as switched off. (`loading` sets `aria-busy` itself, but
+        // it is deliberately not in use for this state.)
+        aria-busy={isRunning}
+        onClick={() =>
+          startExport.mutate({
+            processInstanceId,
+            format: 'csv',
+          })
+        }
+      >
+        <LuArrowDownToLine aria-hidden />
+        {/* Named for what it covers, not for where it sits. The control lives in
           the filter bar and no longer follows it, so a bare "Export" beside an
           active filter would read as exporting that selection. */}
-      {isRunning ? runningLabel : t('Export all')}
-    </Button>
+        {isRunning ? runningLabel : t('Export all')}
+      </Button>
+    </>
   );
 };
