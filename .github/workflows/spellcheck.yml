@@ -1,0 +1,34 @@
+name: Spelling
+
+# This job lives outside pr-checks.yml because the trigger differs, and a
+# trigger is per workflow. pr-checks.yml uses `pull_request_target` so its jobs
+# can read `secrets.TIPTAP_PRO_TOKEN`, and it puts fork PRs behind the
+# `fork-ci` approval gate to protect that secret. Spelling needs no secret, and
+# it runs a script from the pull request. Under `pull_request_target` that
+# script would run with the base repository's context, so a fork author could
+# run any command without a maintainer. `pull_request` grants a fork run no
+# secrets and a read-only token, which is the right trust level for this job
+# and needs no approval gate.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  spellcheck:
+    name: Spelling
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Developers run the same script, so it holds the only version pin and CI
+      # checks with an identical binary. The `crate-ci/typos` action accepts no
+      # version input. It ties the binary to its own ref, which would pin the
+      # version twice. This script needs neither Node nor pnpm.
+      - name: Check spelling
+        run: |
+          ./scripts/install-typos.sh
+          ./node_modules/.bin/typos

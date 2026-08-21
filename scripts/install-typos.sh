@@ -9,7 +9,7 @@
 # discards a download that does not match.
 #
 # VERSION is the only version pin. The Spelling job in
-# .github/workflows/pr-checks.yml runs this script, so CI and developers use
+# .github/workflows/spellcheck.yml runs this script, so CI and developers use
 # the same binary.
 #
 # The script does nothing when the correct version is already installed.
