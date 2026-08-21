@@ -1,11 +1,12 @@
-import { get, set } from '@op/cache';
+import { getWithStatus, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
+import type { Logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import {
   EXPORTS_BUCKET,
@@ -37,17 +38,6 @@ const servesAsAttachment = (signedUrl: unknown): boolean => {
   return query !== undefined && new URLSearchParams(query).has('download');
 };
 
-/**
- * Structurally the subset of `ContextLogger` this module needs.
- *
- * The meta object is `Record<string, unknown>` rather than `any`, so a malformed
- * one is a type error instead of a log line that silently ships a missing field.
- */
-type ExportLogger = {
-  info: (message: string, data?: Record<string, unknown>) => void;
-  error: (message: string, data?: Record<string, unknown>) => void;
-};
-
 export interface ExportStatusData {
   exportId: string;
   processInstanceId: string;
@@ -62,6 +52,14 @@ export interface ExportStatusData {
   completedAt?: string;
 }
 
+/**
+ * The logging surface this module needs, taken from the real {@link Logger} so
+ * the two signatures cannot drift from what callers actually pass. A structural
+ * literal would also have accepted `Record<string, unknown>` for the metadata,
+ * which is the escape hatch this codebase avoids.
+ */
+type ExportStatusLogger = Pick<Logger, 'info' | 'error'>;
+
 export const getExportStatus = async ({
   exportId,
   user,
@@ -69,11 +67,24 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
-  logger: ExportLogger;
+  logger: ExportStatusLogger;
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
-  // Get export data from cache
   const key = exportStatusCacheKey(exportId);
-  const exportStatus = (await get(key)) as ExportStatusData | null;
+
+  // Read the cache in a way that keeps "no such export" apart from "the cache
+  // could not answer". Both used to arrive as `null`, and reporting the second
+  // as `not_found` is not a cosmetic error: export state lives only here, and
+  // the client retires the export id on that answer. One Redis timeout would
+  // discard a finished run of up to a thousand proposals, with the toast beside
+  // it telling the admin to retry something no longer on screen.
+  const cached = await getWithStatus(key);
+
+  if (cached.status === 'timeout' || cached.status === 'error') {
+    throw new CommonError('Could not read the export record.');
+  }
+
+  const exportStatus =
+    cached.status === 'hit' ? (cached.data as ExportStatusData) : null;
 
   if (!exportStatus) {
     return { status: 'not_found' as const };
@@ -210,11 +221,28 @@ const refreshStaleSignedUrl = async ({
 }: {
   exportStatus: ExportStatusData;
   cacheKey: string;
-  logger: ExportLogger;
+  logger: ExportStatusLogger;
 }): Promise<void> => {
   const { exportId, fileName } = exportStatus;
 
-  if (!fileName || !needsFreshUrl(exportStatus)) {
+  if (!fileName) {
+    if (exportStatus.status === 'completed') {
+      // Should not happen: the workflow writes `fileName` and `completed` in one
+      // update. Reported as a terminal failure rather than passed over, because
+      // returning the record untouched reads to the client as a completed export
+      // it can retry — and every retry lands back here, so the button never
+      // resolves and never clears. Absent a file name there is nothing to sign
+      // and no later read grows one.
+      logger.error('Completed export has no file name', { exportId });
+
+      exportStatus.status = 'failed';
+      exportStatus.signedUrl = undefined;
+    }
+
+    return;
+  }
+
+  if (!needsFreshUrl(exportStatus)) {
     return;
   }
 

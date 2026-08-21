@@ -1547,6 +1547,7 @@
   "Download CSV": "CSV ডাউনলোড করুন",
   "Failed to start export": "রপ্তানি শুরু করা যায়নি",
   "Export failed": "রপ্তানি ব্যর্থ হয়েছে",
+  "Export ready": "রপ্তানি প্রস্তুত",
   "Retry download": "ডাউনলোড পুনরায় চেষ্টা করুন",
   "Could not prepare the download. Please try again.": "ডাউনলোড প্রস্তুত করা যায়নি। আবার চেষ্টা করুন।",
   "Export timed out. Please try again.": "রপ্তানির সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",

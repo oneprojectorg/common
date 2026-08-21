@@ -11,6 +11,7 @@ import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { resolveExportRetryOutcome } from './exportRetry';
 import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
 export interface ExportProposalsButtonProps {
@@ -150,47 +151,67 @@ const CompletedExportAction = ({
 }) => {
   const t = useTranslations();
 
+  // The export settles without a navigation, and settling swaps this control
+  // for a different element — so a screen reader following the button is given
+  // no reason to look again. Announced from here rather than from the branches
+  // below so both settled states report through one region.
+  const settledAnnouncement = signedUrl
+    ? t('Export ready')
+    : t('Could not prepare the download. Please try again.');
+
+  const announcement = (
+    <span role="status" aria-live="polite" className="sr-only">
+      {settledAnnouncement}
+    </span>
+  );
+
   if (!signedUrl) {
     return (
-      <Button
-        variant="outline"
-        onClick={() => {
-          void onRetry();
-        }}
-        disabled={isRetrying}
-        // Said explicitly for the same reason the idle button below says it: on
-        // its own, `disabled` reads as "unavailable" to a screen reader, which
-        // is not what a retry in flight is.
-        aria-busy={isRetrying}
-      >
-        <LuDownload aria-hidden />
-        {isRetrying ? t('Preparing...') : t('Retry download')}
-      </Button>
+      <>
+        {announcement}
+        <Button
+          variant="outline"
+          onClick={() => {
+            void onRetry();
+          }}
+          disabled={isRetrying}
+          // Said explicitly for the same reason the idle button below says it:
+          // on its own, `disabled` reads as "unavailable" to a screen reader,
+          // which is not what a retry in flight is.
+          aria-busy={isRetrying}
+        >
+          <LuDownload aria-hidden />
+          {isRetrying ? t('Preparing...') : t('Retry download')}
+        </Button>
+      </>
     );
   }
 
   return (
-    <Button
-      variant="outline"
-      // Rendered as an anchor so the browser owns the download. Base UI needs
-      // both flags to stop emitting button semantics over the link.
-      nativeButton={false}
-      role={undefined}
-      render={
-        // Cross-origin, so `download` only names the file.
-        // `exportDownloadOptions` is what forces the save.
-        <a
-          href={signedUrl}
-          download={fileName}
-          target="_blank"
-          rel="noopener noreferrer"
-        />
-      }
-      onClick={onTaken}
-    >
-      <LuDownload aria-hidden />
-      {t('Download CSV')}
-    </Button>
+    <>
+      {announcement}
+      <Button
+        variant="outline"
+        // Rendered as an anchor so the browser owns the download. Base UI needs
+        // both flags to stop emitting button semantics over the link.
+        nativeButton={false}
+        role={undefined}
+        render={
+          // Cross-origin, so `download` only names the file.
+          // `exportDownloadOptions` is what forces the save.
+          <a
+            href={signedUrl}
+            download={fileName}
+            target="_blank"
+            rel="noopener noreferrer"
+          />
+        }
+        onClick={onTaken}
+      >
+        <LuDownload aria-hidden />
+        {t('Download CSV')}
+      </Button>
+    </>
   );
 };
 
@@ -304,45 +325,38 @@ const ExportProposalsButtonContent = ({
     return () => clearTimeout(timer);
   }, [isRunning, reportedState, t]);
 
+  // `throwOnError` above deliberately stops escalating once a record is
+  // `completed`, so a retry that fails lands here rather than on the boundary.
+  // Without acting on it the button would look like it did nothing.
+  const handleRetryDownload = async () => {
+    const { data, error } = await refetchStatus();
+    const outcome = resolveExportRetryOutcome({
+      errored: Boolean(error),
+      status: data?.status,
+      signedUrl: data && 'signedUrl' in data ? data.signedUrl : undefined,
+    });
+
+    if (
+      outcome.kind === 'recovered' ||
+      outcome.kind === 'failure-already-reported'
+    ) {
+      return;
+    }
+
+    toast.error(t('Could not prepare the download. Please try again.'));
+
+    if (outcome.kind === 'record-gone') {
+      setExportId(null);
+    }
+  };
+
   if (isResolved) {
     return (
       <CompletedExportAction
         signedUrl={status.signedUrl}
         fileName={status.fileName}
         isRetrying={isFetchingStatus}
-        onRetry={async () => {
-          // Report the outcome. `throwOnError` above deliberately stops
-          // escalating once a record is `completed`, so without this a retry
-          // that fails leaves the button exactly as it was — a control that
-          // looks like it did nothing.
-          //
-          // Written as "did it recover?" rather than enumerating the failures,
-          // so a shape not thought of here reports a problem instead of passing
-          // silently.
-          const { data, error } = await refetchStatus();
-          const recovered =
-            !error && data?.status === 'completed' && Boolean(data.signedUrl);
-
-          if (recovered) {
-            return;
-          }
-
-          // `failed` is the one outcome that reports itself: the effect above
-          // toasts and resets the button. Saying "please try again" beside it
-          // would be both duplicated and wrong — that path needs a fresh export,
-          // not a retry.
-          if (data?.status !== 'failed') {
-            toast.error(t('Could not prepare the download. Please try again.'));
-          }
-
-          // A record that has aged out of the 24h cache is not coming back, and
-          // leaving the id set would put `isRunning` back to true — reverting to
-          // "Preparing..." and eventually reporting a timeout for a run that
-          // finished. Drop it and return to idle instead.
-          if (!error && data?.status === 'not_found') {
-            setExportId(null);
-          }
-        }}
+        onRetry={handleRetryDownload}
         // One file per run: once taken, fall back to the idle button so a later
         // export is not confused with this one.
         onTaken={() => setExportId(null)}

@@ -1544,6 +1544,7 @@
   "Download CSV": "Baixar CSV",
   "Failed to start export": "Não foi possível iniciar a exportação",
   "Export failed": "A exportação falhou",
+  "Export ready": "Exportação pronta",
   "Retry download": "Tentar baixar novamente",
   "Could not prepare the download. Please try again.": "Não foi possível preparar o download. Tente novamente.",
   "Export timed out. Please try again.": "A exportação expirou. Tente novamente.",

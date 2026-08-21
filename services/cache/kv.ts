@@ -25,10 +25,16 @@ const RACE_TIMEOUT: unique symbol = Symbol('cache.race-timeout');
 // Discriminated result of an attempted Redis read. `cache()` uses it to
 // record `hit` / `miss` / `timeout` separately so a Redis slowdown does
 // not masquerade as a cold cache.
-type RedisGetResult =
+//
+// `miss` means Redis answered and held nothing. `timeout` and `error` both mean
+// it did not answer, which is a different claim: a caller that treats them as a
+// miss asserts the key is absent when all it knows is that it could not look.
+// Callers holding cache-only state need that distinction — see `getWithStatus`.
+export type RedisGetResult =
   | { status: 'hit'; data: unknown }
   | { status: 'miss' }
-  | { status: 'timeout' };
+  | { status: 'timeout' }
+  | { status: 'error' };
 
 // Create Redis client only if REDIS_URL is provided
 let redis: ReturnType<typeof createClient> | null = null;
@@ -334,7 +340,7 @@ const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
     logger.error('CACHE: error getting from Redis', { error: e });
     cacheMetrics.recordError('get');
 
-    return { status: 'miss' };
+    return { status: 'error' };
   }
 };
 
@@ -342,6 +348,19 @@ export const get = async (key: string) => {
   const result = await tryGetFromRedis(key);
   return result.status === 'hit' ? result.data : null;
 };
+
+/**
+ * Read a key, keeping "Redis held nothing" apart from "Redis did not answer".
+ *
+ * {@link get} collapses both to `null`, which is right for anything that can
+ * re-derive its value from the source on a miss. It is wrong for cache-only
+ * state, where absence is load-bearing: answering "no such record" because a
+ * command timed out invites the caller to discard something that is still
+ * there. Reach for this when a false miss costs the user data rather than a
+ * round trip.
+ */
+export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
+  tryGetFromRedis(key);
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
