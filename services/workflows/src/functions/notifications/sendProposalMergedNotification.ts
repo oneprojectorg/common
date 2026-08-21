@@ -1,6 +1,6 @@
 import { listProposalMergeRecipients } from '@op/common';
 import { OPURLConfig } from '@op/core';
-import { ProposalMergedEmail } from '@op/emails';
+import { ProposalMergedEmail, ProposalMergedIntoYoursEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
@@ -47,27 +47,46 @@ export const sendProposalMergedNotification = inngest.createFunction(
       targetProposalProfileId,
       processTitle,
       processProfileSlug,
-      recipients,
+      note,
+      sourceRecipients,
+      targetRecipients,
     } = result.notification;
 
     const proposalBaseUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfileSlug}/proposal`;
     const proposalUrl = `${proposalBaseUrl}/${sourceProposalProfileId}`;
     const targetProposalUrl = `${proposalBaseUrl}/${targetProposalProfileId}`;
 
+    // One batch for both sides. The two audiences are disjoint, so each address
+    // appears once no matter how many proposals the person worked on.
     const sendResult = await step.run('send-emails', async () =>
       sendNotificationEmails({
-        emails: recipients.map(({ email }) => ({
-          to: email,
-          subject: ProposalMergedEmail.subject(sourceProposalName),
-          component: () =>
-            ProposalMergedEmail({
-              proposalName: sourceProposalName,
-              targetProposalName,
-              processTitle,
-              proposalUrl,
-              targetProposalUrl,
-            }),
-        })),
+        emails: [
+          ...sourceRecipients.map(({ email }) => ({
+            to: email,
+            subject: ProposalMergedEmail.subject(sourceProposalName),
+            component: () =>
+              ProposalMergedEmail({
+                proposalName: sourceProposalName,
+                targetProposalName,
+                processTitle,
+                proposalUrl,
+                targetProposalUrl,
+                note,
+              }),
+          })),
+          ...targetRecipients.map(({ email }) => ({
+            to: email,
+            subject: ProposalMergedIntoYoursEmail.subject(targetProposalName),
+            component: () =>
+              ProposalMergedIntoYoursEmail({
+                proposalName: targetProposalName,
+                sourceProposalName,
+                processTitle,
+                proposalUrl: targetProposalUrl,
+                sourceProposalUrl: proposalUrl,
+              }),
+          })),
+        ],
         failureMessage: 'proposal merged notifications',
         context: { relationshipId },
       }),

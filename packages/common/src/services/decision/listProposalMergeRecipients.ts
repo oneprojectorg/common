@@ -3,6 +3,13 @@ import { ProposalRelationshipType } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
 
+/** The admin's stated reason for the merge, quoted back to the source authors. */
+export type ProposalMergeNote = {
+  body: string;
+  /** Null when the admin's profile can't be resolved; the quote still stands. */
+  authorName: string | null;
+};
+
 export type ProposalMergeNotification = {
   sourceProposalName: string;
   /** Proposals are addressed by their profile id in app URLs, not their own id. */
@@ -11,7 +18,11 @@ export type ProposalMergeNotification = {
   targetProposalProfileId: string;
   processTitle: string;
   processProfileSlug: string;
-  recipients: Array<{ email: string }>;
+  note: ProposalMergeNote | null;
+  /** Authors of the proposal that was merged away. */
+  sourceRecipients: Array<{ email: string }>;
+  /** Authors of the proposal that survived. */
+  targetRecipients: Array<{ email: string }>;
 };
 
 export type ListProposalMergeRecipientsResult =
@@ -22,10 +33,9 @@ export type ListProposalMergeRecipientsResult =
     };
 
 /**
- * Resolves who should hear that a proposal was merged away, and the copy the
- * email needs. Returns a reason rather than throwing when there is nothing to
- * send: none of these outcomes is a failure, and the caller logs which one it
- * hit.
+ * Resolves who should hear that a merge happened and the copy each side needs.
+ * Returns a reason rather than throwing when there is nothing to send: none of
+ * these outcomes is a failure, and the caller logs which one it hit.
  *
  * Everything is re-read at send time rather than carried on the event, because
  * the notification is debounced and the world can move underneath it — the merge
@@ -33,7 +43,8 @@ export type ListProposalMergeRecipientsResult =
  *
  * Deliberately no authorization assert: there is no caller to authorize. This
  * runs from the merge workflow, and the audience is derived rather than
- * requested — it is exactly the proposal's own authors, who can always reach it.
+ * requested — it is exactly the two proposals' own authors, who can always reach
+ * the proposal they wrote.
  */
 export async function listProposalMergeRecipients({
   relationshipId,
@@ -55,12 +66,14 @@ export async function listProposalMergeRecipients({
           processInstance: { with: { profile: true } },
         },
       },
-      targetProposal: { with: { profile: true } },
+      targetProposal: {
+        with: { profile: { with: { profileUsers: true } } },
+      },
     },
   });
 
   // Gone or soft-deleted: the merge was undone before the debounce elapsed, and
-  // telling someone their proposal was merged would now be false.
+  // telling anyone it happened would now be false.
   if (!relationship) {
     return { ok: false, reason: 'edgeNotLive' };
   }
@@ -79,12 +92,25 @@ export async function listProposalMergeRecipients({
     return { ok: false, reason: 'proposalUnavailable' };
   }
 
-  const recipients = collectRecipients({
+  const sourceRecipients = collectRecipients({
     profileUsers: sourceProposal.profile.profileUsers,
-    actorAuthUserId,
+    excludedAuthUserIds: [actorAuthUserId],
   });
 
-  if (recipients.length === 0) {
+  // Anyone who worked on both proposals hears it once, as a source author: "your
+  // proposal was merged away" is the version that affects them.
+  const targetRecipients = collectRecipients({
+    profileUsers: targetProposal.profile.profileUsers,
+    excludedAuthUserIds: [
+      actorAuthUserId,
+      ...sourceProposal.profile.profileUsers.map(
+        ({ authUserId }) => authUserId,
+      ),
+    ],
+    excludedEmails: sourceRecipients.map(({ email }) => email),
+  });
+
+  if (sourceRecipients.length === 0 && targetRecipients.length === 0) {
     return { ok: false, reason: 'noRecipients' };
   }
 
@@ -97,7 +123,12 @@ export async function listProposalMergeRecipients({
       targetProposalProfileId: targetProposal.profileId,
       processTitle: processProfile.name,
       processProfileSlug: processProfile.slug,
-      recipients,
+      note: await resolveNote({
+        body: relationship.note,
+        authorAuthUserId: actorAuthUserId,
+      }),
+      sourceRecipients,
+      targetRecipients,
     },
   };
 }
@@ -108,23 +139,49 @@ const isReachable = (proposal: {
 }) => !proposal.deletedAt && !proposal.moderationDetachedAt;
 
 /**
- * The proposal's own profile carries its author and every collaborator, so one
- * row set is the whole audience. The admin who ran the merge is dropped — nobody
- * needs an email about something they just did — and addresses are collapsed so
- * a person on two collaborator rows is mailed once.
+ * The note is written in the merge dialog, so its author is always the admin who
+ * performed the merge — the edge itself records no author. A missing profile
+ * costs the attribution line, not the note.
+ */
+const resolveNote = async ({
+  body,
+  authorAuthUserId,
+}: {
+  body: string | null;
+  authorAuthUserId: string;
+}): Promise<ProposalMergeNote | null> => {
+  if (!body) {
+    return null;
+  }
+
+  const author = await db.query.users.findFirst({
+    where: { authUserId: authorAuthUserId },
+    with: { profile: true },
+  });
+
+  return { body, authorName: author?.profile?.name ?? null };
+};
+
+/**
+ * A proposal's own profile carries its author and every collaborator, so one row
+ * set is the whole audience. Addresses are collapsed case-insensitively so a
+ * person on two collaborator rows is mailed once.
  */
 const collectRecipients = ({
   profileUsers,
-  actorAuthUserId,
+  excludedAuthUserIds,
+  excludedEmails = [],
 }: {
   profileUsers: Array<{ email: string | null; authUserId: string }>;
-  actorAuthUserId: string;
+  excludedAuthUserIds: Array<string>;
+  excludedEmails?: Array<string>;
 }): Array<{ email: string }> => {
-  const seen = new Set<string>();
+  const excludedIds = new Set(excludedAuthUserIds);
+  const seen = new Set(excludedEmails.map((email) => email.toLowerCase()));
 
   return profileUsers
     .filter(hasEmail)
-    .filter((profileUser) => profileUser.authUserId !== actorAuthUserId)
+    .filter((profileUser) => !excludedIds.has(profileUser.authUserId))
     .filter((profileUser) => {
       const key = profileUser.email.toLowerCase();
 
