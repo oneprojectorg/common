@@ -64,30 +64,3 @@ export async function findLiveMergedEdge({
 
   return edge;
 }
-
-/** Whether anything is currently merged into this proposal. */
-export async function hasLiveMergedSources({
-  processInstanceId,
-  targetProposalId,
-}: {
-  processInstanceId: string;
-  targetProposalId: string;
-}): Promise<boolean> {
-  const [edge] = await db
-    .select({ id: proposalRelationships.id })
-    .from(proposalRelationships)
-    .where(
-      and(
-        eq(proposalRelationships.processInstanceId, processInstanceId),
-        eq(proposalRelationships.targetProposalId, targetProposalId),
-        eq(
-          proposalRelationships.relationshipType,
-          ProposalRelationshipType.MERGED,
-        ),
-        isNull(proposalRelationships.deletedAt),
-      ),
-    )
-    .limit(1);
-
-  return Boolean(edge);
-}

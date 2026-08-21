@@ -10,10 +10,7 @@ import { permission } from 'access-zones';
 import { ConflictError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getLinkedProposal } from './getLinkedProposal';
-import {
-  findLiveMergedEdge,
-  hasLiveMergedSources,
-} from './proposalSupersession';
+import { findLiveMergedEdge } from './proposalSupersession';
 import type { MergeProposalsInput } from './schemas/proposalRelationships';
 
 export type MergeProposalsResult = {
@@ -26,6 +23,11 @@ export type MergeProposalsResult = {
  * Links one proposal into another as `merged`, for admins of the parent
  * decision. No content moves and no status changes — recording the edge is the
  * entire effect, and it's what every read filters on via `notSuperseded`.
+ *
+ * Chains are allowed — a proposal with others merged into it can be merged
+ * onward. The target must still be live, which both keeps the merge visible and
+ * makes a cycle unrepresentable: a proposal that has merged away can never
+ * become a target.
  *
  * `note` is stored on the edge so it soft-deletes with the merge. Nothing mails
  * it yet — there is no merge notification.
@@ -53,14 +55,9 @@ export async function mergeProposals({
     );
   }
 
-  // Both chain directions are checked, because nothing traverses one: reads
-  // exclude any proposal with an outgoing edge, so an intermediate would swallow
-  // whatever points at it. Keeping the graph one level deep is what lets every
-  // consumer treat "has a live merged edge" as the whole answer.
-  //
   // `Promise.all` rejects with the assert's error the moment it throws, so an
-  // unauthorized caller learns nothing from the parallel lookups.
-  const [, targetAlreadyMerged, sourceHasMergedInto] = await Promise.all([
+  // unauthorized caller learns nothing from the parallel lookup.
+  const [, targetAlreadyMerged] = await Promise.all([
     assertProfileAccess({
       user,
       profileId: source.instance.profileId,
@@ -69,10 +66,6 @@ export async function mergeProposals({
     findLiveMergedEdge({
       processInstanceId: source.processInstanceId,
       sourceProposalId: targetProposalId,
-    }),
-    hasLiveMergedSources({
-      processInstanceId: source.processInstanceId,
-      targetProposalId: sourceProposalId,
     }),
   ]);
 
@@ -83,12 +76,6 @@ export async function mergeProposals({
   if (targetAlreadyMerged) {
     throw new ConflictError(
       'Cannot merge into a proposal that has itself been merged',
-    );
-  }
-
-  if (sourceHasMergedInto) {
-    throw new ConflictError(
-      'This proposal has other proposals merged into it; unmerge those first',
     );
   }
 

@@ -313,7 +313,7 @@ describe.concurrent('mergeProposals', () => {
     ).rejects.toThrow(/itself been merged/i);
   });
 
-  it('rejects merging away a proposal that has proposals merged into it', async ({
+  it('merges a proposal that has proposals merged into it, forming a chain', async ({
     task,
     onTestFinished,
   }) => {
@@ -332,15 +332,18 @@ describe.concurrent('mergeProposals', () => {
       sourceProposalId: source.id,
       targetProposalId: target.id,
     });
+    await caller.decision.mergeProposals({
+      sourceProposalId: target.id,
+      targetProposalId: third.id,
+    });
 
-    // Merging the survivor onward would leave source pointing at a hidden
-    // intermediate, and nothing traverses a chain. Keeps the graph one level.
-    await expect(
-      caller.decision.mergeProposals({
-        sourceProposalId: target.id,
-        targetProposalId: third.id,
-      }),
-    ).rejects.toThrow(/merged into it/i);
+    // Every proposal with an outgoing edge leaves the listing, so a chain
+    // resolves to its one live end without anything traversing it.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.proposals.map((proposal) => proposal.id)).toEqual([third.id]);
   });
 
   it('rejects merging a draft proposal', async ({ task, onTestFinished }) => {
