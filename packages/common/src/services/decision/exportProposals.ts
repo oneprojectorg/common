@@ -25,8 +25,8 @@ export const exportProposals = async ({
   const { processInstanceId } = input;
 
   // Resolve the decision profile the export belongs to. Authorization hangs off
-  // this profile; there is no organization lookup because exports are written
-  // to the shared `assets` bucket and no longer need an owning org.
+  // this profile; there is no organization lookup because the export's storage
+  // path is keyed by process instance, not by owning org.
   //
   // Deferred: joining `profiles` would make the null-profileId branch below
   // unrepresentable, but it also collapses "no such instance" and "instance has

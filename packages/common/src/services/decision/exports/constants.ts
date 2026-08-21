@@ -37,7 +37,9 @@ export const EXPORTS_BUCKET = 'exports';
  * Because {@link EXPORTS_BUCKET} is private, expiry actually revokes access to
  * anything stored there. It says nothing about exports written before the move:
  * those objects are still in the public `assets` bucket and remain readable by
- * path until they are deleted, which is tracked separately.
+ * path until they are deleted. Deleting them is Asana 1217696316242182 — named
+ * here because this comment is the only place in the tree that records a live
+ * exposure still outstanding.
  */
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
