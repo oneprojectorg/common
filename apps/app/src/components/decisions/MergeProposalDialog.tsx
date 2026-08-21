@@ -43,7 +43,7 @@ import {
   type MergeCandidate,
   getMergeCandidates,
   getProposalDisplayTitle,
-} from './mergeCandidates';
+} from './proposals/merge';
 
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 

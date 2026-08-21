@@ -17,8 +17,7 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
-import { getProposalDisplayTitle } from './mergeCandidates';
-import { buildMergeMenuItem } from './mergeMenuItem';
+import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**

@@ -2,7 +2,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
-import { getMergeCandidates } from './mergeCandidates';
+import { getMergeCandidates } from './merge';
 
 /** Lifts `title` and `profileName` out of their real nesting so cases stay flat. */
 const proposal = ({

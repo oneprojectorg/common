@@ -13,7 +13,7 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
-import { buildMergeMenuItem } from '../mergeMenuItem';
+import { buildMergeMenuItem } from '../proposals/merge';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
