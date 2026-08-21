@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowHeader,
 } from '@op/sense/Table';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuEllipsis } from 'react-icons/lu';
@@ -100,6 +101,32 @@ export const WithBadges: Story = {
                 {invoice.status}
               </Badge>
             </TableCell>
+            <TableCell className="text-end">{invoice.amount}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  ),
+};
+
+// A row header names its row without taking on column-header styling.
+export const WithRowHeaders: Story = {
+  render: () => (
+    <Table className="max-w-2xl">
+      <TableHeader>
+        <TableRow>
+          <TableHead scope="col">Invoice</TableHead>
+          <TableHead scope="col">Status</TableHead>
+          <TableHead scope="col" className="text-end">
+            Amount
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {invoices.map((invoice) => (
+          <TableRow key={invoice.id}>
+            <TableRowHeader>{invoice.id}</TableRowHeader>
+            <TableCell>{invoice.status}</TableCell>
             <TableCell className="text-end">{invoice.amount}</TableCell>
           </TableRow>
         ))}
