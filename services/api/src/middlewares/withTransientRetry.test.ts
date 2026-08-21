@@ -10,13 +10,13 @@ type NextResult = { ok: true; data: unknown } | { ok: false; error: unknown };
 /**
  * The shape postgres-js produces when a pooled socket dies mid-statement, as
  * tRPC hands it to a middleware: the driver error is only ever reachable
- * through the wrapping `TRPCError`'s `cause`.
+ * through the wrapping `TRPCError`'s `cause`. The host in the message is a
+ * placeholder — matching keys off the code and the `CONNECTION_CLOSED` token,
+ * never the endpoint.
  */
 function droppedSocketError(): TRPCError {
   const driverError = Object.assign(
-    new Error(
-      'write CONNECTION_CLOSED aws-0-us-east-1.pooler.supabase.com:6543',
-    ),
+    new Error('write CONNECTION_CLOSED pooler.example.invalid:6543'),
     { code: 'CONNECTION_CLOSED' },
   );
 
