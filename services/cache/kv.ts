@@ -315,7 +315,15 @@ export const invalidateMultiple = async ({
 // / timeout into different metrics. Public `get()` still maps everything
 // non-hit to `null` for back-compat.
 const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
-  if (!redis) {
+  // No cache configured, or a client that never reached a ready state. Both
+  // mean this deployment has no working cache, so they answer the same way.
+  //
+  // The distinction that matters is narrower: a command that fails on a ready
+  // client. Redis is serving other keys in that case, so a caller cannot read
+  // the failure as "this key is absent". A client that is not ready supports no
+  // such inference, and reporting an error for it would turn a deployment
+  // without Redis into a deployment that answers 500.
+  if (!redis || !redis.isReady) {
     return { status: 'miss' };
   }
 

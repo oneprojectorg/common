@@ -15,20 +15,13 @@ import {
   exportFilePath,
   exportStatusCacheKey,
 } from './exports';
+import type { ExportStatusData } from './schemas/exportStatus';
+import { exportStatusRecordSchema } from './schemas/exportStatus';
 
-export interface ExportStatusData {
-  exportId: string;
-  processInstanceId: string;
-  userId: string;
-  format: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  fileName?: string;
-  signedUrl?: string;
-  urlExpiresAt?: string;
-  errorMessage?: string;
-  createdAt: string;
-  completedAt?: string;
-}
+// Re-exported here because this module is where callers already look for it.
+// `schemas/exportStatus.ts` derives the type from the schema that validates the
+// record, so the type and the check cannot drift.
+export type { ExportStatusData } from './schemas/exportStatus';
 
 /**
  * The logging methods this module needs.
@@ -61,12 +54,33 @@ export const getExportStatus = async ({
     throw new CommonError('Could not read the export record.');
   }
 
-  const exportStatus =
-    cached.status === 'hit' ? (cached.data as ExportStatusData) : null;
-
-  if (!exportStatus) {
+  if (cached.status !== 'hit') {
     return { status: 'not_found' as const };
   }
+
+  // Parse the cached value rather than assert its type. Redis holds the only
+  // copy of this record, so nothing else checks the shape this path depends on.
+  //
+  // A malformed record is reachable. The workflow patches the record by merging
+  // over the copy it reads, and it writes the patch alone when that read misses.
+  // A cache eviction, or one unreachable Redis, therefore leaves a record that
+  // holds a status and nothing else.
+  //
+  // Such a record describes no export, and no later read repairs it. This
+  // reports `not_found`, so the client returns to idle and the admin starts a
+  // fresh run.
+  const parsed = exportStatusRecordSchema.safeParse(cached.data);
+
+  if (!parsed.success) {
+    logger.error('Cached export record does not match its schema', {
+      exportId,
+      error: parsed.error,
+    });
+
+    return { status: 'not_found' as const };
+  }
+
+  const exportStatus = parsed.data;
 
   // Verify user owns this export (basic ownership check)
   if (exportStatus.userId !== user.id) {

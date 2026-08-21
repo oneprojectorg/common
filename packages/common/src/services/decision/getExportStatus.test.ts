@@ -430,6 +430,30 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
 
+  // The workflow patches the record by merging over the copy it reads, and it
+  // writes the patch alone when that read misses. One evicted key therefore
+  // leaves a record holding a status and nothing else. No later read repairs
+  // it, so this reports `not_found` and the admin starts a fresh run.
+  it('reports not_found for a cached record that does not match the schema', async () => {
+    givenCachedRecord({ status: 'processing' });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toEqual({ status: 'not_found' });
+    expect(logger.error).toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  // A record that parses must not be trusted past its owner. The schema checks
+  // the shape; the ownership check below is what checks the caller.
+  it('still rejects a caller who does not own a well-formed record', async () => {
+    givenCachedRecord({ ...expiredRecord(), userId: 'someone-else' });
+
+    await expect(
+      getExportStatus({ exportId: EXPORT_ID, user, logger }),
+    ).rejects.toThrow();
+  });
+
   // The cache must answer before this reports absence. Export state lives only
   // in the cache, and the client retires the export id on `not_found`. A cache
   // it could not reach, reported as "no such export", discards a finished run
