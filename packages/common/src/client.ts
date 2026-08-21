@@ -26,6 +26,10 @@ export {
   isPhaseAtOrBefore,
 } from './services/decision/utils/phaseOrder';
 export {
+  canReadPhaseReviews,
+  type PhaseReviewsReadContext,
+} from './services/decision/utils/reviewAccess';
+export {
   getPhaseRubricTemplate,
   resolvePhaseTemplate,
 } from './services/decision/utils/phaseTemplates';
