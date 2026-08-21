@@ -195,45 +195,13 @@ const mintSignedDownloadUrl = async ({
 };
 
 /**
- * Sign, and try once more if the first attempt fails.
- *
- * Failing is expensive out of proportion to its cause. The caller reports a
- * terminal `failed`, and the client drops the export id when it sees one, so a
- * momentary Storage error on an object that is present and signable a second
- * later costs the admin a whole re-export.
- *
- * The first error is dropped rather than logged: either the retry succeeds, in
- * which case nothing failed that the caller can act on, or it throws in turn and
- * that error is the one the caller reports.
- */
-const signWithOneRetry = async ({
-  processInstanceId,
-  fileName,
-  exportId,
-  logger,
-}: {
-  processInstanceId: string;
-  fileName: string;
-  exportId: string;
-  logger: ExportLogger;
-}): Promise<string> => {
-  try {
-    return await mintSignedDownloadUrl({ processInstanceId, fileName });
-  } catch {
-    logger.info('Retrying export signed URL refresh', { exportId });
-
-    return await mintSignedDownloadUrl({ processInstanceId, fileName });
-  }
-};
-
-/**
  * Re-sign a stale export URL in place and cache the result.
  *
- * A still-good URL is left alone. A failed signature marks the record `failed`,
- * since the bucket is private and a lapsed signature is a dead link rather than
- * a degraded one, and leaves the cache untouched so nothing is persisted about
- * it. A failed cache write still returns the fresh URL, and the next read
- * re-signs again.
+ * A still-good URL is left alone. A failed signature drops the URL from the
+ * record — the bucket is private, so a lapsed signature is a dead link, not a
+ * degraded one — and leaves the cache untouched, so the client's retry re-reads
+ * a record still marked `completed`. A failed cache write still returns the
+ * fresh URL, and the next read re-signs again.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
@@ -257,11 +225,9 @@ const refreshStaleSignedUrl = async ({
   // the whole record, which sends the button to its error boundary.
   // `createSBServiceClient` throws synchronously, so it is inside the try.
   try {
-    exportStatus.signedUrl = await signWithOneRetry({
+    exportStatus.signedUrl = await mintSignedDownloadUrl({
       processInstanceId: exportStatus.processInstanceId,
       fileName,
-      exportId,
-      logger,
     });
     exportStatus.urlExpiresAt = new Date(
       Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
@@ -269,42 +235,17 @@ const refreshStaleSignedUrl = async ({
 
     await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
   } catch (error) {
-    // No signature means no usable link. Leaving the record `completed` with the
-    // URL dropped would be a silent dead end: the client treats a completed
-    // export as settled, so it stops waiting and shows neither a download nor an
-    // error. `failed` is the one terminal state the client surfaces, and it puts
-    // the admin back on a button they can press again — re-exporting rebuilds
-    // the file, so a fresh run is the recovery path rather than this record.
+    // A completed export with no usable URL, reported as exactly that.
     //
-    // No `errorMessage`: the client renders whatever is here verbatim and only
-    // falls back to a translated string when it is absent, so supplying one
-    // would put untranslated English in front of an Arabic or Spanish admin. The
-    // detail belongs in the log, which no user reads.
-    //
-    // The cached record is left `completed` rather than rewritten, so nothing is
-    // persisted about a failure that may be momentary.
+    // Not `failed`: the run did succeed and the object is still in the bucket,
+    // so the only thing missing is a signature — and reporting a terminal
+    // failure makes the client discard the export id, turning one unlucky
+    // signing call into a full re-export of up to a thousand proposals. Not the
+    // lapsed URL either, which renders as a download that 400s. The client
+    // offers a retry for this state, and the cached record is left untouched so
+    // that retry re-reads a record still marked `completed`.
     logger.error('Failed to re-sign export URL', { exportId, error });
 
     exportStatus.signedUrl = undefined;
-    exportStatus.status = 'failed';
   }
-};
-
-/**
- * Whether a completed export's download URL needs re-signing.
- *
- * A missing or unparseable expiry counts as lapsed. `new Date('nonsense') <
- * new Date()` is false, so treating the comparison as the whole test would read
- * a garbled timestamp as *fresh* and keep serving whatever `signedUrl` the
- * record holds — a dead one, or none at all — for the rest of its 24h life.
- * Erring towards a re-sign costs one signing call and is self-correcting.
- */
-const isSignedUrlLapsed = (urlExpiresAt: string | undefined): boolean => {
-  if (!urlExpiresAt) {
-    return true;
-  }
-
-  const expiresAt = Date.parse(urlExpiresAt);
-
-  return Number.isNaN(expiresAt) || expiresAt < Date.now();
 };

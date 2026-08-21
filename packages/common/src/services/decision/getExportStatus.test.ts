@@ -161,11 +161,12 @@ describe('getExportStatus', () => {
     });
   });
 
-  // This used to be swallowed, leaving the lapsed URL on the record for the
-  // client to render as a download that 400s. Reported as `failed` rather than
-  // as a `completed` export with no URL, because the client treats completed as
-  // settled and would show neither a download nor an error.
-  it('reports a failed re-sign as a terminal failure, not a URL-less success', async () => {
+  // Three shapes were possible here and two are wrong: keeping the lapsed URL
+  // renders a download that 400s, and reporting `failed` makes the client
+  // discard the export id — turning one unlucky signing call into a full
+  // re-export of a run that actually succeeded. What is left is a completed
+  // export with no URL, which the button renders as a retry.
+  it('reports a completed export with no URL when signing fails', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
       data: null,
@@ -178,24 +179,20 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    // Retried once before reporting failure, so a momentary Storage error does
-    // not cost the admin a re-export.
-    expect(createSignedUrl).toHaveBeenCalledTimes(2);
-    expect(result).toMatchObject({ status: 'failed' });
+    expect(result).toMatchObject({ status: 'completed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
     // No server-minted message: the client renders `errorMessage` verbatim and
     // only reaches its translated fallback when the field is absent.
     expect((result as { errorMessage?: string }).errorMessage).toBeUndefined();
-    // The cached record is left `completed` rather than rewritten, so nothing is
-    // persisted about a failure that may be momentary.
+    // The record is left as it is, so the retry re-reads one still marked
+    // `completed` and signs again.
     expect(set).not.toHaveBeenCalled();
   });
 
   // `createSBServiceClient` throws synchronously when SUPABASE_SERVICE_ROLE is
   // unset. An escaped throw 500s the query and costs the caller the record
-  // itself. Reporting the export as failed is survivable. Losing the record is
-  // not.
-  it('reports a failure when the storage client cannot be built', async () => {
+  // itself. Losing the download link is survivable. Losing the record is not.
+  it('keeps serving the record when the storage client cannot be built', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     vi.mocked(createSBServiceClient).mockImplementation(() => {
       throw new Error('SUPABASE_SERVICE_ROLE is not set.');
@@ -207,7 +204,7 @@ describe('getExportStatus', () => {
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
-    expect(result).toMatchObject({ status: 'failed' });
+    expect(result).toMatchObject({ status: 'completed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 
@@ -284,7 +281,7 @@ describe('getExportStatus', () => {
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(result).toMatchObject({ status: 'failed' });
+    expect(result).toMatchObject({ status: 'completed' });
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 
@@ -347,7 +344,9 @@ describe('getExportStatus', () => {
     );
   });
 
-  it('recovers from a transient signing failure on the retry', async () => {
+  // The recovery path the client's retry drives: the same record, read again,
+  // signs successfully and comes back with a live URL.
+  it('signs successfully when a later read finds storage healthy', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl
       .mockResolvedValueOnce({ data: null, error: { message: 'try again' } })
@@ -356,13 +355,20 @@ describe('getExportStatus', () => {
         error: null,
       });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const failed = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(result).toMatchObject({
+    expect((failed as { signedUrl?: string }).signedUrl).toBeUndefined();
+
+    const retried = await getExportStatus({
+      exportId: EXPORT_ID,
+      user,
+      logger,
+    });
+
+    expect(retried).toMatchObject({
       status: 'completed',
       signedUrl: 'https://storage.example/fresh-url',
     });
-    expect(logger.error).not.toHaveBeenCalled();
   });
 
   // "Still valid" means unexpired and able to download, so the URL here carries

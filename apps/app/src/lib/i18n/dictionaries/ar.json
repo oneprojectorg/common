@@ -1544,6 +1544,7 @@
   "Download CSV": "تنزيل CSV",
   "Failed to start export": "تعذّر بدء التصدير",
   "Export failed": "فشل التصدير",
+  "Retry download": "إعادة محاولة التنزيل",
   "Export timed out. Please try again.": "انتهت مهلة التصدير. يرجى المحاولة مرة أخرى.",
   "Couldn't check the export's status. It may still be running.": "تعذّر التحقق من حالة التصدير. قد تكون لا تزال قيد التنفيذ.",
   "Export all": "تصدير الكل",
