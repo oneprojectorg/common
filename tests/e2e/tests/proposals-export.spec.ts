@@ -250,22 +250,23 @@ test.describe('Proposals CSV export', () => {
     // regression there returns the same symptom.
     expect(download.headers()['content-disposition']).toContain('attachment');
     expect(download.headers()['content-type']).toContain('text/csv');
-
-    // The property the private bucket exists for: the same object must not be
-    // readable without the signature. Exports used to live in `assets`, which
-    // next.config.mjs serves from its public object root, so this same fetch
-    // returned the CSV — submitter names and all — to anyone holding the path.
-    // Asserted here rather than in a unit test because the bucket's visibility
-    // comes from provisioning (supabase/*.toml, migrate.ts, the test seed) and
-    // only a really-provisioned bucket can confirm the three agree.
+    // This is the property the private bucket exists for. A reader without the
+    // signature must not get the object. Exports lived in `assets` before, and
+    // next.config.mjs serves that bucket from its public object root. This same
+    // fetch then returned the CSV, submitter names included, to any reader who
+    // held the path.
+    //
+    // This belongs here rather than in a unit test. Three places provision the
+    // bucket's visibility: `supabase/*.toml`, `migrate.ts`, and the test seed.
+    // Only a provisioned bucket confirms that the three agree.
     const unsignedUrl = new URL(signedUrl as string);
     unsignedUrl.search = '';
     unsignedUrl.pathname = unsignedUrl.pathname.replace(
       '/object/sign/',
       '/object/public/',
     );
-    // Guards the rewrite above: if the signed-URL shape ever changes, this
-    // assertion fails loudly instead of silently re-fetching the signed URL.
+    // This guards the rewrite above. A change to the signed-URL shape fails
+    // this assertion, instead of fetching the signed URL again in silence.
     expect(unsignedUrl.pathname).toContain('/object/public/');
 
     const unsigned = await request.get(unsignedUrl.toString());

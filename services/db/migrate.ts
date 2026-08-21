@@ -40,10 +40,11 @@ await supabase.storage.createBucket('avatars', {
   fileSizeLimit: 50 * 1024 * 1024,
 });
 
-// Proposal exports, kept out of the public buckets above because an export CSV
-// carries proposal submitter names: reading one requires a signed URL. The name
-// must match `EXPORTS_BUCKET` in @op/common, spelled out here the same way
-// `assets` and `avatars` are — `services/db` does not depend on `@op/common`.
+// Proposal exports stay out of the public buckets above. An export CSV carries
+// proposal submitter names, so a reader must present a signed URL. The name
+// must match `EXPORTS_BUCKET` in @op/common. It is spelled out here, the same
+// way `assets` and `avatars` are, because `services/db` does not depend on
+// `@op/common`.
 const EXPORTS_BUCKET_CONFIG = {
   public: false,
   fileSizeLimit: 50 * 1024 * 1024,

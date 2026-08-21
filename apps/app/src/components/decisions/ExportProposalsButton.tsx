@@ -126,15 +126,16 @@ const ExportStatusUnreadable = ({
 };
 
 /**
- * What a finished export offers: the download, or a retry when its URL could
- * not be signed.
+ * Renders what a finished export offers. That is the download, or a retry when
+ * the server could not sign a URL.
  *
- * The URL-less case is a real state, not an edge case to ignore. The run
- * succeeded and the object is in the bucket — only the signature is missing —
- * so the server reports a completed export without a URL rather than a terminal
- * failure, and re-reading the record is the whole recovery. Falling through to
- * the idle button instead would leave the admin with no download and no reason
- * given.
+ * The state without a URL is a real state. The run succeeded and the object
+ * remains in the bucket, and only the signature is missing. The server
+ * therefore reports a completed export with no URL instead of a failure, and
+ * re-reading the record recovers it.
+ *
+ * A fall through to the idle button would leave the admin with no download and
+ * no stated reason.
  */
 const CompletedExportAction = ({
   signedUrl,
@@ -151,10 +152,10 @@ const CompletedExportAction = ({
 }) => {
   const t = useTranslations();
 
-  // The export settles without a navigation, and settling swaps this control
-  // for a different element — so a screen reader following the button is given
-  // no reason to look again. Announced from here rather than from the branches
-  // below so both settled states report through one region.
+  // The export settles without a navigation. Settling also swaps this control
+  // for a different element, so a screen reader that follows the button gets no
+  // reason to look again. This region announces both settled states, so the two
+  // branches below do not each need one.
   const settledAnnouncement = signedUrl
     ? t('Export ready')
     : t('Could not prepare the download. Please try again.');
@@ -175,9 +176,9 @@ const CompletedExportAction = ({
             void onRetry();
           }}
           disabled={isRetrying}
-          // Said explicitly for the same reason the idle button below says it:
-          // on its own, `disabled` reads as "unavailable" to a screen reader,
-          // which is not what a retry in flight is.
+          // The idle button below sets this for the same reason. A screen
+          // reader reports `disabled` on its own as "unavailable", and a retry
+          // in flight is not unavailable.
           aria-busy={isRetrying}
         >
           <LuDownload aria-hidden />
@@ -325,9 +326,9 @@ const ExportProposalsButtonContent = ({
     return () => clearTimeout(timer);
   }, [isRunning, reportedState, t]);
 
-  // `throwOnError` above deliberately stops escalating once a record is
-  // `completed`, so a retry that fails lands here rather than on the boundary.
-  // Without acting on it the button would look like it did nothing.
+  // `throwOnError` above stops escalating once a record is `completed`. A
+  // failed retry therefore lands here instead of on the error boundary. This
+  // handler must report it, or the button looks like it did nothing.
   const handleRetryDownload = async () => {
     const { data, error } = await refetchStatus();
     const outcome = resolveExportRetryOutcome({
@@ -357,8 +358,8 @@ const ExportProposalsButtonContent = ({
         fileName={status.fileName}
         isRetrying={isFetchingStatus}
         onRetry={handleRetryDownload}
-        // One file per run: once taken, fall back to the idle button so a later
-        // export is not confused with this one.
+        // Each run produces one file. Once the admin takes it, the control
+        // returns to idle, so a later export cannot be confused with this one.
         onTaken={() => setExportId(null)}
       />
     );

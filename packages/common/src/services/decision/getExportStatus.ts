@@ -20,13 +20,13 @@ import {
 /**
  * Does a stored signed URL ask Supabase for an attachment?
  *
- * `exportDownloadOptions` sets a `download` query param. That param is what
- * makes the CSV save instead of render, so expiry alone does not tell you
+ * `exportDownloadOptions` sets a `download` query parameter. That parameter
+ * makes the CSV save instead of render. Expiry alone therefore does not report
  * whether a stored URL still works.
  *
- * Takes `unknown` because the cached record is an unvalidated cast over Redis
- * JSON. This runs outside the re-sign's catch, so a non-string must return
- * false rather than throw.
+ * The parameter is `unknown` because the cached record is an unvalidated cast
+ * over Redis JSON. This runs outside the re-sign's catch, so a non-string must
+ * return false rather than throw.
  */
 const servesAsAttachment = (signedUrl: unknown): boolean => {
   if (typeof signedUrl !== 'string') {
@@ -53,10 +53,11 @@ export interface ExportStatusData {
 }
 
 /**
- * The logging surface this module needs, taken from the real {@link Logger} so
- * the two signatures cannot drift from what callers actually pass. A structural
- * literal would also have accepted `Record<string, unknown>` for the metadata,
- * which is the escape hatch this codebase avoids.
+ * The logging methods this module needs.
+ *
+ * The type derives from {@link Logger}, so it cannot drift from what a caller
+ * passes. A structural literal would accept `Record<string, unknown>` for the
+ * metadata, and this codebase avoids that escape hatch.
  */
 type ExportStatusLogger = Pick<Logger, 'info' | 'error'>;
 
@@ -71,12 +72,11 @@ export const getExportStatus = async ({
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   const key = exportStatusCacheKey(exportId);
 
-  // Read the cache in a way that keeps "no such export" apart from "the cache
-  // could not answer". Both used to arrive as `null`, and reporting the second
-  // as `not_found` is not a cosmetic error: export state lives only here, and
-  // the client retires the export id on that answer. One Redis timeout would
-  // discard a finished run of up to a thousand proposals, with the toast beside
-  // it telling the admin to retry something no longer on screen.
+  // Keep "no such export" apart from "the cache did not answer". Both arrived
+  // as `null` before. Export state lives only in the cache, and the client
+  // retires the export id when it reads `not_found`. One Redis timeout
+  // therefore discarded a finished run of up to a thousand proposals. The toast
+  // beside it told the admin to retry a control no longer on screen.
   const cached = await getWithStatus(key);
 
   if (cached.status === 'timeout' || cached.status === 'error') {
@@ -132,21 +132,29 @@ export const getExportStatus = async ({
 };
 
 /**
- * How much life a stored URL needs to be worth returning.
+ * The margin within which this module treats a URL as already lapsed.
  *
- * Without a margin, a URL with seconds left reads as fresh and then dies before
- * the click. The button drops its export id on click, so the admin has to
- * re-run the whole export.
+ * Without a margin, a URL with seconds left passes as fresh. The client then
+ * receives it, and it answers 400 when the admin clicks. The admin sees no
+ * error, because taking the download clears the export id.
+ *
+ * The margin also absorbs clock skew between this process and storage. A margin
+ * that fires early costs one signing call.
  */
 const URL_EXPIRY_MARGIN_MS = 60 * 1000;
 
 /**
- * Is a stored export URL unusable?
+ * Reports whether a completed export needs a new download URL.
  *
- * Three cases make it so. The URL has expired, or expires within
+ * Three cases call for one. The URL has expired, or expires within
  * {@link URL_EXPIRY_MARGIN_MS}. The URL predates the download option, so it
- * renders instead of saving however long it has left. Or the expiry is missing
- * or unreadable, which is no evidence of a working URL.
+ * renders instead of saving. The expiry is missing or unparseable, which is no
+ * evidence of a working URL.
+ *
+ * A missing or unparseable expiry counts as lapsed for a reason.
+ * `new Date('nonsense') < new Date()` is false, so a bare comparison reads a
+ * garbled timestamp as fresh. The record would then serve whatever `signedUrl`
+ * it holds, dead or absent, for the rest of its 24 hour life.
  *
  * Only `fileName` is required. It rebuilds the storage key.
  */
@@ -176,11 +184,11 @@ const needsFreshUrl = ({
 /**
  * Sign an attachment-serving download URL for an export's stored file.
  *
- * Service-role client: every `storage.objects` policy is scoped to
+ * This uses the service-role client. Every `storage.objects` policy scopes to
  * `bucket_id = 'assets'`, so a caller-scoped client cannot sign in this bucket.
- * Callers settle authorization first, as they do for `getProposal`.
+ * The caller settles authorization first, as it does for `getProposal`.
  *
- * Throws on failure, so one caller decides what a failed re-sign costs.
+ * This throws on failure, so one caller decides what a failed re-sign costs.
  */
 const mintSignedDownloadUrl = async ({
   processInstanceId,
@@ -208,11 +216,12 @@ const mintSignedDownloadUrl = async ({
 /**
  * Re-sign a stale export URL in place and cache the result.
  *
- * A still-good URL is left alone. A failed signature drops the URL from the
- * record — the bucket is private, so a lapsed signature is a dead link, not a
- * degraded one — and leaves the cache untouched, so the client's retry re-reads
- * a record still marked `completed`. A failed cache write still returns the
- * fresh URL, and the next read re-signs again.
+ * A still-good URL stays as it is. A failed signature drops the URL from the
+ * record, because the bucket is private and a lapsed signature is a dead link
+ * rather than a degraded one. It also leaves the cache alone, so the client's
+ * retry re-reads a record still marked `completed`.
+ *
+ * A failed cache write still returns the fresh URL. The next read re-signs.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
@@ -227,12 +236,15 @@ const refreshStaleSignedUrl = async ({
 
   if (!fileName) {
     if (exportStatus.status === 'completed') {
-      // Should not happen: the workflow writes `fileName` and `completed` in one
-      // update. Reported as a terminal failure rather than passed over, because
-      // returning the record untouched reads to the client as a completed export
-      // it can retry — and every retry lands back here, so the button never
-      // resolves and never clears. Absent a file name there is nothing to sign
-      // and no later read grows one.
+      // The workflow writes `fileName` and `completed` in one update, so this
+      // branch should not run. Reaching it means another writer disagrees with
+      // the workflow.
+      //
+      // This reports a terminal failure rather than passing the record over.
+      // Returning the record untouched reads to the client as a completed export
+      // it can retry, and every retry lands back here. The button would never
+      // resolve and never clear. Without a file name there is nothing to sign,
+      // and no later read supplies one.
       logger.error('Completed export has no file name', { exportId });
 
       exportStatus.status = 'failed';
@@ -265,22 +277,25 @@ const refreshStaleSignedUrl = async ({
   } catch (error) {
     logger.error('Failed to re-sign export URL', { exportId, error });
 
-    // Whatever happened, the lapsed URL does not go back on the record: it
-    // renders as a download that 400s.
+    // The lapsed URL does not go back on the record, whatever failed. It
+    // renders as a download that answers 400.
     exportStatus.signedUrl = undefined;
 
-    // A missing object is permanent for this record — retrying can only fail the
-    // same way — so report a terminal failure and let the admin start a fresh
-    // run. Without this, a record whose file is genuinely gone (every export
-    // cached across the deploy that moved buckets, for one) would offer a retry
-    // that could never succeed until its 24h TTL ran out.
+    // A missing object is permanent for this record. A retry fails the same
+    // way, so this reports a terminal failure and the admin starts a fresh run.
+    // Without it, a record whose file is gone offers a retry that never
+    // succeeds until the 24 hour time-to-live (TTL) expires. Every export
+    // cached across the deploy that moved buckets is such a record.
     //
-    // Anything else may be momentary. The run succeeded and the object is still
-    // there, so the record stays `completed` with no URL, which the client
-    // offers to retry — rather than a terminal failure that would make it
-    // discard the export id and cost a re-export of up to a thousand proposals.
-    // The cached record is left untouched either way, so a retry re-reads one
-    // still marked `completed`.
+    // Any other failure may be momentary. The run succeeded and the object
+    // remains in the bucket, so the record stays `completed` with no URL. The
+    // client offers a retry for that state.
+    //
+    // A terminal failure there would make the client discard the export id, and
+    // cost a re-export of up to a thousand proposals.
+    //
+    // This leaves the cached record alone either way, so a retry re-reads a
+    // record still marked `completed`.
     if (isPermanentlyGone(error)) {
       exportStatus.status = 'failed';
     }
@@ -288,14 +303,16 @@ const refreshStaleSignedUrl = async ({
 };
 
 /**
- * Is a signing failure a file that is gone rather than a momentary fault?
+ * Reports whether a signing failure means the file is gone for good.
  *
- * Matched on the message because nothing else distinguishes the two: this
- * Supabase build answers `status` 400 for every signing failure, with no code to
- * key on. Both wordings are checked — this build answers "Object not found" even
- * for a missing bucket, but storage-api has a distinct `NoSuchBucket` that reads
- * "Bucket not found", and either way the file is unreachable for good. A wording
- * this misses degrades to the retryable branch, which is the safe direction.
+ * The check matches on the message because nothing else separates the two
+ * cases. This Supabase build answers `status` 400 for every signing failure,
+ * and supplies no error code.
+ *
+ * The check covers two wordings. This build answers "Object not found" even for
+ * a missing bucket. storage-api has a distinct `NoSuchBucket` that reads
+ * "Bucket not found". Either wording means the file is unreachable. A wording
+ * this check misses falls to the retryable branch, which is the safe direction.
  */
 const PERMANENT_SIGNING_FAILURES = ['Object not found', 'Bucket not found'];
 

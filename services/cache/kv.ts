@@ -26,10 +26,11 @@ const RACE_TIMEOUT: unique symbol = Symbol('cache.race-timeout');
 // record `hit` / `miss` / `timeout` separately so a Redis slowdown does
 // not masquerade as a cold cache.
 //
-// `miss` means Redis answered and held nothing. `timeout` and `error` both mean
-// it did not answer, which is a different claim: a caller that treats them as a
-// miss asserts the key is absent when all it knows is that it could not look.
-// Callers holding cache-only state need that distinction — see `getWithStatus`.
+// `miss` means Redis answered and held nothing. `timeout` and `error` mean
+// Redis did not answer, which is a different claim. A caller that treats them
+// as a miss states the key is absent, when it only knows it could not look.
+// A caller that holds cache-only state needs that distinction. See
+// `getWithStatus`.
 export type RedisGetResult =
   | { status: 'hit'; data: unknown }
   | { status: 'miss' }
@@ -350,14 +351,15 @@ export const get = async (key: string) => {
 };
 
 /**
- * Read a key, keeping "Redis held nothing" apart from "Redis did not answer".
+ * Reads a key. Keeps "Redis held nothing" apart from "Redis did not answer".
  *
- * {@link get} collapses both to `null`, which is right for anything that can
- * re-derive its value from the source on a miss. It is wrong for cache-only
- * state, where absence is load-bearing: answering "no such record" because a
- * command timed out invites the caller to discard something that is still
- * there. Reach for this when a false miss costs the user data rather than a
- * round trip.
+ * {@link get} collapses both to `null`. That suits any caller that can
+ * re-derive its value from the source on a miss.
+ *
+ * It does not suit cache-only state, where absence carries meaning. A caller
+ * that reads "no such record" after a command timed out can discard a record
+ * that is still there. Use this function when a false miss costs the user data
+ * instead of one round trip.
  */
 export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
   tryGetFromRedis(key);
