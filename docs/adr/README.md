@@ -20,6 +20,9 @@ those.
 If you are unsure, ask in review. A reviewer who cannot tell why a structural
 change was made will ask for an ADR.
 
+This paragraph is the single definition of the threshold. Elsewhere — in
+`CONTRIBUTING.md`, `CLAUDE.md`, or an ADR — link here rather than restating it.
+
 ## How to write one
 
 1. Copy [`adr-template.md`](./adr-template.md) to
@@ -36,7 +39,8 @@ tables", not "Drizzle relations".
 
 ## Status lifecycle
 
-Set `status` in the frontmatter to exactly one of:
+The upstream template leaves the status set open. We narrow it to these five —
+if you need one that is not here, add it in the same PR and say why:
 
 | Status | Meaning |
 | --- | --- |
@@ -50,15 +54,11 @@ Merging an ADR that is `proposed` is the signal to move it to `accepted`.
 
 ## Superseding a decision
 
-**Never rewrite the reasoning in an accepted ADR.** The record of what we
-believed at the time is the point of the exercise.
+A reversal is a new ADR, not an edit. Write one that states the new decision and
+why the old one no longer holds, then in the old ADR set `status` to
+`superseded by ADR-NNNN`, bump `date`, and link forward under "More
+Information".
 
-To reverse a decision:
-
-1. Write a new ADR that states the new decision and why the old one no longer
-   holds. Reference the old number.
-2. In the old ADR, change only `status` to `superseded by ADR-NNNN`, and add the
-   link under "More Information".
-
-Correcting a typo or a broken link in an accepted ADR is fine. Changing what it
-decided is not.
+**Do not rewrite the reasoning in a superseded ADR.** The record of what we
+believed at the time is the point of the exercise. Fixing a typo or a dead link
+is fine; changing what it decided is not.

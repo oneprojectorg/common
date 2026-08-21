@@ -58,9 +58,9 @@ the repo, so it satisfies the checkout, grep and no-tooling drivers as well.
 
 ### Confirmation
 
-An ADR is warranted for a decision that is costly to reverse and touches more
-than one workspace. Code review is the check: a reviewer who cannot tell why a
-structural change was made asks for an ADR before approving.
+Code review is the check. [README.md](./README.md) defines when an ADR is
+warranted; a reviewer who cannot tell why a structural change was made asks for
+one before approving.
 
 ## Pros and Cons of the Options
 
@@ -72,8 +72,6 @@ The template published at <https://adr.github.io/adr-templates/>, maintained at
 * Good, because it asks for considered options and pros and cons by name.
 * Good, because YAML frontmatter carries status and date as data, not prose.
 * Good, because it is widely used, so the shape is familiar to new hires.
-* Neutral, because the full template has more sections than a small decision
-  needs. They are marked optional.
 
 ### Nygard's original five-section ADR
 
@@ -108,6 +106,26 @@ accepting D."
 
 The parent proposal is tracked in Asana as "ADR Proposal". This record is the
 first ADR, and its own subject: it uses the template it adopts.
+
+### Relationship to `.specify/memory/constitution.md`
+
+A second normative document already exists at
+`.specify/memory/constitution.md`. It encodes several standing rules that would
+otherwise be ADR material — the design-system boundary, the authorization model,
+database access patterns — and its Governance section claims to supersede "all
+other development practices and guidelines".
+
+In practice its scope is the `.specify` spec-kit workflows that reference it
+(`/analyze`, `/constitution`); nothing else in the repo reads it, and it has
+drifted from current practice since it was last amended on 2025-09-26. This ADR
+does not attempt to reconcile the two. Which document governs, and whether the
+constitution's principles should be migrated into ADRs or left as they are, is
+an open question for the team — worth its own ADR.
+
+Until that is settled, treat the constitution as authoritative inside
+`/analyze`-driven spec work and ADRs as authoritative elsewhere.
+
+### Status
 
 Status is `proposed`, not `accepted` — merging this file is the team's signal to
 change it. See [README.md](./README.md) for the process.
