@@ -12,13 +12,12 @@ Consequences — from
 ## When to write one
 
 Write an ADR when a decision is costly to reverse and hard to infer from the
-code. It does not have to span workspaces: a decision that shapes one package
-for years qualifies. Examples: an ORM query API, the authorization model, a
+code. A decision that shapes one package for years qualifies; it does not have
+to span workspaces. Examples: an ORM query API, the authorization model, a
 data-migration strategy.
 
 Skip it for a decision the code explains, a cheap choice, or a bug fix. Ask in
-review when you are unsure. This section is the only definition of the
-threshold: link here instead of restating it.
+review when you are unsure.
 
 ## How to write one
 
@@ -26,15 +25,11 @@ threshold: link here instead of restating it.
 2. Take the next free `NNNN`. Use four digits, and never reuse a number.
 3. Open a pull request. Review of the ADR is the decision meeting.
 
-Title the file and the heading with the same words, and write the title as a
-statement: "Use Drizzle relations v2 for new tables", not "Drizzle relations".
-
-Two branches can take one number without a git conflict, because the slugs
-differ. Renumber before you merge if another pull request took yours.
+Write the title as a statement: "Use Drizzle relations v2 for new tables", not
+"Drizzle relations". Renumber before you merge if another open pull request took
+your number.
 
 ## Status
-
-The Status section holds one of these five values:
 
 | Status | Meaning |
 | --- | --- |
@@ -44,15 +39,13 @@ The Status section holds one of these five values:
 | `Deprecated` | No longer relevant. Nothing replaced it. |
 | `Superseded by ADR-NNNN` | Replaced. Points at the replacement. |
 
-Most ADRs are Accepted when they merge, because approval is the decision. Use
-Proposed to get discussion without commitment. Whoever merges it then sets it to
-Accepted in a follow-up pull request.
+Set Accepted when the ADR merges. Use Proposed only to get discussion without
+commitment; whoever merges it then sets Accepted.
 
 ## Superseding a decision
 
-A reversal is a new ADR, not an edit. Write one that states the new decision and
-why the old one failed. Then set the old ADR's Status to
-`Superseded by ADR-NNNN` and link forward.
+A reversal is a new ADR, not an edit. Write the new ADR, then set the old one's
+Status to `Superseded by ADR-NNNN` and link forward.
 
 Never rewrite the reasoning in a superseded ADR. Fix a typo, but do not change
 what it decided.
