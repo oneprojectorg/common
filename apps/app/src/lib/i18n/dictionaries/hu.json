@@ -1690,5 +1690,6 @@
   "Proposal unassigned from {name}": "A javaslat hozzárendelése visszavonva tőle: {name}",
   "Unassigning…": "Hozzárendelés visszavonása…",
   "Could not unassign — the assignment has changed.": "Nem sikerült visszavonni a hozzárendelést: a hozzárendelés megváltozott.",
-  "Could not unassign the proposal. Please try again.": "Nem sikerült visszavonni a javaslat hozzárendelését. Kérjük, próbálja újra."
+  "Could not unassign the proposal. Please try again.": "Nem sikerült visszavonni a javaslat hozzárendelését. Kérjük, próbálja újra.",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "A(z) {appName} csak meghívóval érhető el! Felkerült a várólistára. Tartsa szemmel a postaládáját a frissítésekért."
 }

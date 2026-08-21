@@ -1690,5 +1690,6 @@
   "Contributing ideas could not be loaded": "Contributing ideas could not be loaded",
   "Feedback": "Feedback",
   "Notes reviewers shared while this proposal was under review": "Notes reviewers shared while this proposal was under review",
-  "Reviewer · {timeAgo}": "Reviewer · {timeAgo}"
+  "Reviewer · {timeAgo}": "Reviewer · {timeAgo}",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates."
 }

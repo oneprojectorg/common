@@ -1690,5 +1690,6 @@
   "Voting (max {count} per member)": "Votação (máx. {count} por membro)",
   "Vote editing": "Edição de votos",
   "Advances manually": "Avança manualmente",
-  "Advances by date": "Avança por data"
+  "Advances by date": "Avança por data",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "O {appName} é apenas por convite! Você agora está na lista de espera. Fique de olho na sua caixa de entrada para novidades."
 }

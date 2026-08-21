@@ -1,16 +1,6 @@
 import { cache } from '@op/cache';
-import {
-  CommonError,
-  UnauthorizedError,
-  ValidationError,
-  getAllowListUser,
-} from '@op/common';
-import {
-  APP_NAME,
-  adminEmails,
-  allowedEmailDomains,
-  genericEmail,
-} from '@op/core';
+import { CommonError, ValidationError, getAllowListUser } from '@op/common';
+import { adminEmails, allowedEmailDomains, genericEmail } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import { z } from 'zod';
@@ -19,6 +9,19 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { createSBAdminClient, getCachedAuthUser } from '../../supabase/server';
 import { commonProcedure, router } from '../../trpcFactory';
 import type { TContext, TContextWithLogger } from '../../types';
+
+/**
+ * Being turned away by the invite gate is an expected product outcome, not a
+ * failure, so it comes back as a tagged union rather than a thrown error: a
+ * throw would land in the `error` log stream alongside real 500s, and would
+ * carry the user-facing copy as an English exception message that the app —
+ * the only layer with translations — could only string-match. `reason` is
+ * machine-readable; the caller maps it to localized copy.
+ */
+const loginResultSchema = z.discriminatedUnion('ok', [
+  z.object({ ok: z.literal(true) }),
+  z.object({ ok: z.literal(false), reason: z.literal('waitlisted') }),
+]);
 
 const login = router({
   login: commonProcedure
@@ -31,7 +34,7 @@ const login = router({
         usingOAuth: z.boolean().optional(),
       }),
     )
-    .output(z.boolean())
+    .output(loginResultSchema)
     .query(async ({ input, ctx }) => {
       const { logger } = ctx;
       const emailDomain = input.email.split('@')[1];
@@ -98,9 +101,12 @@ const login = router({
             await deleteRejectedOAuthSignup({ ctx, email: input.email });
           }
 
-          throw new UnauthorizedError(
-            `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
-          );
+          // The outcome, at `info`: this is an expected product decision, not a
+          // failure. The `Login attempt` line above shares this requestId and
+          // already carries the address, so the email is not repeated here.
+          logger.info('Login waitlisted - not invited', { emailDomain });
+
+          return { ok: false, reason: 'waitlisted' };
         }
       }
 
@@ -126,7 +132,7 @@ const login = router({
         }
       }
 
-      return true;
+      return { ok: true };
     }),
 });
 
@@ -164,7 +170,7 @@ const deleteRejectedOAuthSignup = async ({
   email: string;
 }): Promise<void> => {
   // Cleanup is best-effort: a failure here must not change the login
-  // response, the caller still throws UnauthorizedError.
+  // response, the caller still returns the waitlisted result.
   try {
     const {
       data: { user: authUser },

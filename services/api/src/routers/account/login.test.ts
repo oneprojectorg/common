@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -23,29 +24,29 @@ const createCaller = createCallerFactory(appRouter);
 // documents that all three caller kinds reach the handler identically.
 //
 // `usingOAuth: true` skips the OTP send side-effect, and an `@oneproject.org`
-// email clears the allow-list via `allowedEmailDomains`, so the handler returns
-// `true` regardless of who is calling.
+// email clears the allow-list via `allowedEmailDomains`, so the handler admits
+// the caller regardless of who is calling.
 const input = { email: 'gate@oneproject.org', usingOAuth: true };
 
 describeAccessTierGating('account.login', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+  noJwt: accessTierGatingCell('admits no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(caller.account.login(input)).resolves.toBe(true);
+    await expect(caller.account.login(input)).resolves.toEqual({ ok: true });
   }),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT caller',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expect(caller.account.login(input)).resolves.toBe(true);
+      await expect(caller.account.login(input)).resolves.toEqual({ ok: true });
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expect(caller.account.login(input)).resolves.toBe(true);
+      await expect(caller.account.login(input)).resolves.toEqual({ ok: true });
     },
   ),
 
@@ -53,7 +54,7 @@ describeAccessTierGating('account.login', {
     'admits network-JWT caller',
     async ({ callers }) => {
       const caller = await callers.networkJwt();
-      await expect(caller.account.login(input)).resolves.toBe(true);
+      await expect(caller.account.login(input)).resolves.toEqual({ ok: true });
     },
   ),
 });
@@ -86,7 +87,7 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
     const caller = await createAnonymousCaller();
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
   });
 
   it('admits a network-domain email with no account (first-time signup)', async () => {
@@ -95,16 +96,30 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
     const caller = await createAnonymousCaller();
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
   });
 
-  it('waitlists an uninvited email with no account', async () => {
+  // Resolving rather than throwing is the point: `withLogger` logs a failed
+  // result at `error` severity, so throwing here put every waitlisted signup —
+  // an expected outcome — in the same stream as real 500s. Resolving routes it
+  // through the `result.ok` branch instead, and the decision itself is recorded
+  // at `info`. (Asserted positively rather than as `logger.error` not-called:
+  // these tests are concurrent and share the module-level logger mock.)
+  it('waitlists an uninvited email with no account without throwing', async () => {
     const email = `stranger-${randomUUID()}@example.com`;
 
     const caller = await createAnonymousCaller();
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).rejects.toThrow(/invite-only/);
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'waitlisted',
+    });
+
+    expect(logger.info).toHaveBeenCalledWith(
+      'Login waitlisted - not invited',
+      expect.objectContaining({ path: 'account.login' }),
+    );
   });
 
   it('admits an allow-listed email with an existing account', async ({
@@ -115,7 +130,7 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
     const caller = await createAnonymousCaller();
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
   });
 
   it('admits a network-domain email with an existing account', async ({
@@ -129,7 +144,7 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
     const caller = await createAnonymousCaller();
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
   });
 
   it('admits an uninvited email with an existing account (claim-flow accounts)', async ({
@@ -140,6 +155,6 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
     const caller = await createAnonymousCaller();
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
   });
 });

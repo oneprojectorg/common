@@ -29,7 +29,10 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).rejects.toThrow(/invite-only/);
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'waitlisted',
+    });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
@@ -62,7 +65,10 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).rejects.toThrow(/invite-only/);
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'waitlisted',
+    });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
@@ -83,7 +89,10 @@ describe.concurrent('account.login: rejected OAuth sign-in cleanup', () => {
     const otherEmail = `oauth-orphan-${randomUUID()}@example.com`;
     await expect(
       caller.account.login({ email: otherEmail, usingOAuth: true }),
-    ).rejects.toThrow(/invite-only/);
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'waitlisted',
+    });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
@@ -106,7 +115,7 @@ describe.concurrent('account.login: existing claimed accounts', () => {
     const caller = createCaller(await createTestContextWithSession(null));
     await expect(
       caller.account.login({ email, usingOAuth: false }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
@@ -129,7 +138,7 @@ describe.concurrent('account.login: existing claimed accounts', () => {
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
@@ -176,12 +185,12 @@ describe.concurrent('account.login: existing claimed accounts', () => {
     const caller = createCaller(await createTestContextWithSession(null));
     await expect(
       caller.account.login({ email, usingOAuth: false }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
   });
 });
 
 describe.concurrent('account.login: accepted network-member sign-in', () => {
-  it('returns true and keeps the account for an allow-listed OAuth sign-in', async ({
+  it('admits an allow-listed OAuth sign-in and keeps the account', async ({
     onTestFinished,
   }) => {
     const { email, user, session, profileId } =
@@ -190,7 +199,7 @@ describe.concurrent('account.login: accepted network-member sign-in', () => {
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
@@ -207,7 +216,7 @@ describe.concurrent('account.login: accepted network-member sign-in', () => {
     expect(profileAfter).toBeDefined();
   });
 
-  it('returns true for an allow-listed email (OTP) sign-in', async ({
+  it('admits an allow-listed email (OTP) sign-in', async ({
     onTestFinished,
   }) => {
     const { email, user, session } =
@@ -216,14 +225,14 @@ describe.concurrent('account.login: accepted network-member sign-in', () => {
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
       caller.account.login({ email, usingOAuth: false }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);
     expect(authAfter?.user?.id).toBe(user.id);
   });
 
-  it('returns true and keeps the account for a network-domain OAuth sign-in', async ({
+  it('admits a network-domain OAuth sign-in and keeps the account', async ({
     onTestFinished,
   }) => {
     const { email, user, session, profileId } = await signUpConfirmedUser(
@@ -234,7 +243,7 @@ describe.concurrent('account.login: accepted network-member sign-in', () => {
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(
       caller.account.login({ email, usingOAuth: true }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ ok: true });
 
     const { data: authAfter } =
       await supabaseTestAdminClient.auth.admin.getUserById(user.id);

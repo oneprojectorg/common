@@ -1690,5 +1690,6 @@
   "Voting (max {count} per member)": "Codayn (ugu badnaan {count} xubin kasta)",
   "Vote editing": "Tifaftirka codadka",
   "Advances manually": "Gacan ayuu ku horumaraa",
-  "Advances by date": "Wuxuu ku horumaraa taariikh"
+  "Advances by date": "Wuxuu ku horumaraa taariikh",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "{appName} waa martiqaad kaliya! Hadda waxaad ku jirtaa liiska sugitaanka. Sanduuqaaga soo dhaca ila soco warbixinno cusub."
 }
