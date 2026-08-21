@@ -232,6 +232,9 @@ export function inferCriterionType(
  * it already reads as "No" before the reviewer touches it — so a required
  * criterion would otherwise demand a Yes→No round trip just to record the
  * value the UI was showing all along.
+ *
+ * Optional criteria are seeded too, on purpose: the switch shows "No" either
+ * way, so "skipped" is not a state the reviewer can see or express.
  */
 export function withYesNoDefaults(
   template: RubricTemplateSchema,
