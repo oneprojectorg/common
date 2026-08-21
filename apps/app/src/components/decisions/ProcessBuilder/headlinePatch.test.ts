@@ -17,6 +17,24 @@ describe('toOverviewInput', () => {
     });
   });
 
+  it('writes no key other than the headline', () => {
+    // Clearing the headline must not disturb the rest of the patch — the
+    // endpoint merges what it receives into the stored overview.
+    expect(
+      toOverviewInput({
+        headline: '',
+        description: 'Desc',
+        body: { type: 'doc', content: [] },
+        heroImage: 'decisions/hero.png',
+      }),
+    ).toEqual({
+      headline: null,
+      description: 'Desc',
+      body: { type: 'doc', content: [] },
+      heroImage: 'decisions/hero.png',
+    });
+  });
+
   it('leaves an untouched headline absent', () => {
     // An absent key means "unchanged" — adding `headline: null` here would
     // clear a headline the admin never edited.
@@ -39,6 +57,28 @@ describe('toPhasesInput', () => {
       { phaseId: 'a', headline: null },
       { phaseId: 'b', headline: 'Share your ideas' },
       { phaseId: 'c', name: 'No headline edit' },
+    ]);
+  });
+
+  it('writes no key other than the headline', () => {
+    expect(
+      toPhasesInput([
+        {
+          phaseId: 'a',
+          headline: '',
+          name: 'Submit',
+          endDate: '2026-01-01',
+          settings: { allowComments: true },
+        },
+      ]),
+    ).toEqual([
+      {
+        phaseId: 'a',
+        headline: null,
+        name: 'Submit',
+        endDate: '2026-01-01',
+        settings: { allowComments: true },
+      },
     ]);
   });
 
