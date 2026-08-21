@@ -5,7 +5,10 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
+import {
+  assertProposalReviewArtifactAccess,
+  proposalWithRevisionRequestsConfig,
+} from './reviewHelpers';
 
 /**
  * Proposal-scoped: revision requests on a single proposal. Visible to the
@@ -24,21 +27,24 @@ export async function listProposalRevisionRequests({
   states?: ProposalReviewRequestState[];
   user: User;
 }) {
-  const commonUser = await assertUserByAuthId(user.id);
+  // The proposal read doesn't depend on the caller's profile — resolve both at
+  // once, as `assertReviewAssignmentContext` does.
+  const [proposal, commonUser] = await Promise.all([
+    db.query.proposals.findFirst({
+      // Detached (CSAM) proposals return 404 — authors and reviewers alike
+      // should not see revision history on a taken-down row.
+      where: {
+        RAW: (table) =>
+          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+      },
+      with: proposalWithRevisionRequestsConfig(states),
+    }),
+    assertUserByAuthId(user.id),
+  ]);
 
   if (!commonUser.profileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
-
-  const proposal = await db.query.proposals.findFirst({
-    // Detached (CSAM) proposals return 404 — authors and reviewers alike
-    // should not see revision history on a taken-down row.
-    where: {
-      RAW: (table) =>
-        and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
-    },
-    with: proposalWithRevisionRequestsConfig(states),
-  });
 
   if (!proposal) {
     throw new NotFoundError('Proposal', proposalId);
@@ -49,13 +55,13 @@ export async function listProposalRevisionRequests({
     user,
   });
 
-  const isAuthor = proposal.submittedByProfileId === commonUser.profileId;
-
-  if (!isAuthor && !instance.access.admin && !instance.access.review) {
-    throw new UnauthorizedError(
-      "You don't have access to this proposal's revision requests",
-    );
-  }
+  await assertProposalReviewArtifactAccess({
+    artifact: 'revision requests',
+    instance,
+    profileId: commonUser.profileId,
+    proposal,
+    user,
+  });
 
   const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
 

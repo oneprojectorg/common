@@ -8,6 +8,7 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import type { DecisionRolePermissions } from './permissions';
@@ -86,6 +87,60 @@ export function proposalWithRevisionRequestsConfig(
       },
     },
   } as const;
+}
+
+/**
+ * Read gate shared by the proposal-scoped, reviewer-authored artifacts
+ * (revision requests, author feedback): the proposal's authors, decision
+ * admins, and any user with the REVIEW capability on the instance. Other
+ * participants — voters, plain members with READ — are rejected. `artifact`
+ * names the thing being read in the denial message.
+ *
+ * "Authors" is the proposal's own profile membership — the creator plus any
+ * invited collaborators (`profileUsers` on `proposal.profileId`) — which is
+ * the audience `getProposal` grants a draft/hidden/flagged proposal to and
+ * `resolveProposalListScope` scopes the list to. `submittedByProfileId` alone
+ * would miss co-authors, and misses the human behind an org-acting submitter
+ * (the profile recorded there is whichever profile was active at submit time,
+ * while the proposal-profile grant is keyed on the auth user). Kept as a union
+ * of the two so no caller who could read these artifacts before loses access.
+ * Fail-closed: no grant on the proposal profile means no author standing.
+ */
+export async function assertProposalReviewArtifactAccess({
+  artifact,
+  instance,
+  profileId,
+  proposal,
+  user,
+}: {
+  artifact: string;
+  instance: { access: Pick<DecisionRolePermissions, 'admin' | 'review'> };
+  profileId: string;
+  proposal: { profileId: string; submittedByProfileId: string | null };
+  user: AccessUser | undefined;
+}): Promise<void> {
+  if (instance.access.admin || instance.access.review) {
+    return;
+  }
+
+  if (proposal.submittedByProfileId === profileId) {
+    return;
+  }
+
+  // Only reached for a caller with neither instance capability nor the
+  // submitter profile — the co-author path.
+  const proposalRoles = await getProfileAccessRoles({
+    user,
+    profileId: proposal.profileId,
+  });
+
+  if (proposalRoles.length > 0) {
+    return;
+  }
+
+  throw new UnauthorizedError(
+    `You don't have access to this proposal's ${artifact}`,
+  );
 }
 
 /**
