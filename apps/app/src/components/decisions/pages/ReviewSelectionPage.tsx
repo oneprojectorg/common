@@ -3,6 +3,7 @@ import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
 import {
   getPhaseRubricTemplate,
   getRubricScoringInfo,
+  templateCollectsBudget,
 } from '@op/common/client';
 import {
   Empty,
@@ -44,6 +45,12 @@ export function ReviewSelectionPage({
     ? getRubricScoringInfo(rubricTemplate).criteria.some((c) => c.scored)
     : false;
 
+  // No budget key in the instance's proposal template means the process
+  // collects no budgets, so the column would only ever show "—".
+  const showBudget = templateCollectsBudget(
+    instance.instanceData?.proposalTemplate,
+  );
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
@@ -84,11 +91,17 @@ export function ReviewSelectionPage({
             }}
           >
             <Suspense
-              fallback={<ReviewSelectionListSkeleton showScore={showScore} />}
+              fallback={
+                <ReviewSelectionListSkeleton
+                  showScore={showScore}
+                  showBudget={showBudget}
+                />
+              }
             >
               <ReviewSelectionList
                 instance={instance}
                 previousPhaseId={previousPhaseId}
+                showBudget={showBudget}
               />
             </Suspense>
           </APIErrorBoundary>

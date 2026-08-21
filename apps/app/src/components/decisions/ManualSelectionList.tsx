@@ -4,6 +4,7 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import { templateCollectsBudget } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Empty,
@@ -250,6 +251,11 @@ export const ManualSelectionList = ({
 
   const proposals = filteredProposals;
   const numSelected = selectedIds.length;
+  // No budget key in the instance's proposal template means the process
+  // collects no budgets, so the column would only ever show "—".
+  const showBudget = templateCollectsBudget(
+    instance.instanceData?.proposalTemplate,
+  );
   const currentPhaseName =
     instance.instanceData?.phases?.find(
       (p) => p.phaseId === instance.currentStateId,
@@ -287,6 +293,7 @@ export const ManualSelectionList = ({
             `/decisions/${decisionSlug}/proposal/${p.profileId}`
           }
           showVotes={isFinalPhase}
+          showBudget={showBudget}
         />
       )}
 
