@@ -1,46 +1,47 @@
----
-status: "proposed"
-date: 2026-08-21
-decision-makers: Engineering
----
+# 1. Record architecture decisions
 
-# Record architecture decisions as ADRs
+Date: 2026-08-21
 
-## Context and Problem Statement
+## Status
+
+Proposed. Adopting the convention is the team's decision, not the author's.
+Approving this pull request makes it, and whoever merges then sets Status to
+Accepted.
+
+## Context
 
 The code shows what we chose. It does not show what we rejected, or why. That
 reasoning lives in pull requests and Asana threads, which are not in the
 checkout. So we re-argue settled questions, and we reverse decisions without
 seeing the original constraint.
 
-## Considered Options
+A record has to be findable in a checkout, greppable by an agent, and quick to
+write. A format that needs tooling to render, or that runs to several pages,
+will not get used.
 
-* MADR (Markdown Architectural Decision Records)
-* Nygard's five-section ADR
-* Y-statements
-* Status quo: pull requests and Asana threads
+`.specify/memory/constitution.md` already claims to supersede "all other
+development practices and guidelines", and it covers rules that are ADR
+material.
 
-## Decision Outcome
+## Decision
 
-Chosen option: MADR, because it is the only option that asks the author for the
-rejected alternatives. It is plain Markdown, so a reader needs no tool and an
-agent can grep it.
+We record architecture decisions in `docs/adr/`, using Nygard's five-section
+format: Title, Status, Context, Decision, Consequences. See
+[Documenting Architecture Decisions](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
 
-We use MADR's minimal template, not its full one. A long template produces long
-records, and nobody reads a long record.
+We keep it to five sections. A longer template produces longer records, and
+nobody reads a long record.
 
-### Consequences
+We do not reconcile this with the constitution here. For now the constitution
+governs the `.specify` workflows and ADRs govern everything else. That conflict
+needs its own ADR.
 
-* Good, because the reasoning sits next to the code, under version control.
-* Bad, because a stale record misleads. Superseding is cheap, but someone must do it.
+## Consequences
 
-## More Information
+The reasoning sits next to the code, under version control, so people and agents
+read the same file.
 
-`.specify/memory/constitution.md` claims to supersede "all other development
-practices and guidelines", and it covers rules that are ADR material. This ADR
-does not reconcile the two. For now the constitution governs the `.specify`
-workflows and ADRs govern everything else. The conflict needs its own ADR.
+Nothing in the format prompts an author for the alternatives they rejected. Put
+those in Context when they matter.
 
-This ADR is `proposed` because adopting the convention is the team's decision,
-not the author's. Approving this pull request makes it. Whoever merges then
-flips `status` to `accepted`.
+A stale record misleads. Superseding is cheap, but someone has to do it.

@@ -1,28 +1,20 @@
----
-# `status` and `date` are required. README.md reads both. The rest are optional.
-status: "{proposed | accepted | rejected | deprecated | superseded by ADR-0123}"
-date: {YYYY-MM-DD when the decision was last updated}
-decision-makers: {who decided}
----
+# NNNN. {short title: the problem and the chosen solution}
 
-# {short title: the problem and the chosen solution}
+Date: {YYYY-MM-DD}
 
-## Context and Problem Statement
+## Status
 
-{Two or three sentences, or a question. Name what is in scope.}
+{Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-NNNN}
 
-## Considered Options
+## Context
 
-* {option 1}
-* {option 2}
-* {option 3}
+{The problem, and the forces acting on it. Two or three sentences, or a
+question. Name what is in scope.}
 
-## Decision Outcome
+## Decision
 
-Chosen option: "{option 1}", because {justification}.
+{What we decided, in the active voice: "We will ...".}
 
-<!-- Optional. Remove it if you have nothing to add. -->
-### Consequences
+## Consequences
 
-* Good, because {consequence}
-* Bad, because {consequence}
+{What becomes easier, and what becomes harder.}
