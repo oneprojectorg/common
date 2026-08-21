@@ -37,9 +37,10 @@ export interface ExportProposalsButtonProps {
  * is not the instance's whole history, and the same button will produce a
  * different one once the instance advances.
  *
- * Kick off → wait to be told it finished → hand back a download link. The wait
- * is driven by a broadcast on the run's own channel rather than by polling, so
- * the file appears as soon as it exists instead of on the next tick.
+ * Kick off → wait to be told how it is going and then that it finished → hand
+ * back a download link. The wait is driven by broadcasts on the run's own
+ * channel rather than by polling, so the label follows the run and the file
+ * appears as soon as it exists instead of on the next tick.
  *
  * It is offered as an explicit link rather than an automatic download: the file
  * is built in the background, so downloading it the instant it arrives would
@@ -132,9 +133,10 @@ const ExportProposalsButtonContent = ({
     },
   });
 
-  // No polling: the workflow broadcasts on this export's channel when the run
-  // settles, and the subscriber re-reads on its own once the channel is live —
-  // which is what covers an export finishing before the socket join lands.
+  // No polling: the workflow broadcasts on this export's channel when it picks
+  // the job up and again when the run settles, and the subscriber re-reads on
+  // its own once the channel is live — which is what covers an export reaching
+  // either of those before the socket join lands.
   const { data: status } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId ?? '' },
     {
@@ -180,6 +182,10 @@ const ExportProposalsButtonContent = ({
   // run purely for being large — generation scales with proposal count, and the
   // ceiling on that is due to be lifted — while still waiting the full period
   // on a job that died a second after starting.
+  //
+  // The run speaks twice — `processing`, then a terminal state — so in practice
+  // this bounds silence since the job started working, and a single generation
+  // step that outlasts the period is still cut off.
   const reportedState = status?.status;
 
   // The run distinguishes accepted-but-not-started from actually-running, and
