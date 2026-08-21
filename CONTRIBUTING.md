@@ -39,6 +39,7 @@ We use a feature branch workflow based on the `dev` branch:
    ```bash
    pnpm w:app lint    # Type checking
    pnpm format        # Code formatting
+   pnpm spellcheck    # Spelling
    ```
 6. **Commit your changes** with descriptive messages
 7. **Push and create a pull request**
@@ -82,6 +83,16 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 - Use TypeScript strictly (no `any` types)
 - Write "self-documenting" code with clear variable names
 - Only use the design tokens defined in `@op/styles` — never arbitrary Tailwind values
+
+### Spelling
+
+`pnpm spellcheck` runs [typos](https://github.com/crate-ci/typos) over the
+repository. CI fails on a hit. `pnpm spellcheck:fix` applies the safe
+corrections. Neither command needs anything installed first.
+
+`_typos.toml` holds the configuration. Add a false positive there with a
+comment that gives the reason. Prefer `[default.extend-identifiers]`, which
+allows one identifier and keeps the word checked elsewhere.
 
 ### UI Components
 

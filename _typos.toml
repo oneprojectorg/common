@@ -1,0 +1,46 @@
+# Spell checker for source, comments, and English copy.
+# Run `pnpm spellcheck`. It installs the binary on first use.
+# https://github.com/crate-ci/typos
+
+[files]
+extend-exclude = [
+  # Drizzle generates these files. Nobody edits them by hand.
+  "services/db/migrations/",
+  # Taxonomy seed rows hold multilingual data, not prose.
+  "services/db/seedData/",
+  # typos reads English only. Every other locale produces false positives.
+  # en.json holds the source copy, so it stays checked.
+  "apps/app/src/lib/i18n/dictionaries/*.json",
+  "!apps/app/src/lib/i18n/dictionaries/en.json",
+]
+
+# Each entry allows one whole identifier. The word stays checked elsewhere.
+[default.extend-identifiers]
+# typos splits a caps word from its lowercase suffix. The stub is not a word.
+ANDed = "ANDed"
+UPDATEs = "UPDATEs"
+# The AsyncLocalStorage handle in services/access/requestCache.ts.
+als = "als"
+# Checkstep's policy code for hate speech, used as a JSON key.
+HTE = "HTE"
+# canva.com, an allowlisted embed host.
+canva = "canva"
+# The house prefix in `mis-routing`, `mis-sized`, `mis-aligns`.
+mis = "mis"
+# Both spellings are current; ours is the one already in error messages.
+unparseable = "unparseable"
+# Paired test-fixture suffixes: `-dhost` hosts, `-dout` sits outside.
+dout = "dout"
+# A worked example of folding "Café" in a doc comment.
+caf = "caf"
+
+# Non-English sample content in stories, fixtures, and language-detection tests.
+[default.extend-words]
+Calle = "Calle"
+fase = "fase"
+frase = "frase"
+hace = "hace"
+participativo = "participativo"
+revisiones = "revisiones"
+som = "som"
+sur = "sur"
