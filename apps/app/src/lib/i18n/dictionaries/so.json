@@ -1172,7 +1172,6 @@
   "Sent {date}": "La diray {date}",
   "Close": "Xidh",
   "Feedback to Author": "Jawaab-celin Qoraaga",
-  "Shared anonymously with the author after the review phase ends": "Si aan la aqoon la wadaagay qoraaga ka dib marka marxaladda dib-u-eegista dhamaato",
   "Total Score": "Wadarta Dhibcaha",
   "Proposal {current} of {total}": "Soo jeedinta {current} ee {total}",
   "{current} of {total}": "{current} ee {total}",
@@ -1546,5 +1545,8 @@
   "Couldn't check the export's status. It may still be running.": "Lama hubin karin xaaladda soo-saarka. Waxaa laga yaabaa inay weli socoto.",
   "Export all": "Dhammaan soo saar",
   "Proposals in review · {count}": "Soo jeedimo dib-u-eegis ku jira · {count}",
-  "{count} Reviewed": "{count} la dib u eegay"
+  "{count} Reviewed": "{count} la dib u eegay",
+  "Feedback": "Jawaab celin",
+  "Notes reviewers shared while this proposal was under review": "Qoraallada dib-u-eegayaashu wadaageen inta soo jeedintan la eegayay",
+  "Reviewer · {timeAgo}": "Dib-u-eege · {timeAgo}"
 }

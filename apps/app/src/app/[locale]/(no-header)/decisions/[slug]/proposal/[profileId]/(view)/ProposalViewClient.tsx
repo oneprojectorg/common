@@ -37,12 +37,14 @@ function ProposalViewPageContent({
   const isAuthor =
     !!user?.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
-  // Author, admin, or explicit review access — only in a review phase.
-  const canSeeRevisions =
-    isInReviewPhase &&
-    (isAuthor ||
-      instance.access?.admin === true ||
-      instance.access?.review === true);
+  // Author, admin, or explicit review access.
+  const canSeeFeedback =
+    isAuthor ||
+    instance.access?.admin === true ||
+    instance.access?.review === true;
+  // The revision panes are a mid-phase affordance; the feedback panel carries
+  // the history once the phase has ended.
+  const canSeeRevisions = isInReviewPhase && canSeeFeedback;
 
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);
@@ -56,6 +58,7 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
+      canSeeFeedback={canSeeFeedback}
       decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />

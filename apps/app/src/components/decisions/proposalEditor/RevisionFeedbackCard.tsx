@@ -14,12 +14,15 @@ interface RevisionFeedbackCardProps {
    * author's note.
    */
   variant: 'reviewer' | 'author';
+  /** Meta line reads "Reviewer · {time}" instead of "Sent {time}". */
+  anonymousReviewer?: boolean;
 }
 
 export function RevisionFeedbackCard({
   comment,
   sentAt,
   variant,
+  anonymousReviewer = false,
 }: RevisionFeedbackCardProps) {
   return (
     <div
@@ -37,18 +40,28 @@ export function RevisionFeedbackCard({
       >
         {comment}
       </p>
-      {sentAt && <SentAtLine sentAt={sentAt} />}
+      {sentAt && (
+        <SentAtLine sentAt={sentAt} anonymousReviewer={anonymousReviewer} />
+      )}
     </div>
   );
 }
 
-function SentAtLine({ sentAt }: { sentAt: string }) {
+function SentAtLine({
+  sentAt,
+  anonymousReviewer,
+}: {
+  sentAt: string;
+  anonymousReviewer: boolean;
+}) {
   const t = useTranslations();
   const timeAgo = useRelativeTime(sentAt, { style: 'long' });
 
   return (
     <p className="text-sm text-muted-foreground">
-      {t('Sent {timeAgo}', { timeAgo })}
+      {anonymousReviewer
+        ? t('Reviewer · {timeAgo}', { timeAgo })
+        : t('Sent {timeAgo}', { timeAgo })}
     </p>
   );
 }
