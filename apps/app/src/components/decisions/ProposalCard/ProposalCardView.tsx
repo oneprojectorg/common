@@ -10,7 +10,10 @@ import {
   normalizeProposalCategories,
 } from '@op/common/client';
 import { match } from '@op/core';
-import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
+import {
+  type ProposalCardAuthor,
+  ProposalCard as SenseProposalCard,
+} from '@op/sense/ProposalCard';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { cn } from '@op/sense/lib/utils';
 import type { ComponentProps, ReactNode } from 'react';
@@ -263,12 +266,44 @@ export const ProposalMiniCard = ({
     useProposalCardData(proposal);
 
   return (
-    <SenseProposalCard
+    <ProposalMiniCardView
       title={titleText}
       budget={budgetText}
-      tags={displayCategories.length > 0 ? displayCategories : undefined}
+      tags={displayCategories}
       authors={authors}
-      className={cn('bg-muted p-4', className)}
+      className={className}
     />
   );
 };
+
+/**
+ * The compact card's presentation, taking already-formatted values. Split from
+ * `ProposalMiniCard` for the surfaces whose rows aren't full `Proposal`s — the
+ * merge-relationship cards — so both compact cards stay one treatment.
+ */
+export const ProposalMiniCardView = ({
+  title,
+  href,
+  budget,
+  tags,
+  authors,
+  className,
+}: {
+  title: ReactNode;
+  /** Makes the title the card's stretched primary link. */
+  href?: string;
+  budget?: string;
+  tags: string[];
+  authors?: ProposalCardAuthor[];
+  className?: string;
+}) => (
+  <SenseProposalCard
+    title={title}
+    href={href}
+    linkComponent={Link}
+    budget={budget}
+    tags={tags.length > 0 ? tags : undefined}
+    authors={authors}
+    className={cn('bg-muted p-4', className)}
+  />
+);

@@ -587,6 +587,65 @@ describe.concurrent('listProposalRelationships', () => {
     });
   });
 
+  it('carries the card fields the contributing-ideas list renders', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    // Budget and categories come from the stored `proposalData` snapshot, which
+    // `createProposal` only seeds with a title and description.
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Source Proposal',
+          budget: { amount: 145000, currency: 'USD' },
+          category: ['Infrastructure', 'Safety'],
+        },
+      })
+      .where(eq(proposals.id, source.id));
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    const result = await caller.decision.listProposalRelationships({
+      targetProposalId: target.id,
+    });
+
+    expect(result.relationships[0]?.proposal).toMatchObject({
+      budget: { amount: 145000, currency: 'USD' },
+      categories: ['Infrastructure', 'Safety'],
+      // The submitter is resolved by a second query keyed on the row's
+      // `submittedByProfileId`, so an empty name here means that fold broke.
+      submittedBy: { name: expect.any(String) },
+    });
+  });
+
+  it('leaves the card fields empty when the proposal carries none', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { source, target, caller } = await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    const result = await caller.decision.listProposalRelationships({
+      targetProposalId: target.id,
+    });
+
+    // A card with no budget renders no budget badge — `null`, not a zero.
+    expect(result.relationships[0]?.proposal.budget).toBeNull();
+    expect(result.relationships[0]?.proposal.categories).toEqual([]);
+  });
+
   it('lists what a proposal was merged into when pinning the source', async ({
     task,
     onTestFinished,

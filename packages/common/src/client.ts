@@ -87,6 +87,7 @@ export {
   type MergeProposalsInput,
   type UnmergeProposalInput,
   type ListProposalRelationshipsInput,
+  type ProposalRelationshipItem,
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
