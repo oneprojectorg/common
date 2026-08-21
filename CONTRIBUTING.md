@@ -74,6 +74,13 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 - **`@op/emails`**: React Email templates
 - **`@op/cache`**: Caching utilities
 
+### Architecture Decision Records
+
+Decisions that are costly to reverse and cross a workspace boundary are recorded
+as ADRs in [`docs/adr/`](./docs/adr/). Read
+[`docs/adr/README.md`](./docs/adr/README.md) before you make one — it covers
+when an ADR is warranted and how to write it.
+
 ## Code Style and Standards
 
 ### General Guidelines

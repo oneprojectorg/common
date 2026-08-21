@@ -19,6 +19,8 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 - **`@op/common`** (`packages/common`): shared business logic and service layer
 - **`@op/db`** (`services/db`): Drizzle ORM schema, migrations, and database client
 
+Architecture decisions are recorded as ADRs in `docs/adr/`. Read them before proposing a structural change — the rationale for an existing decision (and the alternatives already rejected) lives there, not in the code. If a change you are asked to make contradicts an accepted ADR, say so instead of working around it. See [`docs/adr/README.md`](docs/adr/README.md) for when a change warrants a new ADR.
+
 ## Key Technical Details
 
 ### UI Component System
