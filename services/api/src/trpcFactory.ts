@@ -26,7 +26,7 @@ export const createContext = async ({
 }: FetchCreateContextFnOptions): Promise<TContext> => {
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
 
-  // seperate in 4-8-8-4 xxxx-xxxxxxxx-xxxxxxxx-xxxx
+  // separate in 4-8-8-4 xxxx-xxxxxxxx-xxxxxxxx-xxxx
   const requestId = [
     nanoid().slice(0, 4),
     nanoid().slice(4, 12),

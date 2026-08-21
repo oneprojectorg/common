@@ -83,10 +83,10 @@ export function TRPCProvider({
             persister,
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => {
-                const queryIsReadyForPersistance =
+                const queryIsReadyForPersistence =
                   query.state.status === 'success';
 
-                if (queryIsReadyForPersistance) {
+                if (queryIsReadyForPersistence) {
                   const { queryKey } = query;
                   const excludeFromPersisting =
                     queryKey.includes('ogImageThumbnail');
@@ -94,7 +94,7 @@ export function TRPCProvider({
                   return !excludeFromPersisting;
                 }
 
-                return queryIsReadyForPersistance;
+                return queryIsReadyForPersistence;
               },
             },
           }}

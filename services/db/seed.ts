@@ -525,7 +525,7 @@ if (firstUser) {
         // offeringFundsTerms,
         // } = data;
 
-        // // add all stategy terms to the org (strategy terms already exist in the DB)
+        // // add all strategy terms to the org (strategy terms already exist in the DB)
         // // TODO: parallelize this
 
         // if (strategies) {

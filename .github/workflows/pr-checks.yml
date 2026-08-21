@@ -121,3 +121,24 @@ jobs:
         run: |
           pnpm exec turbo build --filter=@op/sense
           test -s packages/sense/storybook-static/index.html
+
+  spellcheck:
+    name: Spelling
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    # This job holds no secrets. It skips the `fork-ci` approval gate that the
+    # other jobs need, so a fork PR gets a result without a maintainer.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Developers run the same script, so it holds the only version pin and
+      # CI checks with an identical binary. The `crate-ci/typos` action accepts
+      # no version input. It ties the binary to its own ref, which would pin
+      # the version twice. This script needs neither Node nor pnpm.
+      - name: Check spelling
+        run: |
+          ./scripts/install-typos.sh
+          ./node_modules/.bin/typos

@@ -31,6 +31,8 @@
     "format": "oxfmt",
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx oxfmt",
     "format:check": "turbo format:check",
+    "spellcheck": "./scripts/install-typos.sh && typos",
+    "spellcheck:fix": "./scripts/install-typos.sh && typos --write-changes",
     "start:e2e": "node ./scripts/ensure-e2e-redis.mjs && cross-env E2E=true INNGEST_DEV=1 REDIS_URL=redis://127.0.0.1:6380 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:56321 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:56322/postgres S3_ASSET_ROOT=http://127.0.0.1:56321/storage/v1/object/public/assets TIPTAP_SECRET=e2e NEXT_PUBLIC_TIPTAP_APP_ID=e2e turbo start:e2e",
     "test": "turbo test",
     "tmux": "bash scripts/tmux.sh",
