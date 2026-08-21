@@ -29,10 +29,13 @@ import {
 export function ReviewSelectionList({
   instance,
   previousPhaseId,
+  showBudget,
 }: {
   instance: ProcessInstance;
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
+  /** Show the budget column. Derived by the page so the skeleton agrees. */
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const processInstanceId = instance.id;
@@ -136,6 +139,7 @@ export function ReviewSelectionList({
           onAdvance={handleAdvanceToggle}
           advancingIds={advancing}
           decisionSlug={decisionSlug}
+          showBudget={showBudget}
         />
       )}
 
@@ -159,13 +163,18 @@ export function ReviewSelectionList({
 
 export function ReviewSelectionListSkeleton({
   showScore = true,
+  showBudget = true,
 }: {
   showScore?: boolean;
+  showBudget?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="h-8 w-32 animate-pulse rounded bg-secondary" />
-      <ReviewSelectionTableSkeleton showScore={showScore} />
+      <ReviewSelectionTableSkeleton
+        showScore={showScore}
+        showBudget={showBudget}
+      />
     </div>
   );
 }

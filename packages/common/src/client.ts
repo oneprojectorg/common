@@ -135,6 +135,7 @@ export {
   templateCollectsLocation,
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
+export { templateCollectsBudget } from './services/decision/templateBudget';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

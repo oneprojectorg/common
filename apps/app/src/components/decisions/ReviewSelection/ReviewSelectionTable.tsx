@@ -40,6 +40,7 @@ export function ReviewSelectionTable({
   onAdvance,
   advancingIds,
   decisionSlug,
+  showBudget,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
@@ -50,6 +51,8 @@ export function ReviewSelectionTable({
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
+  /** Show the budget column. False when the proposal template collects no budget. */
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -67,6 +70,7 @@ export function ReviewSelectionTable({
                 showScore={showScore}
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
+                showBudget={showBudget}
               />
             </li>
           );
@@ -82,7 +86,7 @@ export function ReviewSelectionTable({
           <TableHead scope="col" className="w-56">
             {t('Proposal')}
           </TableHead>
-          <TableHead scope="col">{t('Budget')}</TableHead>
+          {showBudget ? <TableHead scope="col">{t('Budget')}</TableHead> : null}
           <TableHead scope="col">{t('Category')}</TableHead>
           <TableHead scope="col">{t('Overall recommendation')}</TableHead>
           {showScore && (
@@ -126,13 +130,19 @@ export function ReviewSelectionTable({
                   )}
                 </div>
               </TableRowHeader>
-              <TableCell>
-                <span className="text-base">
-                  {budget
-                    ? formatCurrency(budget.amount, undefined, budget.currency)
-                    : '—'}
-                </span>
-              </TableCell>
+              {showBudget ? (
+                <TableCell>
+                  <span className="text-base">
+                    {budget
+                      ? formatCurrency(
+                          budget.amount,
+                          undefined,
+                          budget.currency,
+                        )
+                      : '—'}
+                  </span>
+                </TableCell>
+              ) : null}
               <TableCell>
                 <SelectionCategoryChips
                   labels={item.categories.map((c) => c.label)}
@@ -168,15 +178,17 @@ export function ReviewSelectionTable({
 
 export function ReviewSelectionTableSkeleton({
   showScore = true,
+  showBudget = true,
 }: {
   showScore?: boolean;
+  showBudget?: boolean;
 }) {
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full items-center justify-between border-b border-border py-2">
         <Skeleton className="h-4 w-20" />
         <div className="hidden gap-8 md:flex">
-          <Skeleton className="h-4 w-12" />
+          {showBudget ? <Skeleton className="h-4 w-12" /> : null}
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-32" />
           {showScore && <Skeleton className="h-4 w-20" />}
@@ -192,7 +204,9 @@ export function ReviewSelectionTableSkeleton({
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-24" />
           </div>
-          <Skeleton className="hidden h-4 w-12 md:block" />
+          {showBudget ? (
+            <Skeleton className="hidden h-4 w-12 md:block" />
+          ) : null}
           <Skeleton className="hidden h-5 w-32 md:block" />
           <Skeleton className="hidden h-4 w-32 md:block" />
           {showScore && <Skeleton className="hidden h-4 w-12 md:block" />}
@@ -209,12 +223,14 @@ function ProposalCard({
   showScore,
   onAdvance,
   decisionSlug,
+  showBudget,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
   showScore: boolean;
   onAdvance: () => void;
   decisionSlug: string;
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const title = item.proposal.profile.name || t('Untitled Proposal');
@@ -236,7 +252,7 @@ function ProposalCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {budget && (
+        {showBudget && budget && (
           <span className="text-base">
             {formatCurrency(budget.amount, undefined, budget.currency)}
           </span>
