@@ -313,22 +313,26 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
-  // A missing object cannot be retried into existence, so offering a retry would
-  // loop until the record's TTL ran out. Every export cached across the deploy
-  // that moved buckets lands here: its file is still in `assets`.
-  it('reports a terminal failure when the object is gone', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
-    createSignedUrl.mockResolvedValue({
-      data: null,
-      error: { message: 'Object not found' },
-    });
+  // A missing object cannot be retried into existence, so offering a retry
+  // would loop until the record's TTL ran out. Every export cached across the
+  // deploy that moved buckets lands here: its file is still in `assets`.
+  it.each([['Object not found'], ['Bucket not found']])(
+    'reports a terminal failure when signing says %s',
+    async (message) => {
+      vi.mocked(get).mockResolvedValue(expiredRecord());
+      createSignedUrl.mockResolvedValue({ data: null, error: { message } });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+      const result = await getExportStatus({
+        exportId: EXPORT_ID,
+        user,
+        logger,
+      });
 
-    expect(result).toMatchObject({ status: 'failed' });
-    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
-    expect(set).not.toHaveBeenCalled();
-  });
+      expect(result).toMatchObject({ status: 'failed' });
+      expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+      expect(set).not.toHaveBeenCalled();
+    },
+  );
 
   // The original bug. The record claimed a 24h expiry while the URL was minted
   // for 2h, so callers trusted a link dead for 22 hours.

@@ -253,26 +253,33 @@ const refreshStaleSignedUrl = async ({
     // discard the export id and cost a re-export of up to a thousand proposals.
     // The cached record is left untouched either way, so a retry re-reads one
     // still marked `completed`.
-    if (isMissingObjectError(error)) {
+    if (isPermanentlyGone(error)) {
       exportStatus.status = 'failed';
     }
   }
 };
 
 /**
- * Is a signing failure a missing object rather than a momentary fault?
+ * Is a signing failure a file that is gone rather than a momentary fault?
  *
  * Matched on the message because nothing else distinguishes the two: this
- * Supabase build answers `status` 400 for every signing failure, and this is
- * confirmed to be the wording for both a missing object and a missing bucket. A
- * mismatch degrades to the retryable branch, which is the safe way round.
+ * Supabase build answers `status` 400 for every signing failure, with no code to
+ * key on. Both wordings are checked — this build answers "Object not found" even
+ * for a missing bucket, but storage-api has a distinct `NoSuchBucket` that reads
+ * "Bucket not found", and either way the file is unreachable for good. A wording
+ * this misses degrades to the retryable branch, which is the safe direction.
  */
-const isMissingObjectError = (error: unknown): boolean => {
+const PERMANENT_SIGNING_FAILURES = ['Object not found', 'Bucket not found'];
+
+const isPermanentlyGone = (error: unknown): boolean => {
   if (typeof error !== 'object' || error === null || !('message' in error)) {
     return false;
   }
 
   const { message } = error;
 
-  return typeof message === 'string' && message.includes('Object not found');
+  return (
+    typeof message === 'string' &&
+    PERMANENT_SIGNING_FAILURES.some((reason) => message.includes(reason))
+  );
 };
