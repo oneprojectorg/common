@@ -26,11 +26,13 @@ const fetchOrganizationBySlug = cache(async (slug: string) => {
  * Tagged so the org branch carries a non-nullable organization: the caller can't
  * fall through to the individual layout for an org whose lookup came back empty.
  */
-export const fetchProfileScreenData = cache(async (slug: string) => {
+export const fetchProfileScreenData = async (slug: string) => {
   const profile = await fetchProfileBySlug(slug);
 
+  // Tagged by negation: everything that is not an org renders the same layout,
+  // so this covers proposal and decision slugs, not just EntityType.INDIVIDUAL.
   if (profile.type !== EntityType.ORG) {
-    return { kind: 'individual' as const, profile };
+    return { kind: 'nonOrganization' as const, profile };
   }
 
   return {
@@ -38,4 +40,4 @@ export const fetchProfileScreenData = cache(async (slug: string) => {
     profile,
     organization: await fetchOrganizationBySlug(slug),
   };
-});
+};

@@ -15,7 +15,6 @@ vi.mock('@op/api/serverClient', () => ({
   }),
 }));
 
-// Derived rather than listed so a new entity type has to be classified here too.
 const nonOrgTypes = Object.values(EntityType).filter(
   (type) => type !== EntityType.ORG,
 );
@@ -34,17 +33,25 @@ describe('fetchProfileScreenData', () => {
     vi.clearAllMocks();
   });
 
+  // Pinned so adding an entity type fails here and has to be classified as
+  // org-backed or not, rather than being absorbed silently by the filter above.
+  it('covers every non-org entity type', () => {
+    expect(nonOrgTypes).toHaveLength(4);
+  });
+
   // The org lookup throws for every slug that isn't an org, and tRPC logs that
   // throw as a server error before the caller ever sees it.
   it.each(nonOrgTypes)(
     'skips the organization lookup for a %s profile',
     async (type) => {
-      const profile = { id: 'profile-1', type, name: 'Kathy', slug: 'kathy' };
+      const slug = `kathy-${type}`;
+      const profile = { id: 'profile-1', type, name: 'Kathy', slug };
       getProfileBySlug.mockResolvedValue(profile);
 
-      const result = await fetchProfileScreenData('kathy');
+      const result = await fetchProfileScreenData(slug);
 
-      expect(result).toEqual({ kind: 'individual', profile });
+      expect(result).toEqual({ kind: 'nonOrganization', profile });
+      expect(getProfileBySlug).toHaveBeenCalledWith({ slug });
       expect(getOrganizationBySlug).not.toHaveBeenCalled();
     },
   );
@@ -60,6 +67,7 @@ describe('fetchProfileScreenData', () => {
       profile: organizationProfile,
       organization,
     });
+    expect(getProfileBySlug).toHaveBeenCalledWith({ slug: 'justtransitions' });
     expect(getOrganizationBySlug).toHaveBeenCalledWith({
       slug: 'justtransitions',
     });
