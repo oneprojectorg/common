@@ -99,13 +99,16 @@ export async function listProposalMergeRecipients({
 
   // Anyone who worked on both proposals hears it once, as a source author: "your
   // proposal was merged away" is the version that affects them.
+  //
+  // Keyed on who actually got the source email rather than on everyone attached
+  // to the source proposal. Someone whose source row carries no address was not
+  // told anything by it, so excluding them here would drop them from both sides
+  // and leave a reachable author silently unmailed.
   const targetRecipients = collectRecipients({
     profileUsers: targetProposal.profile.profileUsers,
     excludedAuthUserIds: [
       actorAuthUserId,
-      ...sourceProposal.profile.profileUsers.map(
-        ({ authUserId }) => authUserId,
-      ),
+      ...sourceRecipients.map(({ authUserId }) => authUserId),
     ],
     excludedEmails: sourceRecipients.map(({ email }) => email),
   });
@@ -127,8 +130,8 @@ export async function listProposalMergeRecipients({
         body: relationship.note,
         authorAuthUserId: actorAuthUserId,
       }),
-      sourceRecipients,
-      targetRecipients,
+      sourceRecipients: sourceRecipients.map(({ email }) => ({ email })),
+      targetRecipients: targetRecipients.map(({ email }) => ({ email })),
     },
   };
 }
@@ -175,7 +178,7 @@ const collectRecipients = ({
   profileUsers: Array<{ email: string | null; authUserId: string }>;
   excludedAuthUserIds: Array<string>;
   excludedEmails?: Array<string>;
-}): Array<{ email: string }> => {
+}): Array<{ email: string; authUserId: string }> => {
   const excludedIds = new Set(excludedAuthUserIds);
   const seen = new Set(excludedEmails.map((email) => email.toLowerCase()));
 
@@ -193,5 +196,5 @@ const collectRecipients = ({
 
       return true;
     })
-    .map(({ email }) => ({ email }));
+    .map(({ email, authUserId }) => ({ email, authUserId }));
 };

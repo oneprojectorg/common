@@ -203,6 +203,28 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
+  // Their source row carries no address, so the source email never reached them.
+  // Excluding them from the surviving side too would leave a reachable author
+  // hearing nothing at all.
+  it('still writes to someone on both sides whose source row has no address', async () => {
+    findFirst.mockResolvedValue(
+      edge({
+        sourceProfileUsers: [{ email: null, authUserId: ADA_AUTH_USER_ID }],
+        targetProfileUsers: [ADA],
+      }) as never,
+    );
+
+    const result = await run();
+
+    expect(result).toMatchObject({
+      ok: true,
+      notification: {
+        sourceRecipients: [],
+        targetRecipients: [{ email: 'ada@example.com' }],
+      },
+    });
+  });
+
   it('sends one email per address, not per collaborator row', async () => {
     findFirst.mockResolvedValue(
       edge({
