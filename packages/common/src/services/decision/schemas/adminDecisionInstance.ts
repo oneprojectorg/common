@@ -5,6 +5,8 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
+import { proposalCategorySchema } from './proposalCategory';
+
 const adminDecisionCurrentPhaseSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
@@ -109,6 +111,8 @@ export const adminReviewAssignmentSchema = z.object({
   status: z.enum(ProposalReviewAssignmentStatus),
   reviewState: z.enum(ProposalReviewState).nullable(),
   submittedAt: z.string().nullable(),
+  categories: z.array(proposalCategorySchema),
+  author: adminProfileRefSchema.nullable(),
 });
 
 export type AdminReviewAssignment = z.infer<typeof adminReviewAssignmentSchema>;
@@ -130,13 +134,14 @@ export const adminAssignableProposalSchema = z.object({
   title: z.string().nullable(),
   submittedByProfileId: z.string().nullable(),
   author: adminProfileRefSchema.nullable(),
+  categories: z.array(proposalCategorySchema),
 });
 
 export type AdminAssignableProposal = z.infer<
   typeof adminAssignableProposalSchema
 >;
 
-/** Eligible reviewer candidate; email comes from the member's user record. */
+/** Eligible reviewer candidate; `email` is the profile contact field. */
 export const adminEligibleReviewerSchema = adminProfileRefSchema.extend({
   email: z.string().nullable(),
 });

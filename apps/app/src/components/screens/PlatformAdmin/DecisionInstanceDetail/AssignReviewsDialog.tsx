@@ -85,9 +85,12 @@ export const AssignReviewsDialog = ({
   const assignReviews = trpc.platform.admin.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
       toast.success(
-        t('{count} review assignments created', {
-          count: createdCount,
-        }),
+        t(
+          '{count, plural, one {# review assignment created} other {# review assignments created}}',
+          {
+            count: createdCount,
+          },
+        ),
       );
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,

@@ -170,6 +170,7 @@ async function attachmentIdsFor(
         ),
         phaseEligiblePredicate(proposals),
         isNull(proposals.deletedAt),
+        isNull(proposals.moderationDetachedAt),
       ),
     );
   return rows.map((r) => r.id);

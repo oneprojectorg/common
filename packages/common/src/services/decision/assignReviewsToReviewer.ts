@@ -1,7 +1,6 @@
 import { and, db, desc, eq, inArray } from '@op/db/client';
 import {
   decisionTransitionProposals,
-  proposalReviewAssignments,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -9,7 +8,8 @@ import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { notSuperseded } from './proposalSupersession';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { insertReviewAssignments } from './insertReviewAssignments';
 import { getPhaseIndex } from './utils/phaseOrder';
 
 const phaseOrderData = z
@@ -34,7 +34,10 @@ export interface AssignReviewsToReviewerInput {
  * untouched via `onConflictDoNothing`.
  *
  * Assignments are rejected for completed phases (any phase ordered before the
- * instance's current phase).
+ * instance's current phase), and every proposal must be in the phase's pool —
+ * so drafts, merged-away, deleted and moderation-detached rows can never be
+ * assigned. Any
+ * id outside the pool rejects the whole request.
  *
  * Returns the number of assignments created.
  */
@@ -99,37 +102,42 @@ export async function assignReviewsToReviewer({
     throw new ValidationError('Cannot assign reviews in a completed phase');
   }
 
-  const [selectedProposals, latestTransition] = await Promise.all([
-    db
-      .select({
-        id: proposals.id,
-        submittedByProfileId: proposals.submittedByProfileId,
-      })
-      .from(proposals)
-      .where(
-        and(
-          inArray(proposals.id, proposalIds),
-          eq(proposals.processInstanceId, instanceId),
-          // Assigning a merged-away proposal would create a row its reviewer
-          // can never see, since the queue filters them out.
-          notSuperseded({
-            proposalId: proposals.id,
-            processInstanceId: instanceId,
-          }),
+  const [phaseProposalIds, selectedProposals, latestTransition] =
+    await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId }),
+      db
+        .select({
+          id: proposals.id,
+          submittedByProfileId: proposals.submittedByProfileId,
+        })
+        .from(proposals)
+        .where(
+          and(
+            inArray(proposals.id, proposalIds),
+            eq(proposals.processInstanceId, instanceId),
+          ),
         ),
-      ),
-    db
-      .select({ id: stateTransitionHistory.id })
-      .from(stateTransitionHistory)
-      .where(
-        and(
-          eq(stateTransitionHistory.processInstanceId, instanceId),
-          eq(stateTransitionHistory.toStateId, phaseId),
-        ),
-      )
-      .orderBy(desc(stateTransitionHistory.transitionedAt))
-      .limit(1),
-  ]);
+      db
+        .select({ id: stateTransitionHistory.id })
+        .from(stateTransitionHistory)
+        .where(
+          and(
+            eq(stateTransitionHistory.processInstanceId, instanceId),
+            eq(stateTransitionHistory.toStateId, phaseId),
+          ),
+        )
+        .orderBy(desc(stateTransitionHistory.transitionedAt))
+        .limit(1),
+    ]);
+
+  const pool = new Set(phaseProposalIds);
+  const outsidePool = proposalIds.filter((id) => !pool.has(id));
+
+  if (outsidePool.length > 0) {
+    throw new ValidationError(
+      `Not available for review in this phase: ${outsidePool.join(', ')}`,
+    );
+  }
 
   if (selectedProposals.length === 0) {
     throw new NotFoundError('No matching proposals in this process');
@@ -159,25 +167,14 @@ export async function assignReviewsToReviewer({
     transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
   );
 
-  const assignmentValues = selectedProposals
-    .filter((proposal) => proposal.submittedByProfileId !== reviewerProfileId)
-    .map((proposal) => ({
-      processInstanceId: instanceId,
+  return insertReviewAssignments({
+    instanceId,
+    phaseId,
+    assignableProposals: selectedProposals.map((proposal) => ({
       proposalId: proposal.id,
-      reviewerProfileId,
-      phaseId,
+      submittedByProfileId: proposal.submittedByProfileId,
       assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
-    }));
-
-  if (assignmentValues.length === 0) {
-    return 0;
-  }
-
-  const inserted = await db
-    .insert(proposalReviewAssignments)
-    .values(assignmentValues)
-    .onConflictDoNothing()
-    .returning({ id: proposalReviewAssignments.id });
-
-  return inserted.length;
+      reviewerProfileIds: [reviewerProfileId],
+    })),
+  });
 }
