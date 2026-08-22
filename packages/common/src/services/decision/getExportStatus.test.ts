@@ -115,15 +115,18 @@ describe('getExportStatus', () => {
     });
   });
 
-  // Pinned against the shared bucket by name rather than against the export
-  // constant, which would compare it to itself and hold whatever it was
-  // changed to. Repointing exports at a bucket of their own is what this has
-  // to catch: it reads as a security improvement, but nothing in the
-  // repository provisions such a bucket, so every hosted environment silently
-  // loses the feature until someone creates it by hand. That is why exports
-  // share the public bucket, and why the unguessable file name — not the
-  // signature — is what limits access to them.
-  it('signs against the shared public bucket, at the instance-scoped path', async () => {
+  // Pinned against the bucket by name rather than against the export constant,
+  // which would compare it to itself and hold whatever it was changed to.
+  //
+  // The literal is deliberately temporary. It was written when nothing
+  // provisioned a bucket of their own, so a repoint would have silently lost
+  // the feature per environment — but `services/db/migrate.ts` now creates and
+  // re-asserts a private `exports` bucket and fails the deploy on a public one,
+  // and its comment says the pipeline is repointed at it in a follow-up. When
+  // that lands, this assertion is *expected* to fail: update the literal, do
+  // not read the failure as evidence the repoint is wrong. The instance-scoped
+  // path beside it is the part that keeps its value either way.
+  it('signs against the configured bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
     vi.mocked(createSBServiceClient).mockReturnValue({
@@ -332,6 +335,21 @@ describe('getExportStatus', () => {
 
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
     expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  // `Date.parse` stringifies its argument, so a numeric expiry reads as the year
+  // 2042 rather than NaN. Without the typeof guard a corrupt record beside a
+  // download-carrying URL looked fresh for two decades and was never re-signed.
+  it('re-signs when the expiry is not a string at all', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      signedUrl: FRESH_URL,
+      urlExpiresAt: 42,
+    });
+
+    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalled();
   });
 
   // The original bug: the recorded expiry claimed 24h while the URL itself was

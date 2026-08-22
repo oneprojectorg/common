@@ -166,9 +166,14 @@ const needsFreshUrl = ({
     return false;
   }
 
-  // NaN for a missing expiry as much as an unreadable one, so both fail the
-  // same test rather than needing a branch each.
-  const expiresAt = urlExpiresAt ? Date.parse(urlExpiresAt) : Number.NaN;
+  // NaN for a missing expiry as much as an unreadable one, so both fail the same
+  // test rather than needing a branch each. The `typeof` guard is load-bearing:
+  // the field is an unvalidated cast over Redis JSON, and `Date.parse` coerces
+  // its argument to a string first — so a numeric 42 reads as the year 2042
+  // rather than NaN, and a corrupt record would look fresh for a further
+  // twenty years.
+  const expiresAt =
+    typeof urlExpiresAt === 'string' ? Date.parse(urlExpiresAt) : Number.NaN;
 
   return (
     Number.isNaN(expiresAt) ||
