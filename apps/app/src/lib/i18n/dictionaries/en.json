@@ -1706,5 +1706,14 @@
   "Note to proposal author": "Note to proposal author",
   "Write an optional note to the proposal author here": "Write an optional note to the proposal author here",
   "The author will receive this note as soon as you reject.": "The author will receive this note as soon as you reject.",
-  "Reject & send note": "Reject & send note"
-}
+  "Reject & send note": "Reject & send note",
+  "Import": "Import",
+  "Import proposal IDs": "Import proposal IDs",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.",
+  "Pasted spreadsheet content": "Pasted spreadsheet content",
+  "Paste a column of proposal IDs, or whole rows": "Paste a column of proposal IDs, or whole rows",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {# proposal matched} other {# proposals matched}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# ID not found} other {# IDs not found}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}",
+  "No proposal IDs found in what you pasted.": "No proposal IDs found in what you pasted.",
+  "Add to selection": "Add to selection"}
