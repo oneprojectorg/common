@@ -2,7 +2,7 @@ import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { createSBServerClient } from '@op/supabase/server';
+import { createSBServiceClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -55,7 +55,10 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
-  logger: { info: (message: string, meta?: any) => void };
+  logger: {
+    info: (message: string, meta?: any) => void;
+    warn: (message: string, meta?: any) => void;
+  };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache
   const key = exportStatusCacheKey(exportId);
@@ -119,7 +122,15 @@ export const getExportStatus = async ({
         exportStatus.fileName,
       );
 
-      const supabase = await createSBServerClient();
+      // Service client, not the caller's. Exports live at
+      // `process/<instanceId>/proposals/<file>`, and the only SELECT policy on
+      // the assets bucket requires the first path segment to equal the caller's
+      // uid — so an anon-key client cannot see the object at all and signing
+      // fails with "Object not found". Authorization is already settled above by
+      // the ownership check and `assertProfileAccess`, which is what makes the
+      // service role safe here; `getProposal` and the resources signer read
+      // objects outside a user's own folder the same way.
+      const supabase = createSBServiceClient();
       const { data: urlData, error: urlError } = await supabase.storage
         .from(EXPORTS_BUCKET)
         .createSignedUrl(
@@ -135,6 +146,15 @@ export const getExportStatus = async ({
         ).toISOString();
 
         await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
+      } else {
+        // The stale URL is still returned below — a dead link beats no link —
+        // but this is the rescue path for every pre-fix record, so a silent
+        // failure here is a fix that reports success while still serving the
+        // URL it was meant to replace.
+        logger.warn('Failed to re-sign export URL', {
+          exportId,
+          error: urlError,
+        });
       }
     }
   }

@@ -16,6 +16,7 @@ vi.mock('@op/db/client', () => ({
 
 vi.mock('@op/supabase/server', () => ({
   createSBServerClient: vi.fn(),
+  createSBServiceClient: vi.fn(),
 }));
 
 vi.mock('../assert', () => ({
@@ -24,7 +25,10 @@ vi.mock('../assert', () => ({
 
 import { get, set } from '@op/cache';
 import { db } from '@op/db/client';
-import { createSBServerClient } from '@op/supabase/server';
+import {
+  createSBServerClient,
+  createSBServiceClient,
+} from '@op/supabase/server';
 
 import { ASSETS_BUCKET } from '../../utils/storage';
 import {
@@ -40,9 +44,16 @@ const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const NOW = new Date('2026-08-10T12:00:00.000Z');
 
 const user = { id: AUTH_USER_ID } as never;
-const logger = { info: vi.fn() };
+const logger = { info: vi.fn(), warn: vi.fn() };
 
 const createSignedUrl = vi.fn();
+
+// Carries `download` because that is what Supabase appends for the option
+// `exportDownloadOptions` passes, and `servesAsAttachment` reads it back. A
+// fixture without it would have a refreshed record re-signed on every later
+// read — a real regression the suite would not see.
+const FRESH_URL =
+  'https://storage.example/fresh-url?token=abc&download=proposals_export_123.csv';
 
 /** A completed export record whose signed URL lapsed an hour ago. */
 const expiredRecord = () => ({
@@ -73,10 +84,13 @@ beforeEach(() => {
   } as never);
 
   createSignedUrl.mockResolvedValue({
-    data: { signedUrl: 'https://storage.example/fresh-url' },
+    data: { signedUrl: FRESH_URL },
     error: null,
   });
   vi.mocked(createSBServerClient).mockResolvedValue({
+    storage: { from: () => ({ createSignedUrl }) },
+  } as never);
+  vi.mocked(createSBServiceClient).mockReturnValue({
     storage: { from: () => ({ createSignedUrl }) },
   } as never);
 });
@@ -97,7 +111,7 @@ describe('getExportStatus', () => {
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
     expect(result).toMatchObject({
-      signedUrl: 'https://storage.example/fresh-url',
+      signedUrl: FRESH_URL,
     });
   });
 
@@ -112,7 +126,7 @@ describe('getExportStatus', () => {
   it('signs against the shared public bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
-    vi.mocked(createSBServerClient).mockResolvedValue({
+    vi.mocked(createSBServiceClient).mockReturnValue({
       storage: { from: storageFrom },
     } as never);
 
@@ -147,7 +161,46 @@ describe('getExportStatus', () => {
       { download: 'proposals_export_123.csv' },
     );
     expect(result).toMatchObject({
-      signedUrl: 'https://storage.example/fresh-url',
+      signedUrl: FRESH_URL,
+    });
+  });
+
+  // Export objects live at `process/<instanceId>/proposals/<file>`, and the only
+  // SELECT policy on the assets bucket requires the first path segment to equal
+  // the caller's uid. So the anon-key client this used cannot even see the
+  // object — `createSignedUrl` answers "Object not found" and the re-sign
+  // silently no-ops. Authorization is already settled above by the ownership
+  // check and `assertProfileAccess`, which is what lets the service client sign
+  // here, exactly as `getProposal` and the resources signer do.
+  it('signs with the service client, which RLS does not block', async () => {
+    vi.mocked(get).mockResolvedValue(expiredRecord());
+
+    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSBServiceClient).toHaveBeenCalled();
+    expect(createSBServerClient).not.toHaveBeenCalled();
+  });
+
+  // The re-sign is the whole of the rescue path for records cached before the
+  // download option existed, so a failure that goes unlogged is a fix that
+  // reports success while serving the inline URL it was meant to replace.
+  it('warns when the re-sign fails instead of failing quietly', async () => {
+    vi.mocked(get).mockResolvedValue(expiredRecord());
+    createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Failed to re-sign export URL',
+      expect.objectContaining({ exportId: EXPORT_ID }),
+    );
+    // The stale URL is still returned — a dead link beats no link — but the
+    // failure is now visible.
+    expect(result).toMatchObject({
+      signedUrl: 'https://storage.example/stale-url',
     });
   });
 
@@ -175,7 +228,7 @@ describe('getExportStatus', () => {
     expect(set).toHaveBeenCalledWith(
       `export:proposal:${EXPORT_ID}`,
       expect.objectContaining({
-        signedUrl: 'https://storage.example/fresh-url',
+        signedUrl: FRESH_URL,
       }),
       EXPORT_CACHE_TTL_SECONDS,
     );
@@ -218,7 +271,7 @@ describe('getExportStatus', () => {
       { download: 'proposals_export_123.csv' },
     );
     expect(result).toMatchObject({
-      signedUrl: 'https://storage.example/fresh-url',
+      signedUrl: FRESH_URL,
     });
   });
 

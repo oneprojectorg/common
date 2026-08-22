@@ -105,9 +105,12 @@ export const exportFileName = (extension: string) =>
  * signed URL, which is what naming the file here does.
  *
  * Shared by both signing sites — the export workflow's first URL and the
- * refresh in `getExportStatus` — because either one alone leaves the other
- * serving inline, and the refresh path mints most of the links an admin
- * actually clicks.
+ * re-sign in `getExportStatus` — because either one alone leaves the other
+ * serving inline. The workflow's URL is the one behind almost every click:
+ * `ExportProposalsButton` holds its export id in component state and does not
+ * poll, so it renders that first URL and drops the id once taken. The re-sign
+ * is reached when a record outlives its URL inside one mounted session, and by
+ * every record cached before this option existed.
  */
 export const exportDownloadOptions = (fileName: string) => ({
   download: fileName,
