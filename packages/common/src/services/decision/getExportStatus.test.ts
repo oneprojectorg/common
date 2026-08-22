@@ -126,6 +126,31 @@ describe('getExportStatus', () => {
     );
   });
 
+  // A record cached before the attachment-disposition fix holds a URL minted
+  // without `&download=`, still valid for up to EXPORT_URL_TTL_SECONDS. Gating
+  // the re-sign on expiry alone leaves the reported bug live for that whole
+  // window after deploy — the admin clicks Download CSV and Safari renders the
+  // CSV inline exactly as before. A URL that cannot download is stale whatever
+  // its expiry says.
+  it('re-signs an unexpired URL that predates the download option', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      signedUrl: 'https://storage.example/pre-fix-url?token=abc',
+      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalledWith(
+      exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
+      EXPORT_URL_TTL_SECONDS,
+      { download: 'proposals_export_123.csv' },
+    );
+    expect(result).toMatchObject({
+      signedUrl: 'https://storage.example/fresh-url',
+    });
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
@@ -156,19 +181,22 @@ describe('getExportStatus', () => {
     );
   });
 
+  // "Still valid" now means unexpired *and* able to download — the URL here
+  // carries `download` for that reason. Without it the record would be re-signed
+  // however long it had left, which is what rescues pre-fix cached records.
   it('leaves a still-valid URL alone', async () => {
+    const liveUrl =
+      'https://storage.example/live-url?token=abc&download=proposals_export_123.csv';
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
-      signedUrl: 'https://storage.example/live-url',
+      signedUrl: liveUrl,
       urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
     });
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
     expect(createSignedUrl).not.toHaveBeenCalled();
-    expect(result).toMatchObject({
-      signedUrl: 'https://storage.example/live-url',
-    });
+    expect(result).toMatchObject({ signedUrl: liveUrl });
   });
 
   // The refresh needs the file name to rebuild the storage key — it does not

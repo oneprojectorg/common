@@ -16,6 +16,24 @@ import {
   exportStatusCacheKey,
 } from './exports';
 
+/**
+ * Does a stored signed URL already ask Supabase for an attachment?
+ *
+ * `exportDownloadOptions` puts the file name in a `download` query param, and
+ * that param is the whole of what makes the CSV save rather than render. A
+ * record cached before that option existed holds a URL without it, so expiry
+ * is not on its own a sufficient test of whether a stored URL still works.
+ *
+ * Reads the query with `URLSearchParams` rather than matching the string, so
+ * param order cannot fool it and a malformed cached value returns false
+ * instead of throwing on a read path that must not fail.
+ */
+const servesAsAttachment = (signedUrl: string | undefined): boolean => {
+  const query = signedUrl?.split('?')[1];
+
+  return query !== undefined && new URLSearchParams(query).has('download');
+};
+
 export interface ExportStatusData {
   exportId: string;
   processInstanceId: string;
@@ -84,9 +102,15 @@ export const getExportStatus = async ({
     exportStatus.urlExpiresAt
   ) {
     const expiresAt = new Date(exportStatus.urlExpiresAt);
+    // A URL that renders instead of downloading is as unusable as an expired
+    // one, so it is re-signed on the same path. This is what stops the reported
+    // bug from outliving the deploy by up to EXPORT_URL_TTL_SECONDS on records
+    // cached before the download option was passed.
+    const isStale =
+      expiresAt < new Date() || !servesAsAttachment(exportStatus.signedUrl);
 
-    if (expiresAt < new Date()) {
-      logger.info('Refreshing expired signed URL', {
+    if (isStale) {
+      logger.info('Refreshing signed URL', {
         exportId,
       });
 
