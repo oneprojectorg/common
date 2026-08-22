@@ -119,10 +119,11 @@ export const getExportStatus = async ({
  * download option existed — which renders in the browser instead of saving, and
  * is therefore just as unusable however long it has left; gating on expiry
  * alone leaves the reported bug live for up to EXPORT_URL_TTL_SECONDS after
- * deploy on every record already in the cache. Or the record can carry no
- * expiry at all, which is not evidence of a working URL: bailing out there
- * stranded the export for the rest of the record's life with the object sitting
- * in the bucket.
+ * deploy on every record already in the cache. Or the expiry can be unreadable,
+ * missing or unparseable alike, which is no evidence of a working URL: bailing
+ * out there stranded the export for the rest of the record's life with the
+ * object sitting in the bucket. Note `new Date('garbage') < new Date()` is
+ * false, so a corrupt timestamp reads as "not expired" unless caught by name.
  *
  * Only `fileName` is genuinely required, because that is what rebuilds the
  * storage key.
@@ -137,9 +138,13 @@ const needsFreshUrl = ({
     return false;
   }
 
+  // NaN for a missing expiry as much as an unreadable one, so both fail the
+  // same test rather than needing a branch each.
+  const expiresAt = urlExpiresAt ? Date.parse(urlExpiresAt) : Number.NaN;
+
   return (
-    !urlExpiresAt ||
-    new Date(urlExpiresAt) < new Date() ||
+    Number.isNaN(expiresAt) ||
+    expiresAt < Date.now() ||
     !servesAsAttachment(signedUrl)
   );
 };
@@ -184,8 +189,10 @@ const mintSignedDownloadUrl = async ({
 /**
  * Re-sign a stale export URL in place and write the record back to the cache.
  *
- * Leaves `exportStatus` untouched when its URL is still good, and when the
- * re-sign fails.
+ * Leaves `exportStatus` untouched when its URL is still good. When signing
+ * itself fails the record keeps the URL it arrived with; when signing succeeds
+ * and only the cache write fails, the caller gets the fresh URL while the cache
+ * keeps the old one, so a later read simply re-signs again.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,

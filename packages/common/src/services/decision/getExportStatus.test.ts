@@ -245,6 +245,22 @@ describe('getExportStatus', () => {
     expect(result).toMatchObject({ signedUrl: FRESH_URL });
   });
 
+  // The sibling of the missing-expiry case: `new Date('garbage') < new Date()`
+  // is false, so a corrupt expiry beside a download-carrying URL satisfied none
+  // of the staleness tests and was never re-signed. An expiry that cannot be
+  // read is no more evidence of a live URL than one that is absent.
+  it('re-signs a completed export whose expiry cannot be parsed', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      signedUrl: FRESH_URL,
+      urlExpiresAt: 'not-a-date',
+    });
+
+    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalled();
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
