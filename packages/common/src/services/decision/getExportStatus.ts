@@ -55,9 +55,12 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
+  // Structural rather than imported: `@op/api` depends on this package, not the
+  // other way round. Shaped to match the `ContextLogger` the tRPC procedure
+  // actually passes, which is also what drops the `any` this used to carry.
   logger: {
-    info: (message: string, meta?: any) => void;
-    warn: (message: string, meta?: any) => void;
+    info: (message: string, data?: Record<string, unknown>) => void;
+    error: (message: string, data?: Record<string, unknown>) => void;
   };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache
@@ -147,11 +150,12 @@ export const getExportStatus = async ({
 
         await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
       } else {
-        // The stale URL is still returned below — a dead link beats no link —
-        // but this is the rescue path for every pre-fix record, so a silent
-        // failure here is a fix that reports success while still serving the
-        // URL it was meant to replace.
-        logger.warn('Failed to re-sign export URL', {
+        // `error`, not `warn`: the admin is handed back the stale URL and the
+        // UI still renders an enabled Download CSV link that either 404s or
+        // renders inline. This is also the rescue path for every pre-fix
+        // record, so a failure that does not reach error tracking is a fix
+        // that reports success while still serving the URL it replaced.
+        logger.error('Failed to re-sign export URL', {
           exportId,
           error: urlError,
         });

@@ -44,7 +44,7 @@ const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const NOW = new Date('2026-08-10T12:00:00.000Z');
 
 const user = { id: AUTH_USER_ID } as never;
-const logger = { info: vi.fn(), warn: vi.fn() };
+const logger = { info: vi.fn(), error: vi.fn() };
 
 const createSignedUrl = vi.fn();
 
@@ -184,7 +184,7 @@ describe('getExportStatus', () => {
   // The re-sign is the whole of the rescue path for records cached before the
   // download option existed, so a failure that goes unlogged is a fix that
   // reports success while serving the inline URL it was meant to replace.
-  it('warns when the re-sign fails instead of failing quietly', async () => {
+  it('reports a failed re-sign instead of failing quietly', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
       data: null,
@@ -193,7 +193,7 @@ describe('getExportStatus', () => {
 
     const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
 
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(logger.error).toHaveBeenCalledWith(
       'Failed to re-sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
