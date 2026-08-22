@@ -30,7 +30,6 @@ import { ASSETS_BUCKET } from '../../utils/storage';
 import {
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
-  exportDownloadOptions,
   exportFilePath,
 } from './exports';
 import { getExportStatus } from './getExportStatus';
@@ -123,23 +122,8 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
-      exportDownloadOptions('proposals_export_123.csv'),
+      { download: 'proposals_export_123.csv' },
     );
-  });
-
-  // The reported bug: a re-signed URL that omits the download option serves the
-  // CSV inline, so Safari renders it as text in a new window rather than saving
-  // it. The refresh path here mints most of the links an admin actually clicks
-  // — the workflow's original URL has usually lapsed by the time they return —
-  // so it has to force the attachment disposition too, not just the workflow.
-  it('re-signs with the attachment disposition', async () => {
-    vi.mocked(get).mockResolvedValue(expiredRecord());
-
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
-
-    expect(vi.mocked(createSignedUrl).mock.calls[0]?.[2]).toEqual({
-      download: 'proposals_export_123.csv',
-    });
   });
 
   // The original bug: the recorded expiry claimed 24h while the URL itself was
@@ -203,7 +187,7 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
       EXPORT_URL_TTL_SECONDS,
-      exportDownloadOptions('proposals_export_123.csv'),
+      { download: 'proposals_export_123.csv' },
     );
     expect(result).toMatchObject({
       signedUrl: 'https://storage.example/fresh-url',

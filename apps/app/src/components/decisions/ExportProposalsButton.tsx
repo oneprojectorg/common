@@ -213,11 +213,9 @@ const ExportProposalsButtonContent = ({
         nativeButton={false}
         role={undefined}
         render={
-          // `download` names the saved file but cannot force the save: the
-          // attribute is ignored cross-origin, and the signed URL points at
-          // the Supabase host. `Content-Disposition: attachment` comes from
-          // the signed URL itself (`exportDownloadOptions`) — without it
-          // Safari renders the CSV as text in a new tab instead of saving it.
+          // `download` names the saved file but cannot force the save — it is
+          // ignored cross-origin. That comes from the signed URL itself; see
+          // `exportDownloadOptions`.
           <a
             href={status.signedUrl}
             download={status.fileName}

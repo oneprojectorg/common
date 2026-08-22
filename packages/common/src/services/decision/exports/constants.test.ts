@@ -121,16 +121,13 @@ describe('exportDownloadOptions', () => {
   // inert cross-origin — so Safari navigated to the CSV and rendered it as
   // text instead of saving it. Naming the file here is what turns the response
   // into an attachment.
-  it('asks Supabase to serve the object as an attachment', () => {
+  //
+  // The name rather than a bare `download: true`, which forces the attachment
+  // too but has Supabase name the saved file after the storage key's last
+  // segment. Asserted by equality so that substitution fails here.
+  it('asks Supabase to serve the object as an attachment, by name', () => {
     expect(exportDownloadOptions('proposals_export_123.csv')).toEqual({
       download: 'proposals_export_123.csv',
     });
-  });
-
-  // `download: true` would also force the attachment, but Supabase then names
-  // the file after the storage key's last segment. Passing the name keeps the
-  // saved file named by the record's `fileName`, which is what the UI shows.
-  it('names the saved file rather than passing a bare flag', () => {
-    expect(exportDownloadOptions('f.csv').download).not.toBe(true);
   });
 });
