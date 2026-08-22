@@ -1668,5 +1668,15 @@
   "Unassign": "Unassign",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {# review assignment created} other {# review assignments created}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "This reviewer no longer has the reviewer role, so they cannot take new proposals.",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposal shown} other {# proposals shown}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposal shown} other {# proposals shown}}",
+  "Import from spreadsheet": "Import from spreadsheet",
+  "Import proposal IDs": "Import proposal IDs",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.",
+  "Pasted spreadsheet content": "Pasted spreadsheet content",
+  "Paste a column of proposal IDs, or whole rows": "Paste a column of proposal IDs, or whole rows",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {# proposal matched} other {# proposals matched}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# ID not found} other {# IDs not found}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}",
+  "No proposal IDs found in what you pasted.": "No proposal IDs found in what you pasted.",
+  "Add to selection": "Add to selection"
 }

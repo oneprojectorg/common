@@ -35,6 +35,7 @@ import { useId, useMemo, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
+import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
 
 /**
  * Bulk-assign proposals to one reviewer. Mounted only while open, so every
@@ -143,13 +144,25 @@ export function AssignProposalsDialog({
     );
   }, [rows, query]);
 
-  const selectableIds = rows
-    .filter((row) => row.blockedBy === null)
-    .map((row) => row.proposal.id);
+  // A set, not a list: the spreadsheet import looks IDs up by membership.
+  const selectableIds = useMemo(
+    () =>
+      new Set(
+        rows
+          .filter((row) => row.blockedBy === null)
+          .map((row) => row.proposal.id),
+      ),
+    [rows],
+  );
+
+  const poolIds = useMemo(
+    () => new Set(proposals.map((proposal) => proposal.id)),
+    [proposals],
+  );
 
   // Submitted set spans the whole pool, not just what the filter shows, so
   // "filter → select all → filter again → select all → assign" accumulates.
-  const selectedAssignableIds = selectableIds.filter((id) =>
+  const selectedAssignableIds = [...selectableIds].filter((id) =>
     selectedIds.has(id),
   );
 
@@ -171,6 +184,12 @@ export function AssignProposalsDialog({
       }
       return next;
     });
+  };
+
+  // Additive, like every other selection gesture here: an import never drops
+  // rows the admin ticked by hand.
+  const importProposals = (proposalIds: Array<string>) => {
+    setSelectedIds((current) => new Set([...current, ...proposalIds]));
   };
 
   // Scoped to the current filter: that is the bulk gesture this desk is for.
@@ -243,7 +262,7 @@ export function AssignProposalsDialog({
               <FieldLabel htmlFor={filterId}>
                 {t('Proposals ({selected} of {total} selected)', {
                   selected: selectedAssignableIds.length,
-                  total: selectableIds.length,
+                  total: selectableIds.size,
                 })}
               </FieldLabel>
               <Button
@@ -361,10 +380,19 @@ export function AssignProposalsDialog({
           </Field>
         </FieldGroup>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t('Cancel')}
-          </Button>
+        {/* Import sits opposite the primary action rather than beside "Select
+            all": it is a way of building the selection, not a filter of it.
+            The footer's own `justify-end` would bunch them together. */}
+        <DialogFooter className="sm:justify-between">
+          {/* Stacked on this dialog, which stays mounted underneath. With no
+              reviewer, nothing is blocked yet, so the summary would count
+              already-assigned proposals as matched. */}
+          <ImportProposalIdsDialog
+            poolIds={poolIds}
+            assignableIds={selectableIds}
+            disabled={reviewerId === null}
+            onImport={importProposals}
+          />
           <Button
             disabled={!canSubmit}
             onClick={() => {

@@ -1621,5 +1621,15 @@
   "{submitted} of {assigned} submitted": "{assigned}-এর মধ্যে {submitted}টি জমা দেওয়া হয়েছে",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {#টি পর্যালোচনা নিয়োগ তৈরি হয়েছে} other {#টি পর্যালোচনা নিয়োগ তৈরি হয়েছে}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "এই পর্যালোচকের আর পর্যালোচক ভূমিকা নেই, তাই তাঁকে নতুন প্রস্তাবনা দেওয়া যাবে না।",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {#টি প্রস্তাবনা দেখানো হচ্ছে} other {#টি প্রস্তাবনা দেখানো হচ্ছে}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {#টি প্রস্তাবনা দেখানো হচ্ছে} other {#টি প্রস্তাবনা দেখানো হচ্ছে}}",
+  "Import from spreadsheet": "স্প্রেডশিট থেকে ইমপোর্ট করুন",
+  "Import proposal IDs": "প্রস্তাবনার আইডি ইমপোর্ট করুন",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "স্প্রেডশিট থেকে যা কপি করেছেন তা পেস্ট করুন। আমরা প্রস্তাবনার আইডিগুলো খুঁজে নেব এবং বাকি সব উপেক্ষা করব।",
+  "Pasted spreadsheet content": "পেস্ট করা স্প্রেডশিট বিষয়বস্তু",
+  "Paste a column of proposal IDs, or whole rows": "প্রস্তাবনার আইডির একটি কলাম বা পুরো সারি পেস্ট করুন",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {#টি প্রস্তাবনা মিলেছে} other {#টি প্রস্তাবনা মিলেছে}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {#টি আইডি পাওয়া যায়নি} other {#টি আইডি পাওয়া যায়নি}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {#টি প্রস্তাবনা বাদ দেওয়া হয়েছে (আগেই নিয়োগ করা বা পর্যালোচকের নিজের)} other {#টি প্রস্তাবনা বাদ দেওয়া হয়েছে (আগেই নিয়োগ করা বা পর্যালোচকের নিজের)}}",
+  "No proposal IDs found in what you pasted.": "আপনি যা পেস্ট করেছেন তাতে কোনো প্রস্তাবনার আইডি পাওয়া যায়নি।",
+  "Add to selection": "নির্বাচনে যোগ করুন"
 }
