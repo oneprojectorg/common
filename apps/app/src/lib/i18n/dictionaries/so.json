@@ -1620,5 +1620,15 @@
   "{submitted} of {assigned} submitted": "{submitted} ka mid {assigned} la gudbiyay",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {# qoondo dib-u-eegis ah la sameeyay} other {# qoondo dib-u-eegis ah la sameeyay}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "Dib-u-eegahan mar dambe ma haysto doorka dib-u-eegaha, sidaas darteed soo jeedimo cusub looma qoondayn karo.",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# soo jeedin la muujiyay} other {# soo jeedimo la muujiyay}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# soo jeedin la muujiyay} other {# soo jeedimo la muujiyay}}",
+  "Import from spreadsheet": "Ka soo geli xaashi xisaabeed",
+  "Import proposal IDs": "Soo geli aqoonsiyada soo jeedimaha",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "Ku dheji wixii aad ka koobiyeysay xaashidaada xisaabeed. Waxaan ka soo saaraynaa aqoonsiyada soo jeedimaha, inteeda kalena waan iska indhatiraynaa.",
+  "Pasted spreadsheet content": "Waxa laga dhejiyay xaashida xisaabeed",
+  "Paste a column of proposal IDs, or whole rows": "Ku dheji tiir aqoonsiyo soo jeedimo ah, ama saf dhan",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {# soo jeedin baa la helay} other {# soo jeedimo baa la helay}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# ID lama helin} other {# ID lama helin}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# soo jeedin la dhaafay (hore ayaa loo qoondeeyay ama waa mid dib-u-eegaha)} other {# soo jeedimo la dhaafay (hore ayaa loo qoondeeyay ama waa kuwa dib-u-eegaha)}}",
+  "No proposal IDs found in what you pasted.": "Lagama helin wax aqoonsi soo jeedin ah wixii aad dhejisay.",
+  "Add to selection": "Ku dar xulashada"
 }

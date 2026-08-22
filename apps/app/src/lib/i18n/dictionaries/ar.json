@@ -1618,5 +1618,15 @@
   "{submitted} of {assigned} submitted": "{submitted} من {assigned} مُرسَلة",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {تم إنشاء تعيين مراجعة واحد} other {تم إنشاء # تعيينات مراجعة}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "لم يعد هذا المراجع يملك دور المراجع، لذا لا يمكن تعيين مقترحات جديدة له.",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {يُعرض مقترح واحد} other {تُعرض # مقترحات}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {يُعرض مقترح واحد} other {تُعرض # مقترحات}}",
+  "Import from spreadsheet": "استيراد من جدول بيانات",
+  "Import proposal IDs": "استيراد معرّفات المقترحات",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "الصق ما نسخته من جدول البيانات. سنستخرج معرّفات المقترحات ونتجاهل ما عداها.",
+  "Pasted spreadsheet content": "المحتوى الملصوق من جدول البيانات",
+  "Paste a column of proposal IDs, or whole rows": "الصق عمودًا من معرّفات المقترحات أو صفوفًا كاملة",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {تم مطابقة مقترح واحد} other {تم مطابقة # مقترحات}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {معرّف واحد غير موجود} other {# معرّفات غير موجودة}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {تم تخطي مقترح واحد (معيّن مسبقًا أو من مقترحات المراجع نفسه)} other {تم تخطي # مقترحات (معيّنة مسبقًا أو من مقترحات المراجع نفسه)}}",
+  "No proposal IDs found in what you pasted.": "لم يُعثر على أي معرّف مقترح في ما ألصقته.",
+  "Add to selection": "إضافة إلى التحديد"
 }
