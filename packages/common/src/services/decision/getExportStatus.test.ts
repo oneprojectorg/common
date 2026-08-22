@@ -204,6 +204,29 @@ describe('getExportStatus', () => {
     });
   });
 
+  // `createSBServiceClient` throws synchronously when SUPABASE_SERVICE_ROLE is
+  // unset, which would otherwise escape the graceful-degradation branch above
+  // and 500 the whole query. That costs the admin the Download CSV link
+  // entirely: the button escalates to its error boundary and the only way back
+  // is re-running the export. Losing the re-sign is survivable; losing the
+  // record is not.
+  it('keeps serving the record when the storage client cannot be built', async () => {
+    vi.mocked(get).mockResolvedValue(expiredRecord());
+    vi.mocked(createSBServiceClient).mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE is not set.');
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to re-sign export URL',
+      expect.objectContaining({ exportId: EXPORT_ID }),
+    );
+    expect(result).toMatchObject({
+      signedUrl: 'https://storage.example/stale-url',
+    });
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {

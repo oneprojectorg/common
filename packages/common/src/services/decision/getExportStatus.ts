@@ -34,6 +34,16 @@ const servesAsAttachment = (signedUrl: string | undefined): boolean => {
   return query !== undefined && new URLSearchParams(query).has('download');
 };
 
+/**
+ * Structural rather than imported: `@op/api` depends on this package, not the
+ * other way round. Shaped to match the `ContextLogger` the tRPC procedure
+ * actually passes, which is what keeps an `any` out of the signature.
+ */
+type ExportLogger = {
+  info: (message: string, data?: Record<string, unknown>) => void;
+  error: (message: string, data?: Record<string, unknown>) => void;
+};
+
 export interface ExportStatusData {
   exportId: string;
   processInstanceId: string;
@@ -55,13 +65,7 @@ export const getExportStatus = async ({
 }: {
   exportId: string;
   user: User;
-  // Structural rather than imported: `@op/api` depends on this package, not the
-  // other way round. Shaped to match the `ContextLogger` the tRPC procedure
-  // actually passes, which is also what drops the `any` this used to carry.
-  logger: {
-    info: (message: string, data?: Record<string, unknown>) => void;
-    error: (message: string, data?: Record<string, unknown>) => void;
-  };
+  logger: ExportLogger;
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache
   const key = exportStatusCacheKey(exportId);
@@ -100,68 +104,120 @@ export const getExportStatus = async ({
     permissions: [{ decisions: permission.ADMIN }],
   });
 
-  // Signed URLs are shorter-lived than the export record, so a completed export
-  // is re-signed on read once its current URL has lapsed.
-  if (
-    exportStatus.status === 'completed' &&
-    exportStatus.fileName &&
-    exportStatus.urlExpiresAt
-  ) {
-    const expiresAt = new Date(exportStatus.urlExpiresAt);
-    // A URL that renders instead of downloading is as unusable as an expired
-    // one, so it is re-signed on the same path. This is what stops the reported
-    // bug from outliving the deploy by up to EXPORT_URL_TTL_SECONDS on records
-    // cached before the download option was passed.
-    const isStale =
-      expiresAt < new Date() || !servesAsAttachment(exportStatus.signedUrl);
-
-    if (isStale) {
-      logger.info('Refreshing signed URL', {
-        exportId,
-      });
-
-      const filePath = exportFilePath(
-        exportStatus.processInstanceId,
-        exportStatus.fileName,
-      );
-
-      // Service client, not the caller's. Exports live at
-      // `process/<instanceId>/proposals/<file>`, and the only SELECT policy on
-      // the assets bucket requires the first path segment to equal the caller's
-      // uid — so an anon-key client cannot see the object at all and signing
-      // fails with "Object not found". Authorization is already settled above by
-      // the ownership check and `assertProfileAccess`, which is what makes the
-      // service role safe here; `getProposal` and the resources signer read
-      // objects outside a user's own folder the same way.
-      const supabase = createSBServiceClient();
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from(EXPORTS_BUCKET)
-        .createSignedUrl(
-          filePath,
-          EXPORT_URL_TTL_SECONDS,
-          exportDownloadOptions(exportStatus.fileName),
-        );
-
-      if (!urlError && urlData) {
-        exportStatus.signedUrl = urlData.signedUrl;
-        exportStatus.urlExpiresAt = new Date(
-          Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
-        ).toISOString();
-
-        await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
-      } else {
-        // `error`, not `warn`: the admin is handed back the stale URL and the
-        // UI still renders an enabled Download CSV link that either 404s or
-        // renders inline. This is also the rescue path for every pre-fix
-        // record, so a failure that does not reach error tracking is a fix
-        // that reports success while still serving the URL it replaced.
-        logger.error('Failed to re-sign export URL', {
-          exportId,
-          error: urlError,
-        });
-      }
-    }
-  }
+  // Mutates `exportStatus` in place when it succeeds, so the record returned
+  // below carries the fresh URL.
+  await refreshStaleSignedUrl({ exportStatus, cacheKey: key, logger });
 
   return exportStatus;
+};
+
+/**
+ * Is a stored export URL no longer usable?
+ *
+ * Two ways it can be. Signed URLs are shorter-lived than the record that holds
+ * them, so it can simply have lapsed. Or it can be a URL minted before the
+ * download option existed — which renders in the browser instead of saving, and
+ * is therefore just as unusable however long it has left. Gating on expiry
+ * alone leaves the reported bug live for up to EXPORT_URL_TTL_SECONDS after
+ * deploy on every record already in the cache.
+ */
+const needsFreshUrl = ({
+  status,
+  fileName,
+  signedUrl,
+  urlExpiresAt,
+}: ExportStatusData): boolean => {
+  if (status !== 'completed' || !fileName || !urlExpiresAt) {
+    return false;
+  }
+
+  return new Date(urlExpiresAt) < new Date() || !servesAsAttachment(signedUrl);
+};
+
+/**
+ * Mint a signed, attachment-serving download URL for an export's stored file.
+ *
+ * Signs with the service client, not the caller's. Exports live at
+ * `process/<instanceId>/proposals/<file>`, and the only SELECT policy on the
+ * assets bucket requires the first path segment to equal the caller's uid — so
+ * an anon-key client cannot see the object at all and signing fails with
+ * "Object not found". Callers settle authorization before reaching this;
+ * `getProposal` and the resources signer read objects outside a user's own
+ * folder the same way.
+ *
+ * Throws rather than returning a failure, so the one caller's degradation
+ * boundary is the only place that decides what a failed re-sign costs.
+ */
+const mintSignedDownloadUrl = async ({
+  processInstanceId,
+  fileName,
+}: {
+  processInstanceId: string;
+  fileName: string;
+}): Promise<string> => {
+  const supabase = createSBServiceClient();
+  const { data, error } = await supabase.storage
+    .from(EXPORTS_BUCKET)
+    .createSignedUrl(
+      exportFilePath(processInstanceId, fileName),
+      EXPORT_URL_TTL_SECONDS,
+      exportDownloadOptions(fileName),
+    );
+
+  if (error || !data) {
+    throw error ?? new Error('Signing returned no URL');
+  }
+
+  return data.signedUrl;
+};
+
+/**
+ * Re-sign a stale export URL in place and write the record back to the cache.
+ *
+ * Leaves `exportStatus` untouched when its URL is still good, and when the
+ * re-sign fails.
+ */
+const refreshStaleSignedUrl = async ({
+  exportStatus,
+  cacheKey,
+  logger,
+}: {
+  exportStatus: ExportStatusData;
+  cacheKey: string;
+  logger: ExportLogger;
+}): Promise<void> => {
+  const { exportId, fileName } = exportStatus;
+
+  if (!fileName || !needsFreshUrl(exportStatus)) {
+    return;
+  }
+
+  logger.info('Refreshing signed URL', { exportId });
+
+  // Deliberately broad, against the usual narrow-catch rule: this is a
+  // degradation boundary, not error handling. Every way the re-sign can fail —
+  // a client that cannot be built because SUPABASE_SERVICE_ROLE is unset (which
+  // throws synchronously), a sign that is refused, a cache write that fails —
+  // costs the caller only a fresher URL, while letting any of them escape costs
+  // the record itself. That is far worse: the button escalates to its error
+  // boundary and the admin loses the Download CSV link, with only a "Try again"
+  // that re-runs the whole export.
+  try {
+    exportStatus.signedUrl = await mintSignedDownloadUrl({
+      processInstanceId: exportStatus.processInstanceId,
+      fileName,
+    });
+    exportStatus.urlExpiresAt = new Date(
+      Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
+    ).toISOString();
+
+    await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
+  } catch (error) {
+    // `error`, not `warn`: the admin is handed back the stale URL and the UI
+    // still renders an enabled Download CSV link that either 404s or renders
+    // inline. This is also the rescue path for every pre-fix record, so a
+    // failure that does not reach error tracking is a fix that reports success
+    // while still serving the URL it replaced.
+    logger.error('Failed to re-sign export URL', { exportId, error });
+  }
 };
