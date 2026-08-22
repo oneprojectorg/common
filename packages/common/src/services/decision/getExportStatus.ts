@@ -113,6 +113,15 @@ export const getExportStatus = async ({
     permissions: [{ decisions: permission.ADMIN }],
   });
 
+  // The record is an unvalidated cast over Redis JSON, so a non-string
+  // `signedUrl` is reachable by schema drift or a corrupt entry — and callers
+  // declare a string, so returning one costs them the whole record. Dropped
+  // here rather than inside the re-sign, which only ever sees completed records
+  // and so would leave every other status exposed.
+  if (typeof exportStatus.signedUrl !== 'string') {
+    exportStatus.signedUrl = undefined;
+  }
+
   // Mutates `exportStatus` in place when it succeeds, so the record returned
   // below carries the fresh URL.
   await refreshStaleSignedUrl({ exportStatus, cacheKey: key, logger });
@@ -226,15 +235,6 @@ const refreshStaleSignedUrl = async ({
 
   if (!fileName || !needsFreshUrl(exportStatus)) {
     return;
-  }
-
-  // Drop a URL that is not even a string before attempting the re-sign. Reading
-  // around it is not enough: it would otherwise survive a *failed* re-sign and
-  // be handed back, where the caller's output schema declares a string and
-  // rejects the record — costing the caller exactly what the degradation
-  // boundary below exists to preserve.
-  if (typeof exportStatus.signedUrl !== 'string') {
-    exportStatus.signedUrl = undefined;
   }
 
   logger.info('Refreshing signed URL', { exportId });

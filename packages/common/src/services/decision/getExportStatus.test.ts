@@ -318,6 +318,22 @@ describe('getExportStatus', () => {
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 
+  // The scrub has to cover every status, not just the one the re-sign handles.
+  // A corrupt record that never completed reaches the caller untouched, and its
+  // output schema rejects a non-string `signedUrl` just the same.
+  it('drops a non-string cached URL on a record that never completed', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      status: 'processing',
+      signedUrl: 42,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {

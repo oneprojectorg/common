@@ -102,7 +102,12 @@ export const exportFileName = (extension: string) =>
  * The download button's `download` attribute cannot cover this: the HTML
  * attribute is ignored for cross-origin URLs, and these links point at the
  * Supabase host rather than the app's own. The disposition has to come from the
- * signed URL, which is what naming the file here does.
+ * signed URL.
+ *
+ * Naming the file is equivalent to `download: true` today — the storage key's
+ * last segment already is `fileName` — but it decouples the saved name from the
+ * key, so the admin-facing name can be changed without moving the object. Right
+ * now that name is the internal `proposals_export_<uuid>_<epoch>.csv`.
  *
  * Shared by both signing sites — the export workflow's first URL and the
  * re-sign in `getExportStatus` — because either one alone leaves the other

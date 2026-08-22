@@ -122,9 +122,11 @@ describe('exportDownloadOptions', () => {
   // text instead of saving it. Naming the file here is what turns the response
   // into an attachment.
   //
-  // The name rather than a bare `download: true`, which forces the attachment
-  // too but has Supabase name the saved file after the storage key's last
-  // segment. Asserted by equality so that substitution fails here.
+  // Passes the name rather than a bare `download: true`, though the two are
+  // equivalent today: the storage key's last segment already *is* `fileName`,
+  // so Supabase would derive the same one. The name is what makes the
+  // disposition independent of the key — a human-readable download name is
+  // now possible without moving the object.
   it('asks Supabase to serve the object as an attachment, by name', () => {
     expect(exportDownloadOptions('proposals_export_123.csv')).toEqual({
       download: 'proposals_export_123.csv',
