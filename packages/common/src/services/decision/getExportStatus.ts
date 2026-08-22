@@ -28,8 +28,17 @@ import {
  * param order cannot fool it and a malformed cached value returns false
  * instead of throwing on a read path that must not fail.
  */
-const servesAsAttachment = (signedUrl: string | undefined): boolean => {
-  const query = signedUrl?.split('?')[1];
+const servesAsAttachment = (signedUrl: unknown): boolean => {
+  // `unknown`, not `string | undefined`: the record is an unvalidated cast over
+  // Redis JSON, so a non-string here is reachable by schema drift or a corrupt
+  // entry. This runs outside the re-sign's degradation boundary, so it has to
+  // answer "cannot download" rather than throw — a throw would fail the whole
+  // query and cost the caller the record that boundary exists to preserve.
+  if (typeof signedUrl !== 'string') {
+    return false;
+  }
+
+  const query = signedUrl.split('?')[1];
 
   return query !== undefined && new URLSearchParams(query).has('download');
 };
@@ -112,10 +121,20 @@ export const getExportStatus = async ({
 };
 
 /**
+ * How much life a stored URL needs left to be worth handing over.
+ *
+ * Without a margin a URL with seconds on it reads as fresh, then expires
+ * between the read and the click: the browser shows a signature error, and the
+ * button has already dropped its export id, so the admin's only way back is
+ * re-running the export.
+ */
+const URL_EXPIRY_MARGIN_MS = 60 * 1000;
+
+/**
  * Is a stored export URL no longer usable?
  *
- * Three ways it can be. Signed URLs are shorter-lived than the record that
- * holds them, so it can simply have lapsed. It can be a URL minted before the
+ * Signed URLs are shorter-lived than the record that holds them, so it can
+ * simply have lapsed, or be within {@link URL_EXPIRY_MARGIN_MS} of doing so. It can be a URL minted before the
  * download option existed — which renders in the browser instead of saving, and
  * is therefore just as unusable however long it has left; gating on expiry
  * alone leaves the reported bug live for up to EXPORT_URL_TTL_SECONDS after
@@ -144,7 +163,7 @@ const needsFreshUrl = ({
 
   return (
     Number.isNaN(expiresAt) ||
-    expiresAt < Date.now() ||
+    expiresAt < Date.now() + URL_EXPIRY_MARGIN_MS ||
     !servesAsAttachment(signedUrl)
   );
 };

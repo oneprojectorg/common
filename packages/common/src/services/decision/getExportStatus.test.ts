@@ -261,6 +261,40 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
+  // A URL with seconds left is not worth handing over: it dies between this read
+  // and the click, the browser shows a signature error, and the button has
+  // already cleared its export id — so the link is gone and the only way back
+  // is re-running the export.
+  it('re-signs a URL that is about to expire', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      signedUrl: FRESH_URL,
+      urlExpiresAt: new Date(NOW.getTime() + 5_000).toISOString(),
+    });
+
+    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalled();
+  });
+
+  // The cached record is an unvalidated cast over Redis JSON, so a non-string
+  // `signedUrl` is reachable through schema drift or a corrupt entry. It has to
+  // read as "cannot download" rather than throw: the staleness test runs outside
+  // the degradation boundary, so a throw here would 500 the query and cost the
+  // admin the record the boundary exists to preserve.
+  it('treats a non-string cached URL as unusable rather than throwing', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      signedUrl: 42,
+      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalled();
+    expect(result).toMatchObject({ signedUrl: FRESH_URL });
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
