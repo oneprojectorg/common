@@ -227,6 +227,24 @@ describe('getExportStatus', () => {
     });
   });
 
+  // A record with a file but no recorded expiry used to bail out of the re-sign
+  // entirely, so the export stayed undownloadable for the rest of the record's
+  // 24h life with the object sitting in the bucket the whole time. The workflow
+  // always writes the expiry alongside the file name, so this is latent rather
+  // than live — but it is the same hole this branch closes for `signedUrl`, and
+  // an unknown expiry is not evidence of a working URL.
+  it('re-signs a completed export with no recorded expiry', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      urlExpiresAt: undefined,
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(createSignedUrl).toHaveBeenCalled();
+    expect(result).toMatchObject({ signedUrl: FRESH_URL });
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {

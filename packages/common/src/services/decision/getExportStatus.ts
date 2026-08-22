@@ -114,12 +114,18 @@ export const getExportStatus = async ({
 /**
  * Is a stored export URL no longer usable?
  *
- * Two ways it can be. Signed URLs are shorter-lived than the record that holds
- * them, so it can simply have lapsed. Or it can be a URL minted before the
+ * Three ways it can be. Signed URLs are shorter-lived than the record that
+ * holds them, so it can simply have lapsed. It can be a URL minted before the
  * download option existed — which renders in the browser instead of saving, and
- * is therefore just as unusable however long it has left. Gating on expiry
+ * is therefore just as unusable however long it has left; gating on expiry
  * alone leaves the reported bug live for up to EXPORT_URL_TTL_SECONDS after
- * deploy on every record already in the cache.
+ * deploy on every record already in the cache. Or the record can carry no
+ * expiry at all, which is not evidence of a working URL: bailing out there
+ * stranded the export for the rest of the record's life with the object sitting
+ * in the bucket.
+ *
+ * Only `fileName` is genuinely required, because that is what rebuilds the
+ * storage key.
  */
 const needsFreshUrl = ({
   status,
@@ -127,11 +133,15 @@ const needsFreshUrl = ({
   signedUrl,
   urlExpiresAt,
 }: ExportStatusData): boolean => {
-  if (status !== 'completed' || !fileName || !urlExpiresAt) {
+  if (status !== 'completed' || !fileName) {
     return false;
   }
 
-  return new Date(urlExpiresAt) < new Date() || !servesAsAttachment(signedUrl);
+  return (
+    !urlExpiresAt ||
+    new Date(urlExpiresAt) < new Date() ||
+    !servesAsAttachment(signedUrl)
+  );
 };
 
 /**
