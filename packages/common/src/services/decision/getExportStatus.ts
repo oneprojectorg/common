@@ -228,6 +228,15 @@ const refreshStaleSignedUrl = async ({
     return;
   }
 
+  // Drop a URL that is not even a string before attempting the re-sign. Reading
+  // around it is not enough: it would otherwise survive a *failed* re-sign and
+  // be handed back, where the caller's output schema declares a string and
+  // rejects the record — costing the caller exactly what the degradation
+  // boundary below exists to preserve.
+  if (typeof exportStatus.signedUrl !== 'string') {
+    exportStatus.signedUrl = undefined;
+  }
+
   logger.info('Refreshing signed URL', { exportId });
 
   // Deliberately broad, against the usual narrow-catch rule: this is a

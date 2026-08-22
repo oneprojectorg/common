@@ -295,6 +295,29 @@ describe('getExportStatus', () => {
     expect(result).toMatchObject({ signedUrl: FRESH_URL });
   });
 
+  // Completing the case above. Narrowing only stops the staleness test throwing;
+  // a non-string that survives a *failed* re-sign is still handed back, and the
+  // tRPC output schema declares `signedUrl: z.string().optional()` — so it is
+  // rejected there instead, and the admin loses the record either way. Defending
+  // the corrupt-cache case at all means dropping the value, not just reading
+  // around it.
+  it('drops a non-string cached URL even when the re-sign fails', async () => {
+    vi.mocked(get).mockResolvedValue({
+      ...expiredRecord(),
+      signedUrl: 42,
+      urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
+    });
+    createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+
+    expect(result).toMatchObject({ status: 'completed' });
+    expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
+  });
+
   // The original bug: the recorded expiry claimed 24h while the URL itself was
   // minted for 2h, so callers trusted a link that had been dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
