@@ -8,7 +8,7 @@ import { Suspense, useId } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ContributingIdeaCard } from './ProposalCard';
+import { ProposalCardView } from './ProposalCard';
 
 /**
  * "Contributing ideas" — the proposals merged into this one, listed as cards
@@ -78,9 +78,16 @@ function ContributingIdeasSuspense({
       <ul className="mt-6 flex flex-col gap-4">
         {contributing.proposals.map((contributingProposal) => (
           <li key={contributingProposal.id}>
-            <ContributingIdeaCard
+            {/* The browse card without its owner affordances: no `…` menu, no
+                actions, and no engagement counts — a merged-away proposal is
+                nobody's to manage or act on from here. The status badge goes
+                too: the read already excludes drafts, hidden and flagged rows,
+                so the only badges left ("Shortlisted", "Not shortlisted") speak
+                about a candidacy that ended when the proposal was merged. */}
+            <ProposalCardView
               proposal={contributingProposal}
               href={`${decisionRoot}/proposal/${contributingProposal.profileId}`}
+              showStatusBadge={false}
             />
           </li>
         ))}
