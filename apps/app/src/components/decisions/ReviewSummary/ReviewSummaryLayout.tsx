@@ -85,17 +85,18 @@ export async function ReviewSummaryLayout({
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
 
-  // resolveReviewPhaseId can fall back to a currentStateId that is not in the
-  // phase list, where getPhaseReviewSettings would throw; a rule-less stand-in
-  // phase resolves the same config-fallback/default chain there.
-  const instanceData = instance.instanceData;
-  const reviewSettings =
-    phaseId && instanceData?.phases?.some((phase) => phase.phaseId === phaseId)
-      ? getPhaseReviewSettings(instanceData, phaseId)
-      : getPhaseReviewSettings(
-          { config: instanceData?.config, phases: [{ phaseId: 'fallback' }] },
-          'fallback',
-        );
+  // No phase resolves only on an instance with no phases and no current state.
+  if (!phaseId) {
+    notFound();
+  }
+
+  // Asserts the phase via assertInstancePhase: a resolveReviewPhaseId result
+  // missing from the phase list is broken instance data — fail loudly rather
+  // than resolve default settings.
+  const reviewSettings = getPhaseReviewSettings(
+    instance.instanceData ?? {},
+    phaseId,
+  );
 
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
