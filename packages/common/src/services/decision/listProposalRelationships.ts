@@ -4,7 +4,7 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { needsNoAccessException } from './proposalVisibility';
 import type {
@@ -54,18 +54,14 @@ export async function listProposalRelationships({
   // `Promise.all` rejects with the assert's error the moment it throws, so an
   // unauthorized caller never receives rows from the parallel read.
   const [, pinnedIsReadable, rows] = await Promise.all([
-    // The same grant `listProposals` requires to see the decision's proposals.
-    assertInstanceProfileAccess({
+    // Profile-level grants only, matching `listContributingProposals`. No org
+    // fallback: only legacy processes relied on it and those are all complete,
+    // so none of them can gain a merge. `ADMIN` isn't listed alongside `READ`
+    // because the seeded decisions Admin role already carries `read`.
+    assertProfileAccess({
       user,
-      instance: proposal.instance,
-      profilePermissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-      orgFallbackPermissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
+      profileId: proposal.instance.profileId,
+      permissions: { decisions: permission.READ },
     }),
     db
       .select({ id: proposals.id })
