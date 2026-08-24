@@ -4,33 +4,38 @@ import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
+  exportDownloadOptions,
   exportFileName,
   exportFilePath,
   exportStatusCacheKey,
 } from './constants';
 
-// Regression: these constants are read by three independent call sites — the
-// `exportProposals` service that seeds the status record, the Inngest workflow
-// that writes the file and completes the record, and `getExportStatus` that
-// reads it back. They were previously hardcoded at each site and drifted, which
-// is what produced the dead-download-link bug these tests pin down.
+// Regression. Three independent call sites read these constants. The
+// `exportProposals` service seeds the status record. The Inngest workflow writes
+// the file. `getExportStatus` reads it back.
+//
+// Each site hardcoded its own copy, and they drifted. That produced the
+// dead-download-link bug these tests pin down.
 
 describe('EXPORTS_BUCKET', () => {
-  // Exports share the public `assets` bucket by deliberate choice: no separate
-  // bucket has to be provisioned per environment. The trade is that an export
-  // object is readable by anyone holding its path — next.config.mjs rewrites
-  // /assets/* to the bucket's public object root — so the unguessable file name
-  // is the access control, and the signed URLs are only link expiry.
+  // Exports share the public `assets` bucket on purpose. No separate bucket then
+  // has to be provisioned per environment.
+  //
+  // The trade is that anyone holding an export's path can read it, because
+  // next.config.mjs rewrites /assets/* to the bucket's public object root. The
+  // unguessable file name is the access control. The signed URLs only add
+  // expiry.
   it('is the shared `assets` bucket', () => {
     expect(EXPORTS_BUCKET).toBe('assets');
   });
 });
 
 describe('export TTLs', () => {
-  // THE invariant. The signed URL must expire before the record that holds it,
-  // so that a lapsed URL is still attached to a live record and can be
-  // re-signed on read. Invert this and the record dies first: `getExportStatus`
-  // returns `not_found` and the refresh branch becomes unreachable code.
+  // THE invariant. The signed URL must expire before the record that holds it. A
+  // lapsed URL then still sits on a live record and can be re-signed on read.
+  //
+  // Invert it and the record dies first. `getExportStatus` returns `not_found`
+  // and the refresh branch becomes unreachable code.
   it('expires the signed URL strictly before the cached record', () => {
     expect(EXPORT_URL_TTL_SECONDS).toBeLessThan(EXPORT_CACHE_TTL_SECONDS);
   });
@@ -69,9 +74,9 @@ describe('exportFilePath', () => {
     );
   });
 
-  // Exports share `assets` with profile images and resources, so the key has to
-  // follow the same `<entity>/<id>/<sub-resource>/` shape those writers use or
-  // the bucket's top level accumulates a prefix per feature.
+  // Exports share `assets` with profile images and resources. The key follows the
+  // same `<entity>/<id>/<sub-resource>/` shape those writers use. Otherwise the
+  // bucket's top level accumulates a prefix per feature.
   it('leads with the owning entity, not the sub-resource', () => {
     expect(exportFilePath('instance-1', 'f.csv')).toMatch(
       /^process\/instance-1\/proposals\//,
@@ -111,5 +116,20 @@ describe('exportFileName', () => {
     expect(exportFilePath('instance-1', exportFileName('csv'))).toMatch(
       /^[a-zA-Z0-9!\-_.*'()/]+$/,
     );
+  });
+});
+
+describe('exportDownloadOptions', () => {
+  // The reported bug. Supabase serves a signed URL inline unless it is asked
+  // otherwise. The anchor's `download` attribute is inert cross-origin, so
+  // Safari rendered the CSV as text.
+  //
+  // `download: true` is equivalent today, because the storage key's last segment
+  // is already `fileName`. Passing the name decouples the two, so the saved name
+  // can change without moving the object.
+  it('asks Supabase to serve the object as an attachment, by name', () => {
+    expect(exportDownloadOptions('proposals_export_123.csv')).toEqual({
+      download: 'proposals_export_123.csv',
+    });
   });
 });
