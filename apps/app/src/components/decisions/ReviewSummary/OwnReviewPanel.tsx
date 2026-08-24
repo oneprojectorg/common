@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { ReviewSettings } from '@op/common/client';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
@@ -17,7 +18,7 @@ interface OwnReviewPanelProps {
   decisionSlug: string;
   assignmentId: string;
   /** Resolved from the review phase by `ReviewSummaryLayout`. */
-  anonymousFeedback: boolean;
+  reviewSettings: ReviewSettings;
   onBack: () => void;
   /** Runs after a submit or an update; the host closes the panel. */
   onCompleted: () => void;
@@ -36,7 +37,7 @@ interface OwnReviewPanelProps {
 export function OwnReviewPanel({
   decisionSlug,
   assignmentId,
-  anonymousFeedback,
+  reviewSettings,
   onBack,
   onCompleted,
   initiallyEditing,
@@ -56,10 +57,11 @@ export function OwnReviewPanel({
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            {/* Like revisions, other reviewers' reviews belong to the
-                reviewer surface. */}
+            {/* openReviews forced off like allowRevisions above: the host
+                surface already lists everyone's reviews, so the form's
+                "Other reviews" tab would nest that list inside itself. */}
             <ReviewRubricForm
-              settings={{ anonymousFeedback, openReviews: false }}
+              settings={{ ...reviewSettings, openReviews: false }}
               previousReviewPhases={[]}
             />
           </div>

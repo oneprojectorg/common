@@ -86,16 +86,16 @@ export async function ReviewSummaryLayout({
   const phaseId = resolveReviewPhaseId(instance);
 
   // resolveReviewPhaseId can fall back to a currentStateId that is not in the
-  // phase list, where getPhaseReviewSettings would throw; the setting keeps
-  // its resolver default there.
+  // phase list, where getPhaseReviewSettings would throw; a rule-less stand-in
+  // phase resolves the same config-fallback/default chain there.
   const instanceData = instance.instanceData;
-  let anonymousFeedback = true;
-  if (
-    phaseId &&
-    instanceData?.phases?.some((phase) => phase.phaseId === phaseId)
-  ) {
-    ({ anonymousFeedback } = getPhaseReviewSettings(instanceData, phaseId));
-  }
+  const reviewSettings =
+    phaseId && instanceData?.phases?.some((phase) => phase.phaseId === phaseId)
+      ? getPhaseReviewSettings(instanceData, phaseId)
+      : getPhaseReviewSettings(
+          { config: instanceData?.config, phases: [{ phaseId: 'fallback' }] },
+          'fallback',
+        );
 
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
@@ -129,7 +129,7 @@ export async function ReviewSummaryLayout({
         proposalProfileId={proposalProfileId}
         phaseId={phaseId}
         isPhaseInProgress={isPhaseInProgress}
-        anonymousFeedback={anonymousFeedback}
+        reviewSettings={reviewSettings}
       />
     </HydrationBoundary>
   );
