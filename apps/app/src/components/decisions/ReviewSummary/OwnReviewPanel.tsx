@@ -17,7 +17,6 @@ import { BackToReviewers } from '../ReviewsPanel/BackToReviewers';
 interface OwnReviewPanelProps {
   decisionSlug: string;
   assignmentId: string;
-  /** Resolved from the review phase by `ReviewSummaryLayout`. */
   reviewSettings: ReviewSettings;
   onBack: () => void;
   /** Runs after a submit or an update; the host closes the panel. */

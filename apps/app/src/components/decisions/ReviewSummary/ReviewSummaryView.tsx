@@ -31,7 +31,6 @@ interface ReviewSummaryViewProps {
   proposalProfileId: string;
   phaseId: string | undefined;
   isPhaseInProgress?: boolean;
-  /** Resolved from the review phase by `ReviewSummaryLayout`. */
   reviewSettings: ReviewSettings;
 }
 
