@@ -744,6 +744,99 @@ describe.concurrent('listProposalRelationships', () => {
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
+  it('lists a linked proposal only an admin can open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, target, caller } =
+      await createMergeableProposals(testData);
+
+    // Authored by a member so the admin reaches it through the instance-admin
+    // exception rather than through proposal-level access.
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const source = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Member Source', description: 'Merges away' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    // The mirror of the member case above: an instance admin opens a hidden
+    // proposal through `getProposal`, so the link to it stays visible here.
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, source.id));
+
+    const result = await caller.decision.listProposalRelationships({
+      targetProposalId: target.id,
+    });
+
+    expect(result.relationships).toMatchObject([
+      { proposal: { id: source.id } },
+    ]);
+  });
+
+  it('lists relationships on a pinned proposal for everyone who can open it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, caller } =
+      await createMergeableProposals(testData);
+
+    // Authored by a member, so the admin reaches it through the instance-admin
+    // exception and the author through proposal-level access.
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const target = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Member Target', description: 'Survives' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, target.id));
+
+    // Both can open this proposal's page, so the "Merged into …" notice and the
+    // contributing ideas on it have to load rather than 404.
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    const [adminResult, authorResult] = await Promise.all([
+      caller.decision.listProposalRelationships({
+        targetProposalId: target.id,
+      }),
+      submitterCaller.decision.listProposalRelationships({
+        targetProposalId: target.id,
+      }),
+    ]);
+
+    expect(adminResult.relationships).toMatchObject([
+      { proposal: { id: source.id } },
+    ]);
+    expect(authorResult.relationships).toMatchObject([
+      { proposal: { id: source.id } },
+    ]);
+  });
+
   it('rejects a caller with no access to the decision', async ({
     task,
     onTestFinished,

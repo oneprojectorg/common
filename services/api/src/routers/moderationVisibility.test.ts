@@ -407,5 +407,82 @@ describe.concurrent('moderation read visibility', () => {
       expect(adminView.id).toBe(proposal.id);
       expect(adminView.isFlagged).toBe(true);
     });
+
+    it('keeps the contributing ideas on a flagged proposal loading for the author and admin', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+
+      const instance = setup.instance;
+
+      const [submitter, otherMember, adminCaller] = await Promise.all([
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+      ]);
+
+      const [contributing, survivor] = await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Contributing idea', description: 'Merges' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+        testData.createProposal({
+          userEmail: submitter.email,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Surviving idea', description: 'Survives' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ]);
+
+      // VISIBLE on both ends, as in the test above: this isolates the
+      // moderation gate from the hidden-by-default visibility gate.
+      await db
+        .update(proposals)
+        .set({ visibility: Visibility.VISIBLE })
+        .where(inArray(proposals.id, [contributing.id, survivor.id]));
+
+      await adminCaller.decision.mergeProposals({
+        sourceProposalId: contributing.id,
+        targetProposalId: survivor.id,
+      });
+
+      await flagItem(onTestFinished, ModerationItemType.PROPOSAL, survivor.id);
+
+      // A flagged proposal keeps its page for its author and for admins, so
+      // the section on that page has to load rather than 404 the whole read.
+      const submitterCaller = await createAuthenticatedCaller(submitter.email);
+      const [authorView, adminView] = await Promise.all([
+        submitterCaller.decision.listContributingProposals({
+          proposalId: survivor.id,
+        }),
+        adminCaller.decision.listContributingProposals({
+          proposalId: survivor.id,
+        }),
+      ]);
+      expect(authorView.proposals.map((p) => p.id)).toEqual([contributing.id]);
+      expect(adminView.proposals.map((p) => p.id)).toEqual([contributing.id]);
+
+      // Everyone else loses the page and the section with it.
+      const otherCaller = await createAuthenticatedCaller(otherMember.email);
+      await expect(
+        otherCaller.decision.listContributingProposals({
+          proposalId: survivor.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    });
   });
 });

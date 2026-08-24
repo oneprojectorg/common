@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
+import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -202,6 +202,102 @@ describe.concurrent('listContributingProposals', () => {
     expect(result.proposals.map((proposal) => proposal.id)).toEqual([
       source.id,
     ]);
+  });
+
+  it('loads on a proposal only an admin can open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, caller } =
+      await createMergeableProposals(testData);
+
+    // Authored by a member so the admin reaches it through the instance-admin
+    // exception rather than through proposal-level access.
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const target = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Member Target', description: 'Survives' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, target.id));
+
+    // The admin can open this proposal's page, so the section on it has to
+    // load rather than take the whole read down with a 404.
+    const result = await caller.decision.listContributingProposals({
+      proposalId: target.id,
+    });
+
+    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
+      source.id,
+    ]);
+  });
+
+  it('shows a hidden contributing proposal to an admin but not to other members', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, target, caller } =
+      await createMergeableProposals(testData);
+
+    // Authored by one member and read by another, so neither caller reaches it
+    // through proposal-level access.
+    const [submitter, member] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [setup.instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [setup.instance.profileId],
+      }),
+    ]);
+    const source = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Member Idea', description: 'Merges away' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, source.id));
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const [adminResult, memberResult] = await Promise.all([
+      caller.decision.listContributingProposals({ proposalId: target.id }),
+      memberCaller.decision.listContributingProposals({
+        proposalId: target.id,
+      }),
+    ]);
+
+    // Same split `listProposals` makes: hidden from the decision at large,
+    // still there for the admins who hid it.
+    expect(adminResult.proposals.map((proposal) => proposal.id)).toEqual([
+      source.id,
+    ]);
+    expect(memberResult.proposals).toEqual([]);
   });
 });
 
