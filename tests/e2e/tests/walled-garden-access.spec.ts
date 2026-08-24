@@ -88,6 +88,44 @@ test.describe('Walled garden — authenticated non-members', () => {
   });
 });
 
+/**
+ * Decision pages live in the public `(no-header)` group, so they have no
+ * walled-garden gate — an unreadable one is refused by `getDecisionBySlug`
+ * instead. That refusal can't say whether the decision is private or absent
+ * (the existence-leak guard), so the route decides from the viewer: a visitor
+ * who could still gain access by signing in is sent to login, not to a
+ * dead-end screen. Most of this route's refusals are signed-out, because
+ * decision links travel by email.
+ */
+test.describe('Unreadable decision — a viewer who could sign in', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  // No seeded private decision needed: an absent slug is refused identically.
+  const unreadable = '/en/decisions/wg-unreadable-decision';
+
+  test('logged out → /login carrying the decision path back', async ({
+    page,
+  }) => {
+    await page.goto(unreadable);
+
+    await expect(page).toHaveURL(/\/login\?redirect=/, { timeout: 15000 });
+    expect(new URL(page.url()).searchParams.get('redirect')).toBe(unreadable);
+  });
+
+  test('anonymous session → /login, not the no-access screen', async ({
+    page,
+  }) => {
+    await authenticateAnonymously(page);
+
+    await page.goto(unreadable);
+
+    await expect(page).toHaveURL(/\/login\?redirect=/, { timeout: 15000 });
+    await expect(
+      page.getByText("You don't have access to this page"),
+    ).not.toBeVisible();
+  });
+});
+
 test.describe('Walled garden — anonymous sessions can log in', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
