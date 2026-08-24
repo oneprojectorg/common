@@ -21,12 +21,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
 
-const contributingIdeasFallbacks = {
-  default: ({ error, resetErrorBoundary }: FallbackProps) => (
-    <ContributingIdeasUnavailable error={error} onRetry={resetErrorBoundary} />
-  ),
-};
-
 /**
  * The proposals merged into this one, listed above the comments. A merge
  * records a link rather than moving content, so nothing else on the surviving
@@ -41,7 +35,16 @@ export function ContributingIdeas({
   decisionRoot: string;
 }) {
   return (
-    <APIErrorBoundary fallbacks={contributingIdeasFallbacks}>
+    <APIErrorBoundary
+      fallbacks={{
+        default: ({ error, resetErrorBoundary }: FallbackProps) => (
+          <ContributingIdeasUnavailable
+            error={error}
+            onRetry={resetErrorBoundary}
+          />
+        ),
+      }}
+    >
       {/* No skeleton: most proposals have nothing merged in, so a placeholder
           would flash on every page that ends up rendering nothing. */}
       <Suspense fallback={null}>
