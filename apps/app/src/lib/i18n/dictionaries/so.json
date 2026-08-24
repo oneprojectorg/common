@@ -1623,5 +1623,7 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# soo jeedin la muujiyay} other {# soo jeedimo la muujiyay}}",
   "Contributing ideas": "Fikrado wax ku darsaday",
   "These participant ideas were merged into this proposal.": "Fikradahan ka-qaybgalayaasha waxaa lala biiriyay soo jeedintan.",
-  "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin"
+  "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin",
+  "Sign in to view this page": "Gal si aad u aragto boggan",
+  "This page is only visible to people taking part in this decision.": "Boggan waxaa kaliya arki kara dadka ka qaybqaadanaya go'aankan."
 }

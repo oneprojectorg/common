@@ -3,12 +3,44 @@ import { TRPCError } from '@trpc/server';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
 import {
   type ErrorFormatter,
+  getHTTPStatusCodeFromError,
   getStatusKeyFromCode,
 } from '@trpc/server/unstable-core-do-not-import';
 import { AccessControlException } from 'access-zones';
 import { ZodError } from 'zod';
 
 import type { TContext } from '../types';
+
+/**
+ * The `CommonError` a failed procedure is really reporting, or undefined when
+ * it isn't reporting one.
+ *
+ * tRPC wraps anything a procedure throws in an `INTERNAL_SERVER_ERROR`
+ * `TRPCError` and keeps the original under `cause`, so the outer error never
+ * carries the status our service layer chose. `AccessControlException` comes
+ * from access-zones rather than our own hierarchy, so it maps onto the
+ * equivalent `UnauthorizedError`.
+ */
+const resolveCommonError = (error: TRPCError): CommonError | undefined => {
+  const { cause } = error;
+
+  if (cause instanceof AccessControlException) {
+    return new UnauthorizedError(cause.message);
+  }
+
+  return cause instanceof CommonError ? cause : undefined;
+};
+
+/**
+ * The HTTP status a failed procedure will actually answer with.
+ *
+ * `error.code` alone reports every rejection as a 500 — including the expected
+ * 401/403/404 the access gates raise — because that's the code tRPC assigns
+ * when it wraps the thrown error. Callers that need the real status before
+ * `errorFormatter` runs (request logging, log severity) go through here.
+ */
+export const getErrorStatusCode = (error: TRPCError): number =>
+  resolveCommonError(error)?.statusCode ?? getHTTPStatusCodeFromError(error);
 
 class BackendError extends TRPCError {
   public readonly clientMessage;
@@ -33,27 +65,22 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
   shape,
   error,
 }) => {
-  const cause = error.cause;
-  const commonErrorToTRPCError = (cause: CommonError) => {
+  const commonError = resolveCommonError(error);
+
+  if (commonError) {
+    const { statusCode } = commonError;
+
     return {
       ...shape,
-      message: cause.message,
+      message: commonError.message,
       data: {
         ...shape.data,
-        code: getStatusKeyFromCode(cause.statusCode ?? 500),
-        httpStatus: cause.statusCode ?? 500,
-        timestamp: cause.timestamp,
+        code: getStatusKeyFromCode(statusCode),
+        httpStatus: statusCode,
+        timestamp: commonError.timestamp,
         // Omit the entire error object before it goes to the client
       },
     };
-  };
-
-  if (cause instanceof AccessControlException) {
-    return commonErrorToTRPCError(new UnauthorizedError(cause.message));
-  }
-
-  if (cause instanceof CommonError) {
-    return commonErrorToTRPCError(cause);
   }
 
   const backendError = error as BackendError;

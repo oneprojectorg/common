@@ -10,6 +10,7 @@ import {
 } from '@op/logging';
 import spacetime from 'spacetime';
 
+import { getErrorStatusCode } from '../lib/error';
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
 // withLogContext opens the request-scoped log context that the auth
@@ -118,7 +119,14 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       // Log the actual error message as the body so the log stream is
       // self-explanatory — a wall of identical "Request failed" lines forces a
       // drill-in on every entry. Code/name/stack stay in the attributes.
-      opLogger.error(result.error.message || 'Request failed', {
+      //
+      // Severity follows the status the request actually answers with, not
+      // `result.error.code`: tRPC labels every thrown error
+      // INTERNAL_SERVER_ERROR, so logging on the code alone files an expected
+      // 403 (a non-member opening a proposal) alongside real 500s and buries
+      // the outages. A 4xx is the gate working, so it lands at `warn`.
+      const statusCode = getErrorStatusCode(result.error);
+      const attributes = {
         requestId: ctx.requestId,
         path,
         type,
@@ -128,8 +136,16 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         timestamp: end,
         errorCode: result.error.code,
         errorName: result.error.name,
+        statusCode,
         error: result.error,
-      });
+      };
+      const body = result.error.message || 'Request failed';
+
+      if (statusCode < 500) {
+        opLogger.warn(body, attributes);
+      } else {
+        opLogger.error(body, attributes);
+      }
     } else {
       console.log(
         `? UNHANDLED ERROR:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,

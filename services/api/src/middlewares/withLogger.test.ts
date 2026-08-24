@@ -1,3 +1,4 @@
+import { NotFoundError, UnauthorizedError } from '@op/common';
 import { POSTHOG_SESSION_ID_COOKIE } from '@op/core';
 import { logger, setLogSessionId } from '@op/logging';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,7 +8,15 @@ import withLogger from './withLogger';
 
 type NextResult =
   | { ok: true }
-  | { ok: false; error: { code: string; name: string; message?: string } };
+  | {
+      ok: false;
+      error: {
+        code: string;
+        name: string;
+        message?: string;
+        cause?: unknown;
+      };
+    };
 
 function makeCtx({
   header,
@@ -121,5 +130,61 @@ describe('withLogger — request logging', () => {
       'Request failed',
       expect.objectContaining({ status: 'error' }),
     );
+  });
+});
+
+describe('withLogger — severity follows the answered status', () => {
+  // tRPC labels everything a procedure throws INTERNAL_SERVER_ERROR and keeps
+  // the real error under `cause`, so `errorCode` alone can't tell an outage
+  // from a gate doing its job. These cover the split.
+  const expectedFailures = [
+    {
+      label: 'a 403 from an access gate',
+      cause: new UnauthorizedError("You don't have access to do this"),
+      statusCode: 403,
+    },
+    {
+      label: 'a 404 for a missing record',
+      cause: new NotFoundError('Proposal', 'abc'),
+      statusCode: 404,
+    },
+  ];
+
+  for (const { label, cause, statusCode } of expectedFailures) {
+    it(`logs ${label} at warn, not error`, async () => {
+      await runLogger(makeCtx({ header: 'sess' }), {
+        ok: false,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          name: 'TRPCError',
+          message: cause.message,
+          cause,
+        },
+      });
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        cause.message,
+        expect.objectContaining({ status: 'error', statusCode }),
+      );
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+  }
+
+  it('still logs a genuine 500 at error', async () => {
+    await runLogger(makeCtx({ header: 'sess' }), {
+      ok: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        name: 'TRPCError',
+        message: 'Failed query: select "users"',
+        cause: new Error('Failed query: select "users"'),
+      },
+    });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed query: select "users"',
+      expect.objectContaining({ status: 'error', statusCode: 500 }),
+    );
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 });

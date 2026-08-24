@@ -1671,5 +1671,7 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposal shown} other {# proposals shown}}",
   "Contributing ideas": "Contributing ideas",
   "These participant ideas were merged into this proposal.": "These participant ideas were merged into this proposal.",
-  "Contributing ideas could not be loaded": "Contributing ideas could not be loaded"
+  "Contributing ideas could not be loaded": "Contributing ideas could not be loaded",
+  "Sign in to view this page": "Sign in to view this page",
+  "This page is only visible to people taking part in this decision.": "This page is only visible to people taking part in this decision."
 }

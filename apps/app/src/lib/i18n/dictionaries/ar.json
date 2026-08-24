@@ -1621,5 +1621,7 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {يُعرض مقترح واحد} other {تُعرض # مقترحات}}",
   "Contributing ideas": "أفكار مساهِمة",
   "These participant ideas were merged into this proposal.": "تم دمج أفكار المشاركين هذه في هذا المقترح.",
-  "Contributing ideas could not be loaded": "تعذر تحميل الأفكار المساهِمة"
+  "Contributing ideas could not be loaded": "تعذر تحميل الأفكار المساهِمة",
+  "Sign in to view this page": "سجّل الدخول لعرض هذه الصفحة",
+  "This page is only visible to people taking part in this decision.": "هذه الصفحة مرئية فقط للأشخاص المشاركين في هذا القرار."
 }

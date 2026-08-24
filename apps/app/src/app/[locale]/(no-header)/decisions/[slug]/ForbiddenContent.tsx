@@ -1,11 +1,13 @@
 'use client';
 
+import { useMaybeUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { Header1, Header2 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,6 +30,39 @@ const NoAccessMessage = () => {
         )}
       </p>
       <ButtonLink href="/">{t('Go to Common')}</ButtonLink>
+    </div>
+  );
+};
+
+/**
+ * Shown to a visitor with no real account.
+ *
+ * `/login` sits outside the `[locale]` tree, so this links with a native
+ * anchor rather than `ButtonLink` — the i18n `Link` would prefix the locale
+ * and land on a route that doesn't exist. The redirect target uses
+ * `next/navigation`'s `usePathname` (not the i18n one) for the mirror-image
+ * reason: it keeps the locale prefix that `getSafeRedirectPath` requires
+ * before login will send them back here.
+ */
+const SignInMessage = () => {
+  const t = useTranslations();
+  const pathname = usePathname();
+
+  return (
+    <div className="flex size-full flex-col items-center justify-center gap-4 p-6 text-center">
+      <Header1>{t('Sign in to view this page')}</Header1>
+      <p className="text-muted-foreground">
+        {t('This page is only visible to people taking part in this decision.')}
+      </p>
+      <Button
+        nativeButton={false}
+        role={undefined}
+        render={
+          <a href={`/login?redirect=${encodeURIComponent(pathname)}`}>
+            {t('Sign in')}
+          </a>
+        }
+      />
     </div>
   );
 };
@@ -133,6 +168,19 @@ const ForbiddenWithInviteCheck = () => {
 };
 
 export const ForbiddenContent = () => {
+  // Non-throwing: this renders from a `forbidden.tsx` boundary, where a hook
+  // that threw would escalate the scoped page into a generic error.
+  const user = useMaybeUser();
+
+  // A signed-out visitor (or an anonymous account) hasn't been refused — they
+  // just haven't identified themselves yet, which is how most people arrive on
+  // a shared decision or proposal link. Invites are keyed to a real account, so
+  // the lookup below has nothing to find and would only 401 into the generic
+  // "no access" fallback. Send them to sign in and back instead.
+  if (!userCanInteract(user)) {
+    return <SignInMessage />;
+  }
+
   return (
     <ErrorBoundary fallback={<NoAccessMessage />}>
       <Suspense
