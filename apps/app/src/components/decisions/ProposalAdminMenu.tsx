@@ -17,7 +17,9 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
+import { RejectProposalDialog } from './RejectProposalDialog';
 import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
+import { buildRejectMenuItem } from './proposals/reject';
 import { useProposalModerationActions } from './useProposalModerationActions';
 
 /**
@@ -63,6 +65,7 @@ function ProposalAdminMenuItems({
   const router = useRouter();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
@@ -80,6 +83,10 @@ function ProposalAdminMenuItems({
     },
   });
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
+  const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
+  // The parent gate already requires admin + non-draft; only hide once rejected.
+  const canReject =
+    rejectEnabled && proposal.status !== ProposalStatus.REJECTED;
 
   // A superseded proposal leaves every listing, so its own page is the only
   // surface that can offer the undo. Gated with the item it feeds.
@@ -120,8 +127,17 @@ function ProposalAdminMenuItems({
       })
     : null;
 
+  const rejectItem = canReject
+    ? buildRejectMenuItem({
+        isDisabled: isLoading || unmergeMutation.isPending,
+        label: t('Reject proposal'),
+        onReject: () => setIsRejectModalOpen(true),
+      })
+    : null;
+
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
+    ...(rejectItem ? [rejectItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -160,6 +176,13 @@ function ProposalAdminMenuItems({
           proposal={proposal}
           open={isMergeModalOpen}
           onOpenChange={setIsMergeModalOpen}
+        />
+      ) : null}
+      {canReject ? (
+        <RejectProposalDialog
+          proposalId={proposal.id}
+          open={isRejectModalOpen}
+          onOpenChange={setIsRejectModalOpen}
         />
       ) : null}
     </ProposalOptionsMenu>

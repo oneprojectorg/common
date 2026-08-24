@@ -90,6 +90,13 @@ export {
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
+  REJECTION_NOTE_MAX_LENGTH,
+  PROPOSAL_REJECTION_REASONS,
+  rejectProposalInputSchema,
+  type ProposalRejectionReason,
+  type RejectProposalInput,
+} from './services/decision/schemas/rejectProposal';
+export {
   listContributingProposalsInputSchema,
   contributingProposalListSchema,
   type ListContributingProposalsInput,

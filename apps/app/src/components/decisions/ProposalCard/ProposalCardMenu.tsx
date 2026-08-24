@@ -13,7 +13,9 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
+import { RejectProposalDialog } from '../RejectProposalDialog';
 import { buildMergeMenuItem } from '../proposals/merge';
+import { buildRejectMenuItem } from '../proposals/reject';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
@@ -30,6 +32,7 @@ export function ProposalCardMenu({
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -40,6 +43,13 @@ export function ProposalCardMenu({
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
   const canMerge =
     mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+
+  const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
+  const canReject =
+    rejectEnabled &&
+    canManage &&
+    proposal.status !== ProposalStatus.DRAFT &&
+    proposal.status !== ProposalStatus.REJECTED;
 
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
@@ -64,6 +74,17 @@ export function ProposalCardMenu({
         onAction: handleToggleVisibility,
         isDisabled: isLoading,
       });
+    }
+
+    // Reject sits with merge as an admin curation action (Figma flyout).
+    if (canReject) {
+      items.push(
+        buildRejectMenuItem({
+          isDisabled: isLoading,
+          label: t('Reject proposal'),
+          onReject: () => setIsRejectModalOpen(true),
+        }),
+      );
     }
 
     // Edit is a menu item everywhere except drafts, whose card keeps the
@@ -115,6 +136,13 @@ export function ProposalCardMenu({
           proposal={proposal}
           open={isMergeModalOpen}
           onOpenChange={setIsMergeModalOpen}
+        />
+      )}
+      {canReject && (
+        <RejectProposalDialog
+          proposalId={proposal.id}
+          open={isRejectModalOpen}
+          onOpenChange={setIsRejectModalOpen}
         />
       )}
     </ProposalOptionsMenu>

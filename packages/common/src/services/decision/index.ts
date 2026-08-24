@@ -63,6 +63,7 @@ export * from './getProposalsForPhase';
 export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
+export * from './rejectProposal';
 export * from './getProposal';
 export * from './assertProposalEngagementAccess';
 
