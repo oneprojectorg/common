@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { allProposalsListItemSchema } from './proposal';
 
 export const listContributingProposalsInputSchema = z.object({
-  /** The surviving proposal — the target end of every `merged` edge read here. */
+  /** The surviving proposal — the target of every `merged` edge. */
   proposalId: z.uuid(),
 });
 
@@ -12,10 +12,8 @@ export type ListContributingProposalsInput = z.infer<
 >;
 
 /**
- * Contributing proposals ship the same row shape as every other card surface
- * (`allProposalsListItemSchema`, the read-only list item) so the app can render
- * them through the shared card mapping — which is what carries the anonymity
- * and profile-linking rules. Unpaginated: the fan-in is one admin's merges.
+ * The same row shape as every other card surface, so the app renders these
+ * through the shared card mapping that carries the anonymity rules.
  */
 export const contributingProposalListSchema = z.object({
   proposals: z.array(allProposalsListItemSchema),

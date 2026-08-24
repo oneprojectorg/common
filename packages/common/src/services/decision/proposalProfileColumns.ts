@@ -1,10 +1,7 @@
 /**
- * Column picks for the `submittedBy`/`profile` relations on list rows. Covers
- * the fields the widest consumer needs — the legacy results encoder
- * (`baseProfileEncoder`, via `getInstanceResults`) requires the full profile
- * shape, while the non-legacy `proposalSchema` encoder narrows further on the
- * wire. Keeps only the generated `search` tsvector and other never-encoded
- * columns out of the lateral joins.
+ * Column picks for the `submittedBy`/`profile` relations on list rows. Wide
+ * because the legacy results encoder (`baseProfileEncoder`) needs the whole
+ * profile; keeps the generated `search` tsvector out of the lateral joins.
  */
 export const proposalProfileColumns = {
   id: true,

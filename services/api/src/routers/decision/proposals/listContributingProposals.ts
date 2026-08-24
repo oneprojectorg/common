@@ -8,10 +8,8 @@ import { openProcedure, router } from '../../../trpcFactory';
 
 export const listContributingProposalsRouter = router({
   /**
-   * The proposals merged into this one, as "Contributing ideas" cards.
-   * `openProcedure` to match `getProposal`, since this renders alongside the
-   * proposal and public decision visitors see both; the service asserts
-   * `decisions: READ`.
+   * `openProcedure` like `getProposal` — this renders alongside the proposal,
+   * which public decision visitors can see. The service asserts `decisions: READ`.
    */
   listContributingProposals: openProcedure()
     .input(listContributingProposalsInputSchema)

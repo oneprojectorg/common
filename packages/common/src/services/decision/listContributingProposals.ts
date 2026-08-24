@@ -21,12 +21,8 @@ import { proposalProfileColumns } from './proposalProfileColumns';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { ListContributingProposalsInput } from './schemas/contributingProposals';
 
-/**
- * Same visibility floor `getProposal` applies, so this never surfaces a
- * proposal the caller couldn't open: no drafts, hidden, actively flagged, or
- * moderation-detached rows. Applied to both the pinned proposal and every
- * contributing one.
- */
+/** The visibility floor `getProposal` applies, so this surfaces nothing the
+ *  caller couldn't open. Applied to the pinned proposal and every source. */
 const needsNoAccessException = (t: typeof proposals): SQL =>
   and(
     isNull(t.deletedAt),
@@ -37,24 +33,11 @@ const needsNoAccessException = (t: typeof proposals): SQL =>
   )!;
 
 /**
- * The proposals merged into `proposalId`, as "Contributing ideas" cards on the
- * surviving proposal's page.
+ * The proposals merged into `proposalId`, as "Contributing ideas" cards.
  *
- * Rows carry the same shape every other card surface reads, assembled the same
- * way — `proposalAuthorRelation` + `isAnonymousAuthor` for the submitter, and
- * `buildProposalListPreview` for the title override and body excerpt. The card
- * then goes through the app's shared mapping, so the anonymity and
- * profile-linking rules can't drift on this one surface.
- *
- * Separate from `listProposalRelationships`, which answers the same question
- * about the edges but stays lean because the proposal header's "Merged into …"
- * notice reads it on every superseded proposal's page — this one resolves the
- * collaboration document, so it only runs where the cards actually render.
- *
- * Gated on `decisions: READ` rather than admin: merged-away proposals are
- * hidden from listings, but a contributing idea is meant to be visible to
- * everyone who can read the decision. Unpaginated — the fan-in is however many
- * proposals an admin merged together.
+ * Separate from `listProposalRelationships`, which reads the same edges: that
+ * one backs the "Merged into …" notice on every superseded proposal's page and
+ * would then pay for the collaboration-document fetch only these cards need.
  */
 export async function listContributingProposals({
   proposalId,
@@ -64,10 +47,9 @@ export async function listContributingProposals({
 }) {
   const proposal = await getLinkedProposal(proposalId);
 
-  // `Promise.all` rejects with the assert's error the moment it throws, so an
-  // unauthorized caller never receives rows from the parallel reads.
+  // The assert rejects the whole `Promise.all`, so an unauthorized caller never
+  // receives the rows read alongside it.
   const [, pinnedIsReadable, instance, edges] = await Promise.all([
-    // The same grant `listProposals` requires to see the decision's proposals.
     assertInstanceProfileAccess({
       user,
       instance: proposal.instance,
@@ -108,7 +90,7 @@ export async function listContributingProposals({
   ]);
 
   // `NotFoundError`, never `Unauthorized`, so a restricted proposal's existence
-  // never leaks — the same choice `getProposal` makes.
+  // doesn't leak.
   if (pinnedIsReadable.length === 0) {
     throw new NotFoundError('Proposal', proposalId);
   }
@@ -123,8 +105,8 @@ export async function listContributingProposals({
     return { queriedProposal, proposals: [] };
   }
 
-  // `getLinkedProposal` already resolved this proposal through its instance, so
-  // a miss here means the row was deleted between the two reads.
+  // `getLinkedProposal` resolved it through this instance, so a miss means the
+  // row was deleted between the two reads.
   if (!instance) {
     throw new NotFoundError('Decision instance', proposal.processInstanceId);
   }
@@ -208,9 +190,8 @@ export async function listContributingProposals({
 
   return {
     queriedProposal,
-    // Merge order, which lives on the edge rather than on `proposals`, so the
-    // ordering is reapplied here. Safe to do in JS: the set is unpaginated and
-    // already fully in memory.
+    // Merge order lives on the edge, not on `proposals`. Reapplied in JS
+    // because the set is unpaginated and already in memory.
     proposals: contributingIds
       .map((id) => byId.get(id))
       .filter((row) => row !== undefined),
