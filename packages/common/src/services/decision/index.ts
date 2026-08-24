@@ -70,9 +70,11 @@ export * from './assertProposalEngagementAccess';
 export * from './mergeProposals';
 export * from './unmergeProposal';
 export * from './listProposalRelationships';
+export * from './listContributingProposals';
 
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
+export * from './proposalAuthor';
 export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './assignReviewsToReviewer';

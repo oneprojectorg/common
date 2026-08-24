@@ -41,7 +41,11 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
-import { proposalProfileColumns } from './listProposals';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { notSuperseded } from './proposalSupersession';
@@ -219,16 +223,7 @@ export const listAllProposals = async ({
           )!,
       },
       with: {
-        submittedBy: {
-          columns: proposalProfileColumns,
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
-            },
-          },
-        },
+        submittedBy: proposalAuthorRelation,
         profile: { columns: proposalProfileColumns },
       },
       limit: limit + 1, // Fetch one extra to check whether there's a next page.
@@ -288,15 +283,7 @@ export const listAllProposals = async ({
     const submittedBy = rawSubmittedBy
       ? (() => {
           const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
+          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)

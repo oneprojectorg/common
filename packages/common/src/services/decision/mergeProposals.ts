@@ -9,7 +9,7 @@ import { permission } from 'access-zones';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { getLinkedProposal } from './getLinkedProposal';
+import { getProposalAccessContext } from './getProposalAccessContext';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { MergeProposalsInput } from './schemas/proposalRelationships';
 
@@ -44,7 +44,7 @@ export async function mergeProposals({
 
   // The source is read first because its decision is what admin is asserted
   // against; everything the target could reveal waits behind that assert.
-  const source = await getLinkedProposal(sourceProposalId);
+  const source = await getProposalAccessContext(sourceProposalId);
 
   await assertProfileAccess({
     user,
@@ -53,7 +53,7 @@ export async function mergeProposals({
   });
 
   const [target, targetAlreadyMerged] = await Promise.all([
-    getLinkedProposal(targetProposalId),
+    getProposalAccessContext(targetProposalId),
     findLiveMergedEdge({
       processInstanceId: source.processInstanceId,
       sourceProposalId: targetProposalId,

@@ -1668,5 +1668,8 @@
   "Unassign": "Unassign",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {# review assignment created} other {# review assignments created}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "This reviewer no longer has the reviewer role, so they cannot take new proposals.",
-  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposal shown} other {# proposals shown}}"
+  "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposal shown} other {# proposals shown}}",
+  "Contributing ideas": "Contributing ideas",
+  "These participant ideas were merged into this proposal.": "These participant ideas were merged into this proposal.",
+  "Contributing ideas could not be loaded": "Contributing ideas could not be loaded"
 }

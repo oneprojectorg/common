@@ -14,6 +14,11 @@ import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
@@ -68,27 +73,6 @@ export interface ListProposalsInput {
    */
   includeDocumentContent?: boolean;
 }
-
-/**
- * Column picks for the `submittedBy`/`profile` relations on list rows. Covers
- * the fields the widest consumer needs — the legacy results encoder
- * (`baseProfileEncoder`, via `getInstanceResults`) requires the full profile
- * shape, while the non-legacy `proposalSchema` encoder narrows further on the
- * wire. Keeps only the generated `search` tsvector and other never-encoded
- * columns out of the lateral joins.
- */
-export const proposalProfileColumns = {
-  id: true,
-  type: true,
-  slug: true,
-  name: true,
-  city: true,
-  state: true,
-  bio: true,
-  mission: true,
-  email: true,
-  website: true,
-} satisfies Record<string, true>;
 
 export const listProposals = async ({
   input,
@@ -209,16 +193,7 @@ export const listProposals = async ({
           )!,
       },
       with: {
-        submittedBy: {
-          columns: proposalProfileColumns,
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
-            },
-          },
-        },
+        submittedBy: proposalAuthorRelation,
         profile: { columns: proposalProfileColumns },
       },
       // Fetch one extra to detect whether a next page exists.
@@ -311,15 +286,7 @@ export const listProposals = async ({
     const submittedBy = rawSubmittedBy
       ? (() => {
           const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
+          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)
