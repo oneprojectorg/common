@@ -8,9 +8,17 @@ import { forbidden, redirect } from 'next/navigation';
  * with the attempted path to return to. What a *refused* real account sees is
  * left to the caller, because it differs by surface — the closed-network gate
  * shows `forbidden()`, a public decision route its own invite-aware screen.
+ *
+ * `linkAnonymous` sends an anonymous caller to link mode (`/login?link=1`,
+ * LinkAccountPanel) instead of the plain panel, so anything they created while
+ * anonymous stays on the same auth user. Opt-in, and only correct on surfaces
+ * where anonymous participation is a feature: link mode claims an account
+ * through `useClaimAccount`, which deliberately bypasses the invite-only
+ * allow-list that `account.login` enforces.
  */
 export async function requireRealAccount(
   user: CommonUser | null | undefined,
+  { linkAnonymous = false }: { linkAnonymous?: boolean } = {},
 ): Promise<CommonUser> {
   if (user && !user.isAnonymous) {
     return user;
@@ -26,11 +34,7 @@ export async function requireRealAccount(
   }`;
 
   const params = new URLSearchParams();
-  // An anonymous session already owns what it created — an anon-submitted
-  // proposal is the whole point of these routes. `link=1` reaches
-  // LinkAccountPanel, which links an email onto that same auth user; plain
-  // login would sign them into a different one and strand the work.
-  if (user?.isAnonymous) {
+  if (linkAnonymous && user?.isAnonymous) {
     params.set('link', '1');
   }
   if (isSafeRedirectPath(attempted)) {

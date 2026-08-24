@@ -20,7 +20,10 @@ export const loadDecision = cache(async (slug: string) => {
       // anonymous visitor in, so send them to login with a way back; a refused
       // real account gains nothing there and falls through to the no-access
       // screen, which offers any pending invite for this decision.
-      await requireRealAccount(await getUser());
+      // linkAnonymous: anonymous participation is a feature here, so an
+      // anonymous viewer may already own a submitted proposal — claim the
+      // account they have rather than signing them into a new one.
+      await requireRealAccount(await getUser(), { linkAnonymous: true });
       forbidden();
     }
     if (cause instanceof CommonError && cause.statusCode === 404) {

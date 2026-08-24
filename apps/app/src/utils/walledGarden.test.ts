@@ -52,13 +52,25 @@ describe('requireRealAccount', () => {
     );
   });
 
-  // An anonymous user owns anon-submitted content, so they need the link flow
-  // that keeps it on the same auth user — not a fresh account.
-  it('sends an anonymous session to the account-link flow', async () => {
+  // An anonymous user owns anon-submitted content, so a caller that opts in
+  // gets the link flow, which keeps that content on the same auth user.
+  it('sends an anonymous session to the link flow only when asked', async () => {
+    await expect(
+      requireRealAccount(asUser({ isAnonymous: true }), {
+        linkAnonymous: true,
+      }),
+    ).rejects.toThrow(
+      'NEXT_REDIRECT:/login?link=1&redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
+    );
+  });
+
+  // Link mode claims an account through useClaimAccount, which bypasses the
+  // invite-only allow-list — so it must stay off unless a caller opts in.
+  it('leaves an anonymous session on the plain panel by default', async () => {
     await expect(
       requireRealAccount(asUser({ isAnonymous: true })),
     ).rejects.toThrow(
-      'NEXT_REDIRECT:/login?link=1&redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
+      /^NEXT_REDIRECT:\/login\?redirect=%2Fen%2Fdecisions%2Fparticipatory-budget$/,
     );
   });
 
@@ -70,11 +82,13 @@ describe('requireRealAccount', () => {
     );
   });
 
+  // Anchored: a substring match would still pass if the unsafe path leaked
+  // through as a `redirect=` param, which is the whole point of the guard.
   it('drops an unsafe redirect path rather than forwarding it', async () => {
     requestHeaders.set('x-pathname', 'https://evil.example.com/phish');
 
     await expect(requireRealAccount(null)).rejects.toThrow(
-      'NEXT_REDIRECT:/login',
+      /^NEXT_REDIRECT:\/login$/,
     );
   });
 
@@ -82,8 +96,10 @@ describe('requireRealAccount', () => {
     requestHeaders.set('x-pathname', 'https://evil.example.com/phish');
 
     await expect(
-      requireRealAccount(asUser({ isAnonymous: true })),
-    ).rejects.toThrow('NEXT_REDIRECT:/login?link=1');
+      requireRealAccount(asUser({ isAnonymous: true }), {
+        linkAnonymous: true,
+      }),
+    ).rejects.toThrow(/^NEXT_REDIRECT:\/login\?link=1$/);
   });
 });
 
@@ -113,6 +129,8 @@ describe('assertWalledGardenAccess', () => {
       assertWalledGardenAccess(asUser({ isAnonymous: true }), {
         allowNonMembers: true,
       }),
-    ).rejects.toThrow(/NEXT_REDIRECT:\/login\?link=1&redirect=/);
+      // The closed-network gate never opts into link mode: claiming an account
+      // there would route around the invite-only allow-list.
+    ).rejects.toThrow(/^NEXT_REDIRECT:\/login\?redirect=/);
   });
 });
