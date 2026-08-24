@@ -85,14 +85,13 @@ export async function ReviewSummaryLayout({
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
 
-  // No phase resolves only on an instance with no phases and no current state.
+  // Undefined only on an instance with no phases and no current state.
   if (!phaseId) {
     notFound();
   }
 
-  // Asserts the phase via assertInstancePhase: a resolveReviewPhaseId result
-  // missing from the phase list is broken instance data — fail loudly rather
-  // than resolve default settings.
+  // Throws on a phase missing from the phase list — broken instance data
+  // fails loudly instead of resolving default settings.
   const reviewSettings = getPhaseReviewSettings(
     instance.instanceData ?? {},
     phaseId,

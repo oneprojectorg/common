@@ -57,9 +57,8 @@ export function OwnReviewPanel({
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            {/* openReviews forced off like allowRevisions above: the host
-                surface already lists everyone's reviews, so the form's
-                "Other reviews" tab would nest that list inside itself. */}
+            {/* openReviews off like allowRevisions above: the host surface
+                already lists everyone's reviews. */}
             <ReviewRubricForm
               settings={{ ...reviewSettings, openReviews: false }}
               previousReviewPhases={[]}
