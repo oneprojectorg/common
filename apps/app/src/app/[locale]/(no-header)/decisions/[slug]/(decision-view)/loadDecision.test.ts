@@ -32,7 +32,8 @@ vi.mock('@op/api/serverClient', () => ({
 
 vi.mock('next/headers', () => ({
   headers: async () => ({
-    get: () => '/en/decisions/participatory-budget',
+    get: (name: string) =>
+      name === 'x-pathname' ? '/en/decisions/participatory-budget' : null,
   }),
 }));
 
@@ -91,7 +92,7 @@ describe('loadDecision — a refused viewer', () => {
     );
 
     await expect(loadDecision('participatory-budget')).rejects.toThrow(
-      'NEXT_REDIRECT:/login?redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
+      /^NEXT_REDIRECT:\/login\?redirect=%2Fen%2Fdecisions%2Fparticipatory-budget$/,
     );
   });
 
@@ -104,7 +105,7 @@ describe('loadDecision — a refused viewer', () => {
     );
 
     await expect(loadDecision('participatory-budget')).rejects.toThrow(
-      'NEXT_REDIRECT:/login?link=1&redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
+      /^NEXT_REDIRECT:\/login\?link=1&redirect=%2Fen%2Fdecisions%2Fparticipatory-budget$/,
     );
   });
 

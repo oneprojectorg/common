@@ -124,6 +124,15 @@ describe('assertWalledGardenAccess', () => {
     ).resolves.toBeUndefined();
   });
 
+  it('preserves the query string on the way to login', async () => {
+    requestHeaders.set('x-pathname', '/en/start');
+    requestHeaders.set('x-search', '?promote=1');
+
+    await expect(assertWalledGardenAccess(null)).rejects.toThrow(
+      /^NEXT_REDIRECT:\/login\?redirect=%2Fen%2Fstart%3Fpromote%3D1$/,
+    );
+  });
+
   it('still redirects an anonymous session when allowNonMembers is set', async () => {
     await expect(
       assertWalledGardenAccess(asUser({ isAnonymous: true }), {

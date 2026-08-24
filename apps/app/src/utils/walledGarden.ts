@@ -50,8 +50,8 @@ export async function requireRealAccount(
  * The walled-garden gate. Use in the layout of any closed-network route group.
  *
  * - No session (or an anonymous one) → redirect to login (preserving the
- *   attempted path so the user lands back there after signing in): logging in
- *   can grant access.
+ *   attempted path and its query string so the user lands back there after
+ *   signing in): logging in can grant access.
  * - A real account that isn't a network member → `forbidden()`: logging in as
  *   the same account won't help, so show the no-access screen.
  *
