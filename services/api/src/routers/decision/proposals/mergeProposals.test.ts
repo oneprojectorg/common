@@ -744,6 +744,84 @@ describe.concurrent('listProposalRelationships', () => {
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
+  it('lists a hidden far end for an admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, target, caller } = await createMergeableProposals(testData);
+
+    // Authored by a member so the admin's standing, not proposal-profile
+    // membership, is what admits them.
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const source = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Hidden Source', description: 'Merges away' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, source.id));
+
+    const result = await caller.decision.listProposalRelationships({
+      targetProposalId: target.id,
+    });
+
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0]).toMatchObject({
+      proposal: { id: source.id },
+    });
+  });
+
+  it('reads relationships on a hidden pinned proposal for an admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, target, caller } = await createMergeableProposals(testData);
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const source = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Hidden Source', description: 'Merges away' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, source.id));
+
+    // An admin can open the hidden proposal's page, so the "Merged into …"
+    // notice on it has to resolve instead of 404ing the whole read.
+    const result = await caller.decision.listProposalRelationships({
+      sourceProposalId: source.id,
+    });
+
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0]).toMatchObject({
+      proposal: { id: target.id },
+    });
+  });
+
   it('rejects a caller with no access to the decision', async ({
     task,
     onTestFinished,

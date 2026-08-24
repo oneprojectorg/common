@@ -12,16 +12,14 @@ import {
 } from '@op/db/client';
 import {
   ProposalStatus,
-  Visibility,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
-  profileUsers,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
-import { type NormalizedRole, checkPermission, permission } from 'access-zones';
+import { type NormalizedRole, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import {
@@ -31,7 +29,6 @@ import {
   resolveAccessUserIds,
 } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
   type PhaseProposalSqlScope,
   getPhaseProposalSqlScope,
@@ -39,6 +36,11 @@ import {
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
+import {
+  buildHiddenVisibilityFilter,
+  buildModerationFlagFilter,
+  resolveProposalViewer,
+} from './proposalVisibility';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -235,7 +237,8 @@ export const resolveProposalListScope = async ({
   }
 
   // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
-  // for the draft and HIDDEN visibility subqueries below.
+  // for the draft subquery below and, via the viewer, for the HIDDEN and
+  // moderation-flag exceptions.
   // INVARIANT: public grants must only be placed on the process/decision
   // profile, never on an individual proposal profile — otherwise this would
   // surface every caller's drafts/HIDDEN proposals to the public.
@@ -304,14 +307,11 @@ export const resolveProposalListScope = async ({
   // Run access checks in parallel with the phase-IDs resolution. Both depend
   // only on the instance row (already fetched), so there's no ordering
   // dependency — the auth check still throws on failure, just slightly later.
-  const accessPromise: Promise<{
-    profileRoles: NormalizedRole[];
-    canManageProposals: boolean;
-  }> = (async () => {
+  const accessPromise: Promise<NormalizedRole[]> = (async () => {
     if (skipAccessCheck) {
-      return { profileRoles: [], canManageProposals: false };
+      return [];
     }
-    const profileRoles = await assertInstanceProfileAccess({
+    return assertInstanceProfileAccess({
       user,
       instance,
       profilePermissions: [
@@ -323,19 +323,22 @@ export const resolveProposalListScope = async ({
         { decisions: permission.READ },
       ],
     });
-    return {
-      profileRoles,
-      canManageProposals: checkPermission(
-        { profile: permission.ADMIN },
-        profileRoles,
-      ),
-    };
   })();
 
-  const [phaseScope, { profileRoles, canManageProposals }] = await Promise.all([
+  const [phaseScope, profileRoles] = await Promise.all([
     phaseScopePromise,
     accessPromise,
   ]);
+
+  // The visibility standing every proposal read shares. Trusted
+  // (`skipAccessCheck`) callers resolve to a non-admin viewer off the empty
+  // role set, which is harmless: that branch of `buildWhereClause` returns
+  // before either exception filter is consulted.
+  const viewer = resolveProposalViewer({
+    user,
+    instanceProfileRoles: profileRoles,
+  });
+  const canManageProposals = viewer.isInstanceAdmin;
 
   // Resolve category-scoped proposal IDs so the same ID set is available to
   // every query the caller builds from `buildWhereClause`.
@@ -431,41 +434,22 @@ export const resolveProposalListScope = async ({
     // invited collaborators on the proposal's profile — same pattern the
     // draft filter uses, so a collaborator's view of a co-authored proposal
     // doesn't change the moment it's submitted with HIDDEN visibility.
-    const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
-      : and(
-          phaseScopedNonDraftIdFilter,
-          or(
-            eq(proposalsTable.visibility, Visibility.VISIBLE),
-            inArray(
-              proposalsTable.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(inArray(profileUsers.authUserId, accessUserIds)),
-            ),
-          )!,
-        )!;
+    const nonDraftVisibilityFilter = and(
+      phaseScopedNonDraftIdFilter,
+      buildHiddenVisibilityFilter({ table: proposalsTable, viewer }),
+    )!;
 
     // Items with an active moderation flag are hidden from everyone except
     // members of the proposal's own profile (creator + invited collaborators);
-    // instance admins (canManageProposals) skip the filter entirely. The owner
-    // audience is proposal.profileId membership — the same set getProposal
-    // grants the flagged proposal to — so the list and detail views agree
-    // (keying on submittedByProfileId alone would diverge for group-owned
-    // proposals). Applied in SQL so pagination stays correct.
-    const moderationFilter = canManageProposals
-      ? undefined
-      : or(
-          noActiveModerationFlag('proposal', proposalsTable.id),
-          inArray(
-            proposalsTable.profileId,
-            db
-              .select({ profileId: profileUsers.profileId })
-              .from(profileUsers)
-              .where(inArray(profileUsers.authUserId, accessUserIds)),
-          ),
-        )!;
+    // instance admins skip the filter entirely. The owner audience is
+    // proposal.profileId membership — the same set getProposal grants the
+    // flagged proposal to — so the list and detail views agree (keying on
+    // submittedByProfileId alone would diverge for group-owned proposals).
+    // Applied in SQL so pagination stays correct.
+    const moderationFilter = buildModerationFlagFilter({
+      table: proposalsTable,
+      viewer,
+    });
 
     return and(
       clause,

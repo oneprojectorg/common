@@ -6,7 +6,10 @@ import { permission } from 'access-zones';
 import { NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
-import { needsNoAccessException } from './proposalVisibility';
+import {
+  isProposalReadableBy,
+  resolveProposalViewer,
+} from './proposalVisibility';
 import type {
   ListProposalRelationshipsInput,
   ProposalRelationshipList,
@@ -51,25 +54,29 @@ export async function listProposalRelationships({
     ? proposalRelationships.targetProposalId
     : proposalRelationships.sourceProposalId;
 
-  // `Promise.all` rejects with the assert's error the moment it throws, so an
-  // unauthorized caller never receives rows from the parallel read.
-  const [, pinnedIsReadable, rows] = await Promise.all([
-    // Profile-level grants only, matching `listContributingProposals`. No org
-    // fallback: only legacy processes relied on it and those are all complete,
-    // so none of them can gain a merge. `ADMIN` isn't listed alongside `READ`
-    // because the seeded decisions Admin role already carries `read`.
-    assertProfileAccess({
-      user,
-      profileId: proposal.instance.profileId,
-      permissions: { decisions: permission.READ },
-    }),
+  // Profile-level grants only, matching `listContributingProposals`. No org
+  // fallback: only legacy processes relied on it and those are all complete,
+  // so none of them can gain a merge. `ADMIN` isn't listed alongside `READ`
+  // because the seeded decisions Admin role already carries `read`.
+  //
+  // Awaited before anything else runs: the roles it returns are also what
+  // decides whether this caller is an admin, and an unauthorized one never
+  // reaches the reads below.
+  const instanceProfileRoles = await assertProfileAccess({
+    user,
+    profileId: proposal.instance.profileId,
+    permissions: { decisions: permission.READ },
+  });
+  const viewer = resolveProposalViewer({ user, instanceProfileRoles });
+
+  const [pinnedIsReadable, rows] = await Promise.all([
     db
       .select({ id: proposals.id })
       .from(proposals)
       .where(
         and(
           eq(proposals.id, pinnedProposalId),
-          needsNoAccessException(proposals),
+          isProposalReadableBy({ table: proposals, viewer }),
         ),
       )
       .limit(1),
@@ -95,7 +102,7 @@ export async function listProposalRelationships({
         and(
           eq(pinnedColumn, pinnedProposalId),
           isNull(proposalRelationships.deletedAt),
-          needsNoAccessException(proposals),
+          isProposalReadableBy({ table: proposals, viewer }),
         ),
       )
       .orderBy(proposalRelationships.createdAt, proposalRelationships.id),

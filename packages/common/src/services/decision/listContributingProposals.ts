@@ -20,7 +20,10 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { needsNoAccessException } from './proposalVisibility';
+import {
+  isProposalReadableBy,
+  resolveProposalViewer,
+} from './proposalVisibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { ListContributingProposalsInput } from './schemas/contributingProposals';
 
@@ -39,22 +42,29 @@ export async function listContributingProposals({
 }) {
   const proposal = await getProposalAccessContext(proposalId);
 
-  // The assert rejects the whole `Promise.all`, so an unauthorized caller never
-  // receives the rows read alongside it.
-  const [, pinnedIsReadable, instance, edges] = await Promise.all([
-    // Profile-level grants only — no org fallback, matching `mergeProposals`.
-    // `ADMIN` isn't listed alongside `READ` because the seeded decisions Admin
-    // role already carries `read`, so it would never admit anyone extra.
-    assertProfileAccess({
-      user,
-      profileId: proposal.instance.profileId,
-      permissions: { decisions: permission.READ },
-    }),
+  // Profile-level grants only — no org fallback, matching `mergeProposals`.
+  // `ADMIN` isn't listed alongside `READ` because the seeded decisions Admin
+  // role already carries `read`, so it would never admit anyone extra.
+  //
+  // Awaited before anything else runs: the roles it returns are also what
+  // decides whether this caller is an admin, and an unauthorized one never
+  // reaches the reads below.
+  const instanceProfileRoles = await assertProfileAccess({
+    user,
+    profileId: proposal.instance.profileId,
+    permissions: { decisions: permission.READ },
+  });
+  const viewer = resolveProposalViewer({ user, instanceProfileRoles });
+
+  const [pinnedIsReadable, instance, edges] = await Promise.all([
     db
       .select({ id: proposals.id })
       .from(proposals)
       .where(
-        and(eq(proposals.id, proposalId), needsNoAccessException(proposals)),
+        and(
+          eq(proposals.id, proposalId),
+          isProposalReadableBy({ table: proposals, viewer }),
+        ),
       )
       .limit(1),
     // Shares `getInstance`'s cached row: on a proposal page the decision has
@@ -105,7 +115,7 @@ export async function listContributingProposals({
         RAW: (table) =>
           and(
             inArray(table.id, contributingIds),
-            needsNoAccessException(table),
+            isProposalReadableBy({ table, viewer }),
           )!,
       },
       with: {
