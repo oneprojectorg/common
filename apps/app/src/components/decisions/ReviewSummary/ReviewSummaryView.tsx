@@ -31,6 +31,8 @@ interface ReviewSummaryViewProps {
   proposalProfileId: string;
   phaseId: string | undefined;
   isPhaseInProgress?: boolean;
+  /** Resolved from the review phase by `ReviewSummaryLayout`. */
+  anonymousFeedback: boolean;
 }
 
 export function ReviewSummaryView({
@@ -40,6 +42,7 @@ export function ReviewSummaryView({
   proposalProfileId,
   phaseId,
   isPhaseInProgress = false,
+  anonymousFeedback,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
   const { user } = useRequiredUser();
@@ -221,6 +224,7 @@ export function ReviewSummaryView({
             <OwnReviewPanel
               decisionSlug={decisionSlug}
               assignmentId={ownAssignment.assignment.id}
+              anonymousFeedback={anonymousFeedback}
               onBack={closeOwnForm}
               onCompleted={handleOwnReviewCompleted}
               initiallyEditing={ownReviewIsSubmitted}

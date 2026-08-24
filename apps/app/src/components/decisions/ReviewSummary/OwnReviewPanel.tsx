@@ -16,6 +16,8 @@ import { BackToReviewers } from '../ReviewsPanel/BackToReviewers';
 interface OwnReviewPanelProps {
   decisionSlug: string;
   assignmentId: string;
+  /** Resolved from the review phase by `ReviewSummaryLayout`. */
+  anonymousFeedback: boolean;
   onBack: () => void;
   /** Runs after a submit or an update; the host closes the panel. */
   onCompleted: () => void;
@@ -34,6 +36,7 @@ interface OwnReviewPanelProps {
 export function OwnReviewPanel({
   decisionSlug,
   assignmentId,
+  anonymousFeedback,
   onBack,
   onCompleted,
   initiallyEditing,
@@ -53,10 +56,10 @@ export function OwnReviewPanel({
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            {/* Hardcoded: this surface has no `instanceData` to resolve the
-                phase's settings from. */}
+            {/* Like revisions, other reviewers' reviews belong to the
+                reviewer surface. */}
             <ReviewRubricForm
-              settings={{ anonymousFeedback: true, openReviews: false }}
+              settings={{ anonymousFeedback, openReviews: false }}
               previousReviewPhases={[]}
             />
           </div>
