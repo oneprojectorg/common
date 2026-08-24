@@ -1,10 +1,12 @@
 import type { CommonUser } from '@op/api/encoders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const headersGet = vi.fn<(name: string) => string | null>();
+const requestHeaders = new Map<string, string>();
 
 vi.mock('next/headers', () => ({
-  headers: async () => ({ get: headersGet }),
+  headers: async () => ({
+    get: (name: string) => requestHeaders.get(name) ?? null,
+  }),
 }));
 
 // `redirect`/`forbidden` signal control flow by throwing; mirror that so a test
@@ -30,8 +32,8 @@ const asUser = (overrides: Partial<CommonUser>) =>
   }) as CommonUser;
 
 beforeEach(() => {
-  headersGet.mockReset();
-  headersGet.mockReturnValue('/en/decisions/participatory-budget');
+  requestHeaders.clear();
+  requestHeaders.set('x-pathname', '/en/decisions/participatory-budget');
 });
 
 describe('requireRealAccount', () => {
@@ -44,19 +46,44 @@ describe('requireRealAccount', () => {
   it.each([
     ['no session', null],
     ['an undefined user', undefined],
-    ['an anonymous session', asUser({ isAnonymous: true })],
   ])('sends %s to login with the attempted path', async (_label, user) => {
     await expect(requireRealAccount(user)).rejects.toThrow(
       'NEXT_REDIRECT:/login?redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
     );
   });
 
+  // An anonymous user owns anon-submitted content, so they need the link flow
+  // that keeps it on the same auth user — not a fresh account.
+  it('sends an anonymous session to the account-link flow', async () => {
+    await expect(
+      requireRealAccount(asUser({ isAnonymous: true })),
+    ).rejects.toThrow(
+      'NEXT_REDIRECT:/login?link=1&redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
+    );
+  });
+
+  it('carries the query string so a deep link survives the bounce', async () => {
+    requestHeaders.set('x-search', '?panel=updates&proposal=abc');
+
+    await expect(requireRealAccount(null)).rejects.toThrow(
+      'NEXT_REDIRECT:/login?redirect=%2Fen%2Fdecisions%2Fparticipatory-budget%3Fpanel%3Dupdates%26proposal%3Dabc',
+    );
+  });
+
   it('drops an unsafe redirect path rather than forwarding it', async () => {
-    headersGet.mockReturnValue('https://evil.example.com/phish');
+    requestHeaders.set('x-pathname', 'https://evil.example.com/phish');
 
     await expect(requireRealAccount(null)).rejects.toThrow(
       'NEXT_REDIRECT:/login',
     );
+  });
+
+  it('still offers the link flow when the path is unsafe', async () => {
+    requestHeaders.set('x-pathname', 'https://evil.example.com/phish');
+
+    await expect(
+      requireRealAccount(asUser({ isAnonymous: true })),
+    ).rejects.toThrow('NEXT_REDIRECT:/login?link=1');
   });
 });
 
@@ -86,6 +113,6 @@ describe('assertWalledGardenAccess', () => {
       assertWalledGardenAccess(asUser({ isAnonymous: true }), {
         allowNonMembers: true,
       }),
-    ).rejects.toThrow(/NEXT_REDIRECT:\/login\?redirect=/);
+    ).rejects.toThrow(/NEXT_REDIRECT:\/login\?link=1&redirect=/);
   });
 });

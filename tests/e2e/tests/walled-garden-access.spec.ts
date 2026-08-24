@@ -89,13 +89,11 @@ test.describe('Walled garden — authenticated non-members', () => {
 });
 
 /**
- * Decision pages live in the public `(no-header)` group, so they have no
- * walled-garden gate — an unreadable one is refused by `getDecisionBySlug`
- * instead. That refusal can't say whether the decision is private or absent
- * (the existence-leak guard), so the route decides from the viewer: a visitor
- * who could still gain access by signing in is sent to login, not to a
- * dead-end screen. Most of this route's refusals are signed-out, because
- * decision links travel by email.
+ * Decision pages sit in the public `(no-header)` group with no walled-garden
+ * gate — an unreadable one is refused by `getDecisionBySlug`, which can't say
+ * whether it is private or absent. So the route decides from the viewer, on the
+ * same rule as the gate above: someone who could still get in by signing in is
+ * sent to login rather than to the no-access screen.
  */
 test.describe('Unreadable decision — a viewer who could sign in', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -112,17 +110,20 @@ test.describe('Unreadable decision — a viewer who could sign in', () => {
     expect(new URL(page.url()).searchParams.get('redirect')).toBe(unreadable);
   });
 
-  test('anonymous session → /login, not the no-access screen', async ({
+  // An anonymous visitor may already own an anon-submitted proposal, so they
+  // get link mode — which keeps that content on the same auth user — rather
+  // than the plain login panel.
+  test('anonymous session → /login in link mode, not the no-access screen', async ({
     page,
   }) => {
     await authenticateAnonymously(page);
 
     await page.goto(unreadable);
 
-    await expect(page).toHaveURL(/\/login\?redirect=/, { timeout: 15000 });
-    await expect(
-      page.getByText("You don't have access to this page"),
-    ).not.toBeVisible();
+    await expect(page).toHaveURL(/\/login\?link=1&redirect=/, {
+      timeout: 15000,
+    });
+    expect(new URL(page.url()).searchParams.get('redirect')).toBe(unreadable);
   });
 });
 

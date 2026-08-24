@@ -4,14 +4,10 @@ import { headers } from 'next/headers';
 import { forbidden, redirect } from 'next/navigation';
 
 /**
- * Half of the walled-garden gate: turn a session-less or anonymous visitor away
- * to login, preserving the attempted path so they land back here after signing
- * in. Returns the account for a real (non-anonymous) session — what a real
- * account that is still refused should see is the caller's decision, because it
- * differs by surface (the closed-network gate below shows `forbidden()`; a
- * public decision route shows its own invite-aware screen).
- *
- * Split out so both callers share one definition of "signing in could help".
+ * Returns a real account; redirects a session-less or anonymous caller to login
+ * with the attempted path to return to. What a *refused* real account sees is
+ * left to the caller, because it differs by surface — the closed-network gate
+ * shows `forbidden()`, a public decision route its own invite-aware screen.
  */
 export async function requireRealAccount(
   user: CommonUser | null | undefined,
@@ -20,13 +16,30 @@ export async function requireRealAccount(
     return user;
   }
 
-  const pathname = (await headers()).get('x-pathname');
+  const requestHeaders = await headers();
+  // Keep the query string attached to the path. On the decision routes it
+  // carries the open side panel and the proposal being read, so dropping it
+  // turns a shared deep link into the bare overview. `getSafeRedirectPath`
+  // re-validates the whole string when /login consumes it.
+  const attempted = `${requestHeaders.get('x-pathname') ?? ''}${
+    requestHeaders.get('x-search') ?? ''
+  }`;
 
-  redirect(
-    isSafeRedirectPath(pathname)
-      ? `/login?redirect=${encodeURIComponent(pathname)}`
-      : '/login',
-  );
+  const params = new URLSearchParams();
+  // An anonymous session already owns what it created — an anon-submitted
+  // proposal is the whole point of these routes. `link=1` reaches
+  // LinkAccountPanel, which links an email onto that same auth user; plain
+  // login would sign them into a different one and strand the work.
+  if (user?.isAnonymous) {
+    params.set('link', '1');
+  }
+  if (isSafeRedirectPath(attempted)) {
+    params.set('redirect', attempted);
+  }
+
+  const query = params.toString();
+
+  redirect(query ? `/login?${query}` : '/login');
 }
 
 /**

@@ -14,13 +14,12 @@ export const loadDecision = cache(async (slug: string) => {
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
     if (cause instanceof CommonError && cause.statusCode === 403) {
-      // getDecisionBySlug refuses "missing" and "no access" identically (a
-      // deliberate existence-leak guard), so all we know here is that this
-      // viewer can't read it. A signed-out or anonymous visitor — most of this
-      // route's refusals, since decision links travel by email — can still get
-      // in by signing in, so send them to login with a way back rather than to
-      // a dead-end screen. A real account that was refused gains nothing by
-      // re-authenticating: it falls through to the invite-aware no-access page.
+      // The 403 conflates "missing" and "no access" (an existence-leak guard),
+      // so all we know is that this viewer can't read it — leaving the viewer
+      // to decide the response. Signing in can still let a signed-out or
+      // anonymous visitor in, so send them to login with a way back; a refused
+      // real account gains nothing there and falls through to the no-access
+      // screen, which offers any pending invite for this decision.
       await requireRealAccount(await getUser());
       forbidden();
     }

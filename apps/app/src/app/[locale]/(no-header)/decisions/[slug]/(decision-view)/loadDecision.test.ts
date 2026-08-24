@@ -1,48 +1,22 @@
 import type { CommonUser } from '@op/api/encoders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/**
- * `decision.getDecisionBySlug` conflates "no such slug" and "no access" into one
- * 403 so it can't leak which decisions exist. That makes this catch block the
- * only place that can decide what a refused viewer sees — and the decision turns
- * on whether signing in could possibly help.
- */
-
 // The `@op/common` barrel boots the Drizzle client, `server-only` and the
 // PostHog SDK on import — none of which a route test can or should stand up.
-// Substitute the error classes this catch block branches on. `instanceof
-// CommonError` inside loadDecision resolves to the class below, so the branch
-// is driven by `statusCode` exactly as it is in production.
-const { CommonError, UnauthorizedError, NotFoundError } = vi.hoisted(() => {
-  class CommonError extends Error {
+// `loadDecision` reads only `CommonError` and branches only on its statusCode,
+// so a stand-in that `instanceof` resolves to drives the branch faithfully.
+const { CommonError } = vi.hoisted(() => ({
+  CommonError: class CommonError extends Error {
     statusCode: number;
 
     constructor(message: string, statusCode: number) {
       super(message);
       this.statusCode = statusCode;
     }
-  }
-
-  return {
-    CommonError,
-    UnauthorizedError: class UnauthorizedError extends CommonError {
-      constructor(message: string) {
-        super(message, 403);
-      }
-    },
-    NotFoundError: class NotFoundError extends CommonError {
-      constructor(message: string) {
-        super(message, 404);
-      }
-    },
-  };
-});
-
-vi.mock('@op/common', () => ({
-  CommonError,
-  UnauthorizedError,
-  NotFoundError,
+  },
 }));
+
+vi.mock('@op/common', () => ({ CommonError }));
 
 const getDecisionBySlug = vi.fn();
 const getMyAccount = vi.fn<() => Promise<CommonUser | null>>();
@@ -75,12 +49,16 @@ vi.mock('next/navigation', () => ({
 }));
 
 // React's `cache` memoizes per request; the identity wrapper keeps each test
-// case independent.
-vi.mock('react', () => ({ cache: <T>(fn: T) => fn }));
+// case independent. Spread the real module so an unrelated React import
+// appearing in this graph later doesn't fail as a missing export.
+vi.mock('react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react')>()),
+  cache: <T>(fn: T) => fn,
+}));
 
 const { loadDecision } = await import('./loadDecision');
 
-const asUser = (overrides: Partial<CommonUser>) =>
+const asUser = (overrides: Partial<CommonUser> = {}) =>
   ({
     id: 'user-1',
     isAnonymous: false,
@@ -102,17 +80,14 @@ const aReadableDecision = {
 beforeEach(() => {
   getDecisionBySlug.mockReset();
   getMyAccount.mockReset();
-  getMyAccount.mockResolvedValue(asUser({}));
+  getMyAccount.mockResolvedValue(asUser());
 });
 
 describe('loadDecision — a refused viewer', () => {
-  it.each([
-    ['a signed-out visitor', null],
-    ['an anonymous session', asUser({ isAnonymous: true })],
-  ])('sends %s to login with a way back to the decision', async (_l, user) => {
-    getMyAccount.mockResolvedValue(user);
+  it('sends a signed-out visitor to login with a way back to the decision', async () => {
+    getMyAccount.mockResolvedValue(null);
     getDecisionBySlug.mockRejectedValue(
-      refusalFromApi(new UnauthorizedError('User does not have access')),
+      refusalFromApi(new CommonError('User does not have access', 403)),
     );
 
     await expect(loadDecision('participatory-budget')).rejects.toThrow(
@@ -120,10 +95,23 @@ describe('loadDecision — a refused viewer', () => {
     );
   });
 
+  // Anonymous visitors on these routes may already own a submitted proposal, so
+  // they get the link flow rather than a fresh account.
+  it('sends an anonymous session to the account-link flow', async () => {
+    getMyAccount.mockResolvedValue(asUser({ isAnonymous: true }));
+    getDecisionBySlug.mockRejectedValue(
+      refusalFromApi(new CommonError('User does not have access', 403)),
+    );
+
+    await expect(loadDecision('participatory-budget')).rejects.toThrow(
+      'NEXT_REDIRECT:/login?link=1&redirect=%2Fen%2Fdecisions%2Fparticipatory-budget',
+    );
+  });
+
   it('shows a real account the no-access screen — re-authenticating cannot help', async () => {
     getMyAccount.mockResolvedValue(asUser({ id: 'real-user' }));
     getDecisionBySlug.mockRejectedValue(
-      refusalFromApi(new UnauthorizedError('User does not have access')),
+      refusalFromApi(new CommonError('User does not have access', 403)),
     );
 
     await expect(loadDecision('participatory-budget')).rejects.toThrow(
@@ -133,22 +121,14 @@ describe('loadDecision — a refused viewer', () => {
 });
 
 describe('loadDecision — other outcomes are unchanged', () => {
-  it('returns the decision when the viewer can read it', async () => {
+  it('returns a readable decision without consulting the session', async () => {
+    getMyAccount.mockResolvedValue(null);
     getDecisionBySlug.mockResolvedValue(aReadableDecision);
 
     await expect(loadDecision('participatory-budget')).resolves.toEqual({
       decisionProfile: aReadableDecision,
       instanceId: 'instance-1',
       ownerSlug: 'one-project',
-    });
-  });
-
-  it('reads a public decision without needing a session', async () => {
-    getMyAccount.mockResolvedValue(null);
-    getDecisionBySlug.mockResolvedValue(aReadableDecision);
-
-    await expect(loadDecision('participatory-budget')).resolves.toMatchObject({
-      instanceId: 'instance-1',
     });
     // The login redirect is reserved for refusals — a public decision must not
     // cost an anonymous reader their page.
@@ -158,8 +138,23 @@ describe('loadDecision — other outcomes are unchanged', () => {
   it('404s a 404 rather than bouncing through login', async () => {
     getMyAccount.mockResolvedValue(null);
     getDecisionBySlug.mockRejectedValue(
-      refusalFromApi(new NotFoundError('Decision not found')),
+      refusalFromApi(new CommonError('Decision not found', 404)),
     );
+
+    await expect(loadDecision('participatory-budget')).rejects.toThrow(
+      'NEXT_NOT_FOUND',
+    );
+  });
+
+  it.each([
+    ['the profile carries no process instance', { processInstance: undefined }],
+    [
+      'the owning profile has no slug',
+      { processInstance: { id: 'instance-1', owner: {} } },
+    ],
+  ])('404s when %s', async (_label, overrides) => {
+    getMyAccount.mockResolvedValue(null);
+    getDecisionBySlug.mockResolvedValue({ ...aReadableDecision, ...overrides });
 
     await expect(loadDecision('participatory-budget')).rejects.toThrow(
       'NEXT_NOT_FOUND',
