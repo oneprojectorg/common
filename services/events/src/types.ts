@@ -139,4 +139,14 @@ export const Events = {
       authorProfileId: z.string().uuid(),
     }),
   },
+  // Keyed on the edge, not the proposal pair: the edge soft-deletes on unmerge,
+  // so the notification can re-check the merge before announcing it.
+  proposalMerged: {
+    name: 'proposal/merged' as const,
+    schema: z.object({
+      relationshipId: z.string().uuid(),
+      // Dropped from the recipient lists.
+      actorAuthUserId: z.string().uuid(),
+    }),
+  },
 } as const;

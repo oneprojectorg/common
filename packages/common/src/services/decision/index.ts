@@ -71,6 +71,7 @@ export * from './mergeProposals';
 export * from './unmergeProposal';
 export * from './listProposalRelationships';
 export * from './listContributingProposals';
+export * from './listProposalMergeRecipients';
 
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';

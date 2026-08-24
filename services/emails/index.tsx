@@ -176,5 +176,7 @@ export * from './emails/RevisionResubmittedEmail';
 export * from './emails/RevisionRequestedEmail';
 export * from './emails/DecisionUpdateNotificationEmail';
 export * from './emails/ContentFlaggedEmail';
+export * from './emails/ProposalMergedEmail';
+export * from './emails/ProposalMergedIntoYoursEmail';
 
 export { render } from 'react-email';
