@@ -1621,5 +1621,7 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposta mostrada} other {# propostas mostradas}}",
   "Contributing ideas": "Ideias que contribuíram",
   "These participant ideas were merged into this proposal.": "Estas ideias de participantes foram combinadas com esta proposta.",
-  "Contributing ideas could not be loaded": "Não foi possível carregar as ideias que contribuíram"
+  "Contributing ideas could not be loaded": "Não foi possível carregar as ideias que contribuíram",
+  "Sign in to view this page": "Inicie sessão para ver esta página",
+  "This page is only visible to people taking part in this decision.": "Esta página só é visível para as pessoas que participam desta decisão."
 }

@@ -1624,5 +1624,7 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {#টি প্রস্তাবনা দেখানো হচ্ছে} other {#টি প্রস্তাবনা দেখানো হচ্ছে}}",
   "Contributing ideas": "অবদানকারী ধারণা",
   "These participant ideas were merged into this proposal.": "অংশগ্রহণকারীদের এই ধারণাগুলি এই প্রস্তাবের সঙ্গে একত্র করা হয়েছে।",
-  "Contributing ideas could not be loaded": "অবদানকারী ধারণাগুলি লোড করা যায়নি"
+  "Contributing ideas could not be loaded": "অবদানকারী ধারণাগুলি লোড করা যায়নি",
+  "Sign in to view this page": "এই পৃষ্ঠাটি দেখতে সাইন ইন করুন",
+  "This page is only visible to people taking part in this decision.": "এই পৃষ্ঠাটি কেবল এই সিদ্ধান্তে অংশগ্রহণকারীদের জন্য দৃশ্যমান।"
 }
