@@ -213,9 +213,8 @@ const ExportProposalsButtonContent = ({
         nativeButton={false}
         role={undefined}
         render={
-          // `download` names the saved file but cannot force the save — it is
-          // ignored cross-origin. That comes from the signed URL itself; see
-          // `exportDownloadOptions`.
+          // Cross-origin, so `download` only names the file.
+          // `exportDownloadOptions` is what forces the save.
           <a
             href={status.signedUrl}
             download={status.fileName}

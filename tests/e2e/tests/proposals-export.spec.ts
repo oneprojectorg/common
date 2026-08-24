@@ -236,12 +236,10 @@ test.describe('Proposals CSV export', () => {
     const download = await request.get(signedUrl as string);
     expect(download.ok()).toBe(true);
 
-    // The reported bug — the CSV was served inline, so Safari painted it as
-    // text rather than saving it (see `exportDownloadOptions`). This is the
-    // only test that reaches a real signed URL, so it is where the workflow's
-    // own signing site, which has no unit test behind it, gets covered.
-    // Content-Type is asserted beside it because it was already correct, and a
-    // regression there would resurface the same symptom.
+    // The reported bug: the CSV was served inline, so Safari rendered it as
+    // text. This is the only test that reaches a real signed URL, so it covers
+    // the workflow's signing site. Content-Type was already correct, and a
+    // regression there returns the same symptom.
     expect(download.headers()['content-disposition']).toContain('attachment');
     expect(download.headers()['content-type']).toContain('text/csv');
 

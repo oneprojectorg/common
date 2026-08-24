@@ -48,10 +48,8 @@ const logger = { info: vi.fn(), error: vi.fn() };
 
 const createSignedUrl = vi.fn();
 
-// Carries `download` because that is what Supabase appends for the option
-// `exportDownloadOptions` passes, and `servesAsAttachment` reads it back. A
-// fixture without it would have a refreshed record re-signed on every later
-// read — a real regression the suite would not see.
+// Carries `download` because Supabase appends it and `servesAsAttachment` reads
+// it back. Without it, a refreshed record would re-sign on every later read.
 const FRESH_URL =
   'https://storage.example/fresh-url?token=abc&download=proposals_export_123.csv';
 
@@ -115,17 +113,12 @@ describe('getExportStatus', () => {
     });
   });
 
-  // Pinned against the bucket by name rather than against the export constant,
-  // which would compare it to itself and hold whatever it was changed to.
+  // Named literal, not the export constant, which would compare it to itself.
   //
-  // The literal is deliberately temporary. It was written when nothing
-  // provisioned a bucket of their own, so a repoint would have silently lost
-  // the feature per environment — but `services/db/migrate.ts` now creates and
-  // re-asserts a private `exports` bucket and fails the deploy on a public one,
-  // and its comment says the pipeline is repointed at it in a follow-up. When
-  // that lands, this assertion is *expected* to fail: update the literal, do
-  // not read the failure as evidence the repoint is wrong. The instance-scoped
-  // path beside it is the part that keeps its value either way.
+  // The literal is temporary. `services/db/migrate.ts` provisions a private
+  // `exports` bucket and says the pipeline is repointed at it in a follow-up.
+  // This assertion is expected to fail then: update the literal, and do not
+  // read the failure as evidence the repoint is wrong.
   it('signs against the configured bucket, at the instance-scoped path', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     const storageFrom = vi.fn(() => ({ createSignedUrl }));
@@ -143,12 +136,10 @@ describe('getExportStatus', () => {
     );
   });
 
-  // A record cached before the attachment-disposition fix holds a URL minted
-  // without `&download=`, still valid for up to EXPORT_URL_TTL_SECONDS. Gating
-  // the re-sign on expiry alone leaves the reported bug live for that whole
-  // window after deploy — the admin clicks Download CSV and Safari renders the
-  // CSV inline exactly as before. A URL that cannot download is stale whatever
-  // its expiry says.
+  // A record cached before this fix holds a URL without `&download=`, still
+  // valid for up to EXPORT_URL_TTL_SECONDS. Gating the re-sign on expiry alone
+  // leaves the bug live for that whole window. A URL that cannot download is
+  // stale whatever its expiry says.
   it('re-signs an unexpired URL that predates the download option', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -168,13 +159,9 @@ describe('getExportStatus', () => {
     });
   });
 
-  // Export objects live at `process/<instanceId>/proposals/<file>`, and the only
-  // SELECT policy on the assets bucket requires the first path segment to equal
-  // the caller's uid. So the anon-key client this used cannot even see the
-  // object — `createSignedUrl` answers "Object not found" and the re-sign
-  // silently no-ops. Authorization is already settled above by the ownership
-  // check and `assertProfileAccess`, which is what lets the service client sign
-  // here, exactly as `getProposal` and the resources signer do.
+  // The assets bucket's only SELECT policy requires the first path segment to
+  // equal the caller's uid, and exports live under `process/<instanceId>/`. An
+  // anon-key client cannot see the object, so the re-sign silently no-oped.
   it('signs with the service client, which RLS does not block', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
 
@@ -184,9 +171,8 @@ describe('getExportStatus', () => {
     expect(createSBServerClient).not.toHaveBeenCalled();
   });
 
-  // The re-sign is the whole of the rescue path for records cached before the
-  // download option existed, so a failure that goes unlogged is a fix that
-  // reports success while serving the inline URL it was meant to replace.
+  // The re-sign rescues every record cached before the download option existed.
+  // An unlogged failure there reports success and still serves an inline URL.
   it('reports a failed re-sign instead of failing quietly', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     createSignedUrl.mockResolvedValue({
@@ -208,11 +194,8 @@ describe('getExportStatus', () => {
   });
 
   // `createSBServiceClient` throws synchronously when SUPABASE_SERVICE_ROLE is
-  // unset, which would otherwise escape the graceful-degradation branch above
-  // and 500 the whole query. That costs the admin the Download CSV link
-  // entirely: the button escalates to its error boundary and the only way back
-  // is re-running the export. Losing the re-sign is survivable; losing the
-  // record is not.
+  // unset. An escaped throw 500s the query and removes the download link.
+  // Losing the re-sign is survivable. Losing the record is not.
   it('keeps serving the record when the storage client cannot be built', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
     vi.mocked(createSBServiceClient).mockImplementation(() => {
@@ -230,12 +213,9 @@ describe('getExportStatus', () => {
     });
   });
 
-  // A record with a file but no recorded expiry used to bail out of the re-sign
-  // entirely, so the export stayed undownloadable for the rest of the record's
-  // 24h life with the object sitting in the bucket the whole time. The workflow
-  // always writes the expiry alongside the file name, so this is latent rather
-  // than live — but it is the same hole this branch closes for `signedUrl`, and
-  // an unknown expiry is not evidence of a working URL.
+  // A record with a file but no expiry used to skip the re-sign, so the export
+  // stayed undownloadable for the rest of its 24h life. Latent today, because
+  // the workflow always writes both fields together.
   it('re-signs a completed export with no recorded expiry', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -248,10 +228,8 @@ describe('getExportStatus', () => {
     expect(result).toMatchObject({ signedUrl: FRESH_URL });
   });
 
-  // The sibling of the missing-expiry case: `new Date('garbage') < new Date()`
-  // is false, so a corrupt expiry beside a download-carrying URL satisfied none
-  // of the staleness tests and was never re-signed. An expiry that cannot be
-  // read is no more evidence of a live URL than one that is absent.
+  // `new Date('garbage') < new Date()` is false, so a corrupt expiry beside a
+  // download-carrying URL passed every staleness test and was never re-signed.
   it('re-signs a completed export whose expiry cannot be parsed', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -264,10 +242,8 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
-  // A URL with seconds left is not worth handing over: it dies between this read
-  // and the click, the browser shows a signature error, and the button has
-  // already cleared its export id — so the link is gone and the only way back
-  // is re-running the export.
+  // A URL with seconds left dies between this read and the click. The button has
+  // already cleared its export id, so the admin must re-run the export.
   it('re-signs a URL that is about to expire', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -280,11 +256,8 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
-  // The cached record is an unvalidated cast over Redis JSON, so a non-string
-  // `signedUrl` is reachable through schema drift or a corrupt entry. It has to
-  // read as "cannot download" rather than throw: the staleness test runs outside
-  // the degradation boundary, so a throw here would 500 the query and cost the
-  // admin the record the boundary exists to preserve.
+  // The staleness test runs outside the degradation boundary. A non-string
+  // `signedUrl` has to read as "cannot download" there rather than throw.
   it('treats a non-string cached URL as unusable rather than throwing', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -298,12 +271,8 @@ describe('getExportStatus', () => {
     expect(result).toMatchObject({ signedUrl: FRESH_URL });
   });
 
-  // Completing the case above. Narrowing only stops the staleness test throwing;
-  // a non-string that survives a *failed* re-sign is still handed back, and the
-  // tRPC output schema declares `signedUrl: z.string().optional()` — so it is
-  // rejected there instead, and the admin loses the record either way. Defending
-  // the corrupt-cache case at all means dropping the value, not just reading
-  // around it.
+  // Narrowing only stops the staleness test throwing. A non-string that survives
+  // a failed re-sign is still returned, and the tRPC output schema rejects it.
   it('drops a non-string cached URL even when the re-sign fails', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -321,9 +290,8 @@ describe('getExportStatus', () => {
     expect((result as { signedUrl?: string }).signedUrl).toBeUndefined();
   });
 
-  // The scrub has to cover every status, not just the one the re-sign handles.
-  // A corrupt record that never completed reaches the caller untouched, and its
-  // output schema rejects a non-string `signedUrl` just the same.
+  // The scrub covers every status, not just the one the re-sign handles. A
+  // record that never completed reaches the caller too.
   it('drops a non-string cached URL on a record that never completed', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -338,8 +306,7 @@ describe('getExportStatus', () => {
   });
 
   // `Date.parse` stringifies its argument, so a numeric expiry reads as the year
-  // 2042 rather than NaN. Without the typeof guard a corrupt record beside a
-  // download-carrying URL looked fresh for two decades and was never re-signed.
+  // 2042 rather than NaN.
   it('re-signs when the expiry is not a string at all', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),
@@ -382,9 +349,8 @@ describe('getExportStatus', () => {
     );
   });
 
-  // "Still valid" now means unexpired *and* able to download — the URL here
-  // carries `download` for that reason. Without it the record would be re-signed
-  // however long it had left, which is what rescues pre-fix cached records.
+  // "Still valid" means unexpired and able to download, so the URL here carries
+  // `download`. Without it the record is re-signed however long it has left.
   it('leaves a still-valid URL alone', async () => {
     const liveUrl =
       'https://storage.example/live-url?token=abc&download=proposals_export_123.csv';

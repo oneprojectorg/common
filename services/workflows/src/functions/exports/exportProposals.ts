@@ -177,14 +177,10 @@ export const exportProposals = inngest.createFunction(
           return {
             fileName,
             signedUrl: urlData.signedUrl,
-            // Pinned to the signature here rather than recomputed when the
-            // record is written. This step is memoized, so a retry of the write
-            // below reuses this value; recomputing there moved the recorded
-            // expiry forward by the retry backoff while the signature's real
-            // expiry stayed put, and `needsFreshUrl` trusts the record — so the
-            // admin was handed a URL that had already died. The same class of
-            // drift as the 2h-URL / 24h-record bug this module already carries
-            // a warning about.
+            // Pinned to the signature. This step is memoized, so the write
+            // below reuses this value on a retry. Recomputing it there moved
+            // the recorded expiry past the real one, and the staleness check
+            // trusts the record.
             urlExpiresAt: new Date(
               Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
             ).toISOString(),

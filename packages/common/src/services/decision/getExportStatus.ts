@@ -17,23 +17,17 @@ import {
 } from './exports';
 
 /**
- * Does a stored signed URL already ask Supabase for an attachment?
+ * Does a stored signed URL ask Supabase for an attachment?
  *
- * `exportDownloadOptions` puts the file name in a `download` query param, and
- * that param is the whole of what makes the CSV save rather than render. A
- * record cached before that option existed holds a URL without it, so expiry
- * is not on its own a sufficient test of whether a stored URL still works.
+ * `exportDownloadOptions` sets a `download` query param. That param is what
+ * makes the CSV save instead of render, so expiry alone does not tell you
+ * whether a stored URL still works.
  *
- * Reads the query with `URLSearchParams` rather than matching the string, so
- * param order cannot fool it and a malformed cached value returns false
- * instead of throwing on a read path that must not fail.
+ * Takes `unknown` because the cached record is an unvalidated cast over Redis
+ * JSON. This runs outside the re-sign's catch, so a non-string must return
+ * false rather than throw.
  */
 const servesAsAttachment = (signedUrl: unknown): boolean => {
-  // `unknown`, not `string | undefined`: the record is an unvalidated cast over
-  // Redis JSON, so a non-string here is reachable by schema drift or a corrupt
-  // entry. This runs outside the re-sign's degradation boundary, so it has to
-  // answer "cannot download" rather than throw — a throw would fail the whole
-  // query and cost the caller the record that boundary exists to preserve.
   if (typeof signedUrl !== 'string') {
     return false;
   }
@@ -43,11 +37,6 @@ const servesAsAttachment = (signedUrl: unknown): boolean => {
   return query !== undefined && new URLSearchParams(query).has('download');
 };
 
-/**
- * Structural rather than imported: `@op/api` depends on this package, not the
- * other way round. Shaped to match the `ContextLogger` the tRPC procedure
- * actually passes, which is what keeps an `any` out of the signature.
- */
 type ExportLogger = {
   info: (message: string, data?: Record<string, unknown>) => void;
   error: (message: string, data?: Record<string, unknown>) => void;
@@ -113,49 +102,36 @@ export const getExportStatus = async ({
     permissions: [{ decisions: permission.ADMIN }],
   });
 
-  // The record is an unvalidated cast over Redis JSON, so a non-string
-  // `signedUrl` is reachable by schema drift or a corrupt entry — and callers
-  // declare a string, so returning one costs them the whole record. Dropped
-  // here rather than inside the re-sign, which only ever sees completed records
-  // and so would leave every other status exposed.
+  // Callers declare `signedUrl` as a string and reject the whole record if it
+  // is not one. The re-sign skips records that never completed, so scrub here.
   if (typeof exportStatus.signedUrl !== 'string') {
     exportStatus.signedUrl = undefined;
   }
 
-  // Mutates `exportStatus` in place when it succeeds, so the record returned
-  // below carries the fresh URL.
+  // Mutates `exportStatus` in place, so the record returned below is current.
   await refreshStaleSignedUrl({ exportStatus, cacheKey: key, logger });
 
   return exportStatus;
 };
 
 /**
- * How much life a stored URL needs left to be worth handing over.
+ * How much life a stored URL needs to be worth returning.
  *
- * Without a margin a URL with seconds on it reads as fresh, then expires
- * between the read and the click: the browser shows a signature error, and the
- * button has already dropped its export id, so the admin's only way back is
- * re-running the export.
+ * Without a margin, a URL with seconds left reads as fresh and then dies before
+ * the click. The button drops its export id on click, so the admin has to
+ * re-run the whole export.
  */
 const URL_EXPIRY_MARGIN_MS = 60 * 1000;
 
 /**
- * Is a stored export URL no longer usable?
+ * Is a stored export URL unusable?
  *
- * Signed URLs are shorter-lived than the record that holds them, so it can
- * simply have lapsed, or sit within {@link URL_EXPIRY_MARGIN_MS} of doing so.
+ * Three cases make it so. The URL has expired, or expires within
+ * {@link URL_EXPIRY_MARGIN_MS}. The URL predates the download option, so it
+ * renders instead of saving however long it has left. Or the expiry is missing
+ * or unreadable, which is no evidence of a working URL.
  *
- * It can also be a URL minted before the download option existed, which renders
- * in the browser instead of saving and is therefore just as unusable however
- * long it has left. Gating on expiry alone leaves the reported bug live for up
- * to EXPORT_URL_TTL_SECONDS after deploy on every record already in the cache.
- *
- * Or the expiry can be unreadable — missing and unparseable alike — which is no
- * evidence of a working URL: bailing out there stranded the export for the rest
- * of the record's life with the object sitting in the bucket.
- *
- * Only `fileName` is genuinely required, because that is what rebuilds the
- * storage key.
+ * Only `fileName` is required. It rebuilds the storage key.
  */
 const needsFreshUrl = ({
   status,
@@ -167,12 +143,9 @@ const needsFreshUrl = ({
     return false;
   }
 
-  // NaN for a missing expiry as much as an unreadable one, so both fail the same
-  // test rather than needing a branch each. The `typeof` guard is load-bearing:
-  // the field is an unvalidated cast over Redis JSON, and `Date.parse` coerces
-  // its argument to a string first — so a numeric 42 reads as the year 2042
-  // rather than NaN, and a corrupt record would look fresh for a further
-  // twenty years.
+  // `Date.parse` converts its argument to a string first, so a numeric 42 reads
+  // as the year 2042. The `typeof` guard sends a missing and a non-string expiry
+  // to NaN alike.
   const expiresAt =
     typeof urlExpiresAt === 'string' ? Date.parse(urlExpiresAt) : Number.NaN;
 
@@ -184,18 +157,14 @@ const needsFreshUrl = ({
 };
 
 /**
- * Mint a signed, attachment-serving download URL for an export's stored file.
+ * Sign an attachment-serving download URL for an export's stored file.
  *
- * Signs with the service client, not the caller's. Exports live at
- * `process/<instanceId>/proposals/<file>`, and the only SELECT policy on the
- * assets bucket requires the first path segment to equal the caller's uid — so
- * an anon-key client cannot see the object at all and signing fails with
- * "Object not found". Callers settle authorization before reaching this;
- * `getProposal` and the resources signer read objects outside a user's own
- * folder the same way.
+ * Uses the service client. The only SELECT policy on the assets bucket requires
+ * the first path segment to equal the caller's uid, and exports live under
+ * `process/<instanceId>/`. An anon-key client gets "Object not found" instead.
+ * Callers settle authorization first, as they do for `getProposal`.
  *
- * Throws rather than returning a failure, so the one caller's degradation
- * boundary is the only place that decides what a failed re-sign costs.
+ * Throws on failure, so one caller decides what a failed re-sign costs.
  */
 const mintSignedDownloadUrl = async ({
   processInstanceId,
@@ -221,12 +190,11 @@ const mintSignedDownloadUrl = async ({
 };
 
 /**
- * Re-sign a stale export URL in place and write the record back to the cache.
+ * Re-sign a stale export URL in place and cache the result.
  *
- * Leaves `exportStatus` untouched when its URL is still good. When signing
- * itself fails the record keeps the URL it arrived with; when signing succeeds
- * and only the cache write fails, the caller gets the fresh URL while the cache
- * keeps the old one, so a later read simply re-signs again.
+ * A still-good URL is left alone. A failed signature leaves the record as it
+ * arrived. A failed cache write still returns the fresh URL, and the next read
+ * re-signs again.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
@@ -245,14 +213,10 @@ const refreshStaleSignedUrl = async ({
 
   logger.info('Refreshing signed URL', { exportId });
 
-  // Deliberately broad, against the usual narrow-catch rule: this is a
-  // degradation boundary, not error handling. Every way the re-sign can fail —
-  // a client that cannot be built because SUPABASE_SERVICE_ROLE is unset (which
-  // throws synchronously), a sign that is refused, a cache write that fails —
-  // costs the caller only a fresher URL, while letting any of them escape costs
-  // the record itself. That is far worse: the button escalates to its error
-  // boundary and the admin loses the Download CSV link, with only a "Try again"
-  // that re-runs the whole export.
+  // Broad on purpose: this is a degradation boundary, not error handling. A
+  // failed re-sign costs the caller a fresher URL. An escaped throw costs the
+  // record, which sends the button to its error boundary and removes the
+  // download link. `createSBServiceClient` throws synchronously, so it is here.
   try {
     exportStatus.signedUrl = await mintSignedDownloadUrl({
       processInstanceId: exportStatus.processInstanceId,
@@ -264,11 +228,8 @@ const refreshStaleSignedUrl = async ({
 
     await set(cacheKey, exportStatus, EXPORT_CACHE_TTL_SECONDS);
   } catch (error) {
-    // `error`, not `warn`: the admin is handed back the stale URL and the UI
-    // still renders an enabled Download CSV link that either 404s or renders
-    // inline. This is also the rescue path for every pre-fix record, so a
-    // failure that does not reach error tracking is a fix that reports success
-    // while still serving the URL it replaced.
+    // `error`, not `warn`: the admin still sees an enabled download link, and
+    // it either 404s or renders inline.
     logger.error('Failed to re-sign export URL', { exportId, error });
   }
 };

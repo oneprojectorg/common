@@ -116,17 +116,13 @@ describe('exportFileName', () => {
 });
 
 describe('exportDownloadOptions', () => {
-  // The reported bug. Supabase serves a signed URL with `Content-Disposition:
-  // inline` unless asked otherwise, and the anchor's `download` attribute is
-  // inert cross-origin — so Safari navigated to the CSV and rendered it as
-  // text instead of saving it. Naming the file here is what turns the response
-  // into an attachment.
+  // The reported bug. Supabase serves a signed URL inline unless it is asked
+  // otherwise. The anchor's `download` attribute is inert cross-origin, so
+  // Safari rendered the CSV as text.
   //
-  // Passes the name rather than a bare `download: true`, though the two are
-  // equivalent today: the storage key's last segment already *is* `fileName`,
-  // so Supabase would derive the same one. The name is what makes the
-  // disposition independent of the key — a human-readable download name is
-  // now possible without moving the object.
+  // `download: true` is equivalent today, because the storage key's last segment
+  // is already `fileName`. Passing the name decouples the two, so the saved name
+  // can change without moving the object.
   it('asks Supabase to serve the object as an attachment, by name', () => {
     expect(exportDownloadOptions('proposals_export_123.csv')).toEqual({
       download: 'proposals_export_123.csv',

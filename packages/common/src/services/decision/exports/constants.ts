@@ -91,31 +91,17 @@ export const exportFileName = (extension: string) =>
   `proposals_export_${crypto.randomUUID()}_${Date.now()}.${extension}`;
 
 /**
- * `createSignedUrl` options that make an export download rather than render.
+ * `createSignedUrl` options that make an export download instead of render.
  *
- * Supabase serves a storage object with the `Content-Type` recorded at upload
- * and `Content-Disposition: inline` unless the signed URL asks otherwise, so a
- * `text/csv` export arrives as something the browser is invited to display.
- * Safari accepts that invitation and paints the CSV as text in a new window;
- * Chrome happens to download it, which is why this went unnoticed.
+ * Supabase serves a storage object inline unless the signed URL asks for an
+ * attachment. A `text/csv` export then renders as text. Safari does this;
+ * Chrome downloads it anyway, which hid the bug.
  *
- * The download button's `download` attribute cannot cover this: the HTML
- * attribute is ignored for cross-origin URLs, and these links point at the
- * Supabase host rather than the app's own. The disposition has to come from the
- * signed URL.
+ * The download button's `download` attribute cannot fix this. A browser ignores
+ * that attribute on a cross-origin URL, and these links point at the Supabase
+ * host.
  *
- * Naming the file is equivalent to `download: true` today — the storage key's
- * last segment already is `fileName` — but it decouples the saved name from the
- * key, so the admin-facing name can be changed without moving the object. Right
- * now that name is the internal `proposals_export_<uuid>_<epoch>.csv`.
- *
- * Shared by both signing sites — the export workflow's first URL and the
- * re-sign in `getExportStatus` — because either one alone leaves the other
- * serving inline. The workflow's URL is the one behind almost every click:
- * `ExportProposalsButton` holds its export id in component state and does not
- * poll, so it renders that first URL and drops the id once taken. The re-sign
- * is reached when a record outlives its URL inside one mounted session, and by
- * every record cached before this option existed.
+ * Both signing sites pass this. Either one alone leaves the other inline.
  */
 export const exportDownloadOptions = (fileName: string) => ({
   download: fileName,
