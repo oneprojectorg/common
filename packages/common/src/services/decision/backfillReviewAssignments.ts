@@ -102,7 +102,8 @@ export async function backfillReviewAssignments({
       where: {
         transitionHistoryId: inboundTransition.id,
         proposal: {
-          status: { ne: ProposalStatus.DRAFT },
+          // Rejected proposals leave the review universe, like drafts.
+          status: { notIn: [ProposalStatus.DRAFT, ProposalStatus.REJECTED] },
           deletedAt: { isNull: true },
           moderationDetachedAt: { isNull: true },
         },

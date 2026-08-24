@@ -28,13 +28,17 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import { notSuperseded } from './proposalSupersession';
 
 /**
- * Excludes drafts (never in a phase) and superseded proposals. Every selection,
- * review, and results path resolves membership through this file, so this is
- * what keeps them out of all of them.
+ * Excludes drafts (never in a phase), rejected proposals, and superseded
+ * proposals. Every selection, review, and results path resolves membership
+ * through this file, so this is what keeps them out of all of them. Rejected is
+ * excluded unconditionally here — these are non-user-scoped pipeline reads with
+ * no admin concept; the admin-visible exception lives only in the proposal-list
+ * scope (`resolveProposalListScope`).
  */
 const phaseEligiblePredicate = (t: typeof proposals): SQL =>
   and(
     ne(t.status, ProposalStatus.DRAFT),
+    ne(t.status, ProposalStatus.REJECTED),
     notSuperseded({
       proposalId: t.id,
       processInstanceId: t.processInstanceId,
