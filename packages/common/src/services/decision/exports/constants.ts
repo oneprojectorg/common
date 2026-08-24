@@ -1,12 +1,12 @@
 /**
  * Shared configuration for the proposal export pipeline.
  *
- * The API service, the `@op/common` service layer, and the Inngest workflow all
- * read and write the same export record and the same storage object, so the
- * bucket name, key format, and TTLs have to agree across all three. They
- * previously drifted — the workflow minted a 2 hour signed URL but recorded a
- * 24 hour expiry, so `getExportStatus` served a dead URL for the 22 hours in
- * between.
+ * Three callers read and write the same export record and storage object: the
+ * API service, the `@op/common` service layer, and the Inngest workflow. The
+ * bucket name, key format, and TTLs have to agree across all three.
+ *
+ * They drifted once. The workflow minted a 2 hour signed URL but recorded a 24
+ * hour expiry, so `getExportStatus` served a dead URL for 22 hours.
  */
 
 import { ASSETS_BUCKET } from '../../../utils/storage';
@@ -14,36 +14,36 @@ import { ASSETS_BUCKET } from '../../../utils/storage';
 /**
  * Exports are written to the shared `assets` bucket.
  *
- * Aliased from {@link ASSETS_BUCKET} rather than repeating the literal, so a
- * future migration to per-feature buckets stays the single-file change that
- * constant promises. Renaming the bucket in one place and not the other would
- * strand every export.
+ * Aliased from {@link ASSETS_BUCKET} rather than repeating the literal. A future
+ * migration to per-feature buckets then stays the single-file change that
+ * constant promises. Renaming one and not the other would strand every export.
  *
- * `assets` is public: `apps/app/next.config.mjs` rewrites `/assets/:path*` to
+ * `assets` is public. `apps/app/next.config.mjs` rewrites `/assets/:path*` to
  * the bucket's public object root, and `getPublicUrl()` builds every avatar and
- * organization image URL from it. So an export object is readable by anyone who
- * has its path — the CSV carries submitter names, and the only thing standing
- * between it and an anonymous reader is that the key is not enumerable.
+ * organization image URL from it.
  *
- * The signed URLs minted downstream are therefore a convenience (they expire,
- * so a shared link goes stale) rather than an access boundary: the unsigned
- * public URL for the same object resolves regardless of signature. Treat the
- * random component of the generated file name — minted in the export
- * workflow's `upload-to-storage` step — as the actual control, and do not
- * weaken it.
+ * So anyone holding an export's path can read it. The CSV carries submitter
+ * names. Only an unguessable key stands between it and an anonymous reader.
+ *
+ * The signed URLs downstream are a convenience, not an access boundary. They
+ * expire, so a shared link goes stale, but the unsigned public URL for the same
+ * object resolves regardless of signature.
+ *
+ * Treat the random part of the file name as the actual control. The export
+ * workflow mints it in its `upload-to-storage` step. Do not weaken it.
  */
 export const EXPORTS_BUCKET = ASSETS_BUCKET;
 
 /**
  * Lifetime of a generated signed download URL.
  *
- * Deliberately shorter than {@link EXPORT_CACHE_TTL_SECONDS}: the export record
+ * Shorter than {@link EXPORT_CACHE_TTL_SECONDS} on purpose. The export record
  * outlives any single URL, so an admin returning to a finished export gets a
- * freshly minted URL from `getExportStatus` instead of a 404.
+ * fresh URL from `getExportStatus` instead of a 404.
  *
- * Note this bounds the *signed* URL only. Objects live in the public `assets`
- * bucket (see {@link EXPORTS_BUCKET}), so expiry does not revoke access to the
- * underlying file — it only invalidates the signature on this particular link.
+ * This bounds the *signed* URL only. Objects live in the public `assets` bucket
+ * (see {@link EXPORTS_BUCKET}), so expiry does not revoke access to the file. It
+ * invalidates the signature on this link.
  */
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
@@ -66,11 +66,12 @@ export const exportStatusCacheKey = (exportId: string) =>
  * Storage key for an export's generated file, relative to
  * {@link EXPORTS_BUCKET}.
  *
- * Shaped `<entity>/<id>/<sub-resource>/<file>` to match the other writers
- * sharing this bucket — `profile/${profileId}/resources/` and
- * `profiles/${profileId}/${imageType}/`. Leading with `proposals/` (as this
- * did) reads as though the owning entity were a proposal, when the export is
- * scoped to a process instance and covers many proposals.
+ * Shaped `<entity>/<id>/<sub-resource>/<file>` to match the other writers on
+ * this bucket: `profile/${profileId}/resources/` and
+ * `profiles/${profileId}/${imageType}/`.
+ *
+ * Leading with `proposals/`, as this did, reads as though a proposal owned the
+ * file. The export is scoped to a process instance and covers many proposals.
  */
 export const exportFilePath = (processInstanceId: string, fileName: string) =>
   `process/${processInstanceId}/proposals/${fileName}`;
@@ -80,9 +81,10 @@ export const exportFilePath = (processInstanceId: string, fileName: string) =>
  *
  * The random component is the access control for these objects. They live in
  * the public {@link EXPORTS_BUCKET}, so anyone holding this name can read the
- * CSV — and the CSV carries submitter names. A whole UUID is used rather than
- * a truncation of one: the timestamp beside it is largely inferable, so the
- * UUID has to carry the unguessability by itself.
+ * CSV, and the CSV carries submitter names.
+ *
+ * Uses a whole UUID, not a truncation. The timestamp beside it is largely
+ * inferable, so the UUID carries the unguessability by itself.
  *
  * `crypto.randomUUID()` is the global Web Crypto API, available in Node 19+ and
  * in browsers, so this module stays free of Node-only imports.

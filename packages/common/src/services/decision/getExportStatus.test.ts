@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mocks: getExportStatus is orchestration over the cache, the access
-// gate, and Supabase storage. We drive those and assert what it does with a
-// completed export whose signed URL has lapsed — the refresh path that was
-// unreachable before the record was made longer-lived than the URL.
+// Boundary mocks. `getExportStatus` orchestrates the cache, the access gate,
+// and Supabase storage, so these tests drive all three.
+//
+// The subject is a completed export whose signed URL has lapsed. That refresh
+// path was unreachable until the record outlived the URL.
 vi.mock('@op/cache', () => ({
   get: vi.fn(),
   set: vi.fn(),
@@ -319,8 +320,8 @@ describe('getExportStatus', () => {
     expect(createSignedUrl).toHaveBeenCalled();
   });
 
-  // The original bug: the recorded expiry claimed 24h while the URL itself was
-  // minted for 2h, so callers trusted a link that had been dead for 22 hours.
+  // The original bug. The record claimed a 24h expiry while the URL was minted
+  // for 2h, so callers trusted a link dead for 22 hours.
   it('records an expiry that matches the URL it just minted', async () => {
     vi.mocked(get).mockResolvedValue(expiredRecord());
 
@@ -366,11 +367,12 @@ describe('getExportStatus', () => {
     expect(result).toMatchObject({ signedUrl: liveUrl });
   });
 
-  // The refresh needs the file name to rebuild the storage key — it does not
-  // need the stale URL. Gating on `signedUrl` (as this once did) strands a
-  // record that has a file but no usable URL: it can never be re-signed, so the
-  // export stays undownloadable for the rest of its life despite the object
-  // sitting in the bucket.
+  // The refresh needs the file name to rebuild the storage key. It does not need
+  // the stale URL.
+  //
+  // Gating on `signedUrl`, as this once did, strands a record with a file but no
+  // usable URL. It can never be re-signed, so the export stays undownloadable
+  // while the object sits in the bucket.
   it('refreshes a completed export that has a file but no URL', async () => {
     vi.mocked(get).mockResolvedValue({
       ...expiredRecord(),

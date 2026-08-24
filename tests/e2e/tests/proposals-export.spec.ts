@@ -50,10 +50,12 @@ const processSchema = {
         advancement: { method: 'manual' as const },
       },
     },
-    // A phase after the current one, without which `DecisionStateRouter` sends
-    // the whole route to `ResultsPage`: it renders results whenever the current
-    // phase is the last one and doesn't accept submissions, so a single-phase
-    // instance shows "The results are in." and never mounts a proposals list.
+    // A phase after the current one. Without it `DecisionStateRouter` sends the
+    // whole route to `ResultsPage`.
+    //
+    // That page renders whenever the current phase is the last one and accepts
+    // no submissions. A single-phase instance then shows "The results are in."
+    // and never mounts a proposals list.
     {
       id: 'review',
       name: 'Review',
@@ -100,9 +102,9 @@ const instanceData = {
   budget: 50000,
   hideBudget: false,
   proposalTemplate: processSchema.proposalTemplate,
-  // Rules are carried on the instance's phases, not just the template's — the
-  // router reads `currentPhase.rules` to decide the route, and the process
-  // builder writes them here for the same reason.
+  // The instance's phases carry the rules, not just the template's. The router
+  // reads `currentPhase.rules` to decide the route, and the process builder
+  // writes them here for the same reason.
   phases: [
     {
       phaseId: 'proposalSubmission',
@@ -136,12 +138,14 @@ test.describe('Proposals CSV export', () => {
     // Page load, then a real background workflow round trip on top of it.
     test.setTimeout(150_000);
 
-    // The export is a background Inngest workflow: the mutation only returns an
-    // id, and the file is produced by the handler apps/api mounts at
-    // /api/v1/workflows. The dev server that relays the event back to it is
-    // started by `webServer` in playwright.config.ts, so it is up by the time
-    // this runs — but a reused one belongs to the :3300 stack and has never
-    // seen the e2e app on :4300, so its functions are registered here.
+    // The export is a background Inngest workflow. The mutation returns only an
+    // id, and the handler apps/api mounts at /api/v1/workflows produces the file.
+    //
+    // `webServer` in playwright.config.ts starts the dev server that relays the
+    // event back, so it is up by the time this runs.
+    //
+    // A reused server belongs to the :3300 stack and has never seen the e2e app
+    // on :4300. Its functions are registered here for that reason.
     const sync = await request.fetch(WORKFLOWS_SERVE_URL, { method: 'PUT' });
     expect(sync.ok()).toBe(true);
 
@@ -175,11 +179,13 @@ test.describe('Proposals CSV export', () => {
       },
     });
 
-    // The category filter matches on a taxonomy term id, not on the label the
-    // template offers — `resolveProposalListScope` reads `decision_categories`
-    // and never looks at `proposalData.category`. So the category has to exist
-    // as a term with a row joining it to the proposal it covers; passing
-    // "Environment" straight through matches nothing and silently empties the
+    // The category filter matches a taxonomy term id, not the label the template
+    // offers. `resolveProposalListScope` reads `decision_categories` and never
+    // looks at `proposalData.category`.
+    //
+    // So the category has to exist as a term, with a row joining it to the
+    // proposal it covers. Passing "Environment" straight through matches nothing
+    // and silently empties the
     // list.
     const [category] = await db
       .insert(taxonomyTerms)
@@ -194,12 +200,14 @@ test.describe('Proposals CSV export', () => {
       .insert(proposalCategories)
       .values({ proposalId: inFilter.id, taxonomyTermId: category.id });
 
-    // Narrow the list by category up front, and leave it narrowed. The export
-    // no longer follows the list, so running it from a filtered view is what
-    // makes the row count below an assertion rather than a coincidence: an
-    // export that still inherited the filter would return one row here instead
-    // of two. Both proposals sit in the same phase, which is what the export
-    // covers. The filter is URL state (nuqs), so it is set by navigation rather
+    // Narrow the list by category up front, and leave it narrowed.
+    //
+    // The export no longer follows the list. Running it from a filtered view is
+    // what makes the row count below an assertion rather than a coincidence. An
+    // export that still inherited the filter would return one row, not two.
+    //
+    // Both proposals sit in the same phase, which is what the export covers. The
+    // filter is URL state (nuqs), so it is set by navigation rather
     // than by driving the dropdown.
     await authenticatedPage.goto(
       `/en/decisions/${slug}/current?filter=all&category=${category.id}`,
@@ -227,9 +235,9 @@ test.describe('Proposals CSV export', () => {
     });
     await expect(downloadLink).toBeVisible({ timeout: 90_000 });
 
-    // Fetch the signed URL directly rather than going through the browser's
-    // download: the point is the bytes, and the link is target="_blank", which
-    // makes the download event the flakiest way to reach them.
+    // Fetch the signed URL directly rather than through the browser's download.
+    // The point is the bytes, and the link is target="_blank", which makes the
+    // download event the flakiest way to reach them.
     const signedUrl = await downloadLink.getAttribute('href');
     expect(signedUrl).toBeTruthy();
 
@@ -247,9 +255,9 @@ test.describe('Proposals CSV export', () => {
       columns: true,
     }) as Record<string, string>[];
 
-    // Both rows. The list on screen is showing one proposal and the file
-    // carries the other as well, which is the whole point of an export that no
-    // longer follows the filter. One row here would mean it still does.
+    // Both rows. The list on screen shows one proposal, and the file carries the
+    // other as well. That is the point of an export that no longer follows the
+    // filter. One row here would mean it still does.
     expect(rows).toHaveLength(2);
     expect(rows.map((row) => row['Proposal ID']).sort()).toEqual(
       [inFilter.id, outOfFilter.id].sort(),
@@ -285,8 +293,8 @@ test.describe('Proposals CSV export', () => {
 });
 
 /**
- * Creates a decision process, its instance and profile, and grants the org's
- * admin the ADMIN role on that profile — which is what puts the export control
+ * Creates a decision process, its instance, and its profile. Grants the org's
+ * admin the ADMIN role on that profile, which is what puts the export control
  * on screen.
  */
 async function createProcessAndInstance({

@@ -21,9 +21,8 @@ type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
-// Helper to merge a partial update into the cached export status. The record is
-// seeded in full when the export is requested, so every write here is a patch
-// over an existing record rather than a fresh one.
+// Merge a partial update into the cached export status. The export request seeds
+// the record in full, so every write here patches an existing record.
 const updateExportStatus = async (
   exportId: string,
   updates: Partial<ExportStatusData>,
@@ -41,14 +40,16 @@ const updateExportStatus = async (
  * truth, and the message carries no payload — subscribers re-read
  * `getExportStatus` on receipt.
  *
- * Nothing polls behind this, so a lost broadcast costs correctness rather than
- * latency: the client never sees a terminal state, and the wait ends by
- * reporting a timeout for an export that worked. One way to lose it is to
- * publish before the client has finished subscribing, which an export settling
- * in under a second can easily do. Covering that is not this function's job —
- * every channel re-reads its queries once its join is confirmed, so whatever
- * settled before the join is in that read and whatever settles after arrives
- * here.
+ * Nothing polls behind this, so a lost broadcast costs correctness, not latency.
+ * The client never sees a terminal state, and the wait reports a timeout for an
+ * export that worked.
+ *
+ * One way to lose it is to publish before the client finishes subscribing. An
+ * export that settles in under a second can do that easily.
+ *
+ * Covering it is not this function's job. Every channel re-reads its queries
+ * once its join is confirmed. Whatever settled before the join is in that read,
+ * and whatever settles after arrives here.
  *
  * `realtime.publish` logs and swallows its own failures, so this cannot fail
  * the run or trigger a retry that would rewrite a settled status.
@@ -88,28 +89,33 @@ export const exportProposals = inngest.createFunction(
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
         // Confirm the requester still exists, then hand `listProposals` an
-        // auth-shaped user. Every identity path it reaches — `getCurrentProfileId`,
-        // `assertUserByAuthId`, `resolveAccessUserIds` — reads `user.id` as an
-        // *auth* user id, so passing the `users` row (whose `id` is the database
-        // key) silently resolved the wrong caller.
+        // auth-shaped user.
+        //
+        // Every identity path it reaches reads `user.id` as an *auth* user id:
+        // `getCurrentProfileId`, `assertUserByAuthId`, `resolveAccessUserIds`.
+        // Passing the `users` row, whose `id` is the database key, silently
+        // resolved the wrong caller.
         await assertUserByAuthId(userId);
 
         const result = await listProposals({
           input: {
-            // This call is the whole definition of what an export covers, so
-            // what it leaves unsaid matters as much as what it passes. No
-            // filters: the same instance has to produce the same file, and a
-            // CSV cannot show its reader which filters were active when it was
-            // built. No `phaseId`, which resolves to the instance's *current*
-            // phase — so an export is not the instance's whole history, and
-            // what it holds changes as the instance advances. No `dir`, so
-            // rows arrive in the query's own order.
+            // This call defines what an export covers, so what it omits matters
+            // as much as what it passes.
             //
-            // `skipAccessCheck` also settles the row set rather than merely
-            // skipping a check: the trusted branch takes every phase-scoped
-            // non-draft proposal, ignoring the visibility and moderation
-            // filters a signed-in caller would get. Drafts are never included,
-            // and two admins exporting the same instance get the same rows.
+            // No filters. The same instance has to produce the same file, and a
+            // CSV cannot show which filters were active when it was built.
+            //
+            // No `phaseId`. That resolves to the instance's *current* phase, so
+            // an export is not the whole history, and what it holds changes as
+            // the instance advances.
+            //
+            // No `dir`, so rows arrive in the query's own order.
+            //
+            // `skipAccessCheck` settles the row set as well as skipping a check.
+            // The trusted branch takes every phase-scoped non-draft proposal. It
+            // ignores the visibility and moderation filters a signed-in caller
+            // gets. Drafts never appear, so two admins exporting the same
+            // instance get the same rows.
             processInstanceId,
             limit: 1000, // High limit for exports
             skipAccessCheck: true, // Access already verified when export was created
