@@ -2,11 +2,8 @@ import { type BatchEmailItem, OPBatchSend } from '@op/emails';
 import { logger } from '@op/logging';
 
 /**
- * Sends one batch of notification emails and reports how many went out.
- *
- * Throwing on a partial failure is deliberate: Inngest retries the step, which
- * is the only recovery any of these notifications has. Callers wrap this in
- * `step.run` so the retry boundary stays with the workflow.
+ * Throwing on a partial failure is deliberate — the Inngest retry is the only
+ * recovery these notifications have. Callers wrap this in `step.run`.
  */
 export const sendNotificationEmails = async ({
   emails,
@@ -14,9 +11,8 @@ export const sendNotificationEmails = async ({
   context,
 }: {
   emails: Array<BatchEmailItem>;
-  /** What failed, for the log line — e.g. 'proposal merged notifications'. */
+  /** Noun phrase for the log line, e.g. 'proposal merged notifications'. */
   failureMessage: string;
-  /** Ids that identify this send in the logs. */
   context: Record<string, string>;
 }): Promise<{ sent: number }> => {
   try {

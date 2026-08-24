@@ -3,16 +3,15 @@ import { ProposalRelationshipType } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
 
-/** The admin's stated reason for the merge, quoted back to the source authors. */
 export type ProposalMergeNote = {
   body: string;
-  /** Null when the admin's profile can't be resolved; the quote still stands. */
+  /** Null when the author's profile can't be resolved. */
   authorName: string | null;
 };
 
 export type ProposalMergeNotification = {
   sourceProposalName: string;
-  /** Proposals are addressed by their profile id in app URLs, not their own id. */
+  /** App URLs address a proposal by its profile id, not its own id. */
   sourceProposalProfileId: string;
   targetProposalName: string;
   targetProposalProfileId: string;
@@ -33,18 +32,10 @@ export type ListProposalMergeRecipientsResult =
     };
 
 /**
- * Resolves who should hear that a merge happened and the copy each side needs.
- * Returns a reason rather than throwing when there is nothing to send: none of
- * these outcomes is a failure, and the caller logs which one it hit.
- *
- * Everything is re-read at send time rather than carried on the event, because
- * the notification is debounced and the world can move underneath it — the merge
- * can be undone, or either proposal can be pulled.
- *
- * Deliberately no authorization assert: there is no caller to authorize. This
- * runs from the merge workflow, and the audience is derived rather than
- * requested — it is exactly the two proposals' own authors, who can always reach
- * the proposal they wrote.
+ * Who hears about a merge, and the copy each side needs. Re-read at send time
+ * because the notification is debounced — the merge can be undone, or either
+ * proposal pulled. Empty outcomes return a reason rather than throwing. Nothing
+ * to authorize: the audience is derived, not requested.
  */
 export async function listProposalMergeRecipients({
   relationshipId,
@@ -72,8 +63,7 @@ export async function listProposalMergeRecipients({
     },
   });
 
-  // Gone or soft-deleted: the merge was undone before the debounce elapsed, and
-  // telling anyone it happened would now be false.
+  // Unmerged inside the debounce window.
   if (!relationship) {
     return { ok: false, reason: 'edgeNotLive' };
   }
@@ -81,9 +71,7 @@ export async function listProposalMergeRecipients({
   const { sourceProposal, targetProposal } = relationship;
   const processProfile = sourceProposal.processInstance?.profile;
 
-  // Nobody gets a link to a proposal that has been pulled. `moderationDetachedAt`
-  // hides a proposal from everyone including admins, which is the same treatment
-  // `getLinkedProposal` gives it.
+  // `moderationDetachedAt` hides a proposal from everyone, admins included.
   if (
     !processProfile ||
     !isReachable(sourceProposal) ||
@@ -97,13 +85,9 @@ export async function listProposalMergeRecipients({
     excludedAuthUserIds: [actorAuthUserId],
   });
 
-  // Anyone who worked on both proposals hears it once, as a source author: "your
-  // proposal was merged away" is the version that affects them.
-  //
-  // Keyed on who actually got the source email rather than on everyone attached
-  // to the source proposal. Someone whose source row carries no address was not
-  // told anything by it, so excluding them here would drop them from both sides
-  // and leave a reachable author silently unmailed.
+  // Someone on both proposals hears only the source version. Keyed on who that
+  // email actually reached, so a source row with no address doesn't drop them
+  // from both sides.
   const targetRecipients = collectRecipients({
     profileUsers: targetProposal.profile.profileUsers,
     excludedAuthUserIds: [
@@ -141,11 +125,7 @@ const isReachable = (proposal: {
   moderationDetachedAt: string | null;
 }) => !proposal.deletedAt && !proposal.moderationDetachedAt;
 
-/**
- * The note is written in the merge dialog, so its author is always the admin who
- * performed the merge — the edge itself records no author. A missing profile
- * costs the attribution line, not the note.
- */
+/** The edge records no author, but the merge dialog collects the note. */
 const resolveNote = async ({
   body,
   authorAuthUserId,
@@ -165,11 +145,7 @@ const resolveNote = async ({
   return { body, authorName: author?.profile?.name ?? null };
 };
 
-/**
- * A proposal's own profile carries its author and every collaborator, so one row
- * set is the whole audience. Addresses are collapsed case-insensitively so a
- * person on two collaborator rows is mailed once.
- */
+/** A proposal's profile carries its author and every collaborator. */
 const collectRecipients = ({
   profileUsers,
   excludedAuthUserIds,

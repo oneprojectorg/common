@@ -34,9 +34,8 @@ export const mergeProposalsRouter = router({
         Channels.decisionProposal(processInstanceId, targetProposalId),
       ]);
 
-      // Tell both proposals' authors, each side its own version. The workflow
-      // resolves recipients itself so an unmerge landing first cancels the
-      // notification.
+      // The workflow resolves recipients itself, so an unmerge landing first
+      // cancels the notification.
       waitUntil(
         inngest.send({
           name: Events.proposalMerged.name,

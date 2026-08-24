@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mock: this resolver is two reads plus the filtering rules that decide
-// who hears about a merge and which side of it they hear. We drive the reads and
-// assert the rules — the edge going stale, a proposal being pulled, and who
-// lands in which audience.
+// Boundary mock: drive the two reads, assert the filtering rules.
 vi.mock('@op/db/client', () => ({
   db: {
     query: {
@@ -108,8 +105,7 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
-  // The debounce window is long enough for an admin to undo a merge before the
-  // notification fires, and the edge soft-deletes rather than disappearing.
+  // An admin can unmerge inside the debounce window.
   it('sends nothing when the edge is no longer live', async () => {
     findFirst.mockResolvedValue(undefined as never);
 
@@ -159,8 +155,6 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
-  // The whole point of splitting the audiences: nobody gets told both that their
-  // proposal was merged away and that something was merged into it.
   it('tells someone on both proposals only that theirs was merged away', async () => {
     findFirst.mockResolvedValue(
       edge({
@@ -180,8 +174,6 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
-  // Same person, two accounts on the two proposals — the id check misses this,
-  // so the address check has to catch it.
   it('deduplicates across sides by address, not just by account', async () => {
     findFirst.mockResolvedValue(
       edge({
@@ -203,9 +195,7 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
-  // Their source row carries no address, so the source email never reached them.
-  // Excluding them from the surviving side too would leave a reachable author
-  // hearing nothing at all.
+  // Otherwise they'd be excluded from both sides and hear nothing.
   it('still writes to someone on both sides whose source row has no address', async () => {
     findFirst.mockResolvedValue(
       edge({
@@ -292,7 +282,6 @@ describe('listProposalMergeRecipients', () => {
       });
     });
 
-    // An unresolvable profile costs the attribution line, not the note.
     it('keeps the note when the admin has no resolvable profile', async () => {
       findFirst.mockResolvedValue(edge({ note: 'Consolidated.' }) as never);
       findUser.mockResolvedValue(undefined as never);

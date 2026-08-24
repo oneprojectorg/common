@@ -16,9 +16,7 @@ export const sendProposalMergedNotification = inngest.createFunction(
       period: '1m',
       timeout: '3m',
     },
-    // A decision admin merging a batch of proposals fires one run each, and a
-    // collaborative proposal can carry a long author list. Capping runs keeps a
-    // bulk cleanup from opening every send at once against the email provider.
+    // A bulk merge fires one run per proposal; don't flood the email provider.
     concurrency: { limit: 5 },
   },
   { event: proposalMerged.name },
@@ -56,8 +54,7 @@ export const sendProposalMergedNotification = inngest.createFunction(
     const proposalUrl = `${proposalBaseUrl}/${sourceProposalProfileId}`;
     const targetProposalUrl = `${proposalBaseUrl}/${targetProposalProfileId}`;
 
-    // One batch for both sides. The two audiences are disjoint, so each address
-    // appears once no matter how many proposals the person worked on.
+    // Both sides in one batch; the audiences are disjoint.
     const sendResult = await step.run('send-emails', async () =>
       sendNotificationEmails({
         emails: [

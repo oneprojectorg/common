@@ -17,7 +17,7 @@ export type MergeProposalsResult = {
   processInstanceId: string;
   sourceProposalId: string;
   targetProposalId: string;
-  /** The edge just written, so the caller can announce this specific merge. */
+  /** So the caller can announce this specific merge. */
   relationshipId: string;
 };
 
@@ -31,9 +31,8 @@ export type MergeProposalsResult = {
  * makes a cycle unrepresentable: a proposal that has merged away can never
  * become a target.
  *
- * `note` is stored on the edge so it soft-deletes with the merge, and the merge
- * notification quotes it back to the authors of the proposal that was merged
- * away.
+ * `note` lives on the edge so it soft-deletes with the merge; the notification
+ * quotes it back to the merged-away authors.
  */
 export async function mergeProposals({
   sourceProposalId,

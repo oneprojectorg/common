@@ -7,11 +7,7 @@ import { Header } from '../components/Header';
 
 const inlineLinkClassName = 'font-bold text-primary-teal underline';
 
-/**
- * Goes to the authors of the proposal that survived a merge. The counterpart to
- * {@link ProposalMergedEmail}, which tells the other side their proposal was the
- * one merged away — nobody receives both.
- */
+/** Goes to the authors of the proposal that survived; nobody receives both. */
 export const ProposalMergedIntoYoursEmail = ({
   proposalName,
   sourceProposalName,
@@ -19,7 +15,7 @@ export const ProposalMergedIntoYoursEmail = ({
   proposalUrl = 'https://common.oneproject.org/',
   sourceProposalUrl = 'https://common.oneproject.org/',
 }: {
-  /** The recipient's own proposal — the one that survived. */
+  /** The recipient's own proposal. */
   proposalName: string;
   sourceProposalName: string;
   processTitle: string;

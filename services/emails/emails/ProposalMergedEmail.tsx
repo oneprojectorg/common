@@ -6,9 +6,7 @@ import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
 import { QuotedNote } from '../components/QuotedNote';
 
-// Both proposal names are links so the email carries a route to the work that
-// was superseded as well as to the one that survived. Styled to keep the weight
-// the design gives them rather than the client's default link blue.
+// Styled to keep the design's weight rather than the client's default link blue.
 const inlineLinkClassName = 'font-bold text-primary-teal underline';
 
 /** Goes to the authors of the proposal that was merged away. */
@@ -25,7 +23,7 @@ export const ProposalMergedEmail = ({
   processTitle: string;
   proposalUrl: string;
   targetProposalUrl: string;
-  /** The admin's reason for the merge, when they gave one. */
+  /** The admin's reason for the merge. */
   note?: { body: string; authorName?: string | null } | null;
 }) => {
   return (
