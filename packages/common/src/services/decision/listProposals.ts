@@ -14,10 +14,13 @@ import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
-import { isAnonymousAuthor, proposalAuthorRelation } from './proposalAuthor';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { proposalProfileColumns } from './proposalProfileColumns';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 

@@ -1,8 +1,7 @@
-import { type SQL, and, db, eq, inArray, isNull, ne } from '@op/db/client';
+import { and, db, eq, inArray, isNull } from '@op/db/client';
 import {
   ProposalRelationshipType,
   ProposalStatus,
-  Visibility,
   proposalRelationships,
   proposals,
 } from '@op/db/schema';
@@ -10,27 +9,20 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
-import { noActiveModerationFlag } from '../moderation/moderationVisibility';
-import { getLinkedProposal } from './getLinkedProposal';
+import { assertProfileAccess } from '../assert';
+import { getCachedInstance } from './getCachedInstance';
+import { getProposalAccessContext } from './getProposalAccessContext';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { isAnonymousAuthor, proposalAuthorRelation } from './proposalAuthor';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { proposalProfileColumns } from './proposalProfileColumns';
+import { needsNoAccessException } from './proposalVisibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { ListContributingProposalsInput } from './schemas/contributingProposals';
-
-/** The visibility floor `getProposal` applies, so this surfaces nothing the
- *  caller couldn't open. Applied to the pinned proposal and every source. */
-const needsNoAccessException = (t: typeof proposals): SQL =>
-  and(
-    isNull(t.deletedAt),
-    isNull(t.moderationDetachedAt),
-    ne(t.status, ProposalStatus.DRAFT),
-    eq(t.visibility, Visibility.VISIBLE),
-    noActiveModerationFlag('proposal', t.id),
-  )!;
 
 /**
  * The proposals merged into `proposalId`, as "Contributing ideas" cards.
@@ -45,22 +37,18 @@ export async function listContributingProposals({
 }: ListContributingProposalsInput & {
   user: User | undefined;
 }) {
-  const proposal = await getLinkedProposal(proposalId);
+  const proposal = await getProposalAccessContext(proposalId);
 
   // The assert rejects the whole `Promise.all`, so an unauthorized caller never
   // receives the rows read alongside it.
   const [, pinnedIsReadable, instance, edges] = await Promise.all([
-    assertInstanceProfileAccess({
+    // Profile-level grants only — no org fallback, matching `mergeProposals`.
+    // `ADMIN` isn't listed alongside `READ` because the seeded decisions Admin
+    // role already carries `read`, so it would never admit anyone extra.
+    assertProfileAccess({
       user,
-      instance: proposal.instance,
-      profilePermissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-      orgFallbackPermissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
+      profileId: proposal.instance.profileId,
+      permissions: { decisions: permission.READ },
     }),
     db
       .select({ id: proposals.id })
@@ -69,10 +57,10 @@ export async function listContributingProposals({
         and(eq(proposals.id, proposalId), needsNoAccessException(proposals)),
       )
       .limit(1),
-    db.query.processInstances.findFirst({
-      where: { id: proposal.processInstanceId },
-      columns: { instanceData: true, processId: true },
-    }),
+    // Shares `getInstance`'s cached row: on a proposal page the decision has
+    // almost certainly been read already, so this is a hit. A miss costs the
+    // wider snapshot, which is the price of not forking the cache key.
+    getCachedInstance(proposal.processInstanceId),
     db
       .select({ sourceProposalId: proposalRelationships.sourceProposalId })
       .from(proposalRelationships)
@@ -105,7 +93,7 @@ export async function listContributingProposals({
     return { queriedProposal, proposals: [] };
   }
 
-  // `getLinkedProposal` resolved it through this instance, so a miss means the
+  // `getProposalAccessContext` resolved it through this instance, so a miss means the
   // row was deleted between the two reads.
   if (!instance) {
     throw new NotFoundError('Decision instance', proposal.processInstanceId);

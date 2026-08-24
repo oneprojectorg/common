@@ -2,7 +2,7 @@ import { and, db, eq, isNull } from '@op/db/client';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 
-export type LinkedProposal = {
+export type ProposalAccessContext = {
   proposalId: string;
   processInstanceId: string;
   /** `profileId` is where the grants live; `ownerProfileId` is the org fallback. */
@@ -15,9 +15,9 @@ export type LinkedProposal = {
  * Deliberately no authorization here: merging gates on admin across both ends,
  * the list gates on read access.
  */
-export async function getLinkedProposal(
+export async function getProposalAccessContext(
   proposalId: string,
-): Promise<LinkedProposal> {
+): Promise<ProposalAccessContext> {
   const proposal = await db.query.proposals.findFirst({
     // Moderation-detached (CSAM) proposals are invisible to everyone, admins
     // included — the same treatment `getProposal` gives them.

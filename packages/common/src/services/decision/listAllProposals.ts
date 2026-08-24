@@ -41,10 +41,13 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
-import { isAnonymousAuthor, proposalAuthorRelation } from './proposalAuthor';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { proposalProfileColumns } from './proposalProfileColumns';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import { resolveProposalTemplate } from './resolveProposalTemplate';

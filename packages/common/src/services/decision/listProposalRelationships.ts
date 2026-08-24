@@ -1,39 +1,16 @@
-import { type SQL, and, db, eq, isNull, ne } from '@op/db/client';
-import {
-  ProposalStatus,
-  Visibility,
-  profiles,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { and, db, eq, isNull } from '@op/db/client';
+import { profiles, proposalRelationships, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { noActiveModerationFlag } from '../moderation/moderationVisibility';
-import { getLinkedProposal } from './getLinkedProposal';
+import { getProposalAccessContext } from './getProposalAccessContext';
+import { needsNoAccessException } from './proposalVisibility';
 import type {
   ListProposalRelationshipsInput,
   ProposalRelationshipList,
 } from './schemas/proposalRelationships';
-
-/**
- * Read access to a decision doesn't imply read access to every proposal in it:
- * `getProposal` restricts drafts, hidden and flagged proposals, and treats
- * moderation-detached ones as missing. Applied to *both* ends here — the pinned
- * proposal and the far one — so a link neither surfaces a proposal the caller
- * couldn't open nor reveals that a restricted one has a relationship at all. The
- * profile name exposed alongside is the proposal's title.
- */
-const needsNoAccessException = (t: typeof proposals): SQL =>
-  and(
-    isNull(t.deletedAt),
-    isNull(t.moderationDetachedAt),
-    ne(t.status, ProposalStatus.DRAFT),
-    eq(t.visibility, Visibility.VISIBLE),
-    noActiveModerationFlag('proposal', t.id),
-  )!;
 
 export type ListProposalRelationshipsResult = ProposalRelationshipList & {
   /** Not part of the wire shape; the router uses it to name the realtime channel. */
@@ -65,7 +42,7 @@ export async function listProposalRelationships({
     );
   }
 
-  const proposal = await getLinkedProposal(pinnedProposalId);
+  const proposal = await getProposalAccessContext(pinnedProposalId);
 
   const pinnedColumn = sourceProposalId
     ? proposalRelationships.sourceProposalId

@@ -5,7 +5,7 @@ import { permission } from 'access-zones';
 
 import { ConflictError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { getLinkedProposal } from './getLinkedProposal';
+import { getProposalAccessContext } from './getProposalAccessContext';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { UnmergeProposalInput } from './schemas/proposalRelationships';
 
@@ -24,7 +24,7 @@ export async function unmergeProposal({
   sourceProposalId,
   user,
 }: UnmergeProposalInput & { user: User }): Promise<UnmergeProposalResult> {
-  const source = await getLinkedProposal(sourceProposalId);
+  const source = await getProposalAccessContext(sourceProposalId);
 
   // `Promise.all` rejects with the assert's error the moment it throws, so an
   // unauthorized caller learns nothing from the parallel lookup.

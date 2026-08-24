@@ -75,7 +75,6 @@ export * from './listContributingProposals';
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
 export * from './proposalAuthor';
-export * from './proposalProfileColumns';
 export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './assignReviewsToReviewer';
