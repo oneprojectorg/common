@@ -1622,5 +1622,6 @@
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "Dib-u-eegahan mar dambe ma haysto doorka dib-u-eegaha, sidaas darteed soo jeedimo cusub looma qoondayn karo.",
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# soo jeedin la muujiyay} other {# soo jeedimo la muujiyay}}",
   "Contributing ideas": "Fikrado wax ku darsaday",
-  "These participant ideas were merged into this proposal.": "Fikradahan ka-qaybgalayaasha waxaa lala biiriyay soo jeedintan."
+  "These participant ideas were merged into this proposal.": "Fikradahan ka-qaybgalayaasha waxaa lala biiriyay soo jeedintan.",
+  "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin"
 }

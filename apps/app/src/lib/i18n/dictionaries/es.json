@@ -1620,5 +1620,6 @@
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "Este revisor ya no tiene el rol de revisor, así que no puede recibir nuevas propuestas.",
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# propuesta mostrada} other {# propuestas mostradas}}",
   "Contributing ideas": "Ideas que contribuyen",
-  "These participant ideas were merged into this proposal.": "Estas ideas de participantes se combinaron con esta propuesta."
+  "These participant ideas were merged into this proposal.": "Estas ideas de participantes se combinaron con esta propuesta.",
+  "Contributing ideas could not be loaded": "No se pudieron cargar las ideas que contribuyen"
 }

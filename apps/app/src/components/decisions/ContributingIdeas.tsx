@@ -3,12 +3,29 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
-import { Suspense, useId } from 'react';
+import { Suspense, useEffect, useId } from 'react';
+import type { FallbackProps } from 'react-error-boundary';
+import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
+
+const contributingIdeasFallbacks = {
+  default: ({ error, resetErrorBoundary }: FallbackProps) => (
+    <ContributingIdeasUnavailable error={error} onRetry={resetErrorBoundary} />
+  ),
+};
 
 /**
  * The proposals merged into this one, listed above the comments. A merge
@@ -24,8 +41,9 @@ export function ContributingIdeas({
   decisionRoot: string;
 }) {
   return (
-    // A supplementary section shouldn't take the proposal page down with it.
-    <APIErrorBoundary fallbacks={{ default: () => null }}>
+    <APIErrorBoundary fallbacks={contributingIdeasFallbacks}>
+      {/* No skeleton: most proposals have nothing merged in, so a placeholder
+          would flash on every page that ends up rendering nothing. */}
       <Suspense fallback={null}>
         <ContributingIdeasSuspense
           proposal={proposal}
@@ -78,6 +96,42 @@ function ContributingIdeasSuspense({
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/**
+ * Shown when the read fails. Retrying resets the boundary, which remounts the
+ * query and refetches it.
+ */
+function ContributingIdeasUnavailable({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const t = useTranslations();
+
+  useEffect(() => {
+    logger.error('Could not load contributing proposals', { error });
+  }, [error]);
+
+  return (
+    <section className="border-t pt-8">
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuTriangleAlert className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('Contributing ideas could not be loaded')}</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            {t('Try again')}
+          </Button>
+        </EmptyContent>
+      </Empty>
     </section>
   );
 }
