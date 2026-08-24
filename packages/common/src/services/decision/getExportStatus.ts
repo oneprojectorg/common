@@ -143,15 +143,16 @@ const URL_EXPIRY_MARGIN_MS = 60 * 1000;
  * Is a stored export URL no longer usable?
  *
  * Signed URLs are shorter-lived than the record that holds them, so it can
- * simply have lapsed, or be within {@link URL_EXPIRY_MARGIN_MS} of doing so. It can be a URL minted before the
- * download option existed — which renders in the browser instead of saving, and
- * is therefore just as unusable however long it has left; gating on expiry
- * alone leaves the reported bug live for up to EXPORT_URL_TTL_SECONDS after
- * deploy on every record already in the cache. Or the expiry can be unreadable,
- * missing or unparseable alike, which is no evidence of a working URL: bailing
- * out there stranded the export for the rest of the record's life with the
- * object sitting in the bucket. Note `new Date('garbage') < new Date()` is
- * false, so a corrupt timestamp reads as "not expired" unless caught by name.
+ * simply have lapsed, or sit within {@link URL_EXPIRY_MARGIN_MS} of doing so.
+ *
+ * It can also be a URL minted before the download option existed, which renders
+ * in the browser instead of saving and is therefore just as unusable however
+ * long it has left. Gating on expiry alone leaves the reported bug live for up
+ * to EXPORT_URL_TTL_SECONDS after deploy on every record already in the cache.
+ *
+ * Or the expiry can be unreadable — missing and unparseable alike — which is no
+ * evidence of a working URL: bailing out there stranded the export for the rest
+ * of the record's life with the object sitting in the bucket.
  *
  * Only `fileName` is genuinely required, because that is what rebuilds the
  * storage key.
