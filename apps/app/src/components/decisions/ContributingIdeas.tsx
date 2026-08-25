@@ -19,7 +19,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalCardView } from './ProposalCard';
+import { ProposalCardView, ProposalRestrictionBadge } from './ProposalCard';
 
 /**
  * The proposals merged into this one, listed above the comments. A merge
@@ -95,7 +95,9 @@ function ContributingIdeasSuspense({
             <ProposalCardView
               proposal={contributingProposal}
               href={`${decisionRoot}/proposal/${contributingProposal.profileId}`}
-              badge="restriction"
+              headerBadge={
+                <ProposalRestrictionBadge proposal={contributingProposal} />
+              }
             />
           </li>
         ))}

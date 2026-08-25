@@ -97,7 +97,7 @@ const MyBallotProposals = ({
               proposal={proposal}
               href={viewHref}
               selected
-              badge="none"
+              headerBadge={null}
               // `voteCount` is null until results are published — a bare
               // "0 Total Votes" then would misreport the tally, so the votes
               // row stays hidden (same rule as the funded-proposals tab).
