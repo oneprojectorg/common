@@ -21,8 +21,11 @@ export const listProposalFeedbackRouter = router({
         user: ctx.user,
       });
 
+      // Phase transitions publish on `decisionInstance`, and phase end is
+      // what releases feedback.
       ctx.registerQueryChannels([
         Channels.reviewAssignments(result.processInstanceId),
+        Channels.decisionInstance(result.processInstanceId),
       ]);
 
       return proposalFeedbackListSchema.parse(result);

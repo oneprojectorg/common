@@ -90,10 +90,10 @@ export function proposalWithRevisionRequestsConfig(
 }
 
 /**
- * Read gate shared by the proposal-scoped, reviewer-authored artifacts
+ * Read gate shared by the proposal-scoped, reviewer-authored outputs
  * (revision requests, author feedback): the proposal's authors, decision
  * admins, and any user with the REVIEW capability on the instance. Other
- * participants — voters, plain members with READ — are rejected. `artifact`
+ * participants — voters, plain members with READ — are rejected. `subject`
  * names the thing being read in the denial message.
  *
  * "Authors" is the proposal's own profile membership — the creator plus any
@@ -103,17 +103,17 @@ export function proposalWithRevisionRequestsConfig(
  * would miss co-authors, and misses the human behind an org-acting submitter
  * (the profile recorded there is whichever profile was active at submit time,
  * while the proposal-profile grant is keyed on the auth user). Kept as a union
- * of the two so no caller who could read these artifacts before loses access.
+ * of the two so no caller who could read these before loses access.
  * Fail-closed: no grant on the proposal profile means no author standing.
  */
-export async function assertProposalReviewArtifactAccess({
-  artifact,
+export async function assertProposalReviewReadAccess({
+  subject,
   instance,
   profileId,
   proposal,
   user,
 }: {
-  artifact: string;
+  subject: string;
   instance: { access: Pick<DecisionRolePermissions, 'admin' | 'review'> };
   profileId: string;
   proposal: { profileId: string; submittedByProfileId: string | null };
@@ -139,7 +139,7 @@ export async function assertProposalReviewArtifactAccess({
   }
 
   throw new UnauthorizedError(
-    `You don't have access to this proposal's ${artifact}`,
+    `You don't have access to this proposal's ${subject}`,
   );
 }
 

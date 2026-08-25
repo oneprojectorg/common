@@ -6,7 +6,7 @@ import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import {
-  assertProposalReviewArtifactAccess,
+  assertProposalReviewReadAccess,
   proposalWithRevisionRequestsConfig,
 } from './reviewHelpers';
 
@@ -55,8 +55,8 @@ export async function listProposalRevisionRequests({
     user,
   });
 
-  await assertProposalReviewArtifactAccess({
-    artifact: 'revision requests',
+  await assertProposalReviewReadAccess({
+    subject: 'revision requests',
     instance,
     profileId: commonUser.profileId,
     proposal,

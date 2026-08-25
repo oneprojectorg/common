@@ -5,7 +5,7 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import { assertProposalReviewArtifactAccess } from './reviewHelpers';
+import { assertProposalReviewReadAccess } from './reviewHelpers';
 import { hasPhaseEnded } from './utils/phaseOrder';
 
 /**
@@ -81,8 +81,8 @@ export async function listProposalFeedback({
     user,
   });
 
-  await assertProposalReviewArtifactAccess({
-    artifact: 'reviewer feedback',
+  await assertProposalReviewReadAccess({
+    subject: 'reviewer feedback',
     instance,
     profileId: commonUser.profileId,
     proposal,
