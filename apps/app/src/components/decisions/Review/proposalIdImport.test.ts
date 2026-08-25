@@ -32,6 +32,19 @@ describe('extractProposalIds', () => {
     expect(extractProposalIds(`${A.toUpperCase()}, ${A}`)).toEqual([A]);
   });
 
+  it('finds IDs inside pasted proposal URLs', () => {
+    expect(extractProposalIds(`https://app.example.org/proposal/${A}`)).toEqual(
+      [A],
+    );
+  });
+
+  it('rejects UUID-shaped tokens with invalid version bits', () => {
+    // z.uuid() checks the RFC 9562 version/variant nibbles, not just the shape.
+    expect(extractProposalIds('550e8400-e29b-01d4-c716-446655440000')).toEqual(
+      [],
+    );
+  });
+
   it('returns nothing for text with no IDs', () => {
     expect(extractProposalIds('no ids here, 1234-56')).toEqual([]);
   });

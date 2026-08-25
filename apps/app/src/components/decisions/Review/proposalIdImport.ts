@@ -1,15 +1,19 @@
-const UUID_PATTERN =
-  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+import { z } from 'zod';
+
+const uuidSchema = z.uuid();
 
 /**
  * Pull proposal IDs out of whatever an admin pasted from a spreadsheet.
- * Sheets copies as tab-separated text we don't control, so scan for
- * UUID-shaped tokens and drop everything else. De-duplicated, first-seen order.
+ * Sheets copies as tab-separated text we don't control, so split on anything
+ * that cannot be part of a UUID and keep the tokens zod accepts as one.
+ * De-duplicated, first-seen order.
  */
 export function extractProposalIds(pastedText: string): Array<string> {
   const ids = new Set<string>();
-  for (const match of pastedText.matchAll(UUID_PATTERN)) {
-    ids.add(match[0].toLowerCase());
+  for (const token of pastedText.split(/[^0-9a-fA-F-]+/)) {
+    if (uuidSchema.safeParse(token).success) {
+      ids.add(token.toLowerCase());
+    }
   }
   return [...ids];
 }
