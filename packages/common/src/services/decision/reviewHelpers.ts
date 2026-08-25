@@ -183,28 +183,20 @@ export function assertCanReadPhaseReviews(
  * Assignments deliberately survive a phase advance, so a leftover assignment
  * would otherwise stay actionable past its phase.
  *
- * Re-reads the live phase because `getInstance`'s copy is cached and can lag
- * an advance. Applies to admins too — the phase, not the caller, is what
- * closed.
+ * Trusts the caller's loaded instance: `getInstance`'s copy can lag an advance
+ * by up to the L1 cache TTL (~2 minutes), an accepted window. Applies to
+ * admins too — the phase, not the caller, is what closed.
  */
-export async function assertReviewAssignmentPhaseIsCurrent({
+export function assertReviewAssignmentPhaseIsCurrent({
+  instance,
   assignment,
   error,
 }: {
-  assignment: { processInstanceId: string; phaseId: string };
+  instance: { currentStateId: string | null };
+  assignment: { phaseId: string };
   error: Error;
-}): Promise<void> {
-  const liveInstance = await db.query.processInstances.findFirst({
-    where: { id: assignment.processInstanceId },
-    columns: { currentStateId: true },
-  });
-
-  if (
-    !isInstanceCurrentPhase(
-      { currentStateId: liveInstance?.currentStateId ?? null },
-      assignment.phaseId,
-    )
-  ) {
+}): void {
+  if (!isInstanceCurrentPhase(instance, assignment.phaseId)) {
     throw error;
   }
 }

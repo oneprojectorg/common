@@ -47,7 +47,8 @@ export async function requestRevision({
   }
 
   // A past-phase request would open a revision cycle nobody may complete.
-  await assertReviewAssignmentPhaseIsCurrent({
+  assertReviewAssignmentPhaseIsCurrent({
+    instance: context.instance,
     assignment: context.assignment,
     error: new ValidationError(
       'A revision can no longer be requested because the review phase has ended',

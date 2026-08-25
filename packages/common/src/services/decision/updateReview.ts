@@ -40,7 +40,8 @@ export async function updateReview({
     throw new ValidationError('Review has not been submitted yet');
   }
 
-  await assertReviewAssignmentPhaseIsCurrent({
+  assertReviewAssignmentPhaseIsCurrent({
+    instance: context.instance,
     assignment: context.assignment,
     error: new ValidationError(
       'This review can no longer be edited because the review phase has ended',

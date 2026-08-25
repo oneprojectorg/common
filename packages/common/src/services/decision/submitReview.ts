@@ -47,7 +47,8 @@ export async function submitReview({
 
   // Assignments outlive a phase advance, so a leftover assignment from an
   // earlier phase must not accept a first write either.
-  await assertReviewAssignmentPhaseIsCurrent({
+  assertReviewAssignmentPhaseIsCurrent({
+    instance: context.instance,
     assignment: context.assignment,
     error: new ValidationError(
       'This review can no longer be submitted because the review phase has ended',

@@ -87,7 +87,9 @@ export async function submitRevisionResponse({
   }
 
   // A past-phase response would strand the assignment in READY_FOR_RE_REVIEW.
-  await assertReviewAssignmentPhaseIsCurrent({
+  assertReviewAssignmentPhaseIsCurrent({
+    // Loaded fresh by this procedure's own query, so it is never stale.
+    instance: request.assignment.proposal.processInstance,
     assignment: request.assignment,
     error: new ValidationError(
       'This proposal can no longer be resubmitted because the review phase has ended',
