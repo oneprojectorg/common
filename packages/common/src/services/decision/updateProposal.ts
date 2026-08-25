@@ -94,22 +94,36 @@ export const updateProposal = async ({
       orgFallbackPermissions: [{ decisions: permission.ADMIN }],
     });
   } else {
-    // Data updates require profile-level update permission on the proposal's profile
+    // Data updates belong to the people the proposal belongs to: its author
+    // (Admin on the proposal's own profile) and the collaborators it was
+    // shared with (the invite's role on that profile — Member today, granted
+    // by acceptProposalInvite), with decision admins as the override. Every
+    // grant that confers standing on a proposal carries at least profile
+    // READ, so that's the test.
+    //
+    // Membership of the process is deliberately not enough: Member holds
+    // `decisions` UPDATE so it can submit its own work, and gating on that
+    // would let any participant rewrite every other proposal in the process,
+    // unpublished drafts included.
+    //
+    // Reading standing off the proposal's profile relies on the invariant
+    // `resolveProposalListScope` documents — public grants are only ever
+    // placed on the process profile, never on an individual proposal's.
     const proposalRoles = await getProfileAccessRoles({
       user: { id: user.id },
       profileId: existingProposal.profileId,
     });
 
-    const hasProposalUpdate = checkPermission(
-      { profile: permission.UPDATE },
+    const hasProposalStanding = checkPermission(
+      { profile: permission.READ },
       proposalRoles,
     );
 
-    if (!hasProposalUpdate) {
+    if (!hasProposalStanding) {
       await assertInstanceProfileAccess({
         user: { id: user.id },
         instance: processInstance,
-        profilePermissions: { decisions: permission.UPDATE },
+        profilePermissions: { decisions: permission.ADMIN },
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
     }
