@@ -57,7 +57,7 @@ export function ProposalEditor({
   isEditMode = false,
   asideHeaderIcons,
   activeRevisionRequest = null,
-  asidePanel = null,
+  children,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -66,11 +66,14 @@ export function ProposalEditor({
   asideHeaderIcons?: ReactNode;
   /**
    * Drives revision mode in the header and the resubmit modal. Which pane the
-   * document sits beside is `asidePanel`'s business, not this prop's.
+   * document sits beside is the caller's business, not this prop's.
    */
   activeRevisionRequest?: ProposalReviewRequest | null;
-  /** Rendered beside the document in a SplitPane; the owner picks it. */
-  asidePanel?: { label: string; content: ReactNode } | null;
+  /**
+   * The pane beside the document, expected to be a `ProposalEditorAside`.
+   * Absent, the document gets the full width.
+   */
+  children?: ReactNode;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -113,7 +116,7 @@ export function ProposalEditor({
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       activeRevisionRequest={activeRevisionRequest}
-      asidePanel={asidePanel}
+      asidePane={children}
     />
   );
 
@@ -145,7 +148,7 @@ function ProposalEditorInner({
   collaborationDocId,
   proposalTemplate,
   activeRevisionRequest,
-  asidePanel,
+  asidePane,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -155,7 +158,7 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   activeRevisionRequest: ProposalReviewRequest | null;
-  asidePanel: { label: string; content: ReactNode } | null;
+  asidePane: ReactNode;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -493,7 +496,7 @@ function ProposalEditorInner({
           menu on the selection, so there is no toolbar row above the form. */}
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
-          {asidePanel ? (
+          {asidePane ? (
             <SplitPane className="mx-auto w-full max-w-6xl">
               <SplitPane.Pane
                 id="proposal"
@@ -502,14 +505,7 @@ function ProposalEditorInner({
               >
                 {editorBody}
               </SplitPane.Pane>
-              <SplitPane.Pane
-                id="feedback"
-                label={asidePanel.label}
-                className="bg-background"
-                unpadded
-              >
-                {asidePanel.content}
-              </SplitPane.Pane>
+              {asidePane}
             </SplitPane>
           ) : (
             <div className="px-4 py-8 sm:px-6 sm:py-14">

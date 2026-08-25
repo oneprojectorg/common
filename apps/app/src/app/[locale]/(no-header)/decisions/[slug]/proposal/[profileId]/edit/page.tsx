@@ -29,6 +29,7 @@ import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSke
 import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
 import { getProposalVisibility } from '@/components/decisions/getProposalVisibility';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { ProposalEditorAsidePane } from '@/components/decisions/proposalEditor/ProposalEditorAsidePane';
 import { RevisionFeedbackPanel } from '@/components/decisions/proposalEditor/RevisionFeedbackPanel';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
@@ -47,10 +48,7 @@ import {
   proposalFeedbackPanelParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
-import {
-  type ProposalFeedback,
-  useProposalFeedback,
-} from '@/components/decisions/useProposalFeedback';
+import { useProposalFeedback } from '@/components/decisions/useProposalFeedback';
 
 /**
  * Route page for the proposal editor.
@@ -250,12 +248,6 @@ function EditProposalPageContent() {
 
   const userName = user.profile?.name ?? t('Anonymous');
 
-  const asidePanel = useProposalEditorAsidePanel({
-    activeRevisionRequest,
-    feedback,
-    isFeedbackPanelOpen,
-  });
-
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
@@ -277,8 +269,27 @@ function EditProposalPageContent() {
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
           activeRevisionRequest={activeRevisionRequest}
-          asidePanel={asidePanel}
-        />
+        >
+          {/* A revision request the author still has to answer outranks the
+              read-only record of a review that has already ended. */}
+          {activeRevisionRequest ? (
+            <ProposalEditorAsidePane label={t('Revision feedback')}>
+              <RevisionFeedbackPanel revisionRequest={activeRevisionRequest} />
+            </ProposalEditorAsidePane>
+          ) : isFeedbackPanelOpen && feedback.hasFeedback ? (
+            <ProposalEditorAsidePane label={t('Feedback')}>
+              <ProposalFeedbackPanel
+                feedbackItems={feedback.notes}
+                revisionRequests={feedback.revisionHistory}
+                title={t('Feedback')}
+                subtitle={t(
+                  'Notes reviewers shared while this proposal was under review',
+                )}
+                revisionRequestLabel={t('Revision request')}
+              />
+            </ProposalEditorAsidePane>
+          ) : null}
+        </ProposalEditorContent>
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
@@ -300,7 +311,7 @@ function ProposalEditorContent({
   setAsideState,
   asideHeaderIcons,
   activeRevisionRequest,
-  asidePanel,
+  children,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -310,7 +321,8 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   activeRevisionRequest: ProposalReviewRequest | null;
-  asidePanel: { label: string; content: React.ReactNode } | null;
+  /** The aside pane, forwarded straight to `ProposalEditor`. */
+  children: React.ReactNode;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -368,58 +380,15 @@ function ProposalEditorContent({
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
         activeRevisionRequest={activeRevisionRequest}
-        asidePanel={asidePanel}
-      />
+      >
+        {children}
+      </ProposalEditor>
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays
           visible and scrollable beside it. Mobile: a modal drawer, which covers
           the viewport anyway. */}
       {asideSlot}
     </div>
   );
-}
-
-/**
- * The pane the document sits beside. A revision request the author still has to
- * answer outranks the read-only record of a review that has already ended.
- */
-function useProposalEditorAsidePanel({
-  activeRevisionRequest,
-  feedback,
-  isFeedbackPanelOpen,
-}: {
-  activeRevisionRequest: ProposalReviewRequest | null;
-  feedback: ProposalFeedback;
-  isFeedbackPanelOpen: boolean;
-}): { label: string; content: React.ReactNode } | null {
-  const t = useTranslations();
-
-  if (activeRevisionRequest) {
-    return {
-      label: t('Revision feedback'),
-      content: (
-        <RevisionFeedbackPanel revisionRequest={activeRevisionRequest} />
-      ),
-    };
-  }
-
-  if (!isFeedbackPanelOpen || !feedback.hasFeedback) {
-    return null;
-  }
-
-  return {
-    label: t('Feedback'),
-    content: (
-      <ProposalFeedbackPanel
-        feedbackItems={feedback.notes}
-        revisionRequests={feedback.revisionHistory}
-        title={t('Feedback')}
-        subtitle={t(
-          'Notes reviewers shared while this proposal was under review',
-        )}
-        revisionRequestLabel={t('Revision request')}
-      />
-    ),
-  };
 }
 
 function useProposalEditorAsideHeaderIcons({
