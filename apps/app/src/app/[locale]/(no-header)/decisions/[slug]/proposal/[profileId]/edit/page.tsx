@@ -24,6 +24,7 @@ import { LuHistory, LuMessageSquareText, LuStickyNote } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
+import { FeedbackDotIconButton } from '@/components/decisions/FeedbackDotIconButton';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
 import { getProposalReviewVisibility } from '@/components/decisions/getProposalReviewVisibility';
@@ -204,65 +205,32 @@ function EditProposalPageContent() {
   // surfaces — hide them from anonymous accounts and logged-out visitors.
   const canInteract = userCanInteract(user);
 
-  const revisionRequestLabel = t('Revision request');
-  const feedbackLabel = t('Feedback');
+  // One disclosure, whichever pane applies: mid-phase it opens the revision
+  // request the author must answer, and the feedback record once that is gone.
+  const feedbackDisclosure = firstRevisionRequestId ? (
+    <FeedbackDotIconButton
+      key="revision-request"
+      icon={LuStickyNote}
+      label={t('Revision request')}
+      onToggle={toggleRevisionRequest}
+      isExpanded={Boolean(reviewRevision)}
+    />
+  ) : feedback.hasFeedback ? (
+    <FeedbackDotIconButton
+      key="feedback"
+      icon={LuMessageSquareText}
+      label={t('Feedback')}
+      onToggle={toggleFeedbackPanel}
+      isExpanded={isFeedbackPanelOpen}
+    />
+  ) : null;
+
   const headerIcons = !canInteract
     ? []
-    : firstRevisionRequestId
-      ? [
-          // The header's action row supplies the tooltip group and its delay
-          // (`ProposalEditorHeader`), so these only need a Tooltip each.
-          <Tooltip key="revision-request">
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={toggleRevisionRequest}
-                  aria-label={revisionRequestLabel}
-                  aria-expanded={Boolean(reviewRevision)}
-                  className="relative"
-                >
-                  <LuStickyNote className="size-4" />
-                  <span
-                    aria-hidden
-                    className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                  />
-                </Button>
-              }
-            />
-            <TooltipContent>{revisionRequestLabel}</TooltipContent>
-          </Tooltip>,
-          ...asideHeaderIcons,
-        ]
-      : feedback.hasFeedback
-        ? [
-            <Tooltip key="feedback">
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={toggleFeedbackPanel}
-                    aria-label={feedbackLabel}
-                    aria-expanded={isFeedbackPanelOpen}
-                    className="relative"
-                  >
-                    <LuMessageSquareText className="size-4" />
-                    {/* Static, not an unread badge: we hold no read state for
-                        reviewer notes. */}
-                    <span
-                      aria-hidden
-                      className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                    />
-                  </Button>
-                }
-              />
-              <TooltipContent>{feedbackLabel}</TooltipContent>
-            </Tooltip>,
-            ...asideHeaderIcons,
-          ]
-        : asideHeaderIcons;
+    : [
+        ...(feedbackDisclosure ? [feedbackDisclosure] : []),
+        ...asideHeaderIcons,
+      ];
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
