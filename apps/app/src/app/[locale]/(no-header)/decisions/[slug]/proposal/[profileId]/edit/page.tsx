@@ -27,7 +27,7 @@ import { CollaborativeDocProvider } from '@/components/collaboration';
 import { FeedbackDotIconButton } from '@/components/decisions/FeedbackDotIconButton';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
-import { getProposalVisibility } from '@/components/decisions/getProposalVisibility';
+import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { ProposalEditorAsidePane } from '@/components/decisions/proposalEditor/ProposalEditorAsidePane';
 import { RevisionFeedbackPanel } from '@/components/decisions/proposalEditor/RevisionFeedbackPanel';
@@ -132,14 +132,14 @@ function EditProposalPageContent() {
   // Shared with the view route so the rule lives in one place; only
   // `review.feedback` applies here — the revision panes are that route's
   // affordance.
-  const visibility = getProposalVisibility({ instance, proposal, user });
+  const affordances = getProposalAffordances({ instance, proposal, user });
 
   // `review.feedback`, not `review.revisions`: this is the history the panel
   // keeps showing after the review phase ends, which is when `revisions` goes
   // false.
   const feedback = useProposalFeedback({
     proposalId: proposal.id,
-    enabled: visibility.review.feedback,
+    enabled: affordances.review.feedback,
   });
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
