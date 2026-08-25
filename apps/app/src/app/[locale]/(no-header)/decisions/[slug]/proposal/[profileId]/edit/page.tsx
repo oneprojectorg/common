@@ -109,15 +109,22 @@ function EditProposalPageContent() {
 
   const { user } = useRequiredUser();
 
-  // The server throws UnauthorizedError when the viewer lacks review access;
-  // treat any error as "no revision requests" so the editor still loads.
+  // Mirrors the server gate for both revision reads below: author standing,
+  // decision admin, or review capability. Deliberately not `review.revisions` —
+  // that adds a review-phase condition, and an author has to see a pending
+  // request whatever phase the decision is in.
+  const affordances = getProposalAffordances({ instance, proposal, user });
+
+  // Gated rather than firing for every viewer and swallowing the server's
+  // UnauthorizedError. The error-to-empty fallback stays for transport
+  // failures, so the editor still loads.
   const { data: revisionData, error: revisionError } =
     trpc.decision.listProposalRevisionRequests.useQuery(
       {
         proposalId: proposal.id,
         states: [ProposalReviewRequestState.REQUESTED],
       },
-      { throwOnError: false },
+      { enabled: affordances.review.feedback, throwOnError: false },
     );
 
   const revisionRequests = revisionError
@@ -129,14 +136,8 @@ function EditProposalPageContent() {
         ?.revisionRequest ?? null)
     : null;
 
-  // Shared with the view route so the rule lives in one place; only
-  // `review.feedback` applies here — the revision panes are that route's
-  // affordance.
-  const affordances = getProposalAffordances({ instance, proposal, user });
-
-  // `review.feedback`, not `review.revisions`: this is the history the panel
-  // keeps showing after the review phase ends, which is when `revisions` goes
-  // false.
+  // Same gate: the panel keeps showing this history after the review phase
+  // ends, which is exactly when `review.revisions` would go false.
   const feedback = useProposalFeedback({
     proposalId: proposal.id,
     enabled: affordances.review.feedback,
