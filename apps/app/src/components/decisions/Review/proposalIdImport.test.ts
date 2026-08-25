@@ -24,6 +24,10 @@ describe('extractProposalIds', () => {
     expect(extractProposalIds(sheet)).toEqual([A, B]);
   });
 
+  it('reads comma-delimited text the same as tab-delimited', () => {
+    expect(extractProposalIds(`${A},${B}\n${C}\t${A}`)).toEqual([A, B, C]);
+  });
+
   it('lower-cases and de-duplicates', () => {
     expect(extractProposalIds(`${A.toUpperCase()}, ${A}`)).toEqual([A]);
   });

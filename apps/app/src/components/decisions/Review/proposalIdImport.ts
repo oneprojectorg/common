@@ -1,13 +1,10 @@
-/** UUID shape (8-4-4-4-12 hex), case-insensitive, scanned anywhere in the text. */
 const UUID_PATTERN =
   /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
 /**
- * Pull proposal IDs out of whatever an admin pasted from a spreadsheet — one
- * column, whole rows, or the entire sheet. Sheets copies as tab-separated text,
- * so rather than parsing a shape we don't control, scan for UUID-shaped tokens
- * and drop everything else (headers, titles, quotes, prose). Lower-cased and
- * de-duplicated, in first-seen order.
+ * Pull proposal IDs out of whatever an admin pasted from a spreadsheet.
+ * Sheets copies as tab-separated text we don't control, so scan for
+ * UUID-shaped tokens and drop everything else. De-duplicated, first-seen order.
  */
 export function extractProposalIds(pastedText: string): Array<string> {
   const ids = new Set<string>();
@@ -17,7 +14,6 @@ export function extractProposalIds(pastedText: string): Array<string> {
   return [...ids];
 }
 
-/** What a paste resolves to against the proposal pool the dialog already has. */
 export type ProposalIdImportSummary = {
   /** In the pool and assignable to the selected reviewer — what gets merged. */
   matchedIds: Array<string>;
@@ -27,10 +23,7 @@ export type ProposalIdImportSummary = {
   skippedCount: number;
 };
 
-/**
- * Forgiving by design: an ID we can't use is a count, never an error. The two
- * sets come from the dialog's already-loaded rows, so this adds no fetch.
- */
+/** Forgiving by design: an ID we can't use is a count, never an error. */
 export function summarizeProposalIdImport({
   pastedText,
   poolIds,
