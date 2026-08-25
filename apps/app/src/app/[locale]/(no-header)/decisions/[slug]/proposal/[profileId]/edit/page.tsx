@@ -131,7 +131,7 @@ function EditProposalPageContent() {
     ? []
     : (revisionData?.revisionRequests ?? []);
 
-  const activeRevisionRequest: ProposalReviewRequest | null = reviewRevision
+  const revisionRequest: ProposalReviewRequest | null = reviewRevision
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
@@ -269,13 +269,13 @@ function EditProposalPageContent() {
           asideState={asideState}
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
-          activeRevisionRequest={activeRevisionRequest}
+          revisionRequest={revisionRequest}
         >
           {/* A revision request the author still has to answer outranks the
               read-only record of a review that has already ended. */}
-          {activeRevisionRequest ? (
+          {revisionRequest ? (
             <ProposalEditorAsidePane label={t('Revision feedback')}>
-              <RevisionFeedbackPanel revisionRequest={activeRevisionRequest} />
+              <RevisionFeedbackPanel revisionRequest={revisionRequest} />
             </ProposalEditorAsidePane>
           ) : isFeedbackPanelOpen && feedback.hasFeedback ? (
             <ProposalEditorAsidePane label={t('Feedback')}>
@@ -311,7 +311,7 @@ function ProposalEditorContent({
   asideState,
   setAsideState,
   asideHeaderIcons,
-  activeRevisionRequest,
+  revisionRequest,
   children,
 }: {
   proposal: Proposal;
@@ -321,7 +321,7 @@ function ProposalEditorContent({
   asideState: ProposalEditorAsideState;
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
-  activeRevisionRequest: ProposalReviewRequest | null;
+  revisionRequest: ProposalReviewRequest | null;
   /** The aside pane, forwarded straight to `ProposalEditor`. */
   children: React.ReactNode;
 }) {
@@ -380,7 +380,7 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        activeRevisionRequest={activeRevisionRequest}
+        revisionRequest={revisionRequest}
       >
         {children}
       </ProposalEditor>

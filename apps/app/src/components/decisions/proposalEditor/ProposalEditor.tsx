@@ -56,7 +56,7 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  activeRevisionRequest = null,
+  revisionRequest = null,
   children,
 }: {
   instance: ProcessInstance;
@@ -68,11 +68,12 @@ export function ProposalEditor({
    * Drives revision mode in the header and the resubmit modal. Which pane the
    * document sits beside is the caller's business, not this prop's.
    */
-  activeRevisionRequest?: ProposalReviewRequest | null;
+  revisionRequest?: ProposalReviewRequest | null;
   /**
-   * The pane beside the document, expected to be a `ProposalEditorAside`.
+   * The pane beside the document, expected to be a `ProposalEditorAsidePane`.
    * Absent, the document gets the full width.
    */
+  // TODO: restructure the children => aside mapping
   children?: ReactNode;
 }) {
   const { user } = useRequiredUser();
@@ -115,7 +116,7 @@ export function ProposalEditor({
       asideHeaderIcons={asideHeaderIcons}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
-      activeRevisionRequest={activeRevisionRequest}
+      revisionRequest={revisionRequest}
       asidePane={children}
     />
   );
@@ -147,7 +148,7 @@ function ProposalEditorInner({
   asideHeaderIcons,
   collaborationDocId,
   proposalTemplate,
-  activeRevisionRequest,
+  revisionRequest,
   asidePane,
 }: {
   instance: ProcessInstance;
@@ -157,7 +158,7 @@ function ProposalEditorInner({
   asideHeaderIcons?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
-  activeRevisionRequest: ProposalReviewRequest | null;
+  revisionRequest: ProposalReviewRequest | null;
   asidePane: ReactNode;
 }) {
   const router = useRouter();
@@ -490,7 +491,7 @@ function ProposalEditorInner({
       asideHeaderIcons={asideHeaderIcons}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
-      revisionRequest={activeRevisionRequest}
+      revisionRequest={revisionRequest}
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}
