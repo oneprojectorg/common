@@ -3,8 +3,8 @@ import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
-import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { CommonError, ValidationError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import type { RejectProposalInput } from './schemas/rejectProposal';
 
@@ -20,17 +20,18 @@ export type RejectProposalResult = {
  * flagged proposal does.
  *
  * A draft has never been submitted, so there is nothing to reject.
+ *
+ * Three DB round-trips, matching `mergeProposals`: read the proposal (+ its
+ * instance profile), assert admin on that profile, then write. We intentionally
+ * do NOT set `lastEditedByProfileId` here — recording who rejected is deferred
+ * (ONE-931), and the incidental crumb would cost an extra caller lookup for a
+ * value any later edit overwrites.
  */
 export async function rejectProposal({
   proposalId,
   user,
 }: RejectProposalInput & { user: User }): Promise<RejectProposalResult> {
-  // The caller lookup only needs `user.id`, so it runs alongside the context
-  // read rather than behind the access check.
-  const [context, dbUser] = await Promise.all([
-    getProposalAccessContext(proposalId),
-    assertUserByAuthId(user.id),
-  ]);
+  const context = await getProposalAccessContext(proposalId);
 
   await assertProfileAccess({
     user,
@@ -42,15 +43,10 @@ export async function rejectProposal({
     throw new ValidationError('A draft proposal cannot be rejected');
   }
 
-  if (!dbUser.profileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
   const [updated] = await db
     .update(proposals)
     .set({
       status: ProposalStatus.REJECTED,
-      lastEditedByProfileId: dbUser.profileId,
       updatedAt: new Date().toISOString(),
     })
     .where(eq(proposals.id, proposalId))
