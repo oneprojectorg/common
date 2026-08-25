@@ -117,7 +117,7 @@ function EditProposalPageContent() {
         proposalId: proposal.id,
         states: [ProposalReviewRequestState.REQUESTED],
       },
-      { throwOnError: false, retry: false },
+      { throwOnError: false },
     );
 
   const revisionRequests = revisionError
