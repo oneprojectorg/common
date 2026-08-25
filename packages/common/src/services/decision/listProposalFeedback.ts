@@ -1,11 +1,7 @@
-import { and, db, eq, isNull } from '@op/db/client';
 import { ProposalReviewState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
-import { assertUserByAuthId } from '../assert';
-import { getInstance } from './getInstance';
-import { assertProposalReviewReadAccess } from './reviewHelpers';
+import { loadProposalForReviewRead } from './reviewHelpers';
 import { hasPhaseEnded } from './utils/phaseOrder';
 
 /**
@@ -53,40 +49,11 @@ export async function listProposalFeedback({
   proposalId: string;
   user: User;
 }) {
-  // The proposal read doesn't depend on the caller's profile — resolve both at
-  // once, as `assertReviewAssignmentContext` does.
-  const [proposal, commonUser] = await Promise.all([
-    db.query.proposals.findFirst({
-      // Detached (CSAM) proposals return 404 — authors and reviewers alike
-      // should not see reviewer feedback on a taken-down row.
-      where: {
-        RAW: (table) =>
-          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
-      },
-      with: proposalWithSubmittedFeedbackConfig,
-    }),
-    assertUserByAuthId(user.id),
-  ]);
-
-  if (!commonUser.profileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
-  if (!proposal) {
-    throw new NotFoundError('Proposal', proposalId);
-  }
-
-  const instance = await getInstance({
-    instanceId: proposal.processInstanceId,
-    user,
-  });
-
-  await assertProposalReviewReadAccess({
+  const { proposal, instance } = await loadProposalForReviewRead({
+    proposalId,
     subject: 'reviewer feedback',
-    instance,
-    profileId: commonUser.profileId,
-    proposal,
     user,
+    with: proposalWithSubmittedFeedbackConfig,
   });
 
   const items = proposal.reviewAssignments

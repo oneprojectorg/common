@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
@@ -141,6 +141,68 @@ export async function assertProposalReviewReadAccess({
   throw new UnauthorizedError(
     `You don't have access to this proposal's ${subject}`,
   );
+}
+
+type ProposalWithConfig = NonNullable<
+  NonNullable<Parameters<typeof db.query.proposals.findFirst>[0]>['with']
+>;
+
+/**
+ * Shared preamble of the proposal-scoped reviewer-output reads: load the
+ * proposal, resolve the caller, gate through
+ * `assertProposalReviewReadAccess`. `with` shapes the returned proposal's
+ * relations per caller; `subject` names the output in the denial message.
+ */
+export async function loadProposalForReviewRead<
+  TWith extends ProposalWithConfig,
+>({
+  proposalId,
+  subject,
+  user,
+  with: withConfig,
+}: {
+  proposalId: string;
+  subject: string;
+  user: User;
+  with: TWith;
+}) {
+  // The proposal read doesn't depend on the caller's profile — resolve both at
+  // once, as `assertReviewAssignmentContext` does.
+  const [proposal, commonUser] = await Promise.all([
+    db.query.proposals.findFirst({
+      // Moderation-detached proposals return 404 — authors and reviewers alike
+      // should not read reviewer output on a taken-down row.
+      where: {
+        RAW: (table) =>
+          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+      },
+      with: withConfig,
+    }),
+    assertUserByAuthId(user.id),
+  ]);
+
+  if (!commonUser.profileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
+
+  if (!proposal) {
+    throw new NotFoundError('Proposal', proposalId);
+  }
+
+  const instance = await getInstance({
+    instanceId: proposal.processInstanceId,
+    user,
+  });
+
+  await assertProposalReviewReadAccess({
+    subject,
+    instance,
+    profileId: commonUser.profileId,
+    proposal,
+    user,
+  });
+
+  return { proposal, instance };
 }
 
 /**
