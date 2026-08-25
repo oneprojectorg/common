@@ -683,13 +683,7 @@ describe.concurrent('updateProposal checkpointVersion', () => {
   });
 });
 
-/**
- * Who may edit a proposal's structured data: its author, the collaborators it
- * was shared with, and decision admins. Plain process membership must not
- * carry edit rights on somebody else's proposal — Member holds `decisions`
- * UPDATE so it can submit its own work, which is not a claim on anyone
- * else's.
- */
+/** The rule and its rationale live on the gate in `updateProposal`. */
 describe.concurrent('updateProposal data authorization', () => {
   it('should allow the author to update their own proposal data', async ({
     task,
@@ -709,13 +703,14 @@ describe.concurrent('updateProposal data authorization', () => {
       instanceProfileIds: [instance.profileId],
     });
 
-    const proposal = await testData.createProposal({
-      userEmail: author.email,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Author Proposal' },
-    });
-
-    const authorCaller = await createAuthenticatedCaller(author.email);
+    const [proposal, authorCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Author Proposal' },
+      }),
+      createAuthenticatedCaller(author.email),
+    ]);
 
     const result = await authorCaller.decision.updateProposal({
       proposalId: proposal.id,
@@ -738,10 +733,16 @@ describe.concurrent('updateProposal data authorization', () => {
 
     const instance = setup.instance;
 
-    const author = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    const [author, collaborator] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
     const proposal = await testData.createProposal({
       userEmail: author.email,
@@ -751,20 +752,15 @@ describe.concurrent('updateProposal data authorization', () => {
 
     // Mirrors an accepted share invite: the Member role on the proposal's own
     // profile (profile READ only) plus membership of the parent process.
-    const collaborator = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-    await testData.grantProfileAccess(
-      proposal.profileId,
-      collaborator.authUserId,
-      collaborator.email,
-      false,
-    );
-
-    const collaboratorCaller = await createAuthenticatedCaller(
-      collaborator.email,
-    );
+    const [, collaboratorCaller] = await Promise.all([
+      testData.grantProfileAccess(
+        proposal.profileId,
+        collaborator.authUserId,
+        collaborator.email,
+        false,
+      ),
+      createAuthenticatedCaller(collaborator.email),
+    ]);
 
     const result = await collaboratorCaller.decision.updateProposal({
       proposalId: proposal.id,
@@ -789,18 +785,19 @@ describe.concurrent('updateProposal data authorization', () => {
 
     const instance = setup.instance;
 
-    const author = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    const [author, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
 
     const proposal = await testData.createProposal({
       userEmail: author.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Admin Reviewed Proposal' },
     });
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await adminCaller.decision.updateProposal({
       proposalId: proposal.id,
@@ -810,7 +807,7 @@ describe.concurrent('updateProposal data authorization', () => {
     expect(result.proposalData).toMatchObject({ title: 'Edited by admin' });
   });
 
-  it('should not allow another process member to update the proposal data', async ({
+  it('should not allow another process member to update a submitted proposal', async ({
     task,
     onTestFinished,
   }) => {
@@ -823,27 +820,28 @@ describe.concurrent('updateProposal data authorization', () => {
 
     const instance = setup.instance;
 
-    const author = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-
-    const proposal = await testData.createProposal({
-      userEmail: author.email,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Original Title' },
-    });
-
     // A second member of the same process: no grant on the proposal profile,
     // no admin rights on the decision.
-    const otherMember = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    const [author, otherMember] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
-    const otherMemberCaller = await createAuthenticatedCaller(
-      otherMember.email,
-    );
+    const [proposal, otherMemberCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Original Title' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(otherMember.email),
+    ]);
 
     await expect(
       otherMemberCaller.decision.updateProposal({
@@ -868,26 +866,27 @@ describe.concurrent('updateProposal data authorization', () => {
 
     const instance = setup.instance;
 
-    const author = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    const [author, otherMember] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
-    // Proposals are created in DRAFT status by default.
-    const draft = await testData.createProposal({
-      userEmail: author.email,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Private Draft' },
-    });
-
-    const otherMember = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-
-    const otherMemberCaller = await createAuthenticatedCaller(
-      otherMember.email,
-    );
+    // Proposals are created in DRAFT status by default. A draft is only
+    // reachable by id — it never appears in another member's list.
+    const [draft, otherMemberCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Private Draft' },
+      }),
+      createAuthenticatedCaller(otherMember.email),
+    ]);
 
     await expect(
       otherMemberCaller.decision.updateProposal({
