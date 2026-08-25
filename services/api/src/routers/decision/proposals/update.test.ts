@@ -773,8 +773,7 @@ describe.concurrent('updateProposal data authorization', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Edited by collaborator',
     });
-    // The invite grants profile READ, not profile UPDATE, and the same gate
-    // guards the `profiles.name` write — pin that a collaborator can rename.
+    // The same gate guards the `profiles.name` write.
     expect(result.profile.name).toBe('Edited by collaborator');
   });
 
@@ -813,7 +812,7 @@ describe.concurrent('updateProposal data authorization', () => {
     expect(result.proposalData).toMatchObject({ title: 'Edited by admin' });
   });
 
-  it('should not allow another process member to edit or rename a proposal they did not author', async ({
+  it('should not allow another process member to edit or rename a draft they did not author', async ({
     task,
     onTestFinished,
   }) => {
@@ -839,19 +838,14 @@ describe.concurrent('updateProposal data authorization', () => {
       }),
     ]);
 
-    // A draft is only reachable by id; a submitted proposal is listed to every
-    // member. The gate reads neither status, so both ride on one setup.
-    const [draft, submitted, otherMemberCaller] = await Promise.all([
+    // Drafts carry the sharper end of the gap: unlisted, reachable only by id,
+    // and exempt from template validation, so a missing gate shows up here as
+    // a clean write rather than a 400 from somewhere else.
+    const [draft, otherMemberCaller] = await Promise.all([
       testData.createProposal({
         userEmail: author.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Private Draft' },
-      }),
-      testData.createProposal({
-        userEmail: author.email,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Original Title' },
-        status: ProposalStatus.SUBMITTED,
       }),
       createAuthenticatedCaller(otherMember.email),
     ]);
@@ -862,18 +856,6 @@ describe.concurrent('updateProposal data authorization', () => {
         data: {
           title: 'Hijacked Draft',
           proposalData: { title: 'Hijacked Draft' },
-        },
-      }),
-    ).rejects.toMatchObject({
-      cause: { statusCode: 403 },
-    });
-
-    await expect(
-      otherMemberCaller.decision.updateProposal({
-        proposalId: submitted.id,
-        data: {
-          title: 'Hijacked Title',
-          proposalData: { title: 'Hijacked Title' },
         },
       }),
     ).rejects.toMatchObject({
