@@ -12,9 +12,11 @@ import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  assertReviewAssignmentPhaseIsCurrent,
+} from './reviewHelpers';
 import type { RubricReviewData } from './schemas/reviews';
-import { isInstanceCurrentPhase } from './utils/instance';
 
 /**
  * Persists a draft review for the current reviewer. Upserts the draft row
@@ -45,13 +47,10 @@ export async function saveReviewDraft({
     throw new ValidationError('Review has already been submitted');
   }
 
-  // Assignments outlive a phase advance, so a leftover assignment from an
-  // earlier phase must not accept a first write either.
-  if (!isInstanceCurrentPhase(context.instance, context.assignment.phaseId)) {
-    throw new ValidationError(
-      'This review can no longer be saved because the review phase has ended',
-    );
-  }
+  assertReviewAssignmentPhaseIsCurrent(
+    context.instance,
+    context.assignment.phaseId,
+  );
 
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');
