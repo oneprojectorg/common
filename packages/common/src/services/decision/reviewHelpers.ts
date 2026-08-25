@@ -178,29 +178,6 @@ export function assertCanReadPhaseReviews(
   }
 }
 
-/**
- * Review writes and the revision cycle are pinned to the assignment's phase.
- * Assignments deliberately survive a phase advance, so a leftover assignment
- * would otherwise stay actionable past its phase.
- *
- * Trusts the caller's loaded instance: `getInstance`'s copy can lag an advance
- * by up to the L1 cache TTL (~2 minutes), an accepted window. Applies to
- * admins too — the phase, not the caller, is what closed.
- */
-export function assertReviewAssignmentPhaseIsCurrent({
-  instance,
-  assignment,
-  error,
-}: {
-  instance: { currentStateId: string | null };
-  assignment: { phaseId: string };
-  error: Error;
-}): void {
-  if (!isInstanceCurrentPhase(instance, assignment.phaseId)) {
-    throw error;
-  }
-}
-
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
 export async function assertReviewAssignmentContext({
   assignmentId,

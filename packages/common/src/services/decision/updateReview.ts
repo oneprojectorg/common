@@ -7,12 +7,10 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { ValidationError } from '../../utils';
-import {
-  assertReviewAssignmentPhaseIsCurrent,
-  assertReviewAssignmentContext,
-} from './reviewHelpers';
+import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
+import { isInstanceCurrentPhase } from './utils/instance';
 
 /**
  * Edits an already-submitted review in place — no version history — leaving
@@ -40,13 +38,11 @@ export async function updateReview({
     throw new ValidationError('Review has not been submitted yet');
   }
 
-  assertReviewAssignmentPhaseIsCurrent({
-    instance: context.instance,
-    assignment: context.assignment,
-    error: new ValidationError(
+  if (!isInstanceCurrentPhase(context.instance, context.assignment.phaseId)) {
+    throw new ValidationError(
       'This review can no longer be edited because the review phase has ended',
-    ),
-  });
+    );
+  }
 
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');

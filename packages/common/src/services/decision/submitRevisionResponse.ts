@@ -24,8 +24,8 @@ import { assertUserByAuthId } from '../assert';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { assertReviewAssignmentPhaseIsCurrent } from './reviewHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { isInstanceCurrentPhase } from './utils/instance';
 
 /** Resubmits a proposal after the author addresses reviewer feedback. */
 export async function submitRevisionResponse({
@@ -87,14 +87,17 @@ export async function submitRevisionResponse({
   }
 
   // A past-phase response would strand the assignment in READY_FOR_RE_REVIEW.
-  assertReviewAssignmentPhaseIsCurrent({
-    // Loaded fresh by this procedure's own query, so it is never stale.
-    instance: request.assignment.proposal.processInstance,
-    assignment: request.assignment,
-    error: new ValidationError(
+  // The instance comes fresh from this procedure's own query, never stale.
+  if (
+    !isInstanceCurrentPhase(
+      request.assignment.proposal.processInstance,
+      request.assignment.phaseId,
+    )
+  ) {
+    throw new ValidationError(
       'This proposal can no longer be resubmitted because the review phase has ended',
-    ),
-  });
+    );
+  }
 
   const normalizedResubmitComment = resubmitComment?.trim() || null;
   const proposalData = parseProposalData(proposal.proposalData);
