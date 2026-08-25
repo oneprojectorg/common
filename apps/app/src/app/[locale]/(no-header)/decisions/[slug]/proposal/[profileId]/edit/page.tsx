@@ -26,6 +26,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
+import { getProposalReviewVisibility } from '@/components/decisions/getProposalReviewVisibility';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
@@ -124,13 +125,10 @@ function EditProposalPageContent() {
         ?.revisionRequest ?? null)
     : null;
 
-  // Author, decision admin, or explicit review access. The server decides
-  // which notes are released (only ended review phases), so this flag just
-  // keeps the queries off callers who would be denied anyway.
-  const canSeeFeedback =
-    proposal.submittedBy?.id === user.currentProfile?.id ||
-    instance.access?.admin === true ||
-    instance.access?.review === true;
+  // Same derivation the view route uses — see `getProposalReviewVisibility`.
+  // Only `feedback` applies here; the revision panes are the view route's
+  // affordance.
+  const visibility = getProposalReviewVisibility({ instance, proposal, user });
 
   // The panel's two reads: the anonymized notes the server released once their
   // review phase ended (no client phase math here), and the whole revision
@@ -140,11 +138,11 @@ function EditProposalPageContent() {
   const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
     t.decision.listProposalFeedback(
       { proposalId: proposal.id },
-      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+      { enabled: visibility.feedback, throwOnError: false, retry: false },
     ),
     t.decision.listProposalRevisionRequests(
       { proposalId: proposal.id },
-      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+      { enabled: visibility.feedback, throwOnError: false, retry: false },
     ),
   ]);
 
