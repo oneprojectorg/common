@@ -11,26 +11,26 @@
  */
 export type ExportRetryOutcome =
   /** The server minted a URL. The download is on screen. Report nothing. */
-  | { kind: 'recovered' }
+  | 'recovered'
   /**
    * The run failed. The `isFailed` effect already shows a toast and resets the
    * button. A second message would duplicate it, and would also misdescribe it:
    * that state needs a fresh export, not another retry.
    */
-  | { kind: 'failure-already-reported' }
+  | 'failure-already-reported'
   /**
    * The record is absent, because it aged out of its 24 hour life. Nothing
    * returns it. Holding the id would set `isRunning` back to true, revert the
    * label to "Preparing...", and time out a run that finished.
    */
-  | { kind: 'record-gone' }
+  | 'record-gone'
   /**
    * The read did not settle. A request failed, or signing failed, or the run is
    * still in flight. Report it and keep the export id. The object is most
    * likely still in the bucket, and discarding the only handle to it costs a
    * re-export of up to a thousand proposals.
    */
-  | { kind: 'still-unavailable' };
+  | 'still-unavailable';
 
 export const resolveExportRetryOutcome = ({
   errored,
@@ -43,19 +43,19 @@ export const resolveExportRetryOutcome = ({
   signedUrl?: string;
 }): ExportRetryOutcome => {
   if (!errored && status === 'completed' && signedUrl) {
-    return { kind: 'recovered' };
+    return 'recovered';
   }
 
   if (status === 'failed') {
-    return { kind: 'failure-already-reported' };
+    return 'failure-already-reported';
   }
 
   // Only an answered read proves absence. `errored` covers a server that could
   // not reach the cache. `getExportStatus` throws in that case, so it no longer
   // arrives here as `not_found`.
   if (!errored && status === 'not_found') {
-    return { kind: 'record-gone' };
+    return 'record-gone';
   }
 
-  return { kind: 'still-unavailable' };
+  return 'still-unavailable';
 };

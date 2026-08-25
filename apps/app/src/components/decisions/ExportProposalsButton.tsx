@@ -11,6 +11,8 @@ import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
 import { resolveExportRetryOutcome } from './exportRetry';
 import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
@@ -191,27 +193,21 @@ const CompletedExportAction = ({
   return (
     <>
       {announcement}
-      <Button
+      {/* A link, not a button: the browser owns the download. `ButtonLink`
+          carries the base-ui flags that keep it announced as a link. */}
+      <ButtonLink
         variant="outline"
-        // Rendered as an anchor so the browser owns the download. Base UI needs
-        // both flags to stop emitting button semantics over the link.
-        nativeButton={false}
-        role={undefined}
-        render={
-          // Cross-origin, so `download` only names the file.
-          // `exportDownloadOptions` is what forces the save.
-          <a
-            href={signedUrl}
-            download={fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-          />
-        }
+        // Cross-origin, so `download` only names the file.
+        // `exportDownloadOptions` is what forces the save.
+        href={signedUrl}
+        download={fileName}
+        target="_blank"
+        rel="noopener noreferrer"
         onClick={onTaken}
       >
         <LuDownload aria-hidden />
         {t('Download CSV')}
-      </Button>
+      </ButtonLink>
     </>
   );
 };
@@ -337,16 +333,13 @@ const ExportProposalsButtonContent = ({
       signedUrl: data && 'signedUrl' in data ? data.signedUrl : undefined,
     });
 
-    if (
-      outcome.kind === 'recovered' ||
-      outcome.kind === 'failure-already-reported'
-    ) {
+    if (outcome === 'recovered' || outcome === 'failure-already-reported') {
       return;
     }
 
     toast.error(t('Could not prepare the download. Please try again.'));
 
-    if (outcome.kind === 'record-gone') {
+    if (outcome === 'record-gone') {
       setExportId(null);
     }
   };

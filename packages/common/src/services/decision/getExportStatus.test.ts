@@ -20,19 +20,24 @@ vi.mock('@op/supabase/server', () => ({
   createSBServiceClient: vi.fn(),
 }));
 
-vi.mock('../assert', () => ({
-  assertProfileAccess: vi.fn(),
+vi.mock('../access', () => ({
+  assertInstanceProfileAccess: vi.fn(),
+}));
+
+vi.mock('@op/logging', () => ({
+  logger: { info: vi.fn(), error: vi.fn() },
 }));
 
 import { getWithStatus, set } from '@op/cache';
 import { db } from '@op/db/client';
+import { logger } from '@op/logging';
 import {
   createSBServerClient,
   createSBServiceClient,
 } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
-import { assertProfileAccess } from '../assert';
+import { assertInstanceProfileAccess } from '../access';
 import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
@@ -48,7 +53,6 @@ const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const NOW = new Date('2026-08-10T12:00:00.000Z');
 
 const user = { id: AUTH_USER_ID } as never;
-const logger = { info: vi.fn(), error: vi.fn() };
 
 const createSignedUrl = vi.fn();
 
@@ -134,7 +138,7 @@ describe('getExportStatus', () => {
   it('returns not_found when the record has aged out of the cache', async () => {
     givenCachedRecord(null);
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(result).toEqual({ status: 'not_found' });
     expect(createSignedUrl).not.toHaveBeenCalled();
@@ -143,7 +147,7 @@ describe('getExportStatus', () => {
   it('re-signs a completed export whose URL has expired', async () => {
     givenCachedRecord(expiredRecord());
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(result).toMatchObject({
       signedUrl: FRESH_URL,
@@ -162,7 +166,7 @@ describe('getExportStatus', () => {
       storage: { from: storageFrom },
     } as never);
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSBServiceClient).toHaveBeenCalled();
     expect(createSBServerClient).not.toHaveBeenCalled();
@@ -185,7 +189,7 @@ describe('getExportStatus', () => {
       urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
@@ -209,7 +213,7 @@ describe('getExportStatus', () => {
       error: { message: 'Storage is having a moment' },
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to re-sign export URL',
@@ -234,7 +238,7 @@ describe('getExportStatus', () => {
       throw new Error('SUPABASE_SERVICE_ROLE is not set.');
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to re-sign export URL',
@@ -253,7 +257,7 @@ describe('getExportStatus', () => {
       urlExpiresAt: undefined,
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).toHaveBeenCalled();
     expect(result).toMatchObject({ signedUrl: FRESH_URL });
@@ -268,7 +272,7 @@ describe('getExportStatus', () => {
       urlExpiresAt: 'not-a-date',
     });
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).toHaveBeenCalled();
   });
@@ -282,7 +286,7 @@ describe('getExportStatus', () => {
       urlExpiresAt: new Date(NOW.getTime() + 5_000).toISOString(),
     });
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).toHaveBeenCalled();
   });
@@ -299,7 +303,7 @@ describe('getExportStatus', () => {
   ])('reports not_found for a record with %s', async (_label, corruption) => {
     givenCachedRecord({ ...expiredRecord(), ...corruption });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(result).toEqual({ status: 'not_found' });
     expect(logger.error).toHaveBeenCalled();
@@ -318,7 +322,6 @@ describe('getExportStatus', () => {
       const result = await getExportStatus({
         exportId: EXPORT_ID,
         user,
-        logger,
       });
 
       expect(result).toMatchObject({ status: 'failed' });
@@ -332,7 +335,7 @@ describe('getExportStatus', () => {
   it('records an expiry that matches the URL it just minted', async () => {
     givenCachedRecord(expiredRecord());
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     const signedFor = vi.mocked(createSignedUrl).mock.calls[0]?.[1];
     expect(signedFor).toBe(EXPORT_URL_TTL_SECONDS);
@@ -346,7 +349,7 @@ describe('getExportStatus', () => {
   it('writes the refreshed record back under the longer record TTL', async () => {
     givenCachedRecord(expiredRecord());
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(set).toHaveBeenCalledWith(
       `export:proposal:${EXPORT_ID}`,
@@ -371,14 +374,13 @@ describe('getExportStatus', () => {
         error: null,
       });
 
-    const failed = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const failed = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(expectRecord(failed).signedUrl).toBeUndefined();
 
     const retried = await getExportStatus({
       exportId: EXPORT_ID,
       user,
-      logger,
     });
 
     expect(retried).toMatchObject({
@@ -398,7 +400,7 @@ describe('getExportStatus', () => {
       urlExpiresAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).not.toHaveBeenCalled();
     expect(result).toMatchObject({ signedUrl: liveUrl });
@@ -416,7 +418,7 @@ describe('getExportStatus', () => {
       signedUrl: undefined,
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).toHaveBeenCalledWith(
       exportFilePath(INSTANCE_ID, 'proposals_export_123.csv'),
@@ -437,7 +439,7 @@ describe('getExportStatus', () => {
       errorMessage: 'Storage upload failed',
     });
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
@@ -448,7 +450,7 @@ describe('getExportStatus', () => {
   it('does not attempt a refresh for a run that has not settled', async () => {
     givenCachedRecord({ ...expiredRecord(), status: 'processing' });
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(createSignedUrl).not.toHaveBeenCalled();
     expect(set).not.toHaveBeenCalled();
@@ -465,7 +467,7 @@ describe('getExportStatus', () => {
       signedUrl: undefined,
     });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(result).toMatchObject({ status: 'failed' });
     expect(expectRecord(result).signedUrl).toBeUndefined();
@@ -480,7 +482,7 @@ describe('getExportStatus', () => {
     });
 
     await expect(
-      getExportStatus({ exportId: EXPORT_ID, user, logger }),
+      getExportStatus({ exportId: EXPORT_ID, user }),
     ).rejects.toThrow();
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
@@ -492,23 +494,26 @@ describe('getExportStatus', () => {
   it('demands decision admin on the profile that owns the export', async () => {
     givenCachedRecord(expiredRecord());
 
-    await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    await getExportStatus({ exportId: EXPORT_ID, user });
 
-    expect(assertProfileAccess).toHaveBeenCalledWith({
+    expect(assertInstanceProfileAccess).toHaveBeenCalledWith({
       user,
-      profileId: 'profile-1',
-      permissions: [{ decisions: permission.ADMIN }],
+      // `ownerProfileId: null` is the org fallback being skipped. An org-level
+      // grant must not reach a CSV of submitter names.
+      instance: { profileId: 'profile-1', ownerProfileId: null },
+      profilePermissions: { decisions: permission.ADMIN },
+      orgFallbackPermissions: { decisions: permission.ADMIN },
     });
   });
 
   it('does not sign when the access check rejects', async () => {
     givenCachedRecord(expiredRecord());
-    vi.mocked(assertProfileAccess).mockRejectedValue(
+    vi.mocked(assertInstanceProfileAccess).mockRejectedValue(
       new Error('not a decision admin'),
     );
 
     await expect(
-      getExportStatus({ exportId: EXPORT_ID, user, logger }),
+      getExportStatus({ exportId: EXPORT_ID, user }),
     ).rejects.toThrow('not a decision admin');
     expect(createSBServiceClient).not.toHaveBeenCalled();
     expect(createSignedUrl).not.toHaveBeenCalled();
@@ -521,7 +526,7 @@ describe('getExportStatus', () => {
   it('reports not_found for a cached record that does not match the schema', async () => {
     givenCachedRecord({ status: 'processing' });
 
-    const result = await getExportStatus({ exportId: EXPORT_ID, user, logger });
+    const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(result).toEqual({ status: 'not_found' });
     expect(logger.error).toHaveBeenCalled();
@@ -534,7 +539,7 @@ describe('getExportStatus', () => {
     givenCachedRecord({ ...expiredRecord(), userId: 'someone-else' });
 
     await expect(
-      getExportStatus({ exportId: EXPORT_ID, user, logger }),
+      getExportStatus({ exportId: EXPORT_ID, user }),
     ).rejects.toThrow();
   });
 
@@ -548,7 +553,7 @@ describe('getExportStatus', () => {
       vi.mocked(getWithStatus).mockResolvedValue({ status });
 
       await expect(
-        getExportStatus({ exportId: EXPORT_ID, user, logger }),
+        getExportStatus({ exportId: EXPORT_ID, user }),
       ).rejects.toThrow('Could not read the export record.');
       expect(createSignedUrl).not.toHaveBeenCalled();
     },

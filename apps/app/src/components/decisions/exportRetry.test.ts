@@ -10,19 +10,19 @@ describe('resolveExportRetryOutcome', () => {
         status: 'completed',
         signedUrl: 'https://storage.example/exports/proposals.csv?token=abc',
       }),
-    ).toEqual({ kind: 'recovered' });
+    ).toBe('recovered');
   });
 
   it('stays quiet for a failed run, which the failure effect already toasts', () => {
     expect(
       resolveExportRetryOutcome({ errored: false, status: 'failed' }),
-    ).toEqual({ kind: 'failure-already-reported' });
+    ).toBe('failure-already-reported');
   });
 
   it('retires an export the server answered for and does not have', () => {
     expect(
       resolveExportRetryOutcome({ errored: false, status: 'not_found' }),
-    ).toEqual({ kind: 'record-gone' });
+    ).toBe('record-gone');
   });
 
   it('keeps the export id when the read itself failed', () => {
@@ -31,7 +31,7 @@ describe('resolveExportRetryOutcome', () => {
     // for good.
     expect(
       resolveExportRetryOutcome({ errored: true, status: 'not_found' }),
-    ).toEqual({ kind: 'still-unavailable' });
+    ).toBe('still-unavailable');
   });
 
   it('keeps the export id when a completed record still has no URL', () => {
@@ -39,22 +39,22 @@ describe('resolveExportRetryOutcome', () => {
     // so the next retry can succeed.
     expect(
       resolveExportRetryOutcome({ errored: false, status: 'completed' }),
-    ).toEqual({ kind: 'still-unavailable' });
+    ).toBe('still-unavailable');
   });
 
   it.each(['pending', 'processing'] as const)(
     'keeps the export id for a record still in flight (%s)',
     (status) => {
-      expect(resolveExportRetryOutcome({ errored: false, status })).toEqual({
-        kind: 'still-unavailable',
-      });
+      expect(resolveExportRetryOutcome({ errored: false, status })).toBe(
+        'still-unavailable',
+      );
     },
   );
 
   it('keeps the export id when the read returned nothing at all', () => {
-    expect(resolveExportRetryOutcome({ errored: true })).toEqual({
-      kind: 'still-unavailable',
-    });
+    expect(resolveExportRetryOutcome({ errored: true })).toBe(
+      'still-unavailable',
+    );
   });
 
   it('does not treat a stale URL on an errored read as recovery', () => {
@@ -66,6 +66,6 @@ describe('resolveExportRetryOutcome', () => {
         status: 'completed',
         signedUrl: 'https://storage.example/exports/stale.csv?token=old',
       }),
-    ).toEqual({ kind: 'still-unavailable' });
+    ).toBe('still-unavailable');
   });
 });

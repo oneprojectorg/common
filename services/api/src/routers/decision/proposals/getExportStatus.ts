@@ -13,7 +13,7 @@ export const getExportStatusRouter = router({
     .input(exportStatusInputSchema)
     .output(exportStatusResponseSchema)
     .query(async ({ ctx, input }) => {
-      const { user, logger } = ctx;
+      const { user } = ctx;
 
       // The export workflow broadcasts here when the run finishes, so a
       // completed file surfaces without the client having to ask again.
@@ -25,7 +25,6 @@ export const getExportStatusRouter = router({
       return await getExportStatus({
         exportId: input.exportId,
         user,
-        logger,
       });
     }),
 });

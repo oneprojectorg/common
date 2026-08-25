@@ -1,13 +1,13 @@
 import { getWithStatus, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
-import type { Logger } from '@op/logging';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { assertProfileAccess } from '../assert';
+import { assertInstanceProfileAccess } from '../access';
 import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
@@ -26,12 +26,11 @@ import { exportStatusRecordSchema } from './schemas/exportStatus';
  * makes the CSV save instead of render. Expiry alone therefore does not report
  * whether a stored URL still works.
  *
- * `exportStatusRecordSchema` already rejects a record whose `signedUrl` is not
- * a string, so this only reads a URL the schema passed. It still runs outside
- * the re-sign's catch, so it returns false rather than throws.
+ * `exportStatusRecordSchema` rejects a record whose `signedUrl` is not a string,
+ * so this reads a URL the schema passed, or none at all.
  */
-const servesAsAttachment = (signedUrl: unknown): boolean => {
-  if (typeof signedUrl !== 'string') {
+const servesAsAttachment = (signedUrl: string | undefined): boolean => {
+  if (signedUrl === undefined) {
     return false;
   }
 
@@ -45,23 +44,12 @@ const servesAsAttachment = (signedUrl: unknown): boolean => {
 // record, so the type and the check cannot drift.
 export type { ExportStatusData } from './schemas/exportStatus';
 
-/**
- * The logging methods this module needs.
- *
- * The type derives from {@link Logger}, so it cannot drift from what a caller
- * passes. A structural literal would accept `Record<string, unknown>` for the
- * metadata, and this codebase avoids that escape hatch.
- */
-type ExportStatusLogger = Pick<Logger, 'info' | 'error'>;
-
 export const getExportStatus = async ({
   exportId,
   user,
-  logger,
 }: {
   exportId: string;
   user: User;
-  logger: ExportStatusLogger;
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   const key = exportStatusCacheKey(exportId);
 
@@ -122,19 +110,27 @@ export const getExportStatus = async ({
     throw new NotFoundError('Process instance', exportStatus.processInstanceId);
   }
 
-  if (!instance[0].profileId) {
-    throw new NotFoundError('Decision profile', exportStatus.processInstanceId);
-  }
-
-  // Verify user has admin permission on the profile
-  await assertProfileAccess({
+  // Verify the caller still holds decision admin on the profile that owns the
+  // export. This defers to the shared helper so every decision instance decides
+  // access in one place, including the instance that carries no profile: the
+  // helper reports that as unauthorized, where a local branch reported it as a
+  // missing profile and answered an authorization question with the existence
+  // of a record.
+  //
+  // `ownerProfileId` is null to skip the organization fallback. An export holds
+  // the names of every proposal submitter, so it stays readable by an admin of
+  // the decision profile itself, and not by anyone who holds an org-level grant
+  // over that profile. Passing the real column here would widen the boundary
+  // this module exists to narrow.
+  await assertInstanceProfileAccess({
     user,
-    profileId: instance[0].profileId,
-    permissions: [{ decisions: permission.ADMIN }],
+    instance: { profileId: instance[0].profileId, ownerProfileId: null },
+    profilePermissions: { decisions: permission.ADMIN },
+    orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 
   // Mutates `exportStatus` in place, so the record returned below is current.
-  await refreshStaleSignedUrl({ exportStatus, cacheKey: key, logger });
+  await refreshStaleSignedUrl({ exportStatus, cacheKey: key });
 
   return exportStatus;
 };
@@ -230,15 +226,16 @@ const mintSignedDownloadUrl = async ({
  * retry re-reads a record still marked `completed`.
  *
  * A failed cache write still returns the fresh URL. The next read re-signs.
+ *
+ * A completed record with no file name is terminal, and handled here rather
+ * than skipped by the caller.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
   cacheKey,
-  logger,
 }: {
   exportStatus: ExportStatusData;
   cacheKey: string;
-  logger: ExportStatusLogger;
 }): Promise<void> => {
   const { exportId, fileName } = exportStatus;
 
@@ -311,19 +308,24 @@ const refreshStaleSignedUrl = async ({
 };
 
 /**
+ * The signing-failure messages that mean the file is gone.
+ *
+ * This build answers "Object not found" even for a missing bucket. storage-api
+ * has a distinct `NoSuchBucket` that reads "Bucket not found".
+ */
+const PERMANENT_SIGNING_FAILURES = ['Object not found', 'Bucket not found'];
+
+/**
  * Reports whether a signing failure means the file is gone for good.
  *
  * The check matches on the message because nothing else separates the two
  * cases. This Supabase build answers `status` 400 for every signing failure,
  * and supplies no error code.
  *
- * The check covers two wordings. This build answers "Object not found" even for
- * a missing bucket. storage-api has a distinct `NoSuchBucket` that reads
- * "Bucket not found". Either wording means the file is unreachable. A wording
- * this check misses falls to the retryable branch, which is the safe direction.
+ * Either wording in {@link PERMANENT_SIGNING_FAILURES} means the file is
+ * unreachable. A wording this check misses falls to the retryable branch, which
+ * is the safe direction.
  */
-const PERMANENT_SIGNING_FAILURES = ['Object not found', 'Bucket not found'];
-
 const isPermanentlyGone = (error: unknown): boolean => {
   if (typeof error !== 'object' || error === null || !('message' in error)) {
     return false;
