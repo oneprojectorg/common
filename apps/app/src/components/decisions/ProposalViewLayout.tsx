@@ -51,12 +51,8 @@ export function ProposalViewLayout({
    *  proposal with this id. */
   reportProposalId?: string;
   /**
-   * When provided, renders the "Feedback" disclosure button in the header with
-   * an orange indicator dot. `isActive` reflects the aria-expanded state. The
-   * owner decides which pane it opens (reviewer feedback, or the revision the
-   * author submitted mid-phase) — the header only reports the toggle.
-   *
-   * The dot is static: Figma's red dot means "unread", and we hold no
+   * The header's "Feedback" disclosure; the owner decides which pane it opens.
+   * Its dot is static — Figma's red dot means "unread" and we hold no
    * read-state for reviewer notes.
    */
   feedbackToggle?: {

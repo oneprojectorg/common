@@ -10,9 +10,8 @@ export const proposalEditorAsideValues = ['versions'] as const;
 export const proposalEditorReviewRevisionParser = parseAsString;
 
 /**
- * Open state of the author-facing feedback panel. A plain flag rather than an
- * id: the panel lists every released note at once, and the future
- * notification email deep-links straight to it.
+ * A flag rather than an id: the panel lists every released note at once, so the
+ * notification email can deep-link to it without naming one.
  */
 export const proposalFeedbackPanelParser = parseAsBoolean.withDefault(false);
 

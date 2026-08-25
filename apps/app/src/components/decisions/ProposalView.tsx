@@ -159,16 +159,9 @@ export function ProposalView({
         ?.revisionRequest ?? null)
     : null;
 
-  // What the feedback panel shows, fetched as one unit: the anonymized notes
-  // the server released once their review phase ended (no client phase math),
-  // and the whole revision history — resolved entries included, because the
-  // panel is the author's record of the review, not a to-do list.
-  // Both are gated on `feedback`, not `revisions`, even though the second hits
-  // the same procedure as the mid-phase query above: this panel exists to carry
-  // the history *after* the review phase ends, which is exactly when
-  // `revisions` goes false. The two differ by the `states` filter, not by gate.
-  // Same resilience pattern as the revision query above: an unauthorized
-  // viewer gets no panel, not a broken page.
+  // Gated on `feedback`, not `revisions`: the panel carries the history after
+  // the review phase ends, which is exactly when `revisions` goes false. Same
+  // procedure as the query above — they differ by the `states` filter.
   const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
     t.decision.listProposalFeedback(
       { proposalId: currentProposal.id },
@@ -264,9 +257,6 @@ export function ProposalView({
     </>
   );
 
-  // At most one aside is open at a time: the mid-phase "Revision submitted"
-  // pane wins while it exists, the feedback panel takes over once the review
-  // phase has ended.
   const asidePane: { label: string; content: ReactNode } | null =
     activeRevisionRequest
       ? {
@@ -314,9 +304,8 @@ export function ProposalView({
           decisionRoot={decisionRoot}
         />
       }
-      // One header disclosure. Mid-phase it keeps opening the "Revision
-      // submitted" pane (unchanged); once the review phase has ended
-      // `visibility.revisions` is false and it opens the feedback panel instead.
+      // One disclosure for both panes: mid-phase it opens the submitted
+      // revision, and the feedback panel once `visibility.revisions` is false.
       feedbackToggle={
         firstRevisionRequestId
           ? {

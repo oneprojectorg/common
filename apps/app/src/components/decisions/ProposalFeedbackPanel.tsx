@@ -32,8 +32,7 @@ export function ProposalFeedbackPanel({
         <p className="text-base text-muted-foreground">{subtitle}</p>
       </div>
 
-      {/* The notes arrive from a client query, so the pane fills in without a
-          navigation — announce it. */}
+      {/* Fills in from a client query, with no navigation to announce it. */}
       <div aria-live="polite" className="flex flex-col gap-6">
         {feedbackItems.map((item) => (
           <RevisionFeedbackCard
