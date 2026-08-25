@@ -89,12 +89,13 @@ function ContributingIdeasSuspense({
       <ul className="mt-6 flex flex-col gap-4">
         {contributing.proposals.map((contributingProposal) => (
           <li key={contributingProposal.id}>
-            {/* No status badge: the remaining ones ("Shortlisted", "Not
-                shortlisted") describe a candidacy that ended at the merge. */}
+            {/* Restricted visibility only: the candidacy badges ("Shortlisted",
+                "Not shortlisted") describe a race that ended at the merge, but
+                a hidden idea is listed here for admins and has to say so. */}
             <ProposalCardView
               proposal={contributingProposal}
               href={`${decisionRoot}/proposal/${contributingProposal.profileId}`}
-              showStatusBadge={false}
+              badge="restriction"
             />
           </li>
         ))}

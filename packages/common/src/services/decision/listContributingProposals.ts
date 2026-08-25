@@ -10,6 +10,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getCachedInstance } from './getCachedInstance';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
@@ -127,22 +128,31 @@ export async function listContributingProposals({
     ),
   ]);
 
-  const documentContentMap = await getProposalDocumentsContent(
-    rows.map((row) => {
-      const parsed = parseProposalData(row.proposalData);
-      return {
-        id: row.id,
-        proposalData: row.proposalData,
-        proposalTemplate,
-        collaborationDocVersionId:
-          row.status === ProposalStatus.DRAFT
-            ? undefined
-            : parsed.collaborationDocVersionId,
-      };
-    }),
-    // A single unavailable document must not empty the whole section.
-    { onFetchError: 'omit' },
-  );
+  const [documentContentMap, flaggedIds] = await Promise.all([
+    getProposalDocumentsContent(
+      rows.map((row) => {
+        const parsed = parseProposalData(row.proposalData);
+        return {
+          id: row.id,
+          proposalData: row.proposalData,
+          proposalTemplate,
+          collaborationDocVersionId:
+            row.status === ProposalStatus.DRAFT
+              ? undefined
+              : parsed.collaborationDocVersionId,
+        };
+      }),
+      // A single unavailable document must not empty the whole section.
+      { onFetchError: 'omit' },
+    ),
+    // Flagged contributing ideas reach this point only for their own authors
+    // or an admin — decorate them so the card can say so, the same way
+    // `listProposals` does.
+    getActivelyFlaggedItemIds(
+      'proposal',
+      rows.map((row) => row.id),
+    ),
+  ]);
 
   const byId = new Map(
     rows.map((row) => {
@@ -172,6 +182,7 @@ export async function listContributingProposals({
           proposalData: { ...parsedProposalData, ...systemFieldOverrides },
           status: row.status,
           visibility: row.visibility,
+          isFlagged: flaggedIds.has(row.id),
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           profileId: row.profileId,

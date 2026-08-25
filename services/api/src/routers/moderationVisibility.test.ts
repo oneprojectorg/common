@@ -484,5 +484,74 @@ describe.concurrent('moderation read visibility', () => {
         }),
       ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
     });
+
+    it('marks a flagged contributing idea as flagged and hides it from other members', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+
+      const instance = setup.instance;
+
+      const [otherMember, adminCaller] = await Promise.all([
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+      ]);
+
+      const [contributing, survivor] = await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Contributing idea', description: 'Merges' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Surviving idea', description: 'Survives' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ]);
+
+      await db
+        .update(proposals)
+        .set({ visibility: Visibility.VISIBLE })
+        .where(inArray(proposals.id, [contributing.id, survivor.id]));
+
+      await adminCaller.decision.mergeProposals({
+        sourceProposalId: contributing.id,
+        targetProposalId: survivor.id,
+      });
+
+      await flagItem(
+        onTestFinished,
+        ModerationItemType.PROPOSAL,
+        contributing.id,
+      );
+
+      // Without the indicator the card would read as an ordinary contributing
+      // idea, since the section suppresses the candidacy badges.
+      const adminView = await adminCaller.decision.listContributingProposals({
+        proposalId: survivor.id,
+      });
+      expect(adminView.proposals).toMatchObject([
+        { id: contributing.id, isFlagged: true },
+      ]);
+
+      // The far end drops out entirely for everyone else.
+      const otherCaller = await createAuthenticatedCaller(otherMember.email);
+      const otherView = await otherCaller.decision.listContributingProposals({
+        proposalId: survivor.id,
+      });
+      expect(otherView.proposals).toEqual([]);
+    });
   });
 });

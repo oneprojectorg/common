@@ -81,8 +81,21 @@ export function useProposalCardData(proposal: Proposal) {
   return { titleText, budgetText, displayCategories, authors, description };
 }
 
-/** Proposal status/visibility surfaced as the composite's `headerBadge`. */
-export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
+/**
+ * Proposal status/visibility surfaced as the composite's `headerBadge`.
+ *
+ * `scope="restriction"` keeps only the states that say who can see the
+ * proposal at all and drops the candidacy ones — for surfaces where the
+ * candidacy no longer applies but a proposal most of the decision can't see
+ * still has to say so.
+ */
+export const ProposalStatusBadge = ({
+  proposal,
+  scope = 'all',
+}: {
+  proposal: Proposal;
+  scope?: 'all' | 'restriction';
+}) => {
   const t = useTranslations();
   const { status, visibility, isSelected, isFlagged } = proposal;
 
@@ -99,6 +112,10 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
 
   if (visibility === Visibility.HIDDEN) {
     return <StatusBadge variant="warning">{t('Hidden')}</StatusBadge>;
+  }
+
+  if (scope === 'restriction') {
+    return null;
   }
 
   // "Selected" is driven by results selection, not the editable `status`.
@@ -139,8 +156,12 @@ export interface ProposalCardViewProps extends Omit<
   canEngage?: boolean;
   /** Render the "Revision requested" badge instead of the status badge. */
   revisionRequested?: boolean;
-  /** Show the proposal's status/visibility badge above the title. */
-  showStatusBadge?: boolean;
+  /**
+   * Which header badge sits above the title: every applicable state (`'all'`),
+   * only the restricted-visibility ones — Draft / Flagged / Hidden —
+   * (`'restriction'`), or none at all.
+   */
+  badge?: 'all' | 'restriction' | 'none';
   /** Selected treatment (teal border + title) for vote/selection phases. */
   selected?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
@@ -171,7 +192,7 @@ export const ProposalCardView = ({
   showMetrics = false,
   canEngage = false,
   revisionRequested = false,
-  showStatusBadge = true,
+  badge = 'all',
   selected,
   totalVotes,
   awardedLabel,
@@ -219,9 +240,9 @@ export const ProposalCardView = ({
 
   const headerBadge = revisionRequested ? (
     <StatusBadge variant="revision">{t('Revision requested')}</StatusBadge>
-  ) : showStatusBadge ? (
-    <ProposalStatusBadge proposal={proposal} />
-  ) : undefined;
+  ) : badge === 'none' ? undefined : (
+    <ProposalStatusBadge proposal={proposal} scope={badge} />
+  );
 
   return (
     <SenseProposalCard
