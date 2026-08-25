@@ -179,24 +179,28 @@ export function assertCanReadPhaseReviews(
 }
 
 /**
- * Review writes are pinned to the assignment's phase: a reviewer may only
- * write while that phase is still the instance's current phase. Assignments
- * deliberately survive a phase advance, so without this a leftover assignment
- * from an earlier phase stays writable.
+ * Review writes and the revision cycle are pinned to the assignment's phase:
+ * they may only move forward while that phase is still the instance's current
+ * phase. Assignments deliberately survive a phase advance, so without this a
+ * leftover assignment from an earlier phase stays writable — and a revision
+ * cycle straddling the advance would strand the assignment in a state nobody
+ * is allowed to complete.
  *
  * `getInstance`'s `currentStateId` is cached and can lag a phase advance, so
  * this re-reads the live phase rather than trusting a loaded instance. It
  * applies to admins too — the phase, not the caller, is what closed.
  *
- * `action` names what the caller was doing, so the message reads naturally on
- * the submit, draft and edit paths alike.
+ * `subject` and `action` name what the caller was doing, so the message reads
+ * naturally on the review-write paths and the revision-cycle paths alike.
  */
 export async function assertAssignmentPhaseIsCurrent({
   assignment,
   action,
+  subject = 'This review',
 }: {
   assignment: { processInstanceId: string; phaseId: string };
-  action: 'edited' | 'submitted' | 'saved';
+  action: 'edited' | 'submitted' | 'saved' | 'requested' | 'resubmitted';
+  subject?: 'This review' | 'This proposal' | 'A revision';
 }): Promise<void> {
   const liveInstance = await db.query.processInstances.findFirst({
     where: { id: assignment.processInstanceId },
@@ -210,7 +214,7 @@ export async function assertAssignmentPhaseIsCurrent({
     )
   ) {
     throw new ValidationError(
-      `This review can no longer be ${action} because the review phase has ended`,
+      `${subject} can no longer be ${action} because the review phase has ended`,
     );
   }
 }

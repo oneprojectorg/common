@@ -21,9 +21,29 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
+/** Assignments default to the `'review'` phase (see `createReviewAssignment`). */
+const REVIEW_PHASE = 'review';
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/**
+ * Creates an assignment and moves the instance onto the assignment's phase —
+ * the state a revision cycle actually runs in. The whole cycle is rejected
+ * once that phase is no longer the instance's current phase.
+ */
+async function createAssignmentInReviewPhase(
+  testData: TestReviewsDataManager,
+  opts: Parameters<TestReviewsDataManager['createReviewAssignment']>[0],
+) {
+  const created = await testData.createReviewAssignment(opts);
+  await testData.setCurrentPhase(
+    created.context.instance.instance.id,
+    REVIEW_PHASE,
+  );
+  return created;
 }
 
 describe.concurrent('requestRevision', () => {
@@ -32,7 +52,7 @@ describe.concurrent('requestRevision', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const created = await createAssignmentInReviewPhase(testData, {
       title: 'Needs Budget Detail',
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
@@ -60,12 +80,45 @@ describe.concurrent('requestRevision', () => {
     );
   });
 
+  it('rejects a revision request once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentInReviewPhase(testData, {
+      title: 'Phase Moved On',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+
+    // A past-phase request would open a revision cycle nobody may complete.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.requestRevision({
+        assignmentId: created.assignment.id,
+        requestComment: 'Too late for revisions',
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.IN_PROGRESS);
+  });
+
   it('rejects when a revision is already pending', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const created = await createAssignmentInReviewPhase(testData, {
       title: 'Already Awaiting',
       status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
     });
@@ -94,7 +147,7 @@ describe.concurrent('requestRevision', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const created = await createAssignmentInReviewPhase(testData, {
       title: 'Already Done',
       status: ProposalReviewAssignmentStatus.COMPLETED,
     });
@@ -118,7 +171,7 @@ describe.concurrent('requestRevision', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const created = await createAssignmentInReviewPhase(testData, {
       title: 'Cancel Then Re-request',
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
@@ -163,7 +216,7 @@ describe.concurrent('requestRevision', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const created = await createAssignmentInReviewPhase(testData, {
       title: 'Not My Assignment',
     });
     const otherReviewer = await testData.createReviewer(created.context);
