@@ -99,6 +99,7 @@ export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
 export * from './getPhaseReviewProgress';
 export * from './listProposalsRevisionRequests';
+export * from './listProposalFeedback';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';
 export * from './submitReview';

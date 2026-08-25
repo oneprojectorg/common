@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
@@ -8,6 +8,7 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import type { DecisionRolePermissions } from './permissions';
@@ -86,6 +87,122 @@ export function proposalWithRevisionRequestsConfig(
       },
     },
   } as const;
+}
+
+/**
+ * Read gate shared by the proposal-scoped, reviewer-authored outputs
+ * (revision requests, author feedback): the proposal's authors, decision
+ * admins, and any user with the REVIEW capability on the instance. Other
+ * participants — voters, plain members with READ — are rejected. `subject`
+ * names the thing being read in the denial message.
+ *
+ * "Authors" is the proposal's own profile membership — the creator plus any
+ * invited collaborators (`profileUsers` on `proposal.profileId`) — which is
+ * the audience `getProposal` grants a draft/hidden/flagged proposal to and
+ * `resolveProposalListScope` scopes the list to. `submittedByProfileId` alone
+ * would miss co-authors, and misses the human behind an org-acting submitter
+ * (the profile recorded there is whichever profile was active at submit time,
+ * while the proposal-profile grant is keyed on the auth user). Kept as a union
+ * of the two so no caller who could read these before loses access.
+ * Fail-closed: no grant on the proposal profile means no author standing.
+ */
+export async function assertProposalReviewReadAccess({
+  subject,
+  instance,
+  profileId,
+  proposal,
+  user,
+}: {
+  subject: string;
+  instance: { access: Pick<DecisionRolePermissions, 'admin' | 'review'> };
+  profileId: string;
+  proposal: { profileId: string; submittedByProfileId: string | null };
+  user: AccessUser | undefined;
+}): Promise<void> {
+  if (instance.access.admin || instance.access.review) {
+    return;
+  }
+
+  if (proposal.submittedByProfileId === profileId) {
+    return;
+  }
+
+  // Only reached for a caller with neither instance capability nor the
+  // submitter profile — the co-author path.
+  const proposalRoles = await getProfileAccessRoles({
+    user,
+    profileId: proposal.profileId,
+  });
+
+  if (proposalRoles.length > 0) {
+    return;
+  }
+
+  throw new UnauthorizedError(
+    `You don't have access to this proposal's ${subject}`,
+  );
+}
+
+type ProposalWithConfig = NonNullable<
+  NonNullable<Parameters<typeof db.query.proposals.findFirst>[0]>['with']
+>;
+
+/**
+ * Shared preamble of the proposal-scoped reviewer-output reads: load the
+ * proposal, resolve the caller, gate through
+ * `assertProposalReviewReadAccess`. `with` shapes the returned proposal's
+ * relations per caller; `subject` names the output in the denial message.
+ */
+export async function loadProposalForReviewRead<
+  TWith extends ProposalWithConfig,
+>({
+  proposalId,
+  subject,
+  user,
+  with: withConfig,
+}: {
+  proposalId: string;
+  subject: string;
+  user: User;
+  with: TWith;
+}) {
+  // The proposal read doesn't depend on the caller's profile — resolve both at
+  // once, as `assertReviewAssignmentContext` does.
+  const [proposal, commonUser] = await Promise.all([
+    db.query.proposals.findFirst({
+      // Moderation-detached proposals return 404 — authors and reviewers alike
+      // should not read reviewer output on a taken-down row.
+      where: {
+        RAW: (table) =>
+          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+      },
+      with: withConfig,
+    }),
+    assertUserByAuthId(user.id),
+  ]);
+
+  if (!commonUser.profileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
+
+  if (!proposal) {
+    throw new NotFoundError('Proposal', proposalId);
+  }
+
+  const instance = await getInstance({
+    instanceId: proposal.processInstanceId,
+    user,
+  });
+
+  await assertProposalReviewReadAccess({
+    subject,
+    instance,
+    profileId: commonUser.profileId,
+    proposal,
+    user,
+  });
+
+  return { proposal, instance };
 }
 
 /**
