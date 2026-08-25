@@ -28,6 +28,10 @@ import { exportStatusRecordSchema } from './schemas/exportStatus';
  *
  * `exportStatusRecordSchema` rejects a record whose `signedUrl` is not a string,
  * so this reads a URL the schema passed, or none at all.
+ *
+ * @param signedUrl - Stored signed URL, or undefined on a record that holds
+ *   none.
+ * @returns True when the URL carries the `download` parameter.
  */
 const servesAsAttachment = (signedUrl: string | undefined): boolean => {
   if (signedUrl === undefined) {
@@ -44,6 +48,33 @@ const servesAsAttachment = (signedUrl: string | undefined): boolean => {
 // record, so the type and the check cannot drift.
 export type { ExportStatusData } from './schemas/exportStatus';
 
+/**
+ * Reads one proposal export's status, and re-signs its download URL when the
+ * stored one is no longer usable.
+ *
+ * Authorization runs in a fixed order, and all of it before any signing. The
+ * record's own `userId` settles ownership. `assertInstanceProfileAccess` then
+ * settles `decisions: ADMIN` on the profile that owns the export, which is what
+ * stops an admin who lost the role from holding a working download for the rest
+ * of the record's day.
+ *
+ * The cache holds the only copy of the record. This therefore reads it with
+ * {@link getWithStatus} and keeps "Redis held nothing" apart from "Redis did not
+ * answer", and parses what it gets against
+ * {@link exportStatusRecordSchema} rather than asserting the type.
+ *
+ * @param exportId - The export to read. Also the cache key, via
+ *   `exportStatusCacheKey`.
+ * @param user - The calling user, checked for ownership and then for decision
+ *   admin.
+ * @returns The parsed record, whose `signedUrl` may have been refreshed or
+ *   dropped, or `{ status: 'not_found' }` when the cache holds no usable record.
+ * @throws CommonError when the cache did not answer. Reporting that as
+ *   `not_found` would make the client retire a run that is still there.
+ * @throws UnauthorizedError when the caller does not own the export, or no
+ *   longer holds `decisions: ADMIN` on the owning profile.
+ * @throws NotFoundError when the record names a process instance that is gone.
+ */
 export const getExportStatus = async ({
   exportId,
   user,
@@ -161,6 +192,12 @@ const URL_EXPIRY_MARGIN_MS = 60 * 1000;
  * it holds, dead or absent, for the rest of its 24 hour life.
  *
  * Only `fileName` is required. It rebuilds the storage key.
+ *
+ * @param status - Run status. Only a completed run has a URL to judge.
+ * @param fileName - Stored file name. Without it there is nothing to sign.
+ * @param signedUrl - Stored URL, checked for the download parameter.
+ * @param urlExpiresAt - Recorded expiry, as an ISO string.
+ * @returns True when the caller should sign a new URL.
  */
 const needsFreshUrl = ({
   status,
@@ -193,6 +230,12 @@ const needsFreshUrl = ({
  * The caller settles authorization first, as it does for `getProposal`.
  *
  * This throws on failure, so one caller decides what a failed re-sign costs.
+ *
+ * @param processInstanceId - Owning instance, which scopes the storage key.
+ * @param fileName - Stored file name. Also the name the browser saves.
+ * @returns The signed URL, which asks Supabase for an attachment.
+ * @throws The Supabase storage error, or an `Error` when Supabase reports
+ *   neither data nor an error.
  */
 const mintSignedDownloadUrl = async ({
   processInstanceId,
@@ -229,6 +272,10 @@ const mintSignedDownloadUrl = async ({
  *
  * A completed record with no file name is terminal, and handled here rather
  * than skipped by the caller.
+ *
+ * @param exportStatus - The parsed record. Mutated in place, so the caller can
+ *   return the same object.
+ * @param cacheKey - Key to write the refreshed record back under.
  */
 const refreshStaleSignedUrl = async ({
   exportStatus,
@@ -325,6 +372,10 @@ const PERMANENT_SIGNING_FAILURES = ['Object not found', 'Bucket not found'];
  * Either wording in {@link PERMANENT_SIGNING_FAILURES} means the file is
  * unreachable. A wording this check misses falls to the retryable branch, which
  * is the safe direction.
+ *
+ * @param error - What the signing call threw. Typed `unknown` because a caught
+ *   value carries no guarantee, and Supabase throws a plain object here.
+ * @returns True when the message names a missing object or a missing bucket.
  */
 const isPermanentlyGone = (error: unknown): boolean => {
   if (typeof error !== 'object' || error === null || !('message' in error)) {

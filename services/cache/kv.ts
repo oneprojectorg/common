@@ -368,6 +368,11 @@ export const get = async (key: string) => {
  * that reads "no such record" after a command timed out can discard a record
  * that is still there. Use this function when a false miss costs the user data
  * instead of one round trip.
+ *
+ * @param key - Key to read.
+ * @returns A {@link RedisGetResult}. `hit` carries the parsed value. `miss` means
+ *   Redis answered and held nothing, or this deployment has no working cache.
+ *   `timeout` and `error` mean Redis did not answer, so absence is not known.
  */
 export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
   tryGetFromRedis(key);

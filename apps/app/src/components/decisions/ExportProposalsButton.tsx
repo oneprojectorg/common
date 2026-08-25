@@ -30,7 +30,8 @@ export interface ExportProposalsButtonProps {
 }
 
 /**
- * Admin-only CSV export of every non-draft proposal in the current phase.
+ * React component for the admin-only CSV export of every non-draft proposal in
+ * the current phase. This is the entry point the decision pages render.
  *
  * It does not follow the list's filters. An export that inherited them produced
  * a different file from the same button, based on state the CSV cannot show.
@@ -58,6 +59,10 @@ export interface ExportProposalsButtonProps {
  * could usefully decide anything here, because the guarded failure is internal
  * to the wait. A caller that forgot the wrapper would get the misreport
  * described on the status query below.
+ *
+ * @param props - See {@link ExportProposalsButtonProps}. Passed through to
+ *   {@link ExportProposalsButtonContent}, which holds the run's state, so a
+ *   boundary reset remounts it at idle.
  */
 export const ExportProposalsButton = (props: ExportProposalsButtonProps) => (
   <APIErrorBoundary fallbacks={statusUnreadableFallbacks}>
@@ -86,7 +91,8 @@ const statusUnreadableFallbacks = {
 };
 
 /**
- * Shown when the export's status cannot be read at all.
+ * React component for the error-boundary fallback, shown when the export's
+ * status cannot be read at all.
  *
  * Not phrased as a failure. `failed` and the timeout are outcomes the run
  * reported. This is the absence of one.
@@ -100,6 +106,10 @@ const statusUnreadableFallbacks = {
  *
  * Export state is cache-only with no history, so a file the run goes on to write
  * is unreachable. That cost is real, and the timeout path already pays it.
+ *
+ * @param error - What the status query escalated. Logged, not shown: it names a
+ *   cause the admin cannot act on.
+ * @param onRetry - Resets the error boundary, which remounts the button at idle.
  */
 const ExportStatusUnreadable = ({
   error,
@@ -128,16 +138,35 @@ const ExportStatusUnreadable = ({
 };
 
 /**
- * Renders what a finished export offers. That is the download, or a retry when
- * the server could not sign a URL.
+ * React component for the settled state of an export: the download link, or a
+ * retry control when the server could not sign a URL.
  *
- * The state without a URL is a real state. The run succeeded and the object
- * remains in the bucket, and only the signature is missing. The server
- * therefore reports a completed export with no URL instead of a failure, and
- * re-reading the record recovers it.
+ * {@link ExportProposalsButtonContent} renders this once the status query
+ * reports `completed`, and `signedUrl` alone decides which of the two controls
+ * appears. Both render behind one polite live region, because an export settles
+ * without a navigation and settling swaps the control for a different element.
  *
- * A fall through to the idle button would leave the admin with no download and
- * no stated reason.
+ * The download is a `ButtonLink` rather than a button with a click handler, so
+ * the browser owns the transfer and a screen reader announces a link. Taking it
+ * calls `onTaken`, which retires the export id: one file per run.
+ *
+ * A completed export with no URL is a real state, not a defect. The run
+ * succeeded and the object remains in the bucket, and only the signature is
+ * missing, so the server reports a completed export without a URL instead of a
+ * failure. Re-reading the record is the whole recovery, which is what `onRetry`
+ * does. A fall through to the idle button would leave the admin with no download
+ * and no stated reason.
+ *
+ * @param signedUrl - Signed download URL from the record. Absent when signing
+ *   failed, which is what selects the retry control.
+ * @param fileName - Name the browser saves the CSV under. These links are
+ *   cross-origin, so this only names the file; `exportDownloadOptions` on the
+ *   signed URL is what forces the save.
+ * @param isRetrying - A re-read is in flight. Disables the retry control and
+ *   swaps its label for "Preparing...".
+ * @param onRetry - Re-reads the export record. Runs on a retry click.
+ * @param onTaken - Retires the export id. Runs once the admin takes the
+ *   download.
  */
 const CompletedExportAction = ({
   signedUrl,
@@ -212,6 +241,25 @@ const CompletedExportAction = ({
   );
 };
 
+/**
+ * React component holding everything about one export run: the mutation that
+ * starts it, the status query that follows it, the silence timeout that bounds
+ * it, and the control for each state.
+ *
+ * `exportId` is the state that drives all of it. Setting it enables the status
+ * query, and clearing it returns the button to idle. Because export state is
+ * cache-only, that id is the only handle on a finished run, so every path that
+ * clears it is deliberate: the admin took the download, the run failed, the wait
+ * timed out, or the record aged out of the cache.
+ *
+ * This sits behind {@link ExportProposalsButton}'s error boundary rather than
+ * being exported, so a reset remounts it and discards that state.
+ *
+ * @param processInstanceId - Decision instance whose current phase is exported.
+ * @param isEmpty - The phase holds no proposals, so the button stays disabled.
+ *   See {@link ExportProposalsButtonProps} for why this is not the filtered
+ *   count.
+ */
 const ExportProposalsButtonContent = ({
   processInstanceId,
   isEmpty = false,

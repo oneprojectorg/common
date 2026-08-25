@@ -57,7 +57,13 @@ export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
  */
 export const EXPORT_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
-/** Cache key for an export's status record. */
+/**
+ * Builds the cache key for an export's status record.
+ *
+ * @param exportId - The export the record belongs to.
+ * @returns The namespaced key. Every reader and writer of the record uses this,
+ *   so no call site holds its own copy of the format.
+ */
 export const exportStatusCacheKey = (exportId: string) =>
   `export:proposal:${exportId}`;
 
@@ -71,6 +77,10 @@ export const exportStatusCacheKey = (exportId: string) =>
  * This key led with `proposals/` before. That shape reads as though a proposal
  * owned the export. A process instance owns the export, and one export covers
  * many proposals.
+ *
+ * @param processInstanceId - The instance that owns the export.
+ * @param fileName - The generated file name, from {@link exportFileName}.
+ * @returns The object key, relative to {@link EXPORTS_BUCKET}.
  */
 export const exportFilePath = (processInstanceId: string, fileName: string) =>
   `process/${processInstanceId}/proposals/${fileName}`;
@@ -85,6 +95,9 @@ export const exportFilePath = (processInstanceId: string, fileName: string) =>
  *
  * `crypto.randomUUID()` is the global Web Crypto API. Node 19 and later provide
  * it, and browsers provide it. This module therefore needs no Node-only import.
+ *
+ * @param extension - File extension, with no leading dot. `csv` today.
+ * @returns A fresh name. Every call returns a different one.
  */
 export const exportFileName = (extension: string) =>
   `proposals_export_${crypto.randomUUID()}_${Date.now()}.${extension}`;
@@ -101,6 +114,10 @@ export const exportFileName = (extension: string) =>
  * host.
  *
  * Both signing sites pass this. Either one alone leaves the other inline.
+ *
+ * @param fileName - Name the browser saves the object under.
+ * @returns Options for `createSignedUrl`, which put the name in the signed URL's
+ *   `download` parameter.
  */
 export const exportDownloadOptions = (fileName: string) => ({
   download: fileName,
