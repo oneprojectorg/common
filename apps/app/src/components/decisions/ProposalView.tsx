@@ -27,7 +27,7 @@ import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
-import type { ProposalViewAccess } from './getProposalViewAccess';
+import type { ProposalReviewVisibility } from './getProposalReviewVisibility';
 import {
   proposalEditorReviewRevisionParser,
   proposalFeedbackPanelParser,
@@ -47,13 +47,13 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
-  access,
+  visibility,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
-  /** What this viewer may see here — see `getProposalViewAccess`. */
-  access: ProposalViewAccess;
+  /** What this viewer may see here — see `getProposalReviewVisibility`. */
+  visibility: ProposalReviewVisibility;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -144,7 +144,7 @@ export function ProposalView({
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      { enabled: access.revisions, throwOnError: false, retry: false },
+      { enabled: visibility.revisions, throwOnError: false, retry: false },
     );
 
   const submittedRevisions = revisionError
@@ -163,16 +163,20 @@ export function ProposalView({
   // the server released once their review phase ended (no client phase math),
   // and the whole revision history — resolved entries included, because the
   // panel is the author's record of the review, not a to-do list.
+  // Both are gated on `feedback`, not `revisions`, even though the second hits
+  // the same procedure as the mid-phase query above: this panel exists to carry
+  // the history *after* the review phase ends, which is exactly when
+  // `revisions` goes false. The two differ by the `states` filter, not by gate.
   // Same resilience pattern as the revision query above: an unauthorized
   // viewer gets no panel, not a broken page.
   const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
     t.decision.listProposalFeedback(
       { proposalId: currentProposal.id },
-      { enabled: access.feedback, throwOnError: false, retry: false },
+      { enabled: visibility.feedback, throwOnError: false, retry: false },
     ),
     t.decision.listProposalRevisionRequests(
       { proposalId: currentProposal.id },
-      { enabled: access.feedback, throwOnError: false, retry: false },
+      { enabled: visibility.feedback, throwOnError: false, retry: false },
     ),
   ]);
 
@@ -312,7 +316,7 @@ export function ProposalView({
       }
       // One header disclosure. Mid-phase it keeps opening the "Revision
       // submitted" pane (unchanged); once the review phase has ended
-      // `access.revisions` is false and it opens the feedback panel instead.
+      // `visibility.revisions` is false and it opens the feedback panel instead.
       feedbackToggle={
         firstRevisionRequestId
           ? {

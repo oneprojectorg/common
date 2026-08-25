@@ -1,15 +1,16 @@
 import { isReviewPhase } from '@op/common/client';
 
 /**
- * What a viewer may see on the proposal view page, by capability rather than by
- * which panel happens to render it today.
+ * Which reviewer-authored artifacts a viewer may see on a proposal — named by
+ * capability rather than by the panel that happens to render them, and shared
+ * by the view and edit routes so the rules live in one place.
  *
  * UX gating only: every underlying query is still asserted server-side, so a
  * `true` here never grants anything — it only keeps queries off surfaces that
  * would be denied anyway, and keeps the toggles that open them hidden. Plain
  * booleans so the object crosses the RSC boundary and reads well in Storybook.
  */
-export interface ProposalViewAccess {
+export interface ProposalReviewVisibility {
   /**
    * Author, decision admin, or explicit review access — with no phase
    * condition. Which notes are actually released stays a server decision (only
@@ -24,7 +25,7 @@ export interface ProposalViewAccess {
 }
 
 /** Legacy instances and any other caller with no instance to derive from. */
-export const NO_PROPOSAL_VIEW_ACCESS: ProposalViewAccess = {
+export const NO_PROPOSAL_REVIEW_VISIBILITY: ProposalReviewVisibility = {
   feedback: false,
   revisions: false,
 };
@@ -34,30 +35,23 @@ export const NO_PROPOSAL_VIEW_ACCESS: ProposalViewAccess = {
  * same reason `phaseSettings.ts` does. `rules` is borrowed from `isReviewPhase`
  * so the phase-rules shape stays in one place.
  */
-type ProposalViewPhase = { phaseId: string } & Parameters<
+type ProposalReviewPhase = { phaseId: string } & Parameters<
   typeof isReviewPhase
 >[0];
 
-export function getProposalViewAccess({
+export function getProposalReviewVisibility({
   instance,
   proposal,
   user,
 }: {
-  instance:
-    | {
-        currentStateId?: string | null;
-        instanceData?: { phases?: readonly ProposalViewPhase[] } | null;
-        access?: { admin?: boolean; review?: boolean } | null;
-      }
-    | null
-    | undefined;
+  instance: {
+    currentStateId?: string | null;
+    instanceData?: { phases?: readonly ProposalReviewPhase[] } | null;
+    access?: { admin?: boolean; review?: boolean } | null;
+  };
   proposal: { submittedBy?: { id: string } | null };
   user: { currentProfile?: { id: string } | null } | null | undefined;
-}): ProposalViewAccess {
-  if (!instance) {
-    return NO_PROPOSAL_VIEW_ACCESS;
-  }
-
+}): ProposalReviewVisibility {
   const currentProfileId = user?.currentProfile?.id;
   const isAuthor =
     !!currentProfileId && proposal.submittedBy?.id === currentProfileId;
