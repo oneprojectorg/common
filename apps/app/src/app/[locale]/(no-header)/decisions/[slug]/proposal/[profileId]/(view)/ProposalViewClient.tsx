@@ -9,7 +9,7 @@ import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
-import { getProposalReviewVisibility } from '@/components/decisions/getProposalReviewVisibility';
+import { getProposalVisibility } from '@/components/decisions/getProposalVisibility';
 
 function ProposalViewPageContent({
   profileId,
@@ -31,7 +31,7 @@ function ProposalViewPageContent({
   const { user } = useUser();
 
   const phases = instance.instanceData?.phases ?? [];
-  const visibility = getProposalReviewVisibility({ instance, proposal, user });
+  const visibility = getProposalVisibility({ instance, proposal, user });
 
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);

@@ -27,7 +27,7 @@ import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
-import type { ProposalReviewVisibility } from './getProposalReviewVisibility';
+import type { ProposalVisibility } from './getProposalVisibility';
 import {
   proposalEditorReviewRevisionParser,
   proposalFeedbackPanelParser,
@@ -53,8 +53,8 @@ export function ProposalView({
   selection,
 }: {
   proposal: Proposal;
-  /** What this viewer may see here — see `getProposalReviewVisibility`. */
-  visibility: ProposalReviewVisibility;
+  /** What this viewer may see here — see `getProposalVisibility`. */
+  visibility: ProposalVisibility;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -145,7 +145,11 @@ export function ProposalView({
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      { enabled: visibility.revisions, throwOnError: false, retry: false },
+      {
+        enabled: visibility.review.revisions,
+        throwOnError: false,
+        retry: false,
+      },
     );
 
   const submittedRevisions = revisionError
@@ -164,7 +168,7 @@ export function ProposalView({
   // after the review phase ends, which is when `revisions` goes false.
   const { notes, revisionHistory, hasFeedback } = useProposalFeedback({
     proposalId: currentProposal.id,
-    enabled: visibility.feedback,
+    enabled: visibility.review.feedback,
   });
 
   const toggleFeedbackPanel = useCallback(() => {
@@ -286,7 +290,7 @@ export function ProposalView({
         />
       }
       // One disclosure for both panes: mid-phase it opens the submitted
-      // revision, and the feedback panel once `visibility.revisions` is false.
+      // revision, and the feedback panel once `visibility.review.revisions` is false.
       feedbackToggle={
         firstRevisionRequestId
           ? {

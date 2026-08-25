@@ -29,11 +29,11 @@ export function useProposalFeedback({
   const [feedbackQuery, revisionQuery] = trpc.useQueries((t) => [
     t.decision.listProposalFeedback(
       { proposalId },
-      { enabled, throwOnError: false, retry: false },
+      { enabled, throwOnError: false },
     ),
     t.decision.listProposalRevisionRequests(
       { proposalId },
-      { enabled, throwOnError: false, retry: false },
+      { enabled, throwOnError: false },
     ),
   ]);
 

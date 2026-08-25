@@ -7,7 +7,7 @@ import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
-import { NO_PROPOSAL_REVIEW_VISIBILITY } from '@/components/decisions/getProposalReviewVisibility';
+import { NO_PROPOSAL_VISIBILITY } from '@/components/decisions/getProposalVisibility';
 
 function ProposalViewPageContent({
   profileId,
@@ -32,7 +32,7 @@ function ProposalViewPageContent({
   return (
     <ProposalView
       proposal={proposal}
-      visibility={NO_PROPOSAL_REVIEW_VISIBILITY}
+      visibility={NO_PROPOSAL_VISIBILITY}
       decisionRoot={decisionRoot}
       selection={null}
     />
