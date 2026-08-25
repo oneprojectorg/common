@@ -27,6 +27,7 @@ import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
+import type { ProposalViewAccess } from './getProposalViewAccess';
 import {
   proposalEditorReviewRevisionParser,
   proposalFeedbackPanelParser,
@@ -46,19 +47,13 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
-  canSeeRevisions,
-  canSeeFeedback,
+  access,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
-  canSeeRevisions: boolean;
-  /**
-   * Author, decision admin, or review access — with no phase condition. The
-   * server decides which notes are released (only ended review phases), so
-   * this flag only keeps the query off surfaces that would be denied anyway.
-   */
-  canSeeFeedback: boolean;
+  /** What this viewer may see here — see `getProposalViewAccess`. */
+  access: ProposalViewAccess;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -149,7 +144,7 @@ export function ProposalView({
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      { enabled: canSeeRevisions, throwOnError: false, retry: false },
+      { enabled: access.revisions, throwOnError: false, retry: false },
     );
 
   const submittedRevisions = revisionError
@@ -173,11 +168,11 @@ export function ProposalView({
   const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
     t.decision.listProposalFeedback(
       { proposalId: currentProposal.id },
-      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+      { enabled: access.feedback, throwOnError: false, retry: false },
     ),
     t.decision.listProposalRevisionRequests(
       { proposalId: currentProposal.id },
-      { enabled: canSeeFeedback, throwOnError: false, retry: false },
+      { enabled: access.feedback, throwOnError: false, retry: false },
     ),
   ]);
 
@@ -307,7 +302,7 @@ export function ProposalView({
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
-      // `access.admin` and on the proposal having left draft.
+      // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
       notices={
         <ProposalMergeNotice
@@ -317,7 +312,7 @@ export function ProposalView({
       }
       // One header disclosure. Mid-phase it keeps opening the "Revision
       // submitted" pane (unchanged); once the review phase has ended
-      // `canSeeRevisions` is false and it opens the feedback panel instead.
+      // `access.revisions` is false and it opens the feedback panel instead.
       feedbackToggle={
         firstRevisionRequestId
           ? {

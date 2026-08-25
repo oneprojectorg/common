@@ -3,12 +3,13 @@
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { isLastPhase, isReviewPhase } from '@op/common/client';
+import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
+import { getProposalViewAccess } from '@/components/decisions/getProposalViewAccess';
 
 function ProposalViewPageContent({
   profileId,
@@ -30,21 +31,7 @@ function ProposalViewPageContent({
   const { user } = useUser();
 
   const phases = instance.instanceData?.phases ?? [];
-  const currentPhase = phases.find(
-    (phase) => phase.phaseId === instance.currentStateId,
-  );
-  const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
-  const isAuthor =
-    !!user?.currentProfile?.id &&
-    proposal.submittedBy?.id === user.currentProfile.id;
-  // Author, admin, or explicit review access.
-  const canSeeFeedback =
-    isAuthor ||
-    instance.access?.admin === true ||
-    instance.access?.review === true;
-  // The revision panes are a mid-phase affordance; the feedback panel carries
-  // the history once the phase has ended.
-  const canSeeRevisions = isInReviewPhase && canSeeFeedback;
+  const access = getProposalViewAccess({ instance, proposal, user });
 
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);
@@ -57,8 +44,7 @@ function ProposalViewPageContent({
   return (
     <ProposalView
       proposal={proposal}
-      canSeeRevisions={canSeeRevisions}
-      canSeeFeedback={canSeeFeedback}
+      access={access}
       decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />

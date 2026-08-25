@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
+import { NO_PROPOSAL_VIEW_ACCESS } from '@/components/decisions/getProposalViewAccess';
 
 function ProposalViewPageContent({
   profileId,
@@ -31,8 +32,7 @@ function ProposalViewPageContent({
   return (
     <ProposalView
       proposal={proposal}
-      canSeeRevisions={false}
-      canSeeFeedback={false}
+      access={NO_PROPOSAL_VIEW_ACCESS}
       decisionRoot={decisionRoot}
       selection={null}
     />
