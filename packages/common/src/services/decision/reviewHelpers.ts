@@ -295,6 +295,22 @@ export function assertCanReadPhaseReviews(
   }
 }
 
+/**
+ * Assignments deliberately survive a phase advance, so review writes and the
+ * revision cycle must assert the assignment's phase is still current — admins
+ * included. A cached instance may lag an advance by ~2 minutes; accepted.
+ */
+export function assertReviewAssignmentPhaseIsCurrent(
+  instance: { currentStateId: string | null },
+  phaseId: string,
+): void {
+  if (!isInstanceCurrentPhase(instance, phaseId)) {
+    throw new ValidationError(
+      'This review assignment can no longer be modified because the review phase has ended',
+    );
+  }
+}
+
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
 export async function assertReviewAssignmentContext({
   assignmentId,
