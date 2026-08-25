@@ -94,21 +94,18 @@ export const updateProposal = async ({
       orgFallbackPermissions: [{ decisions: permission.ADMIN }],
     });
   } else {
-    // Data updates belong to the people the proposal belongs to: its author
-    // (Admin on the proposal's own profile) and the collaborators it was
-    // shared with (the invite's role on that profile — Member today, granted
-    // by acceptProposalInvite), with decision admins as the override. Every
-    // grant that confers standing on a proposal carries at least profile
-    // READ, so that's the test.
+    // Standing on the proposal's own profile (author or invited collaborator),
+    // with decision admins as the override. Not `decisions` UPDATE — every
+    // process Member holds it, so gating there lets any participant rewrite
+    // every other proposal, unpublished drafts included.
     //
-    // Membership of the process is deliberately not enough: Member holds
-    // `decisions` UPDATE so it can submit its own work, and gating on that
-    // would let any participant rewrite every other proposal in the process,
-    // unpublished drafts included.
-    //
-    // Reading standing off the proposal's profile relies on the invariant
-    // `resolveProposalListScope` documents — public grants are only ever
-    // placed on the process profile, never on an individual proposal's.
+    // `getProfileAccessRoles` unions the caller's grants with the public
+    // sentinel's, so test the READ bit rather than `roles.length > 0`: the
+    // Public role seeds with no permission rows, so the bit form fails closed
+    // on a public grant while a length check would not. Siblings that ask the
+    // same question (getProposal, reviewHelpers, assertModerationItemAccess)
+    // still use the length form; this is the canonical spelling, and folding
+    // them onto one shared helper is tracked separately.
     const proposalRoles = await getProfileAccessRoles({
       user: { id: user.id },
       profileId: existingProposal.profileId,

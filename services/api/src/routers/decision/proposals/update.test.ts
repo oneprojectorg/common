@@ -764,12 +764,18 @@ describe.concurrent('updateProposal data authorization', () => {
 
     const result = await collaboratorCaller.decision.updateProposal({
       proposalId: proposal.id,
-      data: { proposalData: { title: 'Edited by collaborator' } },
+      data: {
+        title: 'Edited by collaborator',
+        proposalData: { title: 'Edited by collaborator' },
+      },
     });
 
     expect(result.proposalData).toMatchObject({
       title: 'Edited by collaborator',
     });
+    // The invite grants profile READ, not profile UPDATE, and the same gate
+    // guards the `profiles.name` write — pin that a collaborator can rename.
+    expect(result.profile.name).toBe('Edited by collaborator');
   });
 
   it('should allow a decision admin to update the proposal data', async ({
@@ -807,7 +813,7 @@ describe.concurrent('updateProposal data authorization', () => {
     expect(result.proposalData).toMatchObject({ title: 'Edited by admin' });
   });
 
-  it('should not allow another process member to update a submitted proposal', async ({
+  it('should not allow another process member to edit or rename a proposal they did not author', async ({
     task,
     onTestFinished,
   }) => {
@@ -833,7 +839,14 @@ describe.concurrent('updateProposal data authorization', () => {
       }),
     ]);
 
-    const [proposal, otherMemberCaller] = await Promise.all([
+    // A draft is only reachable by id; a submitted proposal is listed to every
+    // member. The gate reads neither status, so both ride on one setup.
+    const [draft, submitted, otherMemberCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Private Draft' },
+      }),
       testData.createProposal({
         userEmail: author.email,
         processInstanceId: instance.instance.id,
@@ -845,53 +858,23 @@ describe.concurrent('updateProposal data authorization', () => {
 
     await expect(
       otherMemberCaller.decision.updateProposal({
-        proposalId: proposal.id,
-        data: { proposalData: { title: 'Hijacked Title' } },
+        proposalId: draft.id,
+        data: {
+          title: 'Hijacked Draft',
+          proposalData: { title: 'Hijacked Draft' },
+        },
       }),
     ).rejects.toMatchObject({
       cause: { statusCode: 403 },
     });
-  });
-
-  it('should not allow another process member to update a draft they did not author', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instance;
-
-    const [author, otherMember] = await Promise.all([
-      testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [instance.profileId],
-      }),
-      testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [instance.profileId],
-      }),
-    ]);
-
-    // Proposals are created in DRAFT status by default. A draft is only
-    // reachable by id — it never appears in another member's list.
-    const [draft, otherMemberCaller] = await Promise.all([
-      testData.createProposal({
-        userEmail: author.email,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Private Draft' },
-      }),
-      createAuthenticatedCaller(otherMember.email),
-    ]);
 
     await expect(
       otherMemberCaller.decision.updateProposal({
-        proposalId: draft.id,
-        data: { proposalData: { title: 'Hijacked Draft' } },
+        proposalId: submitted.id,
+        data: {
+          title: 'Hijacked Title',
+          proposalData: { title: 'Hijacked Title' },
+        },
       }),
     ).rejects.toMatchObject({
       cause: { statusCode: 403 },
