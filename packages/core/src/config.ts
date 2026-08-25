@@ -221,7 +221,14 @@ export const POSTHOG_SESSION_ID_COOKIE = 'ph_session_id';
 
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
 
+// Contact copy only — the address we render when we ask someone to reach a
+// human. Never the From address of an outbound email; that is `noReplyEmail`.
 export const genericEmail = 'support@oneproject.org';
+
+// From address for every outbound email — see `formatFromAddress` in
+// `@op/emails` (services/emails/index.tsx) for why it has to be an
+// unmonitored mailbox.
+export const noReplyEmail = 'noreply@oneproject.org';
 
 export const adminEmails = ['scott@oneproject.org'];
 
