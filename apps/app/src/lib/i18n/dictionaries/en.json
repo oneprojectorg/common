@@ -1253,7 +1253,6 @@
   "Sent {date}": "Sent {date}",
   "Close": "Close",
   "Feedback to Author": "Feedback to Author",
-  "Shared anonymously with the author after the review phase ends": "Shared anonymously with the author after the review phase ends",
   "Total Score": "Total Score",
   "Proposal {current} of {total}": "Proposal {current} of {total}",
   "{current} of {total}": "{current} of {total}",
@@ -1671,5 +1670,8 @@
   "{count, plural, one {# proposal shown} other {# proposals shown}}": "{count, plural, one {# proposal shown} other {# proposals shown}}",
   "Contributing ideas": "Contributing ideas",
   "These participant ideas were merged into this proposal.": "These participant ideas were merged into this proposal.",
-  "Contributing ideas could not be loaded": "Contributing ideas could not be loaded"
+  "Contributing ideas could not be loaded": "Contributing ideas could not be loaded",
+  "Feedback": "Feedback",
+  "Notes reviewers shared while this proposal was under review": "Notes reviewers shared while this proposal was under review",
+  "Reviewer · {timeAgo}": "Reviewer · {timeAgo}"
 }

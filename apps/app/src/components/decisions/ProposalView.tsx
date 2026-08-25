@@ -20,13 +20,19 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
+import { ProposalFeedbackPanel } from './ProposalFeedbackPanel';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
-import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
+import type { ProposalAffordances } from './getProposalAffordances';
+import {
+  proposalEditorReviewRevisionParser,
+  proposalFeedbackPanelParser,
+} from './proposalEditor/proposalEditorAsideParams';
+import { useProposalFeedback } from './useProposalFeedback';
 import { useTranslateProposal } from './useTranslateProposal';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
@@ -42,12 +48,13 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
-  canSeeRevisions,
+  affordances,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
-  canSeeRevisions: boolean;
+  /** What this viewer may see here — see `getProposalAffordances`. */
+  affordances: ProposalAffordances;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -122,9 +129,11 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  const [{ reviewRevision }, setQueryState] = useQueryStates({
-    reviewRevision: proposalEditorReviewRevisionParser,
-  });
+  const [{ reviewRevision, feedback: isFeedbackPanelOpen }, setQueryState] =
+    useQueryStates({
+      reviewRevision: proposalEditorReviewRevisionParser,
+      feedback: proposalFeedbackPanelParser,
+    });
 
   // The view panel is "Revision submitted" — only surface entries the author
   // has already responded to. Pending requests are handled by the editor.
@@ -136,7 +145,7 @@ export function ProposalView({
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      { enabled: canSeeRevisions, throwOnError: false, retry: false },
+      { enabled: affordances.review.revisions, throwOnError: false },
     );
 
   const submittedRevisions = revisionError
@@ -150,6 +159,20 @@ export function ProposalView({
     ? (submittedRevisions.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
+
+  // `feedback`, not `revisions`: this is the history the panel keeps showing
+  // after the review phase ends, which is when `revisions` goes false.
+  const { notes, revisionHistory, hasFeedback } = useProposalFeedback({
+    proposalId: currentProposal.id,
+    enabled: affordances.review.feedback,
+  });
+
+  const toggleFeedbackPanel = useCallback(() => {
+    void setQueryState(
+      { feedback: isFeedbackPanelOpen ? null : true },
+      { history: 'push', scroll: false },
+    );
+  }, [isFeedbackPanelOpen, setQueryState]);
 
   const toggleRevisionRequest = useCallback(() => {
     if (!firstRevisionRequestId) {
@@ -215,6 +238,33 @@ export function ProposalView({
     </>
   );
 
+  const asidePane: { label: string; content: ReactNode } | null =
+    activeRevisionRequest
+      ? {
+          label: t('Revision feedback'),
+          content: (
+            <ProposalRevisionSubmittedPanel
+              revisionRequest={activeRevisionRequest}
+            />
+          ),
+        }
+      : isFeedbackPanelOpen && hasFeedback
+        ? {
+            label: t('Feedback'),
+            content: (
+              <ProposalFeedbackPanel
+                feedbackItems={notes}
+                revisionRequests={revisionHistory}
+                title={t('Feedback')}
+                subtitle={t(
+                  'Notes reviewers shared while this proposal was under review',
+                )}
+                revisionRequestLabel={t('Revision request')}
+              />
+            ),
+          }
+        : null;
+
   return (
     <ProposalViewLayout
       backHref={backHref}
@@ -227,7 +277,7 @@ export function ProposalView({
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
-      // `access.admin` and on the proposal having left draft.
+      // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
       notices={
         <ProposalMergeNotice
@@ -235,29 +285,34 @@ export function ProposalView({
           decisionRoot={decisionRoot}
         />
       }
-      revisionToggle={
+      // One disclosure for both panes: mid-phase it opens the submitted
+      // revision, and the feedback panel once `affordances.review.revisions` is false.
+      feedbackToggle={
         firstRevisionRequestId
           ? {
               onToggle: toggleRevisionRequest,
               isActive: Boolean(activeRevisionRequest),
             }
-          : undefined
+          : hasFeedback
+            ? {
+                onToggle: toggleFeedbackPanel,
+                isActive: isFeedbackPanelOpen,
+              }
+            : undefined
       }
     >
-      {activeRevisionRequest ? (
+      {asidePane ? (
         <SplitPane className="mx-auto w-full max-w-6xl">
           <SplitPane.Pane id="proposal" label={t('Proposal')} className="gap-8">
             {proposalBody}
           </SplitPane.Pane>
           <SplitPane.Pane
             id="feedback"
-            label={t('Revision feedback')}
+            label={asidePane.label}
             className="bg-white"
             unpadded
           >
-            <ProposalRevisionSubmittedPanel
-              revisionRequest={activeRevisionRequest}
-            />
+            {asidePane.content}
           </SplitPane.Pane>
         </SplitPane>
       ) : (
