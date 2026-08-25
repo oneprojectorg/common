@@ -7,7 +7,6 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
-  type ProposalFeedbackItem,
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   getProposalFragmentNames,
@@ -26,8 +25,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
+import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
 import { getProposalReviewVisibility } from '@/components/decisions/getProposalReviewVisibility';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { RevisionFeedbackPanel } from '@/components/decisions/proposalEditor/RevisionFeedbackPanel';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
@@ -45,6 +46,10 @@ import {
   proposalFeedbackPanelParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
+import {
+  type ProposalFeedback,
+  useProposalFeedback,
+} from '@/components/decisions/useProposalFeedback';
 
 /**
  * Route page for the proposal editor.
@@ -129,29 +134,12 @@ function EditProposalPageContent() {
   // applies here, since the revision panes are that route's affordance.
   const visibility = getProposalReviewVisibility({ instance, proposal, user });
 
-  // The second read is the same procedure as above without the `REQUESTED`
-  // filter: the panel is the author's record of the review, not a to-do list.
-  // One endpoint, two filters.
-  const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
-    t.decision.listProposalFeedback(
-      { proposalId: proposal.id },
-      { enabled: visibility.feedback, throwOnError: false, retry: false },
-    ),
-    t.decision.listProposalRevisionRequests(
-      { proposalId: proposal.id },
-      { enabled: visibility.feedback, throwOnError: false, retry: false },
-    ),
-  ]);
-
-  const notes = feedbackQuery.error ? [] : (feedbackQuery.data?.items ?? []);
-
-  const revisionHistory = allRevisionQuery.error
-    ? []
-    : (allRevisionQuery.data?.revisionRequests ?? []).map(
-        (item) => item.revisionRequest,
-      );
-
-  const hasFeedback = notes.length > 0 || revisionHistory.length > 0;
+  // `feedback`, not `revisions`: this is the history the panel keeps showing
+  // after the review phase ends, which is when `revisions` goes false.
+  const feedback = useProposalFeedback({
+    proposalId: proposal.id,
+    enabled: visibility.feedback,
+  });
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -247,7 +235,7 @@ function EditProposalPageContent() {
           </Tooltip>,
           ...asideHeaderIcons,
         ]
-      : hasFeedback
+      : feedback.hasFeedback
         ? [
             <Tooltip key="feedback">
               <TooltipTrigger
@@ -292,6 +280,12 @@ function EditProposalPageContent() {
 
   const userName = user.profile?.name ?? t('Anonymous');
 
+  const asidePanel = useProposalEditorAsidePanel({
+    activeRevisionRequest,
+    feedback,
+    isFeedbackPanelOpen,
+  });
+
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
@@ -313,14 +307,7 @@ function EditProposalPageContent() {
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
           activeRevisionRequest={activeRevisionRequest}
-          feedbackPanel={
-            isFeedbackPanelOpen && hasFeedback
-              ? {
-                  notes,
-                  revisionHistory,
-                }
-              : null
-          }
+          asidePanel={asidePanel}
         />
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
@@ -343,7 +330,7 @@ function ProposalEditorContent({
   setAsideState,
   asideHeaderIcons,
   activeRevisionRequest,
-  feedbackPanel,
+  asidePanel,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -353,10 +340,7 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   activeRevisionRequest: ProposalReviewRequest | null;
-  feedbackPanel: {
-    notes: Array<ProposalFeedbackItem>;
-    revisionHistory: Array<ProposalReviewRequest>;
-  } | null;
+  asidePanel: { label: string; content: React.ReactNode } | null;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -414,7 +398,7 @@ function ProposalEditorContent({
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
         activeRevisionRequest={activeRevisionRequest}
-        feedbackPanel={feedbackPanel}
+        asidePanel={asidePanel}
       />
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays
           visible and scrollable beside it. Mobile: a modal drawer, which covers
@@ -422,6 +406,50 @@ function ProposalEditorContent({
       {asideSlot}
     </div>
   );
+}
+
+/**
+ * The pane the document sits beside. A revision request the author still has to
+ * answer outranks the read-only record of a review that has already ended.
+ */
+function useProposalEditorAsidePanel({
+  activeRevisionRequest,
+  feedback,
+  isFeedbackPanelOpen,
+}: {
+  activeRevisionRequest: ProposalReviewRequest | null;
+  feedback: ProposalFeedback;
+  isFeedbackPanelOpen: boolean;
+}): { label: string; content: React.ReactNode } | null {
+  const t = useTranslations();
+
+  if (activeRevisionRequest) {
+    return {
+      label: t('Revision feedback'),
+      content: (
+        <RevisionFeedbackPanel revisionRequest={activeRevisionRequest} />
+      ),
+    };
+  }
+
+  if (!isFeedbackPanelOpen || !feedback.hasFeedback) {
+    return null;
+  }
+
+  return {
+    label: t('Feedback'),
+    content: (
+      <ProposalFeedbackPanel
+        feedbackItems={feedback.notes}
+        revisionRequests={feedback.revisionHistory}
+        title={t('Feedback')}
+        subtitle={t(
+          'Notes reviewers shared while this proposal was under review',
+        )}
+        revisionRequestLabel={t('Revision request')}
+      />
+    ),
+  };
 }
 
 function useProposalEditorAsideHeaderIcons({

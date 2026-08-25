@@ -7,7 +7,6 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalDataInput,
-  type ProposalFeedbackItem,
   type ProposalReviewRequest,
   type ProposalTemplateSchema,
   parseProposalData,
@@ -37,13 +36,11 @@ import {
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
-import { ProposalFeedbackPanel } from '../ProposalFeedbackPanel';
 import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
-import { RevisionFeedbackPanel } from './RevisionFeedbackPanel';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
@@ -60,23 +57,20 @@ export function ProposalEditor({
   isEditMode = false,
   asideHeaderIcons,
   activeRevisionRequest = null,
-  feedbackPanel = null,
+  asidePanel = null,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  activeRevisionRequest?: ProposalReviewRequest | null;
   /**
-   * `revisionHistory` is the same procedure as `activeRevisionRequest` read
-   * unfiltered — every state, resolved included — because the panel is the
-   * author's record rather than a to-do list. One endpoint, two filters.
+   * Drives revision mode in the header and the resubmit modal. Which pane the
+   * document sits beside is `asidePanel`'s business, not this prop's.
    */
-  feedbackPanel?: {
-    notes: Array<ProposalFeedbackItem>;
-    revisionHistory: Array<ProposalReviewRequest>;
-  } | null;
+  activeRevisionRequest?: ProposalReviewRequest | null;
+  /** Rendered beside the document in a SplitPane; the owner picks it. */
+  asidePanel?: { label: string; content: ReactNode } | null;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -119,7 +113,7 @@ export function ProposalEditor({
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       activeRevisionRequest={activeRevisionRequest}
-      feedbackPanel={feedbackPanel}
+      asidePanel={asidePanel}
     />
   );
 
@@ -151,7 +145,7 @@ function ProposalEditorInner({
   collaborationDocId,
   proposalTemplate,
   activeRevisionRequest,
-  feedbackPanel,
+  asidePanel,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -161,10 +155,7 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   activeRevisionRequest: ProposalReviewRequest | null;
-  feedbackPanel: {
-    notes: Array<ProposalFeedbackItem>;
-    revisionHistory: Array<ProposalReviewRequest>;
-  } | null;
+  asidePanel: { label: string; content: ReactNode } | null;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -476,31 +467,6 @@ function ProposalEditorInner({
     </>
   );
 
-  const asidePane: { label: string; content: ReactNode } | null =
-    activeRevisionRequest
-      ? {
-          label: t('Revision feedback'),
-          content: (
-            <RevisionFeedbackPanel revisionRequest={activeRevisionRequest} />
-          ),
-        }
-      : feedbackPanel
-        ? {
-            label: t('Feedback'),
-            content: (
-              <ProposalFeedbackPanel
-                feedbackItems={feedbackPanel.notes}
-                revisionRequests={feedbackPanel.revisionHistory}
-                title={t('Feedback')}
-                subtitle={t(
-                  'Notes reviewers shared while this proposal was under review',
-                )}
-                revisionRequestLabel={t('Revision request')}
-              />
-            ),
-          }
-        : null;
-
   return (
     <ProposalEditorLayout
       backHref={backHref}
@@ -527,7 +493,7 @@ function ProposalEditorInner({
           menu on the selection, so there is no toolbar row above the form. */}
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
-          {asidePane ? (
+          {asidePanel ? (
             <SplitPane className="mx-auto w-full max-w-6xl">
               <SplitPane.Pane
                 id="proposal"
@@ -538,11 +504,11 @@ function ProposalEditorInner({
               </SplitPane.Pane>
               <SplitPane.Pane
                 id="feedback"
-                label={asidePane.label}
+                label={asidePanel.label}
                 className="bg-background"
                 unpadded
               >
-                {asidePane.content}
+                {asidePanel.content}
               </SplitPane.Pane>
             </SplitPane>
           ) : (
