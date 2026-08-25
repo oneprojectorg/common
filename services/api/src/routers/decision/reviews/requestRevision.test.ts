@@ -29,11 +29,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Creates an assignment and moves the instance onto the assignment's phase —
- * the state a revision cycle actually runs in. The whole cycle is rejected
- * once that phase is no longer the instance's current phase.
- */
+/** Creates an assignment and moves the instance onto its phase — the revision cycle only runs there. */
 async function createAssignmentInReviewPhase(
   testData: TestReviewsDataManager,
   opts: Parameters<TestReviewsDataManager['createReviewAssignment']>[0],
@@ -90,7 +86,6 @@ describe.concurrent('requestRevision', () => {
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
 
-    // A past-phase request would open a revision cycle nobody may complete.
     await testData.setCurrentPhase(
       created.context.instance.instance.id,
       'voting',

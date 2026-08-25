@@ -46,8 +46,7 @@ export async function requestRevision({
       );
   }
 
-  // A past-phase revision request would await an author response that
-  // submitRevisionResponse rejects, stranding the assignment.
+  // A past-phase request would open a revision cycle nobody may complete.
   await assertAssignmentPhaseIsCurrent({
     assignment: context.assignment,
     action: 'requested',

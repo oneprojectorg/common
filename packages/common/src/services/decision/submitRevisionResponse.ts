@@ -86,8 +86,7 @@ export async function submitRevisionResponse({
     );
   }
 
-  // A past-phase resubmission would flip the assignment to
-  // READY_FOR_RE_REVIEW, a state the review-write paths refuse to complete.
+  // A past-phase response would strand the assignment in READY_FOR_RE_REVIEW.
   await assertAssignmentPhaseIsCurrent({
     assignment: request.assignment,
     action: 'resubmitted',

@@ -30,11 +30,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Creates an assignment and moves the instance onto the assignment's phase —
- * the state a revision cycle actually runs in. The whole cycle is rejected
- * once that phase is no longer the instance's current phase.
- */
+/** Creates an assignment and moves the instance onto its phase — the revision cycle only runs there. */
 async function createAssignmentInReviewPhase(
   testData: TestReviewsDataManager,
   opts: Parameters<TestReviewsDataManager['createReviewAssignment']>[0],
@@ -212,8 +208,6 @@ describe.concurrent('submitRevisionResponse', () => {
       requestComment: 'Please add budget details.',
     });
 
-    // A past-phase resubmission would flip the assignment to
-    // READY_FOR_RE_REVIEW, which no reviewer write may complete.
     await testData.setCurrentPhase(
       created.context.instance.instance.id,
       'voting',
@@ -228,7 +222,6 @@ describe.concurrent('submitRevisionResponse', () => {
       }),
     ).rejects.toThrow('the review phase has ended');
 
-    // Nothing moved: the request stays open and the assignment untouched.
     const request = await db.query.proposalReviewRequests.findFirst({
       where: { id: revisionRequest.id },
     });

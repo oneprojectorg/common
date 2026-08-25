@@ -179,19 +179,13 @@ export function assertCanReadPhaseReviews(
 }
 
 /**
- * Review writes and the revision cycle are pinned to the assignment's phase:
- * they may only move forward while that phase is still the instance's current
- * phase. Assignments deliberately survive a phase advance, so without this a
- * leftover assignment from an earlier phase stays writable — and a revision
- * cycle straddling the advance would strand the assignment in a state nobody
- * is allowed to complete.
+ * Review writes and the revision cycle are pinned to the assignment's phase.
+ * Assignments deliberately survive a phase advance, so a leftover assignment
+ * would otherwise stay actionable past its phase.
  *
- * `getInstance`'s `currentStateId` is cached and can lag a phase advance, so
- * this re-reads the live phase rather than trusting a loaded instance. It
- * applies to admins too — the phase, not the caller, is what closed.
- *
- * `subject` and `action` name what the caller was doing, so the message reads
- * naturally on the review-write paths and the revision-cycle paths alike.
+ * Re-reads the live phase because `getInstance`'s copy is cached and can lag
+ * an advance. Applies to admins too — the phase, not the caller, is what
+ * closed.
  */
 export async function assertAssignmentPhaseIsCurrent({
   assignment,
