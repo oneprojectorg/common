@@ -1,19 +1,20 @@
 import { getInstanceCurrentPhase, isReviewPhase } from '@op/common/client';
 
 /**
- * What a viewer may see on a proposal, grouped by feature so later ones add a
- * sibling to `review` rather than a prefix. UX gating only — every query behind
- * these bits is still asserted server-side, so a `true` never grants anything.
+ * What the UI offers a viewer on a proposal, grouped by feature so later ones
+ * add a sibling to `review` rather than a prefix. UX gating only — every query
+ * behind these bits is still asserted server-side, so a `true` never grants
+ * anything.
  */
-export interface ProposalVisibility {
+export interface ProposalAffordances {
   review: {
     feedback: boolean;
-    /** Mid-phase affordance; the feedback panel carries the history afterwards. */
+    /** Mid-phase only; the feedback panel carries the history afterwards. */
     revisions: boolean;
   };
 }
 
-export const NO_PROPOSAL_VISIBILITY: ProposalVisibility = {
+export const NO_PROPOSAL_AFFORDANCES: ProposalAffordances = {
   review: { feedback: false, revisions: false },
 };
 
@@ -21,7 +22,7 @@ type ProposalReviewPhase = { phaseId: string } & Parameters<
   typeof isReviewPhase
 >[0];
 
-export function getProposalVisibility({
+export function getProposalAffordances({
   instance,
   proposal,
   user,
@@ -31,7 +32,7 @@ export function getProposalVisibility({
   >[0] & { access?: { admin?: boolean; review?: boolean } | null };
   proposal: { submittedBy?: { id: string } | null };
   user: { currentProfile?: { id: string } | null } | null | undefined;
-}): ProposalVisibility {
+}): ProposalAffordances {
   const currentProfileId = user?.currentProfile?.id;
   const feedback =
     (!!currentProfileId && proposal.submittedBy?.id === currentProfileId) ||

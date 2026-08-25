@@ -27,7 +27,7 @@ import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
-import type { ProposalVisibility } from './getProposalVisibility';
+import type { ProposalAffordances } from './getProposalAffordances';
 import {
   proposalEditorReviewRevisionParser,
   proposalFeedbackPanelParser,
@@ -48,13 +48,13 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
-  visibility,
+  affordances,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
-  /** What this viewer may see here — see `getProposalVisibility`. */
-  visibility: ProposalVisibility;
+  /** What this viewer may see here — see `getProposalAffordances`. */
+  affordances: ProposalAffordances;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -146,7 +146,7 @@ export function ProposalView({
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
       {
-        enabled: visibility.review.revisions,
+        enabled: affordances.review.revisions,
         throwOnError: false,
         retry: false,
       },
@@ -168,7 +168,7 @@ export function ProposalView({
   // after the review phase ends, which is when `revisions` goes false.
   const { notes, revisionHistory, hasFeedback } = useProposalFeedback({
     proposalId: currentProposal.id,
-    enabled: visibility.review.feedback,
+    enabled: affordances.review.feedback,
   });
 
   const toggleFeedbackPanel = useCallback(() => {
@@ -290,7 +290,7 @@ export function ProposalView({
         />
       }
       // One disclosure for both panes: mid-phase it opens the submitted
-      // revision, and the feedback panel once `visibility.review.revisions` is false.
+      // revision, and the feedback panel once `affordances.review.revisions` is false.
       feedbackToggle={
         firstRevisionRequestId
           ? {
