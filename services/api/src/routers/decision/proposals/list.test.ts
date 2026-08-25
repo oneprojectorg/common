@@ -420,6 +420,47 @@ describe.concurrent('listProposals', () => {
     expect(rejected?.status).toBe(ProposalStatus.REJECTED);
   });
 
+  it('restores a rejected proposal to the active pool on undo', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [proposal, adminCaller, memberUser] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    await adminCaller.decision.submitProposal({ proposalId: proposal.id });
+    await adminCaller.decision.rejectProposal({ proposalId: proposal.id });
+    await adminCaller.decision.unrejectProposal({ proposalId: proposal.id });
+
+    // Back to SUBMITTED, so a non-admin sees it in the list again.
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(proposal.id);
+    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
   it('should show hidden proposals to their owners', async ({
     task,
     onTestFinished,

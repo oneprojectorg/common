@@ -21,6 +21,7 @@ import { RejectProposalDialog } from './RejectProposalDialog';
 import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
 import { buildRejectMenuItem } from './proposals/reject';
 import { useProposalModerationActions } from './useProposalModerationActions';
+import { useProposalRejectionActions } from './useProposalRejectionActions';
 
 /**
  * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide
@@ -84,9 +85,11 @@ function ProposalAdminMenuItems({
   });
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
-  // The parent gate already requires admin + non-draft; only hide once rejected.
-  const canReject =
-    rejectEnabled && proposal.status !== ProposalStatus.REJECTED;
+  // The parent gate already requires admin + non-draft, so the slot always
+  // shows; it just toggles to Undo once rejected.
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
+  const { reject, unreject, isRejecting, isUnrejecting } =
+    useProposalRejectionActions(proposal);
 
   // A superseded proposal leaves every listing, so its own page is the only
   // surface that can offer the undo. Gated with the item it feeds.
@@ -127,11 +130,18 @@ function ProposalAdminMenuItems({
       })
     : null;
 
-  const rejectItem = canReject
+  const rejectItem = rejectEnabled
     ? buildRejectMenuItem({
-        isDisabled: isLoading || unmergeMutation.isPending,
-        label: t('Reject proposal'),
+        isDisabled:
+          isLoading ||
+          unmergeMutation.isPending ||
+          isRejecting ||
+          isUnrejecting,
+        isRejected,
+        rejectLabel: t('Reject proposal'),
+        undoLabel: t('Undo rejection'),
         onReject: () => setIsRejectModalOpen(true),
+        onUndo: unreject,
       })
     : null;
 
@@ -178,11 +188,14 @@ function ProposalAdminMenuItems({
           onOpenChange={setIsMergeModalOpen}
         />
       ) : null}
-      {canReject ? (
+      {rejectEnabled && !isRejected ? (
         <RejectProposalDialog
-          proposalId={proposal.id}
           open={isRejectModalOpen}
           onOpenChange={setIsRejectModalOpen}
+          isPending={isRejecting}
+          onConfirm={() =>
+            reject({ onSuccess: () => setIsRejectModalOpen(false) })
+          }
         />
       ) : null}
     </ProposalOptionsMenu>

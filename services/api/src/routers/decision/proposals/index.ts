@@ -18,6 +18,7 @@ import { rejectProposalRouter } from './reject';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
 import { unmergeProposalRouter } from './unmergeProposal';
+import { unrejectProposalRouter } from './unreject';
 import { updateProposalRouter } from './update';
 
 export const proposalsRouter = mergeRouters(
@@ -35,6 +36,7 @@ export const proposalsRouter = mergeRouters(
   listWithReviewAggregatesRouter,
   mergeProposalsRouter,
   rejectProposalRouter,
+  unrejectProposalRouter,
   unmergeProposalRouter,
   submitProposalRouter,
   updateProposalRouter,
