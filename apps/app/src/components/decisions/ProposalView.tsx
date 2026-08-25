@@ -145,11 +145,7 @@ export function ProposalView({
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      {
-        enabled: affordances.review.revisions,
-        throwOnError: false,
-        retry: false,
-      },
+      { enabled: affordances.review.revisions, throwOnError: false },
     );
 
   const submittedRevisions = revisionError
