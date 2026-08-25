@@ -10,19 +10,14 @@ import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 import { type AccessUser, resolveAccessUserIds } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 
-/** The caller standing `isProposalReadable` resolves its exceptions against. */
 export type ProposalReadContext = {
-  /** The caller's own auth id unioned with the public one — `resolveAccessUserIds`. */
+  /** The caller's own auth id unioned with the public one. */
   accessUserIds: string[];
-  /** `{ profile: ADMIN }` on the decision's profile. */
+  /** `{ profile: ADMIN }` on the *decision's* profile. */
   isInstanceAdmin: boolean;
 };
 
-/**
- * Resolves that standing from what a caller already has in hand: the user, and
- * the roles their decision-profile access assert returned. Nothing is read
- * here — the exceptions are evaluated in SQL by `isProposalReadable`.
- */
+/** Builds the context from the roles the caller's access assert returned. */
 export const getProposalReadContext = ({
   user,
   decisionRoles,
@@ -37,11 +32,10 @@ export const getProposalReadContext = ({
   ),
 });
 
-/** Gone for everyone, admins included: soft-deleted, or detached for moderation. */
+/** Gone for everyone, admins included — no exception reaches these. */
 const isPresent = (t: typeof proposals): SQL =>
   and(isNull(t.deletedAt), isNull(t.moderationDetachedAt))!;
 
-/** Submitted, visible and unflagged — readable without any access exception. */
 const isUnrestricted = (t: typeof proposals): SQL =>
   and(
     ne(t.status, ProposalStatus.DRAFT),
@@ -51,11 +45,9 @@ const isUnrestricted = (t: typeof proposals): SQL =>
 
 /**
  * Members of the proposal's *own* profile: its author plus invited
- * collaborators.
- *
- * INVARIANT, shared with `resolveProposalListScope`: public grants
- * (`GLOBAL_USER_PUBLIC`) belong on the decision's profile and never on an
- * individual proposal's, or this would hand every caller's drafts and hidden
+ * collaborators. INVARIANT, shared with `resolveProposalListScope`: public
+ * grants (`GLOBAL_USER_PUBLIC`) belong on the decision's profile and never on
+ * an individual proposal's, or this hands every caller's drafts and hidden
  * proposals to the public.
  */
 const isProposalProfileMember = (
@@ -71,21 +63,12 @@ const isProposalProfileMember = (
   );
 
 /**
- * `getProposal`'s gate expressed in SQL: the visibility floor plus the two
- * exceptions that reach past it — proposal-level access (author + invited
- * collaborators) sees its own drafts, hidden and flagged proposals, and an
- * instance admin sees every one of those but a draft.
- *
- * Read access to a decision doesn't imply read access to every proposal in it,
- * so any list that surfaces a proposal it didn't reach through
- * `resolveProposalListScope` applies this to *every* row it returns —
- * including the one the caller named. Matching `getProposal` is what keeps a
- * page and the panels on it agreeing: a proposal an admin can open must not
- * 404 the reads its own page issues.
+ * `getProposal`'s gate expressed in SQL. Apply it to *every* row a list
+ * returns, including the one the caller named: matching `getProposal` is what
+ * stops a proposal an admin can open from 404ing the reads its own page makes.
  *
  * Pass the *aliased* table of the query being built (e.g. the `table` from a
- * relational `RAW` callback) so the moderation and membership subqueries
- * correlate correctly.
+ * relational `RAW` callback) so the subqueries correlate correctly.
  */
 export const isProposalReadable = (
   t: typeof proposals,
@@ -96,8 +79,7 @@ export const isProposalReadable = (
     or(
       isUnrestricted(t),
       isProposalProfileMember(t, accessUserIds),
-      // Drafts are for their own authors only — an admin reading someone's
-      // unsubmitted work is the one exception `getProposal` withholds.
+      // Someone else's draft is the one thing `getProposal` withholds from an admin.
       isInstanceAdmin ? ne(t.status, ProposalStatus.DRAFT) : undefined,
     )!,
   )!;

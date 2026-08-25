@@ -83,11 +83,8 @@ export function useProposalCardData(proposal: Proposal) {
 
 /**
  * Proposal status/visibility surfaced as the composite's `headerBadge`.
- *
  * `scope="restriction"` keeps only the states that say who can see the
- * proposal at all and drops the candidacy ones — for surfaces where the
- * candidacy no longer applies but a proposal most of the decision can't see
- * still has to say so.
+ * proposal at all, dropping the candidacy ones.
  */
 export const ProposalStatusBadge = ({
   proposal,
@@ -157,9 +154,8 @@ export interface ProposalCardViewProps extends Omit<
   /** Render the "Revision requested" badge instead of the status badge. */
   revisionRequested?: boolean;
   /**
-   * Which header badge sits above the title: every applicable state (`'all'`),
-   * only the restricted-visibility ones — Draft / Flagged / Hidden —
-   * (`'restriction'`), or none at all.
+   * Header badge above the title: every applicable state, only the
+   * restricted-visibility ones (Draft / Flagged / Hidden), or nothing.
    */
   badge?: 'all' | 'restriction' | 'none';
   /** Selected treatment (teal border + title) for vote/selection phases. */

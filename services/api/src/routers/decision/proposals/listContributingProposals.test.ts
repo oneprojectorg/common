@@ -212,8 +212,8 @@ describe.concurrent('listContributingProposals', () => {
     const { setup, instanceId, source, caller } =
       await createMergeableProposals(testData);
 
-    // Authored by a member so the admin reaches it through the instance-admin
-    // exception rather than through proposal-level access.
+    // Authored by a member, so the admin's access is the instance-admin
+    // exception rather than proposal-level access.
     const submitter = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [setup.instance.profileId],
@@ -235,8 +235,6 @@ describe.concurrent('listContributingProposals', () => {
       .set({ visibility: Visibility.HIDDEN })
       .where(eq(proposals.id, target.id));
 
-    // The admin can open this proposal's page, so the section on it has to
-    // load rather than take the whole read down with a 404.
     const result = await caller.decision.listContributingProposals({
       proposalId: target.id,
     });
@@ -254,7 +252,7 @@ describe.concurrent('listContributingProposals', () => {
     const { setup, instanceId, target, caller } =
       await createMergeableProposals(testData);
 
-    // Authored by one member and read by another, so neither caller reaches it
+    // Authored by one member and read by another, so neither reaches it
     // through proposal-level access.
     const [submitter, member] = await Promise.all([
       testData.createMemberUser({
@@ -292,8 +290,6 @@ describe.concurrent('listContributingProposals', () => {
       }),
     ]);
 
-    // Same split `listProposals` makes: hidden from the decision at large,
-    // still there for the admins who hid it.
     expect(adminResult.proposals.map((proposal) => proposal.id)).toEqual([
       source.id,
     ]);

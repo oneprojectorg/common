@@ -448,8 +448,8 @@ describe.concurrent('moderation read visibility', () => {
         }),
       ]);
 
-      // VISIBLE on both ends, as in the test above: this isolates the
-      // moderation gate from the hidden-by-default visibility gate.
+      // VISIBLE on both ends isolates the moderation gate from the
+      // hidden-by-default visibility gate.
       await db
         .update(proposals)
         .set({ visibility: Visibility.VISIBLE })
@@ -462,8 +462,6 @@ describe.concurrent('moderation read visibility', () => {
 
       await flagItem(onTestFinished, ModerationItemType.PROPOSAL, survivor.id);
 
-      // A flagged proposal keeps its page for its author and for admins, so
-      // the section on that page has to load rather than 404 the whole read.
       const submitterCaller = await createAuthenticatedCaller(submitter.email);
       const [authorView, adminView] = await Promise.all([
         submitterCaller.decision.listContributingProposals({
@@ -476,7 +474,6 @@ describe.concurrent('moderation read visibility', () => {
       expect(authorView.proposals.map((p) => p.id)).toEqual([contributing.id]);
       expect(adminView.proposals.map((p) => p.id)).toEqual([contributing.id]);
 
-      // Everyone else loses the page and the section with it.
       const otherCaller = await createAuthenticatedCaller(otherMember.email);
       await expect(
         otherCaller.decision.listContributingProposals({
@@ -537,8 +534,8 @@ describe.concurrent('moderation read visibility', () => {
         contributing.id,
       );
 
-      // Without the indicator the card would read as an ordinary contributing
-      // idea, since the section suppresses the candidacy badges.
+      // The section suppresses the candidacy badges, so without this the
+      // card would read as an ordinary contributing idea.
       const adminView = await adminCaller.decision.listContributingProposals({
         proposalId: survivor.id,
       });
@@ -546,7 +543,6 @@ describe.concurrent('moderation read visibility', () => {
         { id: contributing.id, isFlagged: true },
       ]);
 
-      // The far end drops out entirely for everyone else.
       const otherCaller = await createAuthenticatedCaller(otherMember.email);
       const otherView = await otherCaller.decision.listContributingProposals({
         proposalId: survivor.id,

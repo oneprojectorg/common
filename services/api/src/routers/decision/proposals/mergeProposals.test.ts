@@ -752,8 +752,8 @@ describe.concurrent('listProposalRelationships', () => {
     const { setup, instanceId, target, caller } =
       await createMergeableProposals(testData);
 
-    // Authored by a member so the admin reaches it through the instance-admin
-    // exception rather than through proposal-level access.
+    // Authored by a member, so the admin's access is the instance-admin
+    // exception rather than proposal-level access.
     const submitter = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [setup.instance.profileId],
@@ -770,8 +770,6 @@ describe.concurrent('listProposalRelationships', () => {
       targetProposalId: target.id,
     });
 
-    // The mirror of the member case above: an instance admin opens a hidden
-    // proposal through `getProposal`, so the link to it stays visible here.
     await db
       .update(proposals)
       .set({ visibility: Visibility.HIDDEN })
@@ -794,8 +792,8 @@ describe.concurrent('listProposalRelationships', () => {
     const { setup, instanceId, source, caller } =
       await createMergeableProposals(testData);
 
-    // Authored by a member, so the admin reaches it through the instance-admin
-    // exception and the author through proposal-level access.
+    // Authored by a member, so one caller reaches it through the
+    // instance-admin exception and the other through proposal-level access.
     const submitter = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [setup.instance.profileId],
@@ -817,8 +815,6 @@ describe.concurrent('listProposalRelationships', () => {
       .set({ visibility: Visibility.HIDDEN })
       .where(eq(proposals.id, target.id));
 
-    // Both can open this proposal's page, so the "Merged into …" notice and the
-    // contributing ideas on it have to load rather than 404.
     const submitterCaller = await createAuthenticatedCaller(submitter.email);
     const [adminResult, authorResult] = await Promise.all([
       caller.decision.listProposalRelationships({

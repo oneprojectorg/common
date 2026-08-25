@@ -57,8 +57,7 @@ export async function listProposalRelationships({
   // Profile-level grants only, matching `listContributingProposals`. No org
   // fallback: only legacy processes relied on it and those are all complete,
   // so none of them can gain a merge. `ADMIN` isn't listed alongside `READ`
-  // because the seeded decisions Admin role already carries `read`. Awaited
-  // before the reads below, which need the roles it resolves.
+  // because the seeded decisions Admin role already carries `read`.
   const decisionRoles = await assertProfileAccess({
     user,
     profileId: proposal.instance.profileId,

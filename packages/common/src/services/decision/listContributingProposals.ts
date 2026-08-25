@@ -45,8 +45,7 @@ export async function listContributingProposals({
 
   // Profile-level grants only — no org fallback, matching `mergeProposals`.
   // `ADMIN` isn't listed alongside `READ` because the seeded decisions Admin
-  // role already carries `read`, so it would never admit anyone extra. Awaited
-  // before the reads below, which need the roles it resolves.
+  // role already carries `read`, so it would never admit anyone extra.
   const decisionRoles = await assertProfileAccess({
     user,
     profileId: proposal.instance.profileId,
@@ -145,9 +144,8 @@ export async function listContributingProposals({
       // A single unavailable document must not empty the whole section.
       { onFetchError: 'omit' },
     ),
-    // Flagged contributing ideas reach this point only for their own authors
-    // or an admin — decorate them so the card can say so, the same way
-    // `listProposals` does.
+    // A flagged idea reaches this point only for its authors or an admin —
+    // decorate it so the card can say so, as `listProposals` does.
     getActivelyFlaggedItemIds(
       'proposal',
       rows.map((row) => row.id),
