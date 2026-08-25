@@ -32,6 +32,7 @@ import {
   proposalEditorReviewRevisionParser,
   proposalFeedbackPanelParser,
 } from './proposalEditor/proposalEditorAsideParams';
+import { useProposalFeedback } from './useProposalFeedback';
 import { useTranslateProposal } from './useTranslateProposal';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
@@ -159,32 +160,12 @@ export function ProposalView({
         ?.revisionRequest ?? null)
     : null;
 
-  // Gated on `feedback`, not `revisions`: the panel carries the history after
-  // the review phase ends, which is exactly when `revisions` goes false. Same
-  // procedure as the query above — they differ by the `states` filter.
-  const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
-    t.decision.listProposalFeedback(
-      { proposalId: currentProposal.id },
-      { enabled: visibility.feedback, throwOnError: false, retry: false },
-    ),
-    t.decision.listProposalRevisionRequests(
-      { proposalId: currentProposal.id },
-      { enabled: visibility.feedback, throwOnError: false, retry: false },
-    ),
-  ]);
-
-  const feedbackItems = feedbackQuery.error
-    ? []
-    : (feedbackQuery.data?.items ?? []);
-
-  const feedbackRevisionRequests = allRevisionQuery.error
-    ? []
-    : (allRevisionQuery.data?.revisionRequests ?? []).map(
-        (item) => item.revisionRequest,
-      );
-
-  const hasFeedback =
-    feedbackItems.length > 0 || feedbackRevisionRequests.length > 0;
+  // `feedback`, not `revisions`: this is the history the panel keeps showing
+  // after the review phase ends, which is when `revisions` goes false.
+  const { notes, revisionHistory, hasFeedback } = useProposalFeedback({
+    proposalId: currentProposal.id,
+    enabled: visibility.feedback,
+  });
 
   const toggleFeedbackPanel = useCallback(() => {
     void setQueryState(
@@ -272,8 +253,8 @@ export function ProposalView({
             label: t('Feedback'),
             content: (
               <ProposalFeedbackPanel
-                feedbackItems={feedbackItems}
-                revisionRequests={feedbackRevisionRequests}
+                feedbackItems={notes}
+                revisionRequests={revisionHistory}
                 title={t('Feedback')}
                 subtitle={t(
                   'Notes reviewers shared while this proposal was under review',
