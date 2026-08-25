@@ -40,30 +40,23 @@ export const RejectProposalDialog = ({
   const t = useTranslations();
 
   // No invalidation needed: the endpoint registers the affected proposal channels.
+  // On error the dialog stays open (only onSuccess closes it) so the user can retry.
   const rejectMutation = trpc.decision.rejectProposal.useMutation({
+    onSuccess: () => {
+      toast.success(t('Proposal rejected'));
+      onOpenChange(false);
+      onRejected?.();
+    },
     onError: (error) => {
+      logger.error('Failed to reject proposal', {
+        error,
+        context: 'RejectProposalDialog',
+      });
       toast.error(
         error.message || t('Could not reject this proposal. Please try again.'),
       );
     },
   });
-
-  const handleReject = async () => {
-    try {
-      await rejectMutation.mutateAsync(
-        { proposalId },
-        { onSuccess: () => toast.success(t('Proposal rejected')) },
-      );
-      onOpenChange(false);
-      onRejected?.();
-    } catch (error) {
-      // Error already surfaced via onError; keep the dialog open for a retry.
-      logger.error('Failed to reject proposal', {
-        error,
-        context: 'RejectProposalDialog',
-      });
-    }
-  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -80,7 +73,7 @@ export const RejectProposalDialog = ({
           <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            onClick={handleReject}
+            onClick={() => rejectMutation.mutate({ proposalId })}
             disabled={rejectMutation.isPending}
           >
             {rejectMutation.isPending

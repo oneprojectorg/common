@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { ProcessStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
@@ -11,6 +11,7 @@ import {
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
+import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 
 export interface BackfillReviewAssignmentsInput {
   instanceId: string;
@@ -103,7 +104,7 @@ export async function backfillReviewAssignments({
         transitionHistoryId: inboundTransition.id,
         proposal: {
           // Rejected proposals leave the review universe, like drafts.
-          status: { notIn: [ProposalStatus.DRAFT, ProposalStatus.REJECTED] },
+          status: { notIn: PIPELINE_INELIGIBLE_STATUSES },
           deletedAt: { isNull: true },
           moderationDetachedAt: { isNull: true },
         },

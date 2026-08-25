@@ -25,7 +25,12 @@ export async function rejectProposal({
   proposalId,
   user,
 }: RejectProposalInput & { user: User }): Promise<RejectProposalResult> {
-  const context = await getProposalAccessContext(proposalId);
+  // The caller lookup only needs `user.id`, so it runs alongside the context
+  // read rather than behind the access check.
+  const [context, dbUser] = await Promise.all([
+    getProposalAccessContext(proposalId),
+    assertUserByAuthId(user.id),
+  ]);
 
   await assertProfileAccess({
     user,
@@ -37,7 +42,6 @@ export async function rejectProposal({
     throw new ValidationError('A draft proposal cannot be rejected');
   }
 
-  const dbUser = await assertUserByAuthId(user.id);
   if (!dbUser.profileId) {
     throw new UnauthorizedError('User must have an active profile');
   }

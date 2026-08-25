@@ -10,7 +10,7 @@ import {
   inArray,
   isNull,
   lt,
-  ne,
+  notInArray,
   or,
   sql,
 } from '@op/db/client';
@@ -26,6 +26,7 @@ import {
 
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { notSuperseded } from './proposalSupersession';
+import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 
 /**
  * Excludes drafts (never in a phase), rejected proposals, and superseded
@@ -37,8 +38,7 @@ import { notSuperseded } from './proposalSupersession';
  */
 const phaseEligiblePredicate = (t: typeof proposals): SQL =>
   and(
-    ne(t.status, ProposalStatus.DRAFT),
-    ne(t.status, ProposalStatus.REJECTED),
+    notInArray(t.status, PIPELINE_INELIGIBLE_STATUSES),
     notSuperseded({
       proposalId: t.id,
       processInstanceId: t.processInstanceId,
