@@ -15,7 +15,7 @@ import { CommonError, ValidationError } from '../../utils';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
 import {
-  assertAssignmentPhaseIsCurrent,
+  assertReviewAssignmentPhaseIsCurrent,
   assertReviewAssignmentContext,
 } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
@@ -47,9 +47,11 @@ export async function submitReview({
 
   // Assignments outlive a phase advance, so a leftover assignment from an
   // earlier phase must not accept a first write either.
-  await assertAssignmentPhaseIsCurrent({
+  await assertReviewAssignmentPhaseIsCurrent({
     assignment: context.assignment,
-    action: 'submitted',
+    error: new ValidationError(
+      'This review can no longer be submitted because the review phase has ended',
+    ),
   });
 
   if (!context.rubricTemplate) {

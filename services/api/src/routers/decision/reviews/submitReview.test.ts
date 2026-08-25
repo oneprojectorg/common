@@ -59,29 +59,18 @@ const singleSelectRubricTemplate: RubricTemplateSchema = {
   required: ['department'],
 };
 
-/** Assignments default to the `'review'` phase (see `createReviewAssignment`). */
-const REVIEW_PHASE = 'review';
-
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Creates an assignment, sets its rubric, and moves the instance onto the
- * assignment's phase — the state a reviewer actually submits in. Review writes
- * are rejected once that phase is no longer the instance's current phase.
- */
-async function createAssignmentInReviewPhase(
+/** Creates an assignment (in its current phase) with the rubric set. */
+async function createAssignmentWithRubric(
   testData: TestReviewsDataManager,
   rubric: RubricTemplateSchema = rubricTemplate,
 ) {
   const created = await testData.createReviewAssignment();
   await testData.setRubricTemplate(created.context, rubric);
-  await testData.setCurrentPhase(
-    created.context.instance.instance.id,
-    REVIEW_PHASE,
-  );
   return created;
 }
 
@@ -91,7 +80,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -133,7 +122,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -156,7 +145,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(
+    const created = await createAssignmentWithRubric(
       testData,
       singleSelectRubricTemplate,
     );
@@ -181,7 +170,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(
+    const created = await createAssignmentWithRubric(
       testData,
       singleSelectRubricTemplate,
     );
@@ -210,7 +199,7 @@ describe.concurrent('submitReview', () => {
     // keeps its original array shape since only the validation copy is
     // coerced.
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(
+    const created = await createAssignmentWithRubric(
       testData,
       singleSelectRubricTemplate,
     );
@@ -235,15 +224,8 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
-
-    // Advance the instance into the assignment's phase, as a real process does
-    // before its reviewers are let in.
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      REVIEW_PHASE,
-    );
+    // createReviewAssignment leaves the instance on the assignment's phase.
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -262,7 +244,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     // Assignments survive a phase advance, so a never-submitted assignment
     // from an earlier phase is still loadable — it just can't be written.
@@ -298,7 +280,7 @@ describe.concurrent('submitReview', () => {
 
   it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,

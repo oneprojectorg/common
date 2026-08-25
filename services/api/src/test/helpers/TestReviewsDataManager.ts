@@ -372,6 +372,14 @@ export class TestReviewsDataManager {
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
 
+    // Review writes and the revision cycle only run while the assignment's
+    // phase is current, so start there; tests exercising a stale assignment
+    // advance the instance afterwards with setCurrentPhase.
+    await this.setCurrentPhase(
+      context.instance.instance.id,
+      opts.phaseId ?? 'review',
+    );
+
     return {
       context,
       assignment: {

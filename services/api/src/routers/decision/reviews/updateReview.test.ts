@@ -46,20 +46,10 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Submits a valid review with the instance on the assignment's phase — the only
- * phase a review can be written in — and leaves it there, so the submitted
- * review stays editable. Returns the reviewer caller + ids.
- */
+/** Submits a valid review (writable — the fixture leaves the instance on the assignment's phase). */
 async function submitEditableReview(testData: TestReviewsDataManager) {
   const created = await testData.createReviewAssignment();
   await testData.setRubricTemplate(created.context, rubricTemplate);
-  // Assignments default to phase 'review'; the instance starts on the first
-  // phase ('submission'), so stamp the current phase to allow the write.
-  await testData.setCurrentPhase(
-    created.context.instance.instance.id,
-    'review',
-  );
 
   const reviewerCaller = await createAuthenticatedCaller(
     created.reviewer.email,
@@ -126,10 +116,6 @@ describe.concurrent('updateReview', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment();
     await testData.setRubricTemplate(created.context, rubricTemplate);
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      'review',
-    );
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,

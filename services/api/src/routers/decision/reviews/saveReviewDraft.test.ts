@@ -41,29 +41,18 @@ const rubricTemplate: RubricTemplateSchema = {
   required: ['impact'],
 };
 
-/** Assignments default to the `'review'` phase (see `createReviewAssignment`). */
-const REVIEW_PHASE = 'review';
-
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Creates an assignment, sets its rubric, and moves the instance onto the
- * assignment's phase — the state a reviewer actually drafts in. Review writes
- * are rejected once that phase is no longer the instance's current phase.
- */
-async function createAssignmentInReviewPhase(
+/** Creates an assignment (in its current phase) with the rubric set. */
+async function createAssignmentWithRubric(
   testData: TestReviewsDataManager,
   opts: { status?: ProposalReviewAssignmentStatus } = {},
 ) {
   const created = await testData.createReviewAssignment(opts);
   await testData.setRubricTemplate(created.context, rubricTemplate);
-  await testData.setCurrentPhase(
-    created.context.instance.instance.id,
-    REVIEW_PHASE,
-  );
   return created;
 }
 
@@ -73,7 +62,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -111,7 +100,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -153,7 +142,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -194,7 +183,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
     const otherReviewer = await testData.createReviewer(created.context);
 
     const otherCaller = await createAuthenticatedCaller(otherReviewer.email);
@@ -217,7 +206,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -242,7 +231,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -284,7 +273,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData);
+    const created = await createAssignmentWithRubric(testData);
 
     // Assignments survive a phase advance, so the leftover assignment still
     // loads — but a first draft must not be written against a closed phase.
@@ -321,7 +310,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentInReviewPhase(testData, {
+    const created = await createAssignmentWithRubric(testData, {
       status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     });
 

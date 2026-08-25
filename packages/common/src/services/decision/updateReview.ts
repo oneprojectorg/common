@@ -8,7 +8,7 @@ import type { User } from '@op/supabase/lib';
 
 import { ValidationError } from '../../utils';
 import {
-  assertAssignmentPhaseIsCurrent,
+  assertReviewAssignmentPhaseIsCurrent,
   assertReviewAssignmentContext,
 } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
@@ -40,9 +40,11 @@ export async function updateReview({
     throw new ValidationError('Review has not been submitted yet');
   }
 
-  await assertAssignmentPhaseIsCurrent({
+  await assertReviewAssignmentPhaseIsCurrent({
     assignment: context.assignment,
-    action: 'edited',
+    error: new ValidationError(
+      'This review can no longer be edited because the review phase has ended',
+    ),
   });
 
   if (!context.rubricTemplate) {

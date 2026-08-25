@@ -256,6 +256,9 @@ describe.concurrent('per-phase rubric templates', () => {
       title: 'Phase-scoped rubric aggregates',
       phaseId: FEASIBILITY_PHASE,
     });
+    // createReviewAssignment stamped feasibility as current; this test reads
+    // the feasibility reviews as a PAST phase, with community current.
+    await testData.setCurrentPhase(instanceId, COMMUNITY_PHASE);
     await createProposalReview({
       assignmentId: feasibilityScenario.assignment.id,
       state: ProposalReviewState.SUBMITTED,

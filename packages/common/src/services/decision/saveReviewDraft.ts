@@ -13,7 +13,7 @@ import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
 import {
-  assertAssignmentPhaseIsCurrent,
+  assertReviewAssignmentPhaseIsCurrent,
   assertReviewAssignmentContext,
 } from './reviewHelpers';
 import type { RubricReviewData } from './schemas/reviews';
@@ -49,9 +49,11 @@ export async function saveReviewDraft({
 
   // Assignments outlive a phase advance, so a leftover assignment from an
   // earlier phase must not accept a first write either.
-  await assertAssignmentPhaseIsCurrent({
+  await assertReviewAssignmentPhaseIsCurrent({
     assignment: context.assignment,
-    action: 'saved',
+    error: new ValidationError(
+      'This review can no longer be saved because the review phase has ended',
+    ),
   });
 
   if (!context.rubricTemplate) {

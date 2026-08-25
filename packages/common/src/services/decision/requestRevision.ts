@@ -13,7 +13,7 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
 import {
-  assertAssignmentPhaseIsCurrent,
+  assertReviewAssignmentPhaseIsCurrent,
   assertReviewAssignmentContext,
 } from './reviewHelpers';
 
@@ -47,10 +47,11 @@ export async function requestRevision({
   }
 
   // A past-phase request would open a revision cycle nobody may complete.
-  await assertAssignmentPhaseIsCurrent({
+  await assertReviewAssignmentPhaseIsCurrent({
     assignment: context.assignment,
-    action: 'requested',
-    subject: 'A revision',
+    error: new ValidationError(
+      'A revision can no longer be requested because the review phase has ended',
+    ),
   });
 
   const request = await db.transaction(async (tx) => {

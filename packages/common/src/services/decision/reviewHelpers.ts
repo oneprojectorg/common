@@ -187,14 +187,12 @@ export function assertCanReadPhaseReviews(
  * an advance. Applies to admins too — the phase, not the caller, is what
  * closed.
  */
-export async function assertAssignmentPhaseIsCurrent({
+export async function assertReviewAssignmentPhaseIsCurrent({
   assignment,
-  action,
-  subject = 'This review',
+  error,
 }: {
   assignment: { processInstanceId: string; phaseId: string };
-  action: 'edited' | 'submitted' | 'saved' | 'requested' | 'resubmitted';
-  subject?: 'This review' | 'This proposal' | 'A revision';
+  error: Error;
 }): Promise<void> {
   const liveInstance = await db.query.processInstances.findFirst({
     where: { id: assignment.processInstanceId },
@@ -207,9 +205,7 @@ export async function assertAssignmentPhaseIsCurrent({
       assignment.phaseId,
     )
   ) {
-    throw new ValidationError(
-      `${subject} can no longer be ${action} because the review phase has ended`,
-    );
+    throw error;
   }
 }
 
