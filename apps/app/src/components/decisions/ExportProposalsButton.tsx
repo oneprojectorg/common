@@ -11,6 +11,9 @@ import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
+import { resolveExportRetryOutcome } from './exportRetry';
 import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
 export interface ExportProposalsButtonProps {
@@ -27,7 +30,8 @@ export interface ExportProposalsButtonProps {
 }
 
 /**
- * Admin-only CSV export of every non-draft proposal in the current phase.
+ * React component for the admin-only CSV export of every non-draft proposal in
+ * the current phase. This is the entry point the decision pages render.
  *
  * It does not follow the list's filters. An export that inherited them produced
  * a different file from the same button, based on state the CSV cannot show.
@@ -55,6 +59,10 @@ export interface ExportProposalsButtonProps {
  * could usefully decide anything here, because the guarded failure is internal
  * to the wait. A caller that forgot the wrapper would get the misreport
  * described on the status query below.
+ *
+ * @param props - See {@link ExportProposalsButtonProps}. Passed through to
+ *   {@link ExportProposalsButtonContent}, which holds the run's state, so a
+ *   boundary reset remounts it at idle.
  */
 export const ExportProposalsButton = (props: ExportProposalsButtonProps) => (
   <APIErrorBoundary fallbacks={statusUnreadableFallbacks}>
@@ -83,7 +91,8 @@ const statusUnreadableFallbacks = {
 };
 
 /**
- * Shown when the export's status cannot be read at all.
+ * React component for the error-boundary fallback, shown when the export's
+ * status cannot be read at all.
  *
  * Not phrased as a failure. `failed` and the timeout are outcomes the run
  * reported. This is the absence of one.
@@ -97,6 +106,10 @@ const statusUnreadableFallbacks = {
  *
  * Export state is cache-only with no history, so a file the run goes on to write
  * is unreachable. That cost is real, and the timeout path already pays it.
+ *
+ * @param error - What the status query escalated. Logged, not shown: it names a
+ *   cause the admin cannot act on.
+ * @param onRetry - Resets the error boundary, which remounts the button at idle.
  */
 const ExportStatusUnreadable = ({
   error,
@@ -124,6 +137,129 @@ const ExportStatusUnreadable = ({
   );
 };
 
+/**
+ * React component for the settled state of an export: the download link, or a
+ * retry control when the server could not sign a URL.
+ *
+ * {@link ExportProposalsButtonContent} renders this once the status query
+ * reports `completed`, and `signedUrl` alone decides which of the two controls
+ * appears. Both render behind one polite live region, because an export settles
+ * without a navigation and settling swaps the control for a different element.
+ *
+ * The download is a `ButtonLink` rather than a button with a click handler, so
+ * the browser owns the transfer and a screen reader announces a link. Taking it
+ * calls `onTaken`, which retires the export id: one file per run.
+ *
+ * A completed export with no URL is a real state, not a defect. The run
+ * succeeded and the object remains in the bucket, and only the signature is
+ * missing, so the server reports a completed export without a URL instead of a
+ * failure. Re-reading the record is the whole recovery, which is what `onRetry`
+ * does. A fall through to the idle button would leave the admin with no download
+ * and no stated reason.
+ *
+ * @param signedUrl - Signed download URL from the record. Absent when signing
+ *   failed, which is what selects the retry control.
+ * @param fileName - Name the browser saves the CSV under. These links are
+ *   cross-origin, so this only names the file; `exportDownloadOptions` on the
+ *   signed URL is what forces the save.
+ * @param isRetrying - A re-read is in flight. Disables the retry control and
+ *   swaps its label for "Preparing...".
+ * @param onRetry - Re-reads the export record. Runs on a retry click.
+ * @param onTaken - Retires the export id. Runs once the admin takes the
+ *   download.
+ */
+const CompletedExportAction = ({
+  signedUrl,
+  fileName,
+  isRetrying,
+  onRetry,
+  onTaken,
+}: {
+  signedUrl?: string;
+  fileName?: string;
+  isRetrying: boolean;
+  onRetry: () => void | Promise<void>;
+  onTaken: () => void;
+}) => {
+  const t = useTranslations();
+
+  // The export settles without a navigation. Settling also swaps this control
+  // for a different element, so a screen reader that follows the button gets no
+  // reason to look again. This region announces both settled states, so the two
+  // branches below do not each need one.
+  const settledAnnouncement = signedUrl
+    ? t('Export ready')
+    : t('Could not prepare the download. Please try again.');
+
+  const announcement = (
+    <span role="status" aria-live="polite" className="sr-only">
+      {settledAnnouncement}
+    </span>
+  );
+
+  if (!signedUrl) {
+    return (
+      <>
+        {announcement}
+        <Button
+          variant="outline"
+          onClick={() => {
+            void onRetry();
+          }}
+          disabled={isRetrying}
+          // The idle button below sets this for the same reason. A screen
+          // reader reports `disabled` on its own as "unavailable", and a retry
+          // in flight is not unavailable.
+          aria-busy={isRetrying}
+        >
+          <LuDownload aria-hidden />
+          {isRetrying ? t('Preparing...') : t('Retry download')}
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {announcement}
+      {/* A link, not a button: the browser owns the download. `ButtonLink`
+          carries the base-ui flags that keep it announced as a link. */}
+      <ButtonLink
+        variant="outline"
+        // Cross-origin, so `download` only names the file.
+        // `exportDownloadOptions` is what forces the save.
+        href={signedUrl}
+        download={fileName}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onTaken}
+      >
+        <LuDownload aria-hidden />
+        {t('Download CSV')}
+      </ButtonLink>
+    </>
+  );
+};
+
+/**
+ * React component holding everything about one export run: the mutation that
+ * starts it, the status query that follows it, the silence timeout that bounds
+ * it, and the control for each state.
+ *
+ * `exportId` is the state that drives all of it. Setting it enables the status
+ * query, and clearing it returns the button to idle. Because export state is
+ * cache-only, that id is the only handle on a finished run, so every path that
+ * clears it is deliberate: the admin took the download, the run failed, the wait
+ * timed out, or the record aged out of the cache.
+ *
+ * This sits behind {@link ExportProposalsButton}'s error boundary rather than
+ * being exported, so a reset remounts it and discards that state.
+ *
+ * @param processInstanceId - Decision instance whose current phase is exported.
+ * @param isEmpty - The phase holds no proposals, so the button stays disabled.
+ *   See {@link ExportProposalsButtonProps} for why this is not the filtered
+ *   count.
+ */
 const ExportProposalsButtonContent = ({
   processInstanceId,
   isEmpty = false,
@@ -147,7 +283,11 @@ const ExportProposalsButtonContent = ({
   // the job up and again when the run settles, and the subscriber re-reads once
   // the channel is live. That covers an export reaching either of those before
   // the socket join lands.
-  const { data: status } = trpc.decision.getExportStatus.useQuery(
+  const {
+    data: status,
+    refetch: refetchStatus,
+    isFetching: isFetchingStatus,
+  } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId ?? '' },
     {
       enabled: Boolean(exportId) && !hasTimedOut,
@@ -230,33 +370,39 @@ const ExportProposalsButtonContent = ({
     return () => clearTimeout(timer);
   }, [isRunning, reportedState, t]);
 
-  if (isResolved && status.signedUrl) {
+  // `throwOnError` above stops escalating once a record is `completed`. A
+  // failed retry therefore lands here instead of on the error boundary. This
+  // handler must report it, or the button looks like it did nothing.
+  const handleRetryDownload = async () => {
+    const { data, error } = await refetchStatus();
+    const outcome = resolveExportRetryOutcome({
+      errored: Boolean(error),
+      status: data?.status,
+      signedUrl: data && 'signedUrl' in data ? data.signedUrl : undefined,
+    });
+
+    if (outcome === 'recovered' || outcome === 'failure-already-reported') {
+      return;
+    }
+
+    toast.error(t('Could not prepare the download. Please try again.'));
+
+    if (outcome === 'record-gone') {
+      setExportId(null);
+    }
+  };
+
+  if (isResolved) {
     return (
-      <Button
-        variant="outline"
-        // Rendered as an anchor so the browser owns the download. Base UI needs
-        // both flags to stop emitting button semantics over the link.
-        nativeButton={false}
-        role={undefined}
-        render={
-          // Cross-origin, so `download` only names the file.
-          // `exportDownloadOptions` is what forces the save.
-          <a
-            href={status.signedUrl}
-            download={status.fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-          />
-        }
-        onClick={() => {
-          // One file per run: once taken, fall back to the idle button so a
-          // later export is not confused with this one.
-          setExportId(null);
-        }}
-      >
-        <LuDownload aria-hidden />
-        {t('Download CSV')}
-      </Button>
+      <CompletedExportAction
+        signedUrl={status.signedUrl}
+        fileName={status.fileName}
+        isRetrying={isFetchingStatus}
+        onRetry={handleRetryDownload}
+        // Each run produces one file. Once the admin takes it, the control
+        // returns to idle, so a later export cannot be confused with this one.
+        onTaken={() => setExportId(null)}
+      />
     );
   }
 

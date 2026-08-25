@@ -1,93 +1,103 @@
 /**
  * Shared configuration for the proposal export pipeline.
  *
- * Three callers read and write the same export record and storage object: the
- * API service, the `@op/common` service layer, and the Inngest workflow. The
- * bucket name, key format, and TTLs have to agree across all three.
+ * The API service, the `@op/common` service layer, and the Inngest workflow
+ * share one export record and one storage object. The bucket name, the key
+ * format, and the time-to-live (TTL) values must agree across all three.
  *
- * They drifted once. The workflow minted a 2 hour signed URL but recorded a 24
- * hour expiry, so `getExportStatus` served a dead URL for 22 hours.
+ * These values drifted once. The workflow signed a URL for 2 hours. It recorded
+ * a 24 hour expiry. `getExportStatus` then served a dead URL for 22 hours.
  */
 
-import { ASSETS_BUCKET } from '../../../utils/storage';
-
 /**
- * Exports are written to the shared `assets` bucket.
+ * The private bucket that holds every generated export.
  *
- * Aliased from {@link ASSETS_BUCKET} rather than repeating the literal. A future
- * migration to per-feature buckets then stays the single-file change that
- * constant promises. Renaming one and not the other would strand every export.
+ * An export CSV carries proposal submitter names. A reader must present a
+ * signature to get one. The shared `assets` bucket cannot hold these files,
+ * because `apps/app/next.config.mjs` rewrites `/assets/:path*` to its public
+ * object root. Use a separate bucket, not a prefix inside `assets`. Do not
+ * point this constant back at `assets`.
  *
- * `assets` is public. `apps/app/next.config.mjs` rewrites `/assets/:path*` to
- * the bucket's public object root, and `getPublicUrl()` builds every avatar and
- * organization image URL from it.
+ * `services/db/migrate.ts` creates this bucket with `public: false`. It also
+ * re-asserts the visibility on every deploy.
  *
- * So anyone holding an export's path can read it. The CSV carries submitter
- * names. Only an unguessable key stands between it and an anonymous reader.
- *
- * The signed URLs downstream are a convenience, not an access boundary. They
- * expire, so a shared link goes stale, but the unsigned public URL for the same
- * object resolves regardless of signature.
- *
- * Treat the random part of the file name as the actual control. The export
- * workflow mints it in its `upload-to-storage` step. Do not weaken it.
+ * A signing call needs the service-role client. Supabase enables row level
+ * security (RLS) on `storage.objects`, and every policy scopes to
+ * `bucket_id = 'assets'`. No policy grants a caller any access here, so a
+ * caller-scoped client cannot see the object. Authorization runs before each
+ * signing call: in `getExportStatus` for a read, and in the export mutation for
+ * the workflow.
  */
-export const EXPORTS_BUCKET = ASSETS_BUCKET;
+export const EXPORTS_BUCKET = 'exports';
 
 /**
- * Lifetime of a generated signed download URL.
+ * The lifetime of a generated signed download URL.
  *
- * Shorter than {@link EXPORT_CACHE_TTL_SECONDS} on purpose. The export record
- * outlives any single URL, so an admin returning to a finished export gets a
- * fresh URL from `getExportStatus` instead of a 404.
+ * This value is shorter than {@link EXPORT_CACHE_TTL_SECONDS} on purpose. The
+ * export record outlives any single URL. An admin who returns to a finished
+ * export gets a new URL from `getExportStatus` instead of a 404.
  *
- * This bounds the *signed* URL only. Objects live in the public `assets` bucket
- * (see {@link EXPORTS_BUCKET}), so expiry does not revoke access to the file. It
- * invalidates the signature on this link.
+ * {@link EXPORTS_BUCKET} is private, so expiry revokes access to the objects it
+ * holds. Expiry does not cover the exports written before the move. Those
+ * objects stay in the public `assets` bucket, and a reader who knows the path
+ * can still read them. Asana 1217696316242182 tracks the deletion. This comment
+ * is the only record of that exposure in the tree.
  */
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
 /**
- * Lifetime of the cached export status record.
+ * The lifetime of the cached export status record.
  *
- * Export state is cache-only — there is no backing table — so this is also how
- * long a completed export stays downloadable. Must stay longer than
- * {@link EXPORT_URL_TTL_SECONDS} or the signed-URL refresh path in
- * `getExportStatus` is unreachable, because the record would expire before the
- * URL it holds.
+ * Export state lives only in the cache. No table backs it. This value is
+ * therefore also how long a completed export stays downloadable.
+ *
+ * Keep this value longer than {@link EXPORT_URL_TTL_SECONDS}. A shorter value
+ * expires the record before the URL it holds. That makes the refresh path in
+ * `getExportStatus` unreachable.
  */
 export const EXPORT_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
-/** Cache key for an export's status record. */
+/**
+ * Builds the cache key for an export's status record.
+ *
+ * @param exportId - The export the record belongs to.
+ * @returns The namespaced key. Every reader and writer of the record uses this,
+ *   so no call site holds its own copy of the format.
+ */
 export const exportStatusCacheKey = (exportId: string) =>
   `export:proposal:${exportId}`;
 
 /**
- * Storage key for an export's generated file, relative to
+ * The storage key for an export's generated file, relative to
  * {@link EXPORTS_BUCKET}.
  *
- * Shaped `<entity>/<id>/<sub-resource>/<file>` to match the other writers on
- * this bucket: `profile/${profileId}/resources/` and
- * `profiles/${profileId}/${imageType}/`.
+ * The shape is `<entity>/<id>/<sub-resource>/<file>`. It matches the shape the
+ * other storage writers use.
  *
- * Leading with `proposals/`, as this did, reads as though a proposal owned the
- * file. The export is scoped to a process instance and covers many proposals.
+ * This key led with `proposals/` before. That shape reads as though a proposal
+ * owned the export. A process instance owns the export, and one export covers
+ * many proposals.
+ *
+ * @param processInstanceId - The instance that owns the export.
+ * @param fileName - The generated file name, from {@link exportFileName}.
+ * @returns The object key, relative to {@link EXPORTS_BUCKET}.
  */
 export const exportFilePath = (processInstanceId: string, fileName: string) =>
   `process/${processInstanceId}/proposals/${fileName}`;
 
 /**
- * File name for a generated export.
+ * The file name for a generated export.
  *
- * The random component is the access control for these objects. They live in
- * the public {@link EXPORTS_BUCKET}, so anyone holding this name can read the
- * CSV, and the CSV carries submitter names.
+ * The signed URL controls access, not this name. {@link EXPORTS_BUCKET} is
+ * private. The full UUID stays as defence in depth, in case someone makes the
+ * bucket public again. A reader can infer the timestamp beside it, so the
+ * timestamp adds no unguessability.
  *
- * Uses a whole UUID, not a truncation. The timestamp beside it is largely
- * inferable, so the UUID carries the unguessability by itself.
+ * `crypto.randomUUID()` is the global Web Crypto API. Node 19 and later provide
+ * it, and browsers provide it. This module therefore needs no Node-only import.
  *
- * `crypto.randomUUID()` is the global Web Crypto API, available in Node 19+ and
- * in browsers, so this module stays free of Node-only imports.
+ * @param extension - File extension, with no leading dot. `csv` today.
+ * @returns A fresh name. Every call returns a different one.
  */
 export const exportFileName = (extension: string) =>
   `proposals_export_${crypto.randomUUID()}_${Date.now()}.${extension}`;
@@ -104,6 +114,10 @@ export const exportFileName = (extension: string) =>
  * host.
  *
  * Both signing sites pass this. Either one alone leaves the other inline.
+ *
+ * @param fileName - Name the browser saves the object under.
+ * @returns Options for `createSignedUrl`, which put the name in the signed URL's
+ *   `download` parameter.
  */
 export const exportDownloadOptions = (fileName: string) => ({
   download: fileName,
