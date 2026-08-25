@@ -120,21 +120,18 @@ function EditProposalPageContent() {
     ? []
     : (revisionData?.revisionRequests ?? []);
 
-  const revisionRequest: ProposalReviewRequest | null = reviewRevision
+  const activeRevisionRequest: ProposalReviewRequest | null = reviewRevision
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
 
-  // Same derivation the view route uses — see `getProposalReviewVisibility`.
-  // Only `feedback` applies here; the revision panes are the view route's
-  // affordance.
+  // Shared with the view route so the rule lives in one place; only `feedback`
+  // applies here, since the revision panes are that route's affordance.
   const visibility = getProposalReviewVisibility({ instance, proposal, user });
 
-  // The panel's two reads: the anonymized notes the server released once their
-  // review phase ended (no client phase math here), and the whole revision
-  // history — resolved entries included, since the panel is the author's record
-  // of the review rather than the pending to-do list above. Same resilience
-  // pattern as the revision query: no panel rather than a broken editor.
+  // The second read is the same procedure as above without the `REQUESTED`
+  // filter: the panel is the author's record of the review, not a to-do list.
+  // One endpoint, two filters.
   const [feedbackQuery, allRevisionQuery] = trpc.useQueries((t) => [
     t.decision.listProposalFeedback(
       { proposalId: proposal.id },
@@ -146,18 +143,15 @@ function EditProposalPageContent() {
     ),
   ]);
 
-  const feedbackItems = feedbackQuery.error
-    ? []
-    : (feedbackQuery.data?.items ?? []);
+  const notes = feedbackQuery.error ? [] : (feedbackQuery.data?.items ?? []);
 
-  const feedbackRevisionRequests = allRevisionQuery.error
+  const revisionHistory = allRevisionQuery.error
     ? []
     : (allRevisionQuery.data?.revisionRequests ?? []).map(
         (item) => item.revisionRequest,
       );
 
-  const hasFeedback =
-    feedbackItems.length > 0 || feedbackRevisionRequests.length > 0;
+  const hasFeedback = notes.length > 0 || revisionHistory.length > 0;
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -255,8 +249,6 @@ function EditProposalPageContent() {
         ]
       : hasFeedback
         ? [
-            // No pending revision request, but reviewers left notes the phase
-            // has released: the same header slot opens the feedback panel.
             <Tooltip key="feedback">
               <TooltipTrigger
                 render={
@@ -320,12 +312,12 @@ function EditProposalPageContent() {
           asideState={asideState}
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
-          revisionRequest={revisionRequest}
+          activeRevisionRequest={activeRevisionRequest}
           feedbackPanel={
             isFeedbackPanelOpen && hasFeedback
               ? {
-                  items: feedbackItems,
-                  revisionRequests: feedbackRevisionRequests,
+                  notes,
+                  revisionHistory,
                 }
               : null
           }
@@ -350,7 +342,7 @@ function ProposalEditorContent({
   asideState,
   setAsideState,
   asideHeaderIcons,
-  revisionRequest,
+  activeRevisionRequest,
   feedbackPanel,
 }: {
   proposal: Proposal;
@@ -360,10 +352,10 @@ function ProposalEditorContent({
   asideState: ProposalEditorAsideState;
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
-  revisionRequest: ProposalReviewRequest | null;
+  activeRevisionRequest: ProposalReviewRequest | null;
   feedbackPanel: {
-    items: Array<ProposalFeedbackItem>;
-    revisionRequests: Array<ProposalReviewRequest>;
+    notes: Array<ProposalFeedbackItem>;
+    revisionHistory: Array<ProposalReviewRequest>;
   } | null;
 }) {
   const versionPreview = useOptionalVersionPreview();
@@ -421,7 +413,7 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        revisionRequest={revisionRequest}
+        activeRevisionRequest={activeRevisionRequest}
         feedbackPanel={feedbackPanel}
       />
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays

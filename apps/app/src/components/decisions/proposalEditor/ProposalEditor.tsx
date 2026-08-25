@@ -59,7 +59,7 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  revisionRequest = null,
+  activeRevisionRequest = null,
   feedbackPanel = null,
 }: {
   instance: ProcessInstance;
@@ -67,16 +67,15 @@ export function ProposalEditor({
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  revisionRequest?: ProposalReviewRequest | null;
+  activeRevisionRequest?: ProposalReviewRequest | null;
   /**
-   * Reviewer feedback for the aside pane, supplied by the route once the
-   * author opened the panel and the server released something to show. The
-   * owner decides what is in it — the editor only places it beside the
-   * document.
+   * `revisionHistory` is the same procedure as `activeRevisionRequest` read
+   * unfiltered — every state, resolved included — because the panel is the
+   * author's record rather than a to-do list. One endpoint, two filters.
    */
   feedbackPanel?: {
-    items: Array<ProposalFeedbackItem>;
-    revisionRequests: Array<ProposalReviewRequest>;
+    notes: Array<ProposalFeedbackItem>;
+    revisionHistory: Array<ProposalReviewRequest>;
   } | null;
 }) {
   const { user } = useRequiredUser();
@@ -119,7 +118,7 @@ export function ProposalEditor({
       asideHeaderIcons={asideHeaderIcons}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
-      revisionRequest={revisionRequest}
+      activeRevisionRequest={activeRevisionRequest}
       feedbackPanel={feedbackPanel}
     />
   );
@@ -151,7 +150,7 @@ function ProposalEditorInner({
   asideHeaderIcons,
   collaborationDocId,
   proposalTemplate,
-  revisionRequest,
+  activeRevisionRequest,
   feedbackPanel,
 }: {
   instance: ProcessInstance;
@@ -161,10 +160,10 @@ function ProposalEditorInner({
   asideHeaderIcons?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
-  revisionRequest: ProposalReviewRequest | null;
+  activeRevisionRequest: ProposalReviewRequest | null;
   feedbackPanel: {
-    items: Array<ProposalFeedbackItem>;
-    revisionRequests: Array<ProposalReviewRequest>;
+    notes: Array<ProposalFeedbackItem>;
+    revisionHistory: Array<ProposalReviewRequest>;
   } | null;
 }) {
   const router = useRouter();
@@ -477,21 +476,21 @@ function ProposalEditorInner({
     </>
   );
 
-  // At most one aside pane: a pending revision request is the actionable one
-  // and keeps the slot, and the released reviewer feedback takes it otherwise.
   const asidePane: { label: string; content: ReactNode } | null =
-    revisionRequest
+    activeRevisionRequest
       ? {
           label: t('Revision feedback'),
-          content: <RevisionFeedbackPanel revisionRequest={revisionRequest} />,
+          content: (
+            <RevisionFeedbackPanel revisionRequest={activeRevisionRequest} />
+          ),
         }
       : feedbackPanel
         ? {
             label: t('Feedback'),
             content: (
               <ProposalFeedbackPanel
-                feedbackItems={feedbackPanel.items}
-                revisionRequests={feedbackPanel.revisionRequests}
+                feedbackItems={feedbackPanel.notes}
+                revisionRequests={feedbackPanel.revisionHistory}
                 title={t('Feedback')}
                 subtitle={t(
                   'Notes reviewers shared while this proposal was under review',
@@ -522,7 +521,7 @@ function ProposalEditorInner({
       asideHeaderIcons={asideHeaderIcons}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
-      revisionRequest={revisionRequest}
+      revisionRequest={activeRevisionRequest}
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}
