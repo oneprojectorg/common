@@ -42,6 +42,13 @@ const withTransientRetry: MiddlewareBuilderBeforeAfter<
     },
     {
       retries: 1,
+      // Belt and braces: today the only throw inside the callback is the one
+      // above, which is already classified. Stating the predicate here keeps
+      // that true if `next` ever starts rejecting instead of returning
+      // `{ ok: false }` — without it, `withRetry` would default to replaying
+      // every error, including the rate-limit and authorization failures raised
+      // by the middlewares nested inside this one.
+      shouldRetry: isTransientConnectionError,
       onRetry: (error, attempt) =>
         ctx.logger.warn('Retrying query after a dropped database connection', {
           attempt,

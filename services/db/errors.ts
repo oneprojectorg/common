@@ -5,14 +5,33 @@
  * went away across a freeze/thaw. The statement never reached the server, so
  * replaying a read is safe.
  *
- * `CONNECTION_CLOSED` is postgres-js's own code (`Errors.connection`, surfaced
- * as `write CONNECTION_CLOSED <host>:<port>`); `ECONNRESET` and `EPIPE` are the
- * Node socket errors behind the same dead-peer condition.
+ * Three sources, one condition:
+ *
+ * - postgres-js's own codes for a socket it found already gone
+ *   (`write CONNECTION_CLOSED <host>:<port>`, and the ended/destroyed variants
+ *   it raises when the pool tears a connection down mid-flight).
+ * - Node's socket errors for a dead peer.
+ * - The Postgres SQLSTATEs a server or pooler sends as it drops the session.
+ *   `57P01` is what Supavisor and Postgres deliver to in-flight sessions on a
+ *   restart — the single most common way this outage actually arrives.
+ *
+ * Deliberately excluded: `CONNECT_TIMEOUT`. That one has already spent the full
+ * `connect_timeout` budget, so replaying it doubles the user's wait instead of
+ * saving the request.
  */
 const TRANSIENT_CONNECTION_CODES: ReadonlySet<string> = new Set([
+  // postgres-js (`Errors.connection`)
   'CONNECTION_CLOSED',
+  'CONNECTION_DESTROYED',
+  'CONNECTION_ENDED',
+  // Node socket
   'ECONNRESET',
   'EPIPE',
+  'ETIMEDOUT',
+  // Postgres SQLSTATE
+  '57P01', // admin_shutdown — terminating connection due to administrator command
+  '08006', // connection_failure
+  '08003', // connection_does_not_exist
 ]);
 
 /** Depth cap so a self-referential `cause` chain cannot spin forever. */

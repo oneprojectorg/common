@@ -148,6 +148,52 @@ describe('withTransientRetry', () => {
     expect(ctx.logger.warn).not.toHaveBeenCalled();
   });
 
+  // tRPC currently reports a failed procedure as `{ ok: false }` rather than
+  // rejecting, but the middleware must not become a blanket retry if that ever
+  // changes — everything nested inside it (rate limiting, authorization) throws.
+  it('does not replay an error thrown out of the nested middlewares', async () => {
+    const ctx = makeLoggerContext();
+    const rateLimited = new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      cause: new Error('Rate limit exceeded'),
+    });
+    const next = vi.fn(async () => {
+      throw rateLimited;
+    });
+
+    await expect(
+      withTransientRetry({
+        ctx,
+        type: 'query',
+        path: 'decision.getProposal',
+        next: next as never,
+      } as never),
+    ).rejects.toBe(rateLimited);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('replays a dropped socket that arrives as a throw rather than a result', async () => {
+    const ctx = makeLoggerContext();
+    let calls = 0;
+    const next = vi.fn(async () => {
+      calls += 1;
+      if (calls === 1) {
+        throw droppedSocketError();
+      }
+      return { ok: true, data: 'proposal' };
+    });
+
+    await expect(
+      withTransientRetry({
+        ctx,
+        type: 'query',
+        path: 'decision.getProposal',
+        next: next as never,
+      } as never),
+    ).resolves.toEqual({ ok: true, data: 'proposal' });
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
   it('passes a successful query straight through', async () => {
     const ctx = makeLoggerContext();
     const { next, result } = runRetry({
