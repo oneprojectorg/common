@@ -48,13 +48,19 @@ import {
   type MergeCandidate,
   getMergeCandidates,
   getProposalDisplayTitle,
-  isMergeSearchEdit,
 } from './proposals/merge';
 
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 /** The popover scrolls rather than paginates, so it takes one short page. */
 const MERGE_SEARCH_RESULT_LIMIT = 20;
 const MERGE_SEARCH_INPUT_ID = 'merge-proposal-search';
+
+// Module scope so their identity is stable: Base UI keeps both in a store whose
+// subscribers include every rendered option, so a new closure per render would
+// re-render the whole list on each keystroke.
+const getMergeCandidateLabel = (candidate: MergeCandidate) => candidate.title;
+const isSameMergeCandidate = (a: MergeCandidate, b: MergeCandidate) =>
+  a.id === b.id;
 
 /** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
  *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
@@ -381,10 +387,10 @@ function MergeTargetSearchField({
   onSelect: (candidate: MergeCandidate | null) => void;
 }) {
   const t = useTranslations();
-  const trimmedTerm = searchTerm.trim();
-  // A field showing the proposal already picked is displaying the choice, not
-  // asking a question — searching it would only re-find what's on screen.
-  const searchQuery = trimmedTerm === selected?.title ? '' : trimmedTerm;
+  // With a proposal picked the field is displaying that choice, not asking a
+  // question, so there is nothing to search for. Any edit drops the pick
+  // below, which is what turns the field back into a query.
+  const searchQuery = selected ? '' : searchTerm.trim();
   const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
 
   const query = trpc.decision.listProposals.useQuery(
@@ -431,14 +437,23 @@ function MergeTargetSearchField({
       inputValue={searchTerm}
       onInputValueChange={(value, details) => {
         onSearchTermChange(value);
-        if (isMergeSearchEdit(details.reason)) {
+        // Base UI refills the input from the selection on item press, on
+        // inline navigation, and again when the popup closes (which it
+        // reports as `none`). Every other change is the user editing the
+        // query, and an edited query drops the pick: `Continue` must not
+        // merge into a proposal the field no longer names. Compared against
+        // the literals so a Base UI rename fails the build rather than
+        // silently re-enabling it.
+        if (
+          details.reason !== 'item-press' &&
+          details.reason !== 'list-navigation' &&
+          details.reason !== 'none'
+        ) {
           onSelect(null);
         }
       }}
-      itemToStringLabel={(candidate: MergeCandidate) => candidate.title}
-      isItemEqualToValue={(a: MergeCandidate, b: MergeCandidate) =>
-        a.id === b.id
-      }
+      itemToStringLabel={getMergeCandidateLabel}
+      isItemEqualToValue={isSameMergeCandidate}
       onValueChange={(candidate: MergeCandidate | null) => onSelect(candidate)}
     >
       <ComboboxInput
@@ -456,13 +471,10 @@ function MergeTargetSearchField({
       </ComboboxInput>
       {searchQuery.length > 0 ? (
         <ComboboxContent>
-          <ComboboxEmpty>
-            {query.isError
-              ? t('Could not search proposals. Please try again.')
-              : isSearching
-                ? t('Searching…')
-                : t('No proposals match your search')}
-          </ComboboxEmpty>
+          <MergeSearchEmptyState
+            isError={query.isError}
+            isSearching={isSearching}
+          />
           <ComboboxList>
             {(candidate: MergeCandidate) => (
               <ComboboxItem key={candidate.id} value={candidate}>
@@ -473,6 +485,30 @@ function MergeTargetSearchField({
         </ComboboxContent>
       ) : null}
     </Combobox>
+  );
+}
+
+/**
+ * What the popover says instead of results. Base UI only renders it while the
+ * list is empty, so the failure and the in-flight states share the slot.
+ */
+function MergeSearchEmptyState({
+  isError,
+  isSearching,
+}: {
+  isError: boolean;
+  isSearching: boolean;
+}) {
+  const t = useTranslations();
+
+  return (
+    <ComboboxEmpty>
+      {isError
+        ? t('Could not search proposals. Please try again.')
+        : isSearching
+          ? t('Searching…')
+          : t('No proposals match your search')}
+    </ComboboxEmpty>
   );
 }
 
