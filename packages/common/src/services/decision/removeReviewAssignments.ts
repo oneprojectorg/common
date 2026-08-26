@@ -54,6 +54,9 @@ export async function removeReviewAssignments({
     );
   }
 
+  // Deliberately the generic gate with no org fallback: the org-fallback
+  // `assertInstanceProfileAccess` is the legacy pattern being retired, so an
+  // org admin needs a role on the decision's own profile to unassign.
   await assertProfileAccess({
     user,
     profileId: instance.profileId,

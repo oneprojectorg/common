@@ -8,6 +8,7 @@ import type {
   AdminEligibleReviewer,
   AdminReviewAssignment,
 } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -535,18 +536,20 @@ function AssignmentActionsMenu({
   reviewerName: string;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const proposalTitle = assignment.proposalTitle ?? t('Untitled Proposal');
   const isRemovable = assignment.status === 'pending';
 
+  // The list refetches through `Channels.reviewAssignments`, which this
+  // mutation publishes to — no explicit invalidation.
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation({
     onSuccess: ({ skippedIds }) => {
-      // The server skips rather than fails a row the reviewer started while
-      // this dialog was open, so a success can still mean nothing was removed.
+      // A skip means the row stopped being pending while the dialog was open:
+      // the reviewer started it, or another admin already dropped it. One
+      // message covers both — the API reports no reason.
       if (skippedIds.includes(assignment.id)) {
-        toast.error(t('Could not unassign — the review has already started.'));
+        toast.error(t('Could not unassign — the assignment has changed.'));
       } else {
         toast.success(
           t('{proposal} is no longer assigned to {name}', {
@@ -555,14 +558,17 @@ function AssignmentActionsMenu({
           }),
         );
       }
-      utils.decision.listPhaseReviewAssignments.invalidate({
-        processInstanceId,
-        phaseId,
-      });
       setIsConfirmOpen(false);
     },
     onError: (error) => {
-      toast.error(error.message);
+      // Server text is untranslated and often internal, so it is logged
+      // rather than shown.
+      logger.error('Failed to unassign a review assignment', {
+        error,
+        context: 'AssignmentActionsMenu',
+        assignmentId: assignment.id,
+      });
+      toast.error(t('Could not unassign the proposal. Please try again.'));
     },
   });
 
