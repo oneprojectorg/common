@@ -648,19 +648,11 @@ function MergeCandidateListSuspense({
     [paginatedData.pages, proposal.id, untitledLabel],
   );
 
-  // The pick is always shown, first: search reaches the whole decision, so it
-  // can name a proposal these pages don't hold, and picking one would otherwise
-  // leave nothing selected-looking on screen. Only that case adds a card —
-  // hoisting a card the list already has is left to `order` below.
-  const candidates = useMemo(() => {
-    if (
-      !selected ||
-      loadedCandidates.some((candidate) => candidate.id === selected.id)
-    ) {
-      return loadedCandidates;
-    }
-    return [selected, ...loadedCandidates];
-  }, [loadedCandidates, selected]);
+  // Only one proposal can be merged into, so once one is picked the list shows
+  // that one and nothing else — including when the pick came from the search
+  // popover, which reaches proposals these pages don't hold. Editing or
+  // clearing the search field drops the pick and brings the full list back.
+  const candidates = selected ? [selected] : loadedCandidates;
 
   return (
     <>
@@ -689,18 +681,7 @@ function MergeCandidateListSuspense({
           aria-label={t('Proposal to merge into')}
         >
           {candidates.map((candidate) => (
-            <Field
-              key={candidate.id}
-              // Hoisted with `order`, not by reordering the array: a radio
-              // group checks whatever the arrow keys land on, so moving the
-              // chosen card in the DOM would re-point the roving index at the
-              // card that just took its place and bounce the selection between
-              // those two for good, stranding everything below them.
-              className={cn(
-                'w-full',
-                candidate.id === selected?.id && 'order-first',
-              )}
-            >
+            <Field key={candidate.id} className="w-full">
               {/* Figma shows no radio dot, so the card is the label and carries
                   the selected treatment; the radio keeps the keyboard semantics. */}
               <RadioGroupItem
@@ -723,7 +704,8 @@ function MergeCandidateListSuspense({
         </RadioGroup>
       )}
 
-      {query.hasNextPage ? (
+      {/* Nothing to show more of while the list is collapsed to the pick. */}
+      {query.hasNextPage && !selected ? (
         <Button
           variant="outline"
           className="w-full"
