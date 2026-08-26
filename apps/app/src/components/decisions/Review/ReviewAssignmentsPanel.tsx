@@ -8,6 +8,17 @@ import type {
   AdminEligibleReviewer,
   AdminReviewAssignment,
 } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
@@ -37,6 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
 import { Fragment, Suspense, useMemo, useState } from 'react';
 import {
@@ -183,6 +195,8 @@ function ReviewAssignmentsPanelContent({
       ) : (
         <div className="overflow-hidden rounded-md border">
           <ReviewersTable
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
             rows={rows}
             onAssignTo={(reviewerProfileId) =>
               setAssignTarget({ reviewerProfileId })
@@ -207,9 +221,13 @@ function ReviewAssignmentsPanelContent({
 }
 
 function ReviewersTable({
+  processInstanceId,
+  phaseId,
   rows,
   onAssignTo,
 }: {
+  processInstanceId: string;
+  phaseId: string;
   rows: ReviewerRow[];
   onAssignTo: (reviewerProfileId: string) => void;
 }) {
@@ -261,6 +279,8 @@ function ReviewersTable({
                       className="flex flex-col gap-2.5 py-3 ps-14 pe-2"
                     >
                       <AssignmentsTable
+                        processInstanceId={processInstanceId}
+                        phaseId={phaseId}
                         assignments={row.assignments}
                         reviewerName={reviewerLabel(row.profile)}
                       />
@@ -384,9 +404,13 @@ function ReviewerRowCells({
  * Columbus reviewers carry 50–70 assignments, so the body scrolls in place.
  */
 function AssignmentsTable({
+  processInstanceId,
+  phaseId,
   assignments,
   reviewerName,
 }: {
+  processInstanceId: string;
+  phaseId: string;
   assignments: AdminReviewAssignment[];
   /** Names the nested table, so its header isn't read as the outer one's. */
   reviewerName: string;
@@ -475,7 +499,12 @@ function AssignmentsTable({
                   </span>
                 </TableCell>
                 <TableCell className="text-end">
-                  <AssignmentActionsMenu />
+                  <AssignmentActionsMenu
+                    processInstanceId={processInstanceId}
+                    phaseId={phaseId}
+                    assignment={assignment}
+                    reviewerName={reviewerName}
+                  />
                 </TableCell>
               </TableRow>
             );
@@ -487,31 +516,104 @@ function AssignmentsTable({
 }
 
 /**
- * Per-assignment overflow menu; Unassign stays disabled until PR 2 lands
- * `decision.removeReviewAssignment`.
+ * Per-assignment overflow menu. The confirm sits outside the menu because Base
+ * UI unmounts the menu content on select, taking a nested dialog with it.
  */
-function AssignmentActionsMenu() {
+function AssignmentActionsMenu({
+  processInstanceId,
+  phaseId,
+  assignment,
+  reviewerName,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+  assignment: AdminReviewAssignment;
+  reviewerName: string;
+}) {
   const t = useTranslations();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  const isRemovable = assignment.status === 'pending';
+
+  // The `reviewAssignments` channel refetches the list; nothing invalidates.
+  const removeAssignments = trpc.decision.removeReviewAssignments.useMutation({
+    onSuccess: ({ skippedIds }) => {
+      // Skipped = no longer pending, for a reason the API doesn't report.
+      if (skippedIds.includes(assignment.id)) {
+        toast.error(t('Could not unassign — the assignment has changed.'));
+      } else {
+        toast.success(
+          t('Proposal unassigned from {name}', { name: reviewerName }),
+        );
+      }
+      setIsConfirmOpen(false);
+    },
+    onError: (error) => {
+      logger.error('Failed to unassign a review assignment', {
+        error,
+        context: 'AssignmentActionsMenu',
+        assignmentId: assignment.id,
+      });
+      toast.error(t('Could not unassign the proposal. Please try again.'));
+    },
+  });
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t('Assignment actions')}
-          />
-        }
-      >
-        <LuEllipsis />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuItem disabled>{t('Unassign')}</DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('Assignment actions')}
+            />
+          }
+        >
+          <LuEllipsis />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              disabled={!isRemovable}
+              onClick={() => setIsConfirmOpen(true)}
+            >
+              {isRemovable ? t('Unassign') : t('Unassign (review started)')}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('Unassign proposal?')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                '{name} will no longer be asked to review this proposal. You can assign it to them again later.',
+                { name: reviewerName },
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={removeAssignments.isPending}
+              onClick={() =>
+                removeAssignments.mutate({
+                  processInstanceId,
+                  phaseId,
+                  assignmentIds: [assignment.id],
+                })
+              }
+            >
+              {removeAssignments.isPending ? t('Unassigning…') : t('Unassign')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
