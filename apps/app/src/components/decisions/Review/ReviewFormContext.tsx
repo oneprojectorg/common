@@ -8,6 +8,7 @@ import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   ProposalReviewState,
+  type ReviewSettings,
   type RubricReviewData,
   type RubricTemplateSchema,
   schemaValidator,
@@ -33,6 +34,8 @@ import { withYesNoDefaults } from '../rubricTemplate';
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
+  /** Resolved review settings for the assignment's phase. */
+  reviewSettings: ReviewSettings;
   /** Rubric answers keyed by criterion id; validated against the rubricTemplate. */
   values: RubricReviewData['answers'];
   /** Optional free-text rationale per criterion id (always optional). */
@@ -88,7 +91,7 @@ export interface ReviewFormStatus {
 export function ReviewFormProvider(props: {
   assignmentId: string;
   decisionSlug: string;
-  allowRevisions: boolean;
+  reviewSettings: ReviewSettings;
   /** Runs after a submit or an update instead of leaving for the decision page. */
   onCompleted?: () => void;
   /** Lets a host render the primary action outside the form. */
@@ -106,7 +109,7 @@ export function ReviewFormProvider(props: {
 function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
-  allowRevisions,
+  reviewSettings,
   onCompleted,
   onStatusChange,
   initiallyEditing = false,
@@ -114,7 +117,7 @@ function ReviewFormProviderInner({
 }: {
   assignmentId: string;
   decisionSlug: string;
-  allowRevisions: boolean;
+  reviewSettings: ReviewSettings;
   onCompleted?: () => void;
   onStatusChange?: (status: ReviewFormStatus) => void;
   initiallyEditing?: boolean;
@@ -180,7 +183,7 @@ function ReviewFormProviderInner({
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
   const isPausedForRevision = hasAnyOpenRevisionRequest;
   const canRequestRevision =
-    allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
+    reviewSettings.allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
   const [isEditing, setIsEditing] = useState(initiallyEditing);
@@ -335,6 +338,7 @@ function ReviewFormProviderInner({
 
   const state = useMemo<ReviewFormState>(
     () => ({
+      reviewSettings,
       values,
       rationales,
       overallComment,
@@ -364,6 +368,7 @@ function ReviewFormProviderInner({
       isCancellingRevision: cancelRevisionMutation.isPending,
     }),
     [
+      reviewSettings,
       values,
       rationales,
       overallComment,

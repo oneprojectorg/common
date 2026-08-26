@@ -57,18 +57,14 @@ import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
  * review phase. With no tab beyond "My review", the form renders on its own.
  */
 export function ReviewRubricForm({
-  openReviews,
   previousReviewPhases,
 }: {
-  openReviews: boolean;
   previousReviewPhases: PreviousReviewPhase[];
 }) {
+  const { openReviews } = useReviewForm().reviewSettings;
+
   if (!openReviews && previousReviewPhases.length === 0) {
-    return (
-      <FormShell>
-        <MyReviewForm />
-      </FormShell>
-    );
+    return <OwnReviewRubricForm />;
   }
 
   return (
@@ -82,12 +78,25 @@ export function ReviewRubricForm({
   );
 }
 
+/** The reviewer's own form alone, for hosts that already list other reviews. */
+export function OwnReviewRubricForm() {
+  return (
+    <FormShell>
+      <MyReviewForm />
+    </FormShell>
+  );
+}
+
 /**
  * Schema-driven review rubric form renderer (the reviewer's own review).
+ *
+ * `anonymousFeedback` off hides only the add button: an existing comment is
+ * always re-submitted, so it must stay visible and editable.
  */
 function MyReviewForm() {
   const t = useTranslations();
   const {
+    reviewSettings: { anonymousFeedback },
     rubricTemplate: authoredTemplate,
     values,
     rationales,
@@ -191,7 +200,7 @@ function MyReviewForm() {
                 onChange={handleOverallCommentChange}
               />
             </section>
-          ) : (
+          ) : anonymousFeedback ? (
             <Button
               variant="outline"
               className="w-full"
@@ -200,7 +209,7 @@ function MyReviewForm() {
               <LuPlus className="size-4" />
               {t('Feedback to author')}
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </>

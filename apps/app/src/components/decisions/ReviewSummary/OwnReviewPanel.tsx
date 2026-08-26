@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { ReviewSettings } from '@op/common/client';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
@@ -10,12 +11,13 @@ import {
   ReviewFormProvider,
   type ReviewFormStatus,
 } from '../Review/ReviewFormContext';
-import { ReviewRubricForm } from '../Review/ReviewRubricForm';
+import { OwnReviewRubricForm } from '../Review/ReviewRubricForm';
 import { BackToReviewers } from '../ReviewsPanel/BackToReviewers';
 
 interface OwnReviewPanelProps {
   decisionSlug: string;
   assignmentId: string;
+  reviewSettings: ReviewSettings;
   onBack: () => void;
   /** Runs after a submit or an update; the host closes the panel. */
   onCompleted: () => void;
@@ -34,6 +36,7 @@ interface OwnReviewPanelProps {
 export function OwnReviewPanel({
   decisionSlug,
   assignmentId,
+  reviewSettings,
   onBack,
   onCompleted,
   initiallyEditing,
@@ -45,15 +48,14 @@ export function OwnReviewPanel({
         <ReviewFormProvider
           assignmentId={assignmentId}
           decisionSlug={decisionSlug}
-          // Revisions belong to the reviewer surface.
-          allowRevisions={false}
+          reviewSettings={reviewSettings}
           onCompleted={onCompleted}
           onStatusChange={onStatusChange}
           initiallyEditing={initiallyEditing}
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            <ReviewRubricForm openReviews={false} previousReviewPhases={[]} />
+            <OwnReviewRubricForm />
           </div>
         </ReviewFormProvider>
       </Suspense>

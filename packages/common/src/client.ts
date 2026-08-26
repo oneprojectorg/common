@@ -17,6 +17,7 @@ export {
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
+  resolveReviewSettings,
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
 export {

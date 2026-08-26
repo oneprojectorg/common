@@ -138,10 +138,11 @@ export const getDecisionInstanceRouter = router({
           hideBudget: instanceData.config?.hideBudget ?? false,
           hasProposalTemplate: instanceData.proposalTemplate != null,
           hasRubric: instanceData.rubricTemplate != null,
+          // Unset resolves to on (getPhaseReviewSettings); display must match.
           reviewsAllowRevisions:
-            instanceData.config?.reviewsAllowRevisions ?? false,
+            instanceData.config?.reviewsAllowRevisions ?? true,
           reviewsAnonymousFeedback:
-            instanceData.config?.reviewsAnonymousFeedback ?? false,
+            instanceData.config?.reviewsAnonymousFeedback ?? true,
           requireCategorySelection:
             instanceData.config?.requireCategorySelection ?? false,
           allowMultipleCategories:

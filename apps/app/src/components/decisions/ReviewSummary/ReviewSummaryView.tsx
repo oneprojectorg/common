@@ -2,7 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProposalReviewState } from '@op/common/client';
+import { ProposalReviewState, type ReviewSettings } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { SplitPane } from '@op/sense/SplitPane';
 import { cn } from '@op/sense/lib/utils';
@@ -31,6 +31,7 @@ interface ReviewSummaryViewProps {
   proposalProfileId: string;
   phaseId: string | undefined;
   isPhaseInProgress?: boolean;
+  reviewSettings: ReviewSettings;
 }
 
 export function ReviewSummaryView({
@@ -40,6 +41,7 @@ export function ReviewSummaryView({
   proposalProfileId,
   phaseId,
   isPhaseInProgress = false,
+  reviewSettings,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
   const { user } = useRequiredUser();
@@ -221,6 +223,7 @@ export function ReviewSummaryView({
             <OwnReviewPanel
               decisionSlug={decisionSlug}
               assignmentId={ownAssignment.assignment.id}
+              reviewSettings={reviewSettings}
               onBack={closeOwnForm}
               onCompleted={handleOwnReviewCompleted}
               initiallyEditing={ownReviewIsSubmitted}

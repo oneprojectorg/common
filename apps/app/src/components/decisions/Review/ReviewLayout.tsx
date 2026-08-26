@@ -5,7 +5,11 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { getPhaseReviewSettings, getPreviousPhases } from '@op/common/client';
+import {
+  getPhaseReviewSettings,
+  getPreviousPhases,
+  type ReviewSettings,
+} from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
@@ -32,8 +36,7 @@ export async function ReviewLayout({
     createServerUtils(),
   ]);
 
-  let allowRevisions: boolean;
-  let openReviews: boolean;
+  let reviewSettings: ReviewSettings;
   let previousReviewPhases: PreviousReviewPhase[];
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
@@ -46,10 +49,7 @@ export async function ReviewLayout({
 
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
-    ({ allowRevisions, openReviews } = getPhaseReviewSettings(
-      instanceData,
-      assignmentPhaseId,
-    ));
+    reviewSettings = getPhaseReviewSettings(instanceData, assignmentPhaseId);
 
     // Earlier review phases whose `openReviews` keeps their reviews readable
     // from this screen. Strictly before the assignment's phase in the
@@ -89,7 +89,7 @@ export async function ReviewLayout({
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}
-        allowRevisions={allowRevisions}
+        reviewSettings={reviewSettings}
       >
         {/* Inside ReviewFormProvider: the proposal and the rubric it translates
             both come from the assignment that provider loads. */}
@@ -111,10 +111,7 @@ export async function ReviewLayout({
                 id="review"
                 label={<TranslatedText text="Review" />}
               >
-                <ReviewRubricForm
-                  openReviews={openReviews}
-                  previousReviewPhases={previousReviewPhases}
-                />
+                <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
               </SplitPane.Pane>
             </SplitPane>
           </div>

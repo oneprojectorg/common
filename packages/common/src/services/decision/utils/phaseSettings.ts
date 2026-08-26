@@ -41,42 +41,69 @@ export function hasVotingPhase(
   return phases.some(isVotingPhase);
 }
 
-/** `PhaseReviewSettings` with defaults applied (`anonymousFeedback` has none). */
+/** `PhaseReviewSettings` with defaults applied. */
 export type ReviewSettings = Required<
   Pick<
     PhaseReviewSettings,
-    'submit' | 'policy' | 'scope' | 'allowRevisions' | 'openReviews'
+    | 'submit'
+    | 'policy'
+    | 'scope'
+    | 'allowRevisions'
+    | 'anonymousFeedback'
+    | 'openReviews'
   >
-> & { anonymousFeedback: PhaseReviewSettings['anonymousFeedback'] };
+>;
+
+interface ReviewSettingsInstanceData {
+  config?: {
+    reviewsPolicy?: ReviewsPolicy;
+    reviewsAllowRevisions?: boolean;
+    reviewsAnonymousFeedback?: boolean;
+  };
+  phases?: ReadonlyArray<{ phaseId: string; rules?: ReviewPhaseRules }>;
+}
 
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
 export function getPhaseReviewSettings(
-  instanceData: {
-    config?: {
-      reviewsPolicy?: ReviewsPolicy;
-      reviewsAllowRevisions?: boolean;
-      reviewsAnonymousFeedback?: boolean;
-    };
-    phases?: ReadonlyArray<{ phaseId: string; rules?: ReviewPhaseRules }>;
-  },
+  instanceData: ReviewSettingsInstanceData,
   phaseId: string,
 ): ReviewSettings {
   const phase = assertInstancePhase({ instance: { instanceData }, phaseId });
-  const reviews = phase.rules?.reviews;
-  const config = instanceData.config;
+  return reviewSettingsFromPhase(instanceData.config, phase);
+}
+
+/**
+ * Lenient `getPhaseReviewSettings` for read surfaces: an unresolved or
+ * off-list phase falls back to config → defaults instead of throwing.
+ */
+export function resolveReviewSettings(
+  instanceData: ReviewSettingsInstanceData,
+  phaseId: string | undefined,
+): ReviewSettings {
+  const phase = phaseId
+    ? instanceData.phases?.find((p) => p.phaseId === phaseId)
+    : undefined;
+  return reviewSettingsFromPhase(instanceData.config, phase);
+}
+
+function reviewSettingsFromPhase(
+  config: ReviewSettingsInstanceData['config'],
+  phase: { phaseId: string; rules?: ReviewPhaseRules } | undefined,
+): ReviewSettings {
+  const reviews = phase?.rules?.reviews;
 
   return {
-    submit: isReviewPhase(phase),
+    submit: phase ? isReviewPhase(phase) : false,
     policy: reviews?.policy ?? config?.reviewsPolicy ?? DEFAULT_REVIEWS_POLICY,
     // Scope is phase-only (no legacy config counterpart), so it resolves from
     // the phase rules or the default.
     scope: reviews?.scope ?? DEFAULT_REVIEWS_SCOPE,
     allowRevisions:
       reviews?.allowRevisions ?? config?.reviewsAllowRevisions ?? true,
+    // Defaults on: the field rendered unconditionally before this was wired.
     anonymousFeedback:
-      reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback,
-    // Open reviews is phase-only (no legacy config counterpart), like scope,
-    // and defaults to false.
+      reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback ?? true,
+    // Phase-only (no legacy config counterpart), like scope.
     openReviews: reviews?.openReviews ?? false,
   };
 }
