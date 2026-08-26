@@ -56,7 +56,7 @@ const isUnrestricted = (proposalsTable: typeof proposals): SQL =>
  * an individual proposal's, or this hands every caller's drafts and hidden
  * proposals to the public.
  */
-const isProposalProfileMember = (
+export const isProposalProfileMember = (
   proposalsTable: typeof proposals,
   accessUserIds: string[],
 ): SQL =>

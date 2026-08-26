@@ -16,7 +16,6 @@ import {
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
-  profileUsers,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
@@ -39,6 +38,7 @@ import {
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
+import { isProposalProfileMember } from './proposalVisibility';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -426,45 +426,27 @@ export const resolveProposalListScope = async ({
       phaseScope.buildDraftFilter(proposalsTable),
     )!;
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
-    // for non-admins. Hidden proposals stay visible to the creator and any
-    // invited collaborators on the proposal's profile — same pattern the
-    // draft filter uses, so a collaborator's view of a co-authored proposal
-    // doesn't change the moment it's submitted with HIDDEN visibility.
+    // The profile-member arm is what keeps a collaborator's view of a
+    // co-authored proposal from changing the moment it is submitted as HIDDEN.
     const nonDraftVisibilityFilter = canManageProposals
       ? phaseScopedNonDraftIdFilter
       : and(
           phaseScopedNonDraftIdFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
-            inArray(
-              proposalsTable.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(inArray(profileUsers.authUserId, accessUserIds)),
-            ),
+            isProposalProfileMember(proposalsTable, accessUserIds),
           )!,
         )!;
 
-    // Items with an active moderation flag are hidden from everyone except
-    // members of the proposal's own profile (creator + invited collaborators);
-    // instance admins (canManageProposals) skip the filter entirely. The owner
-    // audience is proposal.profileId membership — the same set getProposal
-    // grants the flagged proposal to — so the list and detail views agree
-    // (keying on submittedByProfileId alone would diverge for group-owned
-    // proposals). Applied in SQL so pagination stays correct.
+    // Membership on the proposal's profile, not `submittedByProfileId`, is the
+    // set `getProposal` grants a flagged proposal to — keying on the submitter
+    // would diverge for a group-owned proposal. In SQL so pagination stays
+    // correct.
     const moderationFilter = canManageProposals
       ? undefined
       : or(
           noActiveModerationFlag('proposal', proposalsTable.id),
-          inArray(
-            proposalsTable.profileId,
-            db
-              .select({ profileId: profileUsers.profileId })
-              .from(profileUsers)
-              .where(inArray(profileUsers.authUserId, accessUserIds)),
-          ),
+          isProposalProfileMember(proposalsTable, accessUserIds),
         )!;
 
     return and(
