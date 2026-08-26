@@ -59,13 +59,13 @@ export async function removeReviewAssignments({
     columns: { id: true, processInstanceId: true, phaseId: true },
   });
 
-  const foreign = requested.find(
+  const outsideRequestedPhase = requested.find(
     (assignment) =>
       assignment.processInstanceId !== processInstanceId ||
       assignment.phaseId !== phaseId,
   );
-  if (foreign) {
-    throw new NotFoundError('Review assignment', foreign.id);
+  if (outsideRequestedPhase) {
+    throw new NotFoundError('Review assignment', outsideRequestedPhase.id);
   }
 
   // PENDING repeated here: a row started since the read above keeps its review.
