@@ -751,7 +751,7 @@ describe.concurrent('listProposalRelationships', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, target, caller } = await createMergeableProposals(testData);
 
-    // Authored by a member so the admin's standing, not proposal-profile
+    // Member-authored so the admin's standing, not proposal-profile
     // membership, is what admits them.
     const author = await testData.createMemberUser({
       organization: setup.organization,
@@ -810,8 +810,7 @@ describe.concurrent('listProposalRelationships', () => {
       .set({ visibility: Visibility.HIDDEN })
       .where(eq(proposals.id, source.id));
 
-    // An admin can open the hidden proposal's page, so the "Merged into …"
-    // notice on it has to resolve instead of 404ing the whole read.
+    // Backs the "Merged into …" notice on the hidden proposal's own page.
     const result = await caller.decision.listProposalRelationships({
       sourceProposalId: source.id,
     });

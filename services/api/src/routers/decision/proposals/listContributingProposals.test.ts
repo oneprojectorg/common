@@ -59,10 +59,9 @@ async function createMergeableProposals(testData: TestDecisionsDataManager) {
 }
 
 /**
- * A member-authored proposal, hidden by the admin and then merged into an
- * admin-owned target. The author is deliberately *not* the admin: sharing them
- * would let the proposal-profile member exception admit the admin, and the
- * admin exception would never be exercised.
+ * The author is deliberately not the admin: sharing them would let the
+ * proposal-profile member exception admit the admin, leaving the admin
+ * exception untested.
  */
 async function createHiddenContributingProposal(
   testData: TestDecisionsDataManager,
@@ -265,8 +264,6 @@ describe.concurrent('listContributingProposals: hidden proposals', () => {
     const { source, target, adminCaller } =
       await createHiddenContributingProposal(testData);
 
-    // Same rule `listProposals` applies: hidden never means hidden from the
-    // admins who can unhide it.
     const result = await adminCaller.decision.listContributingProposals({
       proposalId: target.id,
     });
@@ -323,8 +320,7 @@ describe.concurrent('listContributingProposals: hidden proposals', () => {
     const { source, target, adminCaller } =
       await createHiddenContributingProposal(testData);
 
-    // The *pinned* end is what's hidden this time. An admin can open the page,
-    // so the section on it must load rather than 404.
+    // Hiding the pinned end this time, not the contributing one.
     await adminCaller.decision.updateProposal({
       proposalId: target.id,
       data: { visibility: Visibility.HIDDEN },

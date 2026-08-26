@@ -10,29 +10,13 @@ import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 import { type AccessUser, resolveAccessUserIds } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 
-/**
- * Who is asking. Resolved once per read and threaded through every predicate
- * below, so two reads of the same proposals can't end up applying different
- * visibility rules to them.
- */
+/** Resolved once per read so two reads can't apply different visibility rules. */
 export type ProposalViewer = {
-  /**
-   * Admin of the decision the proposals belong to. Sees hidden and flagged
-   * proposals wherever they appear.
-   */
+  /** Admin of the decision, not of the proposal. */
   isInstanceAdmin: boolean;
-  /**
-   * The caller's effective auth-user ids (own ∪ public), for the
-   * proposal-profile member exception.
-   */
   accessUserIds: string[];
 };
 
-/**
- * Builds the viewer from the caller's roles on the *decision's* profile — the
- * grants `listProposals` already reads — so "admin" means the same thing in
- * every proposal read.
- */
 export const resolveProposalViewer = ({
   user,
   instanceProfileRoles,
@@ -47,11 +31,8 @@ export const resolveProposalViewer = ({
   accessUserIds: resolveAccessUserIds(user),
 });
 
-/**
- * Members of the proposal's own profile: its creator plus any collaborator
- * invited onto it. Keying on `profileId` rather than `submittedByProfileId` is
- * what keeps a group-owned proposal readable by the whole group.
- */
+// `profileId`, not `submittedByProfileId`: a group-owned proposal stays
+// readable by the whole group.
 const isProposalProfileMember = (
   table: typeof proposals,
   accessUserIds: string[],
@@ -65,13 +46,8 @@ const isProposalProfileMember = (
   );
 
 /**
- * Both restrictions below grant the same two exceptions — instance admins skip
- * the filter outright, and members of the proposal's own profile are excepted
- * from it — so the shape lives here once. `undefined` means no filter at all:
- * `and(...)` drops undefined conditions, which is what admits an admin.
- *
- * `unrestricted` is the predicate that holds for a proposal the restriction
- * doesn't apply to in the first place.
+ * Returns `undefined` for an admin — `and(...)` drops undefined conditions, so
+ * an admin gets no filter rather than a permissive one.
  */
 const buildViewerException = ({
   table,
@@ -86,10 +62,6 @@ const buildViewerException = ({
     ? undefined
     : or(unrestricted, isProposalProfileMember(table, viewer.accessUserIds))!;
 
-/**
- * HIDDEN proposals stay readable by instance admins and by members of the
- * proposal's own profile; everyone else sees VISIBLE rows only.
- */
 export const buildHiddenVisibilityFilter = ({
   table,
   viewer,
@@ -103,10 +75,6 @@ export const buildHiddenVisibilityFilter = ({
     unrestricted: eq(table.visibility, Visibility.VISIBLE),
   });
 
-/**
- * An active moderation flag hides a proposal from the same audience a HIDDEN
- * one is hidden from, with the same two exceptions.
- */
 export const buildModerationFlagFilter = ({
   table,
   viewer,
@@ -121,19 +89,13 @@ export const buildModerationFlagFilter = ({
   });
 
 /**
- * Whether `viewer` may read a proposal that a list reached directly rather than
- * through `resolveProposalListScope` — the merge reads, which deliberately
- * surface superseded proposals every other listing filters out.
+ * For reads that bypass `resolveProposalListScope` — the merge reads, which
+ * surface superseded proposals. Read access to a decision doesn't imply read
+ * access to every proposal in it, so apply this to every row returned,
+ * including the one the caller named.
  *
- * Read access to a decision doesn't imply read access to every proposal in it,
- * so such a list applies this to *every* row it returns, including the one the
- * caller named. That way it neither surfaces a proposal the caller couldn't
- * open nor reveals that a restricted one exists at all. The exceptions come
- * from the same builders `resolveProposalListScope` uses on a non-draft row, so
- * what a merge read shows and what `listProposals` shows can't drift apart.
- *
- * Pass the *aliased* table of the query being built (e.g. the `table` from a
- * relational `RAW` callback) so the subqueries correlate correctly.
+ * Pass the *aliased* table (e.g. from a relational `RAW` callback) so the
+ * subqueries correlate.
  */
 export const isProposalReadableBy = ({
   table,
@@ -144,10 +106,9 @@ export const isProposalReadableBy = ({
 }): SQL =>
   and(
     isNull(table.deletedAt),
-    // Moderation-detached (CSAM) proposals are invisible to everyone, admins
-    // included — the same treatment `getProposal` gives them.
+    // Moderation-detached (CSAM) proposals are invisible to admins too.
     isNull(table.moderationDetachedAt),
-    // A draft can't be merged, and admin standing never grants one anyway.
+    // A draft can't be merged, and admin standing doesn't grant one.
     ne(table.status, ProposalStatus.DRAFT),
     buildHiddenVisibilityFilter({ table, viewer }),
     buildModerationFlagFilter({ table, viewer }),

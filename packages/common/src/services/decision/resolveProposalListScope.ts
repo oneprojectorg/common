@@ -236,9 +236,6 @@ export const resolveProposalListScope = async ({
     }
   }
 
-  // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
-  // for the draft subquery below and, via the viewer, for the HIDDEN and
-  // moderation-flag exceptions.
   // INVARIANT: public grants must only be placed on the process/decision
   // profile, never on an individual proposal profile — otherwise this would
   // surface every caller's drafts/HIDDEN proposals to the public.
@@ -330,9 +327,8 @@ export const resolveProposalListScope = async ({
     accessPromise,
   ]);
 
-  // The visibility standing every proposal read shares. Trusted
-  // (`skipAccessCheck`) callers resolve to a non-admin viewer off the empty
-  // role set, which is harmless: that branch of `buildWhereClause` returns
+  // Trusted (`skipAccessCheck`) callers resolve to a non-admin viewer off the
+  // empty role set; harmless, since that branch of `buildWhereClause` returns
   // before either exception filter is consulted.
   const viewer = resolveProposalViewer({
     user,
@@ -429,23 +425,12 @@ export const resolveProposalListScope = async ({
       phaseScope.buildDraftFilter(proposalsTable),
     )!;
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
-    // for non-admins. Hidden proposals stay visible to the creator and any
-    // invited collaborators on the proposal's profile — same pattern the
-    // draft filter uses, so a collaborator's view of a co-authored proposal
-    // doesn't change the moment it's submitted with HIDDEN visibility.
     const nonDraftVisibilityFilter = and(
       phaseScopedNonDraftIdFilter,
       buildHiddenVisibilityFilter({ table: proposalsTable, viewer }),
     )!;
 
-    // Items with an active moderation flag are hidden from everyone except
-    // members of the proposal's own profile (creator + invited collaborators);
-    // instance admins skip the filter entirely. The owner audience is
-    // proposal.profileId membership — the same set getProposal grants the
-    // flagged proposal to — so the list and detail views agree (keying on
-    // submittedByProfileId alone would diverge for group-owned proposals).
-    // Applied in SQL so pagination stays correct.
+    // Both exceptions run in SQL, not JS, so pagination stays correct.
     const moderationFilter = buildModerationFlagFilter({
       table: proposalsTable,
       viewer,

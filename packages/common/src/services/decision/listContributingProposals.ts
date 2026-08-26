@@ -44,11 +44,8 @@ export async function listContributingProposals({
 
   // Profile-level grants only — no org fallback, matching `mergeProposals`.
   // `ADMIN` isn't listed alongside `READ` because the seeded decisions Admin
-  // role already carries `read`, so it would never admit anyone extra.
-  //
-  // Awaited before anything else runs: the roles it returns are also what
-  // decides whether this caller is an admin, and an unauthorized one never
-  // reaches the reads below.
+  // role already carries `read`. Awaited first: the roles it returns are what
+  // decide whether this caller is an admin.
   const instanceProfileRoles = await assertProfileAccess({
     user,
     profileId: proposal.instance.profileId,
