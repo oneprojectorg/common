@@ -535,7 +535,6 @@ function AssignmentActionsMenu({
   const t = useTranslations();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const proposalTitle = assignment.proposalTitle ?? t('Untitled Proposal');
   const isRemovable = assignment.status === 'pending';
 
   // The list refetches through the `reviewAssignments` channel this publishes
@@ -548,10 +547,7 @@ function AssignmentActionsMenu({
         toast.error(t('Could not unassign — the assignment has changed.'));
       } else {
         toast.success(
-          t('{proposal} is no longer assigned to {name}', {
-            proposal: proposalTitle,
-            name: reviewerName,
-          }),
+          t('Proposal unassigned from {name}', { name: reviewerName }),
         );
       }
       setIsConfirmOpen(false);
@@ -575,9 +571,7 @@ function AssignmentActionsMenu({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={t('Assignment actions for {proposal}', {
-                proposal: proposalTitle,
-              })}
+              aria-label={t('Assignment actions')}
             />
           }
         >
@@ -601,8 +595,8 @@ function AssignmentActionsMenu({
             <AlertDialogTitle>{t('Unassign proposal?')}</AlertDialogTitle>
             <AlertDialogDescription>
               {t(
-                '{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.',
-                { name: reviewerName, proposal: proposalTitle },
+                '{name} will no longer be asked to review this proposal. You can assign it to them again later.',
+                { name: reviewerName },
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
