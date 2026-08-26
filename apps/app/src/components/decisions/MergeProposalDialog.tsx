@@ -70,6 +70,9 @@ const getMergeCandidateLabel = (candidate: MergeCandidate) => candidate.title;
 const isSameMergeCandidate = (a: MergeCandidate, b: MergeCandidate) =>
   a.id === b.id;
 
+/** The `<source>` chunk both steps' `t.rich` copy wraps a proposal title in. */
+const source = (chunks: ReactNode) => <em>{chunks}</em>;
+
 /** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
  *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
 type MergeStep = 'select' | 'confirm';
@@ -179,10 +182,7 @@ export function MergeProposalDialog({
               <DialogDescription>
                 {t.rich(
                   'Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.',
-                  {
-                    name: sourceTitle,
-                    source: (chunks: ReactNode) => <em>{chunks}</em>,
-                  },
+                  { name: sourceTitle, source },
                 )}
               </DialogDescription>
 
@@ -295,7 +295,6 @@ function ConfirmMergeStep({
   onConfirm: () => void;
 }) {
   const t = useTranslations();
-  const source = (chunks: ReactNode) => <em>{chunks}</em>;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0">
@@ -401,11 +400,9 @@ function MergeTargetSearchField({
   // Base UI owns when the popup shows; we mirror it so Escape can be told
   // apart from Escape-with-the-list-open, and so a closed field doesn't search.
   const [isOpen, setIsOpen] = useState(false);
-  const searchQuery = searchTerm.trim();
-  const hasQuery = searchQuery.length > 0;
-  const { results, isSearching, isError } = useMergeCandidateSearch({
+  const { results, hasQuery, isSearching, isError } = useMergeCandidateSearch({
     proposal,
-    searchQuery,
+    searchQuery: searchTerm.trim(),
     isOpen,
   });
 
@@ -441,7 +438,7 @@ function MergeTargetSearchField({
       }}
       itemToStringLabel={getMergeCandidateLabel}
       isItemEqualToValue={isSameMergeCandidate}
-      onValueChange={(candidate: MergeCandidate | null) => onSelect(candidate)}
+      onValueChange={onSelect}
     >
       <ComboboxInput
         id={MERGE_SEARCH_INPUT_ID}
@@ -547,6 +544,7 @@ function useMergeCandidateSearch({
 
   return {
     results,
+    hasQuery,
     isError: query.isError,
     // Anything short of settled results counts as searching, because until
     // then the rows on screen are the previous term's. That covers the
