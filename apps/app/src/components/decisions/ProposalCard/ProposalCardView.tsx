@@ -14,6 +14,7 @@ import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { cn } from '@op/sense/lib/utils';
 import type { ComponentProps, ReactNode } from 'react';
+import { LuCircleX } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -111,7 +112,9 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
       <StatusBadge variant="success">{t('Shortlisted')}</StatusBadge>
     ),
     [ProposalStatus.REJECTED]: (
-      <StatusBadge variant="inactive">{t('Not shortlisted')}</StatusBadge>
+      <StatusBadge variant="alert" icon={LuCircleX}>
+        {t('Rejected')}
+      </StatusBadge>
     ),
     _: null,
   });

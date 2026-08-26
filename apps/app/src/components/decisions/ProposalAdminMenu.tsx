@@ -17,8 +17,11 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
+import { RejectProposalDialog } from './RejectProposalDialog';
 import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
+import { buildRejectMenuItem } from './proposals/reject';
 import { useProposalModerationActions } from './useProposalModerationActions';
+import { useProposalRejectionActions } from './useProposalRejectionActions';
 
 /**
  * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide
@@ -63,6 +66,7 @@ function ProposalAdminMenuItems({
   const router = useRouter();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
@@ -80,6 +84,12 @@ function ProposalAdminMenuItems({
     },
   });
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
+  const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
+  // The parent gate already requires admin + non-draft, so the slot always
+  // shows; it just toggles to Undo once rejected.
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
+  const { reject, unreject, isRejecting, isUnrejecting } =
+    useProposalRejectionActions(proposal);
 
   // A superseded proposal leaves every listing, so its own page is the only
   // surface that can offer the undo. Gated with the item it feeds.
@@ -120,8 +130,24 @@ function ProposalAdminMenuItems({
       })
     : null;
 
+  const rejectItem = rejectEnabled
+    ? buildRejectMenuItem({
+        isDisabled:
+          isLoading ||
+          unmergeMutation.isPending ||
+          isRejecting ||
+          isUnrejecting,
+        isRejected,
+        rejectLabel: t('Reject proposal'),
+        undoLabel: t('Undo rejection'),
+        onReject: () => setIsRejectModalOpen(true),
+        onUndo: unreject,
+      })
+    : null;
+
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
+    ...(rejectItem ? [rejectItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -160,6 +186,16 @@ function ProposalAdminMenuItems({
           proposal={proposal}
           open={isMergeModalOpen}
           onOpenChange={setIsMergeModalOpen}
+        />
+      ) : null}
+      {rejectEnabled && !isRejected ? (
+        <RejectProposalDialog
+          open={isRejectModalOpen}
+          onOpenChange={setIsRejectModalOpen}
+          isPending={isRejecting}
+          onConfirm={() =>
+            reject({ onSuccess: () => setIsRejectModalOpen(false) })
+          }
         />
       ) : null}
     </ProposalOptionsMenu>

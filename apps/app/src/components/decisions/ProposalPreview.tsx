@@ -23,6 +23,7 @@ import type { IconType } from 'react-icons';
 import {
   LuBadgeCheck,
   LuBookmark,
+  LuCircleX,
   LuEyeOff,
   LuFlag,
   LuHeart,
@@ -104,6 +105,7 @@ export function ProposalPreview({
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   // Draft has its own banner above, so don't also badge it as hidden.
   const isHidden = !isDraft && proposal.visibility === Visibility.HIDDEN;
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
 
   const {
     title: originalTitle,
@@ -152,8 +154,13 @@ export function ProposalPreview({
         {/* Status badges. Unlike ProposalCardView's single-badge
             `ProposalStatusBadge`, the header shows every applicable state at
             once, with the longer copy the design spells out. */}
-        {(isHidden || proposal.isFlagged || selection) && (
+        {(isRejected || isHidden || proposal.isFlagged || selection) && (
           <div className="flex flex-wrap gap-2">
+            {isRejected && (
+              <StatusBadge variant="alert" icon={LuCircleX}>
+                {t('Rejected')}
+              </StatusBadge>
+            )}
             {isHidden && (
               <StatusBadge variant="warning" icon={LuEyeOff}>
                 {t('Hidden from public view')}

@@ -93,6 +93,12 @@ export {
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
+  rejectProposalInputSchema,
+  unrejectProposalInputSchema,
+  type RejectProposalInput,
+  type UnrejectProposalInput,
+} from './services/decision/schemas/rejectProposal';
+export {
   listContributingProposalsInputSchema,
   contributingProposalListSchema,
   type ListContributingProposalsInput,

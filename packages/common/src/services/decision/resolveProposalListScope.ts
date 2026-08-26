@@ -467,10 +467,22 @@ export const resolveProposalListScope = async ({
           ),
         )!;
 
+    // Rejected proposals are hidden everywhere except an admin's view of the
+    // proposal list — the same admin-gated treatment as the moderation flag.
+    // Every non-list read (phases, review, voting) drops them unconditionally
+    // via their own predicates; here the admin keeps them so they can manage a
+    // rejection. Drafts can't be rejected, so this never touches the draft
+    // branch. Owners do NOT get an exception: a rejection is an admin verdict,
+    // not moderation of the author's own content.
+    const rejectedFilter = canManageProposals
+      ? undefined
+      : ne(proposalsTable.status, ProposalStatus.REJECTED);
+
     return and(
       clause,
       or(draftFilter, nonDraftVisibilityFilter)!,
       moderationFilter,
+      rejectedFilter,
     )!;
   };
 

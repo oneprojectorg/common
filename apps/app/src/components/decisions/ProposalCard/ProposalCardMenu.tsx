@@ -13,8 +13,11 @@ import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
+import { RejectProposalDialog } from '../RejectProposalDialog';
 import { buildMergeMenuItem } from '../proposals/merge';
+import { buildRejectMenuItem } from '../proposals/reject';
 import { useProposalModerationActions } from '../useProposalModerationActions';
+import { useProposalRejectionActions } from '../useProposalRejectionActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
 export function ProposalCardMenu({
@@ -30,6 +33,7 @@ export function ProposalCardMenu({
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -40,6 +44,14 @@ export function ProposalCardMenu({
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
   const canMerge =
     mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+
+  const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
+  // Shown once submitted; toggles to Undo once rejected, so it stays put.
+  const canRejectOrUndo =
+    rejectEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
+  const { reject, unreject, isRejecting, isUnrejecting } =
+    useProposalRejectionActions(proposal);
 
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
@@ -64,6 +76,21 @@ export function ProposalCardMenu({
         onAction: handleToggleVisibility,
         isDisabled: isLoading,
       });
+    }
+
+    // Reject sits with merge as an admin curation action (Figma flyout), and
+    // becomes Undo once rejected.
+    if (canRejectOrUndo) {
+      items.push(
+        buildRejectMenuItem({
+          isDisabled: isLoading || isRejecting || isUnrejecting,
+          isRejected,
+          rejectLabel: t('Reject proposal'),
+          undoLabel: t('Undo rejection'),
+          onReject: () => setIsRejectModalOpen(true),
+          onUndo: unreject,
+        }),
+      );
     }
 
     // Edit is a menu item everywhere except drafts, whose card keeps the
@@ -115,6 +142,16 @@ export function ProposalCardMenu({
           proposal={proposal}
           open={isMergeModalOpen}
           onOpenChange={setIsMergeModalOpen}
+        />
+      )}
+      {canRejectOrUndo && !isRejected && (
+        <RejectProposalDialog
+          open={isRejectModalOpen}
+          onOpenChange={setIsRejectModalOpen}
+          isPending={isRejecting}
+          onConfirm={() =>
+            reject({ onSuccess: () => setIsRejectModalOpen(false) })
+          }
         />
       )}
     </ProposalOptionsMenu>

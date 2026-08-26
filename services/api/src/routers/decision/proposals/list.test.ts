@@ -315,6 +315,152 @@ describe.concurrent('listProposals', () => {
     expect(result.proposals).toHaveLength(2);
   });
 
+  it('should hide rejected proposals from non-admin users', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [keptProposal, rejectedProposal, adminCaller, memberUser] =
+      await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Kept Proposal' },
+        }),
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Rejected Proposal' },
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+      ]);
+
+    // A draft can't be rejected, so submit both first.
+    await Promise.all([
+      adminCaller.decision.submitProposal({ proposalId: keptProposal.id }),
+      adminCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
+    ]);
+
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+    });
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    // Non-admin sees only the non-rejected proposal, exactly like a flagged one.
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(keptProposal.id);
+  });
+
+  it('should show rejected proposals to admin users', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const [keptProposal, rejectedProposal, adminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: memberUser.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Kept Proposal' },
+      }),
+      testData.createProposal({
+        userEmail: memberUser.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Rejected Proposal' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    await Promise.all([
+      memberCaller.decision.submitProposal({ proposalId: keptProposal.id }),
+      memberCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
+    ]);
+
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+    });
+
+    const result = await adminCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    // Admin still sees the rejected proposal in the proposal list, carrying its
+    // REJECTED status, the same way an admin sees flagged proposals.
+    expect(result.proposals).toHaveLength(2);
+    const rejected = result.proposals.find((p) => p.id === rejectedProposal.id);
+    expect(rejected?.status).toBe(ProposalStatus.REJECTED);
+  });
+
+  it('restores a rejected proposal to the active pool on undo', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [proposal, adminCaller, memberUser] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    await adminCaller.decision.submitProposal({ proposalId: proposal.id });
+    await adminCaller.decision.rejectProposal({ proposalId: proposal.id });
+    await adminCaller.decision.unrejectProposal({ proposalId: proposal.id });
+
+    // Back to SUBMITTED, so a non-admin sees it in the list again.
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(proposal.id);
+    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
   it('should show hidden proposals to their owners', async ({
     task,
     onTestFinished,
