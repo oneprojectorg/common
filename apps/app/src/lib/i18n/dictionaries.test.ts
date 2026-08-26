@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { i18nConfig } from './config';
+import { normalizeMessageKey, normalizeMessageKeys } from './messageKeys';
 
 type MessageValues = Record<
   string,
@@ -27,40 +28,29 @@ const argumentsIn = (message: string): MessageValues => ({
   ),
 });
 
-const loadMessages = async (locale: string): Promise<Record<string, string>> =>
-  (await import(`./dictionaries/${locale}.json`)).default;
-
-// `request.ts` resolves a dictionary with a dynamic import keyed on the locale,
-// so a supported locale with no dictionary file only fails at request time —
-// for every page in that locale. Catch it here instead.
+// `request.ts` resolves a dictionary with a dynamic import keyed on the locale
+// and hands it to next-intl untouched, so a supported locale whose dictionary
+// is missing — or holds a message next-intl can't format — fails at request
+// time, for every page in that locale. A message that fails to format renders
+// as its raw key, which is easy to miss in review.
 describe('dictionaries', () => {
-  it.each(i18nConfig.locales)('has a dictionary for %s', async (locale) => {
-    const messages = await loadMessages(locale);
-
-    expect(Object.keys(messages).length).toBeGreaterThan(0);
-  });
-
-  // A malformed ICU message (an unbalanced brace, a plural arm the locale has
-  // no category for) renders as the raw key at runtime, so it survives review
-  // and only shows up on the page.
   it.each(i18nConfig.locales)('formats every %s message', async (locale) => {
-    const messages = await loadMessages(locale);
+    const messages: Record<string, string> = (
+      await import(`./dictionaries/${locale}.json`)
+    ).default;
     const failures: Array<string> = [];
     const t = createTranslator({
       locale,
-      // next-intl reads dots as path separators, matching `request.ts`.
-      messages: Object.fromEntries(
-        Object.entries(messages).map(([key, value]) => [
-          key.replaceAll('.', '_'),
-          value,
-        ]),
-      ),
+      messages: normalizeMessageKeys(messages),
       onError: (error) => failures.push(error.message),
     });
 
-    for (const [key, message] of Object.entries(messages)) {
+    const entries = Object.entries(messages);
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const [key, message] of entries) {
       // rich() rather than t(): it handles both plain and tag-bearing messages.
-      t.rich(key.replaceAll('.', '_'), argumentsIn(message));
+      t.rich(normalizeMessageKey(key), argumentsIn(message));
     }
 
     expect(failures).toEqual([]);

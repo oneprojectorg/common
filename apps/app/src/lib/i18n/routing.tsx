@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 
 import { i18nConfig } from './config';
 import type messages from './dictionaries/en.json';
+import { normalizeMessageKey } from './messageKeys';
 
 /**
  * Union of all known translation keys derived from the English dictionary.
@@ -44,20 +45,14 @@ export const {
   useRouter,
 } = createNavigation(routing);
 
-// Periods are parsed as path separators by next-intl, so we need to replace
-// them with underscores both here and in request.ts's getConfig helper.
 const useTranslations = (): TranslateFn => {
   const translateFn = _useTranslations();
 
   return useMemo(() => {
-    function transformKey(key: string): string {
-      return key.replaceAll('.', '_');
-    }
-
     const proxyTranslateFn = new Proxy(translateFn, {
       apply(target, thisArg, argumentsList: [string, ...unknown[]]) {
         const [message, ...rest] = argumentsList;
-        const transformedMessage = transformKey(message);
+        const transformedMessage = normalizeMessageKey(message);
 
         const result = Reflect.apply(target, thisArg, [
           transformedMessage,
@@ -96,7 +91,7 @@ const useTranslations = (): TranslateFn => {
           message: string,
           ...rest: unknown[]
         ) => {
-          const transformedMessage = transformKey(message);
+          const transformedMessage = normalizeMessageKey(message);
           const result = original.call(
             translateFn,
             transformedMessage,
