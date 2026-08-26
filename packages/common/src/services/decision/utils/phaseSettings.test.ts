@@ -5,6 +5,7 @@ import {
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
+  resolveReviewSettings,
 } from './phaseSettings';
 
 describe('isReviewPhase', () => {
@@ -325,5 +326,55 @@ describe('getPhaseReviewSettings', () => {
     );
 
     expect(result.openReviews).toBe(false);
+  });
+});
+
+describe('resolveReviewSettings', () => {
+  it('matches the throwing variant when the phase exists', () => {
+    const instanceData = {
+      config: { reviewsAllowRevisions: false },
+      phases: [
+        {
+          phaseId: 'review',
+          rules: { reviews: { submit: true, anonymousFeedback: false } },
+        },
+      ],
+    };
+
+    expect(resolveReviewSettings(instanceData, 'review')).toEqual(
+      getPhaseReviewSettings(instanceData, 'review'),
+    );
+  });
+
+  it('falls back to defaults with no phaseId (legacy instance)', () => {
+    const result = resolveReviewSettings({}, undefined);
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: true,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('falls back instead of throwing when the phase is off the list', () => {
+    const result = resolveReviewSettings(
+      { phases: [{ phaseId: 'submission' }] },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(true);
+    expect(result.submit).toBe(false);
+  });
+
+  it('still honors legacy config in the phaseless fallback', () => {
+    const result = resolveReviewSettings(
+      { config: { reviewsAnonymousFeedback: false } },
+      undefined,
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
   });
 });

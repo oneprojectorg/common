@@ -7,8 +7,8 @@ import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import {
   assertInstancePhase,
-  getPhaseReviewSettings,
   isReviewPhase,
+  resolveReviewSettings,
 } from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 
@@ -85,14 +85,12 @@ export async function ReviewSummaryLayout({
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
 
-  // Undefined only on an instance with no phases and no current state.
-  if (!phaseId) {
-    notFound();
-  }
-
-  // Throws on a phase missing from the phase list — broken instance data
-  // fails loudly instead of resolving default settings.
-  const reviewSettings = getPhaseReviewSettings(
+  // The lenient resolver keeps this screen rendering for legacy instances
+  // (no phase list, or a currentStateId outside it), where the throwing
+  // variant would 500. Keyed to the resolved review phase, not the viewed
+  // assignment's phase — an older assignment gets the current phase's
+  // settings, same as the aggregates below.
+  const reviewSettings = resolveReviewSettings(
     instance.instanceData ?? {},
     phaseId,
   );

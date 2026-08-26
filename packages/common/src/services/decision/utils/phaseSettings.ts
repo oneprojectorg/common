@@ -54,24 +54,48 @@ export type ReviewSettings = Required<
   >
 >;
 
+interface ReviewSettingsInstanceData {
+  config?: {
+    reviewsPolicy?: ReviewsPolicy;
+    reviewsAllowRevisions?: boolean;
+    reviewsAnonymousFeedback?: boolean;
+  };
+  phases?: ReadonlyArray<{ phaseId: string; rules?: ReviewPhaseRules }>;
+}
+
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
 export function getPhaseReviewSettings(
-  instanceData: {
-    config?: {
-      reviewsPolicy?: ReviewsPolicy;
-      reviewsAllowRevisions?: boolean;
-      reviewsAnonymousFeedback?: boolean;
-    };
-    phases?: ReadonlyArray<{ phaseId: string; rules?: ReviewPhaseRules }>;
-  },
+  instanceData: ReviewSettingsInstanceData,
   phaseId: string,
 ): ReviewSettings {
   const phase = assertInstancePhase({ instance: { instanceData }, phaseId });
-  const reviews = phase.rules?.reviews;
-  const config = instanceData.config;
+  return settingsFromPhase(instanceData.config, phase);
+}
+
+/**
+ * Lenient counterpart of `getPhaseReviewSettings` for read-only surfaces that
+ * must still render legacy instances — no phase list, or a `currentStateId`
+ * that fell out of it. Falls back to legacy config → defaults there; write
+ * paths keep the throwing variant.
+ */
+export function resolveReviewSettings(
+  instanceData: ReviewSettingsInstanceData,
+  phaseId: string | undefined,
+): ReviewSettings {
+  const phase = phaseId
+    ? instanceData.phases?.find((p) => p.phaseId === phaseId)
+    : undefined;
+  return settingsFromPhase(instanceData.config, phase);
+}
+
+function settingsFromPhase(
+  config: ReviewSettingsInstanceData['config'],
+  phase: { phaseId: string; rules?: ReviewPhaseRules } | undefined,
+): ReviewSettings {
+  const reviews = phase?.rules?.reviews;
 
   return {
-    submit: isReviewPhase(phase),
+    submit: phase ? isReviewPhase(phase) : false,
     policy: reviews?.policy ?? config?.reviewsPolicy ?? DEFAULT_REVIEWS_POLICY,
     // Scope is phase-only (no legacy config counterpart), so it resolves from
     // the phase rules or the default.
