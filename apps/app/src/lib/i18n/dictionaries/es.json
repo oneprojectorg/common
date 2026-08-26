@@ -1558,6 +1558,7 @@
   "A proposal can only be merged into another one in this decision.": "Una propuesta solo puede combinarse con otra de esta decisión.",
   "Could not load the other proposals. Please try again.": "No se pudieron cargar las demás propuestas. Inténtalo de nuevo.",
   "Could not search proposals. Please try again.": "No se pudieron buscar las propuestas. Inténtalo de nuevo.",
+  "Type to search proposals": "Escribe para buscar propuestas",
   "Could not merge this proposal. Please try again.": "No se pudo combinar esta propuesta. Inténtalo de nuevo.",
   "Could not unmerge this proposal. Please try again.": "No se pudo separar esta propuesta. Inténtalo de nuevo.",
   "{source} is listed on its own again.": "{source} vuelve a aparecer por separado.",

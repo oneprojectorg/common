@@ -1621,6 +1621,7 @@
   "A proposal can only be merged into another one in this decision.": "Egy javaslat csak ugyanennek a döntésnek egy másik javaslatába vonható össze.",
   "Could not load the other proposals. Please try again.": "Nem sikerült betölteni a többi javaslatot. Kérjük, próbálja újra.",
   "Could not search proposals. Please try again.": "Nem sikerült a javaslatok keresése. Kérjük, próbálja újra.",
+  "Type to search proposals": "Írjon a javaslatok kereséséhez",
   "Could not merge this proposal. Please try again.": "Nem sikerült összevonni ezt a javaslatot. Kérjük, próbálja újra.",
   "Could not unmerge this proposal. Please try again.": "Nem sikerült megszüntetni ennek a javaslatnak az összevonását. Kérjük, próbálja újra.",
   "{source} is listed on its own again.": "A(z) {source} ismét önállóan szerepel a listán.",

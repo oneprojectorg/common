@@ -424,10 +424,15 @@ function MergeTargetSearchField({
 
   // The debounce window counts as searching too, or the spinner blinks off
   // between keystrokes while the results on screen are for an earlier term.
+  // `isPending` covers reopening on a term whose results were never fetched:
+  // the query re-enables a tick before `isFetching` flips, and without it the
+  // popup reads "no matches" for that tick.
   const isSearching =
     isOpen &&
     searchQuery.length > 0 &&
-    (query.isFetching || searchQuery !== debouncedSearchQuery);
+    (query.isFetching ||
+      query.isPending ||
+      searchQuery !== debouncedSearchQuery);
 
   return (
     <Combobox
@@ -489,21 +494,24 @@ function MergeTargetSearchField({
           )}
         </InputGroupAddon>
       </ComboboxInput>
-      {searchQuery.length > 0 ? (
-        <ComboboxContent>
-          <MergeSearchEmptyState
-            isError={query.isError}
-            isSearching={isSearching}
-          />
-          <ComboboxList>
-            {(candidate: MergeCandidate) => (
-              <ComboboxItem key={candidate.id} value={candidate}>
-                <MergeSearchResult candidate={candidate} />
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-        </ComboboxContent>
-      ) : null}
+      {/* Always rendered: Base UI owns when the popup mounts, and taking the
+          element away underneath it strands the close lifecycle — the popup
+          then never unmounts and reappears, inert, over the dialog. Vary the
+          contents instead. */}
+      <ComboboxContent>
+        <MergeSearchEmptyState
+          hasQuery={searchQuery.length > 0}
+          isError={query.isError}
+          isSearching={isSearching}
+        />
+        <ComboboxList>
+          {(candidate: MergeCandidate) => (
+            <ComboboxItem key={candidate.id} value={candidate}>
+              <MergeSearchResult candidate={candidate} />
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
     </Combobox>
   );
 }
@@ -513,23 +521,26 @@ function MergeTargetSearchField({
  * list is empty, so the failure and the in-flight states share the slot.
  */
 function MergeSearchEmptyState({
+  hasQuery,
   isError,
   isSearching,
 }: {
+  hasQuery: boolean;
   isError: boolean;
   isSearching: boolean;
 }) {
   const t = useTranslations();
 
-  return (
-    <ComboboxEmpty>
-      {isError
-        ? t('Could not search proposals. Please try again.')
-        : isSearching
-          ? t('Searching…')
-          : t('No proposals match your search')}
-    </ComboboxEmpty>
-  );
+  let message = t('No proposals match your search');
+  if (!hasQuery) {
+    message = t('Type to search proposals');
+  } else if (isError) {
+    message = t('Could not search proposals. Please try again.');
+  } else if (isSearching) {
+    message = t('Searching…');
+  }
+
+  return <ComboboxEmpty>{message}</ComboboxEmpty>;
 }
 
 /** Figma 15409:10854: the title over a single line of the proposal's preview. */
