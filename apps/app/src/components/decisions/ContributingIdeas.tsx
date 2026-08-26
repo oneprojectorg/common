@@ -79,10 +79,13 @@ function ContributingIdeasSuspense({
   return (
     <section className="border-t pt-8" aria-labelledby={headingId}>
       <div className="flex flex-col gap-2">
-        <Header3 id={headingId} className="text-headline font-light">
-          {t('Contributing ideas')}
-        </Header3>
-        <p className="text-base text-muted-foreground">
+        {/* Both unstyled on purpose. Figma ranks this heading with a proposal
+            answer's question rather than the 16px Attachments / Comments
+            headings, which is Header3's own `text-title` (20px from `md`), and
+            binds the description to the primary foreground — so it stays
+            un-muted, unlike the sibling section subtitles. */}
+        <Header3 id={headingId}>{t('Contributing ideas')}</Header3>
+        <p className="text-base">
           {t('These participant ideas were merged into this proposal.')}
         </p>
       </div>
