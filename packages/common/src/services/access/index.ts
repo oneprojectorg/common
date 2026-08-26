@@ -33,6 +33,7 @@ export {
   orgUserCacheKey,
   profileUserCacheKey,
   resolveAccessUserIds,
+  resolveAccountUserId,
 } from './cacheKeys';
 
 /**

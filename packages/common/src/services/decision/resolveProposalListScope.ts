@@ -28,6 +28,7 @@ import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
   resolveAccessUserIds,
+  resolveAccountUserId,
 } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
@@ -235,11 +236,14 @@ export const resolveProposalListScope = async ({
   }
 
   // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
-  // for the draft and HIDDEN visibility subqueries below.
+  // for the draft subquery below.
   // INVARIANT: public grants must only be placed on the process/decision
   // profile, never on an individual proposal profile — otherwise this would
-  // surface every caller's drafts/HIDDEN proposals to the public.
+  // surface every caller's drafts/HIDDEN proposals to the public. The
+  // proposal-profile checks take `accountUserId` alone for that reason: the
+  // sentinel can never match there, so unioning it in only widens the scan.
   const accessUserIds = resolveAccessUserIds(user);
+  const accountUserId = resolveAccountUserId(user);
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -434,7 +438,7 @@ export const resolveProposalListScope = async ({
           phaseScopedNonDraftIdFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
-            isProposalProfileMember(proposalsTable, accessUserIds),
+            isProposalProfileMember(proposalsTable, accountUserId),
           )!,
         )!;
 
@@ -446,7 +450,7 @@ export const resolveProposalListScope = async ({
       ? undefined
       : or(
           noActiveModerationFlag('proposal', proposalsTable.id),
-          isProposalProfileMember(proposalsTable, accessUserIds),
+          isProposalProfileMember(proposalsTable, accountUserId),
         )!;
 
     return and(

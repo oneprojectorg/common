@@ -7,14 +7,12 @@ import {
 } from '@op/db/schema';
 import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 
-import { type AccessUser, resolveAccessUserIds } from '../access';
+import { type AccessUser, resolveAccountUserId } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 
 export type ProposalReadContext = {
-  /** The caller's own auth id unioned with the public one. */
-  accessUserIds: string[];
-  /** False for a caller with no account, who holds only the public grants. */
-  hasAccountGrants: boolean;
+  /** `undefined` for a caller with no account of their own. */
+  accountUserId: string | undefined;
   /** `{ profile: ADMIN }` on the *decision's* profile. */
   isInstanceAdmin: boolean;
 };
@@ -27,8 +25,7 @@ export const getProposalReadContext = ({
   user: AccessUser | undefined;
   decisionRoles: NormalizedRole[];
 }): ProposalReadContext => ({
-  accessUserIds: resolveAccessUserIds(user),
-  hasAccountGrants: user !== undefined,
+  accountUserId: resolveAccountUserId(user),
   isInstanceAdmin: checkPermission(
     { profile: permission.ADMIN },
     decisionRoles,
@@ -51,22 +48,23 @@ const isUnrestricted = (proposalsTable: typeof proposals): SQL =>
 
 /**
  * Members of the proposal's *own* profile: its author plus invited
- * collaborators. INVARIANT, shared with `resolveProposalListScope`: public
- * grants (`GLOBAL_USER_PUBLIC`) belong on the decision's profile and never on
- * an individual proposal's, or this hands every caller's drafts and hidden
- * proposals to the public.
+ * collaborators. Nothing for a caller with no account — public grants belong on
+ * the decision's profile and never on an individual proposal's, so the public
+ * sentinel could only match if that invariant were already broken.
  */
 export const isProposalProfileMember = (
   proposalsTable: typeof proposals,
-  accessUserIds: string[],
-): SQL =>
-  inArray(
-    proposalsTable.profileId,
-    db
-      .select({ profileId: profileUsers.profileId })
-      .from(profileUsers)
-      .where(inArray(profileUsers.authUserId, accessUserIds)),
-  );
+  accountUserId: string | undefined,
+): SQL | undefined =>
+  accountUserId === undefined
+    ? undefined
+    : inArray(
+        proposalsTable.profileId,
+        db
+          .select({ profileId: profileUsers.profileId })
+          .from(profileUsers)
+          .where(eq(profileUsers.authUserId, accountUserId)),
+      );
 
 /**
  * `getProposal`'s gate expressed in SQL. Apply it to *every* row a list
@@ -78,7 +76,7 @@ export const isProposalProfileMember = (
  */
 export const isProposalReadable = (
   proposalsTable: typeof proposals,
-  { accessUserIds, hasAccountGrants, isInstanceAdmin }: ProposalReadContext,
+  { accountUserId, isInstanceAdmin }: ProposalReadContext,
 ): SQL =>
   and(
     isPresent(proposalsTable),
@@ -88,10 +86,6 @@ export const isProposalReadable = (
       isInstanceAdmin
         ? ne(proposalsTable.status, ProposalStatus.DRAFT)
         : isUnrestricted(proposalsTable),
-      // By the invariant above, the public grant is never on a proposal's own
-      // profile — so for a caller with no account the subquery cannot match.
-      hasAccountGrants
-        ? isProposalProfileMember(proposalsTable, accessUserIds)
-        : undefined,
+      isProposalProfileMember(proposalsTable, accountUserId),
     )!,
   )!;
