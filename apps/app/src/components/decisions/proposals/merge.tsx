@@ -25,6 +25,28 @@ export function getProposalDisplayTitle(
 }
 
 /**
+ * Combobox input changes that are the field syncing itself to the option the
+ * user just chose, rather than the user editing the query. Base UI fills the
+ * input from the selection on item press, on inline list navigation, and again
+ * when the popup closes (which it reports as `none`).
+ */
+const MERGE_SEARCH_SELECTION_REASONS = [
+  'item-press',
+  'list-navigation',
+  'none',
+];
+
+/**
+ * Whether a merge-search input change invalidates the proposal already picked.
+ *
+ * Only a real edit does: once the field no longer shows the chosen proposal,
+ * `Continue` would be merging into something the user can't see.
+ */
+export function isMergeSearchEdit(reason: string): boolean {
+  return !MERGE_SEARCH_SELECTION_REASONS.includes(reason);
+}
+
+/**
  * The proposals a given proposal may be merged into, in list order.
  *
  * `mergeProposals` only rejects a self-merge, so the rest is on the picker.

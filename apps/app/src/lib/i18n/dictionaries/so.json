@@ -1557,6 +1557,7 @@
   "No other proposals yet": "Weli ma jiraan soo-jeedinno kale",
   "A proposal can only be merged into another one in this decision.": "Soo-jeedin waxaa lala biirin karaa oo keliya soo-jeedin kale oo go'aankan ku jirta.",
   "Could not load the other proposals. Please try again.": "Soo-jeedinnada kale lama soo geli karin. Fadlan isku day mar kale.",
+  "Could not search proposals. Please try again.": "Soo-jeedinnada lama raadin karin. Fadlan isku day mar kale.",
   "Could not merge this proposal. Please try again.": "Soo-jeedintan lama biirin karin. Fadlan isku day mar kale.",
   "Could not unmerge this proposal. Please try again.": "Soo-jeedintan lama soocan karin. Fadlan isku day mar kale.",
   "{source} is listed on its own again.": "{source} mar kale gooni ahaan bay ku taxan tahay.",

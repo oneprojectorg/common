@@ -1556,6 +1556,7 @@
   "No other proposals yet": "لا توجد مقترحات أخرى بعد",
   "A proposal can only be merged into another one in this decision.": "لا يمكن دمج مقترح إلا مع مقترح آخر في هذا القرار.",
   "Could not load the other proposals. Please try again.": "تعذّر تحميل المقترحات الأخرى. يُرجى المحاولة مرة أخرى.",
+  "Could not search proposals. Please try again.": "تعذّر البحث في المقترحات. يُرجى المحاولة مرة أخرى.",
   "Could not merge this proposal. Please try again.": "تعذّر دمج هذا المقترح. يُرجى المحاولة مرة أخرى.",
   "Could not unmerge this proposal. Please try again.": "تعذّر إلغاء دمج هذا المقترح. يُرجى المحاولة مرة أخرى.",
   "{source} is listed on its own again.": "أصبح {source} مدرجًا بشكل منفصل مرة أخرى.",

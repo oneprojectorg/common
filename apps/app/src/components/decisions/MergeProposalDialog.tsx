@@ -7,6 +7,14 @@ import { useDebounce } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,15 +29,12 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@op/sense/InputGroup';
+import { InputGroupAddon } from '@op/sense/InputGroup';
 import { ProposalCard } from '@op/sense/ProposalCard';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
@@ -43,9 +48,13 @@ import {
   type MergeCandidate,
   getMergeCandidates,
   getProposalDisplayTitle,
+  isMergeSearchEdit,
 } from './proposals/merge';
 
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
+/** The popover scrolls rather than paginates, so it takes one short page. */
+const MERGE_SEARCH_RESULT_LIMIT = 20;
+const MERGE_SEARCH_INPUT_ID = 'merge-proposal-search';
 
 /** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
  *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
@@ -71,9 +80,6 @@ export function MergeProposalDialog({
   const [step, setStep] = useState<MergeStep>('select');
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  // The candidate list is a suspense query, so an un-debounced term would
-  // re-suspend to the skeleton on every keystroke.
-  const [debouncedSearchTerm] = useDebounce(searchTerm.trim(), 200);
   const [note, setNote] = useState('');
   // No invalidation needed: the endpoint registers the affected proposal channels.
   const mergeMutation = trpc.decision.mergeProposals.useMutation({
@@ -85,6 +91,18 @@ export function MergeProposalDialog({
   });
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
+
+  // Both pickers write one selection, and the field always shows it: choosing a
+  // suggested card fills the field the same way choosing a search result does,
+  // so "Merge into" can never name a different proposal than the one selected.
+  // Dropping the pick leaves the field alone — that path is the user editing
+  // the query, and their keystroke has already set it.
+  const handleSelect = (candidate: MergeCandidate | null) => {
+    setTarget(candidate);
+    if (candidate) {
+      setSearchTerm(candidate.title);
+    }
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -155,7 +173,9 @@ export function MergeProposalDialog({
               </DialogDescription>
 
               <section className="flex flex-col gap-2">
-                <h3 className="text-muted-foreground">{t('Merging from')}</h3>
+                <h3 className="text-sm text-muted-foreground">
+                  {t('Merging from')}
+                </h3>
                 <MergeProposalSummaryCard
                   proposal={proposal}
                   className="bg-muted"
@@ -165,30 +185,20 @@ export function MergeProposalDialog({
               <Separator />
 
               <Field>
-                <FieldLabel htmlFor="merge-proposal-search">
+                <FieldLabel htmlFor={MERGE_SEARCH_INPUT_ID}>
                   {t('Merge into')}
                 </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <LuSearch className="size-4" />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="merge-proposal-search"
-                    type="search"
-                    placeholder={t('Search proposals…')}
-                    value={searchTerm}
-                    onChange={(event) => {
-                      setSearchTerm(event.target.value);
-                      // A new search can hide the selected card; keeping it
-                      // would leave Continue enabled on an invisible choice.
-                      setTarget(null);
-                    }}
-                  />
-                </InputGroup>
+                <MergeTargetSearchField
+                  proposal={proposal}
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                  selected={target}
+                  onSelect={handleSelect}
+                />
               </Field>
 
               <section className="flex flex-col gap-2">
-                <h3 className="text-muted-foreground">
+                <h3 className="text-sm text-muted-foreground">
                   {t('Suggested proposals')}
                 </h3>
                 {/* Scoped boundary: a failed list must leave the dialog usable. */}
@@ -206,9 +216,8 @@ export function MergeProposalDialog({
                   <Suspense fallback={<MergeCandidateListSkeleton />}>
                     <MergeCandidateListSuspense
                       proposal={proposal}
-                      searchTerm={debouncedSearchTerm}
                       selected={target}
-                      onSelect={setTarget}
+                      onSelect={handleSelect}
                     />
                   </Suspense>
                 </APIErrorBoundary>
@@ -349,18 +358,153 @@ function ConfirmMergeStep({
 }
 
 /**
+ * Title search over the decision's other proposals, as the drop-down we use
+ * everywhere else (Figma 15409:10832). Results live in the popover, so the
+ * suggestions list underneath stays a list of suggestions.
+ *
+ * Deliberately not a suspense query: the popover is inside the dialog body, so
+ * suspending on a keystroke would blank the whole step. That also means a
+ * failure never reaches an error boundary, hence the in-popover error line.
+ */
+function MergeTargetSearchField({
+  proposal,
+  searchTerm,
+  onSearchTermChange,
+  selected,
+  onSelect,
+}: {
+  proposal: Proposal;
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
+  selected: MergeCandidate | null;
+  /** `null` when the user edits the query, which drops the pick. */
+  onSelect: (candidate: MergeCandidate | null) => void;
+}) {
+  const t = useTranslations();
+  const trimmedTerm = searchTerm.trim();
+  // A field showing the proposal already picked is displaying the choice, not
+  // asking a question — searching it would only re-find what's on screen.
+  const searchQuery = trimmedTerm === selected?.title ? '' : trimmedTerm;
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
+
+  const query = trpc.decision.listProposals.useQuery(
+    {
+      processInstanceId: proposal.processInstanceId,
+      dir: 'desc',
+      limit: MERGE_SEARCH_RESULT_LIMIT,
+      // Server-side, so a match outside the suggestions below is still found.
+      search: debouncedSearchQuery,
+    },
+    {
+      enabled: debouncedSearchQuery.length > 0,
+      // Hold the previous results while the next query runs, so the popover
+      // doesn't empty and re-fill between keystrokes.
+      placeholderData: (previous) => previous,
+      staleTime: 30 * 1000,
+    },
+  );
+
+  const untitledLabel = t('Untitled Proposal');
+  const results = useMemo(
+    () =>
+      getMergeCandidates({
+        proposals: query.data?.proposals ?? [],
+        sourceProposalId: proposal.id,
+        untitledLabel,
+      }),
+    [query.data?.proposals, proposal.id, untitledLabel],
+  );
+
+  // The debounce window counts as searching too, or the spinner blinks off
+  // between keystrokes while the results on screen are for an earlier term.
+  const isSearching =
+    searchQuery.length > 0 &&
+    (query.isFetching || searchQuery !== debouncedSearchQuery);
+
+  return (
+    <Combobox
+      items={results}
+      value={selected}
+      // The server already filtered; a second local pass would drop matches
+      // whose title differs from the term the server matched on.
+      filter={null}
+      inputValue={searchTerm}
+      onInputValueChange={(value, details) => {
+        onSearchTermChange(value);
+        if (isMergeSearchEdit(details.reason)) {
+          onSelect(null);
+        }
+      }}
+      itemToStringLabel={(candidate: MergeCandidate) => candidate.title}
+      isItemEqualToValue={(a: MergeCandidate, b: MergeCandidate) =>
+        a.id === b.id
+      }
+      onValueChange={(candidate: MergeCandidate | null) => onSelect(candidate)}
+    >
+      <ComboboxInput
+        id={MERGE_SEARCH_INPUT_ID}
+        placeholder={t('Search proposals…')}
+        showTrigger={false}
+      >
+        <InputGroupAddon align="inline-start">
+          {isSearching ? (
+            <Spinner className="size-4 text-muted-foreground" />
+          ) : (
+            <LuSearch aria-hidden className="size-4" />
+          )}
+        </InputGroupAddon>
+      </ComboboxInput>
+      {searchQuery.length > 0 ? (
+        <ComboboxContent>
+          <ComboboxEmpty>
+            {query.isError
+              ? t('Could not search proposals. Please try again.')
+              : isSearching
+                ? t('Searching…')
+                : t('No proposals match your search')}
+          </ComboboxEmpty>
+          <ComboboxList>
+            {(candidate: MergeCandidate) => (
+              <ComboboxItem key={candidate.id} value={candidate}>
+                <MergeSearchResult candidate={candidate} />
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      ) : null}
+    </Combobox>
+  );
+}
+
+/** Figma 15409:10854: the title over a single line of the proposal's preview. */
+function MergeSearchResult({ candidate }: { candidate: MergeCandidate }) {
+  const { description } = useProposalCardData(candidate.proposal);
+
+  return (
+    <div className="flex min-w-0 flex-col">
+      <span className="truncate" dir="auto">
+        {candidate.title}
+      </span>
+      {description ? (
+        <span className="truncate text-sm text-muted-foreground" dir="auto">
+          {description}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * The decision's other proposals as a single-select list of cards. Reads
  * `listProposals`, so the picker is scoped exactly like the browse list and
  * can't offer something that list wouldn't show.
  */
 function MergeCandidateListSuspense({
   proposal,
-  searchTerm,
   selected,
   onSelect,
 }: {
   proposal: Proposal;
-  searchTerm: string;
   selected: MergeCandidate | null;
   onSelect: (candidate: MergeCandidate) => void;
 }) {
@@ -372,8 +516,6 @@ function MergeCandidateListSuspense({
         processInstanceId: proposal.processInstanceId,
         dir: 'desc',
         limit: MERGE_CANDIDATE_PAGE_LIMIT,
-        // Server-side, so a match beyond the loaded pages is still found.
-        search: searchTerm || undefined,
       },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
@@ -399,11 +541,7 @@ function MergeCandidateListSuspense({
       {candidates.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>
-              {searchTerm
-                ? t('No proposals match your search')
-                : t('No other proposals yet')}
-            </EmptyTitle>
+            <EmptyTitle>{t('No other proposals yet')}</EmptyTitle>
             <EmptyDescription>
               {t(
                 'A proposal can only be merged into another one in this decision.',

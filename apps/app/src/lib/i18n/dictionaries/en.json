@@ -1620,6 +1620,7 @@
   "No other proposals yet": "No other proposals yet",
   "A proposal can only be merged into another one in this decision.": "A proposal can only be merged into another one in this decision.",
   "Could not load the other proposals. Please try again.": "Could not load the other proposals. Please try again.",
+  "Could not search proposals. Please try again.": "Could not search proposals. Please try again.",
   "Could not merge this proposal. Please try again.": "Could not merge this proposal. Please try again.",
   "Could not unmerge this proposal. Please try again.": "Could not unmerge this proposal. Please try again.",
   "{source} is listed on its own again.": "{source} is listed on its own again.",

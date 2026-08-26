@@ -1557,6 +1557,7 @@
   "No other proposals yet": "Aucune autre proposition pour l’instant",
   "A proposal can only be merged into another one in this decision.": "Une proposition ne peut être fusionnée qu’avec une autre proposition de cette décision.",
   "Could not load the other proposals. Please try again.": "Impossible de charger les autres propositions. Veuillez réessayer.",
+  "Could not search proposals. Please try again.": "Impossible de rechercher les propositions. Veuillez réessayer.",
   "Could not merge this proposal. Please try again.": "Impossible de fusionner cette proposition. Veuillez réessayer.",
   "Could not unmerge this proposal. Please try again.": "Impossible d’annuler la fusion de cette proposition. Veuillez réessayer.",
   "{source} is listed on its own again.": "{source} apparaît de nouveau séparément.",

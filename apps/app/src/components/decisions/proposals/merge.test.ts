@@ -2,7 +2,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
-import { getMergeCandidates } from './merge';
+import { getMergeCandidates, isMergeSearchEdit } from './merge';
 
 /** Lifts `title` and `profileName` out of their real nesting so cases stay flat. */
 const proposal = ({
@@ -137,5 +137,32 @@ describe('getMergeCandidates', () => {
     });
 
     expect(candidate?.proposal.id).toBe('a');
+  });
+});
+
+describe('isMergeSearchEdit', () => {
+  it('treats typing as an edit, which drops the proposal already picked', () => {
+    expect(isMergeSearchEdit('input-change')).toBe(true);
+  });
+
+  it.each(['input-clear', 'clear-press', 'escape-key'])(
+    'treats %s as an edit — an emptied field shows no pick to merge into',
+    (reason) => {
+      expect(isMergeSearchEdit(reason)).toBe(true);
+    },
+  );
+
+  it('keeps the pick when the input fills from the pressed option', () => {
+    expect(isMergeSearchEdit('item-press')).toBe(false);
+  });
+
+  it('keeps the pick when inline navigation fills the input', () => {
+    expect(isMergeSearchEdit('list-navigation')).toBe(false);
+  });
+
+  it('keeps the pick when the closing popup re-syncs the input', () => {
+    // Base UI reports the close-time sync as `none`; reading it as an edit
+    // would clear the target every time the popup closed on a selection.
+    expect(isMergeSearchEdit('none')).toBe(false);
   });
 });
