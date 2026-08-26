@@ -88,8 +88,10 @@ export function ReviewRubricForm({
 /**
  * Schema-driven review rubric form renderer (the reviewer's own review).
  *
- * `anonymousFeedback` off hides the feedback-to-author section but never
- * clears an `overallComment` written while it was on.
+ * `anonymousFeedback` off hides only the add-feedback button. An
+ * `overallComment` written while it was on stays visible and editable —
+ * the form always re-submits it, so hiding it would republish to the
+ * author a comment the reviewer can no longer see or retract.
  */
 function MyReviewForm({ anonymousFeedback }: { anonymousFeedback: boolean }) {
   const t = useTranslations();
@@ -190,24 +192,23 @@ function MyReviewForm({ anonymousFeedback }: { anonymousFeedback: boolean }) {
 
           <TotalScoreCard rubricTemplate={template} values={values} />
 
-          {anonymousFeedback &&
-            (isFeedbackOpen ? (
-              <section className="border-t pt-6">
-                <FeedbackToAuthorField
-                  value={overallComment}
-                  onChange={handleOverallCommentChange}
-                />
-              </section>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsFeedbackOpen(true)}
-              >
-                <LuPlus className="size-4" />
-                {t('Feedback to author')}
-              </Button>
-            ))}
+          {isFeedbackOpen ? (
+            <section className="border-t pt-6">
+              <FeedbackToAuthorField
+                value={overallComment}
+                onChange={handleOverallCommentChange}
+              />
+            </section>
+          ) : anonymousFeedback ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setIsFeedbackOpen(true)}
+            >
+              <LuPlus className="size-4" />
+              {t('Feedback to author')}
+            </Button>
+          ) : null}
         </div>
       </div>
     </>
