@@ -13,6 +13,8 @@ import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 export type ProposalReadContext = {
   /** The caller's own auth id unioned with the public one. */
   accessUserIds: string[];
+  /** False for a caller with no account, who holds only the public grants. */
+  hasAccountGrants: boolean;
   /** `{ profile: ADMIN }` on the *decision's* profile. */
   isInstanceAdmin: boolean;
 };
@@ -26,6 +28,7 @@ export const getProposalReadContext = ({
   decisionRoles: NormalizedRole[];
 }): ProposalReadContext => ({
   accessUserIds: resolveAccessUserIds(user),
+  hasAccountGrants: user !== undefined,
   isInstanceAdmin: checkPermission(
     { profile: permission.ADMIN },
     decisionRoles,
@@ -33,14 +36,17 @@ export const getProposalReadContext = ({
 });
 
 /** Gone for everyone, admins included — no exception reaches these. */
-const isPresent = (t: typeof proposals): SQL =>
-  and(isNull(t.deletedAt), isNull(t.moderationDetachedAt))!;
-
-const isUnrestricted = (t: typeof proposals): SQL =>
+const isPresent = (proposalsTable: typeof proposals): SQL =>
   and(
-    ne(t.status, ProposalStatus.DRAFT),
-    eq(t.visibility, Visibility.VISIBLE),
-    noActiveModerationFlag('proposal', t.id),
+    isNull(proposalsTable.deletedAt),
+    isNull(proposalsTable.moderationDetachedAt),
+  )!;
+
+const isUnrestricted = (proposalsTable: typeof proposals): SQL =>
+  and(
+    ne(proposalsTable.status, ProposalStatus.DRAFT),
+    eq(proposalsTable.visibility, Visibility.VISIBLE),
+    noActiveModerationFlag('proposal', proposalsTable.id),
   )!;
 
 /**
@@ -51,11 +57,11 @@ const isUnrestricted = (t: typeof proposals): SQL =>
  * proposals to the public.
  */
 const isProposalProfileMember = (
-  t: typeof proposals,
+  proposalsTable: typeof proposals,
   accessUserIds: string[],
 ): SQL =>
   inArray(
-    t.profileId,
+    proposalsTable.profileId,
     db
       .select({ profileId: profileUsers.profileId })
       .from(profileUsers)
@@ -71,15 +77,21 @@ const isProposalProfileMember = (
  * relational `RAW` callback) so the subqueries correlate correctly.
  */
 export const isProposalReadable = (
-  t: typeof proposals,
-  { accessUserIds, isInstanceAdmin }: ProposalReadContext,
+  proposalsTable: typeof proposals,
+  { accessUserIds, hasAccountGrants, isInstanceAdmin }: ProposalReadContext,
 ): SQL =>
   and(
-    isPresent(t),
+    isPresent(proposalsTable),
     or(
-      isUnrestricted(t),
-      isProposalProfileMember(t, accessUserIds),
-      // Someone else's draft is the one thing `getProposal` withholds from an admin.
-      isInstanceAdmin ? ne(t.status, ProposalStatus.DRAFT) : undefined,
+      // `isUnrestricted` only ever admits non-drafts, so for an admin it costs
+      // a visibility check and a moderation subquery to widen nothing.
+      isInstanceAdmin
+        ? ne(proposalsTable.status, ProposalStatus.DRAFT)
+        : isUnrestricted(proposalsTable),
+      // By the invariant above, the public grant is never on a proposal's own
+      // profile — so for a caller with no account the subquery cannot match.
+      hasAccountGrants
+        ? isProposalProfileMember(proposalsTable, accessUserIds)
+        : undefined,
     )!,
   )!;

@@ -204,6 +204,49 @@ describe.concurrent('listContributingProposals', () => {
     ]);
   });
 
+  it('serves a public visitor the visible contributing ideas only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, target, caller } =
+      await createMergeableProposals(testData);
+
+    const hidden = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Hidden Idea', description: 'Also merged away' },
+      status: ProposalStatus.SHORTLISTED,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+    await caller.decision.mergeProposals({
+      sourceProposalId: hidden.id,
+      targetProposalId: target.id,
+    });
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, hidden.id));
+
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    // A no-JWT caller resolves to GLOBAL_USER_PUBLIC, which holds no grant on
+    // any proposal's own profile — so the exceptions can never admit one.
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const result = await publicCaller.decision.listContributingProposals({
+      proposalId: target.id,
+    });
+
+    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
+      source.id,
+    ]);
+  });
+
   it('loads on a proposal only an admin can open', async ({
     task,
     onTestFinished,

@@ -471,8 +471,12 @@ describe.concurrent('moderation read visibility', () => {
           proposalId: survivor.id,
         }),
       ]);
-      expect(authorView.proposals.map((p) => p.id)).toEqual([contributing.id]);
-      expect(adminView.proposals.map((p) => p.id)).toEqual([contributing.id]);
+      expect(authorView.proposals.map((proposal) => proposal.id)).toEqual([
+        contributing.id,
+      ]);
+      expect(adminView.proposals.map((proposal) => proposal.id)).toEqual([
+        contributing.id,
+      ]);
 
       const otherCaller = await createAuthenticatedCaller(otherMember.email);
       await expect(
