@@ -1619,6 +1619,7 @@
   "{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.": "لن يُطلب من {name} مراجعة “{proposal}” بعد الآن. يمكنك تعيينه له مرة أخرى لاحقًا.",
   "{proposal} is no longer assigned to {name}": "لم يعد {proposal} معيّنًا إلى {name}",
   "Unassigning…": "جارٍ إلغاء التعيين…",
+  "Could not unassign — the review has already started.": "لا يمكن إلغاء التعيين — فقد بدأت المراجعة بالفعل.",
   "Assigned": "المعيَّنة",
   "Assigning…": "جارٍ التعيين…",
   "Clear": "مسح",

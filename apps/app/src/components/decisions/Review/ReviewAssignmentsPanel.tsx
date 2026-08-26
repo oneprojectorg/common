@@ -520,7 +520,8 @@ function AssignmentsTable({
  * status keeps the item disabled rather than hiding it, so an admin can see
  * why the row cannot be dropped. The confirm lives outside the menu: Base UI
  * unmounts the menu content on select, which would take a nested dialog with
- * it.
+ * it. The removal endpoint takes a list, so a bulk gesture can reuse it; this
+ * desk sends one id at a time.
  */
 function AssignmentActionsMenu({
   processInstanceId,
@@ -540,22 +541,26 @@ function AssignmentActionsMenu({
   const proposalTitle = assignment.proposalTitle ?? t('Untitled Proposal');
   const isRemovable = assignment.status === 'pending';
 
-  const removeAssignment = trpc.decision.removeReviewAssignment.useMutation({
-    onSuccess: () => {
-      toast.success(
-        t('{proposal} is no longer assigned to {name}', {
-          proposal: proposalTitle,
-          name: reviewerName,
-        }),
-      );
+  const removeAssignments = trpc.decision.removeReviewAssignments.useMutation({
+    onSuccess: ({ skippedIds }) => {
+      // The server skips rather than fails a row the reviewer started while
+      // this dialog was open, so a success can still mean nothing was removed.
+      if (skippedIds.includes(assignment.id)) {
+        toast.error(t('Could not unassign — the review has already started.'));
+      } else {
+        toast.success(
+          t('{proposal} is no longer assigned to {name}', {
+            proposal: proposalTitle,
+            name: reviewerName,
+          }),
+        );
+      }
       utils.decision.listPhaseReviewAssignments.invalidate({
         processInstanceId,
         phaseId,
       });
       setIsConfirmOpen(false);
     },
-    // Covers the race this dialog is open through: the reviewer starts the
-    // review while the admin reads the confirm, and the server refuses.
     onError: (error) => {
       toast.error(error.message);
     },
@@ -604,16 +609,16 @@ function AssignmentActionsMenu({
             <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={removeAssignment.isPending}
+              disabled={removeAssignments.isPending}
               onClick={() =>
-                removeAssignment.mutate({
+                removeAssignments.mutate({
                   processInstanceId,
                   phaseId,
-                  assignmentId: assignment.id,
+                  assignmentIds: [assignment.id],
                 })
               }
             >
-              {removeAssignment.isPending ? t('Unassigning…') : t('Unassign')}
+              {removeAssignments.isPending ? t('Unassigning…') : t('Unassign')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1621,6 +1621,7 @@
   "{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.": "{name} mar dambe lama weydiisan doono inuu dib u eego “{proposal}”. Mar dambe waad ku qoondayn kartaa.",
   "{proposal} is no longer assigned to {name}": "{proposal} mar dambe looma qoondayn {name}",
   "Unassigning…": "Qoondada waa la saaraya…",
+  "Could not unassign — the review has already started.": "Qoondada lama saari karo — dib-u-eegista horeba way bilaabatay.",
   "Assigned": "La qoonday",
   "Assigning…": "Waa la qoondaynayaa…",
   "Clear": "Tirtir",

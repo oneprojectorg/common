@@ -82,7 +82,7 @@ export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './assignReviewsToReviewer';
 export * from './assignPhaseReviews';
-export * from './removeReviewAssignment';
+export * from './removeReviewAssignments';
 export * from './getDecisionReviewAssignments';
 export * from './getPhaseReviewAssignments';
 export * from './generateReviewAssignments';

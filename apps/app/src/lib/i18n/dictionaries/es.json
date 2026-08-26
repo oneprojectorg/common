@@ -1619,6 +1619,7 @@
   "{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.": "{name} ya no tendrá que revisar «{proposal}». Puedes volver a asignársela más adelante.",
   "{proposal} is no longer assigned to {name}": "{proposal} ya no está asignada a {name}",
   "Unassigning…": "Quitando asignación…",
+  "Could not unassign — the review has already started.": "No se pudo quitar la asignación: la revisión ya ha comenzado.",
   "Assigned": "Asignadas",
   "Assigning…": "Asignando…",
   "Clear": "Borrar",

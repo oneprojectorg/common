@@ -1619,6 +1619,7 @@
   "{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.": "{name} n’aura plus à examiner « {proposal} ». Vous pourrez la lui attribuer de nouveau plus tard.",
   "{proposal} is no longer assigned to {name}": "{proposal} n’est plus attribuée à {name}",
   "Unassigning…": "Retrait de l’attribution…",
+  "Could not unassign — the review has already started.": "Impossible de retirer l’attribution : l’examen a déjà commencé.",
   "Assigned": "Attribuées",
   "Assigning…": "Attribution…",
   "Clear": "Effacer",

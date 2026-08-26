@@ -1622,6 +1622,7 @@
   "{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.": "{name}-কে আর “{proposal}” পর্যালোচনা করতে বলা হবে না। আপনি পরে আবার তাঁকে এটি নিয়োগ করতে পারবেন।",
   "{proposal} is no longer assigned to {name}": "{proposal} আর {name}-এর কাছে নিয়োগ করা নেই",
   "Unassigning…": "নিয়োগ বাতিল করা হচ্ছে…",
+  "Could not unassign — the review has already started.": "নিয়োগ বাতিল করা যায়নি — পর্যালোচনা ইতিমধ্যে শুরু হয়েছে।",
   "Assigned": "নিয়োজিত",
   "Assigning…": "নিয়োগ করা হচ্ছে…",
   "Clear": "মুছুন",

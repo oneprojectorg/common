@@ -12,6 +12,7 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -41,19 +42,6 @@ const rubricTemplate: RubricTemplateSchema = {
   },
   required: ['impact'],
 };
-
-/** Narrows `cause.name` without a type assertion (the repo forbids `as`). */
-function causeNameOf(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null || !('cause' in error)) {
-    return undefined;
-  }
-  const { cause } = error;
-  if (typeof cause !== 'object' || cause === null || !('name' in cause)) {
-    return undefined;
-  }
-  const { name } = cause;
-  return typeof name === 'string' ? name : undefined;
-}
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -88,7 +76,7 @@ async function createRemovableAssignment(
   };
 }
 
-describe.concurrent('decision.removeReviewAssignment', () => {
+describe.concurrent('decision.removeReviewAssignments', () => {
   it('removes a pending assignment for an instance admin', async ({
     task,
     onTestFinished,
@@ -100,12 +88,12 @@ describe.concurrent('decision.removeReviewAssignment', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.removeReviewAssignment({
+    const result = await adminCaller.decision.removeReviewAssignments({
       processInstanceId,
       phaseId: 'review',
-      assignmentId,
+      assignmentIds: [assignmentId],
     });
-    expect(result.removedCount).toBe(1);
+    expect(result).toEqual({ removedCount: 1, skippedIds: [] });
 
     const assignment = await db.query.proposalReviewAssignments.findFirst({
       where: { id: assignmentId },
@@ -119,7 +107,7 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     expect(listing.totalAssignments).toBe(0);
   });
 
-  it('refuses an assignment the reviewer has started, keeping their draft', async ({
+  it('skips an assignment the reviewer has started, keeping their draft', async ({
     task,
     onTestFinished,
   }) => {
@@ -140,13 +128,12 @@ describe.concurrent('decision.removeReviewAssignment', () => {
       },
     });
 
-    await expect(
-      adminCaller.decision.removeReviewAssignment({
-        processInstanceId,
-        phaseId: 'review',
-        assignmentId,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    const result = await adminCaller.decision.removeReviewAssignments({
+      processInstanceId,
+      phaseId: 'review',
+      assignmentIds: [assignmentId],
+    });
+    expect(result).toEqual({ removedCount: 0, skippedIds: [assignmentId] });
 
     const assignment = await db.query.proposalReviewAssignments.findFirst({
       where: { id: assignmentId },
@@ -160,28 +147,126 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     expect(review?.state).toBe(ProposalReviewState.DRAFT);
   });
 
-  it('refuses a completed assignment', async ({ task, onTestFinished }) => {
+  it('skips a completed assignment, keeping its submitted review', async ({
+    task,
+    onTestFinished,
+  }) => {
     const { context, processInstanceId, assignmentId } =
-      await createRemovableAssignment(task.id, onTestFinished, {
-        status: ProposalReviewAssignmentStatus.COMPLETED,
-      });
+      await createRemovableAssignment(task.id, onTestFinished);
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    await expect(
-      adminCaller.decision.removeReviewAssignment({
-        processInstanceId,
-        phaseId: 'review',
-        assignmentId,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await adminCaller.decision.submitReview({
+      assignmentId,
+      reviewData: {
+        answers: { impact: 3 },
+        rationales: { impact: 'Final' },
+      },
+    });
+
+    const result = await adminCaller.decision.removeReviewAssignments({
+      processInstanceId,
+      phaseId: 'review',
+      assignmentIds: [assignmentId],
+    });
+    expect(result).toEqual({ removedCount: 0, skippedIds: [assignmentId] });
 
     const assignment = await db.query.proposalReviewAssignments.findFirst({
       where: { id: assignmentId },
     });
     expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.COMPLETED);
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId },
+    });
+    expect(review?.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('removes the pending rows of a mixed batch and skips the started one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, context, processInstanceId, assignmentId } =
+      await createRemovableAssignment(task.id, onTestFinished);
+
+    // A second proposal for the same reviewer, so one request spans both.
+    const second = await testData.createReviewAssignment({
+      context,
+      reviewer: context.defaultReviewer,
+      title: `Second unassignable proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    await adminCaller.decision.saveReviewDraft({
+      assignmentId,
+      reviewData: {
+        answers: { impact: 1 },
+        rationales: { impact: 'Started this one' },
+      },
+    });
+
+    const result = await adminCaller.decision.removeReviewAssignments({
+      processInstanceId,
+      phaseId: 'review',
+      assignmentIds: [assignmentId, second.assignment.id],
+    });
+    expect(result).toEqual({ removedCount: 1, skippedIds: [assignmentId] });
+
+    // The started row and its draft survive; the pending one is gone.
+    const started = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: assignmentId },
+    });
+    expect(started?.status).toBe(ProposalReviewAssignmentStatus.IN_PROGRESS);
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId },
+    });
+    expect(review?.state).toBe(ProposalReviewState.DRAFT);
+
+    const removed = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: second.assignment.id },
+    });
+    expect(removed).toBeUndefined();
+  });
+
+  it('skips an id that no longer exists, so a repeat request settles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { context, processInstanceId, assignmentId } =
+      await createRemovableAssignment(task.id, onTestFinished);
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const first = await adminCaller.decision.removeReviewAssignments({
+      processInstanceId,
+      phaseId: 'review',
+      assignmentIds: [assignmentId],
+    });
+    expect(first.removedCount).toBe(1);
+
+    // The double-click: the row is already gone, and that is not an error.
+    const second = await adminCaller.decision.removeReviewAssignments({
+      processInstanceId,
+      phaseId: 'review',
+      assignmentIds: [assignmentId],
+    });
+    expect(second).toEqual({ removedCount: 0, skippedIds: [assignmentId] });
+
+    const unknownId = crypto.randomUUID();
+    const third = await adminCaller.decision.removeReviewAssignments({
+      processInstanceId,
+      phaseId: 'review',
+      assignmentIds: [unknownId],
+    });
+    expect(third).toEqual({ removedCount: 0, skippedIds: [unknownId] });
   });
 
   it('refuses a phase the instance has moved past', async ({
@@ -199,10 +284,10 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     );
 
     await expect(
-      adminCaller.decision.removeReviewAssignment({
+      adminCaller.decision.removeReviewAssignments({
         processInstanceId,
         phaseId: 'review',
-        assignmentId,
+        assignmentIds: [assignmentId],
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
@@ -228,10 +313,10 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     );
 
     await expect(
-      adminCaller.decision.removeReviewAssignment({
+      adminCaller.decision.removeReviewAssignments({
         processInstanceId,
         phaseId: 'review',
-        assignmentId,
+        assignmentIds: [assignmentId],
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
 
@@ -241,14 +326,12 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     expect(assignment).toBeDefined();
   });
 
-  it('refuses an assignment that belongs to another instance', async ({
+  it('refuses the whole batch when one id belongs to another instance', async ({
     task,
     onTestFinished,
   }) => {
-    const { context, processInstanceId } = await createRemovableAssignment(
-      task.id,
-      onTestFinished,
-    );
+    const { context, processInstanceId, assignmentId } =
+      await createRemovableAssignment(task.id, onTestFinished);
 
     // A second, unrelated instance: its assignment id must not be removable
     // through the instance the caller administers.
@@ -266,17 +349,22 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     );
 
     await expect(
-      adminCaller.decision.removeReviewAssignment({
+      adminCaller.decision.removeReviewAssignments({
         processInstanceId,
         phaseId: 'review',
-        assignmentId: other.assignment.id,
+        assignmentIds: [assignmentId, other.assignment.id],
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
 
-    const assignment = await db.query.proposalReviewAssignments.findFirst({
+    // Atomic: the caller's own pending row must not have been removed either.
+    const own = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: assignmentId },
+    });
+    expect(own).toBeDefined();
+    const foreign = await db.query.proposalReviewAssignments.findFirst({
       where: { id: other.assignment.id },
     });
-    expect(assignment).toBeDefined();
+    expect(foreign).toBeDefined();
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
@@ -290,10 +378,10 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
 
     await expect(
-      reviewerCaller.decision.removeReviewAssignment({
+      reviewerCaller.decision.removeReviewAssignments({
         processInstanceId,
         phaseId: 'review',
-        assignmentId,
+        assignmentIds: [assignmentId],
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
@@ -311,10 +399,10 @@ describe.concurrent('decision.removeReviewAssignment', () => {
     const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
-      memberCaller.decision.removeReviewAssignment({
+      memberCaller.decision.removeReviewAssignments({
         processInstanceId,
         phaseId: 'review',
-        assignmentId,
+        assignmentIds: [assignmentId],
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
@@ -325,7 +413,7 @@ describe.concurrent('decision.removeReviewAssignment', () => {
   });
 });
 
-describeDecisionAccessTierGating('decision.removeReviewAssignment', {
+describeDecisionAccessTierGating('decision.removeReviewAssignments', {
   noJwtNonPublic: accessTierGatingCell(
     'rejects no-JWT caller on non-public instance',
     async ({ task, onTestFinished, callers }) => {
@@ -335,10 +423,10 @@ describeDecisionAccessTierGating('decision.removeReviewAssignment', {
       const caller = await callers.noJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.removeReviewAssignment({
+        caller.decision.removeReviewAssignments({
           processInstanceId: context.instance.instance.id,
           phaseId: 'review',
-          assignmentId: crypto.randomUUID(),
+          assignmentIds: [crypto.randomUUID()],
         }),
         'none',
       );
@@ -354,10 +442,10 @@ describeDecisionAccessTierGating('decision.removeReviewAssignment', {
       const caller = await callers.anonJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.removeReviewAssignment({
+        caller.decision.removeReviewAssignments({
           processInstanceId: context.instance.instance.id,
           phaseId: 'review',
-          assignmentId: crypto.randomUUID(),
+          assignmentIds: [crypto.randomUUID()],
         }),
         'anon',
       );
@@ -373,10 +461,10 @@ describeDecisionAccessTierGating('decision.removeReviewAssignment', {
       const caller = await callers.userJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.removeReviewAssignment({
+        caller.decision.removeReviewAssignments({
           processInstanceId: context.instance.instance.id,
           phaseId: 'review',
-          assignmentId: crypto.randomUUID(),
+          assignmentIds: [crypto.randomUUID()],
         }),
         'user',
       );
@@ -392,19 +480,14 @@ describeDecisionAccessTierGating('decision.removeReviewAssignment', {
 
       const caller = await callers.networkJwt(context.defaultReviewer.email);
 
-      // Past the admin gate, dying on the unknown assignment id — proves the
-      // call reached the service.
-      let caught: unknown;
-      try {
-        await caller.decision.removeReviewAssignment({
+      // An unknown id is a skip, not an error, so admission is the resolve.
+      await expectPassesAccessTierGate(
+        caller.decision.removeReviewAssignments({
           processInstanceId: context.instance.instance.id,
           phaseId: 'review',
-          assignmentId: crypto.randomUUID(),
-        });
-      } catch (err) {
-        caught = err;
-      }
-      expect(causeNameOf(caught)).toBe('NotFoundError');
+          assignmentIds: [crypto.randomUUID()],
+        }),
+      );
     },
   ),
 });
