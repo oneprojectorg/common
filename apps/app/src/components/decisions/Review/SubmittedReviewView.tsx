@@ -52,7 +52,7 @@ export function SubmittedReviewView({
   const { answers, rationales } = review.reviewData;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div aria-live="polite" className="flex flex-col gap-8">
       {fields.map((field) => (
         <ResultSection
           key={field.key}

@@ -10,7 +10,7 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
  * happens once rather than at each caller.
  */
 export function isSupportedLocale(locale: string): locale is SupportedLocale {
-  return (SUPPORTED_LOCALES as readonly string[]).includes(locale);
+  return SUPPORTED_LOCALES.some((supported) => supported === locale);
 }
 
 /**

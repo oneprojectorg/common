@@ -145,7 +145,10 @@ export const useProposalRubricTranslation = ({
         ? getReviewsDetectionText(
             reviews,
             // Reviews are scored against the rubric of the phase they belong
-            // to; a screen with reviews always has that phase's rubric.
+            // to; a screen with reviews always has that phase's rubric. This
+            // samples only the first target's rubric — fine while every
+            // caller passes at most one, but wrong the moment a caller
+            // passes reviews spanning more than one phase.
             rubricTemplates?.[reviewsTargets[0]?.phaseId ?? ''] ?? null,
           )
         : '',

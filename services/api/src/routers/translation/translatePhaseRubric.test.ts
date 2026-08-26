@@ -8,6 +8,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { appRouter } from '..';
 import { TestReviewsDataManager } from '../../test/helpers/TestReviewsDataManager';
 import {
+  accessTierGatingCell,
+  describeDecisionAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating/decision';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -180,4 +186,81 @@ describe('translation.translatePhaseRubric', () => {
       cause: { name: 'UnauthorizedError' },
     });
   });
+});
+
+describeDecisionAccessTierGating('translation.translatePhaseRubric', {
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
+
+      const caller = await callers.noJwt();
+
+      await expectFailsAccessTierGate(
+        caller.translation.translatePhaseRubric({
+          processInstanceId: crypto.randomUUID(),
+          phaseId: REVIEW_PHASE_ID,
+          targetLocale: 'es',
+        }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.translation.translatePhaseRubric({
+          processInstanceId: crypto.randomUUID(),
+          phaseId: REVIEW_PHASE_ID,
+          targetLocale: 'es',
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.translation.translatePhaseRubric({
+          processInstanceId: crypto.randomUUID(),
+          phaseId: REVIEW_PHASE_ID,
+          targetLocale: 'es',
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const created = await createRubricScenario(testData, onTestFinished);
+
+      const caller = await callers.networkJwt(created.reviewer.email);
+
+      await expectPassesAccessTierGate(
+        caller.translation.translatePhaseRubric({
+          processInstanceId: created.context.instance.instance.id,
+          phaseId: REVIEW_PHASE_ID,
+          targetLocale: 'es',
+        }),
+      );
+    },
+  ),
 });
