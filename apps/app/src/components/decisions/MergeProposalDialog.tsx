@@ -391,54 +391,11 @@ function MergeTargetSearchField({
   const [isOpen, setIsOpen] = useState(false);
   const searchQuery = searchTerm.trim();
   const hasQuery = searchQuery.length > 0;
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
-
-  const query = trpc.decision.listProposals.useQuery(
-    {
-      processInstanceId: proposal.processInstanceId,
-      dir: 'desc',
-      limit: MERGE_CANDIDATE_PAGE_LIMIT,
-      // Server-side, so a match outside the suggestions below is still found.
-      search: debouncedSearchQuery,
-    },
-    {
-      // Selecting an option refills the field with its title; that is the
-      // field displaying the pick, not a question, so it must not re-search.
-      enabled: isOpen && debouncedSearchQuery.length > 0,
-      // Hold the previous results while the next query runs, so the popover
-      // doesn't empty and re-fill between keystrokes.
-      placeholderData: (previous) => previous,
-      staleTime: 30 * 1000,
-    },
-  );
-
-  const untitledLabel = t('Untitled Proposal');
-  const results = useMemo(
-    () =>
-      // An empty field has no results, but `placeholderData` hands back the
-      // last page fetched whatever the current key is. Without this the popup
-      // keeps listing the previous search under a field the user just cleared.
-      hasQuery
-        ? getMergeCandidates({
-            proposals: query.data?.proposals ?? [],
-            sourceProposalId: proposal.id,
-            untitledLabel,
-          })
-        : [],
-    [hasQuery, query.data?.proposals, proposal.id, untitledLabel],
-  );
-
-  // The debounce window counts as searching too, or the spinner blinks off
-  // between keystrokes while the results on screen are for an earlier term.
-  // `isPending` covers reopening on a term whose results were never fetched:
-  // the query re-enables a tick before `isFetching` flips, and without it the
-  // popup reads "no matches" for that tick.
-  const isSearching =
-    isOpen &&
-    hasQuery &&
-    (query.isFetching ||
-      query.isPending ||
-      searchQuery !== debouncedSearchQuery);
+  const { results, isSearching, isError } = useMergeCandidateSearch({
+    proposal,
+    searchQuery,
+    isOpen,
+  });
 
   return (
     <Combobox
@@ -507,7 +464,7 @@ function MergeTargetSearchField({
       <ComboboxContent>
         <MergeSearchEmptyState
           hasQuery={hasQuery}
-          isError={query.isError}
+          isError={isError}
           isSearching={isSearching}
         />
         <ComboboxList>
@@ -520,6 +477,78 @@ function MergeTargetSearchField({
       </ComboboxContent>
     </Combobox>
   );
+}
+
+/**
+ * The popover's rows for a typed query, and whether they can be trusted yet.
+ *
+ * Only runs while the list is open: selecting an option refills the field with
+ * that option's title, and the field displaying the pick is not a question to
+ * re-ask the server.
+ */
+function useMergeCandidateSearch({
+  proposal,
+  searchQuery,
+  isOpen,
+}: {
+  proposal: Proposal;
+  /** Trimmed. Empty means the field is not asking anything. */
+  searchQuery: string;
+  isOpen: boolean;
+}) {
+  const t = useTranslations();
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
+  const hasQuery = searchQuery.length > 0;
+
+  const query = trpc.decision.listProposals.useQuery(
+    {
+      processInstanceId: proposal.processInstanceId,
+      dir: 'desc',
+      limit: MERGE_CANDIDATE_PAGE_LIMIT,
+      // Server-side, so a match outside the suggestions below is still found.
+      search: debouncedSearchQuery,
+    },
+    {
+      enabled: isOpen && debouncedSearchQuery.length > 0,
+      // Hold the previous results while the next query runs, so the popover
+      // doesn't empty and re-fill between keystrokes.
+      placeholderData: (previous) => previous,
+      staleTime: 30 * 1000,
+    },
+  );
+
+  const untitledLabel = t('Untitled Proposal');
+  const results = useMemo(
+    () =>
+      // An empty field has no results, but `placeholderData` hands back the
+      // last page fetched whatever the current key is. Without this the popup
+      // keeps listing the previous search under a field the user just cleared.
+      hasQuery
+        ? getMergeCandidates({
+            proposals: query.data?.proposals ?? [],
+            sourceProposalId: proposal.id,
+            untitledLabel,
+          })
+        : [],
+    [hasQuery, query.data?.proposals, proposal.id, untitledLabel],
+  );
+
+  return {
+    results,
+    isError: query.isError,
+    // Anything short of settled results counts as searching, because until
+    // then the rows on screen are the previous term's. That covers the
+    // debounce window (no request yet) and going offline, where react-query
+    // parks the fetch as `paused` rather than `fetching` and would otherwise
+    // leave the stale rows sitting there unlabelled until the connection
+    // returns.
+    isSearching:
+      isOpen &&
+      hasQuery &&
+      (query.isFetching ||
+        query.isPaused ||
+        searchQuery !== debouncedSearchQuery),
+  };
 }
 
 /**
