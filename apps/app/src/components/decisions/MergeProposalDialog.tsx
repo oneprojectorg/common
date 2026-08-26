@@ -54,6 +54,15 @@ import {
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 const MERGE_SEARCH_INPUT_ID = 'merge-proposal-search';
 
+/**
+ * One heading style for the step's three sections. Shared as a class rather
+ * than a component because "Merge into" labels the search field and has to stay
+ * a `FieldLabel` — `leading` and `font-weight` are here to displace the ones
+ * `Label` sets, which the headings' `h3` never had.
+ */
+const MERGE_SECTION_HEADING_CLASSNAME =
+  'text-sm leading-5 font-normal text-muted-foreground';
+
 // Module scope so their identity is stable: Base UI keeps both in a store whose
 // subscribers include every rendered option, so a new closure per render would
 // re-render the whole list on each keystroke.
@@ -178,7 +187,7 @@ export function MergeProposalDialog({
               </DialogDescription>
 
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm text-muted-foreground">
+                <h3 className={MERGE_SECTION_HEADING_CLASSNAME}>
                   {t('Merging from')}
                 </h3>
                 <MergeProposalSummaryCard
@@ -190,7 +199,10 @@ export function MergeProposalDialog({
               <Separator />
 
               <Field>
-                <FieldLabel htmlFor={MERGE_SEARCH_INPUT_ID}>
+                <FieldLabel
+                  htmlFor={MERGE_SEARCH_INPUT_ID}
+                  className={MERGE_SECTION_HEADING_CLASSNAME}
+                >
                   {t('Merge into')}
                 </FieldLabel>
                 <MergeTargetSearchField
@@ -203,7 +215,7 @@ export function MergeProposalDialog({
               </Field>
 
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm text-muted-foreground">
+                <h3 className={MERGE_SECTION_HEADING_CLASSNAME}>
                   {t('Suggested proposals')}
                 </h3>
                 {/* Scoped boundary: a failed list must leave the dialog usable. */}
