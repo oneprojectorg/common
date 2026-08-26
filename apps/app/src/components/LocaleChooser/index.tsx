@@ -12,13 +12,15 @@ import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 
 import { usePathname, useTranslations } from '@/lib/i18n';
-import { i18nConfig } from '@/lib/i18n/config';
+import { type Locale, i18nConfig } from '@/lib/i18n/config';
 
 interface LocaleChooserProps {
   onClose?: () => void;
 }
 
-const localeDisplayNames: Record<string, string> = {
+// Keyed on Locale so adding a supported locale without its endonym here is a
+// typecheck failure rather than a raw code (`hu`) rendered in the menu.
+const localeDisplayNames: Record<Locale, string> = {
   en: 'English',
   es: 'Español',
   fr: 'Français',
@@ -26,6 +28,7 @@ const localeDisplayNames: Record<string, string> = {
   bn: 'বাংলা',
   so: 'Af-Soomaali',
   ar: 'العربية',
+  hu: 'Magyar',
 };
 
 /**
@@ -74,7 +77,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
         >
           {i18nConfig.locales.map((locale) => (
             <DropdownMenuRadioItem key={locale} value={locale}>
-              {localeDisplayNames[locale] || locale}
+              {localeDisplayNames[locale]}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

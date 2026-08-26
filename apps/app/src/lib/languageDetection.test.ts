@@ -30,4 +30,12 @@ describe('detectLanguages', () => {
       ),
     ).toEqual(['es']);
   });
+
+  it('detects Hungarian content', () => {
+    expect(
+      detectLanguages(
+        'Ez egy elég hosszú magyar mondat, amelyet a felismerőnek egyértelműen fel kell ismernie.',
+      ),
+    ).toEqual(['hu']);
+  });
 });
