@@ -74,7 +74,7 @@ export function ProposalComments({
 
   return (
     <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
-      <div className="space-y-4 border-t pt-8">
+      <div className="space-y-4 border-t pt-6 sm:pt-10">
         <Header3 className="text-label">
           {t('Comments')} ({comments.length})
         </Header3>

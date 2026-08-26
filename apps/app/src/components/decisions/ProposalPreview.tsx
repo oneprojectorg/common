@@ -136,163 +136,167 @@ export function ProposalPreview({
   const legacyHtml = htmlContent?.default as string | undefined;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Draft mode banner */}
-      {isDraft && (
-        <Alert variant="info">
-          <AlertDescription>
-            {t(
-              'This proposal is currently in draft mode, only you and collaborators can access it.',
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Figma "Proposal Header" (17924:77055): status row / header / engagement
-          stacked at 24, with the header's own contents at 16. */}
-      <div className="flex flex-col gap-6">
-        {/* Status badges. Unlike ProposalCardView's single-badge
-            `ProposalStatusBadge`, the header shows every applicable state at
-            once, with the longer copy the design spells out. */}
-        {(isRejected || isHidden || proposal.isFlagged || selection) && (
-          <div className="flex flex-wrap gap-2">
-            {isRejected && (
-              <StatusBadge variant="alert" icon={LuCircleX}>
-                {t('Rejected')}
-              </StatusBadge>
-            )}
-            {isHidden && (
-              <StatusBadge variant="warning" icon={LuEyeOff}>
-                {t('Hidden from public view')}
-              </StatusBadge>
-            )}
-            {/* Only the author and admins ever receive a flagged proposal. */}
-            {proposal.isFlagged && (
-              <StatusBadge variant="alert" icon={LuFlag}>
-                {t('Hidden from members after a moderation review')}
-              </StatusBadge>
-            )}
-            {selection && (
-              <StatusBadge variant="success" icon={LuBadgeCheck}>
-                {t('Selected')}
-              </StatusBadge>
-            )}
-          </div>
+    // Root carries the section rhythm (rule-separated regions, mirrored by
+    // each section's own `pt`); the preview's body stacks tighter at 16.
+    <div className="flex flex-col gap-6 sm:gap-10">
+      <div className="flex flex-col gap-4">
+        {/* Draft mode banner */}
+        {isDraft && (
+          <Alert variant="info">
+            <AlertDescription>
+              {t(
+                'This proposal is currently in draft mode, only you and collaborators can access it.',
+              )}
+            </AlertDescription>
+          </Alert>
         )}
 
-        <div className="flex flex-col gap-4">
-          {/* 30px serif at 300 — `text-headline` at this column's step. */}
-          <Header1 className="text-headline font-light">
-            {title || t('Untitled Proposal')}
-          </Header1>
-
-          {/* Translation attribution */}
-          {translation && (
-            <TranslationNotice
-              sourceLanguageName={translation.sourceLanguageName}
-              onViewOriginal={translation.onViewOriginal}
-            />
+        {/* Figma "Proposal Header" (17924:77055): status row / header / engagement
+          stacked at 24, with the header's own contents at 16. */}
+        <div className="flex flex-col gap-6">
+          {/* Status badges. Unlike ProposalCardView's single-badge
+            `ProposalStatusBadge`, the header shows every applicable state at
+            once, with the longer copy the design spells out. */}
+          {(isRejected || isHidden || proposal.isFlagged || selection) && (
+            <div className="flex flex-wrap gap-2">
+              {isRejected && (
+                <StatusBadge variant="alert" icon={LuCircleX}>
+                  {t('Rejected')}
+                </StatusBadge>
+              )}
+              {isHidden && (
+                <StatusBadge variant="warning" icon={LuEyeOff}>
+                  {t('Hidden from public view')}
+                </StatusBadge>
+              )}
+              {/* Only the author and admins ever receive a flagged proposal. */}
+              {proposal.isFlagged && (
+                <StatusBadge variant="alert" icon={LuFlag}>
+                  {t('Hidden from members after a moderation review')}
+                </StatusBadge>
+              )}
+              {selection && (
+                <StatusBadge variant="success" icon={LuBadgeCheck}>
+                  {t('Selected')}
+                </StatusBadge>
+              )}
+            </div>
           )}
 
-          {/* Budget + categories share a row; either can appear alone. */}
-          {(budget != null ||
-            selection?.allocated != null ||
-            categories.length > 0) && (
-            <TagGroup className="max-w-full">
-              {(budget != null || selection?.allocated != null) && (
-                <Tag size="lg" variant="outline">
-                  <BudgetDisplay
-                    value={
-                      selection?.allocated != null
-                        ? selection.allocated
-                        : budget
-                    }
-                  />
-                </Tag>
-              )}
-              {selection?.allocated != null && budget && (
-                <Tag size="lg">
-                  {t('{amount} requested', {
-                    amount: formatBudget(budget) ?? '',
-                  })}
-                </Tag>
-              )}
-              {categories.map((category) => (
-                <Tag key={category} size="lg">
-                  {category}
-                </Tag>
-              ))}
-            </TagGroup>
-          )}
+          <div className="flex flex-col gap-4">
+            {/* 30px serif at 300 — `text-headline` at this column's step. */}
+            <Header1 className="text-headline font-light">
+              {title || t('Untitled Proposal')}
+            </Header1>
 
-          {/* Author and submission info */}
-          <div className="flex items-center gap-2">
-            {proposal.submittedBy && (
-              <>
-                <ProfileAvatar
-                  profile={proposal.submittedBy}
-                  withLink={!proposal.submittedBy.isAnonymous}
-                  className="size-8"
-                />
-                <div className="flex flex-col">
-                  {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
-                    <span className="text-base">
-                      {proposal.submittedBy.name || proposal.submittedBy.slug}
-                    </span>
-                  ) : (
-                    <NavLink
-                      href={`/profile/${proposal.submittedBy.slug}`}
-                      // Without this it falls through to the browser's ring.
-                      className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-                    >
-                      {proposal.submittedBy.name || proposal.submittedBy.slug}
-                    </NavLink>
-                  )}
-                  {!isDraft && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <span>
-                        {t('Submitted on')} {formatDate(proposal.createdAt)}
-                      </span>
-                      {submissionMetaSuffix && (
-                        <>
-                          <Bullet />
-                          {submissionMetaSuffix}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
+            {/* Translation attribution */}
+            {translation && (
+              <TranslationNotice
+                sourceLanguageName={translation.sourceLanguageName}
+                onViewOriginal={translation.onViewOriginal}
+              />
             )}
+
+            {/* Budget + categories share a row; either can appear alone. */}
+            {(budget != null ||
+              selection?.allocated != null ||
+              categories.length > 0) && (
+              <TagGroup className="max-w-full">
+                {(budget != null || selection?.allocated != null) && (
+                  <Tag size="lg" variant="outline">
+                    <BudgetDisplay
+                      value={
+                        selection?.allocated != null
+                          ? selection.allocated
+                          : budget
+                      }
+                    />
+                  </Tag>
+                )}
+                {selection?.allocated != null && budget && (
+                  <Tag size="lg">
+                    {t('{amount} requested', {
+                      amount: formatBudget(budget) ?? '',
+                    })}
+                  </Tag>
+                )}
+                {categories.map((category) => (
+                  <Tag key={category} size="lg">
+                    {category}
+                  </Tag>
+                ))}
+              </TagGroup>
+            )}
+
+            {/* Author and submission info */}
+            <div className="flex items-center gap-2">
+              {proposal.submittedBy && (
+                <>
+                  <ProfileAvatar
+                    profile={proposal.submittedBy}
+                    withLink={!proposal.submittedBy.isAnonymous}
+                    className="size-8"
+                  />
+                  <div className="flex flex-col">
+                    {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
+                      <span className="text-base">
+                        {proposal.submittedBy.name || proposal.submittedBy.slug}
+                      </span>
+                    ) : (
+                      <NavLink
+                        href={`/profile/${proposal.submittedBy.slug}`}
+                        // Without this it falls through to the browser's ring.
+                        className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        {proposal.submittedBy.name || proposal.submittedBy.slug}
+                      </NavLink>
+                    )}
+                    {!isDraft && (
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>
+                          {t('Submitted on')} {formatDate(proposal.createdAt)}
+                        </span>
+                        {submissionMetaSuffix && (
+                          <>
+                            <Bullet />
+                            {submissionMetaSuffix}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+
+          <EngagementRow proposal={proposal} engagement={engagement} />
         </div>
 
-        <EngagementRow proposal={proposal} engagement={engagement} />
+        {headerBanner}
+
+        {/* Proposal Content */}
+        {documentState === 'pending' ? (
+          <div className="flex justify-center py-8">
+            <Spinner />
+          </div>
+        ) : documentState === 'error' ? (
+          <DocumentNotAvailable className="py-4" />
+        ) : legacyHtml ? (
+          <ProposalHtmlContent html={legacyHtml} />
+        ) : htmlContent && proposalTemplate ? (
+          <ProposalContentRenderer
+            proposalTemplate={proposalTemplate}
+            htmlContent={htmlContent}
+            location={proposal.proposalData?.location}
+            translatedMeta={translatedMeta}
+          />
+        ) : null}
       </div>
-
-      {headerBanner}
-
-      {/* Proposal Content */}
-      {documentState === 'pending' ? (
-        <div className="flex justify-center py-8">
-          <Spinner />
-        </div>
-      ) : documentState === 'error' ? (
-        <DocumentNotAvailable className="py-4" />
-      ) : legacyHtml ? (
-        <ProposalHtmlContent html={legacyHtml} />
-      ) : htmlContent && proposalTemplate ? (
-        <ProposalContentRenderer
-          proposalTemplate={proposalTemplate}
-          htmlContent={htmlContent}
-          location={proposal.proposalData?.location}
-          translatedMeta={translatedMeta}
-        />
-      ) : null}
 
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
-        <div className="border-t pt-8">
+        <div className="border-t pt-6 sm:pt-10">
           <Header3 className="mb-4 text-label">{t('Attachments')}</Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
