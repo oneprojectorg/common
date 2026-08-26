@@ -129,6 +129,36 @@ describe('getMergeCandidates', () => {
     expect(candidate?.title).toBe(untitledLabel);
   });
 
+  it('keeps every candidate when no limit is given', () => {
+    const candidates = getMergeCandidates({
+      proposals: ['a', 'b', 'c'].map((id) => proposal({ id })),
+      sourceProposalId: 'source',
+      untitledLabel,
+    });
+
+    expect(candidates).toHaveLength(3);
+  });
+
+  it('applies the suggestion limit after filtering, not before', () => {
+    const candidates = getMergeCandidates({
+      proposals: [
+        proposal({ id: 'draft', status: ProposalStatus.DRAFT }),
+        proposal({ id: 'first' }),
+        proposal({ id: 'second' }),
+        proposal({ id: 'third' }),
+      ],
+      sourceProposalId: 'source',
+      untitledLabel,
+      limit: 2,
+    });
+
+    // Slicing first would have spent a slot on the draft and returned one card.
+    expect(candidates.map((candidate) => candidate.id)).toEqual([
+      'first',
+      'second',
+    ]);
+  });
+
   it('carries the proposal through so the card can render it', () => {
     const [candidate] = getMergeCandidates({
       proposals: [proposal({ id: 'a', title: 'Community Garden Expansion' })],

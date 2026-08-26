@@ -147,7 +147,13 @@ const buildBaseConditions = (
   input: ListProposalsInput,
   reviewExclusion: ReviewAssignmentExclusion | undefined,
 ): SQL => {
-  const { processInstanceId, submittedByProfileId, status, search } = input;
+  const {
+    processInstanceId,
+    submittedByProfileId,
+    status,
+    search,
+    similarToProposalId,
+  } = input;
 
   // processInstanceId is always present, so the array is non-empty and the
   // final `and(...)` is guaranteed to return a SQL value.
@@ -168,6 +174,14 @@ const buildBaseConditions = (
 
   if (status) {
     conditions.push(eq(t.status, status));
+  }
+
+  // A proposal is perfectly similar to itself, so without this it would always
+  // take the top suggestion slot. Excluded here rather than in the caller so
+  // `total` and the page agree, and so a null query vector (recency fallback)
+  // still can't offer "merge this into itself".
+  if (similarToProposalId) {
+    conditions.push(ne(t.id, similarToProposalId));
   }
 
   const searchCondition = buildProposalTitleSearchCondition(t, search);

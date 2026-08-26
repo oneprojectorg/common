@@ -2,6 +2,7 @@ import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
+import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -12,6 +13,7 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
+import { syncProposalTitleEmbedding } from './proposalTitleEmbedding';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -245,6 +247,11 @@ export const submitProposal = async ({
 
     return proposal;
   });
+
+  // First point the proposal can appear as a merge candidate, so this is where
+  // its title earns an embedding — drafts are skipped precisely so autosave
+  // doesn't bill one per keystroke. Best-effort and non-blocking.
+  waitUntil(syncProposalTitleEmbedding({ proposalId: updatedProposal.id }));
 
   return updatedProposal;
 };

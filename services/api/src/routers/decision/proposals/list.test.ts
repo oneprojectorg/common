@@ -2,6 +2,7 @@ import { mockCollab, textFragment } from '@op/collab/testing';
 import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
+  PROPOSAL_TITLE_EMBEDDING_DIMENSIONS,
   ProcessStatus,
   ProposalStatus,
   Visibility,
@@ -9,6 +10,7 @@ import {
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
+  proposalTitleEmbeddings,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -2931,5 +2933,128 @@ describe.concurrent('listProposals: search', () => {
       search: 'Bike zzzznomatch',
     });
     expect(withinCap.proposals).toHaveLength(0);
+  });
+});
+
+describe.concurrent('listProposals: similarToProposalId', () => {
+  /** A unit vector along `axis`, so cosine distances are easy to reason about. */
+  const unitVector = (axis: number): number[] =>
+    Array.from({ length: PROPOSAL_TITLE_EMBEDDING_DIMENSIONS }, (_, index) =>
+      index === axis ? 1 : 0,
+    );
+
+  /** Mostly `axis`, slightly `otherAxis` — close to `unitVector(axis)`. */
+  const nearVector = (axis: number, otherAxis: number): number[] =>
+    Array.from({ length: PROPOSAL_TITLE_EMBEDDING_DIMENSIONS }, (_, index) => {
+      if (index === axis) {
+        return 0.99;
+      }
+      return index === otherAxis ? 0.14 : 0;
+    });
+
+  async function setupSimilarProposals(testData: TestDecisionsDataManager) {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const createProposal = (title: string) =>
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title },
+        status: ProposalStatus.SUBMITTED,
+      });
+
+    const [source, near, far, unembedded, caller] = await Promise.all([
+      createProposal('Bike Lanes on Fifth'),
+      createProposal('Protected Cycle Track on Fifth'),
+      createProposal('Community Garden'),
+      createProposal('Nothing Embedded Here'),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    return { instanceId, caller, source, near, far, unembedded };
+  }
+
+  it('ranks by title similarity and drops the source from its own results', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, source, near, far, unembedded } =
+      await setupSimilarProposals(testData);
+
+    await db.insert(proposalTitleEmbeddings).values([
+      { proposalId: source.id, title: 'source', embedding: unitVector(0) },
+      { proposalId: near.id, title: 'near', embedding: nearVector(0, 1) },
+      { proposalId: far.id, title: 'far', embedding: unitVector(1) },
+    ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      similarToProposalId: source.id,
+    });
+
+    // Closest first; the unembedded proposal sorts last rather than dropping
+    // out, which is what keeps a pre-cache decision usable.
+    expect(result.proposals.map((p) => p.id)).toEqual([
+      near.id,
+      far.id,
+      unembedded.id,
+    ]);
+    // Ranking by similarity is a computed sort key, so it can't keyset.
+    expect(result.next).toBeNull();
+  });
+
+  it('excludes the source proposal even when nothing is embedded', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, source } =
+      await setupSimilarProposals(testData);
+
+    // No embeddings and no inference endpoint in the test environment, so this
+    // is the recency fallback — which still must not offer a self-merge.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      similarToProposalId: source.id,
+    });
+
+    expect(result.proposals).toHaveLength(3);
+    expect(result.proposals.map((p) => p.id)).not.toContain(source.id);
+    // `total` counts the same filtered set the page came from.
+    expect(result.total).toBe(3);
+    expect(result.next).toBeNull();
+  });
+
+  it('ignores a proposal from another decision instead of ranking against it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupSimilarProposals(testData);
+
+    const otherSetup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const outsider = await testData.createProposal({
+      userEmail: otherSetup.userEmail,
+      processInstanceId: otherSetup.instance.instance.id,
+      proposalData: { title: 'Bike Lanes on Fifth' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      similarToProposalId: outsider.id,
+    });
+
+    // Every proposal in the decision is still listed — the out-of-scope id
+    // resolves to no vector rather than becoming a title-probe oracle.
+    expect(result.proposals).toHaveLength(4);
   });
 });

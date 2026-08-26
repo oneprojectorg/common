@@ -1,15 +1,18 @@
-import { type SQL, sql } from 'drizzle-orm';
 import {
   jsonb,
   pgEnum,
   pgTable,
   text,
-  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
+import {
+  autoId,
+  createdUpdatedTimestamps,
+  enumToPgEnum,
+  serviceRolePolicies,
+} from '../../helpers';
 import {
   type ModerationScoresData,
   moderationItemTypeEnum,
@@ -67,20 +70,11 @@ export const moderationSubmissions = pgTable(
     // The provider's task/record id for this submission, when echoed back.
     externalRecordId: text('external_record_id'),
 
-    // The shared `timestamps` helper minus `deletedAt`: submission rows are
-    // bookkeeping for in-flight provider rounds and are deleted outright when
-    // a later round supersedes them, or a failed submit is rolled back — no
-    // soft delete. Resolving a flag deliberately does not delete them.
-    createdAt: timestamp({
-      withTimezone: true,
-      mode: 'string',
-    }).default(sql`(now() AT TIME ZONE 'utc'::text)`),
-    updatedAt: timestamp({
-      withTimezone: true,
-      mode: 'string',
-    })
-      .default(sql`(now() AT TIME ZONE 'utc'::text)`)
-      .$onUpdate((): SQL => sql`(now() AT TIME ZONE 'utc'::text)`),
+    // No `deletedAt`: submission rows are bookkeeping for in-flight provider
+    // rounds and are deleted outright when a later round supersedes them, or a
+    // failed submit is rolled back. Resolving a flag deliberately does not
+    // delete them.
+    ...createdUpdatedTimestamps,
   },
   (table) => [
     ...serviceRolePolicies,

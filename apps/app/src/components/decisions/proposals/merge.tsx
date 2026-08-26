@@ -31,18 +31,24 @@ export function getProposalDisplayTitle(
  * Drafts, hidden, and flagged proposals are excluded because merging into one
  * removes the source from every list and leaves nothing visible in its place.
  *
- * Title search is the server's job — `listProposals` takes a `search` term.
+ * Ranking and title search are the server's job — `listProposals` takes a
+ * `search` term and a `similarToProposalId` to order suggestions by. `limit`
+ * caps the suggestion list *after* this filter, so a page that happens to carry
+ * a draft still yields a full set of suggestions.
  */
 export function getMergeCandidates({
   proposals,
   sourceProposalId,
   untitledLabel,
+  limit,
 }: {
   proposals: Proposal[];
   sourceProposalId: string;
   untitledLabel: string;
+  /** Omit to keep every candidate (the search results list). */
+  limit?: number;
 }): MergeCandidate[] {
-  return proposals
+  const candidates = proposals
     .filter(
       (proposal) =>
         proposal.id !== sourceProposalId &&
@@ -55,6 +61,8 @@ export function getMergeCandidates({
       title: getProposalDisplayTitle(proposal, untitledLabel),
       proposal,
     }));
+
+  return limit === undefined ? candidates : candidates.slice(0, limit);
 }
 
 /**

@@ -47,6 +47,9 @@ import {
 
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 
+/** How many suggestions the list shows. Figma 15311:11482 sizes it for a few. */
+const MERGE_SUGGESTION_LIMIT = 5;
+
 /** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
  *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
 type MergeStep = 'select' | 'confirm';
@@ -352,6 +355,10 @@ function ConfirmMergeStep({
  * The decision's other proposals as a single-select list of cards. Reads
  * `listProposals`, so the picker is scoped exactly like the browse list and
  * can't offer something that list wouldn't show.
+ *
+ * With no search term this is a real suggestion list: the server ranks the other
+ * proposals by how close their title is to this one's and returns a single page,
+ * of which the top few are shown. Typing switches it back to a paged search.
  */
 function MergeCandidateListSuspense({
   proposal,
@@ -365,15 +372,24 @@ function MergeCandidateListSuspense({
   onSelect: (candidate: MergeCandidate) => void;
 }) {
   const t = useTranslations();
+  const isSearching = searchTerm.length > 0;
 
   const [paginatedData, query] =
     trpc.decision.listProposals.useSuspenseInfiniteQuery(
       {
         processInstanceId: proposal.processInstanceId,
         dir: 'desc',
+        // A full page either way. Suggestions show only the top few, but they
+        // are picked from the whole page: drafts, hidden and flagged proposals
+        // are filtered out client-side (`getMergeCandidates`), and an admin —
+        // who sees every draft in the decision — could otherwise have a short
+        // fetch fill up with rows that never reach the list.
         limit: MERGE_CANDIDATE_PAGE_LIMIT,
         // Server-side, so a match beyond the loaded pages is still found.
         search: searchTerm || undefined,
+        // Ranking only makes sense against the whole decision; once the user
+        // has typed, their words are the better signal.
+        similarToProposalId: isSearching ? undefined : proposal.id,
       },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
@@ -388,8 +404,9 @@ function MergeCandidateListSuspense({
         proposals: paginatedData.pages.flatMap((page) => page.proposals),
         sourceProposalId: proposal.id,
         untitledLabel,
+        limit: isSearching ? undefined : MERGE_SUGGESTION_LIMIT,
       }),
-    [paginatedData.pages, proposal.id, untitledLabel],
+    [paginatedData.pages, proposal.id, untitledLabel, isSearching],
   );
 
   return (

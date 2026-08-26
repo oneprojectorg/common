@@ -21,6 +21,10 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import {
+  buildTitleSimilarityDistance,
+  getProposalTitleQueryVector,
+} from './proposalTitleEmbedding';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -29,6 +33,17 @@ export interface ListProposalsInput {
   submittedByProfileId?: string;
   status?: ProposalStatus;
   search?: string;
+  /**
+   * Rank results by how close their title is to this proposal's, closest first,
+   * and drop this proposal from its own results. Powers the merge dialog's
+   * "Suggested proposals" list.
+   *
+   * Overrides `orderBy`/`dir` and returns a single page (`next: null`) — the
+   * same constraint `orderBy: 'votes'` has, since a computed score can't keyset.
+   * Proposals with no cached title embedding sort last, so a decision that
+   * predates the cache degrades to the plain recency list.
+   */
+  similarToProposalId?: string;
   categoryId?: string;
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
@@ -139,6 +154,23 @@ export const listProposals = async ({
 
   const { includeVoteCounts = false } = input;
 
+  // A computed score can't keyset, so both similarity and vote ranking return a
+  // single page. Similarity says so up front — before we know whether a vector
+  // resolved — so the caller's pagination doesn't depend on whether the
+  // inference endpoint happened to answer.
+  const isSinglePage = orderBy === 'votes' || !!input.similarToProposalId;
+
+  // Resolved after `resolveProposalListScope` has asserted access, so an
+  // unauthorized caller never triggers an inference call. `null` — unknown
+  // proposal, empty title, unavailable endpoint — leaves the normal ordering in
+  // place rather than emptying the suggestion list.
+  const similarityQueryVector = input.similarToProposalId
+    ? await getProposalTitleQueryVector({
+        proposalId: input.similarToProposalId,
+        processInstanceId,
+      })
+    : null;
+
   // Voter-filtered queries (votedByProfileId) always return a voteCount field,
   // but the count is gated on a successful results record so live tallies are
   // never exposed during voting: null until results are published, after which
@@ -177,12 +209,13 @@ export const listProposals = async ({
   const [rawProposalList, countResult] = await Promise.all([
     db.query.proposals.findMany({
       // Cursor lives only on the data query so `total` stays the full count.
-      // `votes` sorts by a computed aggregate, so it can't keyset (never paginated).
+      // A computed sort key (votes, title similarity) can't keyset — see
+      // `isSinglePage`.
       where: {
         RAW: (table) =>
           and(
             buildWhereClause(table),
-            orderBy === 'votes'
+            isSinglePage
               ? undefined
               : getCursorCondition({
                   column: table[orderBy] ?? table.createdAt,
@@ -208,6 +241,19 @@ export const listProposals = async ({
         // `id` tie-break: without it, rows sharing the primary sort key
         // return in undefined order and flipping `dir` has no visible effect.
         const directional = dir === 'asc' ? ascOp : descOp;
+        if (similarityQueryVector) {
+          return [
+            // `NULLS LAST` is already the ASC default, but spelled out because
+            // the whole graceful-degradation story rests on it: an unembedded
+            // proposal must rank behind every scored one, not ahead of them.
+            sql`${buildTitleSimilarityDistance({
+              queryVector: similarityQueryVector,
+              proposalIdColumn: table.id,
+            })} asc nulls last`,
+            descOp(table.createdAt),
+            descOp(table.id),
+          ];
+        }
         if (orderBy === 'votes') {
           return [
             descOp(voteCountExpr(table)),
@@ -351,15 +397,15 @@ export const listProposals = async ({
     };
   });
 
-  // Keyset cursor off the last row's sort value + id tiebreak (votes can't
-  // keyset, so it stays a single page).
+  // Keyset cursor off the last row's sort value + id tiebreak (a computed sort
+  // key can't keyset, so those stay a single page).
   const lastItem = proposalsWithCounts[proposalsWithCounts.length - 1];
   const cursorValue =
     lastItem && orderBy !== 'votes' ? lastItem[orderBy] : null;
   // `!= null` (not a truthy check) so a falsy-but-valid sort value — e.g. a
   // rubric score of 0 — still produces a cursor instead of silently ending.
   const next =
-    hasMore && lastItem && cursorValue != null
+    hasMore && lastItem && cursorValue != null && !isSinglePage
       ? encodeCursor<{ value: string | Date; id: string }>({
           value: cursorValue,
           id: lastItem.id,
