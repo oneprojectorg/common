@@ -110,9 +110,8 @@ export const phaseReviewSettingsSchema = z.object({
   policy: z.enum(REVIEWS_POLICIES).optional(),
   allowRevisions: z.boolean().optional(),
   /**
-   * Offers the feedback-to-author field, which is always anonymous and
-   * released at phase end. `false` removes the channel — it does NOT switch
-   * feedback to attributed.
+   * Offers the always-anonymous feedback-to-author field; `false` removes
+   * the channel rather than de-anonymizing it.
    */
   anonymousFeedback: z.boolean().optional(),
   /**

@@ -85,11 +85,7 @@ export async function ReviewSummaryLayout({
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
 
-  // The lenient resolver keeps this screen rendering for legacy instances
-  // (no phase list, or a currentStateId outside it), where the throwing
-  // variant would 500. Keyed to the resolved review phase, not the viewed
-  // assignment's phase — an older assignment gets the current phase's
-  // settings, same as the aggregates below.
+  // Keyed to the resolved review phase, like the aggregates below.
   const reviewSettings = resolveReviewSettings(
     instance.instanceData ?? {},
     phaseId,

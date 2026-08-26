@@ -69,14 +69,12 @@ export function getPhaseReviewSettings(
   phaseId: string,
 ): ReviewSettings {
   const phase = assertInstancePhase({ instance: { instanceData }, phaseId });
-  return settingsFromPhase(instanceData.config, phase);
+  return reviewSettingsFromPhase(instanceData.config, phase);
 }
 
 /**
- * Lenient counterpart of `getPhaseReviewSettings` for read-only surfaces that
- * must still render legacy instances — no phase list, or a `currentStateId`
- * that fell out of it. Falls back to legacy config → defaults there; write
- * paths keep the throwing variant.
+ * Lenient `getPhaseReviewSettings` for read surfaces: an unresolved or
+ * off-list phase falls back to config → defaults instead of throwing.
  */
 export function resolveReviewSettings(
   instanceData: ReviewSettingsInstanceData,
@@ -85,10 +83,10 @@ export function resolveReviewSettings(
   const phase = phaseId
     ? instanceData.phases?.find((p) => p.phaseId === phaseId)
     : undefined;
-  return settingsFromPhase(instanceData.config, phase);
+  return reviewSettingsFromPhase(instanceData.config, phase);
 }
 
-function settingsFromPhase(
+function reviewSettingsFromPhase(
   config: ReviewSettingsInstanceData['config'],
   phase: { phaseId: string; rules?: ReviewPhaseRules } | undefined,
 ): ReviewSettings {
@@ -102,12 +100,10 @@ function settingsFromPhase(
     scope: reviews?.scope ?? DEFAULT_REVIEWS_SCOPE,
     allowRevisions:
       reviews?.allowRevisions ?? config?.reviewsAllowRevisions ?? true,
-    // Defaults on: the feedback-to-author field rendered unconditionally before
-    // this setting was wired to it, so an unconfigured process keeps that field.
+    // Defaults on: the field rendered unconditionally before this was wired.
     anonymousFeedback:
       reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback ?? true,
-    // Open reviews is phase-only (no legacy config counterpart), like scope,
-    // and defaults to false.
+    // Phase-only (no legacy config counterpart), like scope.
     openReviews: reviews?.openReviews ?? false,
   };
 }

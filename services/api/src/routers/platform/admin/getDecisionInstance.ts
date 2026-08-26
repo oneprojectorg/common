@@ -138,8 +138,7 @@ export const getDecisionInstanceRouter = router({
           hideBudget: instanceData.config?.hideBudget ?? false,
           hasProposalTemplate: instanceData.proposalTemplate != null,
           hasRubric: instanceData.rubricTemplate != null,
-          // Unset defaults to on, matching getPhaseReviewSettings — an
-          // admin reading "off" here while reviewers see the feature is a lie.
+          // Unset resolves to on (getPhaseReviewSettings); display must match.
           reviewsAllowRevisions:
             instanceData.config?.reviewsAllowRevisions ?? true,
           reviewsAnonymousFeedback:

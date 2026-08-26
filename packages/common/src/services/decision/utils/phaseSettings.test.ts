@@ -346,7 +346,7 @@ describe('resolveReviewSettings', () => {
     );
   });
 
-  it('falls back to defaults with no phaseId (legacy instance)', () => {
+  it('falls back to defaults with no phaseId', () => {
     const result = resolveReviewSettings({}, undefined);
 
     expect(result).toEqual({

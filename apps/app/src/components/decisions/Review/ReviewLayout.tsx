@@ -89,7 +89,7 @@ export async function ReviewLayout({
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}
-        allowRevisions={reviewSettings.allowRevisions}
+        reviewSettings={reviewSettings}
       >
         {/* Inside ReviewFormProvider: the proposal and the rubric it translates
             both come from the assignment that provider loads. */}
@@ -111,10 +111,7 @@ export async function ReviewLayout({
                 id="review"
                 label={<TranslatedText text="Review" />}
               >
-                <ReviewRubricForm
-                  settings={reviewSettings}
-                  previousReviewPhases={previousReviewPhases}
-                />
+                <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
               </SplitPane.Pane>
             </SplitPane>
           </div>

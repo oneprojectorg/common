@@ -2,7 +2,6 @@
 
 import {
   ProposalReviewState,
-  type ReviewSettings,
   type SchemaOption,
   type XFormatPropertySchema,
   isOverallRecommendationField,
@@ -58,26 +57,20 @@ import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
  * review phase. With no tab beyond "My review", the form renders on its own.
  */
 export function ReviewRubricForm({
-  settings,
   previousReviewPhases,
 }: {
-  settings: Pick<ReviewSettings, 'anonymousFeedback' | 'openReviews'>;
   previousReviewPhases: PreviousReviewPhase[];
 }) {
-  const { anonymousFeedback, openReviews } = settings;
+  const { openReviews } = useReviewForm().reviewSettings;
 
   if (!openReviews && previousReviewPhases.length === 0) {
-    return (
-      <FormShell>
-        <MyReviewForm anonymousFeedback={anonymousFeedback} />
-      </FormShell>
-    );
+    return <OwnReviewRubricForm />;
   }
 
   return (
     <FormShell>
       <ReviewTabs
-        myReview={<MyReviewForm anonymousFeedback={anonymousFeedback} />}
+        myReview={<MyReviewForm />}
         showOtherReviews={openReviews}
         previousPhases={previousReviewPhases}
       />
@@ -85,17 +78,25 @@ export function ReviewRubricForm({
   );
 }
 
+/** The reviewer's own form alone, for hosts that already list other reviews. */
+export function OwnReviewRubricForm() {
+  return (
+    <FormShell>
+      <MyReviewForm />
+    </FormShell>
+  );
+}
+
 /**
  * Schema-driven review rubric form renderer (the reviewer's own review).
  *
- * `anonymousFeedback` off hides only the add-feedback button. An
- * `overallComment` written while it was on stays visible and editable —
- * the form always re-submits it, so hiding it would republish to the
- * author a comment the reviewer can no longer see or retract.
+ * `anonymousFeedback` off hides only the add button: an existing comment is
+ * always re-submitted, so it must stay visible and editable.
  */
-function MyReviewForm({ anonymousFeedback }: { anonymousFeedback: boolean }) {
+function MyReviewForm() {
   const t = useTranslations();
   const {
+    reviewSettings: { anonymousFeedback },
     rubricTemplate: authoredTemplate,
     values,
     rationales,

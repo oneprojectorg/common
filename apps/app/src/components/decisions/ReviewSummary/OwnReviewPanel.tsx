@@ -11,7 +11,7 @@ import {
   ReviewFormProvider,
   type ReviewFormStatus,
 } from '../Review/ReviewFormContext';
-import { ReviewRubricForm } from '../Review/ReviewRubricForm';
+import { OwnReviewRubricForm } from '../Review/ReviewRubricForm';
 import { BackToReviewers } from '../ReviewsPanel/BackToReviewers';
 
 interface OwnReviewPanelProps {
@@ -48,20 +48,14 @@ export function OwnReviewPanel({
         <ReviewFormProvider
           assignmentId={assignmentId}
           decisionSlug={decisionSlug}
-          // Revisions belong to the reviewer surface.
-          allowRevisions={false}
+          reviewSettings={reviewSettings}
           onCompleted={onCompleted}
           onStatusChange={onStatusChange}
           initiallyEditing={initiallyEditing}
         >
           <div className="flex flex-col gap-6">
             <BackToReviewers onClick={onBack} />
-            {/* openReviews off like allowRevisions above: the host surface
-                already lists everyone's reviews. */}
-            <ReviewRubricForm
-              settings={{ ...reviewSettings, openReviews: false }}
-              previousReviewPhases={[]}
-            />
+            <OwnReviewRubricForm />
           </div>
         </ReviewFormProvider>
       </Suspense>
