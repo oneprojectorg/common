@@ -1683,5 +1683,12 @@
   "Contributing ideas could not be loaded": "A hozzájáruló ötleteket nem sikerült betölteni",
   "Feedback": "Visszajelzés",
   "Notes reviewers shared while this proposal was under review": "Az értékelők megjegyzései, amelyeket a javaslat értékelése során osztottak meg",
-  "Reviewer · {timeAgo}": "Értékelő · {timeAgo}"
+  "Reviewer · {timeAgo}": "Értékelő · {timeAgo}",
+  "Unassign (review started)": "Hozzárendelés visszavonása (az értékelés elkezdődött)",
+  "Unassign proposal?": "Visszavonja a javaslat hozzárendelését?",
+  "{name} will no longer be asked to review this proposal. You can assign it to them again later.": "{name} a továbbiakban nem lesz felkérve a javaslat értékelésére. Később ismét hozzárendelheti.",
+  "Proposal unassigned from {name}": "A javaslat hozzárendelése visszavonva tőle: {name}",
+  "Unassigning…": "Hozzárendelés visszavonása…",
+  "Could not unassign — the assignment has changed.": "Nem sikerült visszavonni a hozzárendelést: a hozzárendelés megváltozott.",
+  "Could not unassign the proposal. Please try again.": "Nem sikerült visszavonni a javaslat hozzárendelését. Kérjük, próbálja újra."
 }
