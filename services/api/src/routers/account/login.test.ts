@@ -1,3 +1,4 @@
+import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
@@ -102,9 +103,8 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
   // Resolving rather than throwing is the point: `withLogger` logs a failed
   // result at `error` severity, so throwing here put every waitlisted signup —
   // an expected outcome — in the same stream as real 500s. Resolving routes it
-  // through the `result.ok` branch instead, and the decision itself is recorded
-  // at `info`. (Asserted positively rather than as `logger.error` not-called:
-  // these tests are concurrent and share the module-level logger mock.)
+  // through the `result.ok` branch instead, and the decision is recorded at
+  // `info`.
   it('waitlists an uninvited email with no account without throwing', async () => {
     const email = `stranger-${randomUUID()}@example.com`;
 
@@ -120,6 +120,37 @@ describe.concurrent('account.login: allow-list × account-existence matrix', () 
       'Login waitlisted - not invited',
       expect.objectContaining({ path: 'account.login' }),
     );
+
+    // The headline invariant: this outcome must stay out of the `error` stream.
+    // Scoped to this path rather than a bare `not.toHaveBeenCalled()` so it
+    // holds under `describe.concurrent` — every other `account.login` call in
+    // this file is an admit, which never logs at `error`.
+    expect(logger.error).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ path: 'account.login' }),
+    );
+  });
+
+  // The gate used to `throw`, which made the OTP block below it unreachable for
+  // an uninvited email by construction. It is now an early `return`, so only
+  // control flow stops the request from reaching `signInWithOtp`. That call runs
+  // with `shouldCreateUser: true`, so a regression would both mail a login code
+  // to an uninvited address and mint its `auth.users` row — an invite-gate
+  // bypass. The absence of that row is the DB-observable proof it never ran.
+  it('waitlists an uninvited email on the OTP path without sending a code', async () => {
+    const email = `stranger-otp-${randomUUID()}@example.com`;
+
+    const caller = await createAnonymousCaller();
+    await expect(
+      caller.account.login({ email, usingOAuth: false }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'waitlisted',
+    });
+
+    await expect(
+      db.query.authUsers.findFirst({ columns: { id: true }, where: { email } }),
+    ).resolves.toBeUndefined();
   });
 
   it('admits an allow-listed email with an existing account', async ({
