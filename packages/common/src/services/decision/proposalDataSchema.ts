@@ -318,6 +318,22 @@ export function buildCategorySchema(
 }
 
 /**
+ * The schema of an array property's items, or `undefined` when the property is
+ * not an array of one shape — a multi-select stores its options under `items`
+ * rather than on the property itself, so every reader of those options needs
+ * this narrowing first.
+ */
+export function getItemSchema(
+  schema: XFormatPropertySchema,
+): XFormatPropertySchema | undefined {
+  return typeof schema.items === 'object' &&
+    schema.items !== null &&
+    !Array.isArray(schema.items)
+    ? schema.items
+    : undefined;
+}
+
+/**
  * Parse selectable options from a JSON Schema property.
  *
  * Handles both the canonical `oneOf` format (`[{ const, title }]`) and
@@ -359,12 +375,7 @@ export function parseSchemaOptions(
       }));
   }
 
-  const itemSchema =
-    typeof schema.items === 'object' &&
-    schema.items !== null &&
-    !Array.isArray(schema.items)
-      ? schema.items
-      : undefined;
+  const itemSchema = getItemSchema(schema);
 
   if (Array.isArray(itemSchema?.oneOf)) {
     return itemSchema.oneOf
@@ -394,6 +405,33 @@ export function parseSchemaOptions(
   }
 
   return [];
+}
+
+/**
+ * The subset of {@link parseSchemaOptions} whose labels a translation may
+ * replace: `oneOf` entries (top-level or under `items`) that store a `title`
+ * apart from the answer value.
+ *
+ * A legacy `enum` option has no separate label — the label *is* the value every
+ * stored answer holds — so translating it would rewrite answers rather than
+ * copy. Excluded here so the sender and the renderer agree on what can move:
+ * anything collected for translation can be swapped back in, and anything else
+ * reads as authored.
+ */
+export function parseTranslatableSchemaOptions(
+  schema: XFormatPropertySchema | null | undefined,
+): SchemaOption[] {
+  if (!schema) {
+    return [];
+  }
+
+  const itemSchema = getItemSchema(schema);
+
+  if (!Array.isArray(schema.oneOf) && !Array.isArray(itemSchema?.oneOf)) {
+    return [];
+  }
+
+  return parseSchemaOptions(schema);
 }
 
 const DISTRICT_CATEGORY_LABEL_PATTERN = /^district\s*\d+$/i;

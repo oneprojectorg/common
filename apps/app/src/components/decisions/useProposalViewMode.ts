@@ -66,7 +66,9 @@ export function useProposalViewMode(
     hasLocationField,
     mapView,
     effectiveView,
-    isMapMode: hasLocationField && effectiveView === 'map',
+    // `effectiveView` is forced to 'grid' without a location field, so it being
+    // 'map' already implies one.
+    isMapMode: effectiveView === 'map',
     handleViewChange,
   };
 }

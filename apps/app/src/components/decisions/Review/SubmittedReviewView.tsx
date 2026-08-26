@@ -1,3 +1,5 @@
+'use client';
+
 import {
   type ProposalReview,
   type RubricTemplateSchema,
@@ -13,7 +15,9 @@ import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import { YES_NO_VALUES, inferCriterionType } from '../rubricTemplate';
+import { inferCriterionType } from '../rubricTemplate';
+import { useRecommendationLabels } from '../useRecommendationLabels';
+import { useReviewTranslation } from './ReviewTranslationContext';
 
 /**
  * A submitted review, read-only: each criterion's prompt above a bordered card
@@ -22,6 +26,11 @@ import { YES_NO_VALUES, inferCriterionType } from '../rubricTemplate';
  * Field chrome matches `ReviewRubricForm` so the panel doesn't change shape on
  * submit. Rendered for the reviewer's own review, a peer's, and the admin
  * drill-in; only the first passes a total score, hence `scoreSlot`.
+ *
+ * The reviewer's own words — notes, free-text answers, feedback to the author —
+ * are swapped for their translation when the screen has one. They are read from
+ * context rather than taken as a prop because this renders four levels below the
+ * banner, and the prompts around them are already translated the same way.
  */
 export function SubmittedReviewView({
   rubricTemplate,
@@ -36,22 +45,33 @@ export function SubmittedReviewView({
   scoreSlot?: ReactNode;
 }) {
   const t = useTranslations();
+  const { reviewTranslations } = useReviewTranslation();
+  const translation = reviewTranslations[review.id];
+  const recommendation = useRecommendationLabels();
   const fields = compileRubricSchema(rubricTemplate);
   const { answers, rationales } = review.reviewData;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div aria-live="polite" className="flex flex-col gap-8">
       {fields.map((field) => (
         <ResultSection
           key={field.key}
-          title={field.schema.title}
+          title={
+            isOverallRecommendationField(field.key)
+              ? recommendation.title
+              : field.schema.title
+          }
           description={field.schema.description}
           required={field.required}
         >
           <RubricFieldResult
             field={field}
-            value={answers[field.key]}
-            rationale={rationales[field.key]?.trim() || undefined}
+            value={translation?.answers[field.key] ?? answers[field.key]}
+            rationale={
+              (
+                translation?.rationales[field.key] ?? rationales[field.key]
+              )?.trim() || undefined
+            }
           />
         </ResultSection>
       ))}
@@ -65,7 +85,9 @@ export function SubmittedReviewView({
             'Shared anonymously with the author after the review phase',
           )}
         >
-          <ResultCard description={review.overallComment} />
+          <ResultCard
+            description={translation?.overallComment ?? review.overallComment}
+          />
         </ResultSection>
       )}
     </div>
@@ -147,48 +169,9 @@ function RubricFieldResult({
   value: unknown;
   rationale?: string;
 }) {
-  const t = useTranslations();
-
   if (field.format === 'dropdown') {
-    if (inferCriterionType(field.schema) === 'yes_no') {
-      const label =
-        value === YES_NO_VALUES.yes
-          ? t('Yes')
-          : value === YES_NO_VALUES.no
-            ? t('No')
-            : undefined;
-      return <ResultCard value={label} rationale={rationale} />;
-    }
-
-    const selected = findSchemaOption(field.schema, value);
-
-    if (isOverallRecommendationField(field.key)) {
-      return (
-        <ResultCard
-          value={selected?.title ?? selected?.value}
-          rationale={rationale}
-        />
-      );
-    }
-
-    // Single-select options store an opaque id as the value, so show the
-    // option's title instead.
-    if (inferCriterionType(field.schema) === 'single_select') {
-      return (
-        <ResultCard
-          value={selected ? selected.title || String(selected.value) : '—'}
-          description={selected?.description}
-          rationale={rationale}
-        />
-      );
-    }
-
     return (
-      <ResultCard
-        value={selected?.value}
-        description={selected?.title}
-        rationale={rationale}
-      />
+      <DropdownFieldResult field={field} value={value} rationale={rationale} />
     );
   }
 
@@ -198,4 +181,66 @@ function RubricFieldResult({
   }
 
   return null;
+}
+
+/**
+ * A dropdown answer, whose display depends on what kind of dropdown it is: a
+ * yes/no toggle, the overall recommendation (ours, so localized), a single
+ * select (whose stored value is an opaque option id), or a scored option.
+ */
+function DropdownFieldResult({
+  field,
+  value,
+  rationale,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+  rationale?: string;
+}) {
+  const t = useTranslations();
+  const recommendation = useRecommendationLabels();
+  const criterionType = inferCriterionType(field.schema);
+
+  if (criterionType === 'yes_no') {
+    const label =
+      value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
+    return <ResultCard value={label} rationale={rationale} />;
+  }
+
+  const selected = findSchemaOption(field.schema, value);
+
+  if (isOverallRecommendationField(field.key)) {
+    return (
+      <ResultCard
+        // Ours, so localized here; the stored label is only a fallback for a
+        // value we don't recognize.
+        value={
+          recommendation.label(selected?.value ?? value) ??
+          selected?.title ??
+          selected?.value
+        }
+        rationale={rationale}
+      />
+    );
+  }
+
+  // Single-select options store an opaque id as the value, so show the
+  // option's title instead.
+  if (criterionType === 'single_select') {
+    return (
+      <ResultCard
+        value={selected ? selected.title || String(selected.value) : '—'}
+        description={selected?.description}
+        rationale={rationale}
+      />
+    );
+  }
+
+  return (
+    <ResultCard
+      value={selected?.value}
+      description={selected?.title}
+      rationale={rationale}
+    />
+  );
 }
