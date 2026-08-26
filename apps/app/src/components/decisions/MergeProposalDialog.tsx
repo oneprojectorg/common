@@ -54,32 +54,21 @@ import {
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 const MERGE_SEARCH_INPUT_ID = 'merge-proposal-search';
 
-/**
- * One heading style for the step's three sections. Shared as a class rather
- * than a component because "Merge into" labels the search field and has to stay
- * a `FieldLabel` — `leading` and `font-weight` are here to displace the ones
- * `Label` sets, which the headings' `h3` never had.
- */
+/** `font-normal`/`leading-5` displace what `Label` sets on the "Merge into" one. */
 const MERGE_SECTION_HEADING_CLASSNAME =
   'text-sm leading-5 font-normal text-muted-foreground';
 
-// Module scope so their identity is stable: Base UI keeps both in a store whose
-// subscribers include every rendered option, so a new closure per render would
-// re-render the whole list on each keystroke.
+// Stable identities: Base UI re-renders every option when either changes.
 const getMergeCandidateLabel = (candidate: MergeCandidate) => candidate.title;
 const isSameMergeCandidate = (a: MergeCandidate, b: MergeCandidate) =>
   a.id === b.id;
 
-/** The `<source>` chunk both steps' `t.rich` copy wraps a proposal title in. */
 const source = (chunks: ReactNode) => <em>{chunks}</em>;
 
-/** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
- *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
+/** One dialog swaps between the two, so the backdrop doesn't flash. */
 type MergeStep = 'select' | 'confirm';
 
 /**
- * "Merge proposals" — pick the proposal that survives, then confirm.
- *
  * Merging records an edge: no content moves and no status changes, but
  * `proposal` drops out of every listing, the voting pool, and review.
  */
@@ -109,11 +98,8 @@ export function MergeProposalDialog({
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
 
-  // Both pickers write one selection, and the field always shows it: choosing a
-  // suggested card fills the field the same way choosing a search result does,
-  // so "Merge into" can never name a different proposal than the one selected.
-  // Dropping the pick leaves the field alone — that path is the user editing
-  // the query, and their keystroke has already set it.
+  // Filling the field keeps it from ever naming a proposal other than the pick.
+  // Dropping leaves it alone: that path is the user typing, which already set it.
   const handleSelect = (candidate: MergeCandidate | null) => {
     setTarget(candidate);
     if (candidate) {
@@ -157,8 +143,7 @@ export function MergeProposalDialog({
       );
       handleOpenChange(false);
     } catch (error) {
-      // Already toasted by `onError`; staying on this step keeps the selection
-      // for a retry, which is what the conflict failures need.
+      // Already toasted by `onError`; staying put keeps the selection for a retry.
       logger.error('Failed to merge proposal', {
         error,
         context: 'MergeProposalDialog',
@@ -168,7 +153,6 @@ export function MergeProposalDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* ProcessSurveyModal's pattern: header and footer stay put, body scrolls. */}
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-116">
         <DialogHeader>
           <DialogTitle className="text-center">
@@ -269,8 +253,6 @@ export function MergeProposalDialog({
 }
 
 /**
- * Step two (Figma 15313:12547): spell out what the merge does, then commit.
- *
  * Figma also lists engagement transfer, follower notification, and activity-log
  * entries. `mergeProposals` does none of those, so they aren't claimed here.
  */
@@ -374,13 +356,9 @@ function ConfirmMergeStep({
 }
 
 /**
- * Title search over the decision's other proposals, as the drop-down we use
- * everywhere else (Figma 15409:10832). Results live in the popover, so the
- * suggestions list underneath stays a list of suggestions.
- *
- * Deliberately not a suspense query: the popover is inside the dialog body, so
- * suspending on a keystroke would blank the whole step. That also means a
- * failure never reaches an error boundary, hence the in-popover error line.
+ * Not a suspense query: suspending on a keystroke would blank the whole step.
+ * That also keeps failures away from any error boundary, hence the in-popover
+ * error line.
  */
 function MergeTargetSearchField({
   proposal,
@@ -397,8 +375,8 @@ function MergeTargetSearchField({
   onSelect: (candidate: MergeCandidate | null) => void;
 }) {
   const t = useTranslations();
-  // Base UI owns when the popup shows; we mirror it so Escape can be told
-  // apart from Escape-with-the-list-open, and so a closed field doesn't search.
+  // Mirrors Base UI's popup state: a closed field doesn't search, and Escape
+  // needs to know whether the list is open.
   const [isOpen, setIsOpen] = useState(false);
   const { results, hasQuery, isSearching, isError } = useMergeCandidateSearch({
     proposal,
@@ -412,22 +390,16 @@ function MergeTargetSearchField({
       value={selected}
       open={isOpen}
       onOpenChange={setIsOpen}
-      // The server already filtered; a second local pass would drop matches
-      // whose title differs from the term the server matched on.
+      // The server already filtered; a local pass would drop matches whose
+      // title differs from the term the server matched on.
       filter={null}
       inputValue={searchTerm}
       onInputValueChange={(value, details) => {
         onSearchTermChange(value);
-        // Base UI refills the input from the selection on item press, and
-        // again when the popup closes on one (reported as `none`; a close
-        // with nothing picked comes through as `input-clear` instead, which
-        // should indeed drop the pick). `list-navigation` only fills the
-        // input in `inline` mode, which this field doesn't use — it's here so
-        // turning that on later can't start silently discarding selections.
-        // Every other change is the user editing the query, and an edited
-        // query drops the pick: `Continue` must not merge into a proposal the
-        // field no longer names. Compared against the literals so a Base UI
-        // rename fails the build rather than silently re-enabling it.
+        // These three reasons are Base UI refilling the input from the
+        // selection. Anything else is the user editing the query, which drops
+        // the pick so `Continue` can't merge into a proposal the field no
+        // longer names.
         if (
           details.reason !== 'item-press' &&
           details.reason !== 'list-navigation' &&
@@ -445,20 +417,16 @@ function MergeTargetSearchField({
         placeholder={t('Search proposals…')}
         showTrigger={false}
         onKeyDown={(event) => {
-          // With the list closed, Base UI reads Escape as "clear the field":
-          // it drops the chosen proposal, and because a value is set it stops
-          // the event before the dialog's own Escape handler, so the dialog
-          // stays open too. Neither is wanted — let Escape close the dialog.
-          // With the list open Base UI's handler is right (it closes the
-          // list), so this only steps in once the list is already gone.
+          // With the list closed Base UI reads Escape as "clear the field" and
+          // swallows the event, so the dialog never sees it. Its open-list
+          // handling is correct, so only step in once the list is gone.
           if (event.key === 'Escape' && !isOpen) {
             event.preventBaseUIHandler();
           }
         }}
       >
         <InputGroupAddon align="inline-start">
-          {/* Decorative: `ComboboxEmpty` announces "Searching…" already, and
-              sense's Spinner would otherwise read its English default. */}
+          {/* Decorative: `ComboboxEmpty` announces "Searching…" already. */}
           {isSearching ? (
             <Spinner aria-hidden className="size-4 text-muted-foreground" />
           ) : (
@@ -466,10 +434,8 @@ function MergeTargetSearchField({
           )}
         </InputGroupAddon>
       </ComboboxInput>
-      {/* Always rendered: Base UI owns when the popup mounts, and taking the
-          element away underneath it strands the close lifecycle — the popup
-          then never unmounts and reappears, inert, over the dialog. Vary the
-          contents instead. */}
+      {/* Never conditionally rendered: unmounting this strands Base UI's close
+          lifecycle and the popup reappears, inert, over the dialog. */}
       <ComboboxContent>
         <MergeSearchEmptyState
           hasQuery={hasQuery}
@@ -488,13 +454,7 @@ function MergeTargetSearchField({
   );
 }
 
-/**
- * The popover's rows for a typed query, and whether they can be trusted yet.
- *
- * Only runs while the list is open: selecting an option refills the field with
- * that option's title, and the field displaying the pick is not a question to
- * re-ask the server.
- */
+/** Only runs while the list is open: a field showing the pick isn't a query. */
 function useMergeCandidateSearch({
   proposal,
   searchQuery,
@@ -529,13 +489,10 @@ function useMergeCandidateSearch({
   const untitledLabel = t('Untitled Proposal');
   const results = useMemo(
     () =>
-      // `placeholderData` hands back the last page fetched whatever the current
-      // key is, and it survives a failed refetch. Two cases have to drop it or
-      // the popup lists the previous term's rows as if they answered this one:
-      // a field the user just cleared, and a search that errored. The error
-      // case is also the only way its message reaches the screen — Base UI
-      // renders `ComboboxEmpty` only while the list is empty, so leaving stale
-      // rows there means the failure is never announced at all.
+      // `placeholderData` outlives both a cleared field and a failed refetch,
+      // so drop it in either case — otherwise the popup answers this query with
+      // the last one's rows, and a non-empty list keeps Base UI from ever
+      // rendering `ComboboxEmpty`, where the error message lives.
       hasQuery && !query.isError
         ? getMergeCandidates({
             proposals: query.data?.proposals ?? [],
@@ -556,12 +513,9 @@ function useMergeCandidateSearch({
     results,
     hasQuery,
     isError: query.isError,
-    // Anything short of settled results counts as searching, because until
-    // then the rows on screen are the previous term's. That covers the
-    // debounce window (no request yet) and going offline, where react-query
-    // parks the fetch as `paused` rather than `fetching` and would otherwise
-    // leave the stale rows sitting there unlabelled until the connection
-    // returns.
+    // Anything short of settled counts as searching: until then the rows on
+    // screen are the previous term's. `isPaused` covers going offline, which
+    // react-query parks rather than reporting as fetching.
     isSearching:
       isOpen &&
       hasQuery &&
@@ -571,10 +525,7 @@ function useMergeCandidateSearch({
   };
 }
 
-/**
- * What the popover says instead of results. Base UI only renders it while the
- * list is empty, so the failure and the in-flight states share the slot.
- */
+/** Base UI renders this only while the list is empty, so all states share it. */
 function MergeSearchEmptyState({
   hasQuery,
   isError,
@@ -598,7 +549,6 @@ function MergeSearchEmptyState({
   return <ComboboxEmpty>{message}</ComboboxEmpty>;
 }
 
-/** Figma 15409:10854: the title over a single line of the proposal's preview. */
 function MergeSearchResult({ candidate }: { candidate: MergeCandidate }) {
   const { description } = useProposalCardData(candidate.proposal);
 
@@ -616,11 +566,7 @@ function MergeSearchResult({ candidate }: { candidate: MergeCandidate }) {
   );
 }
 
-/**
- * The decision's other proposals as a single-select list of cards. Reads
- * `listProposals`, so the picker is scoped exactly like the browse list and
- * can't offer something that list wouldn't show.
- */
+/** Reads `listProposals`, so this can't offer what the browse list would hide. */
 function MergeCandidateListSuspense({
   proposal,
   selected,
@@ -656,10 +602,9 @@ function MergeCandidateListSuspense({
     [paginatedData.pages, proposal.id, untitledLabel],
   );
 
-  // Only one proposal can be merged into, so once one is picked the list shows
-  // that one and nothing else — including when the pick came from the search
-  // popover, which reaches proposals these pages don't hold. Editing or
-  // clearing the search field drops the pick and brings the full list back.
+  // Only one proposal can be merged into, so a pick collapses the list to it.
+  // Rendered from `selected` rather than found here: search reaches proposals
+  // these pages don't hold.
   const candidates = selected ? [selected] : loadedCandidates;
 
   return (
@@ -690,8 +635,8 @@ function MergeCandidateListSuspense({
         >
           {candidates.map((candidate) => (
             <Field key={candidate.id} className="w-full">
-              {/* Figma shows no radio dot, so the card is the label and carries
-                  the selected treatment; the radio keeps the keyboard semantics. */}
+              {/* No radio dot in Figma: the card is the label, the hidden radio
+                  keeps the keyboard semantics. */}
               <RadioGroupItem
                 id={`merge-target-${candidate.id}`}
                 value={candidate.id}
@@ -727,7 +672,6 @@ function MergeCandidateListSuspense({
   );
 }
 
-/** Figma gives the "Merging from" card no description, hence `showDescription`. */
 function MergeProposalSummaryCard({
   proposal,
   selected,
@@ -756,7 +700,6 @@ function MergeProposalSummaryCard({
   );
 }
 
-/** Two placeholder cards, matching a loaded candidate's height. */
 function MergeCandidateListSkeleton() {
   return (
     <div className="flex flex-col gap-2" aria-hidden>
