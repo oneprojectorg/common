@@ -16,6 +16,7 @@ export const LOCALE_TO_DEEPL: Record<SupportedLocale, string> = {
   bn: 'BN',
   so: 'SO',
   ar: 'AR',
+  hu: 'HU',
 } as const;
 
 /**
