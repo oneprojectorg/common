@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
@@ -43,6 +44,7 @@ import { toast } from '@op/sense/Toast';
 import {
   type ReactNode,
   Suspense,
+  useEffect,
   useMemo,
   useOptimistic,
   useState,
@@ -153,7 +155,46 @@ function ProfileInviteModalContent({
   const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
     profileId,
   });
-  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({ profileId });
+
+  // listUsers is cursor-paginated; role counts and duplicate-filtering need
+  // every member, not just the first page, so drain every page as soon as
+  // it's available instead of waiting for user-triggered "load more".
+  const [usersData, usersQuery] =
+    trpc.profile.listUsers.useSuspenseInfiniteQuery(
+      { profileId, limit: 100 },
+      { getNextPageParam: (lastPage) => lastPage.next ?? undefined },
+    );
+  const {
+    hasNextPage,
+    isFetching,
+    isFetchNextPageError,
+    error,
+    fetchNextPage,
+  } = usersQuery;
+  useEffect(() => {
+    // Guarding on isFetching (not just isFetchingNextPage) matters: a plain
+    // refetch (e.g. from an invalidate()) doesn't set isFetchingNextPage, and
+    // fetchNextPage() defaults to cancelRefetch: true, so without this an
+    // in-flight refetch gets silently cancelled and replaced.
+    if (hasNextPage && !isFetching && !isFetchNextPageError) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetching, isFetchNextPageError, fetchNextPage]);
+
+  useEffect(() => {
+    // fetchNextPage() swallows its own rejection internally, so the failure
+    // has to be reported off the error state rather than the promise — the
+    // query client retries nothing, and a failed page 2+ never surfaces
+    // through Suspense once page 1 has already loaded.
+    if (isFetchNextPageError) {
+      logger.error('Failed to fetch next page of profile users', { error });
+    }
+  }, [isFetchNextPageError, error]);
+
+  const allUsers = useMemo(
+    () => usersData.pages.flatMap((page) => page.items),
+    [usersData.pages],
+  );
 
   const [optimisticInvites, dispatchRemoveInvite] = useOptimistic(
     serverInvites,
@@ -161,7 +202,7 @@ function ProfileInviteModalContent({
   );
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
-    usersData.items,
+    allUsers,
     (state, profileUserId: string) =>
       state.filter((u) => u.id !== profileUserId),
   );
@@ -462,6 +503,16 @@ function ProfileInviteModalContent({
   return (
     <>
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-4">
+        {/* Role counts settle in as pages drain in after mount; announce once
+            rather than per-tab to avoid a live region doubling as a tab's own
+            accessible name and announcing every count on every page. */}
+        {!hasNextPage && (
+          <span className="sr-only" aria-live="polite">
+            {t('{count, plural, one {# participant} other {# participants}}', {
+              count: allUsers.length,
+            })}
+          </span>
+        )}
         {/* Role Tabs */}
         <RoleSelector
           profileId={profileId}

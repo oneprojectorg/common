@@ -104,11 +104,15 @@ export const listProfileUsers = async ({
     }
 
     if (orderBy === 'name') {
-      // ORDER BY name, email - compound condition
+      // profileUsers.name is nullable (most rows never set it — the display
+      // name comes from the joined profile). A NULL never satisfies `>` or
+      // `=` against a literal, so the comparison must go through the same
+      // coalesce the ORDER BY clause and the cursor's own encoding assume.
+      const nameExpr = sql`coalesce(${profileUsers.name}, '')`;
       return or(
-        compareFn(profileUsers.name, decodedCursor.value),
+        compareFn(nameExpr, decodedCursor.value),
         and(
-          eq(profileUsers.name, decodedCursor.value),
+          eq(nameExpr, decodedCursor.value),
           compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
         ),
       );
@@ -171,7 +175,7 @@ export const listProfileUsers = async ({
       }
 
       // Default to name, with email as secondary for consistent ordering
-      return [orderFn(table.name), orderFn(table.email)];
+      return [orderFn(sql`coalesce(${table.name}, '')`), orderFn(table.email)];
     },
     limit: limit + 1,
   });

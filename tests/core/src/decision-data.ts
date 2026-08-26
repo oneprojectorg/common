@@ -490,19 +490,32 @@ export interface GrantInstanceRoleOptions {
    * which makes a deliberately narrowed decisions bitfield unobservable.
    */
   profilePermission?: number;
+  /**
+   * Reuse an existing role (returned as `roleId` from a prior call) instead of
+   * creating a new one. Lets a test put many users under one role so a role's
+   * member count reflects all of them, rather than one role per user. When
+   * set, `roleName`/`decisionsPermission`/`profilePermission` are ignored —
+   * the reused role keeps whatever it was created with.
+   */
+  accessRoleId?: string;
+}
+
+export interface GrantInstanceRoleResult {
+  roleId: string;
+  profileUserId: string;
 }
 
 /**
  * Grants a user a custom role on a decision instance profile, with explicit
- * `decisions` and `profile` zone bitfields. Creates the role on the fly and
- * inserts/reuses a profileUser row.
+ * `decisions` and `profile` zone bitfields. Creates the role on the fly (or
+ * reuses `accessRoleId`) and inserts/reuses a profileUser row.
  *
  * Mirrors what `createDecisionRole` in @op/common writes, without importing it
  * (keeps this package free of server-only deps).
  */
 export async function grantInstanceRole(
   opts: GrantInstanceRoleOptions,
-): Promise<void> {
+): Promise<GrantInstanceRoleResult> {
   const {
     instanceProfileId,
     authUserId,
@@ -510,45 +523,52 @@ export async function grantInstanceRole(
     roleName,
     decisionsPermission,
     profilePermission = TEST_PERMISSION_BITS.READ,
+    accessRoleId,
   } = opts;
 
-  const [decisionsZone, profileZone] = await Promise.all([
-    db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
-    db.query.accessZones.findFirst({ where: { name: 'profile' } }),
-  ]);
+  let roleId = accessRoleId;
 
-  if (!decisionsZone || !profileZone) {
-    throw new Error(
-      'Access zones not seeded (expected "decisions" and "profile")',
-    );
+  if (!roleId) {
+    const [decisionsZone, profileZone] = await Promise.all([
+      db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
+      db.query.accessZones.findFirst({ where: { name: 'profile' } }),
+    ]);
+
+    if (!decisionsZone || !profileZone) {
+      throw new Error(
+        'Access zones not seeded (expected "decisions" and "profile")',
+      );
+    }
+
+    const [role] = await db
+      .insert(accessRoles)
+      .values({ name: roleName, profileId: instanceProfileId })
+      .returning();
+
+    if (!role) {
+      throw new Error(
+        `Failed to create "${roleName}" role on ${instanceProfileId}`,
+      );
+    }
+
+    await db.insert(accessRolePermissionsOnAccessZones).values([
+      {
+        accessRoleId: role.id,
+        accessZoneId: decisionsZone.id,
+        permission: decisionsPermission,
+      },
+      {
+        accessRoleId: role.id,
+        accessZoneId: profileZone.id,
+        permission: profilePermission,
+      },
+    ]);
+
+    roleId = role.id;
   }
-
-  const [role] = await db
-    .insert(accessRoles)
-    .values({ name: roleName, profileId: instanceProfileId })
-    .returning();
-
-  if (!role) {
-    throw new Error(
-      `Failed to create "${roleName}" role on ${instanceProfileId}`,
-    );
-  }
-
-  await db.insert(accessRolePermissionsOnAccessZones).values([
-    {
-      accessRoleId: role.id,
-      accessZoneId: decisionsZone.id,
-      permission: decisionsPermission,
-    },
-    {
-      accessRoleId: role.id,
-      accessZoneId: profileZone.id,
-      permission: profilePermission,
-    },
-  ]);
 
   // Reuse an existing profileUsers row (e.g. created by createInstanceMember)
-  // or insert a fresh one. Either way, attach the new role to it.
+  // or insert a fresh one. Either way, attach the role to it.
   const existing = await db.query.profileUsers.findFirst({
     where: { profileId: instanceProfileId, authUserId },
     columns: { id: true },
@@ -572,7 +592,9 @@ export async function grantInstanceRole(
 
   await db
     .insert(profileUserToAccessRoles)
-    .values({ profileUserId, accessRoleId: role.id });
+    .values({ profileUserId, accessRoleId: roleId });
+
+  return { roleId, profileUserId };
 }
 
 /**
@@ -584,8 +606,9 @@ export async function grantInstanceReviewerRole(opts: {
   authUserId: string;
   email: string;
   roleName?: string;
-}): Promise<void> {
-  await grantInstanceRole({
+  accessRoleId?: string;
+}): Promise<GrantInstanceRoleResult> {
+  return grantInstanceRole({
     ...opts,
     roleName: opts.roleName ?? 'Reviewer',
     decisionsPermission:

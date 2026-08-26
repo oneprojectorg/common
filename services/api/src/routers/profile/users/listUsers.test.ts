@@ -1,6 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { profileUsers, profiles, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -8,6 +8,8 @@ import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUse
 import {
   createIsolatedSession,
   createTestContextWithSession,
+  createTestUser,
+  supabaseTestAdminClient,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 import { usersRouter } from './index';
@@ -645,6 +647,96 @@ describe.concurrent('profile.users.listUsers', () => {
         (a ?? '').localeCompare(b ?? ''),
       );
       expect(allNames).toEqual(sortedNames);
+    });
+
+    it('should paginate from one NULL-name member to the next when ordering by name', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      // Most real profileUsers rows never set `name` — the display name comes
+      // from the joined profile instead. The cursor comparison must be able
+      // to page from one NULL-name row to the next NULL-name row: a single
+      // NULL-name row isn't enough to catch this, since the row on the far
+      // side of the cursor needs a NULL name too (a named row like the admin
+      // already satisfies a raw, un-coalesced `>` comparison).
+      if (!supabaseTestAdminClient) {
+        throw new Error('Supabase test admin client not initialized');
+      }
+      const createNullNameMember = async (suffix: string) => {
+        const email = `${task.id}-null-name-${suffix}@oneproject.org`;
+        const user = await createTestUser(email).then((res) => res.user);
+        if (!user?.email) {
+          throw new Error('Failed to create test user');
+        }
+        onTestFinished(async () => {
+          // The signup trigger also creates a personal profile for this
+          // user; delete it before the auth user so nothing is orphaned.
+          const [userRecord] = await db
+            .select()
+            .from(users)
+            .where(eq(users.authUserId, user.id));
+          if (userRecord?.profileId) {
+            await db
+              .delete(profiles)
+              .where(eq(profiles.id, userRecord.profileId));
+          }
+          await supabaseTestAdminClient.auth.admin.deleteUser(user.id);
+        });
+
+        const [profileUser] = await db
+          .insert(profileUsers)
+          .values({
+            authUserId: user.id,
+            profileId: profile.id,
+            email: user.email,
+          })
+          .returning();
+        // Sanity check: the raw column is NULL — the condition the cursor
+        // fix has to handle, not an empty string.
+        expect(profileUser?.name).toBeNull();
+
+        return user;
+      };
+
+      // Emails sort "a" before "b", so memberA is the tiebreaker-ordered
+      // first NULL-name row and memberB is the one on the far side of its
+      // cursor.
+      const memberA = await createNullNameMember('a');
+      const memberB = await createNullNameMember('b');
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // NULL sorts as '' ahead of any named row, so page 1 holds only the
+      // first NULL-name member (tiebroken by email) and its cursor points
+      // at the second NULL-name member, not the named admin.
+      const page1 = await caller.listUsers({
+        profileId: profile.id,
+        limit: 1,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+      expect(page1.items).toHaveLength(1);
+      expect(page1.items[0]?.email).toBe(memberA.email);
+      expect(page1.next).toBeTruthy();
+
+      // Before the coalesce fix, `gt(name, '')`/`eq(name, '')` against
+      // memberB's NULL name both evaluate to NULL, so memberB is skipped
+      // entirely and this page jumps straight to the named admin instead.
+      const page2 = await caller.listUsers({
+        profileId: profile.id,
+        limit: 1,
+        cursor: page1.next ?? undefined,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+      expect(page2.items).toHaveLength(1);
+      expect(page2.items[0]?.email).toBe(memberB.email);
     });
 
     it('should paginate correctly when ordering by role', async ({
