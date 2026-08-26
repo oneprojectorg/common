@@ -1690,5 +1690,6 @@
   "Voting (max {count} per member)": "ভোটদান (সদস্য প্রতি সর্বোচ্চ {count})",
   "Vote editing": "ভোট সম্পাদনা",
   "Advances manually": "ম্যানুয়ালি অগ্রসর হয়",
-  "Advances by date": "তারিখ অনুযায়ী অগ্রসর হয়"
+  "Advances by date": "তারিখ অনুযায়ী অগ্রসর হয়",
+  "{appName} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.": "{appName} কেবলমাত্র আমন্ত্রণের মাধ্যমে! আপনি এখন অপেক্ষমাণ তালিকায় আছেন। আপডেটের জন্য আপনার ইনবক্সে নজর রাখুন।"
 }
