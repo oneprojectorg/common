@@ -4,6 +4,7 @@ import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
+import { QuotedNote } from '../components/QuotedNote';
 
 const inlineLinkClassName = 'font-bold text-primary-teal underline';
 
@@ -14,6 +15,7 @@ export const ProposalMergedIntoYoursEmail = ({
   processTitle,
   proposalUrl = 'https://common.oneproject.org/',
   sourceProposalUrl = 'https://common.oneproject.org/',
+  note,
 }: {
   /** The recipient's own proposal. */
   proposalName: string;
@@ -21,6 +23,9 @@ export const ProposalMergedIntoYoursEmail = ({
   processTitle: string;
   proposalUrl: string;
   sourceProposalUrl: string;
+  /** The admin's reason for the merge. The merge dialog addresses its note
+   *  field to this recipient, so it has to reach them here. */
+  note?: { body: string; authorName?: string | null } | null;
 }) => {
   return (
     <EmailTemplate previewText={`A proposal was merged into "${proposalName}"`}>
@@ -36,6 +41,10 @@ export const ProposalMergedIntoYoursEmail = ({
         in <strong>{processTitle}</strong>. Open your proposal to review what
         was added.
       </Text>
+
+      {note ? (
+        <QuotedNote authorName={note.authorName}>{note.body}</QuotedNote>
+      ) : null}
 
       <CtaButton href={proposalUrl}>View proposal</CtaButton>
 
@@ -55,6 +64,10 @@ ProposalMergedIntoYoursEmail.PreviewProps = {
   processTitle: 'Participatory Budgeting 2026',
   proposalUrl: 'https://common.oneproject.org/',
   sourceProposalUrl: 'https://common.oneproject.org/',
+  note: {
+    body: "Both proposals address food access in District 5 and the community's support is strongest when consolidated.",
+    authorName: 'Aaron Tanaka',
+  },
 } satisfies Parameters<typeof ProposalMergedIntoYoursEmail>[0];
 
 export default ProposalMergedIntoYoursEmail;

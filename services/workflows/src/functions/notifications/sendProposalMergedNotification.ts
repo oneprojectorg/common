@@ -81,6 +81,7 @@ export const sendProposalMergedNotification = inngest.createFunction(
                 processTitle,
                 proposalUrl: targetProposalUrl,
                 sourceProposalUrl: proposalUrl,
+                note,
               }),
           })),
         ],

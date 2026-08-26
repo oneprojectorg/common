@@ -32,7 +32,8 @@ export type MergeProposalsResult = {
  * become a target.
  *
  * `note` lives on the edge so it soft-deletes with the merge; the notification
- * quotes it back to the merged-away authors.
+ * quotes it back to both proposals' authors. The merge dialog addresses the note
+ * to the surviving proposal's author, so that side has to receive it.
  */
 export async function mergeProposals({
   sourceProposalId,

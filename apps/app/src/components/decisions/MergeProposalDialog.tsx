@@ -86,6 +86,16 @@ export function MergeProposalDialog({
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
 
+  // The note is addressed to the surviving proposal's author, so the label names
+  // them rather than the author of the proposal being merged away — naming the
+  // latter reads as your own name whenever you merge your own proposal. An
+  // anonymous author is never named; `isAnonymous` hides the link, not the name.
+  const targetAuthor = target?.proposal.submittedBy;
+  const noteRecipientName =
+    targetAuthor && !targetAuthor.isAnonymous
+      ? targetAuthor.name || undefined
+      : undefined;
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       // The content unmounts, so state would otherwise survive into the next open.
@@ -229,7 +239,7 @@ export function MergeProposalDialog({
           <ConfirmMergeStep
             sourceTitle={sourceTitle}
             targetTitle={target?.title ?? ''}
-            authorName={proposal.submittedBy?.name}
+            authorName={noteRecipientName}
             note={note}
             onNoteChange={setNote}
             isMerging={mergeMutation.isPending}
@@ -260,7 +270,7 @@ function ConfirmMergeStep({
 }: {
   sourceTitle: string;
   targetTitle: string;
-  /** Named in the note's label. Absent when the author is anonymous. */
+  /** The surviving proposal's author. Absent when they are anonymous. */
   authorName?: string;
   note: string;
   onNoteChange: (note: string) => void;
