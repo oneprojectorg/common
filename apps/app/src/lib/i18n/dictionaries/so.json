@@ -1554,7 +1554,6 @@
   "Unmerge": "Ka soocid",
   "Proposal to merge into": "Soo-jeedinta lala biirinayo",
   "Show more proposals": "Muuji soo-jeedinno dheeraad ah",
-  "No other proposals yet": "Weli ma jiraan soo-jeedinno kale",
   "A proposal can only be merged into another one in this decision.": "Soo-jeedin waxaa lala biirin karaa oo keliya soo-jeedin kale oo go'aankan ku jirta.",
   "Could not load the other proposals. Please try again.": "Soo-jeedinnada kale lama soo geli karin. Fadlan isku day mar kale.",
   "Could not merge this proposal. Please try again.": "Soo-jeedintan lama biirin karin. Fadlan isku day mar kale.",
@@ -1690,5 +1689,7 @@
   "Voting (max {count} per member)": "Codayn (ugu badnaan {count} xubin kasta)",
   "Vote editing": "Tifaftirka codadka",
   "Advances manually": "Gacan ayuu ku horumaraa",
-  "Advances by date": "Wuxuu ku horumaraa taariikh"
+  "Advances by date": "Wuxuu ku horumaraa taariikh",
+  "No similar proposals found": "Lama helin soo jeedin la mid ah",
+  "Search for the proposal you want to merge into.": "Raadi soo jeedinta aad rabto inaad ku biiriso."
 }

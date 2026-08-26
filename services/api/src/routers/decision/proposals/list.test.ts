@@ -2,7 +2,6 @@ import { mockCollab, textFragment } from '@op/collab/testing';
 import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
-  PROPOSAL_TITLE_EMBEDDING_DIMENSIONS,
   ProcessStatus,
   ProposalStatus,
   Visibility,
@@ -10,7 +9,6 @@ import {
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
-  proposalTitleEmbeddings,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -2937,105 +2935,153 @@ describe.concurrent('listProposals: search', () => {
 });
 
 describe.concurrent('listProposals: similarToProposalId', () => {
-  /** A unit vector along `axis`, so cosine distances are easy to reason about. */
-  const unitVector = (axis: number): number[] =>
-    Array.from({ length: PROPOSAL_TITLE_EMBEDDING_DIMENSIONS }, (_, index) =>
-      index === axis ? 1 : 0,
-    );
-
-  /** Mostly `axis`, slightly `otherAxis` — close to `unitVector(axis)`. */
-  const nearVector = (axis: number, otherAxis: number): number[] =>
-    Array.from({ length: PROPOSAL_TITLE_EMBEDDING_DIMENSIONS }, (_, index) => {
-      if (index === axis) {
-        return 0.99;
-      }
-      return index === otherAxis ? 0.14 : 0;
-    });
-
-  async function setupSimilarProposals(testData: TestDecisionsDataManager) {
+  /** Titled proposals on their own instance; the first is the merge source. */
+  async function setupSuggestionProposals(
+    testData: TestDecisionsDataManager,
+    titles: string[],
+  ) {
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
 
-    const createProposal = (title: string) =>
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title },
-        status: ProposalStatus.SUBMITTED,
-      });
-
-    const [source, near, far, unembedded, caller] = await Promise.all([
-      createProposal('Bike Lanes on Fifth'),
-      createProposal('Protected Cycle Track on Fifth'),
-      createProposal('Community Garden'),
-      createProposal('Nothing Embedded Here'),
+    const [caller, ...created] = await Promise.all([
       createAuthenticatedCaller(setup.userEmail),
+      ...titles.map((title) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
     ]);
 
-    return { instanceId, caller, source, near, far, unembedded };
+    return { instanceId, caller, proposals: created };
   }
 
-  it('ranks by title similarity and drops the source from its own results', async ({
+  it('ranks by shared title words and drops the source from its own results', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller, source, near, far, unembedded } =
-      await setupSimilarProposals(testData);
-
-    await db.insert(proposalTitleEmbeddings).values([
-      { proposalId: source.id, title: 'source', embedding: unitVector(0) },
-      { proposalId: near.id, title: 'near', embedding: nearVector(0, 1) },
-      { proposalId: far.id, title: 'far', embedding: unitVector(1) },
+    const {
+      instanceId,
+      caller,
+      proposals: [source, twoWords, oneWord, unrelated],
+    } = await setupSuggestionProposals(testData, [
+      'Riverside Bike Lanes',
+      'Riverside Bike Parking',
+      'Downtown Bike Repair',
+      'Community Garden Beds',
     ]);
 
     const result = await caller.decision.listProposals({
       processInstanceId: instanceId,
-      similarToProposalId: source.id,
+      similarToProposalId: source!.id,
     });
 
-    // Closest first; the unembedded proposal sorts last rather than dropping
-    // out, which is what keeps a pre-cache decision usable.
+    // Two shared words beats one; sharing none is filtered out entirely, so
+    // "top N" means the N best of the proposals that actually relate.
     expect(result.proposals.map((p) => p.id)).toEqual([
-      near.id,
-      far.id,
-      unembedded.id,
+      twoWords!.id,
+      oneWord!.id,
     ]);
-    // Ranking by similarity is a computed sort key, so it can't keyset.
+    expect(result.proposals.map((p) => p.id)).not.toContain(source!.id);
+    expect(result.proposals.map((p) => p.id)).not.toContain(unrelated!.id);
+    // `total` counts the same filtered set the page came from.
+    expect(result.total).toBe(2);
+    // Ranking by a computed score can't keyset, so it stays a single page.
     expect(result.next).toBeNull();
   });
 
-  it('excludes the source proposal even when nothing is embedded', async ({
+  it('matches a word inside a longer one, like the search box does', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller, source } =
-      await setupSimilarProposals(testData);
+    const {
+      instanceId,
+      caller,
+      proposals: [source, plural],
+    } = await setupSuggestionProposals(testData, [
+      'Community Garden Revamp',
+      'Community Gardens',
+    ]);
 
-    // No embeddings and no inference endpoint in the test environment, so this
-    // is the recency fallback — which still must not offer a self-merge.
+    // `ILIKE '%garden%'` is what makes "Gardens" reachable from "Garden" — a
+    // full-text match from word starts would score this pair on "Community"
+    // alone.
     const result = await caller.decision.listProposals({
       processInstanceId: instanceId,
-      similarToProposalId: source.id,
+      similarToProposalId: source!.id,
     });
 
-    expect(result.proposals).toHaveLength(3);
-    expect(result.proposals.map((p) => p.id)).not.toContain(source.id);
-    // `total` counts the same filtered set the page came from.
-    expect(result.total).toBe(3);
-    expect(result.next).toBeNull();
+    expect(result.proposals.map((p) => p.id)).toEqual([plural!.id]);
   });
 
-  it('ignores a proposal from another decision instead of ranking against it', async ({
+  it('ignores words too short to carry signal', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller } = await setupSimilarProposals(testData);
+    const {
+      instanceId,
+      caller,
+      proposals: [source],
+    } = await setupSuggestionProposals(testData, [
+      'Go To A Park',
+      'Repair the Pier',
+    ]);
+
+    // Every word of the source under three characters is dropped, so only
+    // "Park" is searched — and nothing else mentions it. Without the length
+    // floor, "a" would match "Repair" and suggest an unrelated proposal.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      similarToProposalId: source!.id,
+    });
+
+    expect(result.proposals).toHaveLength(0);
+  });
+
+  it('falls back to the plain list when the source title has no usable words', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      instanceId,
+      caller,
+      proposals: [source],
+    } = await setupSuggestionProposals(testData, [
+      'Go To It',
+      'Riverside Bike Lanes',
+      'Community Garden Beds',
+    ]);
+
+    // Nothing to search for, so the filter never applies — but the source is
+    // still excluded, because offering a self-merge is never right.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      similarToProposalId: source!.id,
+    });
+
+    expect(result.proposals).toHaveLength(2);
+    expect(result.proposals.map((p) => p.id)).not.toContain(source!.id);
+    expect(result.next).toBeNull();
+  });
+
+  it('ignores a proposal from another decision instead of searching its title', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupSuggestionProposals(testData, [
+      'Riverside Bike Lanes',
+      'Community Garden Beds',
+    ]);
 
     const otherSetup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -3044,7 +3090,7 @@ describe.concurrent('listProposals: similarToProposalId', () => {
     const outsider = await testData.createProposal({
       userEmail: otherSetup.userEmail,
       processInstanceId: otherSetup.instance.instance.id,
-      proposalData: { title: 'Bike Lanes on Fifth' },
+      proposalData: { title: 'Riverside Bike Lanes' },
       status: ProposalStatus.SUBMITTED,
     });
 
@@ -3053,8 +3099,31 @@ describe.concurrent('listProposals: similarToProposalId', () => {
       similarToProposalId: outsider.id,
     });
 
-    // Every proposal in the decision is still listed — the out-of-scope id
-    // resolves to no vector rather than becoming a title-probe oracle.
-    expect(result.proposals).toHaveLength(4);
+    // Both proposals still listed — the out-of-scope id resolves to no words
+    // rather than becoming a title-probe oracle for another decision.
+    expect(result.proposals).toHaveLength(2);
+  });
+
+  it('treats LIKE wildcards in a source title as literal characters', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      instanceId,
+      caller,
+      proposals: [source, literal],
+    } = await setupSuggestionProposals(testData, [
+      'Fund %%% Everything',
+      'Rebuild %%% Bridge',
+    ]);
+
+    // Unescaped, `%%%` would match every title in the decision.
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      similarToProposalId: source!.id,
+    });
+
+    expect(result.proposals.map((p) => p.id)).toEqual([literal!.id]);
   });
 });

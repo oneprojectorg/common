@@ -158,12 +158,6 @@ export {
 } from './tables/proposalRelationships.sql';
 export type { ProposalRelationship } from './tables/proposalRelationships.sql';
 
-export {
-  PROPOSAL_TITLE_EMBEDDING_DIMENSIONS,
-  proposalTitleEmbeddings,
-} from './tables/proposalTitleEmbeddings.sql';
-export type { ProposalTitleEmbedding } from './tables/proposalTitleEmbeddings.sql';
-
 export { decisionBoundaries } from './tables/decisionBoundaries.sql';
 export type { DecisionBoundary } from './tables/decisionBoundaries.sql';
 

@@ -31,51 +31,6 @@ export const asciiText = customType<{ data: string }>({
   },
 });
 
-const isNumberArray = (value: unknown): value is number[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === 'number');
-
-/**
- * pgvector's wire format for a vector value. Exported because a query that
- * compares against a literal vector (`embedding <=> $1::vector`) binds the
- * parameter itself rather than going through the column's `toDriver`.
- */
-export const toVectorLiteral = (value: number[]): string =>
-  `[${value.join(',')}]`;
-
-/**
- * pgvector `vector(n)` column. The extension is already installed (see the
- * `CREATE EXTENSION ... vector` in the initial migration).
- *
- * Drizzle ships its own `vector()`, but only in the postgres-js/pg-core builds
- * we don't use for custom dimensions here; this mirrors `multiPolygon` above by
- * modelling the type explicitly. The wire format is a bracketed list, so the
- * driver hooks convert to and from `number[]`.
- */
-export const vector = customType<{
-  data: number[];
-  driverData: string;
-  config: { dimensions: number };
-}>({
-  dataType(config) {
-    const dimensions = config?.dimensions;
-    if (dimensions === undefined) {
-      throw new Error('vector() requires a `dimensions` config');
-    }
-    return `vector(${dimensions})`;
-  },
-  toDriver: toVectorLiteral,
-  fromDriver(value: unknown): number[] {
-    if (typeof value !== 'string') {
-      throw new Error(`Expected string for vector, got ${typeof value}`);
-    }
-    const parsed: unknown = JSON.parse(value);
-    if (!isNumberArray(parsed)) {
-      throw new Error(`Invalid vector format: ${value}`);
-    }
-    return parsed;
-  },
-});
-
 /**
  * PostgreSQL tstzrange (timestamp with timezone range) type
  * Used for temporal validity ranges in history tables

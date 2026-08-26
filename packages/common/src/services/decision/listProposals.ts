@@ -21,10 +21,7 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import {
-  buildTitleSimilarityDistance,
-  getProposalTitleQueryVector,
-} from './proposalTitleEmbedding';
+import { buildProposalTitleMatchCount } from './proposalTitleSearch';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -34,14 +31,15 @@ export interface ListProposalsInput {
   status?: ProposalStatus;
   search?: string;
   /**
-   * Rank results by how close their title is to this proposal's, closest first,
-   * and drop this proposal from its own results. Powers the merge dialog's
-   * "Suggested proposals" list.
+   * Restrict to proposals whose title shares a word with this proposal's, rank
+   * them by how many words they share, and drop this proposal from its own
+   * results. Powers the merge dialog's "Suggested proposals" list — the same
+   * title search the search box runs, fed the source proposal's own words.
    *
    * Overrides `orderBy`/`dir` and returns a single page (`next: null`) — the
    * same constraint `orderBy: 'votes'` has, since a computed score can't keyset.
-   * Proposals with no cached title embedding sort last, so a decision that
-   * predates the cache degrades to the plain recency list.
+   * A title with no searchable word in it (or an id from another decision)
+   * filters and ranks by nothing, degrading to the plain recency list.
    */
   similarToProposalId?: string;
   categoryId?: string;
@@ -111,6 +109,7 @@ export const listProposals = async ({
     canManageProposals,
     profileRoles,
     isEmpty,
+    suggestionWords,
     buildWhereClause,
   } = await resolveProposalListScope({ input, user });
 
@@ -154,22 +153,11 @@ export const listProposals = async ({
 
   const { includeVoteCounts = false } = input;
 
-  // A computed score can't keyset, so both similarity and vote ranking return a
-  // single page. Similarity says so up front — before we know whether a vector
-  // resolved — so the caller's pagination doesn't depend on whether the
-  // inference endpoint happened to answer.
+  // A computed score can't keyset, so both suggestion and vote ranking return a
+  // single page. Suggestions say so up front — before we know whether the source
+  // title yielded any words — so the caller's pagination doesn't change shape
+  // based on how the source proposal happened to be named.
   const isSinglePage = orderBy === 'votes' || !!input.similarToProposalId;
-
-  // Resolved after `resolveProposalListScope` has asserted access, so an
-  // unauthorized caller never triggers an inference call. `null` — unknown
-  // proposal, empty title, unavailable endpoint — leaves the normal ordering in
-  // place rather than emptying the suggestion list.
-  const similarityQueryVector = input.similarToProposalId
-    ? await getProposalTitleQueryVector({
-        proposalId: input.similarToProposalId,
-        processInstanceId,
-      })
-    : null;
 
   // Voter-filtered queries (votedByProfileId) always return a voteCount field,
   // but the count is gated on a successful results record so live tallies are
@@ -241,15 +229,12 @@ export const listProposals = async ({
         // `id` tie-break: without it, rows sharing the primary sort key
         // return in undefined order and flipping `dir` has no visible effect.
         const directional = dir === 'asc' ? ascOp : descOp;
-        if (similarityQueryVector) {
+        if (suggestionWords.length > 0) {
+          // Most shared title words first. The WHERE clause has already dropped
+          // everything sharing none, so every row here scores at least 1 and
+          // this only decides the order among real candidates.
           return [
-            // `NULLS LAST` is already the ASC default, but spelled out because
-            // the whole graceful-degradation story rests on it: an unembedded
-            // proposal must rank behind every scored one, not ahead of them.
-            sql`${buildTitleSimilarityDistance({
-              queryVector: similarityQueryVector,
-              proposalIdColumn: table.id,
-            })} asc nulls last`,
+            descOp(buildProposalTitleMatchCount(table, suggestionWords)),
             descOp(table.createdAt),
             descOp(table.id),
           ];

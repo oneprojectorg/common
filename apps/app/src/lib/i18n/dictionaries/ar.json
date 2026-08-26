@@ -1553,7 +1553,6 @@
   "Unmerge": "إلغاء الدمج",
   "Proposal to merge into": "المقترح المراد الدمج معه",
   "Show more proposals": "عرض مزيد من المقترحات",
-  "No other proposals yet": "لا توجد مقترحات أخرى بعد",
   "A proposal can only be merged into another one in this decision.": "لا يمكن دمج مقترح إلا مع مقترح آخر في هذا القرار.",
   "Could not load the other proposals. Please try again.": "تعذّر تحميل المقترحات الأخرى. يُرجى المحاولة مرة أخرى.",
   "Could not merge this proposal. Please try again.": "تعذّر دمج هذا المقترح. يُرجى المحاولة مرة أخرى.",
@@ -1690,5 +1689,7 @@
   "Vote editing": "تعديل الأصوات",
   "Advances manually": "ينتقل يدويًا",
   "Advances by date": "ينتقل حسب التاريخ",
-  "About this phase": "حول هذه المرحلة"
+  "About this phase": "حول هذه المرحلة",
+  "No similar proposals found": "لم يتم العثور على مقترحات مشابهة",
+  "Search for the proposal you want to merge into.": "ابحث عن المقترح الذي تريد الدمج فيه."
 }

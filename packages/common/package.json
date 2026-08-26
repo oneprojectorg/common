@@ -23,7 +23,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@op/ai": "workspace:*",
     "@op/analytics": "workspace:*",
     "@op/cache": "workspace:*",
     "@op/collab": "workspace:*",

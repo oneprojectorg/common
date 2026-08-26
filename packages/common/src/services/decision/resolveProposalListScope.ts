@@ -17,6 +17,7 @@ import {
   decisionsVoteSubmissions,
   processInstances,
   profileUsers,
+  profiles,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
@@ -38,7 +39,11 @@ import {
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
-import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
+import {
+  buildProposalTitleAnyWordCondition,
+  buildProposalTitleSearchCondition,
+  getProposalTitleSearchWords,
+} from './proposalTitleSearch';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -61,6 +66,14 @@ export interface ProposalListScope {
    * an empty category). Callers should short-circuit to an empty result.
    */
   isEmpty: boolean;
+  /**
+   * Words of `similarToProposalId`'s title that the scope filtered on. Empty
+   * unless the caller asked for suggestions — and also empty when that title
+   * yields no usable word, which is why the caller must check it rather than
+   * assume suggestion mode produced a filter. Returned so the caller ranks by
+   * the same words the WHERE clause admitted rows for.
+   */
+  suggestionWords: string[];
   /**
    * Builds the full WHERE clause for the resolved scope. Parameterized on the
    * table reference so it works for both the v2 relational `findMany` (aliased
@@ -128,6 +141,37 @@ const resolveExplicitScope = async ({
 };
 
 /**
+ * The searchable words of one proposal's title, or `[]` when the proposal isn't
+ * in this decision, is deleted, or is titled with nothing a search can use.
+ *
+ * Empty is a real answer, not an error: the caller falls back to its normal
+ * ordering, so a bad id degrades to the plain proposal list rather than to an
+ * empty one.
+ */
+const resolveSuggestionWords = async ({
+  proposalId,
+  processInstanceId,
+}: {
+  proposalId: string;
+  processInstanceId: string;
+}): Promise<string[]> => {
+  const [row] = await db
+    .select({ title: profiles.name })
+    .from(proposals)
+    .innerJoin(profiles, eq(profiles.id, proposals.profileId))
+    .where(
+      and(
+        eq(proposals.id, proposalId),
+        eq(proposals.processInstanceId, processInstanceId),
+        isNull(proposals.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  return getProposalTitleSearchWords(row?.title ?? undefined);
+};
+
+/**
  * Reviewer identity + phase for the `excludeAssignedForReview` anti-join. Both
  * are required together; absent means skip the exclusion.
  */
@@ -142,11 +186,17 @@ type ReviewAssignmentExclusion = {
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
 // relationally-aliased table from a v2 `RAW` callback. Both forms yield SQL
 // that resolves to the right alias in their respective query contexts.
-const buildBaseConditions = (
-  t: typeof proposals,
-  input: ListProposalsInput,
-  reviewExclusion: ReviewAssignmentExclusion | undefined,
-): SQL => {
+const buildBaseConditions = ({
+  t,
+  input,
+  reviewExclusion,
+  suggestionWords,
+}: {
+  t: typeof proposals;
+  input: ListProposalsInput;
+  reviewExclusion: ReviewAssignmentExclusion | undefined;
+  suggestionWords: string[];
+}): SQL => {
   const {
     processInstanceId,
     submittedByProfileId,
@@ -176,12 +226,23 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  // A proposal is perfectly similar to itself, so without this it would always
+  // A proposal shares every word with itself, so without this it would always
   // take the top suggestion slot. Excluded here rather than in the caller so
-  // `total` and the page agree, and so a null query vector (recency fallback)
-  // still can't offer "merge this into itself".
+  // `total` and the page agree, and so the no-usable-words fallback still can't
+  // offer "merge this into itself".
   if (similarToProposalId) {
     conditions.push(ne(t.id, similarToProposalId));
+  }
+
+  // Suggestion mode: keep only proposals sharing a word with the source title.
+  // In the WHERE (not just the ORDER BY) so "top 3" means the three best of the
+  // proposals that actually relate, not the three least-unrelated.
+  const suggestionCondition = buildProposalTitleAnyWordCondition(
+    t,
+    suggestionWords,
+  );
+  if (suggestionCondition) {
+    conditions.push(suggestionCondition);
   }
 
   const searchCondition = buildProposalTitleSearchCondition(t, search);
@@ -372,6 +433,16 @@ export const resolveProposalListScope = async ({
   // makes the whole scope empty, so callers should short-circuit.
   const isEmpty = phaseScope.isEmpty || categoryIsEmpty;
 
+  // Suggestion mode searches for the words of the source proposal's own title.
+  // Resolved after the access check above, so an arbitrary id can't be used to
+  // probe titles from a decision the caller can't see.
+  const suggestionWords = input.similarToProposalId
+    ? await resolveSuggestionWords({
+        proposalId: input.similarToProposalId,
+        processInstanceId,
+      })
+    : [];
+
   // The phase being viewed — the "Other proposals" tab omits phaseId and
   // defaults to the instance's current state.
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
@@ -392,11 +463,12 @@ export const resolveProposalListScope = async ({
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
   const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(
-      proposalsTable,
+    let clause: SQL = buildBaseConditions({
+      t: proposalsTable,
       input,
       reviewExclusion,
-    );
+      suggestionWords,
+    });
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface
@@ -506,6 +578,7 @@ export const resolveProposalListScope = async ({
     canManageProposals,
     profileRoles,
     isEmpty,
+    suggestionWords,
     buildWhereClause,
   };
 };

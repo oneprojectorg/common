@@ -26,7 +26,6 @@ import type {
   ProposalDataInput,
 } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
-import { syncProposalTitleEmbedding } from './proposalTitleEmbedding';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
@@ -247,14 +246,6 @@ export const updateProposal = async ({
 
     return proposal;
   });
-
-  // Refresh the cached title embedding the merge-suggestion ranking reads.
-  // Unconditional rather than gated on `nextTitle`, because a status change
-  // out of `draft` also makes the proposal a merge candidate for the first
-  // time. The helper owns the "is this worth an inference call" decision — it
-  // no-ops for drafts and for a title that didn't move — so this stays one
-  // best-effort, non-blocking call.
-  waitUntil(syncProposalTitleEmbedding({ proposalId }));
 
   // When a checkpoint mints a new TipTap version, evict the prior version's
   // cached fragments. Best-effort and non-blocking.

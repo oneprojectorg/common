@@ -725,9 +725,10 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   /** When set to 'results', all proposals are returned as non-editable */
   phase: z.enum(['results']).optional(),
   /**
-   * Rank by title similarity to this proposal, closest first, and exclude it
-   * from its own results — the merge dialog's "Suggested proposals" list.
-   * Overrides `orderBy`/`dir` and returns a single page.
+   * Restrict to proposals whose title shares a word with this proposal's,
+   * most shared words first, and exclude it from its own results — the merge
+   * dialog's "Suggested proposals" list. Overrides `orderBy`/`dir` and returns
+   * a single page.
    */
   similarToProposalId: z.uuid().optional(),
   /** Keyset pagination cursor from the previous page's `next`. */

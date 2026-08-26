@@ -47,8 +47,8 @@ import {
 
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 
-/** How many suggestions the list shows. Figma 15311:11482 sizes it for a few. */
-const MERGE_SUGGESTION_LIMIT = 5;
+/** Suggestions are a shortlist, not a browse list — the search box is for the rest. */
+const MERGE_SUGGESTION_LIMIT = 3;
 
 /** Figma has these as two dialogs (15311:11482, 15313:12547); one swaps content
  *  between them so the backdrop doesn't flash and Cancel keeps the selection. */
@@ -357,8 +357,9 @@ function ConfirmMergeStep({
  * can't offer something that list wouldn't show.
  *
  * With no search term this is a real suggestion list: the server ranks the other
- * proposals by how close their title is to this one's and returns a single page,
- * of which the top few are shown. Typing switches it back to a paged search.
+ * proposals by how many title words they share with this one and returns a
+ * single page, of which the top few are shown. Typing switches it back to a
+ * paged search over the user's own words.
  */
 function MergeCandidateListSuspense({
   proposal,
@@ -387,8 +388,8 @@ function MergeCandidateListSuspense({
         limit: MERGE_CANDIDATE_PAGE_LIMIT,
         // Server-side, so a match beyond the loaded pages is still found.
         search: searchTerm || undefined,
-        // Ranking only makes sense against the whole decision; once the user
-        // has typed, their words are the better signal.
+        // Both modes run the same title search; they differ only in whose words
+        // it gets. Once the user has typed, their words beat ours.
         similarToProposalId: isSearching ? undefined : proposal.id,
       },
       {
@@ -419,12 +420,17 @@ function MergeCandidateListSuspense({
             <EmptyTitle>
               {searchTerm
                 ? t('No proposals match your search')
-                : t('No other proposals yet')}
+                : t('No similar proposals found')}
             </EmptyTitle>
+            {/* Suggestions are a filtered list now, so an empty one usually
+                means "nothing shares a word", not "nothing exists" — point at
+                the search box rather than implying there is nothing to merge. */}
             <EmptyDescription>
-              {t(
-                'A proposal can only be merged into another one in this decision.',
-              )}
+              {searchTerm
+                ? t(
+                    'A proposal can only be merged into another one in this decision.',
+                  )
+                : t('Search for the proposal you want to merge into.')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

@@ -1617,7 +1617,6 @@
   "Unmerge": "Unmerge",
   "Proposal to merge into": "Proposal to merge into",
   "Show more proposals": "Show more proposals",
-  "No other proposals yet": "No other proposals yet",
   "A proposal can only be merged into another one in this decision.": "A proposal can only be merged into another one in this decision.",
   "Could not load the other proposals. Please try again.": "Could not load the other proposals. Please try again.",
   "Could not merge this proposal. Please try again.": "Could not merge this proposal. Please try again.",
@@ -1690,5 +1689,7 @@
   "Contributing ideas could not be loaded": "Contributing ideas could not be loaded",
   "Feedback": "Feedback",
   "Notes reviewers shared while this proposal was under review": "Notes reviewers shared while this proposal was under review",
-  "Reviewer · {timeAgo}": "Reviewer · {timeAgo}"
+  "Reviewer · {timeAgo}": "Reviewer · {timeAgo}",
+  "No similar proposals found": "No similar proposals found",
+  "Search for the proposal you want to merge into.": "Search for the proposal you want to merge into."
 }

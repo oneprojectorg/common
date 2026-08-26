@@ -1554,7 +1554,6 @@
   "Unmerge": "Annuler la fusion",
   "Proposal to merge into": "Proposition avec laquelle fusionner",
   "Show more proposals": "Afficher plus de propositions",
-  "No other proposals yet": "Aucune autre proposition pour l’instant",
   "A proposal can only be merged into another one in this decision.": "Une proposition ne peut être fusionnée qu’avec une autre proposition de cette décision.",
   "Could not load the other proposals. Please try again.": "Impossible de charger les autres propositions. Veuillez réessayer.",
   "Could not merge this proposal. Please try again.": "Impossible de fusionner cette proposition. Veuillez réessayer.",
@@ -1690,5 +1689,7 @@
   "Voting (max {count} per member)": "Vote (max. {count} par membre)",
   "Vote editing": "Modification des votes",
   "Advances manually": "Avance manuellement",
-  "Advances by date": "Avance à une date"
+  "Advances by date": "Avance à une date",
+  "No similar proposals found": "Aucune proposition similaire trouvée",
+  "Search for the proposal you want to merge into.": "Recherchez la proposition dans laquelle vous souhaitez fusionner."
 }

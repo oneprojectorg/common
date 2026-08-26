@@ -721,9 +721,6 @@ importers:
 
   packages/common:
     dependencies:
-      '@op/ai':
-        specifier: workspace:*
-        version: link:../ai
       '@op/analytics':
         specifier: workspace:*
         version: link:../analytics
@@ -14707,7 +14704,7 @@ snapshots:
 
   '@types/mssql@9.1.9':
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 22.13.14
       tarn: 3.0.2
       tedious: 19.2.0
     transitivePeerDependencies:
@@ -14763,7 +14760,7 @@ snapshots:
 
   '@types/readable-stream@4.0.23':
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 22.13.14
 
   '@types/resolve@1.20.6': {}
 
@@ -16593,7 +16590,7 @@ snapshots:
 
   happy-dom@20.5.3:
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 22.13.14
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       entities: 6.0.1
@@ -19417,7 +19414,7 @@ snapshots:
       '@azure/identity': 4.13.0
       '@azure/keyvault-keys': 4.10.0
       '@js-joda/core': 5.7.0
-      '@types/node': 24.13.3
+      '@types/node': 22.13.14
       bl: 6.1.6
       iconv-lite: 0.6.3
       js-md4: 0.3.2
@@ -19432,7 +19429,7 @@ snapshots:
       '@azure/identity': 4.13.0
       '@azure/keyvault-keys': 4.10.0
       '@js-joda/core': 5.7.0
-      '@types/node': 24.13.3
+      '@types/node': 22.13.14
       bl: 6.1.6
       iconv-lite: 0.7.2
       js-md4: 0.3.2
