@@ -8,6 +8,16 @@ import type {
   AdminEligibleReviewer,
   AdminReviewAssignment,
 } from '@op/common/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
@@ -37,6 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
 import { Fragment, Suspense, useMemo, useState } from 'react';
 import {
@@ -183,6 +194,8 @@ function ReviewAssignmentsPanelContent({
       ) : (
         <div className="overflow-hidden rounded-md border">
           <ReviewersTable
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
             rows={rows}
             onAssignTo={(reviewerProfileId) =>
               setAssignTarget({ reviewerProfileId })
@@ -207,9 +220,13 @@ function ReviewAssignmentsPanelContent({
 }
 
 function ReviewersTable({
+  processInstanceId,
+  phaseId,
   rows,
   onAssignTo,
 }: {
+  processInstanceId: string;
+  phaseId: string;
   rows: ReviewerRow[];
   onAssignTo: (reviewerProfileId: string) => void;
 }) {
@@ -261,6 +278,8 @@ function ReviewersTable({
                       className="flex flex-col gap-2.5 py-3 ps-14 pe-2"
                     >
                       <AssignmentsTable
+                        processInstanceId={processInstanceId}
+                        phaseId={phaseId}
                         assignments={row.assignments}
                         reviewerName={reviewerLabel(row.profile)}
                       />
@@ -384,9 +403,13 @@ function ReviewerRowCells({
  * Columbus reviewers carry 50–70 assignments, so the body scrolls in place.
  */
 function AssignmentsTable({
+  processInstanceId,
+  phaseId,
   assignments,
   reviewerName,
 }: {
+  processInstanceId: string;
+  phaseId: string;
   assignments: AdminReviewAssignment[];
   /** Names the nested table, so its header isn't read as the outer one's. */
   reviewerName: string;
@@ -475,7 +498,12 @@ function AssignmentsTable({
                   </span>
                 </TableCell>
                 <TableCell className="text-end">
-                  <AssignmentActionsMenu />
+                  <AssignmentActionsMenu
+                    processInstanceId={processInstanceId}
+                    phaseId={phaseId}
+                    assignment={assignment}
+                    reviewerName={reviewerName}
+                  />
                 </TableCell>
               </TableRow>
             );
@@ -487,31 +515,110 @@ function AssignmentsTable({
 }
 
 /**
- * Per-assignment overflow menu; Unassign stays disabled until PR 2 lands
- * `decision.removeReviewAssignment`.
+ * Per-assignment overflow menu. Unassign is a hard delete of the assignment,
+ * so it is offered only while the reviewer has not started — every other
+ * status keeps the item disabled rather than hiding it, so an admin can see
+ * why the row cannot be dropped. The confirm lives outside the menu: Base UI
+ * unmounts the menu content on select, which would take a nested dialog with
+ * it.
  */
-function AssignmentActionsMenu() {
+function AssignmentActionsMenu({
+  processInstanceId,
+  phaseId,
+  assignment,
+  reviewerName,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+  assignment: AdminReviewAssignment;
+  reviewerName: string;
+}) {
   const t = useTranslations();
+  const utils = trpc.useUtils();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  const proposalTitle = assignment.proposalTitle ?? t('Untitled Proposal');
+  const isRemovable = assignment.status === 'pending';
+
+  const removeAssignment = trpc.decision.removeReviewAssignment.useMutation({
+    onSuccess: () => {
+      toast.success(
+        t('{proposal} is no longer assigned to {name}', {
+          proposal: proposalTitle,
+          name: reviewerName,
+        }),
+      );
+      utils.decision.listPhaseReviewAssignments.invalidate({
+        processInstanceId,
+        phaseId,
+      });
+      setIsConfirmOpen(false);
+    },
+    // Covers the race this dialog is open through: the reviewer starts the
+    // review while the admin reads the confirm, and the server refuses.
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t('Assignment actions')}
-          />
-        }
-      >
-        <LuEllipsis />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuItem disabled>{t('Unassign')}</DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('Assignment actions for {proposal}', {
+                proposal: proposalTitle,
+              })}
+            />
+          }
+        >
+          <LuEllipsis />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              disabled={!isRemovable}
+              onClick={() => setIsConfirmOpen(true)}
+            >
+              {isRemovable ? t('Unassign') : t('Unassign (review started)')}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('Unassign proposal?')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                '{name} will no longer be asked to review “{proposal}”. You can assign it to them again later.',
+                { name: reviewerName, proposal: proposalTitle },
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={removeAssignment.isPending}
+              onClick={() =>
+                removeAssignment.mutate({
+                  processInstanceId,
+                  phaseId,
+                  assignmentId: assignment.id,
+                })
+              }
+            >
+              {removeAssignment.isPending ? t('Unassigning…') : t('Unassign')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
