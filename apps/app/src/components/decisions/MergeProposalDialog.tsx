@@ -390,6 +390,7 @@ function MergeTargetSearchField({
   // apart from Escape-with-the-list-open, and so a closed field doesn't search.
   const [isOpen, setIsOpen] = useState(false);
   const searchQuery = searchTerm.trim();
+  const hasQuery = searchQuery.length > 0;
   const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
 
   const query = trpc.decision.listProposals.useQuery(
@@ -414,12 +415,17 @@ function MergeTargetSearchField({
   const untitledLabel = t('Untitled Proposal');
   const results = useMemo(
     () =>
-      getMergeCandidates({
-        proposals: query.data?.proposals ?? [],
-        sourceProposalId: proposal.id,
-        untitledLabel,
-      }),
-    [query.data?.proposals, proposal.id, untitledLabel],
+      // An empty field has no results, but `placeholderData` hands back the
+      // last page fetched whatever the current key is. Without this the popup
+      // keeps listing the previous search under a field the user just cleared.
+      hasQuery
+        ? getMergeCandidates({
+            proposals: query.data?.proposals ?? [],
+            sourceProposalId: proposal.id,
+            untitledLabel,
+          })
+        : [],
+    [hasQuery, query.data?.proposals, proposal.id, untitledLabel],
   );
 
   // The debounce window counts as searching too, or the spinner blinks off
@@ -429,7 +435,7 @@ function MergeTargetSearchField({
   // popup reads "no matches" for that tick.
   const isSearching =
     isOpen &&
-    searchQuery.length > 0 &&
+    hasQuery &&
     (query.isFetching ||
       query.isPending ||
       searchQuery !== debouncedSearchQuery);
@@ -500,7 +506,7 @@ function MergeTargetSearchField({
           contents instead. */}
       <ComboboxContent>
         <MergeSearchEmptyState
-          hasQuery={searchQuery.length > 0}
+          hasQuery={hasQuery}
           isError={query.isError}
           isSearching={isSearching}
         />
