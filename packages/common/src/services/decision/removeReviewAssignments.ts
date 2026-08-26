@@ -25,10 +25,8 @@ export interface RemoveReviewAssignmentsResult {
 }
 
 /**
- * Hard-deletes review assignments nobody has started. Reviews and revision
- * requests cascade off `assignmentId`, so a non-PENDING row is skipped rather
- * than deleted: only the caller's own mistakes throw (no access, ended phase,
- * an id from another instance or phase).
+ * Hard-deletes review assignments. Reviews and revision requests cascade off
+ * `assignmentId`, so a non-PENDING row is skipped rather than deleted.
  */
 export async function removeReviewAssignments({
   processInstanceId,
@@ -44,8 +42,7 @@ export async function removeReviewAssignments({
     );
   }
 
-  // No org fallback by design: `assertInstanceProfileAccess` is the legacy
-  // pattern being retired, so an org admin needs a role on this profile.
+  // No org fallback by design: that pattern is being retired.
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
@@ -53,7 +50,6 @@ export async function removeReviewAssignments({
   });
 
   assertInstancePhase({ instance, phaseId });
-  // Assignments survive a phase advance; unassigning them must not.
   assertReviewAssignmentPhaseIsCurrent(instance, phaseId);
 
   const requestedIds = [...new Set(assignmentIds)];
@@ -63,8 +59,6 @@ export async function removeReviewAssignments({
     columns: { id: true, processInstanceId: true, phaseId: true },
   });
 
-  // A row from another instance or phase is a client bug, not a race, so it
-  // fails the batch instead of being skipped.
   const foreign = requested.find(
     (assignment) =>
       assignment.processInstanceId !== processInstanceId ||
@@ -74,8 +68,7 @@ export async function removeReviewAssignments({
     throw new NotFoundError('Review assignment', foreign.id);
   }
 
-  // PENDING repeated here so a row started since the read above keeps its
-  // review and lands in `skippedIds`.
+  // PENDING repeated here: a row started since the read above keeps its review.
   const deleted = await db
     .delete(proposalReviewAssignments)
     .where(

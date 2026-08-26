@@ -22,7 +22,7 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-/** Minimal rubric, so the reviewer can save a draft and start the review. */
+/** Minimal rubric, so the reviewer can start a review. */
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
   'x-field-order': ['impact'],
@@ -49,9 +49,8 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 /**
- * One assignment in the instance's current phase. `defaultReviewer` is both
- * the instance admin and the assignment's reviewer, so a single caller can
- * start the review and then try to unassign it.
+ * One assignment in the current phase. `defaultReviewer` is both the admin and
+ * the reviewer, so one caller can start the review and then try to unassign.
  */
 async function createRemovableAssignment(
   taskId: string,
@@ -118,8 +117,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
       context.defaultReviewer.email,
     );
 
-    // The real transition, not a status write, so the cascade has something
-    // to destroy.
     await adminCaller.decision.saveReviewDraft({
       assignmentId,
       reviewData: {
@@ -140,7 +137,7 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     });
     expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.IN_PROGRESS);
 
-    // The FK cascades off assignmentId — the draft proves nothing was deleted.
+    // The FK cascades off assignmentId; the draft proves nothing was deleted.
     const review = await db.query.proposalReviews.findFirst({
       where: { assignmentId },
     });
@@ -250,7 +247,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     });
     expect(first.removedCount).toBe(1);
 
-    // The double-click.
     const second = await adminCaller.decision.removeReviewAssignments({
       processInstanceId,
       phaseId: 'review',
@@ -274,7 +270,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     const { testData, processInstanceId, context, assignmentId } =
       await createRemovableAssignment(task.id, onTestFinished);
 
-    // Assignments survive a phase advance; unassigning them must not.
     await testData.setCurrentPhase(processInstanceId, 'voting');
 
     const adminCaller = await createAuthenticatedCaller(
@@ -331,7 +326,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     const { context, processInstanceId, assignmentId } =
       await createRemovableAssignment(task.id, onTestFinished);
 
-    // An unrelated instance: its ids are not removable through this one.
     const otherTestData = new TestReviewsDataManager(
       `${task.id}-other`,
       onTestFinished,
@@ -353,7 +347,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
 
-    // Atomic: the caller's own pending row survives too.
     const own = await db.query.proposalReviewAssignments.findFirst({
       where: { id: assignmentId },
     });

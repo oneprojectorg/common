@@ -516,10 +516,8 @@ function AssignmentsTable({
 }
 
 /**
- * Per-assignment overflow menu. Unassign is a hard delete, so a started row
- * keeps the item disabled rather than hidden — the admin can see why it isn't
- * offered. The confirm sits outside the menu because Base UI unmounts the menu
- * content on select, taking a nested dialog with it.
+ * Per-assignment overflow menu. The confirm sits outside the menu because Base
+ * UI unmounts the menu content on select, taking a nested dialog with it.
  */
 function AssignmentActionsMenu({
   processInstanceId,
@@ -537,12 +535,10 @@ function AssignmentActionsMenu({
 
   const isRemovable = assignment.status === 'pending';
 
-  // The list refetches through the `reviewAssignments` channel this publishes
-  // to, so nothing invalidates by hand.
+  // The `reviewAssignments` channel refetches the list; nothing invalidates.
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation({
     onSuccess: ({ skippedIds }) => {
-      // A skip means the row stopped being pending mid-dialog — started, or
-      // already dropped by another admin. The API reports no reason.
+      // Skipped = no longer pending, for a reason the API doesn't report.
       if (skippedIds.includes(assignment.id)) {
         toast.error(t('Could not unassign — the assignment has changed.'));
       } else {
@@ -553,7 +549,6 @@ function AssignmentActionsMenu({
       setIsConfirmOpen(false);
     },
     onError: (error) => {
-      // Server text is untranslated and often internal.
       logger.error('Failed to unassign a review assignment', {
         error,
         context: 'AssignmentActionsMenu',
