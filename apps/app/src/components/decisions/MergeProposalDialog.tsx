@@ -626,7 +626,7 @@ function MergeCandidateListSuspense({
     );
 
   const untitledLabel = t('Untitled Proposal');
-  const candidates = useMemo(
+  const loadedCandidates = useMemo(
     () =>
       getMergeCandidates({
         proposals: paginatedData.pages.flatMap((page) => page.proposals),
@@ -635,6 +635,20 @@ function MergeCandidateListSuspense({
       }),
     [paginatedData.pages, proposal.id, untitledLabel],
   );
+
+  // The pick is always shown, first: search reaches the whole decision, so it
+  // can name a proposal these pages don't hold, and picking one would otherwise
+  // leave nothing selected-looking on screen. Only that case adds a card —
+  // hoisting a card the list already has is left to `order` below.
+  const candidates = useMemo(() => {
+    if (
+      !selected ||
+      loadedCandidates.some((candidate) => candidate.id === selected.id)
+    ) {
+      return loadedCandidates;
+    }
+    return [selected, ...loadedCandidates];
+  }, [loadedCandidates, selected]);
 
   return (
     <>
@@ -663,7 +677,18 @@ function MergeCandidateListSuspense({
           aria-label={t('Proposal to merge into')}
         >
           {candidates.map((candidate) => (
-            <Field key={candidate.id} className="w-full">
+            <Field
+              key={candidate.id}
+              // Hoisted with `order`, not by reordering the array: a radio
+              // group checks whatever the arrow keys land on, so moving the
+              // chosen card in the DOM would re-point the roving index at the
+              // card that just took its place and bounce the selection between
+              // those two for good, stranding everything below them.
+              className={cn(
+                'w-full',
+                candidate.id === selected?.id && 'order-first',
+              )}
+            >
               {/* Figma shows no radio dot, so the card is the label and carries
                   the selected treatment; the radio keeps the keyboard semantics. */}
               <RadioGroupItem
