@@ -50,9 +50,8 @@ import {
   getProposalDisplayTitle,
 } from './proposals/merge';
 
+/** Shared by both pickers, so a search can reach whatever the list can. */
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
-/** The popover scrolls rather than paginates, so it takes one short page. */
-const MERGE_SEARCH_RESULT_LIMIT = 20;
 const MERGE_SEARCH_INPUT_ID = 'merge-proposal-search';
 
 // Module scope so their identity is stable: Base UI keeps both in a store whose
@@ -387,22 +386,24 @@ function MergeTargetSearchField({
   onSelect: (candidate: MergeCandidate | null) => void;
 }) {
   const t = useTranslations();
-  // With a proposal picked the field is displaying that choice, not asking a
-  // question, so there is nothing to search for. Any edit drops the pick
-  // below, which is what turns the field back into a query.
-  const searchQuery = selected ? '' : searchTerm.trim();
+  // Base UI owns when the popup shows; we mirror it so Escape can be told
+  // apart from Escape-with-the-list-open, and so a closed field doesn't search.
+  const [isOpen, setIsOpen] = useState(false);
+  const searchQuery = searchTerm.trim();
   const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
 
   const query = trpc.decision.listProposals.useQuery(
     {
       processInstanceId: proposal.processInstanceId,
       dir: 'desc',
-      limit: MERGE_SEARCH_RESULT_LIMIT,
+      limit: MERGE_CANDIDATE_PAGE_LIMIT,
       // Server-side, so a match outside the suggestions below is still found.
       search: debouncedSearchQuery,
     },
     {
-      enabled: debouncedSearchQuery.length > 0,
+      // Selecting an option refills the field with its title; that is the
+      // field displaying the pick, not a question, so it must not re-search.
+      enabled: isOpen && debouncedSearchQuery.length > 0,
       // Hold the previous results while the next query runs, so the popover
       // doesn't empty and re-fill between keystrokes.
       placeholderData: (previous) => previous,
@@ -424,6 +425,7 @@ function MergeTargetSearchField({
   // The debounce window counts as searching too, or the spinner blinks off
   // between keystrokes while the results on screen are for an earlier term.
   const isSearching =
+    isOpen &&
     searchQuery.length > 0 &&
     (query.isFetching || searchQuery !== debouncedSearchQuery);
 
@@ -431,19 +433,24 @@ function MergeTargetSearchField({
     <Combobox
       items={results}
       value={selected}
+      open={isOpen}
+      onOpenChange={setIsOpen}
       // The server already filtered; a second local pass would drop matches
       // whose title differs from the term the server matched on.
       filter={null}
       inputValue={searchTerm}
       onInputValueChange={(value, details) => {
         onSearchTermChange(value);
-        // Base UI refills the input from the selection on item press, on
-        // inline navigation, and again when the popup closes (which it
-        // reports as `none`). Every other change is the user editing the
-        // query, and an edited query drops the pick: `Continue` must not
-        // merge into a proposal the field no longer names. Compared against
-        // the literals so a Base UI rename fails the build rather than
-        // silently re-enabling it.
+        // Base UI refills the input from the selection on item press, and
+        // again when the popup closes on one (reported as `none`; a close
+        // with nothing picked comes through as `input-clear` instead, which
+        // should indeed drop the pick). `list-navigation` only fills the
+        // input in `inline` mode, which this field doesn't use — it's here so
+        // turning that on later can't start silently discarding selections.
+        // Every other change is the user editing the query, and an edited
+        // query drops the pick: `Continue` must not merge into a proposal the
+        // field no longer names. Compared against the literals so a Base UI
+        // rename fails the build rather than silently re-enabling it.
         if (
           details.reason !== 'item-press' &&
           details.reason !== 'list-navigation' &&
@@ -460,10 +467,23 @@ function MergeTargetSearchField({
         id={MERGE_SEARCH_INPUT_ID}
         placeholder={t('Search proposals…')}
         showTrigger={false}
+        onKeyDown={(event) => {
+          // With the list closed, Base UI reads Escape as "clear the field":
+          // it drops the chosen proposal, and because a value is set it stops
+          // the event before the dialog's own Escape handler, so the dialog
+          // stays open too. Neither is wanted — let Escape close the dialog.
+          // With the list open Base UI's handler is right (it closes the
+          // list), so this only steps in once the list is already gone.
+          if (event.key === 'Escape' && !isOpen) {
+            event.preventBaseUIHandler();
+          }
+        }}
       >
         <InputGroupAddon align="inline-start">
+          {/* Decorative: `ComboboxEmpty` announces "Searching…" already, and
+              sense's Spinner would otherwise read its English default. */}
           {isSearching ? (
-            <Spinner className="size-4 text-muted-foreground" />
+            <Spinner aria-hidden className="size-4 text-muted-foreground" />
           ) : (
             <LuSearch aria-hidden className="size-4" />
           )}
