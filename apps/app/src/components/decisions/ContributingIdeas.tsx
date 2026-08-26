@@ -77,7 +77,7 @@ function ContributingIdeasSuspense({
   }
 
   return (
-    <section className="border-t pt-8" aria-labelledby={headingId}>
+    <section className="border-t pt-6 sm:pt-10" aria-labelledby={headingId}>
       <div className="flex flex-col gap-2">
         {/* Both unstyled on purpose. Figma ranks this heading with a proposal
             answer's question rather than the 16px Attachments / Comments
@@ -124,7 +124,7 @@ function ContributingIdeasUnavailable({
   }, [error]);
 
   return (
-    <section className="border-t pt-8">
+    <section className="border-t pt-6 sm:pt-10">
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">

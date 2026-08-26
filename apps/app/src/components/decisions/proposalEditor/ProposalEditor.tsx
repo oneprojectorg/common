@@ -450,7 +450,7 @@ function ProposalEditorInner({
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />
 
-      <div className="border-t pt-8">
+      <div className="border-t pt-6 sm:pt-10">
         <ProposalAttachments
           proposalId={proposal.id}
           attachments={
@@ -499,10 +499,12 @@ function ProposalEditorInner({
         <div className="relative min-h-0 overflow-y-auto">
           {asidePane ? (
             <SplitPane className="mx-auto w-full max-w-6xl">
+              {/* Matches the standalone column below: `editorBody`'s sections
+                  mirror this gap in their own `pt`, keeping the rule centred. */}
               <SplitPane.Pane
                 id="proposal"
                 label={t('Proposal')}
-                className="gap-4"
+                className="gap-6 sm:gap-10"
               >
                 {editorBody}
               </SplitPane.Pane>

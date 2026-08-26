@@ -19,7 +19,9 @@ export function ReviewProposalPane() {
   const responseComment = respondedAt ? revisionRequest?.responseComment : null;
 
   return (
-    <div className="flex flex-col gap-8">
+    // Same section rhythm as the proposal view: the sections below mirror this
+    // gap in their own `pt`, which keeps each rule centred between them.
+    <div className="flex flex-col gap-6 sm:gap-10">
       <ProposalPreview
         proposal={assignment.proposal}
         translation={translation}

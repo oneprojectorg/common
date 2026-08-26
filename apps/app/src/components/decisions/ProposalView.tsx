@@ -303,7 +303,14 @@ export function ProposalView({
     >
       {asidePane ? (
         <SplitPane className="mx-auto w-full max-w-6xl">
-          <SplitPane.Pane id="proposal" label={t('Proposal')} className="gap-8">
+          {/* Same section rhythm as the standalone column below: a section's
+              own `pt` mirrors this gap, so every rule sits centred between the
+              two sections it separates. */}
+          <SplitPane.Pane
+            id="proposal"
+            label={t('Proposal')}
+            className="gap-6 sm:gap-10"
+          >
             {proposalBody}
           </SplitPane.Pane>
           <SplitPane.Pane
