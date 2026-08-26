@@ -529,17 +529,27 @@ function useMergeCandidateSearch({
   const untitledLabel = t('Untitled Proposal');
   const results = useMemo(
     () =>
-      // An empty field has no results, but `placeholderData` hands back the
-      // last page fetched whatever the current key is. Without this the popup
-      // keeps listing the previous search under a field the user just cleared.
-      hasQuery
+      // `placeholderData` hands back the last page fetched whatever the current
+      // key is, and it survives a failed refetch. Two cases have to drop it or
+      // the popup lists the previous term's rows as if they answered this one:
+      // a field the user just cleared, and a search that errored. The error
+      // case is also the only way its message reaches the screen — Base UI
+      // renders `ComboboxEmpty` only while the list is empty, so leaving stale
+      // rows there means the failure is never announced at all.
+      hasQuery && !query.isError
         ? getMergeCandidates({
             proposals: query.data?.proposals ?? [],
             sourceProposalId: proposal.id,
             untitledLabel,
           })
         : [],
-    [hasQuery, query.data?.proposals, proposal.id, untitledLabel],
+    [
+      hasQuery,
+      query.isError,
+      query.data?.proposals,
+      proposal.id,
+      untitledLabel,
+    ],
   );
 
   return {
