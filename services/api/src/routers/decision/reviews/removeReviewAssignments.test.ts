@@ -118,8 +118,8 @@ describe.concurrent('decision.removeReviewAssignments', () => {
       context.defaultReviewer.email,
     );
 
-    // The real transition into IN_PROGRESS, rather than a status write, so the
-    // cascade this guard protects has something to destroy.
+    // The real transition, not a status write, so the cascade has something
+    // to destroy.
     await adminCaller.decision.saveReviewDraft({
       assignmentId,
       reviewData: {
@@ -191,7 +191,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     const { testData, context, processInstanceId, assignmentId } =
       await createRemovableAssignment(task.id, onTestFinished);
 
-    // A second proposal for the same reviewer, so one request spans both.
     const second = await testData.createReviewAssignment({
       context,
       reviewer: context.defaultReviewer,
@@ -218,7 +217,6 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     });
     expect(result).toEqual({ removedCount: 1, skippedIds: [assignmentId] });
 
-    // The started row and its draft survive; the pending one is gone.
     const started = await db.query.proposalReviewAssignments.findFirst({
       where: { id: assignmentId },
     });
@@ -252,7 +250,7 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     });
     expect(first.removedCount).toBe(1);
 
-    // The double-click: the row is already gone, and that is not an error.
+    // The double-click.
     const second = await adminCaller.decision.removeReviewAssignments({
       processInstanceId,
       phaseId: 'review',
@@ -333,8 +331,7 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     const { context, processInstanceId, assignmentId } =
       await createRemovableAssignment(task.id, onTestFinished);
 
-    // A second, unrelated instance: its assignment id must not be removable
-    // through the instance the caller administers.
+    // An unrelated instance: its ids are not removable through this one.
     const otherTestData = new TestReviewsDataManager(
       `${task.id}-other`,
       onTestFinished,
@@ -356,7 +353,7 @@ describe.concurrent('decision.removeReviewAssignments', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
 
-    // Atomic: the caller's own pending row must not have been removed either.
+    // Atomic: the caller's own pending row survives too.
     const own = await db.query.proposalReviewAssignments.findFirst({
       where: { id: assignmentId },
     });
@@ -480,7 +477,7 @@ describeDecisionAccessTierGating('decision.removeReviewAssignments', {
 
       const caller = await callers.networkJwt(context.defaultReviewer.email);
 
-      // An unknown id is a skip, not an error, so admission is the resolve.
+      // An unknown id is a skip, so admission is the resolve.
       await expectPassesAccessTierGate(
         caller.decision.removeReviewAssignments({
           processInstanceId: context.instance.instance.id,

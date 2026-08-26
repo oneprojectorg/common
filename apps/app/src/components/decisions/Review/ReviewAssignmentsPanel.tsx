@@ -516,13 +516,10 @@ function AssignmentsTable({
 }
 
 /**
- * Per-assignment overflow menu. Unassign is a hard delete of the assignment,
- * so it is offered only while the reviewer has not started — every other
- * status keeps the item disabled rather than hiding it, so an admin can see
- * why the row cannot be dropped. The confirm lives outside the menu: Base UI
- * unmounts the menu content on select, which would take a nested dialog with
- * it. The removal endpoint takes a list, so a bulk gesture can reuse it; this
- * desk sends one id at a time.
+ * Per-assignment overflow menu. Unassign is a hard delete, so a started row
+ * keeps the item disabled rather than hidden — the admin can see why it isn't
+ * offered. The confirm sits outside the menu because Base UI unmounts the menu
+ * content on select, taking a nested dialog with it.
  */
 function AssignmentActionsMenu({
   processInstanceId,
@@ -541,13 +538,12 @@ function AssignmentActionsMenu({
   const proposalTitle = assignment.proposalTitle ?? t('Untitled Proposal');
   const isRemovable = assignment.status === 'pending';
 
-  // The list refetches through `Channels.reviewAssignments`, which this
-  // mutation publishes to — no explicit invalidation.
+  // The list refetches through the `reviewAssignments` channel this publishes
+  // to, so nothing invalidates by hand.
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation({
     onSuccess: ({ skippedIds }) => {
-      // A skip means the row stopped being pending while the dialog was open:
-      // the reviewer started it, or another admin already dropped it. One
-      // message covers both — the API reports no reason.
+      // A skip means the row stopped being pending mid-dialog — started, or
+      // already dropped by another admin. The API reports no reason.
       if (skippedIds.includes(assignment.id)) {
         toast.error(t('Could not unassign — the assignment has changed.'));
       } else {
@@ -561,8 +557,7 @@ function AssignmentActionsMenu({
       setIsConfirmOpen(false);
     },
     onError: (error) => {
-      // Server text is untranslated and often internal, so it is logged
-      // rather than shown.
+      // Server text is untranslated and often internal.
       logger.error('Failed to unassign a review assignment', {
         error,
         context: 'AssignmentActionsMenu',

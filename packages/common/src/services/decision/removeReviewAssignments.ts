@@ -25,20 +25,10 @@ export interface RemoveReviewAssignmentsResult {
 }
 
 /**
- * The inverse of `assignPhaseReviews`: an admin drops review assignments
- * nobody has started. A hard delete, with no tombstone — an assignment
- * carries no history of its own worth keeping.
- *
- * PENDING is the only removable status. `decision_proposal_reviews` and
- * `decision_proposal_review_requests` both cascade off `assignmentId`, so
- * deleting an assignment a reviewer has touched would silently destroy their
- * draft or submitted review.
- *
- * Best-effort per row: a started or already-deleted assignment comes back in
- * `skippedIds` rather than failing the batch, so a double-click and a
- * reviewer starting mid-request both settle instead of erroring. Only the
- * caller's own mistakes throw — no access, a phase that has ended, or an id
- * from another instance or phase.
+ * Hard-deletes review assignments nobody has started. Reviews and revision
+ * requests cascade off `assignmentId`, so a non-PENDING row is skipped rather
+ * than deleted: only the caller's own mistakes throw (no access, ended phase,
+ * an id from another instance or phase).
  */
 export async function removeReviewAssignments({
   processInstanceId,
@@ -54,9 +44,8 @@ export async function removeReviewAssignments({
     );
   }
 
-  // Deliberately the generic gate with no org fallback: the org-fallback
-  // `assertInstanceProfileAccess` is the legacy pattern being retired, so an
-  // org admin needs a role on the decision's own profile to unassign.
+  // No org fallback by design: `assertInstanceProfileAccess` is the legacy
+  // pattern being retired, so an org admin needs a role on this profile.
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
@@ -64,8 +53,7 @@ export async function removeReviewAssignments({
   });
 
   assertInstancePhase({ instance, phaseId });
-  // Assignments survive a phase advance, so the phase must still be current —
-  // the same posture as the review writes in `reviewHelpers`.
+  // Assignments survive a phase advance; unassigning them must not.
   assertReviewAssignmentPhaseIsCurrent(instance, phaseId);
 
   const requestedIds = [...new Set(assignmentIds)];
@@ -75,9 +63,8 @@ export async function removeReviewAssignments({
     columns: { id: true, processInstanceId: true, phaseId: true },
   });
 
-  // A row from another instance or phase is a client bug rather than a race,
-  // so it fails the batch instead of being skipped. Naming it would leak a
-  // row the caller may not read, hence the requested id.
+  // A row from another instance or phase is a client bug, not a race, so it
+  // fails the batch instead of being skipped.
   const foreign = requested.find(
     (assignment) =>
       assignment.processInstanceId !== processInstanceId ||
@@ -87,8 +74,8 @@ export async function removeReviewAssignments({
     throw new NotFoundError('Review assignment', foreign.id);
   }
 
-  // One statement, PENDING included: a row the reviewer starts between the
-  // read above and this delete keeps its review and lands in `skippedIds`.
+  // PENDING repeated here so a row started since the read above keeps its
+  // review and lands in `skippedIds`.
   const deleted = await db
     .delete(proposalReviewAssignments)
     .where(
