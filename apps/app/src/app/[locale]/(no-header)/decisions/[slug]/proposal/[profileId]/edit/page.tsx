@@ -19,13 +19,18 @@ import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
-import { LuHistory, LuStickyNote } from 'react-icons/lu';
+import { LuHistory, LuMessageSquareText, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
+import { FeedbackDotIconButton } from '@/components/decisions/FeedbackDotIconButton';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
+import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
+import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { ProposalEditorAsidePane } from '@/components/decisions/proposalEditor/ProposalEditorAsidePane';
+import { RevisionFeedbackPanel } from '@/components/decisions/proposalEditor/RevisionFeedbackPanel';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
@@ -40,8 +45,10 @@ import {
   proposalEditorAsideValues,
   proposalEditorReviewRevisionParser,
   proposalEditorVersionIdParser,
+  proposalFeedbackPanelParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
+import { useProposalFeedback } from '@/components/decisions/useProposalFeedback';
 
 /**
  * Route page for the proposal editor.
@@ -66,10 +73,14 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
+  const [
+    { aside, versionId, reviewRevision, feedback: isFeedbackPanelOpen },
+    setQueryState,
+  ] = useQueryStates({
     aside: proposalEditorAsideParser,
     versionId: proposalEditorVersionIdParser,
     reviewRevision: proposalEditorReviewRevisionParser,
+    feedback: proposalFeedbackPanelParser,
   });
   const t = useTranslations();
 
@@ -98,15 +109,22 @@ function EditProposalPageContent() {
 
   const { user } = useRequiredUser();
 
-  // The server throws UnauthorizedError when the viewer lacks review access;
-  // treat any error as "no revision requests" so the editor still loads.
+  // Mirrors the server gate for both revision reads below: author standing,
+  // decision admin, or review capability. Deliberately not `review.revisions` —
+  // that adds a review-phase condition, and an author has to see a pending
+  // request whatever phase the decision is in.
+  const affordances = getProposalAffordances({ instance, proposal, user });
+
+  // Gated rather than firing for every viewer and swallowing the server's
+  // UnauthorizedError. The error-to-empty fallback stays for transport
+  // failures, so the editor still loads.
   const { data: revisionData, error: revisionError } =
     trpc.decision.listProposalRevisionRequests.useQuery(
       {
         proposalId: proposal.id,
         states: [ProposalReviewRequestState.REQUESTED],
       },
-      { throwOnError: false, retry: false },
+      { enabled: affordances.review.feedback, throwOnError: false },
     );
 
   const revisionRequests = revisionError
@@ -117,6 +135,13 @@ function EditProposalPageContent() {
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
+
+  // Same gate: the panel keeps showing this history after the review phase
+  // ends, which is exactly when `review.revisions` would go false.
+  const feedback = useProposalFeedback({
+    proposalId: proposal.id,
+    enabled: affordances.review.feedback,
+  });
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -170,41 +195,43 @@ function EditProposalPageContent() {
     );
   };
 
+  const toggleFeedbackPanel = () => {
+    void setQueryState(
+      { feedback: isFeedbackPanelOpen ? null : true },
+      { history: 'push', scroll: false },
+    );
+  };
+
   // The version-history and revision-request controls are interactive editing
   // surfaces — hide them from anonymous accounts and logged-out visitors.
   const canInteract = userCanInteract(user);
 
-  const revisionRequestLabel = t('Revision request');
+  // One disclosure, whichever pane applies: mid-phase it opens the revision
+  // request the author must answer, and the feedback record once that is gone.
+  const feedbackDisclosure = firstRevisionRequestId ? (
+    <FeedbackDotIconButton
+      key="revision-request"
+      icon={LuStickyNote}
+      label={t('Revision request')}
+      onToggle={toggleRevisionRequest}
+      isExpanded={Boolean(reviewRevision)}
+    />
+  ) : feedback.hasFeedback ? (
+    <FeedbackDotIconButton
+      key="feedback"
+      icon={LuMessageSquareText}
+      label={t('Feedback')}
+      onToggle={toggleFeedbackPanel}
+      isExpanded={isFeedbackPanelOpen}
+    />
+  ) : null;
+
   const headerIcons = !canInteract
     ? []
-    : firstRevisionRequestId
-      ? [
-          // The header's action row supplies the tooltip group and its delay
-          // (`ProposalEditorHeader`), so these only need a Tooltip each.
-          <Tooltip key="revision-request">
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={toggleRevisionRequest}
-                  aria-label={revisionRequestLabel}
-                  aria-expanded={Boolean(reviewRevision)}
-                  className="relative"
-                >
-                  <LuStickyNote className="size-4" />
-                  <span
-                    aria-hidden
-                    className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                  />
-                </Button>
-              }
-            />
-            <TooltipContent>{revisionRequestLabel}</TooltipContent>
-          </Tooltip>,
-          ...asideHeaderIcons,
-        ]
-      : asideHeaderIcons;
+    : [
+        ...(feedbackDisclosure ? [feedbackDisclosure] : []),
+        ...asideHeaderIcons,
+      ];
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -243,7 +270,27 @@ function EditProposalPageContent() {
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
           revisionRequest={revisionRequest}
-        />
+        >
+          {/* A revision request the author still has to answer outranks the
+              read-only record of a review that has already ended. */}
+          {revisionRequest ? (
+            <ProposalEditorAsidePane label={t('Revision feedback')}>
+              <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+            </ProposalEditorAsidePane>
+          ) : isFeedbackPanelOpen && feedback.hasFeedback ? (
+            <ProposalEditorAsidePane label={t('Feedback')}>
+              <ProposalFeedbackPanel
+                feedbackItems={feedback.notes}
+                revisionRequests={feedback.revisionHistory}
+                title={t('Feedback')}
+                subtitle={t(
+                  'Notes reviewers shared while this proposal was under review',
+                )}
+                revisionRequestLabel={t('Revision request')}
+              />
+            </ProposalEditorAsidePane>
+          ) : null}
+        </ProposalEditorContent>
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
@@ -265,6 +312,7 @@ function ProposalEditorContent({
   setAsideState,
   asideHeaderIcons,
   revisionRequest,
+  children,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -274,6 +322,8 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   revisionRequest: ProposalReviewRequest | null;
+  /** The aside pane, forwarded straight to `ProposalEditor`. */
+  children: React.ReactNode;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -331,7 +381,9 @@ function ProposalEditorContent({
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
         revisionRequest={revisionRequest}
-      />
+      >
+        {children}
+      </ProposalEditor>
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays
           visible and scrollable beside it. Mobile: a modal drawer, which covers
           the viewport anyway. */}

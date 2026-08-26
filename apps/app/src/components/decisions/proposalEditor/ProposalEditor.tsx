@@ -41,7 +41,6 @@ import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
-import { RevisionFeedbackPanel } from './RevisionFeedbackPanel';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
@@ -58,13 +57,24 @@ export function ProposalEditor({
   isEditMode = false,
   asideHeaderIcons,
   revisionRequest = null,
+  children,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
+  /**
+   * Drives revision mode in the header and the resubmit modal. Which pane the
+   * document sits beside is the caller's business, not this prop's.
+   */
   revisionRequest?: ProposalReviewRequest | null;
+  /**
+   * The pane beside the document, expected to be a `ProposalEditorAsidePane`.
+   * Absent, the document gets the full width.
+   */
+  // TODO: restructure the children => aside mapping
+  children?: ReactNode;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -107,6 +117,7 @@ export function ProposalEditor({
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       revisionRequest={revisionRequest}
+      asidePane={children}
     />
   );
 
@@ -138,6 +149,7 @@ function ProposalEditorInner({
   collaborationDocId,
   proposalTemplate,
   revisionRequest,
+  asidePane,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -147,6 +159,7 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   revisionRequest: ProposalReviewRequest | null;
+  asidePane: ReactNode;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -484,7 +497,7 @@ function ProposalEditorInner({
           menu on the selection, so there is no toolbar row above the form. */}
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
-          {revisionRequest ? (
+          {asidePane ? (
             <SplitPane className="mx-auto w-full max-w-6xl">
               <SplitPane.Pane
                 id="proposal"
@@ -493,14 +506,7 @@ function ProposalEditorInner({
               >
                 {editorBody}
               </SplitPane.Pane>
-              <SplitPane.Pane
-                id="feedback"
-                label={t('Revision feedback')}
-                className="bg-background"
-                unpadded
-              >
-                <RevisionFeedbackPanel revisionRequest={revisionRequest} />
-              </SplitPane.Pane>
+              {asidePane}
             </SplitPane>
           ) : (
             <div className="px-4 py-8 sm:px-6 sm:py-14">
