@@ -4,6 +4,7 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { applyLikeToggle } from '@/utils/optimisticUpdates';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type {
@@ -189,20 +190,18 @@ const PostLikeButton = ({
 }) => {
   const t = useTranslations();
   const { user } = useUser();
-  const canLike = userCanInteract(user);
 
   if (!post?.id) return null;
 
-  const count = post.likeCount ?? 0;
-  const postId = post.id;
+  const { id: postId, likeCount } = post;
 
   return (
     <LikeButton
-      count={count}
-      label={t('{count} likes', { count })}
-      isLiked={post.userHasLiked ?? false}
+      count={likeCount}
+      label={t('{count} likes', { count: likeCount })}
+      isLiked={post.userHasLiked}
       users={post.likeUsers}
-      canLike={canLike}
+      canLike={userCanInteract(user)}
       onClick={() => onLikeClick(postId)}
     />
   );
@@ -321,51 +320,30 @@ const useOptimisticLike = (
   const { user } = useUser();
   const currentProfile = user?.currentProfile;
 
-  const [localLike, setLocalLike] = useState({
-    userHasLiked: post.userHasLiked ?? false,
-    likeCount: post.likeCount ?? 0,
-    likeUsers: post.likeUsers ?? [],
-  });
+  const serverLike = useMemo(
+    () => ({
+      userHasLiked: post.userHasLiked,
+      likeCount: post.likeCount,
+      likeUsers: post.likeUsers ?? [],
+    }),
+    [post.userHasLiked, post.likeCount, post.likeUsers],
+  );
+
+  const [localLike, setLocalLike] = useState(serverLike);
 
   // Sync pattern: setState during render is intentional to avoid extra render cycle.
   // This syncs local state when server data changes (after refetch).
   // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const serverLikeKey = `${post.userHasLiked}-${post.likeCount}`;
+  const serverLikeKey = `${serverLike.userHasLiked}-${serverLike.likeCount}`;
   const [lastServerKey, setLastServerKey] = useState(serverLikeKey);
   if (serverLikeKey !== lastServerKey) {
     setLastServerKey(serverLikeKey);
-    setLocalLike({
-      userHasLiked: post.userHasLiked ?? false,
-      likeCount: post.likeCount ?? 0,
-      likeUsers: post.likeUsers ?? [],
-    });
+    setLocalLike(serverLike);
   }
 
   const handleLikeClick = useCallback(
     (postId: string) => {
-      setLocalLike((current) => {
-        const liked = !current.userHasLiked;
-        const others = currentProfile
-          ? current.likeUsers.filter((liker) => liker.id !== currentProfile.id)
-          : current.likeUsers;
-
-        return {
-          userHasLiked: liked,
-          likeCount: Math.max(0, current.likeCount + (liked ? 1 : -1)),
-          likeUsers:
-            liked && currentProfile
-              ? [
-                  {
-                    id: currentProfile.id,
-                    name: currentProfile.name,
-                    timestamp: new Date(),
-                  },
-                  ...others,
-                ]
-              : others,
-        };
-      });
-
+      setLocalLike((current) => applyLikeToggle(current, currentProfile));
       onLikeClick(postId);
     },
     [currentProfile, onLikeClick],

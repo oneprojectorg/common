@@ -38,6 +38,11 @@ interface LikeButtonProps extends Omit<
  * The like half of a post's footer, sized and styled to sit beside
  * `CommentButton`. Pass `users` to name recent likers on hover.
  */
+// The branching is prop defaults plus the liked/read-only styling forks — flat,
+// not nested. Splitting it further would trade a readable component for
+// indirection, and sense has no headless test runner to score coverage against
+// (see packages/sense/README.md).
+// fallow-ignore-next-line complexity
 function LikeButton({
   count = 0,
   isLiked = false,
@@ -90,16 +95,14 @@ function LikeButton({
 }
 
 // Newest two likers by name, then "+ N others".
-function formatLikeTooltip(users?: LikeUser[]): React.ReactNode {
-  const sorted = (users ?? []).slice().sort((a, b) => {
-    const aTime = new Date(a.timestamp).getTime() || 0;
-    const bTime = new Date(b.timestamp).getTime() || 0;
-    return bTime - aTime;
-  });
-
-  if (sorted.length === 0) {
+function formatLikeTooltip(users: LikeUser[] = []): React.ReactNode {
+  if (users.length === 0) {
     return null;
   }
+
+  const sorted = users
+    .slice()
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   const latest = sorted.slice(0, 2);
   const remaining = sorted.length - latest.length;

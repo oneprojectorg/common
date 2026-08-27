@@ -1,7 +1,7 @@
 'use client';
 
 import type { PostFeedUser } from '@/utils/optimisticUpdates';
-import { createOptimisticUpdater } from '@/utils/optimisticUpdates';
+import { togglePostLike } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import { toast } from '@op/sense/Toast';
@@ -40,17 +40,13 @@ export const usePostDetailActions = ({
       const previousMainPost = utils.posts.getPost.getData(mainPostQueryKey);
       const previousComments = utils.posts.getPosts.getData(commentsQueryKey);
 
-      // Create optimistic updater
-      const optimisticUpdater = createOptimisticUpdater(user);
-
       // Optimistically update main post
       utils.posts.getPost.setData(mainPostQueryKey, (old) => {
         if (!old) {
           return old;
         }
 
-        return optimisticUpdater.togglePostLike({ post: old }, likedPostId)
-          .post;
+        return togglePostLike({ post: old }, likedPostId, user).post;
       });
 
       // Optimistically update comments
@@ -61,8 +57,7 @@ export const usePostDetailActions = ({
 
         return old.map(
           (comment) =>
-            optimisticUpdater.togglePostLike({ post: comment }, likedPostId)
-              .post,
+            togglePostLike({ post: comment }, likedPostId, user).post,
         );
       });
 
