@@ -2,26 +2,13 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
+import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { NumberField } from '@op/sense/NumberField';
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-
-const DEFAULT_CURRENCY = 'USD';
-
-const getCurrencySymbol = (currency: string) =>
-  (0)
-    .toLocaleString(undefined, {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-    .replace(/\d/g, '')
-    .trim();
 
 interface CollaborativeBudgetFieldProps {
   /** Visible field label. Falls back to "Funding amount". */
@@ -77,7 +64,7 @@ export function CollaborativeBudgetField({
   }, [onChange]);
 
   const budgetAmount = budget?.amount ?? null;
-  const currency = budget?.currency ?? DEFAULT_CURRENCY;
+  const currency = budget?.currency ?? DEFAULT_MONEY_CURRENCY;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount

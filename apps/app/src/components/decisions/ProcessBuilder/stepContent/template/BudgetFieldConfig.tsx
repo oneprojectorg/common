@@ -1,6 +1,7 @@
 'use client';
 
 import { ProposalTemplateSchema } from '@op/common';
+import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { NumberField } from '@op/sense/NumberField';
@@ -25,27 +26,25 @@ import {
   setFieldRequired,
 } from '../../../proposalTemplate';
 
+// The picker's curated option list, not a validation registry — symbols are
+// derived per-viewer via the shared getCurrencySymbol.
 const CURRENCIES = [
-  { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'JPY', symbol: '¥' },
-  { code: 'CAD', symbol: 'CA$' },
-  { code: 'AUD', symbol: 'A$' },
-  { code: 'CHF', symbol: 'CHF' },
-  { code: 'CNY', symbol: '¥' },
-  { code: 'INR', symbol: '₹' },
-  { code: 'BRL', symbol: 'R$' },
-  { code: 'KRW', symbol: '₩' },
-  { code: 'SGD', symbol: 'S$' },
-  { code: 'MXN', symbol: 'MX$' },
-  { code: 'AED', symbol: 'د.إ' },
-  { code: 'SAR', symbol: '﷼' },
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CAD',
+  'AUD',
+  'CHF',
+  'CNY',
+  'INR',
+  'BRL',
+  'KRW',
+  'SGD',
+  'MXN',
+  'AED',
+  'SAR',
 ] as const;
-
-const CURRENCY_SYMBOL_MAP = new Map<string, string>(
-  CURRENCIES.map((c) => [c.code, c.symbol]),
-);
 
 export function BudgetFieldConfig({
   template,
@@ -67,15 +66,13 @@ export function BudgetFieldConfig({
     [locale],
   );
   const currencyLabel = useCallback(
-    (code: string, symbol: string) =>
-      `${currencyName.of(code) ?? code} (${code} ${symbol})`,
+    (code: string) =>
+      `${currencyName.of(code) ?? code} (${code} ${getCurrencySymbol(code)})`,
     [currencyName],
   );
   const currencyItems = useMemo(
     () =>
-      Object.fromEntries(
-        CURRENCIES.map((c) => [c.code, currencyLabel(c.code, c.symbol)]),
-      ),
+      Object.fromEntries(CURRENCIES.map((code) => [code, currencyLabel(code)])),
     [currencyLabel],
   );
 
@@ -83,8 +80,8 @@ export function BudgetFieldConfig({
   const showBudget = !!budgetSchema;
   const budgetCurrency =
     (budgetSchema?.properties?.currency as { default?: string } | undefined)
-      ?.default ?? 'USD';
-  const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
+      ?.default ?? DEFAULT_MONEY_CURRENCY;
+  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 
@@ -107,7 +104,7 @@ export function BudgetFieldConfig({
               'x-format': 'money',
               properties: {
                 amount: { type: 'number' },
-                currency: { type: 'string', default: 'USD' },
+                currency: { type: 'string', default: DEFAULT_MONEY_CURRENCY },
               },
             },
           },
@@ -217,9 +214,9 @@ export function BudgetFieldConfig({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {currencyLabel(c.code, c.symbol)}
+                    {CURRENCIES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {currencyLabel(code)}
                       </SelectItem>
                     ))}
                   </SelectGroup>
