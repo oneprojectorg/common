@@ -161,7 +161,7 @@ export {
   isMoneyFieldSchema,
   resolveMoneyDisplayCurrency,
   type MoneyFieldAnswer,
-} from './services/decision/templateMoney';
+} from './services/decision/rubric/money';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

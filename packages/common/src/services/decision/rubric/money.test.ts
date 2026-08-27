@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { SchemaValidator } from './schemaValidator';
+import { SchemaValidator } from '../schemaValidator';
+import type { RubricTemplateSchema, XFormatPropertySchema } from '../types';
 import {
   buildMoneyFieldAnswer,
   getMoneyAnswerAmount,
@@ -9,8 +10,7 @@ import {
   isMoneyFieldSchema,
   isValidCurrencyCode,
   resolveMoneyDisplayCurrency,
-} from './templateMoney';
-import type { RubricTemplateSchema, XFormatPropertySchema } from './types';
+} from './money';
 
 function moneySchema({
   title = 'Cost',

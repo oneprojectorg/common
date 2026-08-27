@@ -20,7 +20,7 @@
  * whatever the template declares, so authors must declare exactly this shape.
  * Totals are derived at render time, never stored.
  */
-import type { XFormatPropertySchema } from './types';
+import type { XFormatPropertySchema } from '../types';
 
 // ---------------------------------------------------------------------------
 // Types
