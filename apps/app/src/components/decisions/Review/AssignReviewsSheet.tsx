@@ -22,6 +22,7 @@ import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import { useDirection } from '@op/sense/Direction';
 import { Field, FieldLabel } from '@op/sense/Field';
+import { Header3 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { Label } from '@op/sense/Label';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
@@ -46,6 +47,8 @@ import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
 /** A reviewer row: the server rollup, or an eligible reviewer with no work yet. */
 export type ReviewerRow = AdminDecisionReviewer & {
+  /** Display name resolved from profile name → slug → id. */
+  label: string;
   email: string | null;
   /** False once the reviewer lost the REVIEW capability; history stays visible. */
   isEligible: boolean;
@@ -71,7 +74,6 @@ export function AssignReviewsSheet({
   onClose: () => void;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const filterId = useId();
   // Sheet's side is physical, so it has to be mirrored to stay at inline-end.
   const isRtl = useDirection() === 'rtl';
@@ -82,8 +84,9 @@ export function AssignReviewsSheet({
     () => new Set<string>(),
   );
 
-  const name = reviewerLabel(reviewer.profile);
+  const name = reviewer.label;
 
+  // The `reviewAssignments` channel refetches the list; nothing invalidates.
   const assignReviews = trpc.decision.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
       toast.success(
@@ -93,10 +96,6 @@ export function AssignReviewsSheet({
         ),
       );
       setSelectedIds(new Set());
-      utils.decision.listPhaseReviewAssignments.invalidate({
-        processInstanceId,
-        phaseId,
-      });
       // The Assign button just disabled itself while focused.
       assignedHeadingRef.current?.focus();
     },
@@ -144,13 +143,15 @@ export function AssignReviewsSheet({
   }, [rows, query]);
 
   // Spans the whole pool so selections accumulate across filter changes.
-  const selectedAssignableIds = rows
-    .filter((row) => !row.isOwnProposal && selectedIds.has(row.proposal.id))
-    .map((row) => row.proposal.id);
+  const selectedAssignableIds = rows.flatMap((row) =>
+    !row.isOwnProposal && selectedIds.has(row.proposal.id)
+      ? [row.proposal.id]
+      : [],
+  );
 
-  const selectableVisibleIds = visibleRows
-    .filter((row) => !row.isOwnProposal)
-    .map((row) => row.proposal.id);
+  const selectableVisibleIds = visibleRows.flatMap((row) =>
+    row.isOwnProposal ? [] : [row.proposal.id],
+  );
 
   const allVisibleSelected =
     selectableVisibleIds.length > 0 &&
@@ -240,13 +241,13 @@ export function AssignReviewsSheet({
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
           <section className="flex flex-col gap-2">
-            <h3
+            <Header3
               ref={assignedHeadingRef}
               tabIndex={-1}
-              className="text-sm font-medium text-muted-foreground outline-none"
+              className="font-sans text-sm font-medium text-muted-foreground outline-none"
             >
               {t('Assigned ({count})', { count: reviewer.assignments.length })}
-            </h3>
+            </Header3>
             {reviewer.assignments.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {reviewer.isEligible
@@ -428,14 +429,6 @@ export function AssignReviewsSheet({
       </SheetContent>
     </Sheet>
   );
-}
-
-export function reviewerLabel(profile: {
-  id: string;
-  name: string | null;
-  slug: string | null;
-}): string {
-  return profile.name ?? profile.slug ?? profile.id;
 }
 
 /** One assigned proposal: title/author, status, and unassign while pending. */

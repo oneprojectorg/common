@@ -33,11 +33,7 @@ import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  AssignReviewsSheet,
-  type ReviewerRow,
-  reviewerLabel,
-} from './AssignReviewsSheet';
+import { AssignReviewsSheet, type ReviewerRow } from './AssignReviewsSheet';
 
 export function ReviewAssignmentsPanel({
   processInstanceId,
@@ -188,7 +184,7 @@ function ReviewerRowCells({
 }) {
   const t = useTranslations();
   const format = useFormatter();
-  const name = reviewerLabel(row.profile);
+  const name = row.label;
   const lastSubmittedAt = row.lastSubmittedAt
     ? new Date(row.lastSubmittedAt)
     : null;
@@ -293,6 +289,7 @@ function buildRows(
   const rows: ReviewerRow[] = [
     ...reviewers.map((reviewer) => ({
       ...reviewer,
+      label: reviewerLabel(reviewer.profile),
       email: emailByProfileId.get(reviewer.profile.id) ?? null,
       isEligible: emailByProfileId.has(reviewer.profile.id),
     })),
@@ -300,6 +297,7 @@ function buildRows(
       .filter((reviewer) => !rollupByProfileId.has(reviewer.id))
       .map((reviewer) => ({
         profile: { id: reviewer.id, name: reviewer.name, slug: reviewer.slug },
+        label: reviewerLabel(reviewer),
         email: reviewer.email,
         isEligible: true,
         assignedCount: 0,
@@ -331,4 +329,12 @@ function buildRows(
       (proposal) => !reviewerIdsByProposalId.has(proposal.id),
     ).length,
   };
+}
+
+function reviewerLabel(profile: {
+  id: string;
+  name: string | null;
+  slug: string | null;
+}): string {
+  return profile.name ?? profile.slug ?? profile.id;
 }
