@@ -1652,7 +1652,6 @@
   "Could not undo the rejection. Please try again.": "Could not undo the rejection. Please try again.",
   "Assignments": "Assignments",
   "Alpha": "Alpha",
-  "{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned": "{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned",
   "Assign proposals to {name}": "Assign proposals to {name}",
   "Show assignments for {name}": "Show assignments for {name}",
   "No assignments": "No assignments",
@@ -1689,5 +1688,6 @@
   "Unassign \"{title}\" from {name}": "Unassign \"{title}\" from {name}",
   "No reviewers yet": "No reviewers yet",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Give people the reviewer role and they will appear here, ready to take proposals.",
-  "Reviewers": "Reviewers"
+  "Reviewers": "Reviewers",
+  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} reviewers · {unassigned} proposals unassigned"
 }

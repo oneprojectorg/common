@@ -1589,7 +1589,6 @@
   "Could not undo the rejection. Please try again.": "Lama tirtiri karin diidmada. Fadlan mar kale isku day.",
   "Assignments": "Qoondooyinka",
   "Alpha": "Alfa",
-  "{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned": "{phase} · {reviewers} dib-u-eegayaal · {assignments} qoondo · {unassigned} soo jeedimo aan la qoondayn",
   "Assign proposals to {name}": "Soo jeedimo u qoondee {name}",
   "Show assignments for {name}": "Muuji qoondooyinka {name}",
   "No assignments": "Qoondo ma jirto",
@@ -1689,5 +1688,6 @@
   "Unassign \"{title}\" from {name}": "\"{title}\" ka saar qoondada {name}",
   "No reviewers yet": "Weli ma jiraan dib-u-eegayaal",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Dadka sii doorka dib-u-eegaha, halkan ayay ka soo muuqan doonaan, diyaar u ah inay qaataan soo jeedimo.",
-  "Reviewers": "Dib-u-eegayaal"
+  "Reviewers": "Dib-u-eegayaal",
+  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} dib-u-eegayaal · {unassigned} soo jeedimo aan la qoondayn"
 }

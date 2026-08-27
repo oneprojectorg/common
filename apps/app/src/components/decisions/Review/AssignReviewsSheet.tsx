@@ -46,21 +46,14 @@ import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
 /** A reviewer row: the server rollup, or an eligible reviewer with no work yet. */
 export type ReviewerRow = AdminDecisionReviewer & {
-  /** From the eligible list; tells two same-named reviewers apart. */
   email: string | null;
-  /**
-   * False for a reviewer with historical assignments who has lost the REVIEW
-   * capability: their assignments stay visible, but they can't take new ones.
-   */
+  /** False once the reviewer lost the REVIEW capability; history stays visible. */
   isEligible: boolean;
 };
 
 /**
- * Per-reviewer assignment desk, opened from a reviewer row. One sheet shows
- * both halves of the job: what the reviewer already has (with unassign on
- * pending rows) and what can still be assigned to them. Assigning keeps the
- * sheet open so several batches can be built without re-finding the reviewer.
- * Mount keyed by reviewer id so switching reviewers resets filter + selection.
+ * Per-reviewer assignment sheet: the current queue (unassign on pending rows)
+ * plus the remaining assignable proposals. Assigning keeps the sheet open.
  */
 export function AssignReviewsSheet({
   processInstanceId,
@@ -73,9 +66,7 @@ export function AssignReviewsSheet({
   processInstanceId: string;
   phaseId: string;
   reviewer: ReviewerRow;
-  /** Every assignable proposal in the phase. */
   proposals: AdminAssignableProposal[];
-  /** Reviewers already assigned per proposal — the coverage hint on each row. */
   reviewerIdsByProposalId: ReadonlyMap<string, string[]>;
   onClose: () => void;
 }) {
@@ -106,8 +97,7 @@ export function AssignReviewsSheet({
         processInstanceId,
         phaseId,
       });
-      // The Assign button just disabled itself while focused; park focus on
-      // the assigned heading so keyboard users stay inside the sheet.
+      // The Assign button just disabled itself while focused.
       assignedHeadingRef.current?.focus();
     },
     onError: (error) => {
@@ -121,8 +111,6 @@ export function AssignReviewsSheet({
     [reviewer.assignments],
   );
 
-  // Assigned proposals live in the section above, so candidates exclude them
-  // outright; `isOwnProposal` is what makes a listed row uncheckable.
   const rows = useMemo(
     () =>
       proposals
@@ -155,9 +143,7 @@ export function AssignReviewsSheet({
     );
   }, [rows, query]);
 
-  // Submitted set spans the whole pool, not just what the filter shows, so
-  // "filter → select all → filter again → select all → assign" accumulates.
-  // It also drops ids that a refetch moved into the assigned section.
+  // Spans the whole pool so selections accumulate across filter changes.
   const selectedAssignableIds = rows
     .filter((row) => !row.isOwnProposal && selectedIds.has(row.proposal.id))
     .map((row) => row.proposal.id);
@@ -182,7 +168,6 @@ export function AssignReviewsSheet({
     });
   };
 
-  // Scoped to the current filter: that is the bulk gesture this desk is for.
   const toggleAllVisible = () => {
     setSelectedIds((current) => {
       const next = new Set(current);
@@ -214,9 +199,8 @@ export function AssignReviewsSheet({
         }
       }}
     >
-      {/* The width override repeats the component's data-side variant chain so
-          `cn` replaces the default `sm:max-w-sm` instead of losing to its
-          higher attribute-selector specificity. */}
+      {/* Width override repeats the data-side variants so `cn` replaces the
+          default max-width instead of losing to its higher specificity. */}
       <SheetContent
         side={isRtl ? 'left' : 'right'}
         className="gap-0 p-0 data-[side=left]:sm:max-w-xl data-[side=right]:sm:max-w-xl"
@@ -313,8 +297,6 @@ export function AssignReviewsSheet({
                 placeholder={t('Filter by title or category…')}
               />
 
-              {/* The live region is this count, not the list — announcing the
-                  list re-read every row on each filter keystroke. */}
               <p aria-live="polite" className="sr-only">
                 {t(
                   '{count, plural, one {# proposal shown} other {# proposals shown}}',
@@ -468,7 +450,6 @@ function AssignedRow({
   phaseId: string;
   assignment: AdminReviewAssignment;
   reviewerName: string;
-  /** The ✕ that had focus is about to disappear; the caller re-parks focus. */
   onUnassigned: () => void;
 }) {
   const t = useTranslations();
@@ -517,10 +498,6 @@ function AssignedRow({
   );
 }
 
-/**
- * Unassign with confirmation. The confirm is an `AlertDialog` rather than an
- * inline action because unassigning removes another person's queued work.
- */
 function UnassignButton({
   processInstanceId,
   phaseId,

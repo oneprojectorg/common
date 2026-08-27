@@ -1652,7 +1652,6 @@
   "Could not undo the rejection. Please try again.": "Nem sikerült visszavonni az elutasítást. Kérjük, próbálja újra.",
   "Assignments": "Hozzárendelések",
   "Alpha": "Alfa",
-  "{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned": "{phase} · {reviewers} értékelő · {assignments} hozzárendelés · {unassigned} hozzárendeletlen javaslat",
   "Assign proposals to {name}": "Javaslatok hozzárendelése {name} értékelőhöz",
   "Show assignments for {name}": "{name} hozzárendeléseinek megjelenítése",
   "No assignments": "Nincsenek hozzárendelések",
@@ -1689,5 +1688,6 @@
   "Unassign \"{title}\" from {name}": "„{title}” hozzárendelésének megszüntetése tőle: {name}",
   "No reviewers yet": "Még nincsenek értékelők",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Adjon értékelő szerepkört a felhasználóknak, és itt jelennek meg, készen a javaslatok fogadására.",
-  "Reviewers": "Értékelők"
+  "Reviewers": "Értékelők",
+  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} értékelő · {unassigned} hozzárendeletlen javaslat"
 }

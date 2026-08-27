@@ -1589,7 +1589,6 @@
   "Could not undo the rejection. Please try again.": "Não foi possível desfazer a rejeição. Tente novamente.",
   "Assignments": "Atribuições",
   "Alpha": "Alfa",
-  "{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned": "{phase} · {reviewers} revisores · {assignments} atribuições · {unassigned} propostas sem atribuição",
   "Assign proposals to {name}": "Atribuir propostas a {name}",
   "Show assignments for {name}": "Mostrar as atribuições de {name}",
   "No assignments": "Sem atribuições",
@@ -1689,5 +1688,6 @@
   "Unassign \"{title}\" from {name}": "Remover a atribuição de \"{title}\" a {name}",
   "No reviewers yet": "Ainda não há revisores",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Dê às pessoas o papel de revisor e elas aparecerão aqui, prontas para receber propostas.",
-  "Reviewers": "Revisores"
+  "Reviewers": "Revisores",
+  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} revisores · {unassigned} propostas sem atribuição"
 }

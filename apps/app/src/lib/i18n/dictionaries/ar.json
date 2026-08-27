@@ -1588,7 +1588,6 @@
   "Could not undo the rejection. Please try again.": "تعذّر التراجع عن الرفض. يرجى المحاولة مرة أخرى.",
   "Assignments": "التعيينات",
   "Alpha": "ألفا",
-  "{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned": "{phase} · {reviewers} مراجعين · {assignments} تعيينات · {unassigned} مقترحات غير معيَّنة",
   "Assign proposals to {name}": "تعيين مقترحات إلى {name}",
   "Show assignments for {name}": "إظهار تعيينات {name}",
   "No assignments": "لا توجد تعيينات",
@@ -1689,5 +1688,6 @@
   "Unassign \"{title}\" from {name}": "إلغاء تعيين \"{title}\" من {name}",
   "No reviewers yet": "لا يوجد مراجعون بعد",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "امنح الأشخاص دور المراجع وسيظهرون هنا جاهزين لاستلام المقترحات.",
-  "Reviewers": "المراجعون"
+  "Reviewers": "المراجعون",
+  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} مراجعين · {unassigned} مقترحات غير معيَّنة"
 }

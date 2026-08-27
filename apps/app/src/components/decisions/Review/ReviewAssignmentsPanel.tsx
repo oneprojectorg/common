@@ -42,12 +42,9 @@ import {
 export function ReviewAssignmentsPanel({
   processInstanceId,
   phaseId,
-  phaseName,
 }: {
   processInstanceId: string;
   phaseId: string;
-  /** Display name of the phase, shown in the summary line. */
-  phaseName: string;
 }) {
   const t = useTranslations();
 
@@ -75,7 +72,6 @@ export function ReviewAssignmentsPanel({
         <ReviewAssignmentsPanelContent
           processInstanceId={processInstanceId}
           phaseId={phaseId}
-          phaseName={phaseName}
         />
       </Suspense>
     </APIErrorBoundary>
@@ -85,11 +81,9 @@ export function ReviewAssignmentsPanel({
 function ReviewAssignmentsPanelContent({
   processInstanceId,
   phaseId,
-  phaseName,
 }: {
   processInstanceId: string;
   phaseId: string;
-  phaseName: string;
 }) {
   const t = useTranslations();
   const [openReviewerId, setOpenReviewerId] = useState<string | null>(null);
@@ -104,8 +98,6 @@ function ReviewAssignmentsPanelContent({
     [data.reviewers, data.eligibleReviewers, data.proposals],
   );
 
-  // Derived from the fresh query data, so the sheet re-renders with every
-  // refetch instead of holding the snapshot it was opened with.
   const openReviewer = openReviewerId
     ? (rows.find((row) => row.profile.id === openReviewerId) ?? null)
     : null;
@@ -113,15 +105,10 @@ function ReviewAssignmentsPanelContent({
   return (
     <div className="flex flex-col gap-4">
       <p aria-live="polite" className="text-sm text-muted-foreground">
-        {t(
-          '{phase} · {reviewers} reviewers · {assignments} assignments · {unassigned} proposals unassigned',
-          {
-            phase: phaseName,
-            reviewers: data.eligibleReviewers.length,
-            assignments: data.totalAssignments,
-            unassigned: unassignedCount,
-          },
-        )}
+        {t('{reviewers} reviewers · {unassigned} proposals unassigned', {
+          reviewers: data.eligibleReviewers.length,
+          unassigned: unassignedCount,
+        })}
       </p>
 
       {rows.length === 0 ? (
@@ -144,7 +131,6 @@ function ReviewAssignmentsPanelContent({
 
       {openReviewer ? (
         <AssignReviewsSheet
-          // Keyed so switching reviewers resets the sheet's filter + selection.
           key={openReviewer.profile.id}
           processInstanceId={processInstanceId}
           phaseId={phaseId}
@@ -168,8 +154,6 @@ function ReviewersTable({
   const t = useTranslations();
 
   return (
-    // Bare like the advance screen's SelectableProposalsTable: the Table
-    // primitive already brings the overflow container and row dividers.
     <Table aria-label={t('Reviewers')} className="w-full">
       <TableHeader>
         <TableRow>
@@ -215,8 +199,6 @@ function ReviewerRowCells({
     <TableRow>
       {/* Names the row; `text-start` because a `th` centers by default. */}
       <TableCell render={<th scope="row" />} className="text-start font-normal">
-        {/* The name is the row's open control (the sheet also shows history
-            for reviewers who can no longer be assigned to). */}
         <Button
           variant="bare"
           onClick={onOpen}
