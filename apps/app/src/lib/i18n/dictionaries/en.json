@@ -1689,5 +1689,5 @@
   "No reviewers yet": "No reviewers yet",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Give people the reviewer role and they will appear here, ready to take proposals.",
   "Reviewers": "Reviewers",
-  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} reviewers · {unassigned} proposals unassigned"
+  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}"
 }

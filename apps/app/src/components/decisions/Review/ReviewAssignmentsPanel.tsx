@@ -101,10 +101,13 @@ function ReviewAssignmentsPanelContent({
   return (
     <div className="flex flex-col gap-4">
       <p aria-live="polite" className="text-sm text-muted-foreground">
-        {t('{reviewers} reviewers · {unassigned} proposals unassigned', {
-          reviewers: data.eligibleReviewers.length,
-          unassigned: unassignedCount,
-        })}
+        {t(
+          '{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}',
+          {
+            reviewers: data.eligibleReviewers.length,
+            unassigned: unassignedCount,
+          },
+        )}
       </p>
 
       {rows.length === 0 ? (

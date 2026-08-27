@@ -467,15 +467,13 @@ function AssignedRow({
       </span>
       <span className="ms-auto flex shrink-0 items-center gap-2">
         <Badge variant={statusBadgeVariant(assignment.reviewState)}>
-          {statusLabel[state] ?? state}
+          {assignment.reviewState === 'submitted' && assignment.submittedAt
+            ? `${statusLabel[state] ?? state} · ${format.dateTime(
+                new Date(assignment.submittedAt),
+                { dateStyle: 'medium' },
+              )}`
+            : (statusLabel[state] ?? state)}
         </Badge>
-        {assignment.reviewState === 'submitted' && assignment.submittedAt ? (
-          <span className="text-sm whitespace-nowrap text-muted-foreground">
-            {format.dateTime(new Date(assignment.submittedAt), {
-              dateStyle: 'medium',
-            })}
-          </span>
-        ) : null}
         {assignment.status === 'pending' ? (
           <UnassignButton
             processInstanceId={processInstanceId}

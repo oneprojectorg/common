@@ -1689,5 +1689,5 @@
   "No reviewers yet": "Még nincsenek értékelők",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Adjon értékelő szerepkört a felhasználóknak, és itt jelennek meg, készen a javaslatok fogadására.",
   "Reviewers": "Értékelők",
-  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} értékelő · {unassigned} hozzárendeletlen javaslat"
+  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# értékelő} other {# értékelő}} · {unassigned, plural, one {# hozzárendeletlen javaslat} other {# hozzárendeletlen javaslat}}"
 }

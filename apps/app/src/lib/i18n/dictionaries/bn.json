@@ -1689,5 +1689,5 @@
   "No reviewers yet": "এখনও কোনো পর্যালোচক নেই",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "লোকেদের পর্যালোচকের ভূমিকা দিন, তারা এখানে দেখা যাবে এবং প্রস্তাবনা নিতে প্রস্তুত থাকবে।",
   "Reviewers": "পর্যালোচকগণ",
-  "{reviewers} reviewers · {unassigned} proposals unassigned": "{reviewers} জন পর্যালোচক · {unassigned} প্রস্তাবনা অনিয়োজিত"
+  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# জন পর্যালোচক} other {# জন পর্যালোচক}} · {unassigned, plural, one {#টি প্রস্তাবনা অনিয়োজিত} other {#টি প্রস্তাবনা অনিয়োজিত}}"
 }
