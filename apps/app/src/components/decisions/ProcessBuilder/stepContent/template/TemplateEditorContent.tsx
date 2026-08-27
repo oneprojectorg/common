@@ -114,8 +114,6 @@ export function TemplateEditorContent({
   // Delete confirmation modal
   const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
-  // Participant preview modal
-
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
   // Applied to the current template state so user edits are preserved.

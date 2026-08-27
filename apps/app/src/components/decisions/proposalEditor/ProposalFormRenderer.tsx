@@ -59,8 +59,7 @@ interface ProposalFormRendererProps {
   /**
    * Decision profile (== `processInstances.profileId`) the proposal is being
    * composed under. Threaded through to the location field so the boundary
-   * overlay / out-of-area check scope to the right decision. `null` for
-   * preview-template mode where no decision is in scope.
+   * overlay / out-of-area check scope to the right decision.
    */
   decisionProfileId: string | null;
   /** Called when any system field value changes. */
@@ -70,7 +69,7 @@ interface ProposalFormRendererProps {
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
   /** Rendering mode for collaborative editing or readonly previews. */
-  mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  mode?: 'edit-collaborative' | 'preview-version';
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
 }
@@ -116,64 +115,6 @@ function formatPreviewBudget(
   });
 }
 
-function getPreviewText({
-  mode,
-  draftValue,
-  previewContent,
-}: {
-  mode: 'preview-version' | 'preview-template';
-  draftValue: string | null | undefined;
-  previewContent: JSONContent | null | undefined;
-}): string | null {
-  if (mode === 'preview-version') {
-    const previewText = getFragmentText(previewContent);
-    return previewText || null;
-  }
-
-  return draftValue ?? null;
-}
-
-function getPreviewCategories({
-  mode,
-  draftValue,
-  previewContent,
-}: {
-  mode: 'preview-version' | 'preview-template';
-  draftValue: string[];
-  previewContent: JSONContent | null | undefined;
-}): string[] {
-  if (mode === 'preview-version') {
-    return parseCategoryFragmentValue(getFragmentText(previewContent) ?? '');
-  }
-
-  return draftValue;
-}
-
-function getPreviewBudgetValue({
-  mode,
-  draftValue,
-  previewContent,
-}: {
-  mode: 'preview-version' | 'preview-template';
-  draftValue: ProposalDraftFields['budget'] | null | undefined;
-  previewContent: JSONContent | null | undefined;
-}): string | null {
-  if (mode === 'preview-version') {
-    return formatPreviewBudget(previewContent);
-  }
-
-  if (!draftValue) {
-    return null;
-  }
-
-  return draftValue.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: draftValue.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Field renderer
 // ---------------------------------------------------------------------------
@@ -188,7 +129,7 @@ function renderField(
   decisionProfileId: string | null,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
-  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
+  mode: 'edit-collaborative' | 'preview-version',
   previewVersionFragmentContents: Record<string, JSONContent | null>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
@@ -205,11 +146,7 @@ function renderField(
         <ReadonlyTitleField
           title={schema.title ?? t('Proposal name')}
           required={field.required}
-          value={getPreviewText({
-            mode,
-            draftValue: draft.title,
-            previewContent,
-          })}
+          value={getFragmentText(previewContent) || null}
         />
       );
     }
@@ -236,11 +173,9 @@ function renderField(
     const categoryLabel = schema.title ?? t('Select a category');
 
     if (isReadonlyMode) {
-      const selectedValues = getPreviewCategories({
-        mode,
-        draftValue: draft.category,
-        previewContent,
-      });
+      const selectedValues = parseCategoryFragmentValue(
+        getFragmentText(previewContent) ?? '',
+      );
       const selectedLabels = options
         .filter((opt) => selectedValues.includes(opt.value))
         .map((opt) => opt.label);
@@ -300,11 +235,7 @@ function renderField(
     if (isReadonlyMode) {
       return (
         <ReadonlyBudgetField
-          value={getPreviewBudgetValue({
-            mode,
-            draftValue: draft.budget,
-            previewContent,
-          })}
+          value={formatPreviewBudget(previewContent)}
           title={schema.title ?? t('Funding amount')}
           description={schema.description}
           required={field.required}
@@ -339,9 +270,7 @@ function renderField(
             title={schema.title}
             description={schema.description}
             required={field.required}
-            content={
-              mode === 'preview-version' ? (previewContent ?? null) : null
-            }
+            content={previewContent ?? null}
             placeholder={placeholder}
             multiline={format === 'long-text'}
           />
@@ -368,11 +297,7 @@ function renderField(
       if (isReadonlyMode) {
         return (
           <ReadonlyBudgetField
-            value={getPreviewBudgetValue({
-              mode,
-              draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
-              previewContent,
-            })}
+            value={formatPreviewBudget(previewContent)}
             title={schema.title ?? t('Funding amount')}
             description={schema.description}
             required={field.required}
@@ -396,10 +321,7 @@ function renderField(
 
     case 'location': {
       if (isReadonlyMode) {
-        const location =
-          mode === 'preview-version'
-            ? parsePreviewLocation(previewContent)
-            : ((draft[key] as ProposalDraftFields['location']) ?? undefined);
+        const location = parsePreviewLocation(previewContent);
 
         return (
           <LabeledFieldSet
@@ -439,11 +361,7 @@ function renderField(
       const options = extractOptions(schema);
 
       if (isReadonlyMode) {
-        const selectedValue = getPreviewText({
-          mode,
-          draftValue: (draft[key] as string | null) ?? null,
-          previewContent,
-        });
+        const selectedValue = getFragmentText(previewContent) || null;
         const selectedOption = options.find(
           (opt) => opt.value === selectedValue,
         );
@@ -487,11 +405,11 @@ function renderField(
 // ---------------------------------------------------------------------------
 
 /**
- * Schema-driven form renderer for proposal editing and template preview.
+ * Schema-driven form renderer for proposal editing and version preview.
  *
  * Takes compiled field descriptors and renders the correct component for
- * each field. Version and template previews reuse readonly field components,
- * while editing keeps the collaborative Yjs-backed fields.
+ * each field. Version previews reuse readonly field components, while
+ * editing keeps the collaborative Yjs-backed fields.
  *
  * Layout: one flat stack of labeled fields at the form's field gap — title,
  * budget, category, then the dynamic template fields in schema order.
