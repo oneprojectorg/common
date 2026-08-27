@@ -17,15 +17,13 @@ const basePostsEncoder = createSelectSchema(posts)
     userHasLiked: z.boolean(),
     // Likers the read could name. Fewer than `likeCount` when a reaction's
     // profile didn't join, so this drives the tooltip and never the count.
-    likeUsers: z
-      .array(
-        z.object({
-          id: z.string(),
-          name: z.string(),
-          timestamp: z.date(),
-        }),
-      )
-      .optional(),
+    likeUsers: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        timestamp: z.date(),
+      }),
+    ),
     commentCount: z.number(),
     // True only on posts the read filters let through to their author or an
     // admin while an active moderation flag hides them from everyone else;

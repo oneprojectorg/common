@@ -1,5 +1,5 @@
 import { EntityType } from '@op/db/schema';
-import { LIKE_REACTION_TYPE, LIKE_REACTION_TYPES } from '@op/types';
+import { LIKE_REACTION_TYPE, isLikeReactionType } from '@op/types';
 
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
@@ -51,10 +51,7 @@ export const toggleLike = async ({
   const profileId = await getCurrentProfileId(user.id);
   const existingReaction = await getExistingReaction({ postId, profileId });
 
-  if (
-    existingReaction &&
-    LIKE_REACTION_TYPES.includes(existingReaction.reactionType)
-  ) {
+  if (existingReaction && isLikeReactionType(existingReaction.reactionType)) {
     await removeReaction({ postId, profileId });
     return { action: 'removed', context };
   }

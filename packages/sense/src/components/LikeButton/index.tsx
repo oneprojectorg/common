@@ -4,6 +4,10 @@ import * as React from 'react';
 import { LuThumbsUp } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import {
+  footerButtonClasses,
+  footerButtonInteractiveClasses,
+} from '../CommentButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface LikeUser {
@@ -38,10 +42,10 @@ interface LikeButtonProps extends Omit<
  * The like half of a post's footer, sized and styled to sit beside
  * `CommentButton`. Pass `users` to name recent likers on hover.
  */
-// The branching is prop defaults plus the liked/read-only styling forks — flat,
-// not nested. Splitting it further would trade a readable component for
-// indirection, and sense has no headless test runner to score coverage against
-// (see packages/sense/README.md).
+// What's left after folding the read-only fork into `pressProps` and moving the
+// shared chrome into `footerButtonClasses` is three prop defaults, the liked
+// styling on two elements, and the tooltip bail — flat, and sense has no
+// headless runner to score coverage against (see packages/sense/README.md).
 // fallow-ignore-next-line complexity
 function LikeButton({
   count = 0,
@@ -53,21 +57,25 @@ function LikeButton({
   onClick,
   ...props
 }: LikeButtonProps) {
+  // Read-only buttons stay enabled (aria-disabled, no press affordances) so
+  // they keep tab order and the liker tooltip stays reachable — native disabled
+  // would suppress both.
+  const pressProps: React.ComponentProps<'button'> = canLike
+    ? {
+        'aria-pressed': isLiked,
+        onClick,
+        className: footerButtonInteractiveClasses,
+      }
+    : { 'aria-disabled': true, className: 'cursor-default' };
+
   const button = (
     <button
       type="button"
       data-slot="like-button"
-      aria-pressed={canLike ? isLiked : undefined}
-      // Read-only buttons stay enabled (aria-disabled, no press affordances) so
-      // they keep tab order and the liker tooltip stays reachable — native
-      // disabled would suppress both.
-      aria-disabled={canLike ? undefined : true}
-      onClick={canLike ? onClick : undefined}
+      {...pressProps}
       className={cn(
-        'flex h-8 items-center justify-center gap-1 rounded-md bg-muted px-2 py-1 text-sm text-nowrap text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-        canLike
-          ? 'cursor-pointer hover:bg-gray-100 hover:text-foreground active:bg-gray-200 active:text-foreground'
-          : 'cursor-default',
+        footerButtonClasses,
+        pressProps.className,
         isLiked && 'bg-gray-100 text-foreground',
         className,
       )}

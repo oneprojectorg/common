@@ -1,4 +1,4 @@
-import { LIKE_REACTION_TYPES } from '@op/types';
+import { isLikeReactionType } from '@op/types';
 
 /** A `post_reactions` row as the post reads load it. */
 export type ReactionRow = {
@@ -31,7 +31,7 @@ export type LikeSummary = {
  * Folds a post's reaction rows into the single like the UI shows.
  *
  * Reactions predate the like button and were never migrated, so every positive
- * historical type still counts (see `LIKE_REACTION_TYPES`). A viewer whose only
+ * historical type still counts (see `isLikeReactionType`). A viewer whose only
  * row is a dropped type reads as not having liked, and liking replaces that row.
  */
 export const getLikeSummary = ({
@@ -42,7 +42,7 @@ export const getLikeSummary = ({
   profileId?: string;
 }): LikeSummary => {
   const likes = reactions.filter((reaction) =>
-    LIKE_REACTION_TYPES.includes(reaction.reactionType),
+    isLikeReactionType(reaction.reactionType),
   );
 
   const likeUsers = likes.flatMap((reaction) =>

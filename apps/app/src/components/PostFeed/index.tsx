@@ -320,14 +320,11 @@ const useOptimisticLike = (
   const { user } = useUser();
   const currentProfile = user?.currentProfile;
 
-  const serverLike = useMemo(
-    () => ({
-      userHasLiked: post.userHasLiked,
-      likeCount: post.likeCount,
-      likeUsers: post.likeUsers ?? [],
-    }),
-    [post.userHasLiked, post.likeCount, post.likeUsers],
-  );
+  const serverLike = {
+    userHasLiked: post.userHasLiked,
+    likeCount: post.likeCount,
+    likeUsers: post.likeUsers,
+  };
 
   const [localLike, setLocalLike] = useState(serverLike);
 

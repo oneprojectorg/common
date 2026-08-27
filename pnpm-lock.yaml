@@ -1555,9 +1555,6 @@ importers:
       '@op/supabase':
         specifier: workspace:*
         version: link:../supabase
-      '@op/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
@@ -14704,7 +14701,7 @@ snapshots:
 
   '@types/mssql@9.1.9':
     dependencies:
-      '@types/node': 22.13.14
+      '@types/node': 24.13.3
       tarn: 3.0.2
       tedious: 19.2.0
     transitivePeerDependencies:
@@ -14760,7 +14757,7 @@ snapshots:
 
   '@types/readable-stream@4.0.23':
     dependencies:
-      '@types/node': 22.13.14
+      '@types/node': 24.13.3
 
   '@types/resolve@1.20.6': {}
 
@@ -16590,7 +16587,7 @@ snapshots:
 
   happy-dom@20.5.3:
     dependencies:
-      '@types/node': 22.13.14
+      '@types/node': 24.13.3
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       entities: 6.0.1
@@ -19414,7 +19411,7 @@ snapshots:
       '@azure/identity': 4.13.0
       '@azure/keyvault-keys': 4.10.0
       '@js-joda/core': 5.7.0
-      '@types/node': 22.13.14
+      '@types/node': 24.13.3
       bl: 6.1.6
       iconv-lite: 0.6.3
       js-md4: 0.3.2
@@ -19429,7 +19426,7 @@ snapshots:
       '@azure/identity': 4.13.0
       '@azure/keyvault-keys': 4.10.0
       '@js-joda/core': 5.7.0
-      '@types/node': 22.13.14
+      '@types/node': 24.13.3
       bl: 6.1.6
       iconv-lite: 0.7.2
       js-md4: 0.3.2

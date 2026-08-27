@@ -1,3 +1,5 @@
+import type { Post } from '@op/api/encoders';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -7,19 +9,18 @@ export interface PostFeedUser {
   currentProfile?: UserProfile | null;
 }
 
+/** The like fields the encoder puts on every post, kept in step with it. */
+export type PostLikeState = Pick<
+  Post,
+  'likeCount' | 'userHasLiked' | 'likeUsers'
+>;
+
 /**
- * The only fields a cached entry needs for a like to be flipped on it. Kept
- * structural rather than tied to the full post encoder so any cache shape that
- * carries a post — feed row, comment, detail payload — can be mapped through.
+ * The only shape a cached entry needs for a like to be flipped on it. Any cache
+ * entry carrying a post — feed row, comment, detail payload — matches.
  */
 export type LikeableItem = {
-  post: { id?: string | null } & Partial<PostLikeState>;
-};
-
-export type PostLikeState = {
-  likeCount: number;
-  userHasLiked: boolean;
-  likeUsers: Array<{ id: string; name: string; timestamp: Date }>;
+  post: { id: string } & PostLikeState;
 };
 
 /**
@@ -69,16 +70,6 @@ export const togglePostLike = <T extends LikeableItem>(
 
   return {
     ...item,
-    post: {
-      ...item.post,
-      ...applyLikeToggle(
-        {
-          likeCount: item.post.likeCount ?? 0,
-          userHasLiked: item.post.userHasLiked ?? false,
-          likeUsers: item.post.likeUsers ?? [],
-        },
-        user?.currentProfile,
-      ),
-    },
+    post: { ...item.post, ...applyLikeToggle(item.post, user?.currentProfile) },
   };
 };

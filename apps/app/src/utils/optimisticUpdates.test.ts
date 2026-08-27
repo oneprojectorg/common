@@ -111,24 +111,9 @@ describe('togglePostLike', () => {
     expect(result.post).toMatchObject({ userHasLiked: true, likeCount: 2 });
   });
 
-  it('treats a post with no like fields as unliked with no likes', () => {
-    const result = togglePostLike(
-      { post: { id: 'target-post' } },
-      'target-post',
-      {
-        currentProfile: viewer,
-      },
-    );
-
-    expect(result.post).toMatchObject({ userHasLiked: true, likeCount: 1 });
-  });
-
   it('keeps the rest of the cached item intact', () => {
     const result = togglePostLike(
-      {
-        post: { id: 'target-post', likeCount: 0, userHasLiked: false },
-        organization: { id: 'org-1' },
-      },
+      { ...item('target-post'), organization: { id: 'org-1' } },
       'target-post',
       { currentProfile: viewer },
     );
