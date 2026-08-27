@@ -1,4 +1,4 @@
-import { deleteProfileInvite } from '@op/common';
+import { Channels, deleteProfileInvite } from '@op/common';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
@@ -12,6 +12,8 @@ export const deleteProfileInviteRouter = router({
         inviteId: input.inviteId,
         user: ctx.user,
       });
+
+      ctx.registerMutationChannels([Channels.profileMembers(result.profileId)]);
 
       return { id: result.id };
     }),

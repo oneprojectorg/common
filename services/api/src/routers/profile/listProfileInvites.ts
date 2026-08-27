@@ -1,4 +1,4 @@
-import { listProfileUserInvites } from '@op/common';
+import { Channels, listProfileUserInvites } from '@op/common';
 import { z } from 'zod';
 
 import { profileInviteEncoder } from '../../encoders/profiles';
@@ -21,6 +21,8 @@ export const listProfileInvitesRouter = router({
         user: ctx.user,
         query: input.query,
       });
+
+      ctx.registerQueryChannels([Channels.profileMembers(input.profileId)]);
 
       return invites.map((invite) => ({
         id: invite.id,

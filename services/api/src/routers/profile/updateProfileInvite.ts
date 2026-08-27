@@ -1,4 +1,4 @@
-import { updateProfileInvite } from '@op/common';
+import { Channels, updateProfileInvite } from '@op/common';
 import { z } from 'zod';
 
 import { profileInviteEncoder } from '../../encoders/profiles';
@@ -19,6 +19,10 @@ export const updateProfileInviteRouter = router({
         accessRoleId: input.accessRoleId,
         user: ctx.user,
       });
+
+      // Changing an invite's role moves it between role tabs, so both
+      // tabs' counts move.
+      ctx.registerMutationChannels([Channels.profileMembers(invite.profileId)]);
 
       return {
         id: invite.id,
