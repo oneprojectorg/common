@@ -1,6 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
-import { db, eq } from '@op/db/client';
-import { profileUsers, profiles, users } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/client';
+import { profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -8,8 +8,6 @@ import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUse
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
-  supabaseTestAdminClient,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 import { usersRouter } from './index';
@@ -649,94 +647,186 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(allNames).toEqual(sortedNames);
     });
 
-    it('should paginate from one NULL-name member to the next when ordering by name', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
-      const { profile, adminUser } = await testData.createProfile({
-        users: { admin: 1 },
-      });
+    describe('NULL columns and duplicate keys', () => {
+      // Pages every item for orderBy, asserting the result is exactly the
+      // given ids with no duplicates and no gaps — the two failure modes a
+      // tie on every sort column produces: `gt`/`eq` against a NULL column
+      // is NULL either way, so a tied row is dropped from every page; a tied
+      // '' cursor value re-matches the whole group, so a page repeats it.
+      const paginateAllIds = async (
+        caller: ReturnType<typeof createCaller>,
+        profileId: string,
+        orderBy: 'name' | 'email' | 'role',
+      ) => {
+        const allIds: string[] = [];
+        let cursor: string | null | undefined;
+        let pageCount = 0;
 
-      // Most real profileUsers rows never set `name` — the display name comes
-      // from the joined profile instead. The cursor comparison must be able
-      // to page from one NULL-name row to the next NULL-name row: a single
-      // NULL-name row isn't enough to catch this, since the row on the far
-      // side of the cursor needs a NULL name too (a named row like the admin
-      // already satisfies a raw, un-coalesced `>` comparison).
-      if (!supabaseTestAdminClient) {
-        throw new Error('Supabase test admin client not initialized');
-      }
-      const createNullNameMember = async (suffix: string) => {
-        const email = `${task.id}-null-name-${suffix}@oneproject.org`;
-        const user = await createTestUser(email).then((res) => res.user);
-        if (!user?.email) {
-          throw new Error('Failed to create test user');
-        }
-        onTestFinished(async () => {
-          // The signup trigger also creates a personal profile for this
-          // user; delete it before the auth user so nothing is orphaned.
-          const [userRecord] = await db
-            .select()
-            .from(users)
-            .where(eq(users.authUserId, user.id));
-          if (userRecord?.profileId) {
-            await db
-              .delete(profiles)
-              .where(eq(profiles.id, userRecord.profileId));
+        do {
+          const page = await caller.listUsers({
+            profileId,
+            limit: 2,
+            cursor: cursor ?? undefined,
+            orderBy,
+            dir: 'asc',
+          });
+          allIds.push(...page.items.map((u) => u.id));
+          cursor = page.next;
+          pageCount++;
+
+          if (pageCount > 10) {
+            throw new Error('Too many pages - possible infinite loop');
           }
-          await supabaseTestAdminClient.auth.admin.deleteUser(user.id);
-        });
+        } while (cursor);
 
-        const [profileUser] = await db
-          .insert(profileUsers)
-          .values({
-            authUserId: user.id,
-            profileId: profile.id,
-            email: user.email,
-          })
-          .returning();
-        // Sanity check: the raw column is NULL — the condition the cursor
-        // fix has to handle, not an empty string.
-        expect(profileUser?.name).toBeNull();
-
-        return user;
+        return allIds;
       };
 
-      // Emails sort "a" before "b", so memberA is the tiebreaker-ordered
-      // first NULL-name row and memberB is the one on the far side of its
-      // cursor.
-      const memberA = await createNullNameMember('a');
-      const memberB = await createNullNameMember('b');
+      it('should paginate past two NULL-name members without duplicating or dropping either', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, memberUsers } =
+          await testData.createProfile({
+            users: { admin: 1, member: 4 },
+          });
 
-      const { session } = await createIsolatedSession(adminUser.email);
-      const caller = createCaller(await createTestContextWithSession(session));
+        // Most real profileUsers rows never set `name` — the display name
+        // comes from the joined profile instead. Two NULL-name rows (not
+        // one) are needed to catch a broken cursor: the row on the far side
+        // of the cursor must tie too, since a named row already satisfies a
+        // raw, un-coalesced `>` comparison.
+        const nullNameIds = memberUsers.slice(0, 2).map((m) => m.profileUserId);
+        await db
+          .update(profileUsers)
+          .set({ name: null })
+          .where(inArray(profileUsers.id, nullNameIds));
 
-      // NULL sorts as '' ahead of any named row, so page 1 holds only the
-      // first NULL-name member (tiebroken by email) and its cursor points
-      // at the second NULL-name member, not the named admin.
-      const page1 = await caller.listUsers({
-        profileId: profile.id,
-        limit: 1,
-        orderBy: 'name',
-        dir: 'asc',
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'name');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        nullNameIds.forEach((id) => expect(allIds).toContain(id));
       });
-      expect(page1.items).toHaveLength(1);
-      expect(page1.items[0]?.email).toBe(memberA.email);
-      expect(page1.next).toBeTruthy();
 
-      // Before the coalesce fix, `gt(name, '')`/`eq(name, '')` against
-      // memberB's NULL name both evaluate to NULL, so memberB is skipped
-      // entirely and this page jumps straight to the named admin instead.
-      const page2 = await caller.listUsers({
-        profileId: profile.id,
-        limit: 1,
-        cursor: page1.next ?? undefined,
-        orderBy: 'name',
-        dir: 'asc',
+      it('should paginate past two NULL-email members without duplicating or dropping either', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, memberUsers } =
+          await testData.createProfile({
+            users: { admin: 1, member: 4 },
+          });
+
+        // orderBy: 'email' previously had no tiebreaker at all (email was
+        // assumed unique). Two NULL emails tie on the sort column itself, so
+        // only the id tiebreaker can tell them apart.
+        const nullEmailIds = memberUsers
+          .slice(0, 2)
+          .map((m) => m.profileUserId);
+        await db
+          .update(profileUsers)
+          .set({ email: null })
+          .where(inArray(profileUsers.id, nullEmailIds));
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'email');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        nullEmailIds.forEach((id) => expect(allIds).toContain(id));
       });
-      expect(page2.items).toHaveLength(1);
-      expect(page2.items[0]?.email).toBe(memberB.email);
+
+      it('should paginate past two same-role members with NULL emails without duplicating or dropping either', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, memberUsers } =
+          await testData.createProfile({
+            users: { admin: 1, member: 4 },
+          });
+
+        // All four members share the Member role, and two of them also share
+        // a NULL email: both the role value and the email tiebreaker tie,
+        // leaving only the id tiebreaker to distinguish the pair.
+        const nullEmailIds = memberUsers
+          .slice(0, 2)
+          .map((m) => m.profileUserId);
+        await db
+          .update(profileUsers)
+          .set({ email: null })
+          .where(inArray(profileUsers.id, nullEmailIds));
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'role');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        nullEmailIds.forEach((id) => expect(allIds).toContain(id));
+      });
+
+      it('should paginate past two members sharing the same non-null email without duplicating or dropping either', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, memberUsers } =
+          await testData.createProfile({
+            users: { admin: 1, member: 4 },
+          });
+
+        // profileUsers.email has no uniqueness constraint, so two real,
+        // non-null rows can tie on email too — the `?? ''` fallback for a
+        // NULL value doesn't help here, since both rows already share the
+        // same real, non-empty string.
+        const duplicateEmailIds = memberUsers
+          .slice(0, 2)
+          .map((m) => m.profileUserId);
+        const sharedEmail = `shared-${task.id}@oneproject.org`;
+        await db
+          .update(profileUsers)
+          .set({ email: sharedEmail })
+          .where(inArray(profileUsers.id, duplicateEmailIds));
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const allIds = await paginateAllIds(caller, profile.id, 'email');
+
+        expect(allIds).toHaveLength(5);
+        expect(new Set(allIds).size).toBe(5);
+        duplicateEmailIds.forEach((id) => expect(allIds).toContain(id));
+      });
     });
 
     it('should paginate correctly when ordering by role', async ({

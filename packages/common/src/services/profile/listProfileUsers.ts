@@ -1,4 +1,4 @@
-import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
+import { and, db, eq, gt, lt, or, type SQL, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -85,46 +85,74 @@ export const listProfileUsers = async ({
       : undefined;
 
   // Build cursor condition for pagination
-  // The cursor must match the ORDER BY columns for correct pagination
-  type ProfileUserCursor = { value: string; tiebreaker?: string };
+  // The cursor must match the ORDER BY columns for correct pagination.
+  // `id` is optional only so a cursor issued before this tiebreaker existed
+  // (e.g. handed to a client mid-pagination across a deploy) doesn't decode
+  // into a broken comparison.
+  type ProfileUserCursor = { value: string; tiebreaker?: string; id?: string };
   const decodedCursor = cursor
     ? decodeCursor<ProfileUserCursor>(cursor)
     : undefined;
 
   const compareFn = dir === 'asc' ? gt : lt;
+  const emailExpr = sql`coalesce(${profileUsers.email}, '')`;
+  const nameExpr = sql`coalesce(${profileUsers.name}, '')`;
+
+  /**
+   * Builds a strictly-monotonic keyset condition from an ordered list of sort
+   * keys, each paired with its cursor value: key1 > v1 OR (key1 = v1 AND key2
+   * > v2) OR ... . `email` and `name` are both nullable and non-unique, so a
+   * cursor built from only those columns can tie: two rows with the same
+   * (name, email) — both NULL, or a duplicated real email — would otherwise
+   * either repeat across pages or never satisfy the comparison at all. `id`
+   * is always the last key so the order is total.
+   */
+  const buildKeysetCondition = (
+    keys: Array<{ expr: SQL; value: string }>,
+  ): SQL =>
+    or(
+      ...keys.map((key, i) => {
+        const comparison = compareFn(key.expr, key.value);
+        const precedingEqualities = keys
+          .slice(0, i)
+          .map((k) => eq(k.expr, k.value));
+        return precedingEqualities.length > 0
+          ? and(...precedingEqualities, comparison)
+          : comparison;
+      }),
+    )!;
 
   const buildCursorCondition = () => {
     if (!decodedCursor) {
       return undefined;
     }
 
+    const idKey = decodedCursor.id
+      ? [{ expr: sql`${profileUsers.id}`, value: decodedCursor.id }]
+      : [];
+
     if (orderBy === 'email') {
-      // Email is unique, no tiebreaker needed
-      return compareFn(profileUsers.email, decodedCursor.value);
+      return buildKeysetCondition([
+        { expr: emailExpr, value: decodedCursor.value },
+        ...idKey,
+      ]);
     }
 
     if (orderBy === 'name') {
-      // profileUsers.name is nullable (most rows never set it — the display
-      // name comes from the joined profile). A NULL never satisfies `>` or
-      // `=` against a literal, so the comparison must go through the same
-      // coalesce the ORDER BY clause and the cursor's own encoding assume.
-      const nameExpr = sql`coalesce(${profileUsers.name}, '')`;
-      return or(
-        compareFn(nameExpr, decodedCursor.value),
-        and(
-          eq(nameExpr, decodedCursor.value),
-          compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
-        ),
-      );
+      return buildKeysetCondition([
+        { expr: nameExpr, value: decodedCursor.value },
+        { expr: emailExpr, value: decodedCursor.tiebreaker ?? '' },
+        ...idKey,
+      ]);
     }
 
     // orderBy === 'role' - uses shared subquery helper
     const roleSubquery = buildRoleNameSubquery(profileUsers.id);
-    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
-    return sql`(
-      ${roleSubquery} ${compareOp} ${decodedCursor.value}
-      OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
-    )`;
+    return buildKeysetCondition([
+      { expr: roleSubquery, value: decodedCursor.value },
+      { expr: emailExpr, value: decodedCursor.tiebreaker ?? '' },
+      ...idKey,
+    ]);
   };
 
   const cursorCondition = buildCursorCondition();
@@ -162,20 +190,30 @@ export const listProfileUsers = async ({
     },
     orderBy: (table, { asc, desc }) => {
       const orderFn = dir === 'desc' ? desc : asc;
+      // Coalesced to match the cursor condition, with id as the final
+      // tiebreaker so the sort is total even when every other key ties.
+      const tableEmailExpr = sql`coalesce(${table.email}, '')`;
 
       if (orderBy === 'role') {
         // Use shared subquery helper for consistency with cursor condition
         const roleNameSubquery = buildRoleNameSubquery(table.id);
-        // Add email as secondary sort for consistent cursor pagination
-        return [orderFn(roleNameSubquery), orderFn(table.email)];
+        return [
+          orderFn(roleNameSubquery),
+          orderFn(tableEmailExpr),
+          orderFn(table.id),
+        ];
       }
 
       if (orderBy === 'email') {
-        return [orderFn(table.email)];
+        return [orderFn(tableEmailExpr), orderFn(table.id)];
       }
 
-      // Default to name, with email as secondary for consistent ordering
-      return [orderFn(sql`coalesce(${table.name}, '')`), orderFn(table.email)];
+      // Default to name, with email + id as secondary tiebreakers
+      return [
+        orderFn(sql`coalesce(${table.name}, '')`),
+        orderFn(tableEmailExpr),
+        orderFn(table.id),
+      ];
     },
     limit: limit + 1,
   });
@@ -208,6 +246,7 @@ export const listProfileUsers = async ({
     if (orderBy === 'email') {
       return encodeCursor<ProfileUserCursor>({
         value: lastResult.email ?? '',
+        id: lastResult.id,
       });
     }
 
@@ -215,6 +254,7 @@ export const listProfileUsers = async ({
       return encodeCursor<ProfileUserCursor>({
         value: lastResult.name ?? '',
         tiebreaker: lastResult.email ?? '',
+        id: lastResult.id,
       });
     }
 
@@ -235,6 +275,7 @@ export const listProfileUsers = async ({
     return encodeCursor<ProfileUserCursor>({
       value: firstRoleName,
       tiebreaker: lastResult.email ?? '',
+      id: lastResult.id,
     });
   };
 
