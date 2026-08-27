@@ -319,7 +319,7 @@ export function AssignReviewsSheet({
                       >
                         <Label
                           className={cn(
-                            'flex items-center gap-2.5 px-3 py-2 font-normal',
+                            'flex items-center gap-2 px-3 py-2 font-normal',
                             isOwnProposal
                               ? 'text-muted-foreground'
                               : 'hover:bg-muted/50',
