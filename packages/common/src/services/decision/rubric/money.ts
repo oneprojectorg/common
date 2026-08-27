@@ -20,6 +20,8 @@
  * whatever the template declares, so authors must declare exactly this shape.
  * Totals are derived at render time, never stored.
  */
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+
 import {
   DEFAULT_MONEY_CURRENCY,
   type MoneyAmount,
@@ -30,8 +32,8 @@ import type { XFormatPropertySchema } from '../types';
 
 /** Narrows a JSON Schema definition to its object form (not `true`/`false`). */
 function isSchemaObjectDefinition(
-  definition: XFormatPropertySchema | boolean | undefined,
-): definition is XFormatPropertySchema {
+  definition: JSONSchema7Definition | undefined,
+): definition is JSONSchema7 {
   return typeof definition === 'object' && definition !== null;
 }
 
