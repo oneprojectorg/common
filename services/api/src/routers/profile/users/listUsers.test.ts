@@ -827,6 +827,56 @@ describe.concurrent('profile.users.listUsers', () => {
         expect(new Set(allIds).size).toBe(5);
         duplicateEmailIds.forEach((id) => expect(allIds).toContain(id));
       });
+
+      it('should accept a cursor encoded before the id tiebreaker existed', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser } = await testData.createProfile({
+          users: { admin: 1, member: 2 },
+        });
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const page1 = await caller.listUsers({
+          profileId: profile.id,
+          limit: 1,
+          orderBy: 'email',
+          dir: 'asc',
+        });
+        expect(page1.next).toBeTruthy();
+
+        // A cursor issued before this fix shipped has no `id` field. Strip it
+        // and re-encode to simulate one still in flight across a deploy, and
+        // confirm it doesn't throw or otherwise mishandle the now-missing id
+        // comparison.
+        const currentCursor: {
+          value: string;
+          tiebreaker?: string;
+          id?: string;
+        } = JSON.parse(Buffer.from(page1.next!, 'base64').toString());
+        expect(currentCursor.id).toBeTruthy();
+        const { id: _omittedId, ...legacyCursor } = currentCursor;
+        const reencoded = Buffer.from(JSON.stringify(legacyCursor)).toString(
+          'base64',
+        );
+
+        const page2 = await caller.listUsers({
+          profileId: profile.id,
+          limit: 1,
+          cursor: reencoded,
+          orderBy: 'email',
+          dir: 'asc',
+        });
+        expect(page2.items).toHaveLength(1);
+      });
     });
 
     it('should paginate correctly when ordering by role', async ({
