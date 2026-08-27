@@ -13,18 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import {
-  Field,
-  FieldDescription,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from '@op/sense/Field';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Textarea } from '@op/sense/Textarea';
 import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { LabeledFieldSet } from './forms/LabeledFieldSet';
 
 /**
  * Keyed on the enum rather than on the English label: the plain `Duplicate` key
@@ -83,18 +80,16 @@ export const RejectProposalDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      {/* Wide enough for the four reasons to sit on one row, as in Figma. */}
+      <DialogContent className="sm:max-w-144">
         <DialogHeader>
           <DialogTitle>{t('Reject proposal')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-          <FieldSet>
-            <FieldLegend variant="label" id={`${fieldId}-reason`}>
-              {t('Reason')}
-            </FieldLegend>
-            {/* A `legend` names the fieldset, not the `radiogroup` nested in it. */}
+          <LabeledFieldSet legend={t('Reason')} legendId={`${fieldId}-reason`}>
             <RadioGroup
+              // A <legend> does not name a nested role="radiogroup".
               aria-labelledby={`${fieldId}-reason`}
               value={reason}
               onValueChange={(value) => {
@@ -104,17 +99,25 @@ export const RejectProposalDialog = ({
                   setReason(parsed.data);
                 }
               }}
+              // Figma lays the reasons out as chips on one row; they wrap rather
+              // than squeeze, since a translated label can be twice as long.
+              className="flex flex-row flex-wrap"
             >
-              {Object.values(RejectionReason).map((value) => (
-                <Field key={value} orientation="horizontal">
-                  <RadioGroupItem id={`${fieldId}-${value}`} value={value} />
-                  <FieldLabel htmlFor={`${fieldId}-${value}`}>
-                    {t(REJECTION_REASON_LABEL_KEYS[value])}
-                  </FieldLabel>
-                </Field>
-              ))}
+              {Object.values(RejectionReason).map((value) => {
+                const optionId = `${fieldId}-${value}`;
+
+                return (
+                  <OptionBox
+                    key={value}
+                    htmlFor={optionId}
+                    width="hug"
+                    label={t(REJECTION_REASON_LABEL_KEYS[value])}
+                    control={<RadioGroupItem id={optionId} value={value} />}
+                  />
+                );
+              })}
             </RadioGroup>
-          </FieldSet>
+          </LabeledFieldSet>
 
           <Field>
             <FieldLabel htmlFor={`${fieldId}-note`}>
@@ -145,8 +148,8 @@ export const RejectProposalDialog = ({
           >
             {t('Cancel')}
           </Button>
+          {/* Figma uses the primary button here, not the destructive one. */}
           <Button
-            variant="destructive"
             className="w-full sm:w-auto"
             onClick={handleConfirm}
             disabled={!reason || isPending}
