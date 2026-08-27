@@ -1564,6 +1564,7 @@
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Dooro soo-jeedinta lala biirinayo <source>{name}</source>. Waxay sii haysanaysaa boggeeda, laakiin waxay ka baxaysaa liiska soo-jeedinnada, codbixinta, iyo dib-u-eegista.",
   "Merging from": "Laga biirinayo",
   "Merge into": "Lala biirinayo",
+  "Select a different proposal": "Dooro soo-jeedin kale",
   "No proposals match your search": "Ma jiro soo-jeedin u dhiganta raadintaada",
   "Confirm merge": "Xaqiiji biirinta",
   "What happens:": "Waxa dhacaya:",
