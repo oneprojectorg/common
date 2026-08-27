@@ -1030,7 +1030,7 @@
   "Select language": "ভাষা নির্বাচন করুন",
   "{count} comments": "{count}টি মন্তব্য",
   "{count} likes": "{count, plural, one {# পছন্দ} other {# পছন্দ}}",
-  "{names} and {count} others": "{names} এবং আরও {count} জন",
+  "{count} others": "{count, plural, one {আরও # জন} other {আরও # জন}}",
   "Comment as {name}...": "{name} হিসেবে মন্তব্য করুন...",
   "Comment...": "মন্তব্য করুন...",
   "Update failed": "আপডেট ব্যর্থ",

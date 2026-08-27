@@ -5,7 +5,7 @@ import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { loadPostContext, type PostContext } from '../posts/postContext';
 import { addReaction } from './addReaction';
-import { removeReaction } from './removeReaction';
+import { removeLike } from './removeLike';
 
 export interface ToggleLikeOptions {
   user: { id: string };
@@ -53,7 +53,7 @@ export const toggleLike = async ({
   // scoped to the like types, so a double-click can't have both requests see a
   // row and both remove it. A caller holding only a legacy thumbs-down deletes
   // nothing and falls through to liking, which replaces that row.
-  const { removed } = await removeReaction({ postId, profileId });
+  const { removed } = await removeLike({ postId, profileId });
 
   if (removed) {
     return { action: 'removed', context };

@@ -1,4 +1,4 @@
-// addReaction / removeReaction stay module-private: the product writes exactly
+// addReaction / removeLike stay module-private: the product writes exactly
 // one reaction type now, so `toggleLike` is the only supported way in.
 export { getLikeSummary } from './utils';
 export type { LikeSummary, LikeUser, ReactionRow } from './utils';

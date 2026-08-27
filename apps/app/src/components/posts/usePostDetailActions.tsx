@@ -91,6 +91,14 @@ export const usePostDetailActions = ({
 
       toast.error(err.message || t('Failed to update like'));
     },
+    // The detail page never refetches on its own (`refetchOnWindowFocus` is
+    // off), so without this a batched double-click — where both requests race
+    // to "added" and the two optimistic flips cancel out — leaves the button
+    // disagreeing with the server until a full reload.
+    onSettled: () => {
+      void utils.posts.getPost.invalidate();
+      void utils.posts.getPosts.invalidate();
+    },
   });
 
   const handleLikeClick = (likedPostId: string) =>

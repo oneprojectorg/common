@@ -965,7 +965,7 @@
   "Select language": "Dooro luqad",
   "{count} comments": "{count} faallo",
   "{count} likes": "{count, plural, one {# jeclaysi} other {# jeclaysi}}",
-  "{names} and {count} others": "{names} iyo {count} kale",
+  "{count} others": "{count, plural, one {# kale} other {# kale}}",
   "Comment as {name}...": "Ka faallo {name} ahaan...",
   "Comment...": "Faallo...",
   "Update failed": "Cusboonaysiinta way guuldareystay",

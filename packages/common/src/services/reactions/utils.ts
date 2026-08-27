@@ -29,11 +29,11 @@ export type LikeSummary = {
 };
 
 /**
- * How many likers a post payload names. The UI shows two plus an "and N others"
- * built from `likeCount`, so shipping every liker on a popular post would be
- * hundreds of rows nobody renders.
+ * How many likers a post payload names — exactly what the tooltip renders
+ * before it switches to an "and N others" built from `likeCount`. Shipping
+ * every liker on a popular post would be hundreds of rows nobody reads.
  */
-const NAMED_LIKERS_LIMIT = 3;
+const NAMED_LIKERS_LIMIT = 2;
 
 /**
  * Folds a post's reaction rows into the single like the UI shows.

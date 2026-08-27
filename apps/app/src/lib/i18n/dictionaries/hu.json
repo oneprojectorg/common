@@ -1044,7 +1044,7 @@
   "Select language": "Nyelv kiválasztása",
   "{count} comments": "{count} hozzászólás",
   "{count} likes": "{count, plural, one {# kedvelés} other {# kedvelés}}",
-  "{names} and {count} others": "{names} és {count} további",
+  "{count} others": "{count, plural, one {# további} other {# további}}",
   "Comment as {name}...": "Hozzászólás {name} néven...",
   "Comment...": "Hozzászólás...",
   "Update failed": "A frissítés nem sikerült",

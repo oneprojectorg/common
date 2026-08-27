@@ -1031,7 +1031,7 @@
   "Select language": "Sélectionner la langue",
   "{count} comments": "{count} commentaires",
   "{count} likes": "{count, plural, one {# j'aime} other {# j'aime}}",
-  "{names} and {count} others": "{names} et {count} autres",
+  "{count} others": "{count, plural, one {# autre} other {# autres}}",
   "Comment as {name}...": "Commenter en tant que {name}...",
   "Comment...": "Commenter...",
   "Update failed": "Échec de la mise à jour",

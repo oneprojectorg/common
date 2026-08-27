@@ -1026,7 +1026,7 @@
   "Select language": "Selecionar idioma",
   "{count} comments": "{count} comentários",
   "{count} likes": "{count, plural, one {# curtida} other {# curtidas}}",
-  "{names} and {count} others": "{names} e mais {count}",
+  "{count} others": "{count, plural, one {mais #} other {mais #}}",
   "Comment as {name}...": "Comentar como {name}...",
   "Comment...": "Comentar...",
   "Update failed": "Falha na atualização",

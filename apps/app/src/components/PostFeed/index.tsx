@@ -239,15 +239,17 @@ const formatLikerTooltip = ({
     return null;
   }
 
-  const names = new Intl.ListFormat(locale, {
-    style: 'long',
-    type: 'conjunction',
-  }).format(named);
   const others = Math.max(0, likeCount - named.length);
 
-  return others > 0
-    ? t('{names} and {count} others', { names, count: others })
-    : names;
+  // The overflow goes in as a list item so ListFormat owns every separator and
+  // the conjunction — appending "and N others" ourselves would double the "and"
+  // the formatter already inserted.
+  return new Intl.ListFormat(locale, {
+    style: 'long',
+    type: 'conjunction',
+  }).format(
+    others > 0 ? [...named, t('{count} others', { count: others })] : named,
+  );
 };
 
 const PostCommentButton = ({
@@ -386,13 +388,18 @@ const useOptimisticLike = (
   const handleLikeClick = useCallback(
     (postId: string) => {
       const before = localLike;
+      const optimistic = applyLikeToggle({ current: before, currentProfile });
 
-      setLocalLike(applyLikeToggle({ current: before, currentProfile }));
+      setLocalLike(optimistic);
 
       // A rejected like (rate limit, lost access) refetches to the values we
       // started from, so the sync key above is unchanged and can't undo the
       // optimistic flip. Put it back here instead, or the button stays lit.
-      void onLikeClick(postId).catch(() => setLocalLike(before));
+      // Only when our own guess is still what's on screen though — a newer
+      // click or a server sync has better information than this snapshot.
+      void onLikeClick(postId).catch(() => {
+        setLocalLike((current) => (current === optimistic ? before : current));
+      });
     },
     [currentProfile, localLike, onLikeClick],
   );

@@ -1043,7 +1043,7 @@
   "Select language": "Select language",
   "{count} comments": "{count} comments",
   "{count} likes": "{count, plural, one {# like} other {# likes}}",
-  "{names} and {count} others": "{names} and {count} others",
+  "{count} others": "{count, plural, one {# other} other {# others}}",
   "Comment as {name}...": "Comment as {name}...",
   "Comment...": "Comment...",
   "Update failed": "Update failed",

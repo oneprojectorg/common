@@ -98,11 +98,10 @@ describe('getLikeSummary', () => {
     });
 
     expect(summary.likeCount).toBe(10);
-    expect(summary.likeUsers).toHaveLength(3);
+    expect(summary.likeUsers).toHaveLength(2);
     expect(summary.likeUsers.map((liker) => liker.name)).toEqual([
       'Liker 9',
       'Liker 8',
-      'Liker 7',
     ]);
   });
 

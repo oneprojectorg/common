@@ -2,7 +2,7 @@ import { and, db, eq, inArray } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
 import { LIKE_REACTION_TYPES } from '@op/types';
 
-export interface RemoveReactionOptions {
+export interface RemoveLikeOptions {
   postId: string;
   profileId: string;
 }
@@ -15,10 +15,10 @@ export interface RemoveReactionOptions {
  * statement, so two concurrent toggles can't both see the row and both remove
  * it: exactly one gets a non-empty result.
  */
-export const removeReaction = async ({
+export const removeLike = async ({
   postId,
   profileId,
-}: RemoveReactionOptions): Promise<{ removed: boolean }> => {
+}: RemoveLikeOptions): Promise<{ removed: boolean }> => {
   const deleted = await db
     .delete(postReactions)
     .where(
