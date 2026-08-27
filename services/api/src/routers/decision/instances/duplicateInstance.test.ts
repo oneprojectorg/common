@@ -377,6 +377,87 @@ describe.concurrent('duplicateInstance', () => {
     }
   });
 
+  // The reported bug: SEI cycle 2 came out of a duplication with an empty
+  // rubric. That rubric lives at the instance level, not on a phase.
+  it('should copy the instance-level rubric when include.reviewRubric is true', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const rubric = {
+      type: 'object' as const,
+      properties: {
+        impact: { type: 'integer' as const, title: 'Impact', maximum: 5 },
+        feasibility: {
+          type: 'integer' as const,
+          title: 'Feasibility',
+          maximum: 3,
+        },
+        notes: { type: 'string' as const, title: 'Notes' },
+      },
+      required: ['impact', 'feasibility'],
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      rubricTemplate: rubric,
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Instance Rubric Copy ${task.id}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    // Whole schema, not just presence — a rubric that loses its criteria,
+    // their scoring maxima, or its required list is the same bug.
+    expect(instanceData.rubricTemplate).toEqual(rubric);
+  });
+
+  it('should not copy the instance-level rubric when include.reviewRubric is false', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      rubricTemplate: {
+        type: 'object',
+        properties: { impact: { type: 'integer', title: 'Impact' } },
+      },
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `No Instance Rubric ${task.id}`,
+      include: { ...ALL_INCLUDED, reviewRubric: false },
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    expect(instanceData.rubricTemplate).toBeUndefined();
+  });
+
   it('should not copy proposalTemplate when include.proposalTemplate is false', async ({
     task,
     onTestFinished,
