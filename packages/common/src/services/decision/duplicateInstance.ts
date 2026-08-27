@@ -4,10 +4,15 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import {
+  assertProfileAccess,
+  assertProfileAdminWithOrgFallback,
+  assertUserByAuthId,
+} from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
 import type {
   DecisionInstanceData,
+  InstanceOverview,
   PhaseInstanceData,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -47,14 +52,16 @@ export const duplicateInstance = async ({
     new UnauthorizedError('User must be authenticated'),
   );
 
-  // Owner is always the individual creator. Steward defaults to the profile the
-  // user is acting as (an org when in org context, otherwise the individual).
+  // Owner is always the individual creator.
   const ownerProfileId = dbUser.profileId;
   if (!ownerProfileId) {
     throw new UnauthorizedError('User must have a profile');
   }
-  const resolvedStewardProfileId =
-    stewardProfileId ?? dbUser.currentProfileId ?? ownerProfileId;
+
+  // Default to the duplicating user so the copy lands on their process list.
+  // `currentProfileId` is a last-viewed pointer, not a choice about this copy;
+  // an explicit steward is how a caller puts the duplicate under an org.
+  const resolvedStewardProfileId = stewardProfileId ?? ownerProfileId;
 
   if (!user.email) {
     throw new CommonError(
@@ -85,6 +92,18 @@ export const duplicateInstance = async ({
     profileId: sourceInstance.profileId,
     permissions: { decisions: permission.ADMIN },
   });
+
+  // An explicit steward must be a profile the caller administers — otherwise
+  // any admin of the source could hand the copy to a profile they have no
+  // claim on. Org-fallback because the picker also offers org profiles; the
+  // caller's own profile short-circuits, having no role row to check.
+  if (resolvedStewardProfileId !== ownerProfileId) {
+    await assertProfileAdminWithOrgFallback({
+      user,
+      profileId: resolvedStewardProfileId,
+      notAdminMessage: 'Not authorized to steward a process to this profile',
+    });
+  }
 
   const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
@@ -164,6 +183,26 @@ function buildInstanceData(
       }
     }
     base.config = config;
+  }
+
+  // Overview and stored field values are process-level content, so they travel
+  // with the process-settings flag alongside `config`.
+  if (include.processSettings) {
+    if (source.overview) {
+      const overview: InstanceOverview = { ...source.overview };
+      // The hero image lives under the SOURCE instance's storage prefix, and
+      // clearing it there deletes the object. Sharing the path would let
+      // either process break the other's banner.
+      delete overview.heroImage;
+
+      if (Object.keys(overview).length > 0) {
+        base.overview = overview;
+      }
+    }
+
+    if (source.fieldValues) {
+      base.fieldValues = source.fieldValues;
+    }
   }
 
   // Phases
