@@ -27,25 +27,22 @@ export function isValidCurrencyCode(code: unknown): code is string {
   return knownCurrencyCodes.has(code.toUpperCase());
 }
 
-function isPlainObject(value: unknown): value is { [key: string]: unknown } {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+// Partial: unvalidated drafts may hold half-filled money values.
+const partialMoneyAmountSchema = moneyAmountSchema.partial();
 
 /** The amount inside a stored money value, or `null` when absent/malformed. */
 export function getMoneyAmount(value: unknown): number | null {
-  if (!isPlainObject(value)) {
-    return null;
-  }
-  const amount = value.amount;
-  return typeof amount === 'number' && Number.isFinite(amount) ? amount : null;
+  const parsed = partialMoneyAmountSchema.safeParse(value);
+  const amount = parsed.success ? parsed.data.amount : undefined;
+  // zod rejects NaN but lets Infinity through
+  return amount !== undefined && Number.isFinite(amount) ? amount : null;
 }
 
 /** The currency inside a stored money value, when it is well-formed. */
 export function getMoneyCurrency(value: unknown): string | undefined {
-  if (!isPlainObject(value)) {
-    return undefined;
-  }
-  return isValidCurrencyCode(value.currency) ? value.currency : undefined;
+  const parsed = partialMoneyAmountSchema.safeParse(value);
+  const currency = parsed.success ? parsed.data.currency : undefined;
+  return isValidCurrencyCode(currency) ? currency : undefined;
 }
 
 // formatToParts, not string-stripping: locales with non-ASCII numerals would
