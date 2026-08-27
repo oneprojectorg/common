@@ -2,7 +2,6 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProposalStatus } from '@op/api/encoders';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
@@ -98,10 +97,7 @@ const MyBallotProposals = ({
               proposal={proposal}
               href={viewHref}
               selected
-              // The ballot is a list of picks, so a badge on every card would
-              // be noise — except for a proposal rejected after the vote, where
-              // silence would read as "still in the running".
-              showStatusBadge={proposal.status === ProposalStatus.REJECTED}
+              showStatusBadge={false}
               // `voteCount` is null until results are published — a bare
               // "0 Total Votes" then would misreport the tally, so the votes
               // row stays hidden (same rule as the funded-proposals tab).
