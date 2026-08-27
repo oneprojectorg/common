@@ -38,7 +38,7 @@ import { Spinner } from '@op/sense/Spinner';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { type ReactNode, Suspense, useMemo, useState } from 'react';
+import { type ReactNode, Suspense, useId, useMemo, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -52,11 +52,6 @@ import {
 
 /** Shared by both pickers, so a search can reach whatever the list can. */
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
-const MERGE_SEARCH_INPUT_ID = 'merge-proposal-search';
-
-/** `font-normal`/`leading-5` displace what `Label` sets on the "Merge into" one. */
-const MERGE_SECTION_HEADING_CLASSNAME =
-  'text-sm leading-5 font-normal text-muted-foreground';
 
 // Stable identities: Base UI re-renders every option when either changes.
 const getMergeCandidateLabel = (candidate: MergeCandidate) => candidate.title;
@@ -83,6 +78,9 @@ export function MergeProposalDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations();
+  // Figma hides the search field's own label: this heading names the input and
+  // the suggestion cards alike, so the input borrows it rather than adding one.
+  const mergeIntoHeadingId = useId();
   const [step, setStep] = useState<MergeStep>('select');
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -153,55 +151,47 @@ export function MergeProposalDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-116">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-144">
         <DialogHeader>
-          <DialogTitle className="text-center">
-            {step === 'select' ? t('Merge proposals') : t('Confirm merge')}
+          <DialogTitle>
+            {step === 'select' ? t('Merge proposal') : t('Confirm merge')}
           </DialogTitle>
         </DialogHeader>
 
         {step === 'select' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-0">
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
-              <DialogDescription>
+            <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-8 pb-10">
+              {/* Figma renders this at body colour, not the muted default. */}
+              <DialogDescription className="text-foreground">
                 {t.rich(
                   'Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.',
                   { name: sourceTitle, source },
                 )}
               </DialogDescription>
 
-              <section className="flex flex-col gap-2">
-                <h3 className={MERGE_SECTION_HEADING_CLASSNAME}>
-                  {t('Merging from')}
-                </h3>
+              <section className="flex flex-col gap-4">
+                <h3 className="font-serif text-label">{t('Merging from')}</h3>
                 <MergeProposalSummaryCard
                   proposal={proposal}
                   className="bg-muted"
                 />
               </section>
 
-              <Separator />
-
-              <Field>
-                <FieldLabel
-                  htmlFor={MERGE_SEARCH_INPUT_ID}
-                  className={MERGE_SECTION_HEADING_CLASSNAME}
-                >
+              {/* One heading over both pickers, per Figma: the field and the
+                  suggestions are two ways of answering "merge into what?". */}
+              <section className="flex flex-col gap-4">
+                <h3 id={mergeIntoHeadingId} className="font-serif text-label">
                   {t('Merge into')}
-                </FieldLabel>
+                </h3>
                 <MergeTargetSearchField
+                  labelledBy={mergeIntoHeadingId}
                   proposal={proposal}
                   searchTerm={searchTerm}
                   onSearchTermChange={setSearchTerm}
                   selected={target}
                   onSelect={handleSelect}
                 />
-              </Field>
 
-              <section className="flex flex-col gap-2">
-                <h3 className={MERGE_SECTION_HEADING_CLASSNAME}>
-                  {t('Suggested proposals')}
-                </h3>
                 {/* Scoped boundary: a failed list must leave the dialog usable. */}
                 <APIErrorBoundary
                   fallbacks={{
@@ -280,8 +270,9 @@ function ConfirmMergeStep({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0">
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
-        <DialogDescription>
+      <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-8 pb-10">
+        {/* Figma renders this at body colour, not the muted default. */}
+        <DialogDescription className="text-foreground">
           {t.rich(
             'Merge <source>{name}</source> into <source>{target}</source>.',
             {
@@ -309,11 +300,8 @@ function ConfirmMergeStep({
         <Field>
           <FieldLabel htmlFor="merge-note">
             {authorName
-              ? t('Add a note for {name}', { name: authorName })
-              : t('Add a note')}{' '}
-            <span className="font-normal text-muted-foreground">
-              {t('Optional')}
-            </span>
+              ? t('Add a note for {name} (optional)', { name: authorName })
+              : t('Add a note (optional)')}
           </FieldLabel>
           <Textarea
             id="merge-note"
@@ -348,7 +336,7 @@ function ConfirmMergeStep({
           onClick={onConfirm}
           loading={isMerging}
         >
-          {t('Confirm Merge')}
+          {t('Confirm merge')}
         </Button>
       </DialogFooter>
     </div>
@@ -361,12 +349,15 @@ function ConfirmMergeStep({
  * error line.
  */
 function MergeTargetSearchField({
+  labelledBy,
   proposal,
   searchTerm,
   onSearchTermChange,
   selected,
   onSelect,
 }: {
+  /** Id of the "Merge into" heading — Figma shows no label on the field. */
+  labelledBy: string;
   proposal: Proposal;
   searchTerm: string;
   onSearchTermChange: (term: string) => void;
@@ -413,8 +404,8 @@ function MergeTargetSearchField({
       onValueChange={onSelect}
     >
       <ComboboxInput
-        id={MERGE_SEARCH_INPUT_ID}
-        placeholder={t('Search proposals…')}
+        aria-labelledby={labelledBy}
+        placeholder={t('Search proposals')}
         showTrigger={false}
         onKeyDown={(event) => {
           // With the list closed Base UI reads Escape as "clear the field" and
@@ -632,6 +623,7 @@ function MergeCandidateListSuspense({
             }
           }}
           aria-label={t('Proposal to merge into')}
+          className="gap-4"
         >
           {candidates.map((candidate) => (
             <Field key={candidate.id} className="w-full">
@@ -702,9 +694,9 @@ function MergeProposalSummaryCard({
 
 function MergeCandidateListSkeleton() {
   return (
-    <div className="flex flex-col gap-2" aria-hidden>
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-32 w-full" />
+    <div className="flex flex-col gap-4" aria-hidden>
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-40 w-full" />
     </div>
   );
 }
