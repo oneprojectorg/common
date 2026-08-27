@@ -23,7 +23,6 @@ export const adminDecisionInstanceSchema = z.object({
   proposalCount: z.number(),
   totalProposalCount: z.number(),
   participantCount: z.number(),
-  instanceData: z.unknown(),
 });
 
 export type AdminDecisionInstance = z.infer<typeof adminDecisionInstanceSchema>;
@@ -95,6 +94,8 @@ export const adminDecisionInstanceDetailSchema = z.object({
   processType: z.string().nullable(),
   templateVersion: z.string().nullable(),
   config: adminDecisionConfigSchema,
+  /** Raw and unparsed - admins read shapes our schemas don't model. */
+  instanceData: z.unknown(),
   phases: z.array(adminDecisionPhaseSchema),
 });
 

@@ -153,6 +153,7 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.requireCollaborativeProposals ?? false,
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
+        instanceData: instance.instanceData,
         phases: (instanceData.phases ?? []).map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
