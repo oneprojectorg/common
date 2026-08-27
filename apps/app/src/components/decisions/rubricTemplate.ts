@@ -47,8 +47,7 @@ export type { RubricTemplateSchema };
 
 /**
  * Every criterion type the renderer understands. `money` is template-authored
- * for now — the builder cannot create or retype it (see `CRITERION_TYPES`).
- * TODO: make money builder-editable; until then it stays out of the selector.
+ * for now; TODO: make it builder-editable (see `CRITERION_TYPES`).
  */
 export type RubricCriterionType =
   | 'scored'
@@ -148,8 +147,7 @@ export function createCriterionJsonSchema(
   selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
-    // TODO: buildable once money is builder-editable; today the canonical
-    // shape (pinned currency) only comes from the process template.
+    // TODO: buildable once money is builder-editable
     case 'money':
       throw new Error('Money criteria are template-authored');
     case 'scored': {

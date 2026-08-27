@@ -16,12 +16,10 @@
  * }
  * ```
  *
- * `x-format: 'money'` alone selects the money renderer, so
- * {@link assertMoneyFieldSchemas} rejects a declared money field without this
- * exact shape at the persistence boundary. Totals are derived at render time,
- * never stored.
+ * `x-format: 'money'` selects the renderer; AJV validates answers against
+ * whatever the template declares, so authors must declare exactly this shape.
+ * Totals are derived at render time, never stored.
  */
-import { ValidationError } from '../../utils';
 import type { XFormatPropertySchema } from './types';
 
 // ---------------------------------------------------------------------------
@@ -34,7 +32,7 @@ export interface MoneyFieldAnswer {
   currency: string;
 }
 
-/** Reader fallback for unvalidated drafts and pre-guard templates. */
+/** Reader fallback for unvalidated drafts. */
 export const DEFAULT_MONEY_CURRENCY = 'USD';
 
 /** ISO 4217 codes are three letters. */
@@ -124,84 +122,4 @@ export function buildMoneyFieldAnswer(
     amount,
     currency: getMoneyFieldCurrency(schema) ?? DEFAULT_MONEY_CURRENCY,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Template-authoring guards
-// ---------------------------------------------------------------------------
-
-/**
- * Every declared money property must carry the exact storage shape documented
- * at the top of this file — AJV validates answers against the template, so
- * only this guard keeps a declared money field submittable.
- *
- * @throws ValidationError naming the offending property and requirement.
- */
-export function assertMoneyFieldSchemas(template: {
-  [key: string]: unknown;
-  properties?: Record<string, XFormatPropertySchema | boolean>;
-}): void {
-  for (const [key, definition] of Object.entries(template.properties ?? {})) {
-    if (!isSchemaObjectDefinition(definition)) {
-      continue;
-    }
-    if (!isMoneyFieldSchema(definition)) {
-      continue;
-    }
-
-    const problem = findMoneyFieldSchemaProblem(definition);
-    if (problem) {
-      throw new ValidationError(
-        `Money field "${key}" has an invalid schema: ${problem}`,
-        { [key]: problem },
-      );
-    }
-  }
-}
-
-/** The first shape requirement a money field breaks, or `undefined`. */
-function findMoneyFieldSchemaProblem(
-  schema: XFormatPropertySchema,
-): string | undefined {
-  if (schema.type !== 'object') {
-    return "type must be 'object'";
-  }
-
-  if (schema.additionalProperties !== false) {
-    return 'additionalProperties must be false';
-  }
-
-  const required = schema.required ?? [];
-  for (const key of ['amount', 'currency']) {
-    if (!required.includes(key)) {
-      return `required must include '${key}'`;
-    }
-  }
-
-  const amount = schema.properties?.amount;
-  if (!isSchemaObjectDefinition(amount)) {
-    return "an 'amount' property is required";
-  }
-  if (amount.type !== 'number') {
-    return "amount.type must be 'number'";
-  }
-  if (amount.minimum !== 0) {
-    return 'amount.minimum must be 0';
-  }
-
-  const currency = schema.properties?.currency;
-  if (!isSchemaObjectDefinition(currency)) {
-    return "a 'currency' property is required";
-  }
-  if (currency.type !== 'string') {
-    return "currency.type must be 'string'";
-  }
-  if (!isValidCurrencyCode(currency.const)) {
-    return 'currency.const must be a three-letter ISO 4217 code';
-  }
-  if (currency.default !== currency.const) {
-    return 'currency.default must equal currency.const';
-  }
-
-  return undefined;
 }

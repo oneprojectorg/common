@@ -25,7 +25,6 @@ import type {
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
-import { assertMoneyFieldSchemas } from './templateMoney';
 import type { RubricTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -101,16 +100,12 @@ export const updateDecisionInstance = async ({
   // Validate rubricTemplate is a structurally valid JSON Schema before persisting
   if (rubricTemplate !== undefined) {
     schemaValidator.validateJsonSchema(rubricTemplate);
-    // Semantic check AJV can't express: declared money fields must carry the
-    // exact storage shape, or reviewer answers would never validate.
-    assertMoneyFieldSchemas(rubricTemplate);
   }
 
   // Same validation for phase-level rubric templates (null = clear, skipped)
   for (const phase of phases ?? []) {
     if (phase.rubricTemplate != null) {
       schemaValidator.validateJsonSchema(phase.rubricTemplate);
-      assertMoneyFieldSchemas(phase.rubricTemplate);
     }
   }
 

@@ -14,8 +14,6 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-// Three money criteria plus a scored one, with opaque criterion ids as the
-// builder generates them.
 const DESIGN = 'a1b2c3d4';
 const CONSTRUCTION = 'e5f6a7b8';
 const CONTINGENCY = 'c9d0e1f2';
@@ -195,8 +193,6 @@ describe.concurrent('rubric money criteria', () => {
       ctx.onTestFinished,
     );
 
-    // `additionalProperties: false` is what makes the derived total
-    // unstorable — there is nowhere to smuggle it.
     await expect(
       caller.decision.submitReview({
         assignmentId: created.assignment.id,
@@ -287,8 +283,6 @@ describe.concurrent('rubric money criteria', () => {
       ctx.onTestFinished,
     );
 
-    // Drafts are deliberately unvalidated: a half-filled money answer and a
-    // completely missing required one both persist.
     const partial = {
       [DESIGN]: { amount: 120000, currency: 'USD' },
       [CONSTRUCTION]: { currency: 'USD' },
@@ -323,8 +317,6 @@ describe.concurrent('rubric money criteria', () => {
       },
     });
 
-    // Per-field notes need no new storage: the existing flat rationale map
-    // keys on the same criterion ids as the answers.
     expect(result.reviewData.rationales).toEqual(rationales);
 
     const stored = await db.query.proposalReviews.findFirst({

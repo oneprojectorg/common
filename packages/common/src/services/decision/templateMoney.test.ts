@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { ValidationError } from '../../utils';
 import { SchemaValidator } from './schemaValidator';
 import {
-  assertMoneyFieldSchemas,
   buildMoneyFieldAnswer,
   getMoneyAnswerAmount,
   getMoneyAnswerCurrency,
@@ -136,120 +134,6 @@ describe('buildMoneyFieldAnswer', () => {
       amount: 1,
       currency: 'USD',
     });
-  });
-});
-
-describe('assertMoneyFieldSchemas', () => {
-  function template(schema: XFormatPropertySchema): RubricTemplateSchema {
-    return { type: 'object', properties: { cost: schema } };
-  }
-
-  it('accepts the canonical money shape', () => {
-    expect(() =>
-      assertMoneyFieldSchemas(template(moneySchema())),
-    ).not.toThrow();
-  });
-
-  it('ignores properties that do not declare x-format money', () => {
-    expect(() =>
-      assertMoneyFieldSchemas(
-        template({ type: 'object', properties: { amount: {} } }),
-      ),
-    ).not.toThrow();
-  });
-
-  it('ignores boolean subschemas', () => {
-    expect(() =>
-      assertMoneyFieldSchemas({
-        type: 'object',
-        properties: { blocked: false },
-      }),
-    ).not.toThrow();
-  });
-
-  // Each omission below would persist a template whose money input either
-  // cannot be submitted or can store something the model forbids.
-  const unsafe: Array<[string, XFormatPropertySchema]> = [
-    ['a non-object type', { ...moneySchema(), type: 'number' }],
-    [
-      'a missing additionalProperties:false (a stored total becomes possible)',
-      { ...moneySchema(), additionalProperties: undefined },
-    ],
-    [
-      'additionalProperties:true',
-      { ...moneySchema(), additionalProperties: true },
-    ],
-    ['an unrequired amount', { ...moneySchema(), required: ['currency'] }],
-    ['an unrequired currency', { ...moneySchema(), required: ['amount'] }],
-    [
-      'a missing amount property',
-      {
-        ...moneySchema(),
-        properties: {
-          currency: { type: 'string', const: 'USD', default: 'USD' },
-        },
-      },
-    ],
-    [
-      'an integer amount',
-      {
-        ...moneySchema(),
-        properties: {
-          amount: { type: 'integer', minimum: 0 },
-          currency: { type: 'string', const: 'USD', default: 'USD' },
-        },
-      },
-    ],
-    [
-      'an amount without minimum 0',
-      {
-        ...moneySchema(),
-        properties: {
-          amount: { type: 'number' },
-          currency: { type: 'string', const: 'USD', default: 'USD' },
-        },
-      },
-    ],
-    [
-      'a missing currency property (the renderer would store an extra key)',
-      moneySchema({ currency: null }),
-    ],
-    [
-      'a missing currency const',
-      {
-        ...moneySchema(),
-        properties: {
-          amount: { type: 'number', minimum: 0 },
-          currency: { type: 'string', default: 'USD' },
-        },
-      },
-    ],
-    [
-      'a currency const that is not a valid ISO code',
-      {
-        ...moneySchema(),
-        properties: {
-          amount: { type: 'number', minimum: 0 },
-          currency: { type: 'string', const: 'US$', default: 'US$' },
-        },
-      },
-    ],
-    [
-      'a currency default disagreeing with its const',
-      {
-        ...moneySchema(),
-        properties: {
-          amount: { type: 'number', minimum: 0 },
-          currency: { type: 'string', const: 'USD', default: 'EUR' },
-        },
-      },
-    ],
-  ];
-
-  it.each(unsafe)('rejects %s', (_label, schema) => {
-    expect(() => assertMoneyFieldSchemas(template(schema))).toThrow(
-      ValidationError,
-    );
   });
 });
 

@@ -43,9 +43,7 @@ export interface XFormatPropertySchema extends JSONSchema7 {
   /** Default map camera for `location` fields (see {@link MapDefaultView}). */
   'x-map-default'?: MapDefaultView;
   /**
-   * Nested subschemas. Keeps JSON Schema 7's definition union — a boolean
-   * subschema (`{ blocked: false }`) stays legal — while letting nested
-   * properties carry the same vendor extensions. Readers must narrow with
+   * Nested subschemas keep JSON Schema 7's boolean union; narrow with
    * `isSchemaObjectDefinition` before touching keywords.
    */
   properties?: Record<string, XFormatPropertySchema | boolean>;

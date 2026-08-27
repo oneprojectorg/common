@@ -425,9 +425,8 @@ function FeedbackToAuthorField({
 }
 
 /**
- * Amount input for a money criterion. The currency is template-pinned and
- * stamped into the stored answer at fill time; clearing the input drops the
- * answer key entirely rather than storing a currency-only object.
+ * Amount input for a money criterion. The template-pinned currency is stamped
+ * into the answer at fill time; clearing the input drops the answer key.
  */
 function MoneyFieldInput({
   field,
@@ -442,14 +441,12 @@ function MoneyFieldInput({
 }) {
   const t = useTranslations();
 
-  // Show the currency that will be stored (the template's), not a stale draft's.
   const currency =
     getMoneyFieldCurrency(field.schema) ?? DEFAULT_MONEY_CURRENCY;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   return (
     <NumberField
-      // An untitled money field still needs a real label.
       label={field.schema.title || t('Amount')}
       description={field.schema.description}
       required={required}
@@ -685,10 +682,9 @@ function parseSelectedValue(
   return selected;
 }
 
-/** Currency symbol via Intl, never a hand-rolled map. */
+// formatToParts, not string-stripping: locales with non-ASCII numerals would
+// leave digits behind in the prefix.
 function getCurrencySymbol(currency: string): string {
-  // formatToParts, not string-stripping: locales with non-ASCII numerals
-  // (e.g. Eastern Arabic) would leave digits behind in the prefix.
   const part = new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
