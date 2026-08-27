@@ -31,6 +31,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { InputGroupAddon } from '@op/sense/InputGroup';
 import { ProposalCard } from '@op/sense/ProposalCard';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Spinner } from '@op/sense/Spinner';
@@ -665,27 +666,39 @@ function MergeCandidateListSuspense({
           </EmptyHeader>
         </Empty>
       ) : (
-        <ul
+        <RadioGroup
+          // Never holds a value: picking swaps this list out for the picked card.
+          value={null}
+          onValueChange={(value) => {
+            const candidate = candidates.find((item) => item.id === value);
+            if (candidate) {
+              onSelect(candidate);
+            }
+          }}
           aria-label={t('Proposal to merge into')}
-          className="flex flex-col gap-4"
+          className="gap-4"
         >
           {candidates.map((candidate) => (
-            <li key={candidate.id}>
-              {/* `bare` keeps button semantics and the focus ring without
-                  imposing button paint — the card is the whole hit area. */}
-              <Button
-                variant="bare"
-                className="w-full whitespace-normal"
-                onClick={() => onSelect(candidate)}
+            <Field key={candidate.id} className="w-full">
+              {/* No radio dot in Figma: the card is the label, the hidden radio
+                  keeps the keyboard semantics. */}
+              <RadioGroupItem
+                id={`merge-target-${candidate.id}`}
+                value={candidate.id}
+                className="sr-only"
+              />
+              <FieldLabel
+                htmlFor={`merge-target-${candidate.id}`}
+                className="w-full font-normal"
               >
                 <MergeProposalSummaryCard
                   proposal={candidate.proposal}
                   showDescription
                 />
-              </Button>
-            </li>
+              </FieldLabel>
+            </Field>
           ))}
-        </ul>
+        </RadioGroup>
       )}
 
       {/* The sentinel's padding is load-bearing: a zero-height target can never
