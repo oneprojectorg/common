@@ -2,6 +2,7 @@ import {
   type SQL,
   and,
   asc,
+  count,
   db,
   desc,
   eq,
@@ -126,15 +127,21 @@ export const getRoles = async (params?: {
   const shouldIncludeMemberCounts = includeMemberCounts && !!profileId;
 
   // The role junction's accessRoleId index bounds the correlated lookup.
-  const memberCountExpr = (accessRoleCols: typeof accessRoles) => sql<number>`(
-    SELECT COUNT(*)::int
-    FROM ${profileUserToAccessRoles}
-    INNER JOIN ${profileUsers}
-      ON ${profileUsers.id} = ${profileUserToAccessRoles.profileUserId}
-    WHERE ${profileUserToAccessRoles.accessRoleId} = ${accessRoleCols.id}
-      AND ${profileUsers.profileId} = ${profileId}
-      AND ${excludeGlobalUsers(profileUsers.authUserId)}
-  )`;
+  const memberCountSubquery = (accessRoleCols: typeof accessRoles) =>
+    db
+      .select({ count: count() })
+      .from(profileUserToAccessRoles)
+      .innerJoin(
+        profileUsers,
+        eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+      )
+      .where(
+        and(
+          eq(profileUserToAccessRoles.accessRoleId, accessRoleCols.id),
+          eq(profileUsers.profileId, profileId!),
+          excludeGlobalUsers(profileUsers.authUserId),
+        ),
+      );
 
   // Use join-based query when zoneName is provided for DB-level filtering
   if (zoneName) {
@@ -145,7 +152,7 @@ export const getRoles = async (params?: {
         description: accessRoles.description,
         permission: accessRolePermissionsOnAccessZones.permission,
         ...(shouldIncludeMemberCounts && {
-          memberCount: memberCountExpr(accessRoles),
+          memberCount: sql<number>`(${memberCountSubquery(accessRoles)})`,
         }),
       })
       .from(accessRoles)
@@ -208,7 +215,7 @@ export const getRoles = async (params?: {
     extras: {
       memberCount: (table, { sql: sqlOp }) =>
         shouldIncludeMemberCounts
-          ? sqlOp<number>`${memberCountExpr(table)}`.as('member_count')
+          ? sqlOp<number>`(${memberCountSubquery(table)})`.as('member_count')
           : sqlOp<number>`0`.as('member_count'),
     },
     limit: limit + 1,
