@@ -148,7 +148,6 @@ export function ReviewPage({
       <ReviewAssignmentsPanel
         processInstanceId={instance.id}
         phaseId={currentPhase.phaseId}
-        phaseName={currentPhase.name ?? currentPhase.phaseId}
       />
     </TabsContent>
   );
