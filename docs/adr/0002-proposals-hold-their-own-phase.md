@@ -59,6 +59,9 @@ it has to be replaced rather than removed. Three questions hide behind one read:
 | May I review or vote on _this_ proposal? | the proposal | that proposal's phase, and its window       |
 | What am I looking at?                    | the view     | an explicit phase in the route              |
 
+The first two are back-end questions and are decided here; the third is a
+front-end question and is not.
+
 Each individual check gets simpler. `isReviewPhase(phase)` and
 `isVotingPhase(phase)` already take a phase rather than a cursor — today they are
 handed whichever phase the cursor names. Afterwards the review and vote checks
@@ -84,9 +87,11 @@ every `isPhaseAtOrBefore` and `hasPhaseEnded` gate.
 So: three entangled axes — phase identity, where membership lives, and whether
 phases may be open at the same time.
 
-Scope is `@op/common`'s decision services, the `decision_*` tables, the tRPC
-decision routers and the decision UI. `current_state_id` is read in ~220 places.
-Legacy instances (`isLegacyInstanceData`) bypass phase scoping and stay out.
+This ADR decides the **back end**: `@op/common`'s decision services, the
+`decision_*` tables and the tRPC decision routers. `current_state_id` is read in
+~220 places. Legacy instances (`isLegacyInstanceData`) bypass phase scoping and
+stay out. The front end changes substantially too — noted under Consequences,
+decided elsewhere.
 
 ### Axis 1: should phases be entities?
 
@@ -160,8 +165,12 @@ The flag subsumes the mode — every phase exclusive **is** today's behaviour �
 the backfill sets `exclusive = true` everywhere and nothing changes until an
 instance opts out.
 
-Phases already carry `startDate` and `endDate`; what is missing is anything
-driving `state` from them.
+The window does the rest of the work. Phases already carry `startDate` and
+`endDate`; what is missing is that nothing consults them. Gate every capability
+on `rules ∧ inside the window`, and a voting phase is simply shut until its start
+date and shut again after its end date — no separate pause mechanism, and no
+transition needed to open it. `state` stays for the cases the calendar cannot
+express: a phase with no dates, or one closed early by an admin.
 
 ## Decision
 
@@ -186,9 +195,10 @@ end_date, state, exclusive)`, unique on `(process_instance_id, phase_id)`.
 5. Split capability resolution along the table above. Intake reads the open
    phases; review and vote checks read `proposal.phase_id`. `createProposal`
    takes an explicit `phaseId`.
-6. Adopt `exclusive` as a per-phase flag rather than an instance mode, and drive
-   `state` from `start_date` / `end_date` so a voting window opens and closes on
-   schedule. Backfill `exclusive = true`.
+6. Gate every phase capability on `rules ∧ window ∧ state != closed`, so
+   `start_date` / `end_date` alone open and close a voting window. Adopt
+   `exclusive` as a per-phase flag rather than an instance mode, backfilled to
+   `true`.
 7. Rewrite `getProposalsForPhase.ts` against `phase_id`. Backfill non-legacy
    instances with today's derivation, then delete the window resolver. Legacy
    instances keep `phase_id NULL`.
@@ -213,13 +223,15 @@ flowchart LR
     T1["<b>Tranche 1</b><br/>Phase lifecycle<br/>replaces the cursor"]
     T2["<b>Tranche 2</b><br/>Membership becomes<br/>a column"]
     T3["<b>Tranche 3</b><br/>Independent movement<br/><i>behaviour changes here</i>"]
-    T4["<b>Tranche 4</b><br/>UI for multiple<br/>live phases"]
+    T4["<b>Front end</b><br/>multiple live phases<br/><i>out of scope</i>"]
     T0 --> T1 --> T2 --> T3 --> T4
     T2 -.->|"once the API shape is fixed"| T4
     classDef safe fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
     classDef live fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef out fill:#f5f5f5,stroke:#9e9e9e,color:#616161
     class T0,T1,T2 safe
-    class T3,T4 live
+    class T3 live
+    class T4 out
 ```
 
 0. **Phases become entities.** Add the table, `EntityType.PHASE` and a profile
@@ -233,13 +245,13 @@ flowchart LR
 2. **Membership becomes a column.** Add `phase_id`, `phase_entered_at` and the
    transitions table. Backfill with today's derivation, shadow-read both and log
    divergence, then cut over and delete the window resolver.
-3. **Independent movement.** Add `exclusive` and schedule-driven `state`, then
-   relax the one-open-phase invariant to one open _exclusive_ phase. Add the
-   batch move, per-batch side effects, results as explicit close, and the
-   explicit `phaseId` on `createProposal`.
-4. **UI for multiple live phases.** Phase in the route, a landing rule, and a
-   target picker when intake is open in more than one phase. Needs its own
-   design pass; can start alongside tranche 3 once the API shape is fixed.
+3. **Independent movement.** Add `exclusive` and window gating, then relax the
+   one-open-phase invariant to one open _exclusive_ phase. Add the batch move,
+   per-batch side effects, results as explicit close, and the explicit `phaseId`
+   on `createProposal`.
+
+Front-end work is a fourth tranche, out of scope here. It can start alongside
+tranche 3 once the API shape is fixed.
 
 Tranches 0–2 are behaviour-preserving and independently revertable. Every
 migration and backfill bakes in production before anything user-visible changes.
@@ -274,15 +286,21 @@ Backfill touches every non-legacy instance, and the ~220 `current_state_id` read
 each need a judgement about whether they ask about a proposal or the instance — a
 distinction the code does not currently draw.
 
-The UI loses its single answer to "what phase is this decision in".
-`DecisionStateRouter` routes the whole decision off the current phase and
-`DecisionProcessStepper` renders one active step; both need a model where several
-phases are live. That is a design question, not a refactor, and the largest piece
+**Front-end changes to consider, not decided here.** The UI loses its single
+answer to "what phase is this decision in": `DecisionStateRouter` routes the
+whole decision off the current phase and `DecisionProcessStepper` renders one
+active step, and both need a model where several phases are live. Beyond that,
+the phase has to enter the route with a landing rule, intake needs a target
+picker when more than one phase accepts proposals, and the voting window becomes
+a first-class UI state — countdowns before the start date, a live indicator
+inside it, a closed state after. That is a design question and the largest piece
 of work this creates.
 
 Scheduled transitions (`decision_process_transitions.scheduled_date`) become
-per-phase open/close rather than instance-wide clock ticks, which is what makes a
-fixed voting window expressible.
+per-phase open/close rather than instance-wide clock ticks. Because the window is
+consulted on every capability check, a voting phase opens and closes on its dates
+with no job to run and no transition to fire, and the same dates tell the client
+when voting has started.
 
 `createProposal` gains a required-in-practice `phaseId`, and the client has to
 supply it — a breaking input change, mitigated by defaulting to the sole open
