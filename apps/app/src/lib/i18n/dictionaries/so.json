@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "Dhammaan soo jeedimaha horey ayaa loo qoonday dib-u-eegahan.",
   "Unassign \"{title}\" from {name}": "\"{title}\" ka saar qoondada {name}",
   "No reviewers yet": "Weli ma jiraan dib-u-eegayaal",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "Dadka sii doorka dib-u-eegaha, halkan ayay ka soo muuqan doonaan, diyaar u ah inay qaataan soo jeedimo."
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "Dadka sii doorka dib-u-eegaha, halkan ayay ka soo muuqan doonaan, diyaar u ah inay qaataan soo jeedimo.",
+  "Reviewers": "Dib-u-eegayaal"
 }

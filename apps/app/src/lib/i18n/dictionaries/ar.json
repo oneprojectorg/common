@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "تم تعيين جميع المقترحات لهذا المراجع بالفعل.",
   "Unassign \"{title}\" from {name}": "إلغاء تعيين \"{title}\" من {name}",
   "No reviewers yet": "لا يوجد مراجعون بعد",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "امنح الأشخاص دور المراجع وسيظهرون هنا جاهزين لاستلام المقترحات."
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "امنح الأشخاص دور المراجع وسيظهرون هنا جاهزين لاستلام المقترحات.",
+  "Reviewers": "المراجعون"
 }

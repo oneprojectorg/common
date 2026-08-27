@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "Toutes les propositions sont déjà attribuées à cet évaluateur.",
   "Unassign \"{title}\" from {name}": "Retirer l’attribution de « {title} » à {name}",
   "No reviewers yet": "Aucun évaluateur pour l’instant",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "Donnez aux personnes le rôle d’évaluateur et elles apparaîtront ici, prêtes à recevoir des propositions."
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "Donnez aux personnes le rôle d’évaluateur et elles apparaîtront ici, prêtes à recevoir des propositions.",
+  "Reviewers": "Évaluateurs"
 }

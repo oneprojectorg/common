@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "Már minden javaslat hozzá van rendelve ehhez az értékelőhöz.",
   "Unassign \"{title}\" from {name}": "„{title}” hozzárendelésének megszüntetése tőle: {name}",
   "No reviewers yet": "Még nincsenek értékelők",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "Adjon értékelő szerepkört a felhasználóknak, és itt jelennek meg, készen a javaslatok fogadására."
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "Adjon értékelő szerepkört a felhasználóknak, és itt jelennek meg, készen a javaslatok fogadására.",
+  "Reviewers": "Értékelők"
 }

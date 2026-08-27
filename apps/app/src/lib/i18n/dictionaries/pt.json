@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "Todas as propostas já estão atribuídas a este revisor.",
   "Unassign \"{title}\" from {name}": "Remover a atribuição de \"{title}\" a {name}",
   "No reviewers yet": "Ainda não há revisores",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "Dê às pessoas o papel de revisor e elas aparecerão aqui, prontas para receber propostas."
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "Dê às pessoas o papel de revisor e elas aparecerão aqui, prontas para receber propostas.",
+  "Reviewers": "Revisores"
 }

@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "প্রতিটি প্রস্তাবনা ইতিমধ্যে এই পর্যালোচককে নিয়োগ করা হয়েছে।",
   "Unassign \"{title}\" from {name}": "{name}-এর কাছ থেকে \"{title}\"-এর নিয়োগ বাতিল করুন",
   "No reviewers yet": "এখনও কোনো পর্যালোচক নেই",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "লোকেদের পর্যালোচকের ভূমিকা দিন, তারা এখানে দেখা যাবে এবং প্রস্তাবনা নিতে প্রস্তুত থাকবে।"
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "লোকেদের পর্যালোচকের ভূমিকা দিন, তারা এখানে দেখা যাবে এবং প্রস্তাবনা নিতে প্রস্তুত থাকবে।",
+  "Reviewers": "পর্যালোচকগণ"
 }

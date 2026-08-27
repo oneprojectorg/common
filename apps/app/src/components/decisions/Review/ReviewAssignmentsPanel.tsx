@@ -139,9 +139,7 @@ function ReviewAssignmentsPanelContent({
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <ReviewersTable rows={rows} onOpen={setOpenReviewerId} />
-        </div>
+        <ReviewersTable rows={rows} onOpen={setOpenReviewerId} />
       )}
 
       {openReviewer ? (
@@ -170,7 +168,9 @@ function ReviewersTable({
   const t = useTranslations();
 
   return (
-    <Table>
+    // Bare like the advance screen's SelectableProposalsTable: the Table
+    // primitive already brings the overflow container and row dividers.
+    <Table aria-label={t('Reviewers')} className="w-full">
       <TableHeader>
         <TableRow>
           <TableHead>{t('Reviewer')}</TableHead>
@@ -278,7 +278,7 @@ function ReviewAssignmentsPanelSkeleton() {
   return (
     <div className="flex flex-col gap-4">
       <Skeleton className="h-5 w-72" />
-      <div className="flex flex-col gap-2 rounded-md border p-4">
+      <div className="flex flex-col gap-2">
         {Array.from({ length: 4 }).map((_, index) => (
           <Skeleton key={index} className="h-10 w-full" />
         ))}

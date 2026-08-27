@@ -1688,5 +1688,6 @@
   "Every proposal is already assigned to this reviewer.": "Every proposal is already assigned to this reviewer.",
   "Unassign \"{title}\" from {name}": "Unassign \"{title}\" from {name}",
   "No reviewers yet": "No reviewers yet",
-  "Give people the reviewer role and they will appear here, ready to take proposals.": "Give people the reviewer role and they will appear here, ready to take proposals."
+  "Give people the reviewer role and they will appear here, ready to take proposals.": "Give people the reviewer role and they will appear here, ready to take proposals.",
+  "Reviewers": "Reviewers"
 }
