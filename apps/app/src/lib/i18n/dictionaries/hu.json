@@ -1645,7 +1645,6 @@
   "{source} has now been merged with {target}": "A(z) {source} összevonása a(z) {target} javaslattal megtörtént",
   "Reject proposal": "Javaslat elutasítása",
   "Rejecting...": "Elutasítás...",
-  "This removes the proposal from voting, review, and the proposal list. Only admins will still see it. You can undo this afterwards.": "Ezzel a javaslat kikerül a szavazásból, az értékelésből és a javaslatlistából. Csak az adminisztrátorok látják majd. A műveletet később visszavonhatja.",
   "Proposal rejected": "A javaslatot elutasítottuk",
   "Could not reject this proposal. Please try again.": "Nem sikerült elutasítani ezt a javaslatot. Kérjük, próbálja újra.",
   "Rejected": "Elutasítva",
@@ -1698,5 +1697,14 @@
   "{submitted} out of {assigned} assigned reviews are submitted": "A {assigned} kiosztott értékelés közül {submitted} beadva",
   "{submitted}/{assigned} reviews": "{submitted}/{assigned} értékelés",
   "{created, plural, one {# review assignment created} other {# review assignments created}} · {removed, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{created, plural, one {# értékelési feladat létrehozva} other {# értékelési feladat létrehozva}} · {removed, plural, one {# javaslat kiosztása visszavonva} other {# javaslat kiosztása visszavonva}}",
-  "No changes were needed.": "Nem volt szükség módosításra."
+  "No changes were needed.": "Nem volt szükség módosításra.",
+  "Reason": "Indok",
+  "rejectionReason_ineligible": "Nem támogatható",
+  "rejectionReason_duplicate": "Duplikátum",
+  "rejectionReason_offTopic": "Nem kapcsolódik a témához",
+  "rejectionReason_infeasible": "Nem megvalósítható",
+  "Note to proposal author": "Üzenet a javaslat szerzőjének",
+  "Write an optional note to the proposal author here": "Írjon ide egy nem kötelező üzenetet a javaslat szerzőjének",
+  "The author will receive this note as soon as you reject.": "A szerző azonnal megkapja ezt az üzenetet, amint elutasítja a javaslatot.",
+  "Reject & send note": "Elutasítás és üzenet küldése"
 }

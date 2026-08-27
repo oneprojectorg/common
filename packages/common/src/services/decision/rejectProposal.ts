@@ -6,7 +6,6 @@ import { permission } from 'access-zones';
 import { CommonError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
-import type { RejectProposalInput } from './schemas/rejectProposal';
 
 export type RejectProposalResult = {
   processInstanceId: string;
@@ -27,11 +26,18 @@ export type RejectProposalResult = {
  * do NOT set `lastEditedByProfileId` here — recording who rejected is deferred
  * (ONE-931), and the incidental crumb would cost an extra caller lookup for a
  * value any later edit overwrites.
+ *
+ * The dialog also collects a reason and an optional note. Neither has a column
+ * yet, so neither reaches this function — the router carries both to the
+ * rejection email instead.
  */
 export async function rejectProposal({
   proposalId,
   user,
-}: RejectProposalInput & { user: User }): Promise<RejectProposalResult> {
+}: {
+  proposalId: string;
+  user: User;
+}): Promise<RejectProposalResult> {
   const context = await getProposalAccessContext(proposalId);
 
   await assertProfileAccess({

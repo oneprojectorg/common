@@ -1,17 +1,21 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { Proposal } from '@op/common/client';
+import type { Proposal, RejectionReason } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 
 export interface ProposalRejectionActions {
   /**
-   * Reject the proposal. `onSuccess` runs after it resolves — e.g. the confirm
+   * Reject the proposal. The reason and note reach the author's rejection email
+   * only — nothing stores them. `onSuccess` runs after it resolves — e.g. the
    * dialog uses it to close itself.
    */
-  reject: (options?: { onSuccess?: () => void }) => void;
+  reject: (
+    input: { reason: RejectionReason; note: string },
+    options?: { onSuccess?: () => void },
+  ) => void;
   /** Restore a rejected proposal to the active pool. */
   unreject: () => void;
   isRejecting: boolean;
@@ -58,9 +62,9 @@ export function useProposalRejectionActions(
   });
 
   return {
-    reject: (options) =>
+    reject: ({ reason, note }, options) =>
       rejectMutation.mutate(
-        { proposalId: proposal.id },
+        { proposalId: proposal.id, reason, note },
         { onSuccess: options?.onSuccess },
       ),
     unreject,

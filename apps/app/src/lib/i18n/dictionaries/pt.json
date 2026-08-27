@@ -1579,7 +1579,6 @@
   "{source} has now been merged with {target}": "{source} já foi combinada com {target}",
   "Reject proposal": "Rejeitar proposta",
   "Rejecting...": "Rejeitando...",
-  "This removes the proposal from voting, review, and the proposal list. Only admins will still see it. You can undo this afterwards.": "Isso remove a proposta da votação, da revisão e da lista de propostas. Apenas os administradores continuarão a vê-la. Você pode desfazer isso depois.",
   "Proposal rejected": "Proposta rejeitada",
   "Could not reject this proposal. Please try again.": "Não foi possível rejeitar esta proposta. Tente novamente.",
   "Rejected": "Rejeitada",
@@ -1698,5 +1697,14 @@
   "{submitted} out of {assigned} assigned reviews are submitted": "{submitted} de {assigned} avaliações atribuídas foram enviadas",
   "{submitted}/{assigned} reviews": "{submitted}/{assigned} avaliações",
   "{created, plural, one {# review assignment created} other {# review assignments created}} · {removed, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{created, plural, one {# atribuição de revisão criada} other {# atribuições de revisão criadas}} · {removed, plural, one {# proposta desatribuída} other {# propostas desatribuídas}}",
-  "No changes were needed.": "Não foi necessária nenhuma alteração."
+  "No changes were needed.": "Não foi necessária nenhuma alteração.",
+  "Reason": "Motivo",
+  "rejectionReason_ineligible": "Inelegível",
+  "rejectionReason_duplicate": "Duplicada",
+  "rejectionReason_offTopic": "Fora do tema",
+  "rejectionReason_infeasible": "Inviável",
+  "Note to proposal author": "Nota para o autor da proposta",
+  "Write an optional note to the proposal author here": "Escreva aqui uma nota opcional para o autor da proposta",
+  "The author will receive this note as soon as you reject.": "O autor receberá esta nota assim que você rejeitar a proposta.",
+  "Reject & send note": "Rejeitar e enviar nota"
 }

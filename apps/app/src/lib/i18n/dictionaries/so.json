@@ -1579,7 +1579,6 @@
   "{source} has now been merged with {target}": "{source} hadda waa lala biiriyay {target}",
   "Reject proposal": "Diid soo jeedinta",
   "Rejecting...": "Waa la diidayaa...",
-  "This removes the proposal from voting, review, and the proposal list. Only admins will still see it. You can undo this afterwards.": "Tani waxay soo jeedinta ka saartaa codaynta, dib-u-eegista, iyo liiska soo jeedinta. Kaliya maamulayaashu ayaa weli arki doona. Waxaad markadambe ka noqon kartaa.",
   "Proposal rejected": "Soo jeedinta waa la diiday",
   "Could not reject this proposal. Please try again.": "Lama diidi karin soo jeedintan. Fadlan mar kale isku day.",
   "Rejected": "La diiday",
@@ -1698,5 +1697,14 @@
   "{submitted} out of {assigned} assigned reviews are submitted": "{submitted} ka mid {assigned} dib-u-eegis la qoondeeyay ayaa la gudbiyay",
   "{submitted}/{assigned} reviews": "{submitted}/{assigned} dib-u-eegis",
   "{created, plural, one {# review assignment created} other {# review assignments created}} · {removed, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{created, plural, one {# qoondo dib-u-eegis ah la sameeyay} other {# qoondo dib-u-eegis ah la sameeyay}} · {removed, plural, one {# soo-jeedin laga qaaday} other {# soo-jeedin laga qaaday}}",
-  "No changes were needed.": "Wax isbeddel looma baahnayn."
+  "No changes were needed.": "Wax isbeddel looma baahnayn.",
+  "Reason": "Sababta",
+  "rejectionReason_ineligible": "Uma qalmo",
+  "rejectionReason_duplicate": "Nuqul",
+  "rejectionReason_offTopic": "Mowduuca ka baxsan",
+  "rejectionReason_infeasible": "Aan suurtogal ahayn",
+  "Note to proposal author": "Qoraal loo diro qoraaga soo jeedinta",
+  "Write an optional note to the proposal author here": "Halkan ku qor qoraal ikhtiyaari ah oo loogu talagalay qoraaga soo jeedinta",
+  "The author will receive this note as soon as you reject.": "Qoraagu wuxuu heli doonaa qoraalkan isla marka aad diiddo soo jeedinta.",
+  "Reject & send note": "Diid oo dir qoraalka"
 }

@@ -1,5 +1,5 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
-import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
+import { PROPOSAL_SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -357,6 +357,7 @@ describe.concurrent('listProposals', () => {
 
     await adminCaller.decision.rejectProposal({
       proposalId: rejectedProposal.id,
+      reason: RejectionReason.INELIGIBLE,
     });
 
     const [memberResult, adminResult] = await Promise.all([
@@ -408,6 +409,7 @@ describe.concurrent('listProposals', () => {
     });
     await adminCaller.decision.rejectProposal({
       proposalId: rejectedProposal.id,
+      reason: RejectionReason.INELIGIBLE,
     });
 
     // No-JWT caller — substituted to GLOBAL_USER_PUBLIC by the access layer.
@@ -458,6 +460,7 @@ describe.concurrent('listProposals', () => {
     ]);
     await adminCaller.decision.rejectProposal({
       proposalId: rejectedProposal.id,
+      reason: RejectionReason.INELIGIBLE,
     });
 
     await testData.advancePhase({
@@ -523,7 +526,10 @@ describe.concurrent('listProposals', () => {
     ]);
 
     await adminCaller.decision.submitProposal({ proposalId: proposal.id });
-    await adminCaller.decision.rejectProposal({ proposalId: proposal.id });
+    await adminCaller.decision.rejectProposal({
+      proposalId: proposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
     await adminCaller.decision.unrejectProposal({ proposalId: proposal.id });
 
     // Back to SUBMITTED, so a non-admin sees it in the list again.

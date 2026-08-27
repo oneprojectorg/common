@@ -1,27 +1,52 @@
 'use client';
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@op/sense/AlertDialog';
+  REJECTION_NOTE_MAX_LENGTH,
+  RejectionReason,
+  rejectionReasonSchema,
+} from '@op/common/client';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { Textarea } from '@op/sense/Textarea';
+import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 /**
- * Reject-proposal confirmation, shared by the card kebab and the proposal-page
- * overflow menu. Presentational: the caller owns the reject mutation (via
+ * Keyed on the enum rather than on the English label: the plain `Duplicate` key
+ * is already the decision list's *verb* ("make a copy"), which every
+ * non-English dictionary translates as one. `satisfies` is what makes a new
+ * reason fail to compile until it has copy.
+ */
+const REJECTION_REASON_LABEL_KEYS = {
+  [RejectionReason.INELIGIBLE]: 'rejectionReason_ineligible',
+  [RejectionReason.DUPLICATE]: 'rejectionReason_duplicate',
+  [RejectionReason.OFF_TOPIC]: 'rejectionReason_offTopic',
+  [RejectionReason.INFEASIBLE]: 'rejectionReason_infeasible',
+} as const satisfies Record<RejectionReason, string>;
+
+/**
+ * Reject-proposal form, shared by the card kebab and the proposal-page overflow
+ * menu. Presentational: the caller owns the reject mutation (via
  * {@link useProposalRejectionActions}) and passes `onConfirm` + its pending
  * state, so the toast-with-undo and the menu's Undo item stay on one code path.
  *
- * Rejecting drops the proposal from voting, review, and the default list,
- * leaving it visible only to admins on the proposal list — and it's reversible
- * from the same menu, so this stays a light confirm rather than a reason form.
+ * Neither the reason nor the note is stored — both exist to reach the author's
+ * rejection email, which is why the confirm button says so.
  */
 export const RejectProposalDialog = ({
   open,
@@ -31,33 +56,105 @@ export const RejectProposalDialog = ({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (input: { reason: RejectionReason; note: string }) => void;
   isPending: boolean;
 }) => {
   const t = useTranslations();
+  // One dialog per proposal card, so the radio and textarea ids must not collide.
+  const fieldId = useId();
+  const [reason, setReason] = useState<RejectionReason | null>(null);
+  const [note, setNote] = useState('');
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      // The content unmounts, so state would otherwise survive into the next open.
+      setReason(null);
+      setNote('');
+    }
+    onOpenChange(nextOpen);
+  };
+
+  // The confirm button is disabled without a reason; this is the type's half.
+  const handleConfirm = () => {
+    if (reason) {
+      onConfirm({ reason, note });
+    }
+  };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t('Reject proposal')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t(
-              'This removes the proposal from voting, review, and the proposal list. Only admins will still see it. You can undo this afterwards.',
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            onClick={onConfirm}
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('Reject proposal')}</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+          <FieldSet>
+            <FieldLegend variant="label" id={`${fieldId}-reason`}>
+              {t('Reason')}
+            </FieldLegend>
+            {/* A `legend` names the fieldset, not the `radiogroup` nested in it. */}
+            <RadioGroup
+              aria-labelledby={`${fieldId}-reason`}
+              value={reason}
+              onValueChange={(value) => {
+                const parsed = rejectionReasonSchema.safeParse(value);
+
+                if (parsed.success) {
+                  setReason(parsed.data);
+                }
+              }}
+            >
+              {Object.values(RejectionReason).map((value) => (
+                <Field key={value} orientation="horizontal">
+                  <RadioGroupItem id={`${fieldId}-${value}`} value={value} />
+                  <FieldLabel htmlFor={`${fieldId}-${value}`}>
+                    {t(REJECTION_REASON_LABEL_KEYS[value])}
+                  </FieldLabel>
+                </Field>
+              ))}
+            </RadioGroup>
+          </FieldSet>
+
+          <Field>
+            <FieldLabel htmlFor={`${fieldId}-note`}>
+              {t('Note to proposal author')}
+            </FieldLabel>
+            <Textarea
+              id={`${fieldId}-note`}
+              value={note}
+              maxLength={REJECTION_NOTE_MAX_LENGTH}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={t(
+                'Write an optional note to the proposal author here',
+              )}
+              className="min-h-24"
+            />
+            <FieldDescription>
+              {t('The author will receive this note as soon as you reject.')}
+            </FieldDescription>
+          </Field>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => handleOpenChange(false)}
             disabled={isPending}
           >
-            {isPending ? t('Rejecting...') : t('Reject proposal')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            {t('Cancel')}
+          </Button>
+          <Button
+            variant="destructive"
+            className="w-full sm:w-auto"
+            onClick={handleConfirm}
+            disabled={!reason || isPending}
+          >
+            {isPending ? t('Rejecting...') : t('Reject & send note')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

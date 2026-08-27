@@ -193,8 +193,8 @@ function ProposalAdminMenuItems({
           open={isRejectModalOpen}
           onOpenChange={setIsRejectModalOpen}
           isPending={isRejecting}
-          onConfirm={() =>
-            reject({ onSuccess: () => setIsRejectModalOpen(false) })
+          onConfirm={(input) =>
+            reject(input, { onSuccess: () => setIsRejectModalOpen(false) })
           }
         />
       ) : null}
