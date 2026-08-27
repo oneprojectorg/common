@@ -469,7 +469,7 @@ export const PostItem = ({
           <PostContent content={displayContent} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4">
             <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             {onCommentClick ? (
               <PostCommentButton
@@ -539,7 +539,7 @@ export const PostItemOnDetailPage = ({
           <PostContent content={post?.content} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4">
             <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             <CommentButton
               count={commentCount}

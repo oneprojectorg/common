@@ -753,7 +753,8 @@ test.describe('Proposal View', () => {
       await expect(page.getByText(commentText)).toBeVisible();
 
       // The comment's like button renders for everyone so read-only viewers
-      // still see the seeded count; only a member gets it as a real toggle.
+      // still see the seeded count; only a member gets it as a real toggle. It
+      // draws just the heart and the number, so "1 like" is its aria-label.
       // Anchored regex, not the string form: `name` as a string matches
       // case-insensitively on a substring, so '1 like' would also pick up the
       // proposal-level "N Likes" stat and "11 likes".

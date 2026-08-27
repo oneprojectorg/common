@@ -15,25 +15,24 @@ type Story = StoryObj<typeof LikeButton>;
 
 // The app composes this with `Intl.ListFormat` and a translated overflow
 // string; the component only ever receives the finished node.
-const likers = 'Ada Lovelace, Grace Hopper and 2 others';
+const likers = 'Ada Lovelace, Grace Hopper, and 2 others';
 
 export const Default: Story = {
   render: () => (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-6">
       <LikeButton count={0} label="0 likes" />
       <LikeButton count={4} label="4 likes" tooltip={likers} />
       <LikeButton count={4} label="4 likes" tooltip={likers} isLiked />
-      <LikeButton count={12} label="١٢ إعجابًا" />
     </div>
   ),
 };
 
-/** How the pair sits in a post footer — like at the start, comments at the end. */
+/** How the pair sits in a post footer — heart, then comments, both at the start. */
 export const InPostFooter: Story = {
   render: () => (
-    <div className="flex w-96 items-center justify-between gap-2">
-      <LikeButton count={4} label="4 likes" tooltip={likers} />
-      <CommentButton count={2} label="2 comments" />
+    <div className="flex w-96 items-center gap-4">
+      <LikeButton count={1} label="1 like" tooltip={likers} isLiked />
+      <CommentButton count={0} label="0 comments" />
     </div>
   ),
 };

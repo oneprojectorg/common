@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { LuThumbsUp } from 'react-icons/lu';
+import { LuHeart } from 'react-icons/lu';
 
 import {
   footerButtonClasses,
@@ -15,12 +15,13 @@ interface LikeButtonProps extends Omit<
   'children'
 > {
   count?: number;
-  /** Renders the button as pressed — the viewer has already liked. */
+  /** Fills the heart — the viewer has already liked. */
   isLiked?: boolean;
   /**
-   * Fully-formatted, translated label (e.g. "3 likes"). Consumers should pass
-   * an i18n-translated string since this package is locale-agnostic. Falls back
-   * to an English default when omitted.
+   * Translated accessible name (e.g. "3 likes"). Only the count is drawn, so
+   * this is what a screen reader announces; it should contain the count so the
+   * name still matches the visible text. Consumers pass an i18n-translated
+   * string since this package is locale-agnostic.
    */
   label?: string;
   /**
@@ -37,11 +38,11 @@ interface LikeButtonProps extends Omit<
 }
 
 /**
- * The like half of a post's footer, sized and styled to sit beside
+ * The like half of a post's footer — a heart and a count, sized to sit beside
  * `CommentButton`. Pass `tooltip` to name recent likers on hover.
  */
-// What's left is four prop defaults, the read-only fork, the liked styling on
-// two elements, and the tooltip bail — flat, and sense has no headless runner to
+// What's left is five prop defaults, the read-only fork, the filled-heart
+// styling, and the tooltip bail — flat, and sense has no headless runner to
 // score coverage against (see packages/sense/README.md).
 // fallow-ignore-next-line complexity
 function LikeButton({
@@ -60,6 +61,9 @@ function LikeButton({
       type="button"
       data-slot="like-button"
       dir={dir}
+      // Only the count is drawn, so the number alone would be the whole
+      // accessible name. The label carries it plus the noun.
+      aria-label={label ?? `${count} likes`}
       aria-pressed={canLike ? isLiked : undefined}
       // Read-only buttons stay enabled (aria-disabled, no press affordances) so
       // they keep tab order and the liker tooltip stays reachable — native
@@ -68,17 +72,19 @@ function LikeButton({
       onClick={canLike ? onClick : undefined}
       className={cn(
         footerButtonClasses,
-        canLike ? footerButtonInteractiveClasses : 'cursor-default',
-        isLiked && 'bg-accent text-accent-foreground',
+        canLike && footerButtonInteractiveClasses,
         className,
       )}
       {...props}
     >
-      <LuThumbsUp
-        className={cn('size-4 shrink-0', isLiked && 'fill-current')}
+      <LuHeart
+        className={cn(
+          'size-5 shrink-0',
+          isLiked && 'fill-current text-primary',
+        )}
       />
-      {/* The count changes without a navigation when the viewer toggles. */}
-      <span aria-live="polite">{label ?? `${count} likes`}</span>
+      {/* The count changes without a navigation when anyone likes the post. */}
+      <span aria-live="polite">{count}</span>
     </button>
   );
 

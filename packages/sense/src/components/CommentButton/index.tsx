@@ -15,18 +15,24 @@ interface CommentButtonProps extends Omit<
 > {
   count?: number;
   /**
-   * Fully-formatted, translated label (e.g. "3 comments"). Consumers should
-   * pass an i18n-translated string since this package is locale-agnostic.
-   * Falls back to an English default when omitted.
+   * Translated accessible name (e.g. "3 comments"). Only the count is drawn, so
+   * this is what a screen reader announces; it should contain the count so the
+   * name still matches the visible text. Consumers pass an i18n-translated
+   * string since this package is locale-agnostic.
    */
   label?: string;
 }
 
+/**
+ * The comment half of a post's footer — a bubble and a count, sized to sit
+ * beside `LikeButton`.
+ */
 function CommentButton({
   count = 0,
   label,
   className,
   dir = 'auto',
+  disabled,
   ...props
 }: CommentButtonProps) {
   return (
@@ -34,15 +40,18 @@ function CommentButton({
       type="button"
       data-slot="comment-button"
       dir={dir}
+      aria-label={label ?? `${count} comments`}
+      disabled={disabled}
       className={cn(
         footerButtonClasses,
-        footerButtonInteractiveClasses,
+        !disabled && footerButtonInteractiveClasses,
         className,
       )}
       {...props}
     >
-      <LuMessageCircle className="size-4 shrink-0" />
-      <span>{label ?? `${count} comments`}</span>
+      <LuMessageCircle className="size-5 shrink-0" />
+      {/* The count changes without a navigation when a comment is posted. */}
+      <span aria-live="polite">{count}</span>
     </button>
   );
 }
