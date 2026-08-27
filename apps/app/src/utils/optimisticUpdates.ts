@@ -28,10 +28,13 @@ export type LikeableItem = {
  * the named likers. Without a current profile there is nobody to name, so only
  * the count moves.
  */
-export const applyLikeToggle = (
-  current: PostLikeState,
-  currentProfile?: UserProfile | null,
-): PostLikeState => {
+export const applyLikeToggle = ({
+  current,
+  currentProfile,
+}: {
+  current: PostLikeState;
+  currentProfile?: UserProfile | null;
+}): PostLikeState => {
   const userHasLiked = !current.userHasLiked;
   const others = currentProfile
     ? current.likeUsers.filter((liker) => liker.id !== currentProfile.id)
@@ -59,17 +62,27 @@ export const applyLikeToggle = (
  * leaving every other item untouched. Preserves the input type shape so it can
  * be mapped straight over a react-query cache entry.
  */
-export const togglePostLike = <T extends LikeableItem>(
-  item: T,
-  postId: string,
-  user?: PostFeedUser,
-): T => {
+export const togglePostLike = <T extends LikeableItem>({
+  item,
+  postId,
+  user,
+}: {
+  item: T;
+  postId: string;
+  user?: PostFeedUser;
+}): T => {
   if (item.post.id !== postId) {
     return item;
   }
 
   return {
     ...item,
-    post: { ...item.post, ...applyLikeToggle(item.post, user?.currentProfile) },
+    post: {
+      ...item.post,
+      ...applyLikeToggle({
+        current: item.post,
+        currentProfile: user?.currentProfile,
+      }),
+    },
   };
 };

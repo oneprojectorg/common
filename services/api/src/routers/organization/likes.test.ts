@@ -10,7 +10,7 @@ describeAccessTierGating('organization.toggleLike', {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.organization.toggleLike({
-        postId: 'x',
+        postId: '00000000-0000-4000-8000-000000000000',
       }),
       'none',
     );
@@ -22,7 +22,7 @@ describeAccessTierGating('organization.toggleLike', {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
         caller.organization.toggleLike({
-          postId: 'x',
+          postId: '00000000-0000-4000-8000-000000000000',
         }),
         'anon',
       );
@@ -35,7 +35,7 @@ describeAccessTierGating('organization.toggleLike', {
       const caller = await callers.userJwt();
       await expectFailsAccessTierGate(
         caller.organization.toggleLike({
-          postId: 'x',
+          postId: '00000000-0000-4000-8000-000000000000',
         }),
         'user',
       );
@@ -48,7 +48,7 @@ describeAccessTierGating('organization.toggleLike', {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
         caller.organization.toggleLike({
-          postId: 'x',
+          postId: '00000000-0000-4000-8000-000000000000',
         }),
       );
     },

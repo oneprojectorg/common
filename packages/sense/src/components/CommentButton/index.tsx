@@ -3,17 +3,11 @@
 import * as React from 'react';
 import { LuMessageCircle } from 'react-icons/lu';
 
+import {
+  footerButtonClasses,
+  footerButtonInteractiveClasses,
+} from '../../lib/footerButton';
 import { cn } from '../../lib/utils';
-
-/**
- * Chrome shared by the buttons in a post's footer, so `LikeButton` and
- * `CommentButton` stay pixel-identical sitting next to each other.
- */
-const footerButtonClasses =
-  'flex h-8 items-center justify-center gap-1 rounded-md bg-muted px-2 py-1 text-sm text-nowrap text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
-
-const footerButtonInteractiveClasses =
-  'cursor-pointer hover:bg-gray-100 hover:text-foreground active:bg-gray-200 active:text-foreground';
 
 interface CommentButtonProps extends Omit<
   React.ComponentProps<'button'>,
@@ -32,12 +26,14 @@ function CommentButton({
   count = 0,
   label,
   className,
+  dir = 'auto',
   ...props
 }: CommentButtonProps) {
   return (
     <button
       type="button"
       data-slot="comment-button"
+      dir={dir}
       className={cn(
         footerButtonClasses,
         footerButtonInteractiveClasses,
@@ -51,4 +47,4 @@ function CommentButton({
   );
 }
 
-export { CommentButton, footerButtonClasses, footerButtonInteractiveClasses };
+export { CommentButton };

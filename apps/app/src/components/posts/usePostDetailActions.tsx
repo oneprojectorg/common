@@ -46,7 +46,11 @@ export const usePostDetailActions = ({
           return old;
         }
 
-        return togglePostLike({ post: old }, likedPostId, user).post;
+        return togglePostLike({
+          item: { post: old },
+          postId: likedPostId,
+          user,
+        }).post;
       });
 
       // Optimistically update comments
@@ -57,7 +61,11 @@ export const usePostDetailActions = ({
 
         return old.map(
           (comment) =>
-            togglePostLike({ post: comment }, likedPostId, user).post,
+            togglePostLike({
+              item: { post: comment },
+              postId: likedPostId,
+              user,
+            }).post,
         );
       });
 
@@ -85,9 +93,8 @@ export const usePostDetailActions = ({
     },
   });
 
-  const handleLikeClick = (likedPostId: string) => {
-    toggleLike.mutate({ postId: likedPostId });
-  };
+  const handleLikeClick = (likedPostId: string) =>
+    toggleLike.mutateAsync({ postId: likedPostId });
 
   return { handleLikeClick };
 };

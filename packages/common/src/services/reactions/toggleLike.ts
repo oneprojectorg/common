@@ -1,11 +1,10 @@
 import { EntityType } from '@op/db/schema';
-import { LIKE_REACTION_TYPE, isLikeReactionType } from '@op/types';
+import { LIKE_REACTION_TYPE } from '@op/types';
 
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { loadPostContext, type PostContext } from '../posts/postContext';
 import { addReaction } from './addReaction';
-import { getExistingReaction } from './getExistingReaction';
 import { removeReaction } from './removeReaction';
 
 export interface ToggleLikeOptions {
@@ -49,10 +48,14 @@ export const toggleLike = async ({
   });
 
   const profileId = await getCurrentProfileId(user.id);
-  const existingReaction = await getExistingReaction({ postId, profileId });
 
-  if (existingReaction && isLikeReactionType(existingReaction.reactionType)) {
-    await removeReaction({ postId, profileId });
+  // Delete-then-decide rather than read-then-write: the delete is one statement
+  // scoped to the like types, so a double-click can't have both requests see a
+  // row and both remove it. A caller holding only a legacy thumbs-down deletes
+  // nothing and falls through to liking, which replaces that row.
+  const { removed } = await removeReaction({ postId, profileId });
+
+  if (removed) {
     return { action: 'removed', context };
   }
 

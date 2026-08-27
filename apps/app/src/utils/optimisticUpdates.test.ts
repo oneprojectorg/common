@@ -17,15 +17,18 @@ const state = (overrides: Partial<PostLikeState> = {}): PostLikeState => ({
 
 describe('applyLikeToggle', () => {
   it('adds the viewer to an unliked post', () => {
-    const next = applyLikeToggle(state({ likeCount: 2 }), viewer);
+    const next = applyLikeToggle({
+      current: state({ likeCount: 2 }),
+      currentProfile: viewer,
+    });
 
     expect(next).toMatchObject({ userHasLiked: true, likeCount: 3 });
     expect(next.likeUsers.map((liker) => liker.id)).toEqual(['viewer']);
   });
 
   it('removes the viewer from a post they had liked', () => {
-    const next = applyLikeToggle(
-      state({
+    const next = applyLikeToggle({
+      current: state({
         likeCount: 3,
         userHasLiked: true,
         likeUsers: [
@@ -33,37 +36,37 @@ describe('applyLikeToggle', () => {
           { id: 'other', name: 'Grace', timestamp: new Date('2026-02-01') },
         ],
       }),
-      viewer,
-    );
+      currentProfile: viewer,
+    });
 
     expect(next).toMatchObject({ userHasLiked: false, likeCount: 2 });
     expect(next.likeUsers.map((liker) => liker.id)).toEqual(['other']);
   });
 
   it('lists the viewer first so the tooltip reads newest-first', () => {
-    const next = applyLikeToggle(
-      state({
+    const next = applyLikeToggle({
+      current: state({
         likeCount: 1,
         likeUsers: [
           { id: 'other', name: 'Grace', timestamp: new Date('2026-02-01') },
         ],
       }),
-      viewer,
-    );
+      currentProfile: viewer,
+    });
 
     expect(next.likeUsers.map((liker) => liker.name)).toEqual(['Ada', 'Grace']);
   });
 
   it('never lists the viewer twice', () => {
-    const next = applyLikeToggle(
-      state({
+    const next = applyLikeToggle({
+      current: state({
         likeCount: 1,
         likeUsers: [
           { id: 'viewer', name: 'Ada', timestamp: new Date('2026-01-01') },
         ],
       }),
-      viewer,
-    );
+      currentProfile: viewer,
+    });
 
     expect(
       next.likeUsers.filter((liker) => liker.id === 'viewer'),
@@ -71,7 +74,10 @@ describe('applyLikeToggle', () => {
   });
 
   it('keeps the count at zero rather than going negative', () => {
-    const next = applyLikeToggle(state({ userHasLiked: true }), viewer);
+    const next = applyLikeToggle({
+      current: state({ userHasLiked: true }),
+      currentProfile: viewer,
+    });
 
     expect(next.likeCount).toBe(0);
   });
@@ -80,10 +86,10 @@ describe('applyLikeToggle', () => {
     const existing = [
       { id: 'other', name: 'Grace', timestamp: new Date('2026-02-01') },
     ];
-    const next = applyLikeToggle(
-      state({ likeCount: 1, likeUsers: existing }),
-      null,
-    );
+    const next = applyLikeToggle({
+      current: state({ likeCount: 1, likeUsers: existing }),
+      currentProfile: null,
+    });
 
     expect(next).toMatchObject({ userHasLiked: true, likeCount: 2 });
     expect(next.likeUsers).toEqual(existing);
@@ -99,24 +105,30 @@ describe('togglePostLike', () => {
     const other = item('other-post');
 
     expect(
-      togglePostLike(other, 'target-post', { currentProfile: viewer }),
+      togglePostLike({
+        item: other,
+        postId: 'target-post',
+        user: { currentProfile: viewer },
+      }),
     ).toBe(other);
   });
 
   it('flips the like on the matching post', () => {
-    const result = togglePostLike(item('target-post'), 'target-post', {
-      currentProfile: viewer,
+    const result = togglePostLike({
+      item: item('target-post'),
+      postId: 'target-post',
+      user: { currentProfile: viewer },
     });
 
     expect(result.post).toMatchObject({ userHasLiked: true, likeCount: 2 });
   });
 
   it('keeps the rest of the cached item intact', () => {
-    const result = togglePostLike(
-      { ...item('target-post'), organization: { id: 'org-1' } },
-      'target-post',
-      { currentProfile: viewer },
-    );
+    const result = togglePostLike({
+      item: { ...item('target-post'), organization: { id: 'org-1' } },
+      postId: 'target-post',
+      user: { currentProfile: viewer },
+    });
 
     expect(result).toMatchObject({ organization: { id: 'org-1' } });
   });

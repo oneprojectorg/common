@@ -204,14 +204,13 @@ export const listPosts = async ({
           })
         : null;
 
-    // Transform items to include reaction counts, user's reactions, and comment counts
-    const itemsWithReactionsAndComments =
-      await getItemsWithReactionsAndComments({
-        items,
-        profileId: actorProfileId,
-      });
+    // Transform items to include like counts and comment counts
+    const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
+      items,
+      profileId: actorProfileId,
+    });
 
-    return { items: itemsWithReactionsAndComments, next: nextCursor };
+    return { items: itemsWithLikesAndComments, next: nextCursor };
   } catch (e) {
     logger.error('Error listing posts', { error: e });
     throw e;
@@ -240,9 +239,7 @@ type EnhancedPostFields = LikeSummary & {
  * @param profileId - The current user's profile ID to determine whether they liked it
  * @returns Items with enhanced post data including like counts and comment counts
  */
-export const getItemsWithReactionsAndComments = async <
-  T extends { post: any },
->({
+export const getItemsWithLikesAndComments = async <T extends { post: any }>({
   items,
   profileId,
 }: {

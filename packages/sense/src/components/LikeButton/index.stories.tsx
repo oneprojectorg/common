@@ -13,19 +13,17 @@ export default meta;
 
 type Story = StoryObj<typeof LikeButton>;
 
-const likers = [
-  { id: '1', name: 'Ada Lovelace', timestamp: new Date('2026-02-03') },
-  { id: '2', name: 'Grace Hopper', timestamp: new Date('2026-02-02') },
-  { id: '3', name: 'Katherine Johnson', timestamp: new Date('2026-02-01') },
-];
+// The app composes this with `Intl.ListFormat` and a translated overflow
+// string; the component only ever receives the finished node.
+const likers = 'Ada Lovelace, Grace Hopper and 2 others';
 
 export const Default: Story = {
   render: () => (
     <div className="flex items-center gap-3">
       <LikeButton count={0} label="0 likes" />
-      <LikeButton count={3} label="3 likes" users={likers} />
-      <LikeButton count={3} label="3 likes" users={likers} isLiked />
-      <LikeButton count={12} label="١٢ إعجابًا" dir="rtl" />
+      <LikeButton count={4} label="4 likes" tooltip={likers} />
+      <LikeButton count={4} label="4 likes" tooltip={likers} isLiked />
+      <LikeButton count={12} label="١٢ إعجابًا" />
     </div>
   ),
 };
@@ -34,7 +32,7 @@ export const Default: Story = {
 export const InPostFooter: Story = {
   render: () => (
     <div className="flex w-96 items-center justify-between gap-2">
-      <LikeButton count={3} label="3 likes" users={likers} />
+      <LikeButton count={4} label="4 likes" tooltip={likers} />
       <CommentButton count={2} label="2 comments" />
     </div>
   ),
@@ -43,7 +41,7 @@ export const InPostFooter: Story = {
 /** Read-only viewers still see the count, but get no toggle. */
 export const ReadOnly: Story = {
   render: () => (
-    <LikeButton count={7} label="7 likes" users={likers} canLike={false} />
+    <LikeButton count={7} label="7 likes" tooltip={likers} canLike={false} />
   ),
 };
 
@@ -57,7 +55,7 @@ export const Interactive: Story = {
         count={count}
         label={`${count} likes`}
         isLiked={liked}
-        users={likers}
+        tooltip={likers}
         onClick={() => setLiked((current) => !current)}
       />
     );

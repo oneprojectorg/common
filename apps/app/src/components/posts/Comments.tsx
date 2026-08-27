@@ -41,7 +41,7 @@ export function Comments({
   postId: string;
   organization: Organization | null;
   user: PostFeedUser | undefined;
-  onLikeClick: (postId: string) => void;
+  onLikeClick: (postId: string) => Promise<unknown>;
 }) {
   const t = useTranslations();
 

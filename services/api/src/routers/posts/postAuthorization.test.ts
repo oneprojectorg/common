@@ -394,7 +394,10 @@ describe.concurrent('decision-profile post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, adminPost.id));
 
@@ -429,11 +432,15 @@ describe.concurrent('decision-profile post authorization', () => {
     });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, adminPost.id));
 
     expect(reactions).toHaveLength(1);
+    expect(reactions[0]?.reactionType).toBe('like');
   });
 
   it('allows a member to react to a comment (gate inherited via rootProfileId)', async ({
@@ -468,11 +475,139 @@ describe.concurrent('decision-profile post authorization', () => {
     });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, comment.id));
 
     expect(reactions).toHaveLength(1);
+    expect(reactions[0]?.reactionType).toBe('like');
+  });
+
+  // Reactions predate the like button and were never migrated, so the toggle
+  // has to read a legacy row correctly: a positive type already counts as this
+  // caller's like, a thumbs-down does not.
+  it('unlikes a post the caller had reacted to with a legacy positive type', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    await db.insert(postReactions).values({
+      postId: adminPost.id,
+      profileId: member.profileId,
+      reactionType: 'love',
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+
+    expect(result.action).toBe('removed');
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(0);
+  });
+
+  it('replaces a legacy thumbs-down with a like rather than clearing it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    await db.insert(postReactions).values({
+      postId: adminPost.id,
+      profileId: member.profileId,
+      reactionType: 'dislike',
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+
+    expect(result.action).toBe('added');
+    const reactions = await db
+      .select({ reactionType: postReactions.reactionType })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toEqual([{ reactionType: 'like' }]);
+  });
+
+  it('toggles a like off on the second call', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const added = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+    const removed = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+
+    expect([added.action, removed.action]).toEqual(['added', 'removed']);
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(0);
   });
 });
 
@@ -708,11 +843,15 @@ describe.concurrent('org-feed post authorization', () => {
     });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, orgPost.id));
 
     expect(reactions).toHaveLength(1);
+    expect(reactions[0]?.reactionType).toBe('like');
   });
 });
 

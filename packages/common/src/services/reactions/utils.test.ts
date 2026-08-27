@@ -73,6 +73,39 @@ describe('getLikeSummary', () => {
     expect(summary.userHasLiked).toBe(false);
   });
 
+  it('counts one profile once even when it holds several reaction rows', () => {
+    const summary = getLikeSummary({
+      reactions: [
+        reaction({ reactionType: 'like', profileId: 'a' }),
+        reaction({ reactionType: 'love', profileId: 'a' }),
+        reaction({ reactionType: 'fire', profileId: 'b' }),
+      ],
+    });
+
+    expect(summary.likeCount).toBe(2);
+  });
+
+  it('names at most a handful of likers, newest first', () => {
+    const summary = getLikeSummary({
+      reactions: Array.from({ length: 10 }, (_, index) =>
+        reaction({
+          reactionType: 'like',
+          profileId: `profile-${index}`,
+          profile: { id: `profile-${index}`, name: `Liker ${index}` },
+          createdAt: new Date(2026, 0, index + 1).toISOString(),
+        }),
+      ),
+    });
+
+    expect(summary.likeCount).toBe(10);
+    expect(summary.likeUsers).toHaveLength(3);
+    expect(summary.likeUsers.map((liker) => liker.name)).toEqual([
+      'Liker 9',
+      'Liker 8',
+      'Liker 7',
+    ]);
+  });
+
   it('names only the likers it has a profile for', () => {
     const summary = getLikeSummary({
       reactions: [

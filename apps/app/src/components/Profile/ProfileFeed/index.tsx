@@ -35,7 +35,7 @@ export type ProfileFeedRenderProps = {
   infiniteScrollRef: RefCallback<HTMLElement>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
-  handleLikeClick: (postId: string) => void;
+  handleLikeClick: (postId: string) => Promise<unknown>;
   handleCommentClick: (post: Post, organization: Organization | null) => void;
   discussionModal: DiscussionModalState;
   handleModalClose: () => void;

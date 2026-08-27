@@ -29,6 +29,7 @@ import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuEllipsis, LuFlag, LuLeaf } from 'react-icons/lu';
@@ -186,9 +187,12 @@ const PostLikeButton = ({
   onLikeClick,
 }: {
   post: Post;
+  // The optimistic layer above owns the rollback, so the button itself only
+  // needs to report the click.
   onLikeClick: (postId: string) => void;
 }) => {
   const t = useTranslations();
+  const locale = useLocale();
   const { user } = useUser();
 
   if (!post?.id) return null;
@@ -200,11 +204,50 @@ const PostLikeButton = ({
       count={likeCount}
       label={t('{count} likes', { count: likeCount })}
       isLiked={post.userHasLiked}
-      users={post.likeUsers}
+      tooltip={formatLikerTooltip({
+        likeUsers: post.likeUsers,
+        likeCount,
+        locale,
+        t,
+      })}
       canLike={userCanInteract(user)}
       onClick={() => onLikeClick(postId)}
     />
   );
+};
+
+/**
+ * Names the most recent likers for the hover tooltip. Lives here rather than in
+ * `@op/sense` because joining names is locale-specific and the design system has
+ * no translations. The overflow count comes off `likeCount`, since the payload
+ * only names the newest few.
+ */
+const formatLikerTooltip = ({
+  likeUsers,
+  likeCount,
+  locale,
+  t,
+}: {
+  likeUsers: Post['likeUsers'];
+  likeCount: number;
+  locale: string;
+  t: ReturnType<typeof useTranslations>;
+}) => {
+  const named = likeUsers.map((liker) => liker.name).slice(0, 2);
+
+  if (named.length === 0) {
+    return null;
+  }
+
+  const names = new Intl.ListFormat(locale, {
+    style: 'long',
+    type: 'conjunction',
+  }).format(named);
+  const others = Math.max(0, likeCount - named.length);
+
+  return others > 0
+    ? t('{names} and {count} others', { names, count: others })
+    : names;
 };
 
 const PostCommentButton = ({
@@ -315,7 +358,7 @@ export const EmptyPostsState = () => {
  */
 const useOptimisticLike = (
   post: Post,
-  onLikeClick: (postId: string) => void,
+  onLikeClick: (postId: string) => Promise<unknown>,
 ) => {
   const { user } = useUser();
   const currentProfile = user?.currentProfile;
@@ -331,7 +374,9 @@ const useOptimisticLike = (
   // Sync pattern: setState during render is intentional to avoid extra render cycle.
   // This syncs local state when server data changes (after refetch).
   // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const serverLikeKey = `${serverLike.userHasLiked}-${serverLike.likeCount}`;
+  // The liker ids are in the key because a like and an unlike between refetches
+  // leave the count untouched while changing who the tooltip should name.
+  const serverLikeKey = `${serverLike.userHasLiked}-${serverLike.likeCount}-${serverLike.likeUsers.map((liker) => liker.id).join()}`;
   const [lastServerKey, setLastServerKey] = useState(serverLikeKey);
   if (serverLikeKey !== lastServerKey) {
     setLastServerKey(serverLikeKey);
@@ -340,10 +385,16 @@ const useOptimisticLike = (
 
   const handleLikeClick = useCallback(
     (postId: string) => {
-      setLocalLike((current) => applyLikeToggle(current, currentProfile));
-      onLikeClick(postId);
+      const before = localLike;
+
+      setLocalLike(applyLikeToggle({ current: before, currentProfile }));
+
+      // A rejected like (rate limit, lost access) refetches to the values we
+      // started from, so the sync key above is unchanged and can't undo the
+      // optimistic flip. Put it back here instead, or the button stays lit.
+      void onLikeClick(postId).catch(() => setLocalLike(before));
     },
-    [currentProfile, onLikeClick],
+    [currentProfile, localLike, onLikeClick],
   );
 
   const displayPost = useMemo(
@@ -367,7 +418,7 @@ export const PostItem = ({
   organization: Organization | null;
   user?: CommonUser;
   withLinks: boolean;
-  onLikeClick: (postId: string) => void;
+  onLikeClick: (postId: string) => Promise<unknown>;
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
 }) => {
@@ -439,7 +490,7 @@ export const PostItemOnDetailPage = ({
   organization: Organization | null;
   user?: CommonUser;
   withLinks: boolean;
-  onLikeClick: (postId: string) => void;
+  onLikeClick: (postId: string) => Promise<unknown>;
   commentCount: number;
   className?: string;
 }) => {
@@ -545,9 +596,10 @@ export const usePostFeedActions = () => {
     },
   });
 
-  const handleLikeClick = (postId: string) => {
-    toggleLike.mutate({ postId });
-  };
+  // Returns the promise so the caller's optimistic state can roll itself back;
+  // `onError` above still owns the toast.
+  const handleLikeClick = (postId: string) =>
+    toggleLike.mutateAsync({ postId });
 
   const handleCommentClick = (
     post: Post,

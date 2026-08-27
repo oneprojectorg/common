@@ -24,15 +24,17 @@ export const LIKE_REACTION_TYPE = REACTION_TYPES.LIKE;
  * reaction (🔥 🙏 😂 🎉 ❤️ 👍) becomes a like, so a thumbs-down is dropped from
  * the count rather than silently flipped into an endorsement.
  */
-const LIKE_REACTION_TYPES = new Set<string>([
+export const LIKE_REACTION_TYPES: readonly string[] = [
   REACTION_TYPES.LIKE,
   REACTION_TYPES.LOVE,
   REACTION_TYPES.LAUGH,
   REACTION_TYPES.FOLDED_HANDS,
   REACTION_TYPES.CELEBRATE,
   REACTION_TYPES.FIRE,
-]);
+];
+
+const likeReactionTypes = new Set(LIKE_REACTION_TYPES);
 
 /** Whether a stored `post_reactions.reactionType` counts towards a like. */
 export const isLikeReactionType = (reactionType: string): boolean =>
-  LIKE_REACTION_TYPES.has(reactionType);
+  likeReactionTypes.has(reactionType);

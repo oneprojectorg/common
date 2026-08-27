@@ -754,9 +754,10 @@ test.describe('Proposal View', () => {
 
       // The comment's like button renders for everyone so read-only viewers
       // still see the seeded count; only a member gets it as a real toggle.
-      // Lower-case "likes" is the post button; the proposal-level stat below
-      // is "N Likes".
-      const commentLike = page.getByRole('button', { name: '1 likes' });
+      // Anchored regex, not the string form: `name` as a string matches
+      // case-insensitively on a substring, so '1 like' would also pick up the
+      // proposal-level "N Likes" stat and "11 likes".
+      const commentLike = page.getByRole('button', { name: /^1 like$/ });
       await expect(commentLike).toBeVisible();
       if (canInteract) {
         await expect(commentLike).toHaveAttribute('aria-pressed', 'false');
