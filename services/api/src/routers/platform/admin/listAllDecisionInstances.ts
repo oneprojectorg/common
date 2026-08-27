@@ -199,7 +199,6 @@ export const listAllDecisionInstancesRouter = router({
             totalProposalCount: stats?.totalProposalCount ?? 0,
             participantCount: stats?.participantCount ?? 0,
             createdAt: instance.createdAt,
-            instanceData: instance.instanceData,
           });
         }),
         next: nextCursor,
