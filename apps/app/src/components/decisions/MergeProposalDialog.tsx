@@ -179,7 +179,7 @@ export function MergeProposalDialog({
 
               {/* One heading over both pickers, per Figma: the field and the
                   suggestions are two ways of answering "merge into what?". */}
-              <section className="flex flex-col gap-4">
+              <section className="flex min-h-0 flex-1 flex-col gap-4">
                 <h3 id={mergeIntoHeadingId} className="font-serif text-label">
                   {t('Merge into')}
                 </h3>
@@ -192,26 +192,32 @@ export function MergeProposalDialog({
                   onSelect={handleSelect}
                 />
 
-                {/* Scoped boundary: a failed list must leave the dialog usable. */}
-                <APIErrorBoundary
-                  fallbacks={{
-                    default: () => (
-                      <p className="text-destructive" role="alert">
-                        {t(
-                          'Could not load the other proposals. Please try again.',
-                        )}
-                      </p>
-                    ),
-                  }}
-                >
-                  <Suspense fallback={<MergeCandidateListSkeleton />}>
-                    <MergeCandidateListSuspense
-                      proposal={proposal}
-                      selected={target}
-                      onSelect={handleSelect}
-                    />
-                  </Suspense>
-                </APIErrorBoundary>
+                {/* Only the candidates scroll; the blurb, the source card and
+                    the field stay put. `min-h-40` is the floor that keeps a
+                    short viewport from squeezing this to nothing — past it the
+                    body scrolls again rather than hiding the list. */}
+                <div className="flex min-h-40 flex-1 flex-col gap-4 overflow-y-auto">
+                  {/* Scoped boundary: a failed list must leave the dialog usable. */}
+                  <APIErrorBoundary
+                    fallbacks={{
+                      default: () => (
+                        <p className="text-destructive" role="alert">
+                          {t(
+                            'Could not load the other proposals. Please try again.',
+                          )}
+                        </p>
+                      ),
+                    }}
+                  >
+                    <Suspense fallback={<MergeCandidateListSkeleton />}>
+                      <MergeCandidateListSuspense
+                        proposal={proposal}
+                        selected={target}
+                        onSelect={handleSelect}
+                      />
+                    </Suspense>
+                  </APIErrorBoundary>
+                </div>
               </section>
             </div>
 
