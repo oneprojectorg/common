@@ -52,4 +52,9 @@ describe('getCurrencySymbol', () => {
     expect(getCurrencySymbol('USD')).toBe('$');
     expect(getCurrencySymbol('EUR')).toBe('€');
   });
+
+  it('returns malformed persisted codes verbatim instead of throwing', () => {
+    expect(getCurrencySymbol('BOGUS')).toBe('BOGUS');
+    expect(getCurrencySymbol('')).toBe('');
+  });
 });

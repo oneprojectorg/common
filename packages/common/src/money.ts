@@ -48,6 +48,11 @@ export function getMoneyCurrency(value: unknown): string | undefined {
 // formatToParts, not string-stripping: locales with non-ASCII numerals would
 // leave digits behind in the symbol.
 export function getCurrencySymbol(currency: string): string {
+  // Callers pass persisted values; Intl.NumberFormat throws on unknown codes,
+  // which must not crash a render.
+  if (!isValidCurrencyCode(currency)) {
+    return currency;
+  }
   const part = new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
