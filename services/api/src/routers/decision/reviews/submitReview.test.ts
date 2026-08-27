@@ -59,6 +59,36 @@ const singleSelectRubricTemplate: RubricTemplateSchema = {
   required: ['department'],
 };
 
+const moneyRubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['cost', 'impact'],
+  properties: {
+    cost: {
+      type: 'object',
+      title: 'Estimated cost',
+      'x-format': 'money',
+      properties: {
+        amount: { type: 'number', minimum: 0 },
+        currency: { type: 'string', const: 'USD', default: 'USD' },
+      },
+      required: ['amount', 'currency'],
+      additionalProperties: false,
+    },
+    impact: {
+      type: 'integer',
+      title: 'Impact',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Low' },
+        { const: 5, title: 'High' },
+      ],
+    },
+  },
+  required: ['cost', 'impact'],
+};
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
@@ -217,6 +247,43 @@ describe.concurrent('submitReview', () => {
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.reviewData.answers).toEqual({ department: ['e5f6a7b8'] });
+  });
+
+  it('accepts a money answer and stores it verbatim', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(
+      testData,
+      moneyRubricTemplate,
+    );
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'review',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const answers = { cost: { amount: 120000.5, currency: 'USD' }, impact: 5 };
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(result.reviewData.answers).toEqual(answers);
+
+    // Only `impact` scores: 5, not 5 + 120000.5.
+    const aggregates = await reviewerCaller.decision.listWithReviewAggregates({
+      processInstanceId: created.context.instance.instance.id,
+      proposalIds: [created.proposal.id],
+    });
+    expect(aggregates.items[0]?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      averageScore: 5,
+    });
   });
 
   it('allows a first submit while the assignment phase is the current phase', async ({

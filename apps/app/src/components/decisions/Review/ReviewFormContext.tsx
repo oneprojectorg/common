@@ -251,7 +251,14 @@ function ReviewFormProviderInner({
 
   const handleValueChange = useCallback(
     (key: string, value: unknown) => {
-      setValues((current) => ({ ...current, [key]: value }));
+      setValues((current) => {
+        // `undefined` = unanswered: drop the key so the criterion validates as absent.
+        if (value === undefined) {
+          const { [key]: _cleared, ...rest } = current;
+          return rest;
+        }
+        return { ...current, [key]: value };
+      });
       scheduleAutosave();
     },
     [scheduleAutosave],

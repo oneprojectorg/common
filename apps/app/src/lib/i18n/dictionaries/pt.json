@@ -1689,5 +1689,7 @@
   "No reviewers yet": "Ainda não há revisores",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Dê às pessoas o papel de revisor e elas aparecerão aqui, prontas para receber propostas.",
   "Reviewers": "Revisores",
-  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# revisor} other {# revisores}} · {unassigned, plural, one {# proposta sem atribuição} other {# propostas sem atribuição}}"
+  "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# revisor} other {# revisores}} · {unassigned, plural, one {# proposta sem atribuição} other {# propostas sem atribuição}}",
+  "Amount": "Montante",
+  "Reviewers enter an amount": "Os avaliadores inserem um valor"
 }

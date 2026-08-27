@@ -152,6 +152,13 @@ export {
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
 export { templateCollectsBudget } from './services/decision/templateBudget';
+export {
+  buildMoneyFieldAnswer,
+  getMoneyFieldCurrency,
+  getMoneyFieldMinimum,
+  isMoneyFieldSchema,
+  resolveMoneyDisplayCurrency,
+} from './services/decision/rubric/money';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

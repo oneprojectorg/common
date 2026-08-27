@@ -33,10 +33,16 @@ export const CRITERION_TYPE_REGISTRY: Record<
     labelKey: 'Text response only',
     descriptionKey: 'No score, just written feedback',
   },
+  money: {
+    labelKey: 'Amount',
+    descriptionKey: 'Reviewers enter an amount',
+  },
 };
 
 /**
  * Ordered list of criterion types for the radio selector.
+ * `money` is deliberately absent — template-authored for now.
+ * TODO: add it here once money criteria become builder-editable.
  */
 export const CRITERION_TYPES: RubricCriterionType[] = [
   'scored',

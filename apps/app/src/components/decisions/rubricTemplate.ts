@@ -16,6 +16,7 @@ import type {
 import {
   OVERALL_RECOMMENDATION_KEY,
   RECOMMENDATION_OPTION,
+  isMoneyFieldSchema,
   isOverallRecommendationField,
 } from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
@@ -44,11 +45,16 @@ export type { RubricTemplateSchema };
 // Criterion types
 // ---------------------------------------------------------------------------
 
+/**
+ * Every criterion type the renderer understands. `money` is template-authored
+ * for now; TODO: make it builder-editable (see `CRITERION_TYPES`).
+ */
 export type RubricCriterionType =
   | 'scored'
   | 'yes_no'
   | 'single_select'
-  | 'long_text';
+  | 'long_text'
+  | 'money';
 
 /**
  * Stored encoding of a yes/no criterion's answer. These literals define the
@@ -141,6 +147,9 @@ export function createCriterionJsonSchema(
   selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
+    // TODO: buildable once money is builder-editable
+    case 'money':
+      throw new Error('Money criteria are template-authored');
     case 'scored': {
       const max = DEFAULT_MAX_POINTS;
       const oneOf = Array.from({ length: max }, (_, i) => ({
@@ -194,6 +203,11 @@ export function inferCriterionType(
   schema: XFormatPropertySchema,
 ): RubricCriterionType | undefined {
   const xFormat = schema['x-format'];
+
+  // Money is declared, never inferred from shape.
+  if (isMoneyFieldSchema(schema)) {
+    return 'money';
+  }
 
   if (xFormat === 'long-text') {
     return 'long_text';
@@ -388,6 +402,11 @@ export function getCriteria(template: RubricTemplateSchema): CriterionView[] {
 export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
   const errors: TranslationKey[] = [];
 
+  // Money criteria are inert in the builder — an error here would be unfixable.
+  if (criterion.criterionType === 'money') {
+    return errors;
+  }
+
   if (!criterion.label.trim()) {
     errors.push('Criterion label is required');
   }
@@ -463,6 +482,7 @@ export function setCriterionRequired(
 /**
  * Change a criterion's type while preserving its label, description, and
  * required status. The schema is rebuilt from scratch for the new type.
+ * No-op for money criteria (template-authored).
  */
 export function changeCriterionType(
   template: RubricTemplateSchema,
@@ -470,6 +490,10 @@ export function changeCriterionType(
   newType: RubricCriterionType,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
+  if (getCriterionType(template, criterionId) === 'money') {
+    return template;
+  }
+
   return updateProperty(template, criterionId, (existing) => {
     const newSchema: XFormatPropertySchema = {
       ...createCriterionJsonSchema(newType, selectOptionLabels),
