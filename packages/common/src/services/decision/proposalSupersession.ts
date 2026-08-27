@@ -42,6 +42,37 @@ export const notSuperseded = ({
   );
 
 /**
+ * The proposals merged into `targetProposalId`, in merge order. That order
+ * lives on the edge rather than on `proposals`, so every caller that wants it
+ * has to read it from here.
+ *
+ * Returns ids only — the rows they name still need the caller's own visibility
+ * filter before anything derived from them is surfaced.
+ */
+export async function getMergedSourceProposalIds({
+  targetProposalId,
+}: {
+  targetProposalId: string;
+}): Promise<string[]> {
+  const edges = await db
+    .select({ sourceProposalId: proposalRelationships.sourceProposalId })
+    .from(proposalRelationships)
+    .where(
+      and(
+        eq(proposalRelationships.targetProposalId, targetProposalId),
+        eq(
+          proposalRelationships.relationshipType,
+          ProposalRelationshipType.MERGED,
+        ),
+        isNull(proposalRelationships.deletedAt),
+      ),
+    )
+    .orderBy(proposalRelationships.createdAt, proposalRelationships.id);
+
+  return edges.map((edge) => edge.sourceProposalId);
+}
+
+/**
  * The live `merged` edge leading away from a proposal, or `undefined` when it
  * hasn't been superseded. The target always resolves: both endpoints carry a
  * composite foreign key, so an edge cannot outlive either proposal.

@@ -9,5 +9,7 @@ export * from './createPostInOrganization';
 export * from './createPostOnProfile';
 export * from './getProfilePosts';
 export * from './listProfilePosts';
+export * from './listProposalComments';
+export * from './schemas';
 export * from './access';
 export * from './postContext';

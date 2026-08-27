@@ -12,6 +12,7 @@ import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getCachedInstance } from './getCachedInstance';
+import { getMergedSourceProposalIds } from './proposalSupersession';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import {
@@ -47,7 +48,7 @@ export async function listContributingProposals({
   // receives the rows read alongside it. Profile-level grants only — no org
   // fallback, matching `mergeProposals`. `ADMIN` isn't listed alongside `READ`
   // because the seeded decisions Admin role already carries `read`.
-  const [decisionRoles, instance, edges] = await Promise.all([
+  const [decisionRoles, instance, contributingIds] = await Promise.all([
     assertProfileAccess({
       user,
       profileId: proposal.instance.profileId,
@@ -57,24 +58,10 @@ export async function listContributingProposals({
     // almost certainly been read already, so this is a hit. A miss costs the
     // wider snapshot, which is the price of not forking the cache key.
     getCachedInstance(proposal.processInstanceId),
-    db
-      .select({ sourceProposalId: proposalRelationships.sourceProposalId })
-      .from(proposalRelationships)
-      .where(
-        and(
-          eq(proposalRelationships.targetProposalId, proposalId),
-          eq(
-            proposalRelationships.relationshipType,
-            ProposalRelationshipType.MERGED,
-          ),
-          isNull(proposalRelationships.deletedAt),
-        ),
-      )
-      .orderBy(proposalRelationships.createdAt, proposalRelationships.id),
+    getMergedSourceProposalIds({ targetProposalId: proposalId }),
   ]);
 
   const readContext = getProposalReadContext({ user, decisionRoles });
-  const contributingIds = edges.map((edge) => edge.sourceProposalId);
 
   const [pinnedIsReadable, rows, proposalTemplate] = await Promise.all([
     db

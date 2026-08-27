@@ -13,7 +13,7 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { useCallback, useRef } from 'react';
-import { LuUserRoundPlus } from 'react-icons/lu';
+import { LuMerge, LuUserRoundPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -39,8 +39,9 @@ export function ProposalComments({
   const { user } = useUser();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Also carries the comments of every proposal merged into this one.
   const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.listProfilePosts.useQuery({
+    trpc.posts.listProposalComments.useQuery({
       profileId: proposal.profileId,
       limit: 50,
     });
@@ -119,10 +120,13 @@ export function ProposalComments({
         ) : comments.length > 0 ? (
           <div role="feed" aria-label={`${comments.length} comments`}>
             <PostFeed>
-              {comments.map((comment, i) => (
-                <div key={comment.id}>
+              {comments.map(({ post, originProposal }, i) => (
+                <div key={post.id}>
+                  {originProposal ? (
+                    <MergedCommentOrigin name={originProposal.name} />
+                  ) : null}
                   <PostItem
-                    post={comment}
+                    post={post}
                     organization={null}
                     user={user}
                     withLinks={true}
@@ -147,5 +151,22 @@ export function ProposalComments({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Marks a comment that was written on a proposal merged into this one. Without
+ * it the comment reads as a reply to a proposal its author never saw.
+ */
+function MergedCommentOrigin({ name }: { name: string }) {
+  const t = useTranslations();
+
+  return (
+    <p className="mb-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground sm:px-4">
+      <LuMerge className="size-4 shrink-0" aria-hidden />
+      <span className="truncate">
+        {t('Comment originally appeared in {name}', { name })}
+      </span>
+    </p>
   );
 }

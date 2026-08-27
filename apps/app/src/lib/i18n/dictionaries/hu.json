@@ -1670,6 +1670,7 @@
   "Contributing ideas": "Hozzájáruló ötletek",
   "These participant ideas were merged into this proposal.": "Ezeket a résztvevői ötleteket vontuk össze ebbe a javaslatba.",
   "Contributing ideas could not be loaded": "A hozzájáruló ötleteket nem sikerült betölteni",
+  "Comment originally appeared in {name}": "A hozzászólás eredetileg itt jelent meg: {name}",
   "Feedback": "Visszajelzés",
   "Notes reviewers shared while this proposal was under review": "Az értékelők megjegyzései, amelyeket a javaslat értékelése során osztottak meg",
   "Reviewer · {timeAgo}": "Értékelő · {timeAgo}",

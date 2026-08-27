@@ -1671,6 +1671,7 @@
   "Contributing ideas": "Contributing ideas",
   "These participant ideas were merged into this proposal.": "These participant ideas were merged into this proposal.",
   "Contributing ideas could not be loaded": "Contributing ideas could not be loaded",
+  "Comment originally appeared in {name}": "Comment originally appeared in {name}",
   "Feedback": "Feedback",
   "Notes reviewers shared while this proposal was under review": "Notes reviewers shared while this proposal was under review",
   "Reviewer · {timeAgo}": "Reviewer · {timeAgo}",

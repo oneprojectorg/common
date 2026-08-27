@@ -233,6 +233,11 @@ export {
 // its server-only deps) into the client bundle.
 export { MAX_PROPOSAL_ATTACHMENT_FILE_SIZE } from './services/decision/proposalAttachmentStorage';
 
+export {
+  listProposalCommentsSchema,
+  type ListProposalCommentsInput,
+} from './services/posts/schemas';
+
 // Translation constants (no server dependencies)
 import { SUPPORTED_LOCALES } from './services/translation/locales';
 
