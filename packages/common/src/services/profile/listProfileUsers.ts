@@ -85,8 +85,14 @@ export const listProfileUsers = async ({
       : undefined;
 
   // Build cursor condition for pagination
-  // The cursor must match the ORDER BY columns for correct pagination
-  type ProfileUserCursor = { value: string; tiebreaker?: string };
+  // The cursor must match the ORDER BY columns for correct pagination.
+  // name and email are nullable, so every comparison COALESCEs them to ''
+  // (matching the `?? ''` cursor encoding below and the ORDER BY expressions),
+  // and id is the final tiebreaker so the keyset is strictly monotonic.
+  // Without this, a NULL at a page boundary encodes a '' cursor that
+  // re-matches the whole previous page (duplicates) while NULL rows never
+  // satisfy the comparison at all (dropped rows).
+  type ProfileUserCursor = { value: string; tiebreaker?: string; id?: string };
   const decodedCursor = cursor
     ? decodeCursor<ProfileUserCursor>(cursor)
     : undefined;
@@ -98,29 +104,59 @@ export const listProfileUsers = async ({
       return undefined;
     }
 
-    if (orderBy === 'email') {
-      // Email is unique, no tiebreaker needed
-      return compareFn(profileUsers.email, decodedCursor.value);
-    }
+    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
+    const coalescedName = sql`COALESCE(${profileUsers.name}, '')`;
+    const coalescedEmail = sql`COALESCE(${profileUsers.email}, '')`;
+    // Cursors issued before the id tiebreaker existed omit id; guard so we
+    // never compare the uuid column against ''.
+    const idTiebreaker = decodedCursor.id
+      ? compareFn(profileUsers.id, decodedCursor.id)
+      : undefined;
 
-    if (orderBy === 'name') {
-      // ORDER BY name, email - compound condition
+    if (orderBy === 'email') {
+      // ORDER BY email, id - compound condition
       return or(
-        compareFn(profileUsers.name, decodedCursor.value),
-        and(
-          eq(profileUsers.name, decodedCursor.value),
-          compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
-        ),
+        sql`${coalescedEmail} ${compareOp} ${decodedCursor.value}`,
+        idTiebreaker
+          ? and(sql`${coalescedEmail} = ${decodedCursor.value}`, idTiebreaker)
+          : undefined,
       );
     }
 
-    // orderBy === 'role' - uses shared subquery helper
+    if (orderBy === 'name') {
+      // ORDER BY name, email, id - compound condition
+      return or(
+        sql`${coalescedName} ${compareOp} ${decodedCursor.value}`,
+        and(
+          sql`${coalescedName} = ${decodedCursor.value}`,
+          sql`${coalescedEmail} ${compareOp} ${decodedCursor.tiebreaker ?? ''}`,
+        ),
+        idTiebreaker
+          ? and(
+              sql`${coalescedName} = ${decodedCursor.value}`,
+              sql`${coalescedEmail} = ${decodedCursor.tiebreaker ?? ''}`,
+              idTiebreaker,
+            )
+          : undefined,
+      );
+    }
+
+    // orderBy === 'role' - uses shared subquery helper (already COALESCEd)
     const roleSubquery = buildRoleNameSubquery(profileUsers.id);
-    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
-    return sql`(
-      ${roleSubquery} ${compareOp} ${decodedCursor.value}
-      OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
-    )`;
+    return or(
+      sql`${roleSubquery} ${compareOp} ${decodedCursor.value}`,
+      and(
+        sql`${roleSubquery} = ${decodedCursor.value}`,
+        sql`${coalescedEmail} ${compareOp} ${decodedCursor.tiebreaker ?? ''}`,
+      ),
+      idTiebreaker
+        ? and(
+            sql`${roleSubquery} = ${decodedCursor.value}`,
+            sql`${coalescedEmail} = ${decodedCursor.tiebreaker ?? ''}`,
+            idTiebreaker,
+          )
+        : undefined,
+    );
   };
 
   const cursorCondition = buildCursorCondition();
@@ -158,20 +194,27 @@ export const listProfileUsers = async ({
     },
     orderBy: (table, { asc, desc }) => {
       const orderFn = dir === 'desc' ? desc : asc;
+      // COALESCE nullable columns so ordering matches the cursor comparisons,
+      // and always end on id so the sort is total.
+      const nameExpr = sql`COALESCE(${table.name}, '')`;
+      const emailExpr = sql`COALESCE(${table.email}, '')`;
 
       if (orderBy === 'role') {
         // Use shared subquery helper for consistency with cursor condition
         const roleNameSubquery = buildRoleNameSubquery(table.id);
-        // Add email as secondary sort for consistent cursor pagination
-        return [orderFn(roleNameSubquery), orderFn(table.email)];
+        return [
+          orderFn(roleNameSubquery),
+          orderFn(emailExpr),
+          orderFn(table.id),
+        ];
       }
 
       if (orderBy === 'email') {
-        return [orderFn(table.email)];
+        return [orderFn(emailExpr), orderFn(table.id)];
       }
 
-      // Default to name, with email as secondary for consistent ordering
-      return [orderFn(table.name), orderFn(table.email)];
+      // Default to name, with email + id as secondary for consistent ordering
+      return [orderFn(nameExpr), orderFn(emailExpr), orderFn(table.id)];
     },
     limit: limit + 1,
   });
@@ -204,6 +247,7 @@ export const listProfileUsers = async ({
     if (orderBy === 'email') {
       return encodeCursor<ProfileUserCursor>({
         value: lastResult.email ?? '',
+        id: lastResult.id,
       });
     }
 
@@ -211,6 +255,7 @@ export const listProfileUsers = async ({
       return encodeCursor<ProfileUserCursor>({
         value: lastResult.name ?? '',
         tiebreaker: lastResult.email ?? '',
+        id: lastResult.id,
       });
     }
 
@@ -231,6 +276,7 @@ export const listProfileUsers = async ({
     return encodeCursor<ProfileUserCursor>({
       value: firstRoleName,
       tiebreaker: lastResult.email ?? '',
+      id: lastResult.id,
     });
   };
 
