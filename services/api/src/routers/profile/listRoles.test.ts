@@ -448,7 +448,7 @@ describe.concurrent('profile.listRoles', () => {
   });
 
   describe('member counts', () => {
-    it('should include per-role member counts by default', async ({
+    it('should include per-role member counts when opted in', async ({
       task,
       onTestFinished,
     }) => {
@@ -489,6 +489,7 @@ describe.concurrent('profile.listRoles', () => {
       // Simple branch (no zoneName)
       const result = await caller.listRoles({
         profileId: profile.id,
+        includeMemberCounts: true,
         limit: 100,
       });
 
@@ -503,6 +504,7 @@ describe.concurrent('profile.listRoles', () => {
       const zoneResult = await caller.listRoles({
         profileId: profile.id,
         zoneName: ZONES.PROFILE.name,
+        includeMemberCounts: true,
         limit: 100,
       });
 
@@ -574,6 +576,7 @@ describe.concurrent('profile.listRoles', () => {
 
       const result = await caller.listRoles({
         profileId: profile.id,
+        includeMemberCounts: true,
         limit: 100,
       });
 
@@ -581,6 +584,38 @@ describe.concurrent('profile.listRoles', () => {
       expect(
         result.items.find((r) => r.id === customRole.id)?.memberCount,
       ).toBe(1);
+    });
+
+    it('should omit member counts for a profile-scoped call that does not opt in', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listRoles({
+        profileId: profile.id,
+        limit: 100,
+      });
+
+      expect(result.items.every((role) => role.memberCount === undefined)).toBe(
+        true,
+      );
+
+      const zoneResult = await caller.listRoles({
+        profileId: profile.id,
+        zoneName: ZONES.PROFILE.name,
+        limit: 100,
+      });
+
+      expect(
+        zoneResult.items.every((role) => role.memberCount === undefined),
+      ).toBe(true);
     });
   });
 });

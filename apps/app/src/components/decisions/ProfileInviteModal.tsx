@@ -133,22 +133,24 @@ function ProfileInviteModalContent({
   const [isSubmitting, startSendTransition] = useTransition();
   const [, startOptimisticTransition] = useTransition();
 
-  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({
+  const rolesQueryInput = {
     profileId,
     zoneName: 'decisions',
+    includeMemberCounts: true,
     limit: 100,
-  });
+  };
+  // Batched so the roles and pending-invites fetches fire together — two
+  // separate useSuspenseQuery calls would suspend one after the other.
+  const [[{ items: roles }, serverInvites]] = trpc.useSuspenseQueries((t) => [
+    t.profile.listRoles(rolesQueryInput),
+    t.profile.listProfileInvites({ profileId }),
+  ]);
   const selectedRole =
     roles.find((role) => role.id === requestedRoleId) ?? roles[0];
   const selectedRoleId = selectedRole?.id ?? '';
   const selectedRoleName = selectedRole?.name ?? '';
   const showDraftBanner =
     isDraft && !!selectedRole && !selectedRole.permissions?.admin;
-
-  // Fetch existing pending invites
-  const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
-    profileId,
-  });
 
   // Members for the selected role, paginated server-side. React Query caches
   // per input key, so each role tab paginates independently and switching
@@ -186,10 +188,21 @@ function ProfileInviteModalContent({
   // Get items for current role
   const currentRoleItems = selectedItemsByRole[selectedRoleId] ?? [];
 
+  // Roles staged items were added under can vanish mid-session (e.g. another
+  // admin deletes a custom role while this modal is open); dropping their
+  // entries here keeps a deleted role's leftovers out of counts and payloads.
+  const validRoleIds = useMemo(
+    () => new Set(roles.map((role) => role.id)),
+    [roles],
+  );
+
   // Get all selected items across all roles (for filtering duplicates)
   const allSelectedItems = useMemo(
-    () => Object.values(selectedItemsByRole).flat(),
-    [selectedItemsByRole],
+    () =>
+      Object.entries(selectedItemsByRole)
+        .filter(([roleId]) => validRoleIds.has(roleId))
+        .flatMap(([, items]) => items),
+    [selectedItemsByRole, validRoleIds],
   );
 
   // Member emails cover the loaded pages for the selected role; the invite
@@ -215,9 +228,14 @@ function ProfileInviteModalContent({
   // Members are already filtered to the selected role by the server query
   const currentRoleMembers = optimisticUsers;
 
+  // State rather than a ref: the observer effect below needs a re-render once
+  // the container attaches to pick it up as its root.
+  const [memberListRoot, setMemberListRoot] = useState<HTMLDivElement | null>(
+    null,
+  );
   const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
     fetchNextPage,
-    { hasNextPage, isFetchingNextPage },
+    { hasNextPage, isFetchingNextPage, root: memberListRoot },
   );
 
   // Search for individuals
@@ -392,11 +410,6 @@ function ProfileInviteModalContent({
     startOptimisticTransition(async () => {
       dispatchRemoveUser(id);
       const removedRoleIds = new Set(memberRoles.map((role) => role.id));
-      const rolesQueryInput = {
-        profileId,
-        zoneName: 'decisions',
-        limit: 100,
-      };
       const updateMemberCounts = (delta: number) =>
         utils.profile.listRoles.setData(rolesQueryInput, (rolesData) =>
           rolesData
@@ -419,16 +432,19 @@ function ProfileInviteModalContent({
       updateMemberCounts(-1);
       try {
         await removeUserMutation.mutateAsync({ profileUserId: id });
+        // The optimistic decrement above already holds the correct count;
+        // listUsers still needs a refetch to drop the member from its pages.
+        await utils.profile.listUsers.invalidate({ profileId });
       } catch {
         updateMemberCounts(1);
         toast.error(t('Failed to remove user'));
+        // Partial input matching also invalidates the per-role infinite
+        // queries; listRoles reconciles the rollback with server truth.
+        await Promise.all([
+          utils.profile.listUsers.invalidate({ profileId }),
+          utils.profile.listRoles.invalidate({ profileId }),
+        ]);
       }
-      // Partial input matching also invalidates the per-role infinite queries;
-      // listRoles refreshes or restores the optimistic member counts.
-      await Promise.all([
-        utils.profile.listUsers.invalidate({ profileId }),
-        utils.profile.listRoles.invalidate({ profileId }),
-      ]);
     });
   };
 
@@ -437,7 +453,9 @@ function ProfileInviteModalContent({
       try {
         // Collect all invitations across all roles into a single array
         const invitations = Object.entries(selectedItemsByRole)
-          .filter(([, items]) => items.length > 0)
+          .filter(
+            ([roleId, items]) => validRoleIds.has(roleId) && items.length > 0,
+          )
           .flatMap(([roleId, items]) =>
             items.map((item) => ({ email: item.email, roleId })),
           );
@@ -464,7 +482,13 @@ function ProfileInviteModalContent({
             ),
           );
           setSearchQuery('');
-          toast.error(t('Failed to send invite'));
+          // The server's reason strings aren't translated (same as the raw
+          // error.message surfaced in the catch block below), but they're
+          // the only way this toast explains why a retry would fail again.
+          const failureDetail = result.details.failed
+            .map((failure) => `${failure.email}: ${failure.reason}`)
+            .join('; ');
+          toast.error(`${t('Failed to send invite')}: ${failureDetail}`);
 
           if (result.details.successful.length > 0) {
             utils.profile.listUsers.invalidate({ profileId });
@@ -612,7 +636,10 @@ function ProfileInviteModalContent({
             <span className="text-sm">{t('People with access')}</span>
           )}
 
-          <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
+          <div
+            ref={setMemberListRoot}
+            className="flex max-h-80 flex-col gap-2 overflow-y-auto"
+          >
             {/* Staged items (not yet sent) */}
             {currentRoleItems.map((item) => (
               <PersonRow
