@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import { ProposalRelationshipType } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
+import { isProposalReachable } from './utils/proposal';
 
 export type ProposalMergeNote = {
   body: string;
@@ -71,11 +72,10 @@ export async function listProposalMergeRecipients({
   const { sourceProposal, targetProposal } = relationship;
   const processProfile = sourceProposal.processInstance?.profile;
 
-  // `moderationDetachedAt` hides a proposal from everyone, admins included.
   if (
     !processProfile ||
-    !isReachable(sourceProposal) ||
-    !isReachable(targetProposal)
+    !isProposalReachable(sourceProposal) ||
+    !isProposalReachable(targetProposal)
   ) {
     return { ok: false, reason: 'proposalUnavailable' };
   }
@@ -119,11 +119,6 @@ export async function listProposalMergeRecipients({
     },
   };
 }
-
-const isReachable = (proposal: {
-  deletedAt: string | null;
-  moderationDetachedAt: string | null;
-}) => !proposal.deletedAt && !proposal.moderationDetachedAt;
 
 /** The edge records no author, but the merge dialog collects the note. */
 const resolveNote = async ({

@@ -65,6 +65,7 @@ export * from './submitProposal';
 export * from './updateProposal';
 export * from './rejectProposal';
 export * from './unrejectProposal';
+export * from './listProposalRejectionRecipients';
 export * from './getProposal';
 export * from './assertProposalEngagementAccess';
 

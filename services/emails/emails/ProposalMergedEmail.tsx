@@ -1,13 +1,11 @@
-import { Link, Text } from 'react-email';
+import { Text } from 'react-email';
 
 import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
+import { InlineLink } from '../components/InlineLink';
 import { QuotedNote } from '../components/QuotedNote';
-
-// Styled to keep the design's weight rather than the client's default link blue.
-const inlineLinkClassName = 'font-bold text-primary-teal underline';
 
 /** Goes to the authors of the proposal that was merged away. */
 export const ProposalMergedEmail = ({
@@ -32,14 +30,9 @@ export const ProposalMergedEmail = ({
     >
       <Header>Proposal Merged</Header>
       <Text className="my-8 text-lg">
-        Your proposal{' '}
-        <Link href={proposalUrl} className={inlineLinkClassName}>
-          {proposalName}
-        </Link>{' '}
+        Your proposal <InlineLink href={proposalUrl}>{proposalName}</InlineLink>{' '}
         was merged into{' '}
-        <Link href={targetProposalUrl} className={inlineLinkClassName}>
-          {targetProposalName}
-        </Link>{' '}
+        <InlineLink href={targetProposalUrl}>{targetProposalName}</InlineLink>{' '}
         in <strong>{processTitle}</strong>.
       </Text>
 

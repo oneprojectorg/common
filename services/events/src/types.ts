@@ -4,6 +4,19 @@ import { z } from 'zod';
 // union so it flows cleanly through the service layer without enum coercion.
 const moderationItemType = z.enum(['proposal', 'post', 'user']);
 
+// Mirrors the `RejectionReason` enum in `@op/common`, which stays the source of
+// truth for the dialog and the mutation. Importing it here would invert the
+// existing `@op/common` → `@op/events` dependency, and re-exporting this file
+// from `@op/common/client` would put inngest in the browser bundle. Adding a
+// reason there without adding it here fails this schema's `parse` in the
+// workflow, so the author is never mailed — see the PR for the alternatives.
+const rejectionReason = z.enum([
+  'ineligible',
+  'duplicate',
+  'off-topic',
+  'infeasible',
+]);
+
 export const Events = {
   // Carries only the item ref: the workflow resolves the item's current text
   // and attachments itself at review time. Snapshotting content into the
@@ -146,6 +159,20 @@ export const Events = {
     schema: z.object({
       relationshipId: z.string().uuid(),
       // Dropped from the recipient lists.
+      actorAuthUserId: z.string().uuid(),
+    }),
+  },
+  // Unlike every other notification here, the payload is the carrier rather than
+  // a ref to re-read: nothing stores the reason or the note, so the email can
+  // only get them from the event. Everything else about the rejection — whether
+  // it still stands, who hears about it — is still re-read at send time.
+  proposalRejected: {
+    name: 'proposal/rejected' as const,
+    schema: z.object({
+      proposalId: z.string().uuid(),
+      reason: rejectionReason,
+      note: z.string().optional(),
+      // Dropped from the recipient list.
       actorAuthUserId: z.string().uuid(),
     }),
   },
