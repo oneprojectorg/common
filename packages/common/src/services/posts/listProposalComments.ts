@@ -33,17 +33,11 @@ export const listProposalComments = async ({
   limit?: number;
   cursor?: string | null;
 }) => {
-  // The assert rejects the whole `Promise.all`, so an unauthorized caller never
-  // receives the row read alongside it.
-  const [, proposal] = await Promise.all([
-    assertPostReadAccess({ user, profileId }),
-    db.query.proposals.findFirst({
-      where: { profileId },
-      columns: { id: true, processInstanceId: true },
-    }),
-  ]);
+  // The assert resolves the proposal to gate on it, so it comes back here
+  // rather than being read a second time. Null means a decision profile, which
+  // the assert also admits.
+  const { proposal } = await assertPostReadAccess({ user, profileId });
 
-  // The assert admits a decision profile too, which has no proposal behind it.
   if (!proposal) {
     throw new NotFoundError('Proposal', profileId);
   }

@@ -13,17 +13,25 @@ import {
 import { decisionPermission } from '../decision/permissions';
 import { getNetworkMembership } from '../user';
 
+/** The proposal behind the gated profile, or null when it is a decision. */
+export type PostReadAccess = {
+  proposal: { id: string; processInstanceId: string } | null;
+};
+
 // Asserts a caller's READ access to a profile's posts, dispatching on the
 // profile's server-resolved type. Fail-closed: a type without a case is denied
 // (unlike assertProfileTypeAccess, whose policy map passes unlisted types and
 // leaked proposal posts). The type comes from the DB row, never the caller.
+//
+// Returns the proposal it resolved on the way, so a caller that needs it does
+// not query for it a second time.
 export const assertPostReadAccess = async ({
   user,
   profileId,
 }: {
   user: AccessUser | undefined;
   profileId: string;
-}) => {
+}): Promise<PostReadAccess> => {
   const profile = await db.query.profiles.findFirst({
     where: { id: profileId },
     columns: { type: true },
@@ -41,7 +49,7 @@ export const assertPostReadAccess = async ({
         profileIds: [profileId],
         policies: { [EntityType.DECISION]: { decisions: permission.READ } },
       });
-      return;
+      return { proposal: null };
     }
 
     // A proposal's READ grant lives on its parent decision (the process
@@ -65,7 +73,12 @@ export const assertPostReadAccess = async ({
           { decisions: permission.ADMIN },
         ],
       });
-      return;
+      return {
+        proposal: {
+          id: proposal.id,
+          processInstanceId: proposal.processInstanceId,
+        },
+      };
     }
 
     default:
