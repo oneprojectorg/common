@@ -6,10 +6,11 @@ import {
   type SchemaOption,
   type XFormatPropertySchema,
   buildMoneyFieldAnswer,
-  getMoneyAnswerAmount,
+  getCurrencySymbol,
+  getMoneyAmount,
   getMoneyFieldCurrency,
+  getMoneyFieldMinimum,
   isOverallRecommendationField,
-  isSchemaObjectDefinition,
   parseSchemaOptions,
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
@@ -451,7 +452,7 @@ function MoneyFieldInput({
       description={field.schema.description}
       required={required}
       prefixText={currencySymbol}
-      value={getMoneyAnswerAmount(value)}
+      value={getMoneyAmount(value)}
       minValue={getMoneyFieldMinimum(field.schema)}
       onChange={(next) =>
         onChange(
@@ -680,25 +681,4 @@ function parseSelectedValue(
   }
 
   return selected;
-}
-
-// formatToParts, not string-stripping: locales with non-ASCII numerals would
-// leave digits behind in the prefix.
-function getCurrencySymbol(currency: string): string {
-  const part = new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency,
-    currencyDisplay: 'narrowSymbol',
-  })
-    .formatToParts(0)
-    .find(({ type }) => type === 'currency');
-  return part?.value ?? currency;
-}
-
-/** Declared `amount.minimum`, when the money schema is well-formed. */
-function getMoneyFieldMinimum(
-  schema: XFormatPropertySchema,
-): number | undefined {
-  const amount = schema.properties?.amount;
-  return isSchemaObjectDefinition(amount) ? amount.minimum : undefined;
 }

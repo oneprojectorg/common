@@ -2,7 +2,7 @@ import {
   type ProposalReview,
   type RubricTemplateSchema,
   findSchemaOption,
-  getMoneyAnswerAmount,
+  getMoneyAmount,
   isOverallRecommendationField,
   resolveMoneyDisplayCurrency,
 } from '@op/common/client';
@@ -154,7 +154,7 @@ function RubricFieldResult({
   const format = useFormatter();
 
   if (inferCriterionType(field.schema) === 'money') {
-    const amount = getMoneyAnswerAmount(value);
+    const amount = getMoneyAmount(value);
     return (
       <ResultCard
         value={

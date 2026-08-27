@@ -43,8 +43,8 @@ export interface XFormatPropertySchema extends JSONSchema7 {
   /** Default map camera for `location` fields (see {@link MapDefaultView}). */
   'x-map-default'?: MapDefaultView;
   /**
-   * Nested subschemas keep JSON Schema 7's boolean union; narrow with
-   * `isSchemaObjectDefinition` before touching keywords.
+   * Nested subschemas keep JSON Schema 7's boolean union; narrow before
+   * touching keywords.
    */
   properties?: Record<string, XFormatPropertySchema | boolean>;
 }

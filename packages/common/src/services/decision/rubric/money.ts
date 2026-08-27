@@ -20,48 +20,20 @@
  * whatever the template declares, so authors must declare exactly this shape.
  * Totals are derived at render time, never stored.
  */
+import {
+  DEFAULT_MONEY_CURRENCY,
+  type MoneyAmount,
+  getMoneyCurrency,
+  isValidCurrencyCode,
+} from '../../../money';
 import type { XFormatPropertySchema } from '../types';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Stored answer for a money field. */
-export interface MoneyFieldAnswer {
-  amount: number;
-  currency: string;
-}
-
-/** Reader fallback for unvalidated drafts. */
-export const DEFAULT_MONEY_CURRENCY = 'USD';
-
-/** ISO 4217 codes are three letters. */
-const CURRENCY_CODE_PATTERN = /^[A-Za-z]{3}$/;
-
-// ---------------------------------------------------------------------------
-// Runtime narrowing (unknown JSON in, no assertions)
-// ---------------------------------------------------------------------------
-
 /** Narrows a JSON Schema definition to its object form (not `true`/`false`). */
-export function isSchemaObjectDefinition(
+function isSchemaObjectDefinition(
   definition: XFormatPropertySchema | boolean | undefined,
 ): definition is XFormatPropertySchema {
   return typeof definition === 'object' && definition !== null;
 }
-
-/** Narrows an unknown stored value to a plain (non-array) object. */
-function isPlainObject(value: unknown): value is { [key: string]: unknown } {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** Whether a code is shaped like an ISO 4217 currency code. */
-export function isValidCurrencyCode(code: unknown): code is string {
-  return typeof code === 'string' && CURRENCY_CODE_PATTERN.test(code);
-}
-
-// ---------------------------------------------------------------------------
-// Schema readers
-// ---------------------------------------------------------------------------
 
 /** Declared-only detection — never structural, so legacy criteria can't be reclassified. */
 export function isMoneyFieldSchema(schema: XFormatPropertySchema): boolean {
@@ -80,34 +52,21 @@ export function getMoneyFieldCurrency(
   return isValidCurrencyCode(declared) ? declared : undefined;
 }
 
-// ---------------------------------------------------------------------------
-// Answer readers (drafts are unvalidated, so every read is defensive)
-// ---------------------------------------------------------------------------
-
-/** The amount inside a stored money answer, or `null` when absent/malformed. */
-export function getMoneyAnswerAmount(value: unknown): number | null {
-  if (!isPlainObject(value)) {
-    return null;
-  }
-  const amount = value.amount;
-  return typeof amount === 'number' && Number.isFinite(amount) ? amount : null;
+/** Declared `amount.minimum`, when the money schema is well-formed. */
+export function getMoneyFieldMinimum(
+  schema: XFormatPropertySchema,
+): number | undefined {
+  const amount = schema.properties?.amount;
+  return isSchemaObjectDefinition(amount) ? amount.minimum : undefined;
 }
 
-/** The currency inside a stored money answer, when it is well-formed. */
-export function getMoneyAnswerCurrency(value: unknown): string | undefined {
-  if (!isPlainObject(value)) {
-    return undefined;
-  }
-  return isValidCurrencyCode(value.currency) ? value.currency : undefined;
-}
-
-/** Display currency: stored answer wins (survives template re-pinning), then template, then USD. */
+/** Display currency: stored value wins (survives template re-pinning), then template, then USD. */
 export function resolveMoneyDisplayCurrency(
   value: unknown,
   schema: XFormatPropertySchema,
 ): string {
   return (
-    getMoneyAnswerCurrency(value) ??
+    getMoneyCurrency(value) ??
     getMoneyFieldCurrency(schema) ??
     DEFAULT_MONEY_CURRENCY
   );
@@ -117,7 +76,7 @@ export function resolveMoneyDisplayCurrency(
 export function buildMoneyFieldAnswer(
   amount: number,
   schema: XFormatPropertySchema,
-): MoneyFieldAnswer {
+): MoneyAmount {
   return {
     amount,
     currency: getMoneyFieldCurrency(schema) ?? DEFAULT_MONEY_CURRENCY,

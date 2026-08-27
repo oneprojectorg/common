@@ -1691,6 +1691,5 @@
   "Reviewers": "Revisores",
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# revisor} other {# revisores}} · {unassigned, plural, one {# propuesta sin asignar} other {# propuestas sin asignar}}",
   "Amount": "Importe",
-  "Cost estimate": "Estimación de costes",
   "Reviewers enter an amount": "Las personas revisoras introducen un importe"
 }

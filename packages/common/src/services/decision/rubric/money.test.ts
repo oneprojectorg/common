@@ -4,11 +4,9 @@ import { SchemaValidator } from '../schemaValidator';
 import type { RubricTemplateSchema, XFormatPropertySchema } from '../types';
 import {
   buildMoneyFieldAnswer,
-  getMoneyAnswerAmount,
-  getMoneyAnswerCurrency,
   getMoneyFieldCurrency,
+  getMoneyFieldMinimum,
   isMoneyFieldSchema,
-  isValidCurrencyCode,
   resolveMoneyDisplayCurrency,
 } from './money';
 
@@ -69,34 +67,14 @@ describe('getMoneyFieldCurrency', () => {
   });
 });
 
-describe('answer readers', () => {
-  it('reads a well-formed answer', () => {
-    expect(getMoneyAnswerAmount({ amount: 1200.5, currency: 'USD' })).toBe(
-      1200.5,
-    );
-    expect(getMoneyAnswerCurrency({ amount: 1, currency: 'eur' })).toBe('eur');
+describe('getMoneyFieldMinimum', () => {
+  it('reads the declared amount.minimum, undefined when malformed', () => {
+    expect(getMoneyFieldMinimum(moneySchema())).toBe(0);
+    expect(getMoneyFieldMinimum({ 'x-format': 'money' })).toBeUndefined();
   });
+});
 
-  it('tolerates the partial / malformed shapes unvalidated drafts allow', () => {
-    for (const value of [
-      undefined,
-      null,
-      'nope',
-      42,
-      [],
-      {},
-      { amount: '12' },
-      { amount: Number.NaN },
-      { currency: 'USD' },
-    ]) {
-      expect(getMoneyAnswerAmount(value)).toBeNull();
-    }
-    expect(
-      getMoneyAnswerCurrency({ amount: 1, currency: 'US$' }),
-    ).toBeUndefined();
-    expect(getMoneyAnswerCurrency({ amount: 1 })).toBeUndefined();
-  });
-
+describe('resolveMoneyDisplayCurrency', () => {
   it('guards Intl against malformed stored currency codes', () => {
     const schema = moneySchema({ currency: 'EUR' });
     expect(
@@ -109,13 +87,6 @@ describe('answer readers', () => {
     expect(resolveMoneyDisplayCurrency({}, { 'x-format': 'money' })).toBe(
       'USD',
     );
-  });
-
-  it('isValidCurrencyCode accepts three letters only', () => {
-    expect(isValidCurrencyCode('usd')).toBe(true);
-    expect(isValidCurrencyCode('US')).toBe(false);
-    expect(isValidCurrencyCode('USDD')).toBe(false);
-    expect(isValidCurrencyCode(12)).toBe(false);
   });
 });
 

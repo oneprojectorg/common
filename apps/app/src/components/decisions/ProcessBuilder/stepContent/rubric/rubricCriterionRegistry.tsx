@@ -34,7 +34,7 @@ export const CRITERION_TYPE_REGISTRY: Record<
     descriptionKey: 'No score, just written feedback',
   },
   money: {
-    labelKey: 'Cost estimate',
+    labelKey: 'Amount',
     descriptionKey: 'Reviewers enter an amount',
   },
 };

@@ -1691,6 +1691,5 @@
   "Reviewers": "المراجعون",
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# مراجع} other {# مراجعين}} · {unassigned, plural, one {# مقترح غير معيَّن} other {# مقترحات غير معيَّنة}}",
   "Amount": "المبلغ",
-  "Cost estimate": "تقدير التكلفة",
   "Reviewers enter an amount": "يُدخل المراجعون مبلغًا"
 }
