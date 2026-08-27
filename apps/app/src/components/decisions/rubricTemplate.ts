@@ -253,8 +253,23 @@ export function withYesNoDefaults(
 // Readers (delegating to shared utils where possible)
 // ---------------------------------------------------------------------------
 
+/**
+ * Criterion ids in display order. `x-field-order` is ordering metadata, so a
+ * rubric missing it (authored through the API or carried in on a process
+ * template) still has its criteria — falling back to `properties` keeps the
+ * builder consistent with the reviewer-facing `compileRubricSchema`, which
+ * would otherwise render criteria the builder shows as an empty rubric.
+ */
 export function getCriterionOrder(template: RubricTemplateSchema): string[] {
-  return getPropertyOrder(template);
+  const order = getPropertyOrder(template);
+  const ordered = new Set(order);
+
+  return [
+    ...order,
+    ...Object.keys(template.properties ?? {}).filter(
+      (key) => !ordered.has(key),
+    ),
+  ];
 }
 
 export function getCriterionSchema(

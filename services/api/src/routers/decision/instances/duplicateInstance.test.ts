@@ -377,8 +377,8 @@ describe.concurrent('duplicateInstance', () => {
     }
   });
 
-  // The reported bug: SEI cycle 2 came out of a duplication with an empty
-  // rubric. That rubric lives at the instance level, not on a phase.
+  // The reported bug was a duplicate arriving with an empty rubric, and that
+  // rubric lives at the instance level, not on a phase.
   it('should copy the instance-level rubric when include.reviewRubric is true', async ({
     task,
     onTestFinished,
