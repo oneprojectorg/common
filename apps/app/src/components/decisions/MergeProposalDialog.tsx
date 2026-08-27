@@ -63,10 +63,8 @@ import {
 /** Shared by both pickers, so a search can reach whatever the list can. */
 const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 
-// Stable identities: Base UI re-renders every option when either changes.
+// Stable identity: Base UI re-renders every option when this changes.
 const getMergeCandidateLabel = (candidate: MergeCandidate) => candidate.title;
-const isSameMergeCandidate = (a: MergeCandidate, b: MergeCandidate) =>
-  a.id === b.id;
 
 /**
  * Both frames set the interpolated proposal titles in Roboto Medium, which is
@@ -94,24 +92,10 @@ export function MergeProposalDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations();
-  // Figma hides the search field's own label: while the field is on screen this
-  // heading names it, and it names the picked card once the field is gone.
-  const mergeIntoHeadingId = useId();
   const [step, setStep] = useState<MergeStep>('select');
-  // State rather than a ref: the list below reads this as its observer root, so
-  // it has to re-render once the element is attached.
-  const [candidateScrollRoot, setCandidateScrollRoot] =
-    useState<HTMLDivElement | null>(null);
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
-  // Picking swaps the field for the picked card and clearing swaps it back, so
-  // each hands focus to whatever replaced it — an unmounted element leaves it on
-  // `<body>`. Only the two handlers set this, so opening the dialog, typing, or
-  // a re-render never moves focus on their own.
-  const [pendingFocus, setPendingFocus] = useState<'clear-pick' | 'search'>();
-  const clearPickRef = useRef<HTMLButtonElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   // No invalidation needed: the endpoint registers the affected proposal channels.
   const mergeMutation = trpc.decision.mergeProposals.useMutation({
     onError: (error) => {
@@ -123,34 +107,12 @@ export function MergeProposalDialog({
 
   const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
 
-  // `null` drops the pick without touching the query — that path is the user
-  // editing the field, which already set the term.
-  const handleSelect = (candidate: MergeCandidate | null) => {
-    setTarget(candidate);
-    if (candidate) {
-      setPendingFocus('clear-pick');
-    }
-  };
-
   // Blanking the term too: the restored field must not come back pre-filled
   // with the proposal the user just rejected.
   const handleClearPick = () => {
     setTarget(null);
     setSearchTerm('');
-    setPendingFocus('search');
   };
-
-  useEffect(() => {
-    if (!pendingFocus) {
-      return;
-    }
-    const element =
-      pendingFocus === 'clear-pick'
-        ? clearPickRef.current
-        : searchInputRef.current;
-    element?.focus();
-    setPendingFocus(undefined);
-  }, [pendingFocus]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -159,7 +121,6 @@ export function MergeProposalDialog({
       setTarget(null);
       setSearchTerm('');
       setNote('');
-      setPendingFocus(undefined);
     }
     onOpenChange(nextOpen);
   };
@@ -207,120 +168,16 @@ export function MergeProposalDialog({
         </DialogHeader>
 
         {step === 'select' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-0">
-            {/* No bottom padding while the candidate list is up: it owns the
-                space down to the footer, so padding here would strand a dead
-                band under the scroll area. The picked state has no list, so it
-                pads itself. */}
-            <div
-              className={cn(
-                'flex flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-6 pt-8',
-                target && 'pb-10',
-              )}
-            >
-              {/* Figma renders this at body colour, not the muted default. */}
-              <DialogDescription className="text-foreground">
-                {t.rich(
-                  'Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.',
-                  { name: sourceTitle, source },
-                )}
-              </DialogDescription>
-
-              <section className="flex flex-col gap-4">
-                <h3 className="font-serif text-label">{t('Merging from')}</h3>
-                <MergeProposalSummaryCard
-                  proposal={proposal}
-                  className="bg-muted"
-                />
-              </section>
-
-              {/* One heading over every picker, per Figma: the field and the
-                  suggestions are two ways of answering "merge into what?", and
-                  once one is picked the heading names the card that answered it. */}
-              <section className="flex min-h-0 flex-1 flex-col gap-4">
-                <h3 id={mergeIntoHeadingId} className="font-serif text-label">
-                  {t('Merge into')}
-                </h3>
-
-                {target ? (
-                  <>
-                    {/* Plain card, not the `selected` highlight: nothing here is
-                        selectable any more, so there is no state to signal. */}
-                    <MergeProposalSummaryCard
-                      proposal={target.proposal}
-                      showDescription
-                    />
-                    {/* `px-0` only: Figma starts the link on the content padding,
-                        and the default size carries the row height it sits on. */}
-                    <Button
-                      ref={clearPickRef}
-                      variant="link"
-                      className="self-start px-0"
-                      onClick={handleClearPick}
-                    >
-                      {t('Select a different proposal')}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <MergeTargetSearchField
-                      inputRef={searchInputRef}
-                      labelledBy={mergeIntoHeadingId}
-                      proposal={proposal}
-                      searchTerm={searchTerm}
-                      onSearchTermChange={setSearchTerm}
-                      onSelect={handleSelect}
-                    />
-
-                    {/* Only the candidates scroll; the blurb, the source card and
-                        the field stay put. `min-h-40` is the floor that keeps a
-                        short viewport from squeezing this to nothing — past it the
-                        body scrolls again rather than hiding the list.
-                        `overflow-x-hidden` is not belt-and-braces: `overflow-y`
-                        alone computes the other axis to `auto`, so a vertical
-                        scrollbar narrowing the content box is enough to raise a
-                        horizontal one. Every card here is width-constrained, so the
-                        axis has nothing to reach and should never scroll. */}
-                    <div
-                      ref={setCandidateScrollRoot}
-                      className="flex min-h-40 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto"
-                    >
-                      {/* Scoped boundary: a failed list must leave the dialog usable. */}
-                      <APIErrorBoundary
-                        fallbacks={{
-                          default: () => (
-                            <p className="text-destructive" role="alert">
-                              {t(
-                                'Could not load the other proposals. Please try again.',
-                              )}
-                            </p>
-                          ),
-                        }}
-                      >
-                        <Suspense fallback={<MergeCandidateListSkeleton />}>
-                          <MergeCandidateListSuspense
-                            proposal={proposal}
-                            scrollRoot={candidateScrollRoot}
-                            onSelect={handleSelect}
-                          />
-                        </Suspense>
-                      </APIErrorBoundary>
-                    </div>
-                  </>
-                )}
-              </section>
-            </div>
-
-            <DialogFooter>
-              <Button
-                className="w-full sm:w-auto"
-                onClick={() => setStep('confirm')}
-                disabled={!target}
-              >
-                {t('Continue')}
-              </Button>
-            </DialogFooter>
-          </div>
+          <SelectMergeTargetStep
+            proposal={proposal}
+            sourceTitle={sourceTitle}
+            target={target}
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            onSelect={setTarget}
+            onClearPick={handleClearPick}
+            onContinue={() => setStep('confirm')}
+          />
         ) : (
           <ConfirmMergeStep
             sourceTitle={sourceTitle}
@@ -335,6 +192,187 @@ export function MergeProposalDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Two states, not one: until a proposal is picked this is a search field over a
+ * suggestion list, and after it is the picked card with a link back. Figma keeps
+ * no field on screen beside the pick.
+ */
+function SelectMergeTargetStep({
+  proposal,
+  sourceTitle,
+  target,
+  searchTerm,
+  onSearchTermChange,
+  onSelect,
+  onClearPick,
+  onContinue,
+}: {
+  /** The proposal being merged away. */
+  proposal: Proposal;
+  /** `proposal`'s display title, named in the blurb. */
+  sourceTitle: string;
+  target: MergeCandidate | null;
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
+  /** `null` when the user edits the query, which drops the pick. */
+  onSelect: (candidate: MergeCandidate | null) => void;
+  onClearPick: () => void;
+  onContinue: () => void;
+}) {
+  const t = useTranslations();
+  // Figma hides the search field's own label: while the field is on screen this
+  // heading names it, and it names the picked card once the field is gone.
+  const mergeIntoHeadingId = useId();
+  // State rather than a ref: the list below reads this as its observer root, so
+  // it has to re-render once the element is attached.
+  const [candidateScrollRoot, setCandidateScrollRoot] =
+    useState<HTMLDivElement | null>(null);
+  // Picking swaps the field for the picked card and clearing swaps it back, so
+  // each hands focus to whatever replaced it — an unmounted element leaves it on
+  // `<body>`. Only the two handlers set this, so mounting the step, typing, or a
+  // re-render never moves focus on their own.
+  const [pendingFocus, setPendingFocus] = useState<'clear-pick' | 'search'>();
+  const clearPickRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!pendingFocus) {
+      return;
+    }
+    const element =
+      pendingFocus === 'clear-pick'
+        ? clearPickRef.current
+        : searchInputRef.current;
+    element?.focus();
+    setPendingFocus(undefined);
+  }, [pendingFocus]);
+
+  const handleSelect = (candidate: MergeCandidate | null) => {
+    onSelect(candidate);
+    if (candidate) {
+      setPendingFocus('clear-pick');
+    }
+  };
+
+  const handleClearPick = () => {
+    onClearPick();
+    setPendingFocus('search');
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-0">
+      {/* No bottom padding while the candidate list is up: it owns the space
+          down to the footer, so padding here would strand a dead band under the
+          scroll area. The picked state has no list, so it pads itself. */}
+      <div
+        className={cn(
+          'flex flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-6 pt-8',
+          target && 'pb-10',
+        )}
+      >
+        {/* Figma renders this at body colour, not the muted default. */}
+        <DialogDescription className="text-foreground">
+          {t.rich(
+            'Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.',
+            { name: sourceTitle, source },
+          )}
+        </DialogDescription>
+
+        <section className="flex flex-col gap-4">
+          <h3 className="font-serif text-label">{t('Merging from')}</h3>
+          <MergeProposalSummaryCard proposal={proposal} className="bg-muted" />
+        </section>
+
+        {/* One heading over every picker, per Figma: the field and the
+            suggestions are two ways of answering "merge into what?", and once
+            one is picked the heading names the card that answered it. */}
+        <section className="flex min-h-0 flex-1 flex-col gap-4">
+          <h3 id={mergeIntoHeadingId} className="font-serif text-label">
+            {t('Merge into')}
+          </h3>
+
+          {target ? (
+            <>
+              {/* Plain card, not the `selected` highlight: nothing here is
+                  selectable any more, so there is no state to signal. */}
+              <MergeProposalSummaryCard
+                proposal={target.proposal}
+                showDescription
+              />
+              {/* `px-0` only: Figma starts the link on the content padding, and
+                  the default size carries the row height it sits on. */}
+              <Button
+                ref={clearPickRef}
+                variant="link"
+                className="self-start px-0"
+                onClick={handleClearPick}
+              >
+                {t('Select a different proposal')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <MergeTargetSearchField
+                inputRef={searchInputRef}
+                labelledBy={mergeIntoHeadingId}
+                proposal={proposal}
+                searchTerm={searchTerm}
+                onSearchTermChange={onSearchTermChange}
+                onSelect={handleSelect}
+              />
+
+              {/* Only the candidates scroll; the blurb, the source card and the
+                  field stay put. `min-h-40` is the floor that keeps a short
+                  viewport from squeezing this to nothing — past it the body
+                  scrolls again rather than hiding the list. `overflow-x-hidden`
+                  is not belt-and-braces: `overflow-y` alone computes the other
+                  axis to `auto`, so a vertical scrollbar narrowing the content
+                  box is enough to raise a horizontal one. Every card here is
+                  width-constrained, so the axis has nothing to reach and should
+                  never scroll. */}
+              <div
+                ref={setCandidateScrollRoot}
+                className="flex min-h-40 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto"
+              >
+                {/* Scoped boundary: a failed list must leave the dialog usable. */}
+                <APIErrorBoundary
+                  fallbacks={{
+                    default: () => (
+                      <p className="text-destructive" role="alert">
+                        {t(
+                          'Could not load the other proposals. Please try again.',
+                        )}
+                      </p>
+                    ),
+                  }}
+                >
+                  <Suspense fallback={<MergeCandidateListSkeleton />}>
+                    <MergeCandidateListSuspense
+                      proposal={proposal}
+                      scrollRoot={candidateScrollRoot}
+                      onSelect={handleSelect}
+                    />
+                  </Suspense>
+                </APIErrorBoundary>
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+
+      <DialogFooter>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={onContinue}
+          disabled={!target}
+        >
+          {t('Continue')}
+        </Button>
+      </DialogFooter>
+    </div>
   );
 }
 
@@ -499,7 +537,6 @@ function MergeTargetSearchField({
         }
       }}
       itemToStringLabel={getMergeCandidateLabel}
-      isItemEqualToValue={isSameMergeCandidate}
       onValueChange={onSelect}
     >
       <ComboboxInput
