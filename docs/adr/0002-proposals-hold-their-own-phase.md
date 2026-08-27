@@ -62,17 +62,12 @@ it has to be replaced rather than removed. Three questions hide behind one read:
 The first two are back-end questions and are decided here; the third is a
 front-end question and is not.
 
-Each individual check gets simpler. `isReviewPhase(phase)` and
-`isVotingPhase(phase)` already take a phase rather than a cursor — today they are
-handed whichever phase the cursor names. Afterwards the review and vote checks
-read `proposal.phase_id`: one row, and none of the array-position arithmetic in
-`isPhaseAtOrBefore` or `hasPhaseEnded`.
-
-The difficulty moves into _selecting_ the phase, and only bites when two phases
-of the same kind are open at once. Submission is where it bites: with two open
-intake phases a `createProposal` call has no unique target, so the input needs an
-explicit `phaseId` and the UI has to ask. Navigation loses its implied answer
-too — the phase becomes part of the route, with a rule for where to land.
+Each check gets simpler. `isReviewPhase(phase)` and `isVotingPhase(phase)`
+already take a phase rather than a cursor, so review and vote become a lookup on
+`proposal.phase_id` with none of the array-position arithmetic in
+`isPhaseAtOrBefore` or `hasPhaseEnded`. The difficulty moves into _selecting_ the
+phase, and only bites when two of the same kind are open at once: with two open
+intake phases a `createProposal` call has no unique target.
 
 ### Phases have no identity
 
@@ -137,9 +132,8 @@ the phase filter into the same query. Under B the existing
 `(process_instance_id, created_at, id)` index gains `phase_id` and one scan still
 serves filter and ordering. Under C the filter and sort keys sit in different
 tables, which no single index serves; the escapes are denormalizing `created_at`
-into the membership row, or paginating by `entered_at` and changing the product's
-sort order to settle a schema question. That is a permanent cost against a
-requirement we do not yet have.
+into the membership row, or changing the product's sort order to settle a schema
+question — a permanent cost against a requirement we do not yet have.
 
 Rejected: a nullable `phase_id` override falling back to the derived window. Two
 membership mechanisms that disagree at the edges, and the fallback never becomes
@@ -147,9 +141,9 @@ deletable.
 
 ### Axis 3: are phases continuous or exclusive
 
-Independent movement is not always what we want. A voting phase usually opens at
-a fixed time, closes at a fixed time, and pauses that capability outside the
-window — and while voting is open, intake usually should not be.
+Independent movement is not always what we want. A voting phase usually opens
+and closes at fixed times and is paused outside that window — and while it is
+open, intake usually should not be.
 
 **As an instance mode.** A process is either continuous (proposals move
 independently, viewers browse phases) or restricted (one phase at a time, as
@@ -207,9 +201,9 @@ end_date, state, exclusive)`, unique on `(process_instance_id, phase_id)`.
 9. Make results processing an explicit instance close, since proposals now reach
    the last phase continuously.
 
-C is not adopted. If parallel tracks become a requirement,
-`decision_proposal_phase_transitions` holds the history and `decision_phases` is
-the FK target, so C is reachable without a second backfill.
+C stays reachable: `decision_proposal_phase_transitions` holds the history and
+`decision_phases` is the FK target, so adopting it later needs no second
+backfill.
 
 ### Delivery order
 
@@ -250,24 +244,20 @@ flowchart LR
    per-batch side effects, results as explicit close, and the explicit `phaseId`
    on `createProposal`.
 
-Front-end work is a fourth tranche, out of scope here. It can start alongside
-tranche 3 once the API shape is fixed.
-
-Tranches 0–2 are behaviour-preserving and independently revertable. Every
-migration and backfill bakes in production before anything user-visible changes.
+Front-end work is a fourth tranche, out of scope here; it can start alongside
+tranche 3 once the API shape is fixed. Tranches 0–2 are behaviour-preserving and
+independently revertable — every migration and backfill bakes in production
+before anything user-visible changes.
 
 ## Consequences
 
-Phase-scoped reads collapse to a `WHERE` clause, so the ID-materialization and
-SQL-pushdown machinery in `getProposalsForPhase.ts` goes away and phase-scoped
-lists sort and paginate in the database.
-
-Independent movement becomes expressible, and a phase can be `open` for
-submissions while proposals leave it one at a time.
-
-Phases gain referential integrity, explicit ordering, and per-phase membership
-and role grants in the standard access-zones vocabulary — replacing three
-hand-rolled mechanisms.
+Independent movement becomes expressible: a phase stays open for submissions
+while proposals leave it one at a time. Phase-scoped reads collapse to a `WHERE`
+clause, so the ID-materialization and SQL-pushdown machinery in
+`getProposalsForPhase.ts` goes away and phase-scoped lists sort and paginate in
+the database. Phases gain referential integrity, explicit ordering, and per-phase
+role grants in the standard access-zones vocabulary, replacing three hand-rolled
+mechanisms.
 
 Phase configuration moves out of `instance_data` into a table, and instantiation
 mints profiles. `createInstanceFromTemplate`, `duplicateInstance`,
@@ -277,35 +267,29 @@ or reordering phases in the Process Builder becomes a row operation with live
 FKs, so it needs guard rails.
 
 Phase state is written rather than derived, so a bug corrupts data instead of
-producing a wrong answer that a fix would correct on the next read. Keeping
-`phase_id` derivable from the transition log preserves a rebuild path, but the
-reconciler has to be written. `advancePhase`'s single-row optimistic lock becomes
-a batch write, and concurrent moves over overlapping sets need conflict handling.
+producing a wrong answer the next read would correct. Keeping `phase_id`
+derivable from the transition log preserves a rebuild path, but the reconciler
+has to be written. `advancePhase`'s single-row optimistic lock becomes a batch
+write, and concurrent moves over overlapping sets need conflict handling.
 
 Backfill touches every non-legacy instance, and the ~220 `current_state_id` reads
 each need a judgement about whether they ask about a proposal or the instance — a
 distinction the code does not currently draw.
 
-**Front-end changes to consider, not decided here.** The UI loses its single
-answer to "what phase is this decision in": `DecisionStateRouter` routes the
-whole decision off the current phase and `DecisionProcessStepper` renders one
-active step, and both need a model where several phases are live. Beyond that,
-the phase has to enter the route with a landing rule, intake needs a target
-picker when more than one phase accepts proposals, and the voting window becomes
-a first-class UI state — countdowns before the start date, a live indicator
-inside it, a closed state after. That is a design question and the largest piece
-of work this creates.
+Voting windows come for free. The window is consulted on every capability check,
+so a phase opens and closes on its dates with no job to run and no transition to
+fire, and those dates tell the client when voting has started. Scheduled
+transitions become per-phase open/close rather than instance-wide clock ticks.
 
-Scheduled transitions (`decision_process_transitions.scheduled_date`) become
-per-phase open/close rather than instance-wide clock ticks. Because the window is
-consulted on every capability check, a voting phase opens and closes on its dates
-with no job to run and no transition to fire, and the same dates tell the client
-when voting has started.
+`createProposal` gains a `phaseId` — a breaking input change, mitigated by
+defaulting to the sole open intake phase. And because `exclusive` backfills to
+`true`, an instance behaves exactly as it does today until someone turns it off:
+continuous behaviour is opt-in per instance, not a flag day.
 
-`createProposal` gains a required-in-practice `phaseId`, and the client has to
-supply it — a breaking input change, mitigated by defaulting to the sole open
-intake phase while `exclusive` is universally true.
-
-Because `exclusive` defaults to true everywhere, an instance behaves exactly as
-it does today until someone turns it off. Continuous behaviour is opt-in per
-instance rather than a flag day.
+**Front end, not decided here.** The UI loses its single answer to "what phase is
+this decision in" — `DecisionStateRouter` routes the whole decision off the
+current phase, `DecisionProcessStepper` renders one active step. Beyond that: the
+phase enters the route with a landing rule, intake needs a target picker when
+more than one phase accepts proposals, and the voting window becomes a UI state
+(before, during, after). A design question, and the largest piece of work this
+creates.
