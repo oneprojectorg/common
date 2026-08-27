@@ -101,8 +101,6 @@ export function RubricEditorContent({
     null,
   );
 
-  // Reviewer preview modal
-
   // Cache scored config so switching type and back doesn't lose score labels
   const scoredConfigCacheRef = useRef<
     Map<string, { maximum: number; oneOf: { const: number; title: string }[] }>
