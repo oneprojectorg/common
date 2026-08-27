@@ -30,6 +30,9 @@ export function getProposalDisplayTitle(
  * `mergeProposals` only rejects a self-merge, so the rest is on the picker.
  * Drafts, hidden, and flagged proposals are excluded because merging into one
  * removes the source from every list and leaves nothing visible in its place.
+ * Rejected proposals are excluded for the opposite reason — they're perfectly
+ * visible, but they've left the pipeline, so folding a live proposal into one
+ * would retire it by the back door.
  *
  * Title search is the server's job — `listProposals` takes a `search` term.
  */
@@ -47,6 +50,7 @@ export function getMergeCandidates({
       (proposal) =>
         proposal.id !== sourceProposalId &&
         proposal.status !== ProposalStatus.DRAFT &&
+        proposal.status !== ProposalStatus.REJECTED &&
         proposal.visibility !== Visibility.HIDDEN &&
         !proposal.isFlagged,
     )

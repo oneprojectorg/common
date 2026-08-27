@@ -315,59 +315,7 @@ describe.concurrent('listProposals', () => {
     expect(result.proposals).toHaveLength(2);
   });
 
-  it('should hide rejected proposals from non-admin users', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instance;
-
-    const [keptProposal, rejectedProposal, adminCaller, memberUser] =
-      await Promise.all([
-        testData.createProposal({
-          userEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: 'Kept Proposal' },
-        }),
-        testData.createProposal({
-          userEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: 'Rejected Proposal' },
-        }),
-        createAuthenticatedCaller(setup.userEmail),
-        testData.createMemberUser({
-          organization: setup.organization,
-          instanceProfileIds: [instance.profileId],
-        }),
-      ]);
-
-    // A draft can't be rejected, so submit both first.
-    await Promise.all([
-      adminCaller.decision.submitProposal({ proposalId: keptProposal.id }),
-      adminCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
-    ]);
-
-    await adminCaller.decision.rejectProposal({
-      proposalId: rejectedProposal.id,
-    });
-
-    const memberCaller = await createAuthenticatedCaller(memberUser.email);
-    const result = await memberCaller.decision.listProposals({
-      processInstanceId: instance.instance.id,
-    });
-
-    // Non-admin sees only the non-rejected proposal, exactly like a flagged one.
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(keptProposal.id);
-  });
-
-  it('should show rejected proposals to admin users', async ({
+  it('shows rejected proposals to admins and non-admins alike', async ({
     task,
     onTestFinished,
   }) => {
@@ -385,21 +333,23 @@ describe.concurrent('listProposals', () => {
       instanceProfileIds: [instance.profileId],
     });
 
-    const [keptProposal, rejectedProposal, adminCaller] = await Promise.all([
-      testData.createProposal({
-        userEmail: memberUser.email,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Kept Proposal' },
-      }),
-      testData.createProposal({
-        userEmail: memberUser.email,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Rejected Proposal' },
-      }),
-      createAuthenticatedCaller(setup.userEmail),
-    ]);
+    const [keptProposal, rejectedProposal, adminCaller, memberCaller] =
+      await Promise.all([
+        testData.createProposal({
+          userEmail: memberUser.email,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Kept Proposal' },
+        }),
+        testData.createProposal({
+          userEmail: memberUser.email,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Rejected Proposal' },
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+        createAuthenticatedCaller(memberUser.email),
+      ]);
 
-    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    // A draft can't be rejected, so submit both first.
     await Promise.all([
       memberCaller.decision.submitProposal({ proposalId: keptProposal.id }),
       memberCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
@@ -409,15 +359,140 @@ describe.concurrent('listProposals', () => {
       proposalId: rejectedProposal.id,
     });
 
-    const result = await adminCaller.decision.listProposals({
+    const [memberResult, adminResult] = await Promise.all([
+      memberCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      }),
+      adminCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ]);
+
+    // Rejection is a verdict, not a visibility rule: both viewers see the same
+    // two proposals, and the rejected one carries its status so the card can
+    // badge it.
+    for (const result of [memberResult, adminResult]) {
+      expect(result.proposals).toHaveLength(2);
+      expect(
+        result.proposals.find((p) => p.id === rejectedProposal.id)?.status,
+      ).toBe(ProposalStatus.REJECTED);
+    }
+  });
+
+  it('shows a rejected proposal to an anonymous visitor on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [rejectedProposal, adminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Rejected Proposal' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+      testData.makeDecisionPublic(instance.profileId),
+    ]);
+
+    await adminCaller.decision.submitProposal({
+      proposalId: rejectedProposal.id,
+    });
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+    });
+
+    // No-JWT caller — substituted to GLOBAL_USER_PUBLIC by the access layer.
+    // `listProposals` is an openProcedure, so logged-out visitors are part of
+    // the "everyone" this rule promises.
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const result = await publicCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
     });
 
-    // Admin still sees the rejected proposal in the proposal list, carrying its
-    // REJECTED status, the same way an admin sees flagged proposals.
-    expect(result.proposals).toHaveLength(2);
-    const rejected = result.proposals.find((p) => p.id === rejectedProposal.id);
-    expect(rejected?.status).toBe(ProposalStatus.REJECTED);
+    expect(result.proposals.map((p) => p.id)).toEqual([rejectedProposal.id]);
+    expect(result.proposals[0]?.status).toBe(ProposalStatus.REJECTED);
+  });
+
+  it('keeps a rejected proposal in its own phase but out of later phases and the review read', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+
+    const instanceId = setup.instance.instance.id;
+    const { userEmail } = setup;
+    const adminCaller = await createAuthenticatedCaller(userEmail);
+
+    const [keptProposal, rejectedProposal] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Kept ${task.id}` },
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Rejected ${task.id}` },
+      }),
+    ]);
+
+    await Promise.all([
+      adminCaller.decision.submitProposal({ proposalId: keptProposal.id }),
+      adminCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
+    ]);
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const [submissionPhase, reviewPhase, reviewAggregates] = await Promise.all([
+      adminCaller.decision.listProposals({
+        processInstanceId: instanceId,
+        phaseId: 'submission',
+      }),
+      adminCaller.decision.listProposals({
+        processInstanceId: instanceId,
+        phaseId: 'review',
+      }),
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: instanceId,
+        phaseId: 'review',
+      }),
+    ]);
+
+    // It stays a record where it lived: the rejection happened in `submission`,
+    // and that phase's list still carries it.
+    expect(submissionPhase.proposals.map((p) => p.id)).toContain(
+      rejectedProposal.id,
+    );
+
+    // Rejected proposals are dropped when the advance snapshot is written, so
+    // `review` never receives it — the pipeline exclusion this change must not
+    // weaken. The kept proposal proves the snapshot itself worked.
+    expect(reviewPhase.proposals.map((p) => p.id)).toEqual([keptProposal.id]);
+    expect(reviewAggregates.items.map((item) => item.proposal.id)).toEqual([
+      keptProposal.id,
+    ]);
   });
 
   it('restores a rejected proposal to the active pool on undo', async ({

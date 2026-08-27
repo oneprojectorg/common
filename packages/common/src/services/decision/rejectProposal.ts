@@ -14,10 +14,11 @@ export type RejectProposalResult = {
 };
 
 /**
- * Move a proposal to `REJECTED`, for admins of its decision. A rejected proposal
- * drops out of every read — phases, review, voting, and the default proposal
- * list — and only stays visible to admins on the proposal list, the same way a
- * flagged proposal does.
+ * Move a proposal to `REJECTED`, for admins of its decision. Rejection is a
+ * pipeline rule, not a visibility one: the proposal stops advancing through
+ * phases, stops being reviewed, and stops being votable, but it stays listed
+ * and readable by everyone — badged with its status — the same way its detail
+ * page always has been.
  *
  * A draft has never been submitted, so there is nothing to reject.
  *

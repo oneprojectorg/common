@@ -31,10 +31,11 @@ import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 /**
  * Excludes drafts (never in a phase), rejected proposals, and superseded
  * proposals. Every selection, review, and results path resolves membership
- * through this file, so this is what keeps them out of all of them. Rejected is
- * excluded unconditionally here — these are non-user-scoped pipeline reads with
- * no admin concept; the admin-visible exception lives only in the proposal-list
- * scope (`resolveProposalListScope`).
+ * through this file, so this is what keeps them out of all of them — and since
+ * the proposal list stopped filtering on rejection
+ * (`resolveProposalListScope`), it is the *only* thing that does. A rejected
+ * proposal is listed and readable by everyone; what it no longer does is
+ * advance, get reviewed, or be voted on.
  */
 const phaseEligiblePredicate = (t: typeof proposals): SQL =>
   and(
