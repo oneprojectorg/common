@@ -152,7 +152,9 @@ export const getRoles = async (params?: {
         description: accessRoles.description,
         permission: accessRolePermissionsOnAccessZones.permission,
         ...(shouldIncludeMemberCounts && {
-          memberCount: sql<number>`(${memberCountSubquery(accessRoles)})`,
+          // Postgres COUNT(*) returns bigint, which node-postgres decodes as
+          // a string; cast to int so the value round-trips as a JS number.
+          memberCount: sql<number>`(${memberCountSubquery(accessRoles)})::int`,
         }),
       })
       .from(accessRoles)
@@ -215,7 +217,9 @@ export const getRoles = async (params?: {
     extras: {
       memberCount: (table, { sql: sqlOp }) =>
         shouldIncludeMemberCounts
-          ? sqlOp<number>`(${memberCountSubquery(table)})`.as('member_count')
+          ? sqlOp<number>`(${memberCountSubquery(table)})::int`.as(
+              'member_count',
+            )
           : sqlOp<number>`0`.as('member_count'),
     },
     limit: limit + 1,
