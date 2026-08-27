@@ -1557,6 +1557,8 @@
   "No other proposals yet": "এখনও অন্য কোনো প্রস্তাব নেই",
   "A proposal can only be merged into another one in this decision.": "একটি প্রস্তাব কেবল এই সিদ্ধান্তের অন্য একটি প্রস্তাবের সঙ্গেই একত্র করা যায়।",
   "Could not load the other proposals. Please try again.": "অন্য প্রস্তাবগুলি লোড করা যায়নি। আবার চেষ্টা করুন।",
+  "Could not search proposals. Please try again.": "প্রস্তাব খোঁজা যায়নি। আবার চেষ্টা করুন।",
+  "Type to search proposals": "প্রস্তাব খুঁজতে টাইপ করুন",
   "Could not merge this proposal. Please try again.": "এই প্রস্তাবটি একত্র করা যায়নি। আবার চেষ্টা করুন।",
   "Could not unmerge this proposal. Please try again.": "এই প্রস্তাবের একত্রীকরণ বাতিল করা যায়নি। আবার চেষ্টা করুন।",
   "{source} is listed on its own again.": "{source} আবার আলাদাভাবে তালিকাভুক্ত হয়েছে।",
