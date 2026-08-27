@@ -12,6 +12,8 @@ export const roleEncoder = createSelectSchema(accessRoles)
   })
   .extend({
     permissions: permissionsSchema.optional(),
+    // Present only when the caller opts in via includeMemberCounts.
+    memberCount: z.number().optional(),
   });
 
 export type Role = z.infer<typeof roleEncoder>;

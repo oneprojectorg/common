@@ -2,6 +2,7 @@ import {
   type SQL,
   and,
   asc,
+  count,
   db,
   desc,
   eq,
@@ -11,11 +12,14 @@ import {
   isNull,
   lt,
   or,
+  sql,
 } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   accessZones,
+  profileUserToAccessRoles,
+  profileUsers,
 } from '@op/db/schema';
 import { type Permission, fromBitField } from 'access-zones';
 
@@ -24,6 +28,7 @@ import {
   type SortDir,
   decodeCursor,
   encodeCursor,
+  excludeGlobalUsers,
 } from '../../utils/db';
 
 interface Role {
@@ -31,6 +36,7 @@ interface Role {
   name: string;
   description: string | null;
   permissions?: Permission;
+  memberCount?: number;
 }
 
 /**
@@ -66,10 +72,13 @@ type RoleCursor = { value: string; id: string };
  * - If no profileId: returns only exposable global roles (profileId IS NULL
  *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
+ * - If includeMemberCounts is set (and profileId is present): each role gains
+ *   a memberCount — the number of profile members holding that role
  */
 export const getRoles = async (params?: {
   profileId?: string;
   zoneName?: string;
+  includeMemberCounts?: boolean;
   cursor?: string | null;
   limit?: number;
   dir?: SortDir;
@@ -77,6 +86,7 @@ export const getRoles = async (params?: {
   const {
     profileId = null,
     zoneName,
+    includeMemberCounts,
     cursor,
     limit = 25,
     dir = 'asc',
@@ -114,6 +124,25 @@ export const getRoles = async (params?: {
       : profileCondition;
   };
 
+  const shouldIncludeMemberCounts = includeMemberCounts && !!profileId;
+
+  // The role junction's accessRoleId index bounds the correlated lookup.
+  const memberCountSubquery = (accessRoleCols: typeof accessRoles) =>
+    db
+      .select({ count: count() })
+      .from(profileUserToAccessRoles)
+      .innerJoin(
+        profileUsers,
+        eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+      )
+      .where(
+        and(
+          eq(profileUserToAccessRoles.accessRoleId, accessRoleCols.id),
+          eq(profileUsers.profileId, profileId!),
+          excludeGlobalUsers(profileUsers.authUserId),
+        ),
+      );
+
   // Use join-based query when zoneName is provided for DB-level filtering
   if (zoneName) {
     const rows = await db
@@ -122,6 +151,11 @@ export const getRoles = async (params?: {
         name: accessRoles.name,
         description: accessRoles.description,
         permission: accessRolePermissionsOnAccessZones.permission,
+        ...(shouldIncludeMemberCounts && {
+          // Postgres COUNT(*) returns bigint, which node-postgres decodes as
+          // a string; cast to int so the value round-trips as a JS number.
+          memberCount: sql<number>`(${memberCountSubquery(accessRoles)})::int`,
+        }),
       })
       .from(accessRoles)
       .leftJoin(
@@ -156,6 +190,7 @@ export const getRoles = async (params?: {
       name: row.name,
       description: row.description,
       permissions: fromBitField(row.permission ?? 0),
+      ...(shouldIncludeMemberCounts && { memberCount: row.memberCount ?? 0 }),
     }));
 
     const lastItem = resultItems[resultItems.length - 1];
@@ -176,6 +211,17 @@ export const getRoles = async (params?: {
       dir === 'desc'
         ? { name: 'desc', id: 'desc' }
         : { name: 'asc', id: 'asc' },
+    // extras always runs, but the expression is a cheap constant unless the
+    // caller opted in — this keeps `role.memberCount` reliably typed while
+    // still avoiding the correlated subquery for callers that don't need it.
+    extras: {
+      memberCount: (table, { sql: sqlOp }) =>
+        shouldIncludeMemberCounts
+          ? sqlOp<number>`(${memberCountSubquery(table)})::int`.as(
+              'member_count',
+            )
+          : sqlOp<number>`0`.as('member_count'),
+    },
     limit: limit + 1,
   });
 
@@ -188,6 +234,7 @@ export const getRoles = async (params?: {
     id: role.id,
     name: role.name,
     description: role.description,
+    ...(shouldIncludeMemberCounts && { memberCount: role.memberCount ?? 0 }),
   }));
 
   // Build next cursor from last item
