@@ -19,7 +19,7 @@ const likers = 'Ada Lovelace, Grace Hopper, and 2 others';
 
 export const Default: Story = {
   render: () => (
-    <div className="flex items-center gap-6">
+    <div className="flex items-center gap-2">
       <LikeButton count={0} label="0 likes" />
       <LikeButton count={4} label="4 likes" tooltip={likers} />
       <LikeButton count={4} label="4 likes" tooltip={likers} isLiked />
@@ -27,12 +27,19 @@ export const Default: Story = {
   ),
 };
 
-/** How the pair sits in a post footer — heart, then comments, both at the start. */
+/**
+ * How the pair sits under a post. The footer row is pulled back by the buttons'
+ * own padding so the heart lines up with the text, and the buttons sit flush —
+ * their padding is what separates them from the text and from each other.
+ */
 export const InPostFooter: Story = {
   render: () => (
-    <div className="flex w-96 items-center gap-4">
-      <LikeButton count={1} label="1 like" tooltip={likers} isLiked />
-      <CommentButton count={0} label="0 comments" />
+    <div className="flex w-96 flex-col gap-2 leading-6">
+      <p>It’s really hard to see people walking at night</p>
+      <div className="-ms-2 flex items-center">
+        <LikeButton count={1} label="1 like" tooltip={likers} isLiked />
+        <CommentButton count={0} label="0 comments" />
+      </div>
     </div>
   ),
 };
