@@ -22,7 +22,7 @@ import type { SectionProps } from '@/components/decisions/ProcessBuilder/content
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import type {
   CriterionView,
-  EditableRubricCriterionType,
+  RubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
 import {
@@ -198,7 +198,7 @@ export function RubricEditorContent({
   );
 
   const handleChangeType = useCallback(
-    (criterionId: string, newType: EditableRubricCriterionType) => {
+    (criterionId: string, newType: RubricCriterionType) => {
       setTemplate((prev) => {
         // Stash scored config before switching away from scored
         if (getCriterionType(prev, criterionId) === 'scored') {

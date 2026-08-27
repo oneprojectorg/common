@@ -2,7 +2,7 @@ import type { XFormatPropertySchema } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import type {
-  EditableRubricCriterionType,
+  RubricCriterionType,
   RubricTemplateSchema,
 } from './rubricTemplate';
 import {
@@ -25,7 +25,8 @@ import {
   withYesNoDefaults,
 } from './rubricTemplate';
 
-const ALL_TYPES: EditableRubricCriterionType[] = [
+// Every builder-creatable type; money is template-authored and covered below.
+const ALL_TYPES: RubricCriterionType[] = [
   'scored',
   'yes_no',
   'single_select',
@@ -33,7 +34,7 @@ const ALL_TYPES: EditableRubricCriterionType[] = [
 ];
 
 function templateWithCriterion(
-  type: EditableRubricCriterionType,
+  type: RubricCriterionType,
   criterionId = 'crit1',
 ): RubricTemplateSchema {
   return addCriterion(createEmptyRubricTemplate(), criterionId, type, 'Label');

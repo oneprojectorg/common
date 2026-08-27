@@ -47,13 +47,16 @@ export type { RubricTemplateSchema };
 // ---------------------------------------------------------------------------
 
 /**
- * Criterion types the rubric builder can create and switch between.
+ * Every criterion type the renderer understands. `money` is template-authored
+ * for now — the builder cannot create or retype it (see `CRITERION_TYPES`).
+ * TODO: make money builder-editable; until then it stays out of the selector.
  */
-export type EditableRubricCriterionType =
+export type RubricCriterionType =
   | 'scored'
   | 'yes_no'
   | 'single_select'
-  | 'long_text';
+  | 'long_text'
+  | 'money';
 
 /**
  * Stored encoding of a yes/no criterion's answer. These literals define the
@@ -61,12 +64,6 @@ export type EditableRubricCriterionType =
  * review form reads and writes — stored answers go stale if they change.
  */
 export const YES_NO_VALUES = { yes: 'yes', no: 'no' } as const;
-
-/**
- * Every criterion type the renderer understands. `money` is template-authored
- * only, hence outside {@link EditableRubricCriterionType}.
- */
-export type RubricCriterionType = EditableRubricCriterionType | 'money';
 
 /** A single admin-defined option on a single-select criterion. */
 export interface SelectOption {
@@ -150,10 +147,14 @@ function getSelectOptionEntries(schema: XFormatPropertySchema): SelectOption[] {
  * Callers with i18n access pass translated labels (e.g. Yes/Maybe/No).
  */
 export function createCriterionJsonSchema(
-  type: EditableRubricCriterionType,
+  type: RubricCriterionType,
   selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
+    // TODO: buildable once money is builder-editable; today the canonical
+    // shape (pinned currency) only comes from the process template.
+    case 'money':
+      throw new Error('Money criteria are template-authored');
     case 'scored': {
       const max = DEFAULT_MAX_POINTS;
       const oneOf = Array.from({ length: max }, (_, i) => ({
@@ -438,7 +439,7 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
 export function addCriterion(
   template: RubricTemplateSchema,
   criterionId: string,
-  type: EditableRubricCriterionType,
+  type: RubricCriterionType,
   label: string,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
@@ -495,7 +496,7 @@ export function setCriterionRequired(
 export function changeCriterionType(
   template: RubricTemplateSchema,
   criterionId: string,
-  newType: EditableRubricCriterionType,
+  newType: RubricCriterionType,
   selectOptionLabels?: string[],
 ): RubricTemplateSchema {
   if (getCriterionType(template, criterionId) === 'money') {

@@ -33,14 +33,13 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
-  EditableRubricCriterionType,
+  RubricCriterionType,
   SelectOption,
 } from '@/components/decisions/rubricTemplate';
 
 import {
   CRITERION_TYPES,
   CRITERION_TYPE_REGISTRY,
-  isEditableRubricCriterionType,
 } from './rubricCriterionRegistry';
 
 const MAX_LABEL_LENGTH = 50;
@@ -62,10 +61,7 @@ interface RubricCriterionCardProps {
   onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
-  onChangeType?: (
-    criterionId: string,
-    newType: EditableRubricCriterionType,
-  ) => void;
+  onChangeType?: (criterionId: string, newType: RubricCriterionType) => void;
   onUpdateMaxPoints?: (criterionId: string, maxPoints: number) => void;
   onUpdateScoreLabel?: (
     criterionId: string,
@@ -320,8 +316,8 @@ function CriterionTypeSelector({
   value,
   onChange,
 }: {
-  value: string;
-  onChange: (type: EditableRubricCriterionType) => void;
+  value: RubricCriterionType;
+  onChange: (type: RubricCriterionType) => void;
 }) {
   const t = useTranslations();
   const groupId = useId();
@@ -333,11 +329,7 @@ function CriterionTypeSelector({
       </FieldLegend>
       <RadioGroup
         value={value}
-        onValueChange={(newValue) => {
-          if (isEditableRubricCriterionType(newValue)) {
-            onChange(newValue);
-          }
-        }}
+        onValueChange={(newValue) => onChange(newValue as RubricCriterionType)}
       >
         {CRITERION_TYPES.map((type) => {
           const entry = CRITERION_TYPE_REGISTRY[type];

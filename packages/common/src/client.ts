@@ -152,17 +152,13 @@ export {
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
 export { templateCollectsBudget } from './services/decision/templateBudget';
-export { assertRubricTemplateAuthoring } from './services/decision/templateAuthoring';
 export {
   DEFAULT_MONEY_CURRENCY,
-  assertMoneyFieldSchemas,
   isSchemaObjectDefinition,
   buildMoneyFieldAnswer,
   getMoneyAnswerAmount,
-  getMoneyAnswerCurrency,
   getMoneyFieldCurrency,
   isMoneyFieldSchema,
-  isValidCurrencyCode,
   resolveMoneyDisplayCurrency,
   type MoneyFieldAnswer,
 } from './services/decision/templateMoney';

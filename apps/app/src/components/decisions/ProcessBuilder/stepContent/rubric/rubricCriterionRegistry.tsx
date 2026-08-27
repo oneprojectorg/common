@@ -1,9 +1,6 @@
 import type { TranslationKey } from '@/lib/i18n/routing';
 
-import type {
-  EditableRubricCriterionType,
-  RubricCriterionType,
-} from '@/components/decisions/rubricTemplate';
+import type { RubricCriterionType } from '@/components/decisions/rubricTemplate';
 
 /**
  * Display metadata for each rubric criterion type.
@@ -42,17 +39,14 @@ export const CRITERION_TYPE_REGISTRY: Record<
   },
 };
 
-/** Types offered in the radio selector — money is template-authored, so absent. */
-export const CRITERION_TYPES: EditableRubricCriterionType[] = [
+/**
+ * Ordered list of criterion types for the radio selector.
+ * `money` is deliberately absent — template-authored for now.
+ * TODO: add it here once money criteria become builder-editable.
+ */
+export const CRITERION_TYPES: RubricCriterionType[] = [
   'scored',
   'yes_no',
   'single_select',
   'long_text',
 ];
-
-/** Runtime predicate for the types the builder is allowed to assign. */
-export function isEditableRubricCriterionType(
-  value: string,
-): value is EditableRubricCriterionType {
-  return CRITERION_TYPES.some((type) => type === value);
-}
