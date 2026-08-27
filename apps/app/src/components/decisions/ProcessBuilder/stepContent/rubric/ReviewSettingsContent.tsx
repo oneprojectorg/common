@@ -1,12 +1,10 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
 import type { ReviewsScope } from '@op/common';
 import { isReviewPhase } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
 import {
   Field,
   FieldLabel,
@@ -42,9 +40,6 @@ export function ReviewSettingsContent({
 }: SectionProps) {
   const t = useTranslations();
   const posthog = usePostHog();
-  // Gates the by-category scope. When off, the radio stays disabled with a
-  // "Coming soon" chip (pre-flag behavior) and the reviewer cards never render.
-  const byCategoryEnabled = useFeatureFlag('reviews-v2');
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const config = instance.instanceData?.config;
@@ -161,21 +156,11 @@ export function ReviewSettingsContent({
                 </FieldDescription>
               </FieldContent>
             </Field>
-            <Field
-              orientation="horizontal"
-              data-disabled={!byCategoryEnabled || undefined}
-            >
-              <RadioGroupItem
-                id="scope-by_category"
-                value="by_category"
-                disabled={!byCategoryEnabled}
-              />
+            <Field orientation="horizontal">
+              <RadioGroupItem id="scope-by_category" value="by_category" />
               <FieldContent>
                 <FieldLabel htmlFor="scope-by_category">
                   {t('By category')}
-                  {!byCategoryEnabled && (
-                    <Badge variant="secondary">{t('Coming soon')}</Badge>
-                  )}
                 </FieldLabel>
                 <FieldDescription>
                   {t(
@@ -187,7 +172,7 @@ export function ReviewSettingsContent({
           </RadioGroup>
         </FieldSet>
 
-        {byCategoryEnabled && settings.scope === 'by_category' && (
+        {settings.scope === 'by_category' && (
           <>
             <hr className="border-border" />
             <CategoryReviewerCards instanceId={instanceId} />
