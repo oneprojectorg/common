@@ -195,13 +195,15 @@ function ReviewerRowCells({
     row.assignedCount > 0 ? (row.submittedCount / row.assignedCount) * 100 : 0;
 
   return (
-    <TableRow>
+    // `relative` anchors the name button's stretched ::after, which makes
+    // the whole row open the sheet without an unfocusable <tr> onClick.
+    <TableRow className="relative">
       {/* Names the row; `text-start` because a `th` centers by default. */}
       <TableCell render={<th scope="row" />} className="text-start font-normal">
         <Button
           variant="bare"
           onClick={onOpen}
-          className="rounded-md p-1 hover:bg-muted"
+          className="static rounded-md p-1 after:absolute after:inset-0 focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
           aria-label={t('Show assignments for {name}', { name })}
         >
           <ProfileItem
@@ -242,11 +244,14 @@ function ReviewerRowCells({
           : '—'}
       </TableCell>
       <TableCell className="text-end">
+        {/* `relative z-10` lifts the button above the row's stretched
+            click target so it stays independently clickable. */}
         <Button
           variant="outline"
           disabled={!row.isEligible}
           aria-label={t('Assign proposals to {name}', { name })}
           onClick={onOpen}
+          className="relative z-10"
         >
           {t('Assign')}
         </Button>
