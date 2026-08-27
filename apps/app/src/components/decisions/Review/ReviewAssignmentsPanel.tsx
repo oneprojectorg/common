@@ -200,10 +200,13 @@ function ReviewerRowCells({
     <TableRow className="relative">
       {/* Names the row; `text-start` because a `th` centers by default. */}
       <TableCell render={<th scope="row" />} className="text-start font-normal">
+        {/* `active:…:translate-none` because ANY translate (even 0) makes the
+            pressed button the containing block for its ::after, shrinking the
+            row-wide click target mid-press so mouseup misses and no click fires. */}
         <Button
           variant="bare"
           onClick={onOpen}
-          className="static rounded-md p-1 after:absolute after:inset-0 focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
+          className="static rounded-md p-1 after:absolute after:inset-0 focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset active:not-aria-[haspopup]:translate-none"
           aria-label={t('Show assignments for {name}', { name })}
         >
           <ProfileItem
