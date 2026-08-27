@@ -1630,6 +1630,7 @@
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Válassza ki azt a javaslatot, amelybe a(z) <source>{name}</source> beolvad. A saját oldala megmarad, de kikerül a javaslatlistából, a szavazásból és az értékelésből.",
   "Merging from": "Összevonás innen",
   "Merge into": "Összevonás ebbe",
+  "Select a different proposal": "Másik javaslat kiválasztása",
   "No proposals match your search": "Egy javaslat sem felel meg a keresésének",
   "Confirm merge": "Összevonás megerősítése",
   "What happens:": "Ez történik:",

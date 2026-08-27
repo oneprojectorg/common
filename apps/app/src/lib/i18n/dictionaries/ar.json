@@ -1563,6 +1563,7 @@
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "اختر المقترح الذي سيُدمج معه <source>{name}</source>. يحتفظ بصفحته الخاصة، لكنه يخرج من قائمة المقترحات ومن التصويت ومن المراجعة.",
   "Merging from": "الدمج من",
   "Merge into": "الدمج مع",
+  "Select a different proposal": "اختيار مقترح آخر",
   "No proposals match your search": "لا توجد مقترحات مطابقة لبحثك",
   "Confirm merge": "تأكيد الدمج",
   "What happens:": "ما الذي سيحدث:",

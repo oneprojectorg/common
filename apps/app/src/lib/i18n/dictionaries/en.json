@@ -1630,6 +1630,7 @@
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.",
   "Merging from": "Merging from",
   "Merge into": "Merge into",
+  "Select a different proposal": "Select a different proposal",
   "No proposals match your search": "No proposals match your search",
   "Confirm merge": "Confirm merge",
   "What happens:": "What happens:",

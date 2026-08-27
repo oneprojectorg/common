@@ -1564,6 +1564,7 @@
   "Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.": "Elige la propuesta con la que combinar <source>{name}</source>. Mantiene su propia página, pero sale de la lista de propuestas, de la votación y de la revisión.",
   "Merging from": "Se combina desde",
   "Merge into": "Combinar con",
+  "Select a different proposal": "Elegir otra propuesta",
   "No proposals match your search": "Ninguna propuesta coincide con tu búsqueda",
   "Confirm merge": "Confirmar la combinación",
   "What happens:": "Qué ocurre:",
