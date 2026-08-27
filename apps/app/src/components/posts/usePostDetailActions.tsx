@@ -5,12 +5,11 @@ import { createOptimisticUpdater } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import { toast } from '@op/sense/Toast';
-import { REACTION_OPTIONS } from '@op/types';
 
 import { useTranslations } from '@/lib/i18n';
 
 /**
- * Hook for handling reactions on the post detail page.
+ * Hook for handling likes on the post detail page.
  * Manages optimistic updates for both the main post and its comments.
  * Isolates the complexity of the optimistic updates to a single hook.
  */
@@ -24,8 +23,8 @@ export const usePostDetailActions = ({
   const utils = trpc.useUtils();
   const t = useTranslations();
 
-  const toggleReaction = trpc.organization.toggleReaction.useMutation({
-    onMutate: async ({ postId: reactionPostId, reactionType }) => {
+  const toggleLike = trpc.organization.toggleLike.useMutation({
+    onMutate: async ({ postId: likedPostId }) => {
       // Query keys for the detail page
       const mainPostQueryKey = {
         postId,
@@ -50,12 +49,8 @@ export const usePostDetailActions = ({
           return old;
         }
 
-        const updated = optimisticUpdater.updatePostReactions(
-          { post: old },
-          reactionPostId,
-          reactionType,
-        );
-        return updated.post;
+        return optimisticUpdater.togglePostLike({ post: old }, likedPostId)
+          .post;
       });
 
       // Optimistically update comments
@@ -64,14 +59,11 @@ export const usePostDetailActions = ({
           return old;
         }
 
-        return old.map((comment) => {
-          const updated = optimisticUpdater.updatePostReactions(
-            { post: comment },
-            reactionPostId,
-            reactionType,
-          );
-          return updated.post;
-        });
+        return old.map(
+          (comment) =>
+            optimisticUpdater.togglePostLike({ post: comment }, likedPostId)
+              .post,
+        );
       });
 
       return { previousMainPost, previousComments };
@@ -94,24 +86,13 @@ export const usePostDetailActions = ({
         );
       }
 
-      toast.error(err.message || t('Failed to update reaction'));
+      toast.error(err.message || t('Failed to update like'));
     },
   });
 
-  const handleReactionClick = (reactionPostId: string, emoji: string) => {
-    // Convert emoji to reaction type
-    const reactionOption = REACTION_OPTIONS.find(
-      (option) => option.emoji === emoji,
-    );
-    const reactionType = reactionOption?.key;
-
-    if (!reactionType) {
-      console.error('Unknown emoji:', emoji);
-      return;
-    }
-
-    toggleReaction.mutate({ postId: reactionPostId, reactionType });
+  const handleLikeClick = (likedPostId: string) => {
+    toggleLike.mutate({ postId: likedPostId });
   };
 
-  return { handleReactionClick };
+  return { handleLikeClick };
 };

@@ -36,12 +36,12 @@ export function Comments({
   postId,
   organization,
   user,
-  onReactionClick,
+  onLikeClick,
 }: {
   postId: string;
   organization: Organization | null;
   user: PostFeedUser | undefined;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => void;
 }) {
   const t = useTranslations();
 
@@ -74,7 +74,7 @@ export function Comments({
               organization={organization}
               user={user}
               withLinks={true}
-              onReactionClick={onReactionClick}
+              onLikeClick={onLikeClick}
               className="sm:px-0"
             />
             <hr className="mt-4" />

@@ -26,6 +26,11 @@ import {
   getActivelyFlaggedItemIds,
   noActiveModerationFlag,
 } from '../moderation/moderationVisibility';
+import {
+  getLikeSummary,
+  type LikeSummary,
+  type ReactionRow,
+} from '../reactions/utils';
 
 /**
  * SQL filter for post/comment reads: the row carries no active moderation flag,
@@ -214,28 +219,9 @@ export const listPosts = async ({
 };
 
 /**
- * Represents a reaction item with required fields for processing
- */
-type ReactionItem = {
-  reactionType: string;
-  createdAt?: string | Date | null;
-  profileId: string;
-  profile?: {
-    id: string;
-    name: string;
-  } | null;
-};
-
-/**
  * Fields added to posts by this function
  */
-type EnhancedPostFields = {
-  reactionCounts: Record<string, number>;
-  reactionUsers: Record<
-    string,
-    Array<{ id: string; name: string; timestamp: Date }>
-  >;
-  userReaction: string | null;
+type EnhancedPostFields = LikeSummary & {
   commentCount: number;
   /** True when an active moderation flag hides this post from general readers.
    *  Only the author and admins ever receive a flagged post (the read filters
@@ -244,15 +230,15 @@ type EnhancedPostFields = {
 };
 
 /**
- * Processes posts to add reaction counts, user reactions, and comment counts.
+ * Processes posts to add like counts and comment counts.
  *
  * Note: The generic constraint uses `any` for the `post` parameter to remain compatible
  * with Drizzle's loosely-typed query results. Within the function, we process reactions
- * with proper type safety using the `ReactionItem` type.
+ * with proper type safety using the `ReactionRow` type.
  *
  * @param items - Array of items where each has a post with id and optional reactions array
- * @param profileId - The current user's profile ID to determine their reaction
- * @returns Items with enhanced post data including reaction counts and comment counts
+ * @param profileId - The current user's profile ID to determine whether they liked it
+ * @returns Items with enhanced post data including like counts and comment counts
  */
 export const getItemsWithReactionsAndComments = async <
   T extends { post: any },
@@ -296,48 +282,7 @@ export const getItemsWithReactionsAndComments = async <
   }
 
   return items.map((item) => {
-    const reactionCounts: Record<string, number> = {};
-    const reactionUsers: Record<
-      string,
-      Array<{ id: string; name: string; timestamp: Date }>
-    > = {};
-    let userReaction: string | null = null;
-
-    // Count reactions by type and collect user info
-    if (item.post.reactions) {
-      item.post.reactions.forEach((reaction: ReactionItem) => {
-        reactionCounts[reaction.reactionType] =
-          (reactionCounts[reaction.reactionType] || 0) + 1;
-
-        // Collect user data for each reaction type
-        if (!reactionUsers[reaction.reactionType]) {
-          reactionUsers[reaction.reactionType] = [];
-        }
-
-        // Only add user data if profile exists
-        if (reaction.profile) {
-          const timestamp = reaction.createdAt
-            ? new Date(reaction.createdAt)
-            : new Date();
-
-          // Ensure the date is valid
-          const validTimestamp = isNaN(timestamp.getTime())
-            ? new Date()
-            : timestamp;
-
-          reactionUsers[reaction.reactionType]?.push({
-            id: reaction.profile.id,
-            name: reaction.profile.name,
-            timestamp: validTimestamp,
-          });
-        }
-
-        // Track user's reaction (only one per user)
-        if (reaction.profileId === profileId) {
-          userReaction = reaction.reactionType;
-        }
-      });
-    }
+    const reactions: ReactionRow[] = item.post.reactions ?? [];
 
     // Get comment count for this post
     const commentCount = commentCountMap[item.post.id] || 0;
@@ -346,9 +291,7 @@ export const getItemsWithReactionsAndComments = async <
       ...item,
       post: {
         ...item.post,
-        reactionCounts,
-        reactionUsers, // Add user data grouped by reaction type
-        userReaction,
+        ...getLikeSummary({ reactions, profileId }),
         commentCount,
         isFlagged: flaggedIds.has(item.post.id),
       },

@@ -388,9 +388,8 @@ describe.concurrent('decision-profile post authorization', () => {
     const outsiderCaller = await createOutsiderCaller(testData);
 
     await expect(
-      outsiderCaller.organization.toggleReaction({
+      outsiderCaller.organization.toggleLike({
         postId: adminPost.id,
-        reactionType: 'like',
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
 
@@ -425,9 +424,8 @@ describe.concurrent('decision-profile post authorization', () => {
     });
 
     const memberCaller = await createAuthenticatedCaller(member.email);
-    await memberCaller.organization.toggleReaction({
+    await memberCaller.organization.toggleLike({
       postId: adminPost.id,
-      reactionType: 'like',
     });
 
     const reactions = await db
@@ -465,9 +463,8 @@ describe.concurrent('decision-profile post authorization', () => {
       parentPostId: adminPost.id,
     });
 
-    await memberCaller.organization.toggleReaction({
+    await memberCaller.organization.toggleLike({
       postId: comment.id,
-      reactionType: 'like',
     });
 
     const reactions = await db
@@ -483,7 +480,7 @@ describe.concurrent('decision-profile post authorization', () => {
 // fallback on `organizationUsers`); regular org members and outsiders fail
 // closed at the service-layer write gate, independent of the procedure tier.
 // The feed-read and reaction tests below cover sibling endpoints
-// (`posts.getPosts`, `organization.toggleReaction`) whose org-side authz is
+// (`posts.getPosts`, `organization.toggleLike`) whose org-side authz is
 // out of scope for `assertPostWriteAccess` and is intentionally untouched.
 describe.concurrent('org-feed post authorization', () => {
   it('admits the org admin (creator) posting on the org profile', async ({
@@ -692,7 +689,7 @@ describe.concurrent('org-feed post authorization', () => {
     );
   });
 
-  it('does not gate reactions on non-decision posts', async ({
+  it('does not gate likes on non-decision posts', async ({
     task,
     onTestFinished,
   }) => {
@@ -706,9 +703,8 @@ describe.concurrent('org-feed post authorization', () => {
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
-    await outsiderCaller.organization.toggleReaction({
+    await outsiderCaller.organization.toggleLike({
       postId: orgPost.id,
-      reactionType: 'like',
     });
 
     const reactions = await db

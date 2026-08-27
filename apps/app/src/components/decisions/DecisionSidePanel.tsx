@@ -273,7 +273,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -304,7 +304,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
               organization={null}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
+              onLikeClick={handleLikeClick}
               onCommentClick={handleCommentClick}
               className="sm:px-0"
             />

@@ -1,4 +1,5 @@
 import { EntityType } from '@op/db/schema';
+import { LIKE_REACTION_TYPE, LIKE_REACTION_TYPES } from '@op/types';
 
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
@@ -7,22 +8,28 @@ import { addReaction } from './addReaction';
 import { getExistingReaction } from './getExistingReaction';
 import { removeReaction } from './removeReaction';
 
-export interface ToggleReactionOptions {
+export interface ToggleLikeOptions {
   user: { id: string };
   postId: string;
-  reactionType: string;
 }
 
-export type ToggleReactionResult = {
-  action: 'added' | 'removed' | 'replaced';
+export type ToggleLikeResult = {
+  action: 'added' | 'removed';
   context: PostContext;
 };
 
-export const toggleReaction = async ({
+/**
+ * Toggles the current user's like on a post or comment.
+ *
+ * A caller can still be holding a pre-like reaction row. If it is one of the
+ * types that counts as a like, the toggle removes it; if it is one of the types
+ * that does not (a thumbs-down), the caller has not liked yet, so this replaces
+ * that row with a like.
+ */
+export const toggleLike = async ({
   user,
   postId,
-  reactionType,
-}: ToggleReactionOptions): Promise<ToggleReactionResult> => {
+}: ToggleLikeOptions): Promise<ToggleLikeResult> => {
   const context = await loadPostContext(postId);
 
   // Prefer the pinned rootProfileId gate; fall back to associations for
@@ -44,15 +51,19 @@ export const toggleReaction = async ({
   const profileId = await getCurrentProfileId(user.id);
   const existingReaction = await getExistingReaction({ postId, profileId });
 
-  if (existingReaction) {
-    if (existingReaction.reactionType === reactionType) {
-      await removeReaction({ postId, profileId });
-      return { action: 'removed', context };
-    }
-    await addReaction({ postId, profileId, reactionType });
-    return { action: 'replaced', context };
+  if (
+    existingReaction &&
+    LIKE_REACTION_TYPES.includes(existingReaction.reactionType)
+  ) {
+    await removeReaction({ postId, profileId });
+    return { action: 'removed', context };
   }
 
-  await addReaction({ postId, profileId, reactionType });
+  await addReaction({
+    postId,
+    profileId,
+    reactionType: LIKE_REACTION_TYPE,
+  });
+
   return { action: 'added', context };
 };

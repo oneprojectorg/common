@@ -23,12 +23,11 @@ import {
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
 import { Header3 } from '@op/sense/Header';
+import { LikeButton } from '@op/sense/LikeButton';
 import { MediaDisplay } from '@op/sense/MediaDisplay';
-import { ReactionsButton } from '@op/sense/ReactionsButton';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { REACTION_OPTIONS } from '@op/types';
 import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuEllipsis, LuFlag, LuLeaf } from 'react-icons/lu';
@@ -181,42 +180,30 @@ const PostUrls = memo(({ urls }: { urls: string[] }) => {
 
 PostUrls.displayName = 'PostUrls';
 
-const PostReactions = ({
+const PostLikeButton = ({
   post,
-  onReactionClick,
+  onLikeClick,
 }: {
   post: Post;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => void;
 }) => {
+  const t = useTranslations();
   const { user } = useUser();
-  const canReact = userCanInteract(user);
+  const canLike = userCanInteract(user);
 
   if (!post?.id) return null;
 
-  const reactions = post.reactionCounts
-    ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-        const reactionOption = REACTION_OPTIONS.find(
-          (option) => option.key === reactionType,
-        );
-        const emoji = reactionOption?.emoji || reactionType;
-        const users = post.reactionUsers?.[reactionType] || [];
-
-        return {
-          emoji,
-          count: count as number,
-          isActive: post.userReaction === reactionType,
-          users,
-        };
-      })
-    : [];
+  const count = post.likeCount ?? 0;
+  const postId = post.id;
 
   return (
-    <ReactionsButton
-      reactions={reactions}
-      reactionOptions={REACTION_OPTIONS}
-      canReact={canReact}
-      onReactionClick={(emoji) => onReactionClick(post.id!, emoji)}
-      onAddReaction={(emoji) => onReactionClick(post.id!, emoji)}
+    <LikeButton
+      count={count}
+      label={t('{count} likes', { count })}
+      isLiked={post.userHasLiked ?? false}
+      users={post.likeUsers}
+      canLike={canLike}
+      onClick={() => onLikeClick(postId)}
     />
   );
 };
@@ -323,89 +310,73 @@ export const EmptyPostsState = () => {
 };
 
 /**
- * Hook for optimistic reaction updates with server sync.
- * Returns displayPost with optimistic reaction data and a handleReactionClick function.
+ * Hook for optimistic like updates with server sync.
+ * Returns displayPost with optimistic like data and a handleLikeClick function.
  * TODO: stopgap until we have server channels in place for updates
  */
-const useOptimisticReaction = (
+const useOptimisticLike = (
   post: Post,
-  onReactionClick: (postId: string, emoji: string) => void,
+  onLikeClick: (postId: string) => void,
 ) => {
-  const [localReaction, setLocalReaction] = useState({
-    userReaction: post.userReaction ?? null,
-    reactionCounts: post.reactionCounts ?? {},
+  const { user } = useUser();
+  const currentProfile = user?.currentProfile;
+
+  const [localLike, setLocalLike] = useState({
+    userHasLiked: post.userHasLiked ?? false,
+    likeCount: post.likeCount ?? 0,
+    likeUsers: post.likeUsers ?? [],
   });
 
   // Sync pattern: setState during render is intentional to avoid extra render cycle.
   // This syncs local state when server data changes (after refetch).
   // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
-  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
-  if (serverReactionKey !== lastServerKey) {
-    setLastServerKey(serverReactionKey);
-    setLocalReaction({
-      userReaction: post.userReaction ?? null,
-      reactionCounts: post.reactionCounts ?? {},
+  const serverLikeKey = `${post.userHasLiked}-${post.likeCount}`;
+  const [lastServerKey, setLastServerKey] = useState(serverLikeKey);
+  if (serverLikeKey !== lastServerKey) {
+    setLastServerKey(serverLikeKey);
+    setLocalLike({
+      userHasLiked: post.userHasLiked ?? false,
+      likeCount: post.likeCount ?? 0,
+      likeUsers: post.likeUsers ?? [],
     });
   }
 
-  const updateReaction = useCallback((reactionType: string) => {
-    setLocalReaction((current) => {
-      const newCounts = { ...current.reactionCounts };
+  const handleLikeClick = useCallback(
+    (postId: string) => {
+      setLocalLike((current) => {
+        const liked = !current.userHasLiked;
+        const others = currentProfile
+          ? current.likeUsers.filter((liker) => liker.id !== currentProfile.id)
+          : current.likeUsers;
 
-      if (current.userReaction === reactionType) {
-        // Removing the reaction
-        const newCount = Math.max(0, (newCounts[reactionType] || 1) - 1);
-        if (newCount === 0) {
-          delete newCounts[reactionType];
-        } else {
-          newCounts[reactionType] = newCount;
-        }
-        return { userReaction: null, reactionCounts: newCounts };
-      } else {
-        // Adding or replacing reaction
-        if (current.userReaction) {
-          // Remove previous reaction count
-          const prevCount = Math.max(
-            0,
-            (newCounts[current.userReaction] || 1) - 1,
-          );
-          if (prevCount === 0) {
-            delete newCounts[current.userReaction];
-          } else {
-            newCounts[current.userReaction] = prevCount;
-          }
-        }
-        // Add new reaction count
-        newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-        return { userReaction: reactionType, reactionCounts: newCounts };
-      }
-    });
-  }, []);
+        return {
+          userHasLiked: liked,
+          likeCount: Math.max(0, current.likeCount + (liked ? 1 : -1)),
+          likeUsers:
+            liked && currentProfile
+              ? [
+                  {
+                    id: currentProfile.id,
+                    name: currentProfile.name,
+                    timestamp: new Date(),
+                  },
+                  ...others,
+                ]
+              : others,
+        };
+      });
 
-  const handleReactionClick = useCallback(
-    (postId: string, emoji: string) => {
-      const reactionOption = REACTION_OPTIONS.find(
-        (option) => option.emoji === emoji,
-      );
-      if (reactionOption?.key) {
-        updateReaction(reactionOption.key);
-      }
-      onReactionClick(postId, emoji);
+      onLikeClick(postId);
     },
-    [onReactionClick, updateReaction],
+    [currentProfile, onLikeClick],
   );
 
   const displayPost = useMemo(
-    () => ({
-      ...post,
-      userReaction: localReaction.userReaction,
-      reactionCounts: localReaction.reactionCounts,
-    }),
-    [post, localReaction],
+    () => ({ ...post, ...localLike }),
+    [post, localLike],
   );
 
-  return { displayPost, handleReactionClick };
+  return { displayPost, handleLikeClick };
 };
 
 export const PostItem = ({
@@ -413,7 +384,7 @@ export const PostItem = ({
   organization,
   user,
   withLinks,
-  onReactionClick,
+  onLikeClick,
   onCommentClick,
   className,
 }: {
@@ -421,7 +392,7 @@ export const PostItem = ({
   organization: Organization | null;
   user?: CommonUser;
   withLinks: boolean;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => void;
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
 }) => {
@@ -429,10 +400,7 @@ export const PostItem = ({
   const translatedContent = decisionTranslation?.posts[post.id]?.content;
   const displayContent = translatedContent ?? post?.content;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-  const { displayPost, handleReactionClick } = useOptimisticReaction(
-    post,
-    onReactionClick,
-  );
+  const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -469,10 +437,7 @@ export const PostItem = ({
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="flex items-center justify-between gap-2">
-            <PostReactions
-              post={displayPost}
-              onReactionClick={handleReactionClick}
-            />
+            <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             {onCommentClick ? (
               <PostCommentButton
                 post={post}
@@ -491,7 +456,7 @@ export const PostItemOnDetailPage = ({
   organization,
   user,
   withLinks,
-  onReactionClick,
+  onLikeClick,
   commentCount,
   className,
 }: {
@@ -499,16 +464,13 @@ export const PostItemOnDetailPage = ({
   organization: Organization | null;
   user?: CommonUser;
   withLinks: boolean;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => void;
   commentCount: number;
   className?: string;
 }) => {
   const t = useTranslations();
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-  const { displayPost, handleReactionClick } = useOptimisticReaction(
-    post,
-    onReactionClick,
-  );
+  const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -545,10 +507,7 @@ export const PostItemOnDetailPage = ({
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="flex items-center justify-between gap-2">
-            <PostReactions
-              post={displayPost}
-              onReactionClick={handleReactionClick}
-            />
+            <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             <CommentButton
               count={commentCount}
               label={t('{count} comments', { count: commentCount })}
@@ -599,7 +558,7 @@ export const usePostFeedActions = () => {
   });
 
   const utils = trpc.useUtils();
-  const toggleReaction = trpc.organization.toggleReaction.useMutation({
+  const toggleLike = trpc.organization.toggleLike.useMutation({
     onSettled: () => {
       void utils.organization.listPosts.invalidate();
       void utils.organization.listAllPosts.invalidate();
@@ -607,23 +566,12 @@ export const usePostFeedActions = () => {
       void utils.posts.listProfilePosts.invalidate();
     },
     onError: (err) => {
-      toast.error(err.message || t('Failed to update reaction'));
+      toast.error(err.message || t('Failed to update like'));
     },
   });
 
-  const handleReactionClick = (postId: string, emoji: string) => {
-    // Convert emoji to reaction type using REACTION_OPTIONS
-    const reactionOption = REACTION_OPTIONS.find(
-      (option) => option.emoji === emoji,
-    );
-    const reactionType = reactionOption?.key;
-
-    if (!reactionType) {
-      console.error('Unknown emoji:', emoji);
-      return;
-    }
-
-    toggleReaction.mutate({ postId, reactionType });
+  const handleLikeClick = (postId: string) => {
+    toggleLike.mutate({ postId });
   };
 
   const handleCommentClick = (
@@ -639,7 +587,7 @@ export const usePostFeedActions = () => {
 
   return {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   };

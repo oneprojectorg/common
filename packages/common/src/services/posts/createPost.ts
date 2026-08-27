@@ -211,8 +211,9 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   return {
     ...newPost,
-    reactionCounts: {},
-    userReactions: [],
+    likeCount: 0,
+    userHasLiked: false,
+    likeUsers: [],
     commentCount: 0,
   };
 };

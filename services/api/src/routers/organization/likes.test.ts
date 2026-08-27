@@ -5,13 +5,12 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
-describeAccessTierGating('organization.toggleReaction', {
+describeAccessTierGating('organization.toggleLike', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
-      caller.organization.toggleReaction({
+      caller.organization.toggleLike({
         postId: 'x',
-        reactionType: 'like',
       }),
       'none',
     );
@@ -22,9 +21,8 @@ describeAccessTierGating('organization.toggleReaction', {
     async ({ callers }) => {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
-        caller.organization.toggleReaction({
+        caller.organization.toggleLike({
           postId: 'x',
-          reactionType: 'like',
         }),
         'anon',
       );
@@ -36,9 +34,8 @@ describeAccessTierGating('organization.toggleReaction', {
     async ({ callers }) => {
       const caller = await callers.userJwt();
       await expectFailsAccessTierGate(
-        caller.organization.toggleReaction({
+        caller.organization.toggleLike({
           postId: 'x',
-          reactionType: 'like',
         }),
         'user',
       );
@@ -50,9 +47,8 @@ describeAccessTierGating('organization.toggleReaction', {
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
-        caller.organization.toggleReaction({
+        caller.organization.toggleLike({
           postId: 'x',
-          reactionType: 'like',
         }),
       );
     },

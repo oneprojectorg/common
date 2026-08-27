@@ -62,7 +62,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -82,7 +82,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
             organization={postToOrg.organization ?? null}
             user={user}
             withLinks={true}
-            onReactionClick={handleReactionClick}
+            onLikeClick={handleLikeClick}
             onCommentClick={handleCommentClick}
           />
           <hr />
