@@ -1692,7 +1692,5 @@
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# জন পর্যালোচক} other {# জন পর্যালোচক}} · {unassigned, plural, one {#টি প্রস্তাবনা অনিয়োজিত} other {#টি প্রস্তাবনা অনিয়োজিত}}",
   "Amount": "পরিমাণ",
   "Cost estimate": "ব্যয়ের প্রাক্কলন",
-  "Reviewers enter an amount": "পর্যালোচকরা একটি পরিমাণ লিখবেন",
-  "Set by the process template and cannot be edited here.": "প্রক্রিয়া টেমপ্লেট দ্বারা নির্ধারিত, এখানে সম্পাদনা করা যাবে না।",
-  "Currency: {code}": "মুদ্রা: {code}"
+  "Reviewers enter an amount": "পর্যালোচকরা একটি পরিমাণ লিখবেন"
 }

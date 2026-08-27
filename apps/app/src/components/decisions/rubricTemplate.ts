@@ -16,7 +16,6 @@ import type {
 import {
   OVERALL_RECOMMENDATION_KEY,
   RECOMMENDATION_OPTION,
-  getMoneyFieldCurrency,
   isMoneyFieldSchema,
   isOverallRecommendationField,
 } from '@op/common/client';
@@ -95,8 +94,6 @@ export interface CriterionView {
   scoreLabels: string[];
   /** Admin-defined options. Single-select criteria only (empty for other types). */
   options: SelectOption[];
-  /** Template-pinned currency. Money criteria only. */
-  currency?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -371,9 +368,6 @@ export function getCriterion(
     return undefined;
   }
 
-  const schema = getCriterionSchema(template, criterionId);
-  const currency = schema ? getMoneyFieldCurrency(schema) : undefined;
-
   return {
     id: criterionId,
     criterionType,
@@ -383,7 +377,6 @@ export function getCriterion(
     maxPoints: getCriterionMaxPoints(template, criterionId),
     scoreLabels: getCriterionScoreLabels(template, criterionId),
     options: getCriterionOptions(template, criterionId),
-    ...(currency !== undefined ? { currency } : {}),
   };
 }
 

@@ -325,7 +325,7 @@ describe('money criteria', () => {
     ).toBeUndefined();
   });
 
-  it('surfaces money criteria in getCriteria with their pinned currency', () => {
+  it('surfaces money criteria in getCriteria', () => {
     const criteria = getCriteria(templateWithMoneyCriterion());
     const money = criteria.find((c) => c.id === 'cost1');
 
@@ -333,7 +333,6 @@ describe('money criteria', () => {
     expect(money?.criterionType).toBe('money');
     expect(money?.label).toBe('Estimated Cost');
     expect(money?.required).toBe(true);
-    expect(money?.currency).toBe('USD');
     expect(money?.maxPoints).toBeUndefined();
     expect(money?.options).toEqual([]);
   });

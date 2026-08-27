@@ -1692,7 +1692,5 @@
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# revisor} other {# revisores}} · {unassigned, plural, one {# proposta sem atribuição} other {# propostas sem atribuição}}",
   "Amount": "Montante",
   "Cost estimate": "Estimativa de custo",
-  "Reviewers enter an amount": "Os avaliadores inserem um valor",
-  "Set by the process template and cannot be edited here.": "Definido pelo modelo do processo e não editável aqui.",
-  "Currency: {code}": "Moeda: {code}"
+  "Reviewers enter an amount": "Os avaliadores inserem um valor"
 }

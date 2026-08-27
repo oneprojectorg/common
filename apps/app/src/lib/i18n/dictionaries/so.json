@@ -1692,7 +1692,5 @@
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# dib-u-eege} other {# dib-u-eegayaal}} · {unassigned, plural, one {# soo jeedin aan la qoondayn} other {# soo jeedimo aan la qoondayn}}",
   "Amount": "Qaddarka",
   "Cost estimate": "Qiyaasta qiimaha",
-  "Reviewers enter an amount": "Dib-u-eegayaashu waxay gelinayaan qadar",
-  "Set by the process template and cannot be edited here.": "Waxaa lagu dejiyay qaabka habraaca, halkan lagama beddeli karo.",
-  "Currency: {code}": "Lacagta: {code}"
+  "Reviewers enter an amount": "Dib-u-eegayaashu waxay gelinayaan qadar"
 }

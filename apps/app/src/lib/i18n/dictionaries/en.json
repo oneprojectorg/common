@@ -1692,7 +1692,5 @@
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}",
   "Amount": "Amount",
   "Cost estimate": "Cost estimate",
-  "Reviewers enter an amount": "Reviewers enter an amount",
-  "Set by the process template and cannot be edited here.": "Set by the process template and cannot be edited here.",
-  "Currency: {code}": "Currency: {code}"
+  "Reviewers enter an amount": "Reviewers enter an amount"
 }

@@ -1692,7 +1692,5 @@
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# értékelő} other {# értékelő}} · {unassigned, plural, one {# hozzárendeletlen javaslat} other {# hozzárendeletlen javaslat}}",
   "Amount": "Összeg",
   "Cost estimate": "Költségbecslés",
-  "Reviewers enter an amount": "Az értékelők megadnak egy összeget",
-  "Set by the process template and cannot be edited here.": "A folyamatsablon határozza meg, itt nem szerkeszthető.",
-  "Currency: {code}": "Pénznem: {code}"
+  "Reviewers enter an amount": "Az értékelők megadnak egy összeget"
 }

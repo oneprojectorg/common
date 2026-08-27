@@ -1692,7 +1692,5 @@
   "{reviewers, plural, one {# reviewer} other {# reviewers}} · {unassigned, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{reviewers, plural, one {# revisor} other {# revisores}} · {unassigned, plural, one {# propuesta sin asignar} other {# propuestas sin asignar}}",
   "Amount": "Importe",
   "Cost estimate": "Estimación de costes",
-  "Reviewers enter an amount": "Las personas revisoras introducen un importe",
-  "Set by the process template and cannot be edited here.": "Definido por la plantilla del proceso; no se puede editar aquí.",
-  "Currency: {code}": "Moneda: {code}"
+  "Reviewers enter an amount": "Las personas revisoras introducen un importe"
 }

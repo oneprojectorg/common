@@ -109,12 +109,6 @@ export function RubricCriterionCard({
 
   const displayLabel = criterion.label || t('Untitled');
 
-  // Money criteria are template-authored: an inert card keeps them visible
-  // (and in `x-field-order`) without pretending to be editable.
-  if (criterion.criterionType === 'money') {
-    return <MoneyCriterionCard criterion={criterion} label={displayLabel} />;
-  }
-
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
       ? `${criterion.maxPoints} ${t('pts')}`
@@ -275,36 +269,6 @@ export function RubricCriterionCard({
         </div>
       </CollapsibleConfigCard>
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Money criterion (read-only)
-// ---------------------------------------------------------------------------
-
-/** Inert card for a template-authored money criterion. */
-function MoneyCriterionCard({
-  criterion,
-  label,
-}: {
-  criterion: CriterionView;
-  label: string;
-}) {
-  const t = useTranslations();
-
-  return (
-    <CollapsibleConfigCard
-      label={label}
-      badgeLabel={t(CRITERION_TYPE_REGISTRY.money.labelKey)}
-      locked
-    >
-      <div className="space-y-1 px-8 text-sm text-muted-foreground">
-        <p>{t('Set by the process template and cannot be edited here.')}</p>
-        {criterion.currency && (
-          <p>{t('Currency: {code}', { code: criterion.currency })}</p>
-        )}
-      </div>
-    </CollapsibleConfigCard>
   );
 }
 
