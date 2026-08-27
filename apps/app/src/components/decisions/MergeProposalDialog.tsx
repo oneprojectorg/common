@@ -160,7 +160,10 @@ export function MergeProposalDialog({
 
         {step === 'select' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-0">
-            <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-8 pb-10">
+            {/* No bottom padding on this step: the candidate list below owns the
+                space down to the footer, so padding here would strand a dead
+                band under the scroll area. */}
+            <div className="flex flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-6 pt-8">
               {/* Figma renders this at body colour, not the muted default. */}
               <DialogDescription className="text-foreground">
                 {t.rich(
@@ -195,8 +198,13 @@ export function MergeProposalDialog({
                 {/* Only the candidates scroll; the blurb, the source card and
                     the field stay put. `min-h-40` is the floor that keeps a
                     short viewport from squeezing this to nothing — past it the
-                    body scrolls again rather than hiding the list. */}
-                <div className="flex min-h-40 flex-1 flex-col gap-4 overflow-y-auto">
+                    body scrolls again rather than hiding the list.
+                    `overflow-x-hidden` is not belt-and-braces: `overflow-y`
+                    alone computes the other axis to `auto`, so a vertical
+                    scrollbar narrowing the content box is enough to raise a
+                    horizontal one. Every card here is width-constrained, so the
+                    axis has nothing to reach and should never scroll. */}
+                <div className="flex min-h-40 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
                   {/* Scoped boundary: a failed list must leave the dialog usable. */}
                   <APIErrorBoundary
                     fallbacks={{
@@ -276,7 +284,7 @@ function ConfirmMergeStep({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0">
-      <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-8 pb-10">
+      <div className="flex flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-6 pt-8 pb-10">
         {/* Figma renders this at body colour, not the muted default. */}
         <DialogDescription className="text-foreground">
           {t.rich(
