@@ -46,13 +46,34 @@ flowchart LR
 ```
 
 This breaks the derivation, not just the cursor. Without an instance-level
-outbound transition there is no window to close. It also breaks a conflation the
-cursor hides: `rules.proposals.submit` ("is intake open?") is a property of the
-**phase**, while `rules.reviews.submit` and `rules.voting.submit` ("may I act on
-this proposal?") are properties of **where a proposal sits**.
+outbound transition there is no window to close.
 
-A second problem surfaced. A phase has no database identity. `phaseId` is a
-`varchar(256)` denormalized across `proposal_review_assignments`,
+### Resolving a user's phase
+
+The cursor is also how the product answers "what can this user do right now", so
+it has to be replaced rather than removed. Three questions hide behind one read:
+
+| Question                                 | Scoped to    | Resolved by                                 |
+| ---------------------------------------- | ------------ | ------------------------------------------- |
+| May I submit a proposal?                 | the instance | an open phase with `rules.proposals.submit` |
+| May I review or vote on _this_ proposal? | the proposal | that proposal's phase, and its window       |
+| What am I looking at?                    | the view     | an explicit phase in the route              |
+
+Each individual check gets simpler. `isReviewPhase(phase)` and
+`isVotingPhase(phase)` already take a phase rather than a cursor — today they are
+handed whichever phase the cursor names. Afterwards the review and vote checks
+read `proposal.phase_id`: one row, and none of the array-position arithmetic in
+`isPhaseAtOrBefore` or `hasPhaseEnded`.
+
+The difficulty moves into _selecting_ the phase, and only bites when two phases
+of the same kind are open at once. Submission is where it bites: with two open
+intake phases a `createProposal` call has no unique target, so the input needs an
+explicit `phaseId` and the UI has to ask. Navigation loses its implied answer
+too — the phase becomes part of the route, with a rule for where to land.
+
+### Phases have no identity
+
+`phaseId` is a `varchar(256)` denormalized across `proposal_review_assignments`,
 `decision_proposal_reviews`, `category_reviewers`,
 `decision_transition_history.{from,to}_state_id`,
 `decision_process_transitions.{from,to}_state_id` and `current_state_id`, with no
@@ -60,7 +81,8 @@ foreign key anywhere. It is defined in a JSON array, and phase order is array
 position — so editing that array dangles those rows, and reordering it inverts
 every `isPhaseAtOrBefore` and `hasPhaseEnded` gate.
 
-So: two entangled axes — phase identity, and where membership lives.
+So: three entangled axes — phase identity, where membership lives, and whether
+phases may be open at the same time.
 
 Scope is `@op/common`'s decision services, the `decision_*` tables, the tRPC
 decision routers and the decision UI. `current_state_id` is read in ~220 places.
@@ -118,6 +140,29 @@ Rejected: a nullable `phase_id` override falling back to the derived window. Two
 membership mechanisms that disagree at the edges, and the fallback never becomes
 deletable.
 
+### Axis 3: are phases continuous or exclusive
+
+Independent movement is not always what we want. A voting phase usually opens at
+a fixed time, closes at a fixed time, and pauses that capability outside the
+window — and while voting is open, intake usually should not be.
+
+**As an instance mode.** A process is either continuous (proposals move
+independently, viewers browse phases) or restricted (one phase at a time, as
+today). Simple, but it fixes the choice for the whole process, so a process
+cannot run continuous submission and review _and_ hold a hard voting window.
+
+**As a per-phase flag.** `exclusive` on the phase: while it is open, no other
+phase accepts entries or actions. Continuous submission and review then compose
+with an exclusive voting window in the same instance, which is the shape the
+product wants.
+
+The flag subsumes the mode — every phase exclusive **is** today's behaviour — so
+the backfill sets `exclusive = true` everywhere and nothing changes until an
+instance opts out.
+
+Phases already carry `startDate` and `endDate`; what is missing is anything
+driving `state` from them.
+
 ## Decision
 
 Phases become entities — a table plus a profile. Membership goes on the proposal.
@@ -125,9 +170,9 @@ The entity work is a prerequisite delivered separately; see **Delivery order**.
 
 1. Add `decision_phases (id, process_instance_id, profile_id, phase_id, position,
 name, rules, selection_pipeline, settings, rubric_template, start_date,
-end_date, state)`, unique on `(process_instance_id, phase_id)`. `phase_id`
-   stays the human-readable instance-scoped key, `id` is the FK target,
-   `position` replaces array index, and `state`
+end_date, state, exclusive)`, unique on `(process_instance_id, phase_id)`.
+   `phase_id` stays the human-readable instance-scoped key, `id` is the FK
+   target, `position` replaces array index, and `state`
    (`not_started | open | closed`) replaces `current_state_id` for gating intake.
 2. Add `EntityType.PHASE` and mint a profile per phase. Move reviewer rosters
    onto phase-profile membership; `category_reviewers` keeps `taxonomy_term_id`
@@ -138,12 +183,18 @@ end_date, state)`, unique on `(process_instance_id, phase_id)`. `phase_id`
 4. Add `decision_proposal_phase_transitions`, carrying `proposal_history_id` and
    `batch_id`, superseding `decision_transition_proposals`. `phase_id` is a
    projection of this log and must stay derivable from it.
-5. Rewrite `getProposalsForPhase.ts` against `phase_id`. Backfill non-legacy
+5. Split capability resolution along the table above. Intake reads the open
+   phases; review and vote checks read `proposal.phase_id`. `createProposal`
+   takes an explicit `phaseId`.
+6. Adopt `exclusive` as a per-phase flag rather than an instance mode, and drive
+   `state` from `start_date` / `end_date` so a voting window opens and closes on
+   schedule. Backfill `exclusive = true`.
+7. Rewrite `getProposalsForPhase.ts` against `phase_id`. Backfill non-legacy
    instances with today's derivation, then delete the window resolver. Legacy
    instances keep `phase_id NULL`.
-6. Recast the instance advance as a batch move over a phase's cohort. The
+8. Recast the instance advance as a batch move over a phase's cohort. The
    selection pipeline still runs; side effects fire per batch.
-7. Make results processing an explicit instance close, since proposals now reach
+9. Make results processing an explicit instance close, since proposals now reach
    the last phase continuously.
 
 C is not adopted. If parallel tracks become a requirement,
@@ -177,15 +228,18 @@ flowchart LR
    rosters. Reads still use `instanceData.phases[]`; `current_state_id` untouched.
 1. **Phase lifecycle replaces the cursor.** Add `state`, backfilled from cursor
    position. Triage the ~220 reads into instance-scoped (read `state`) and
-   proposal-scoped (still derived). Assert exactly one `open` phase per instance.
+   proposal-scoped (still derived) — the split above. Assert exactly one `open`
+   phase per instance, which is the all-exclusive default in table form.
 2. **Membership becomes a column.** Add `phase_id`, `phase_entered_at` and the
    transitions table. Backfill with today's derivation, shadow-read both and log
    divergence, then cut over and delete the window resolver.
-3. **Independent movement.** Drop the one-open-phase invariant. Add the batch
-   move, per-batch side effects, results as explicit close, and per-phase
-   scheduled deadlines.
-4. **UI for multiple live phases.** Needs its own design pass; can start
-   alongside tranche 3 once the API shape is fixed.
+3. **Independent movement.** Add `exclusive` and schedule-driven `state`, then
+   relax the one-open-phase invariant to one open _exclusive_ phase. Add the
+   batch move, per-batch side effects, results as explicit close, and the
+   explicit `phaseId` on `createProposal`.
+4. **UI for multiple live phases.** Phase in the route, a landing rule, and a
+   target picker when intake is open in more than one phase. Needs its own
+   design pass; can start alongside tranche 3 once the API shape is fixed.
 
 Tranches 0–2 are behaviour-preserving and independently revertable. Every
 migration and backfill bakes in production before anything user-visible changes.
@@ -227,4 +281,13 @@ phases are live. That is a design question, not a refactor, and the largest piec
 of work this creates.
 
 Scheduled transitions (`decision_process_transitions.scheduled_date`) become
-per-phase deadlines rather than instance-wide clock ticks.
+per-phase open/close rather than instance-wide clock ticks, which is what makes a
+fixed voting window expressible.
+
+`createProposal` gains a required-in-practice `phaseId`, and the client has to
+supply it — a breaking input change, mitigated by defaulting to the sole open
+intake phase while `exclusive` is universally true.
+
+Because `exclusive` defaults to true everywhere, an instance behaves exactly as
+it does today until someone turns it off. Continuous behaviour is opt-in per
+instance rather than a flag day.
