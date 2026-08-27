@@ -55,10 +55,13 @@ import type { AllProposalsFilter } from './schemas/proposal';
 
 /**
  * Returns proposals on the instance for the "All proposals" tab on the
- * results page. Drafts, rejected, duplicate, merged, and soft-deleted
- * proposals are excluded for everyone. Non-admin members additionally see only
- * visible proposals; decision admins also see hidden proposals so they
- * can audit and report on what was submitted to the process.
+ * results page. Drafts, duplicate, merged, and soft-deleted proposals are
+ * excluded for everyone. Rejected proposals are NOT excluded: this is a
+ * listing, it matches the phase-scoped proposal list, and because that list is
+ * phase-scoped it is the only browse surface that still reaches a proposal
+ * rejected in an earlier phase. Non-admin members additionally see only visible
+ * proposals; decision admins also see hidden proposals so they can audit and
+ * report on what was submitted to the process.
  */
 export const listAllProposals = async ({
   input,
@@ -178,11 +181,7 @@ export const listAllProposals = async ({
               ),
           )
         : undefined,
-      notInArray(t.status, [
-        ProposalStatus.DRAFT,
-        ProposalStatus.REJECTED,
-        ProposalStatus.DUPLICATE,
-      ]),
+      notInArray(t.status, [ProposalStatus.DRAFT, ProposalStatus.DUPLICATE]),
       notSuperseded({ proposalId: t.id, processInstanceId }),
       isNull(t.deletedAt),
       // Moderation-detached (CSAM) proposals are invisible to everyone —

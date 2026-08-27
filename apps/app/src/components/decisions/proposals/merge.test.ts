@@ -70,6 +70,19 @@ describe('getMergeCandidates', () => {
     expect(candidates.map((candidate) => candidate.id)).toEqual(['visible']);
   });
 
+  it('excludes a rejected proposal, which every viewer now receives from listProposals', () => {
+    const candidates = getMergeCandidates({
+      proposals: [
+        proposal({ id: 'rejected', status: ProposalStatus.REJECTED }),
+        proposal({ id: 'active' }),
+      ],
+      sourceProposalId: 'source',
+      untitledLabel,
+    });
+
+    expect(candidates.map((candidate) => candidate.id)).toEqual(['active']);
+  });
+
   it('excludes a flagged proposal, which members also cannot see', () => {
     const candidates = getMergeCandidates({
       proposals: [
