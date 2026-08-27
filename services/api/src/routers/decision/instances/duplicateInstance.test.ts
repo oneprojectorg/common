@@ -615,9 +615,6 @@ describe.concurrent('duplicateInstance', () => {
     expect(instanceData.rubricTemplate).toBeUndefined();
   });
 
-  // Was asserting stewardProfileId === currentProfileId. The default is now the
-  // duplicating user's own profile so the copy lands on their process list
-  // rather than on whichever profile they happened to be viewing.
   it('should default both ownerProfileId and stewardProfileId to the duplicating individual when steward not provided', async ({
     task,
     onTestFinished,
@@ -679,7 +676,6 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    // The profile page's process list — stewardProfileId is what scopes it.
     const listed = await caller.decision.listDecisionProfiles({
       stewardProfileId: userRecord!.profileId!,
       status: [ProcessStatus.DRAFT],
@@ -698,8 +694,6 @@ describe.concurrent('duplicateInstance', () => {
       task.id,
     );
 
-    // A profile belonging to an unrelated user — never offered by the steward
-    // picker, so only a hand-rolled request can ask for it.
     const otherSetup = await testData.createDecisionSetup({ instanceCount: 0 });
     const [otherUser] = await db
       .select()
@@ -727,9 +721,8 @@ describe.concurrent('duplicateInstance', () => {
       organizationProfileId,
     } = await createSourceInstance(testData, task.id);
 
-    // An org profile is the other half of what the steward picker offers, and
-    // that grant lives on organizationUsers rather than profileUsers — a
-    // profileUsers-only admin check would reject it.
+    // Org grants live on organizationUsers, so a profileUsers-only admin check
+    // would reject this.
     const duplicate = await caller.decision.duplicateInstance({
       instanceId: source.processInstance.id,
       name: `Org Steward Copy ${task.id}`,
@@ -815,16 +808,13 @@ describe.concurrent('duplicateInstance', () => {
     });
     const duplicateData = duplicateRow!.instanceData as DecisionInstanceData;
 
-    // The guard against a field silently dropping out: a full-include copy
-    // carries every top-level key the source had. A new DecisionInstanceData
-    // field that buildInstanceData forgets fails here. If a new field is meant
-    // NOT to carry, seed it above and subtract it here with the reason —
-    // don't drop the assertion.
+    // A new DecisionInstanceData field that buildInstanceData forgets fails
+    // here. If one is meant not to carry, subtract it with the reason rather
+    // than dropping the assertion.
     expect(Object.keys(duplicateData).sort()).toEqual(
       Object.keys(sourceData).sort(),
     );
 
-    // ...and the values that motivated this, not just the keys.
     expect(duplicateData.rubricTemplate).toEqual(sourceData.rubricTemplate);
     expect(duplicateData.proposalTemplate).toEqual(sourceData.proposalTemplate);
     expect(duplicateData.config).toEqual(sourceData.config);
@@ -833,9 +823,7 @@ describe.concurrent('duplicateInstance', () => {
       headline: 'Cycle 1 headline',
       description: 'Cycle 1 overview description',
     });
-    // The hero image points at a storage object under the source instance's
-    // path prefix; clearing it there deletes the object, so it must not be
-    // shared with the copy.
+    // Shared storage object; see buildInstanceData.
     expect(duplicateData.overview?.heroImage).toBeUndefined();
   });
 
