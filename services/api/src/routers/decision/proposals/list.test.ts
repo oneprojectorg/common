@@ -392,6 +392,8 @@ describe.concurrent('listProposals', () => {
 
     const instance = setup.instance;
 
+    await testData.makeDecisionPublic(instance.profileId);
+
     const [rejectedProposal, adminCaller] = await Promise.all([
       testData.createProposal({
         userEmail: setup.userEmail,
@@ -399,7 +401,6 @@ describe.concurrent('listProposals', () => {
         proposalData: { title: 'Rejected Proposal' },
       }),
       createAuthenticatedCaller(setup.userEmail),
-      testData.makeDecisionPublic(instance.profileId),
     ]);
 
     await adminCaller.decision.submitProposal({
