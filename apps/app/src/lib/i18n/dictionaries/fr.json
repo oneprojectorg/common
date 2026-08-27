@@ -1553,7 +1553,6 @@
   "Merge with another proposal": "Fusionner avec une autre proposition",
   "Unmerge": "Annuler la fusion",
   "Proposal to merge into": "Proposition avec laquelle fusionner",
-  "Show more proposals": "Afficher plus de propositions",
   "No other proposals yet": "Aucune autre proposition pour l’instant",
   "A proposal can only be merged into another one in this decision.": "Une proposition ne peut être fusionnée qu’avec une autre proposition de cette décision.",
   "Could not load the other proposals. Please try again.": "Impossible de charger les autres propositions. Veuillez réessayer.",

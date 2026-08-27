@@ -1616,7 +1616,6 @@
   "Merge with another proposal": "Összevonás másik javaslattal",
   "Unmerge": "Összevonás megszüntetése",
   "Proposal to merge into": "Javaslat, amelybe az összevonás történik",
-  "Show more proposals": "További javaslatok megjelenítése",
   "No other proposals yet": "Még nincsenek más javaslatok",
   "A proposal can only be merged into another one in this decision.": "Egy javaslat csak ugyanennek a döntésnek egy másik javaslatába vonható össze.",
   "Could not load the other proposals. Please try again.": "Nem sikerült betölteni a többi javaslatot. Kérjük, próbálja újra.",

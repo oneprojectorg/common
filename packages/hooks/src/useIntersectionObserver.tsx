@@ -11,6 +11,14 @@ interface UseIntersectionObserverOptions {
    * one frame on mount.
    */
   initialIsIntersecting?: boolean;
+  /**
+   * Element to measure against; defaults to the viewport. Pass the scrolling
+   * ancestor when the target sits inside one — `rootMargin` only expands the
+   * root's own rect, so against the viewport an intermediate scroller still
+   * clips the target and the margin buys no early trigger at all (measured:
+   * a 100px margin fired within 20px of the inner scroller's bottom).
+   */
+  root?: Element | null;
 }
 
 export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
@@ -21,6 +29,7 @@ export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
     rootMargin = '0px',
     enabled = true,
     initialIsIntersecting = false,
+    root = null,
   } = options;
   const [isIntersecting, setIsIntersecting] = useState(initialIsIntersecting);
   // The observed node is state (set via callback ref), not a ref, so the
@@ -41,6 +50,7 @@ export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
         }
       },
       {
+        root,
         threshold,
         rootMargin,
       },
@@ -55,7 +65,7 @@ export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
       // fetchNextPage) the moment they re-enable.
       setIsIntersecting(initialIsIntersecting);
     };
-  }, [node, threshold, rootMargin, enabled, initialIsIntersecting]);
+  }, [node, root, threshold, rootMargin, enabled, initialIsIntersecting]);
 
   // Typed as a plain callback ref so the state-setter implementation detail
   // doesn't leak into consumers' prop types.

@@ -3,7 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { MERGE_NOTE_MAX_LENGTH, type Proposal } from '@op/common/client';
-import { useDebounce } from '@op/hooks';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -38,7 +38,14 @@ import { Spinner } from '@op/sense/Spinner';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { type ReactNode, Suspense, useId, useMemo, useState } from 'react';
+import {
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -82,6 +89,10 @@ export function MergeProposalDialog({
   // the suggestion cards alike, so the input borrows it rather than adding one.
   const mergeIntoHeadingId = useId();
   const [step, setStep] = useState<MergeStep>('select');
+  // State rather than a ref: the list below reads this as its observer root, so
+  // it has to re-render once the element is attached.
+  const [candidateScrollRoot, setCandidateScrollRoot] =
+    useState<HTMLDivElement | null>(null);
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
@@ -204,7 +215,10 @@ export function MergeProposalDialog({
                     scrollbar narrowing the content box is enough to raise a
                     horizontal one. Every card here is width-constrained, so the
                     axis has nothing to reach and should never scroll. */}
-                <div className="flex min-h-40 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
+                <div
+                  ref={setCandidateScrollRoot}
+                  className="flex min-h-40 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto"
+                >
                   {/* Scoped boundary: a failed list must leave the dialog usable. */}
                   <APIErrorBoundary
                     fallbacks={{
@@ -220,6 +234,7 @@ export function MergeProposalDialog({
                     <Suspense fallback={<MergeCandidateListSkeleton />}>
                       <MergeCandidateListSuspense
                         proposal={proposal}
+                        scrollRoot={candidateScrollRoot}
                         selected={target}
                         onSelect={handleSelect}
                       />
@@ -574,10 +589,13 @@ function MergeSearchResult({ candidate }: { candidate: MergeCandidate }) {
 /** Reads `listProposals`, so this can't offer what the browse list would hide. */
 function MergeCandidateListSuspense({
   proposal,
+  scrollRoot,
   selected,
   onSelect,
 }: {
   proposal: Proposal;
+  /** The list's own scroll container — see the `root` note on the sentinel. */
+  scrollRoot: Element | null;
   selected: MergeCandidate | null;
   onSelect: (candidate: MergeCandidate) => void;
 }) {
@@ -612,10 +630,23 @@ function MergeCandidateListSuspense({
   // these pages don't hold.
   const candidates = selected ? [selected] : loadedCandidates;
 
+  const { fetchNextPage } = query;
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+  const { ref: infiniteScrollRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage: query.hasNextPage,
+      isFetchingNextPage: query.isFetchingNextPage,
+      // Measured against the list's own scroller, not the viewport: a viewport
+      // root is clipped by this container, which leaves `rootMargin` no room to
+      // work and only fetches once the user is already at the very bottom.
+      root: scrollRoot,
+      enabled: !selected,
+    });
+
   return (
     <>
-      {/* Beside "Show more", not instead of it: a page can filter down to
-          nothing while later pages still hold candidates. */}
       {candidates.length === 0 ? (
         <Empty>
           <EmptyHeader>
@@ -663,16 +694,16 @@ function MergeCandidateListSuspense({
         </RadioGroup>
       )}
 
-      {/* Nothing to show more of while the list is collapsed to the pick. */}
-      {query.hasNextPage && !selected ? (
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => query.fetchNextPage()}
-          loading={query.isFetchingNextPage}
-        >
-          {t('Show more proposals')}
-        </Button>
+      {/* Nothing left to reach while the list is collapsed to the pick, so the
+          observer stays off and the sentinel never renders. Its padding is
+          load-bearing: a zero-height target can never satisfy the hook's
+          intersection threshold. */}
+      {shouldShowTrigger ? (
+        <div ref={infiniteScrollRef} className="py-2">
+          {query.isFetchingNextPage ? (
+            <Skeleton className="h-40 w-full" aria-hidden />
+          ) : null}
+        </div>
       ) : null}
     </>
   );
