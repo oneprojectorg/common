@@ -419,6 +419,7 @@ export const PostItem = ({
   withLinks,
   onLikeClick,
   onCommentClick,
+  contentFooter,
   className,
 }: {
   post: Post;
@@ -427,6 +428,8 @@ export const PostItem = ({
   withLinks: boolean;
   onLikeClick: (postId: string) => Promise<unknown>;
   onCommentClick?: (post: Post, organization: Organization | null) => void;
+  /** Rendered under the post body, above the like/comment row. */
+  contentFooter?: ReactNode;
   className?: string;
 }) => {
   const decisionTranslation = useDecisionTranslation();
@@ -469,6 +472,7 @@ export const PostItem = ({
           <PostContent content={displayContent} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
+          {contentFooter}
           <div className="-ms-2 flex items-center">
             <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             {onCommentClick ? (

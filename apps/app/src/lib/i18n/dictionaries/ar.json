@@ -1617,7 +1617,7 @@
   "Contributing ideas": "أفكار مساهِمة",
   "These participant ideas were merged into this proposal.": "تم دمج أفكار المشاركين هذه في هذا المقترح.",
   "Contributing ideas could not be loaded": "تعذر تحميل الأفكار المساهِمة",
-  "Comment originally appeared in {name}": "ظهر التعليق في الأصل في {name}",
+  "Comment originally appeared in <proposal>{name}</proposal>": "ظهر التعليق في الأصل في <proposal>{name}</proposal>",
   "Feedback": "الملاحظات",
   "Notes reviewers shared while this proposal was under review": "ملاحظات شاركها المراجعون أثناء مراجعة هذا المقترح",
   "Reviewer · {timeAgo}": "مراجع · {timeAgo}",

@@ -1618,7 +1618,7 @@
   "Contributing ideas": "Fikrado wax ku darsaday",
   "These participant ideas were merged into this proposal.": "Fikradahan ka-qaybgalayaasha waxaa lala biiriyay soo jeedintan.",
   "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin",
-  "Comment originally appeared in {name}": "Faallada waxay markii hore ka soo muuqatay {name}",
+  "Comment originally appeared in <proposal>{name}</proposal>": "Faallada waxay markii hore ka soo muuqatay <proposal>{name}</proposal>",
   "Feedback": "Jawaab celin",
   "Notes reviewers shared while this proposal was under review": "Qoraallada dib-u-eegayaashu wadaageen inta soo jeedintan la eegayay",
   "Reviewer · {timeAgo}": "Dib-u-eege · {timeAgo}",

@@ -1618,7 +1618,7 @@
   "Contributing ideas": "Ideias que contribuíram",
   "These participant ideas were merged into this proposal.": "Estas ideias de participantes foram combinadas com esta proposta.",
   "Contributing ideas could not be loaded": "Não foi possível carregar as ideias que contribuíram",
-  "Comment originally appeared in {name}": "O comentário apareceu originalmente em {name}",
+  "Comment originally appeared in <proposal>{name}</proposal>": "O comentário apareceu originalmente em <proposal>{name}</proposal>",
   "Feedback": "Comentários",
   "Notes reviewers shared while this proposal was under review": "Notas que os avaliadores compartilharam enquanto esta proposta estava em revisão",
   "Reviewer · {timeAgo}": "Avaliador · {timeAgo}",

@@ -12,10 +12,10 @@ import {
   EmptyMedia,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
-import { useCallback, useRef } from 'react';
-import { LuMerge, LuUserRoundPlus } from 'react-icons/lu';
+import { type ReactNode, useCallback, useRef } from 'react';
+import { LuUserRoundPlus } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
@@ -30,9 +30,12 @@ export const PROPOSAL_COMMENTS_ANCHOR_ID = 'proposal-comments';
 
 export function ProposalComments({
   proposal,
+  decisionRoot,
   readOnly: readOnlyProp = false,
 }: {
   proposal: Proposal;
+  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
+  decisionRoot: string;
   readOnly?: boolean;
 }) {
   const t = useTranslations();
@@ -122,15 +125,20 @@ export function ProposalComments({
             <PostFeed>
               {comments.map(({ post, originProposal }, i) => (
                 <div key={post.id}>
-                  {originProposal ? (
-                    <MergedCommentOrigin name={originProposal.name} />
-                  ) : null}
                   <PostItem
                     post={post}
                     organization={null}
                     user={user}
                     withLinks={true}
                     onLikeClick={handleLikeClick}
+                    contentFooter={
+                      originProposal ? (
+                        <MergedCommentOrigin
+                          origin={originProposal}
+                          decisionRoot={decisionRoot}
+                        />
+                      ) : undefined
+                    }
                     className="sm:px-0"
                   />
                   {comments.length !== i + 1 && <hr className="my-4" />}
@@ -158,15 +166,28 @@ export function ProposalComments({
  * Marks a comment that was written on a proposal merged into this one. Without
  * it the comment reads as a reply to a proposal its author never saw.
  */
-function MergedCommentOrigin({ name }: { name: string }) {
+function MergedCommentOrigin({
+  origin,
+  decisionRoot,
+}: {
+  origin: { profileId: string; name: string };
+  decisionRoot: string;
+}) {
   const t = useTranslations();
 
   return (
-    <p className="mb-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground sm:px-4">
-      <LuMerge className="size-4 shrink-0" aria-hidden />
-      <span className="truncate">
-        {t('Comment originally appeared in {name}', { name })}
-      </span>
+    <p className="text-sm text-muted-foreground">
+      {t.rich('Comment originally appeared in <proposal>{name}</proposal>', {
+        name: origin.name,
+        proposal: (chunks: ReactNode) => (
+          <Link
+            href={`${decisionRoot}/proposal/${origin.profileId}`}
+            className="text-primary underline"
+          >
+            {chunks}
+          </Link>
+        ),
+      })}
     </p>
   );
 }
