@@ -29,8 +29,8 @@ import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
-import { ReviewAssignmentsPanel } from '../Review/ReviewAssignmentsPanel';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
+import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
 import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
@@ -143,9 +143,13 @@ export function ReviewPage({
     </TabsTrigger>
   );
 
+  // Same table as /decisions/[slug]/assignments — the tab and the dedicated
+  // screen are two entry points onto one surface, and reviewer rows link into
+  // the dedicated per-reviewer route from both.
   const assignmentsTabContent = (
     <TabsContent value="assignments" className="grow sm:p-0">
-      <ReviewAssignmentsPanel
+      <ReviewersTableSection
+        decisionSlug={decisionSlug}
         processInstanceId={instance.id}
         phaseId={currentPhase.phaseId}
       />
