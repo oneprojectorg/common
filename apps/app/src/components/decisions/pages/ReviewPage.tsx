@@ -1,9 +1,11 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
+import { Badge } from '@op/sense/Badge';
 import {
   Empty,
   EmptyDescription,
@@ -69,6 +71,10 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
+  // Instance admins only; the flag fails closed in prod.
+  const manualAssignmentsEnabled = useFeatureFlag('manual_review_assignments');
+  const showAssignmentsTab = isAdmin && Boolean(manualAssignmentsEnabled);
+
   // Client-side mirror of the service's `canReadPhaseReviews` gate.
   const canSeeReviewCounts =
     isAdmin ||
@@ -83,9 +89,9 @@ export function ReviewPage({
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
 
-  // A `?tab=assignments` link opened by a non-admin has no panel.
+  // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
   const activeTab =
-    tab === 'assignments' && !isAdmin ? DEFAULT_REVIEW_TAB : tab;
+    tab === 'assignments' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
 
   // The admin variant has no 'other-proposals' panel to land on.
   const adminActiveTab =
@@ -129,7 +135,12 @@ export function ReviewPage({
   useRegisterTranslationSamples('review-phase', phaseSamples);
 
   const assignmentsTabTrigger = (
-    <TabsTrigger value="assignments">{t('Assignments')}</TabsTrigger>
+    <TabsTrigger value="assignments">
+      {t('Assignments')}
+      <Badge variant="secondary" className="ms-2">
+        {t('Alpha')}
+      </Badge>
+    </TabsTrigger>
   );
 
   // Same table as /decisions/[slug]/assignments — the tab and the dedicated
@@ -228,7 +239,7 @@ export function ReviewPage({
                   <TabsTrigger value="other-proposals">
                     {t('Other proposals')}
                   </TabsTrigger>
-                  {isAdmin ? assignmentsTabTrigger : null}
+                  {showAssignmentsTab ? assignmentsTabTrigger : null}
                 </TabsList>
               </div>
 
@@ -273,31 +284,35 @@ export function ReviewPage({
                 </APIErrorBoundary>
               </TabsContent>
 
-              {isAdmin ? assignmentsTabContent : null}
+              {showAssignmentsTab ? assignmentsTabContent : null}
             </Tabs>
           ) : isAdmin ? (
-            // Admin without review capability: the progress list plus the
-            // assignments desk.
-            <Tabs
-              className="gap-6"
-              value={adminActiveTab}
-              onValueChange={handleTabChange}
-            >
-              <div className="w-full border-b">
-                <TabsList variant="line" className="flex gap-6">
-                  <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                    {t('Review progress')}
-                  </TabsTrigger>
-                  {assignmentsTabTrigger}
-                </TabsList>
-              </div>
+            // Admin without review capability: the progress list is the whole
+            // surface, gaining a sibling tab only when the desk is on.
+            showAssignmentsTab ? (
+              <Tabs
+                className="gap-6"
+                value={adminActiveTab}
+                onValueChange={handleTabChange}
+              >
+                <div className="w-full border-b">
+                  <TabsList variant="line" className="flex gap-6">
+                    <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                      {t('Review progress')}
+                    </TabsTrigger>
+                    {assignmentsTabTrigger}
+                  </TabsList>
+                </div>
 
-              <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
-                {adminProgressList}
-              </TabsContent>
+                <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
+                  {adminProgressList}
+                </TabsContent>
 
-              {assignmentsTabContent}
-            </Tabs>
+                {assignmentsTabContent}
+              </Tabs>
+            ) : (
+              adminProgressList
+            )
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
               <Suspense fallback={<ProposalListSkeleton />}>
