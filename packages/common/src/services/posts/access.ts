@@ -13,9 +13,22 @@ import {
 import { decisionPermission } from '../decision/permissions';
 import { getNetworkMembership } from '../user';
 
-/** The proposal behind the gated profile, or null when it is a decision. */
 export type PostReadAccess = {
+  /** The proposal behind the gated profile, or null when it is a decision. */
   proposal: { id: string; processInstanceId: string } | null;
+  /**
+   * The profile whose admins moderate these posts — always the decision's own
+   * profile, never a proposal's.
+   *
+   * Moderation authority belongs to the process admins alone. A proposal's
+   * owner and co-authors hold `profile: ADMIN` on their *proposal* profile
+   * (`createProposal` grants the global Admin role), so resolving standing
+   * there would hand them every flagged comment on their own proposal — and,
+   * once a merge carries comments over, on every proposal merged into it.
+   * Flagged content stays hidden from them; only its own author still sees it,
+   * via the author clause in `postModerationFilter`.
+   */
+  moderationProfileId: string;
 };
 
 // Asserts a caller's READ access to a profile's posts, dispatching on the
@@ -49,7 +62,8 @@ export const assertPostReadAccess = async ({
         profileIds: [profileId],
         policies: { [EntityType.DECISION]: { decisions: permission.READ } },
       });
-      return { proposal: null };
+      // The decision profile is its own moderation authority.
+      return { proposal: null, moderationProfileId: profileId };
     }
 
     // A proposal's READ grant lives on its parent decision (the process
@@ -73,11 +87,21 @@ export const assertPostReadAccess = async ({
           { decisions: permission.ADMIN },
         ],
       });
+
+      // `assertInstanceProfileAccess` rejects an instance with no profile, so
+      // reaching this with a null is impossible; the check is what narrows the
+      // nullable column for the return.
+      const moderationProfileId = proposal.processInstance.profileId;
+      if (!moderationProfileId) {
+        throw new UnauthorizedError('You do not have access to these posts');
+      }
+
       return {
         proposal: {
           id: proposal.id,
           processInstanceId: proposal.processInstanceId,
         },
+        moderationProfileId,
       };
     }
 

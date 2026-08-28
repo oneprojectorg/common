@@ -13,12 +13,17 @@ export const listProfilePosts = async ({
   limit?: number;
   cursor?: string | null;
 }) => {
-  await assertPostReadAccess({ user, profileId });
+  // Moderation standing comes back resolved on the decision, so a proposal's
+  // own owner doesn't moderate their proposal's feed.
+  const { moderationProfileId } = await assertPostReadAccess({
+    user,
+    profileId,
+  });
 
   const { items, next } = await getPostsPageForProfiles({
     user,
     profileIds: [profileId],
-    moderationProfileId: profileId,
+    moderationProfileId,
     limit,
     cursor,
   });

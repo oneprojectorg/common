@@ -25,8 +25,13 @@ import {
  *
  * Does no authorization — every caller asserts read access itself, because the
  * grant a profile's posts hang off depends on the profile's type.
+ *
  * `moderationProfileId` is the profile whose admin standing decides whether
- * flagged posts stay visible.
+ * flagged posts stay visible, and it is resolved once for the whole page — so
+ * pass a profile whose admins are entitled to moderate *every* profile in
+ * `profileIds`. In practice that means the decision's own profile: it governs
+ * its proposals as well as itself, which a single proposal's profile does not.
+ * `assertPostReadAccess` returns the right id for either profile type.
  */
 export const getPostsPageForProfiles = async ({
   user,
@@ -55,7 +60,7 @@ export const getPostsPageForProfiles = async ({
 
   // The caller's profile + admin standing on the governing profile drive the
   // moderation filter below: flagged posts stay visible to their author and
-  // to profile admins, hidden from everyone else.
+  // to the governing profile's admins, hidden from everyone else.
   const [actorProfileId, governingRoles] = await Promise.all([
     user ? getCurrentProfileId(user.id) : undefined,
     getProfileAccessRolesWithOrgFallback({

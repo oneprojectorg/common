@@ -1,8 +1,12 @@
 import { createPostOnProfile } from '@op/common';
 import { db } from '@op/db/client';
 import {
+  ModerationFlagStatus,
+  ModerationItemType,
+  ModerationSource,
   ProposalStatus,
   Visibility,
+  moderationFlags,
   postsToProfiles,
   proposals,
 } from '@op/db/schema';
@@ -215,6 +219,121 @@ describe.concurrent('posts.listProposalComments', () => {
 
     expect(result.items.map((item) => item.post.id)).toEqual([
       targetComment.id,
+    ]);
+  });
+
+  it('hides a flagged carried-over comment from the proposal owner but not from a process admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const instanceProfileId = setup.instance.profileId;
+
+    // The proposals' author is an ordinary participant: the seeded Member role
+    // carries `decisions: SUBMIT_PROPOSALS` but only `profile: READ` on the
+    // decision, while `createProposal` makes them Admin on the two proposal
+    // profiles they own. Exactly the principal whose standing must not count.
+    const [owner, commenter] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instanceProfileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instanceProfileId],
+      }),
+    ]);
+
+    const [source, target, adminCaller, ownerCaller, commenterCaller] =
+      await Promise.all([
+        testData.createProposal({
+          userEmail: owner.email,
+          processInstanceId: instanceId,
+          proposalData: { title: 'Merged-in idea' },
+          status: ProposalStatus.SHORTLISTED,
+        }),
+        testData.createProposal({
+          userEmail: owner.email,
+          processInstanceId: instanceId,
+          proposalData: { title: 'Surviving proposal' },
+          status: ProposalStatus.SHORTLISTED,
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+        createAuthenticatedCaller(owner.email),
+        createAuthenticatedCaller(commenter.email),
+      ]);
+
+    const [clean, flagged] = await Promise.all([
+      createPostOnProfile({
+        content: 'Clean comment on the merged-in idea',
+        targetProfileId: source.profileId,
+        authUserId: commenter.authUserId,
+      }),
+      createPostOnProfile({
+        content: 'Flagged comment on the merged-in idea',
+        targetProfileId: source.profileId,
+        authUserId: commenter.authUserId,
+      }),
+    ]);
+
+    await setCommentTime(
+      flagged.id,
+      source.profileId,
+      '2026-01-01T12:00:00.000Z',
+    );
+    await setCommentTime(
+      clean.id,
+      source.profileId,
+      '2026-01-01T10:00:00.000Z',
+    );
+
+    await db.insert(moderationFlags).values({
+      itemType: ModerationItemType.POST,
+      itemId: flagged.id,
+      status: ModerationFlagStatus.FLAGGED,
+      source: ModerationSource.AUTOMATED,
+      reason: 'listProposalComments test',
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(moderationFlags)
+        .where(eq(moderationFlags.itemId, flagged.id));
+    });
+
+    await adminCaller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    // Owning both proposals grants `profile: ADMIN` on each proposal profile —
+    // which must not carry any moderation standing.
+    const ownerResult = await ownerCaller.posts.listProposalComments({
+      profileId: target.profileId,
+    });
+    expect(ownerResult.items.map((item) => item.post.id)).toEqual([clean.id]);
+
+    // Moderation standing lives on the decision, so its admin sees the flag.
+    const adminResult = await adminCaller.posts.listProposalComments({
+      profileId: target.profileId,
+    });
+    expect(adminResult.items.map((item) => item.post.id)).toEqual([
+      flagged.id,
+      clean.id,
+    ]);
+
+    // The author exception is untouched: a commenter still sees their own
+    // flagged comment carried onto the target.
+    const commenterResult = await commenterCaller.posts.listProposalComments({
+      profileId: target.profileId,
+    });
+    expect(commenterResult.items.map((item) => item.post.id)).toEqual([
+      flagged.id,
+      clean.id,
     ]);
   });
 

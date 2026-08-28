@@ -36,7 +36,10 @@ export const listProposalComments = async ({
   // The assert resolves the proposal to gate on it, so it comes back here
   // rather than being read a second time. Null means a decision profile, which
   // the assert also admits.
-  const { proposal } = await assertPostReadAccess({ user, profileId });
+  const { proposal, moderationProfileId } = await assertPostReadAccess({
+    user,
+    profileId,
+  });
 
   if (!proposal) {
     throw new NotFoundError('Proposal', profileId);
@@ -72,7 +75,7 @@ export const listProposalComments = async ({
   const { items, next } = await getPostsPageForProfiles({
     user,
     profileIds,
-    moderationProfileId: profileId,
+    moderationProfileId,
     limit,
     cursor,
   });
