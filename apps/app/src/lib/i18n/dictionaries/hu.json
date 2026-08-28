@@ -1611,6 +1611,7 @@
   "Retry download": "Letöltés újrapróbálása",
   "Could not prepare the download. Please try again.": "Nem sikerült előkészíteni a letöltést. Kérjük, próbálja újra.",
   "Export timed out. Please try again.": "Az exportálás túllépte az időkorlátot. Kérjük, próbálja újra.",
+  "Only {rowCount, number} of {total, number} proposals are in this file.": "Ebben a fájlban csak {total, number} javaslatból {rowCount, number} szerepel.",
   "Couldn't check the export's status. It may still be running.": "Nem sikerült ellenőrizni az exportálás állapotát. Lehet, hogy még fut.",
   "Export all": "Összes exportálása",
   "Proposals in review · {count}": "Értékelés alatt álló javaslatok · {count}",
