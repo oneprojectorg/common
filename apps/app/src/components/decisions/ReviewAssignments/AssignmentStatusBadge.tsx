@@ -1,8 +1,9 @@
 'use client';
 
 import type { AdminReviewAssignment } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import type { StatusDotIntent } from '@op/sense/StatusDot';
+import { LuCircleCheck, LuPencilLine } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
@@ -16,7 +17,7 @@ export type AssignmentStatusValue =
 
 /**
  * The shared `ReviewStatusBadge` for the five statuses; the two review
- * states get the plain Badge treatment the rest of the codebase gives them.
+ * states get the same StatusBadge treatment so all seven read as one set.
  */
 export function AssignmentStatusBadge({
   status,
@@ -27,9 +28,12 @@ export function AssignmentStatusBadge({
 
   if (status === 'draft' || status === 'submitted') {
     return (
-      <Badge variant={status === 'submitted' ? 'default' : 'warning'}>
+      <StatusBadge
+        variant={status === 'submitted' ? 'success' : 'warning'}
+        icon={status === 'submitted' ? LuCircleCheck : LuPencilLine}
+      >
         {t(assignmentStatusSpecs[status].label)}
-      </Badge>
+      </StatusBadge>
     );
   }
 
