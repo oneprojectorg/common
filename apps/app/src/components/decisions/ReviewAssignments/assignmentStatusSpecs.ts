@@ -1,40 +1,12 @@
-'use client';
-
 import type { AdminReviewAssignment } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
 import type { StatusDotIntent } from '@op/sense/StatusDot';
 
-import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
-
-import { ReviewStatusBadge } from '../ReviewStatusBadge';
 
 /** The merged status vocabulary: `reviewState ?? status` at every call site. */
 export type AssignmentStatusValue =
   | AdminReviewAssignment['status']
   | NonNullable<AdminReviewAssignment['reviewState']>;
-
-/**
- * The shared `ReviewStatusBadge` for the five statuses; the two review
- * states get the plain Badge treatment the rest of the codebase gives them.
- */
-export function AssignmentStatusBadge({
-  status,
-}: {
-  status: AssignmentStatusValue;
-}) {
-  const t = useTranslations();
-
-  if (status === 'draft' || status === 'submitted') {
-    return (
-      <Badge variant={status === 'submitted' ? 'default' : 'warning'}>
-        {t(assignmentStatusSpecs[status].label)}
-      </Badge>
-    );
-  }
-
-  return <ReviewStatusBadge status={status} />;
-}
 
 /** Label + StatusDot intent for the whole vocabulary — the progress rail's breakdown. */
 export const assignmentStatusSpecs: Record<

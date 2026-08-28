@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from '@op/sense/Dialog';
 import { Field, FieldLabel } from '@op/sense/Field';
+import { Header3 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { Label } from '@op/sense/Label';
 import { toast } from '@op/sense/Toast';
@@ -28,8 +29,8 @@ import { useId, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
-import { AssignmentStatusBadge } from './AssignmentStatusBadge';
 import type { ReviewerRow } from './buildReviewerRows';
 
 /** How a proposal row behaves for this reviewer. */
@@ -251,14 +252,11 @@ export function ManageAssignmentsDialog({
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
           <div className="flex items-center justify-between gap-3">
             {/* Not the filter's label — a moving count would rename the control. */}
-            <p
-              aria-live="polite"
-              className="text-sm font-medium text-muted-foreground"
-            >
+            <Header3 aria-live="polite" className="font-light">
               {t('Proposals ({count} assigned)', { count: assignedCount })}
-            </p>
+            </Header3>
             <Button
-              variant="ghost"
+              variant="link"
               onClick={toggleVisibleFree}
               disabled={visibleFreeIds.length === 0}
             >
@@ -398,7 +396,7 @@ function ProposalCheckRow({
             <Badge variant="outline">{t("Reviewer's own proposal")}</Badge>
           ) : null}
           {kind === 'locked' && assignment ? (
-            <AssignmentStatusBadge
+            <ReviewStatusBadge
               status={assignment.reviewState ?? assignment.status}
             />
           ) : null}

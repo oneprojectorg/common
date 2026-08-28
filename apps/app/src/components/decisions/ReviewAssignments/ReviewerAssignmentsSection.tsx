@@ -21,14 +21,14 @@ import { LuUserX, LuUsers } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
+import { ReviewStatusBadge } from '../ReviewStatusBadge';
+import { ReviewerAssignmentsBodySkeleton } from './ReviewAssignmentsSkeletons';
+import { ReviewerHeader } from './ReviewerHeader';
 import {
-  AssignmentStatusBadge,
   type AssignmentStatusValue,
   assignmentStatusRank,
   assignmentStatusSpecs,
-} from './AssignmentStatusBadge';
-import { ReviewerAssignmentsBodySkeleton } from './ReviewAssignmentsSkeletons';
-import { ReviewerHeader } from './ReviewerHeader';
+} from './assignmentStatusSpecs';
 import { type ReviewerRow, buildReviewerRows } from './buildReviewerRows';
 
 interface ReviewerAssignmentsSectionProps {
@@ -172,7 +172,7 @@ function AssignmentCard({
       authors={authorName ? [{ name: authorName }] : undefined}
       description={assignment.previewText ?? undefined}
       status={
-        <AssignmentStatusBadge
+        <ReviewStatusBadge
           status={assignment.reviewState ?? assignment.status}
         />
       }
