@@ -57,7 +57,7 @@ export const DecisionInviteCard = ({
           <Header2 className="text-title">{profile.name}</Header2>
           <ProfileItem
             size="small"
-            className="items-center gap-1"
+            className="gap-1"
             avatar={
               <ProfileAvatar
                 name={steward?.name ?? ''}
