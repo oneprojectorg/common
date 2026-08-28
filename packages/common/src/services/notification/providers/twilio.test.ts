@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from '../../../utils/error';
 import { parsePhoneNumber } from '../schemas';
+import type { SmsProvider } from '../types';
 import { type TwilioRestClient, createTwilioProvider } from './twilio';
 
 /** Twilio's own magic test number, so no real line appears in a fixture. */
@@ -19,6 +20,24 @@ const TO = parsePhoneNumber('+15005550006');
  */
 const restError = (code: number, status = 400) =>
   Object.assign(new Error(`Twilio error ${code}`), { code, status });
+
+/**
+ * Builds a provider and returns one capability, failing when it is absent.
+ *
+ * Every capability is optional on {@link SmsProvider}, because each one follows
+ * from a service the deployment configured separately. A test states which one
+ * it means to exercise here, rather than asserting past the type.
+ */
+const capabilityOf = <K extends keyof SmsProvider>(
+  options: Parameters<typeof createTwilioProvider>[0],
+  name: K,
+): NonNullable<SmsProvider[K]> => {
+  const capability = createTwilioProvider(options)[name];
+  if (!capability) {
+    throw new Error(`The fixture built a provider with no ${name}.`);
+  }
+  return capability;
+};
 
 type Services = TwilioRestClient['verify']['v2']['services'];
 type MessageCreate = TwilioRestClient['messages']['create'];
@@ -61,10 +80,10 @@ describe('createTwilioProvider', () => {
     it('always sends through the Messaging Service, never a bare from number', async () => {
       const { client, messageCreate } = fakeClient();
 
-      const result = await createTwilioProvider({
-        client,
-        messagingServiceSid: 'MG1',
-      }).sendSms({ to: TO, body: 'hello' });
+      const result = await capabilityOf(
+        { client, messagingServiceSid: 'MG1' },
+        'sendSms',
+      )({ to: TO, body: 'hello' });
 
       expect(messageCreate).toHaveBeenCalledWith({
         to: '+15005550006',
@@ -82,10 +101,10 @@ describe('createTwilioProvider', () => {
     it('reports acceptance, not delivery', async () => {
       const { client } = fakeClient();
 
-      const result = await createTwilioProvider({
-        client,
-        messagingServiceSid: 'MG1',
-      }).sendSms({ to: TO, body: 'hello' });
+      const result = await capabilityOf(
+        { client, messagingServiceSid: 'MG1' },
+        'sendSms',
+      )({ to: TO, body: 'hello' });
 
       // Delivery is only ever known from the status callback, so no status
       // this method can return may claim it.
@@ -106,10 +125,10 @@ describe('createTwilioProvider', () => {
           message: () => Promise.reject(restError(code)),
         });
 
-        const result = await createTwilioProvider({
-          client,
-          messagingServiceSid: 'MG1',
-        }).sendSms({ to: TO, body: 'hi' });
+        const result = await capabilityOf(
+          { client, messagingServiceSid: 'MG1' },
+          'sendSms',
+        )({ to: TO, body: 'hi' });
 
         expect(result).toEqual({ status: 'rejected', reason, retryable });
       },
@@ -121,10 +140,10 @@ describe('createTwilioProvider', () => {
           const { client } = fakeClient({
             message: () => Promise.reject(restError(code)),
           });
-          const result = await createTwilioProvider({
-            client,
-            messagingServiceSid: 'MG1',
-          }).sendSms({ to: TO, body: 'hi' });
+          const result = await capabilityOf(
+            { client, messagingServiceSid: 'MG1' },
+            'sendSms',
+          )({ to: TO, body: 'hi' });
           return result.status === 'rejected' && result.retryable ? code : null;
         }),
       );
@@ -140,7 +159,10 @@ describe('createTwilioProvider', () => {
       // A bad auth token is an operator mistake. Reporting it as a rejection
       // would make it look like the participant refused delivery.
       await expect(
-        createTwilioProvider({ client, messagingServiceSid: 'MG1' }).sendSms({
+        capabilityOf(
+          { client, messagingServiceSid: 'MG1' },
+          'sendSms',
+        )({
           to: TO,
           body: 'hi',
         }),
@@ -153,7 +175,10 @@ describe('createTwilioProvider', () => {
       });
 
       await expect(
-        createTwilioProvider({ client, messagingServiceSid: 'MG1' }).sendSms({
+        capabilityOf(
+          { client, messagingServiceSid: 'MG1' },
+          'sendSms',
+        )({
           to: TO,
           body: 'hi',
         }),
@@ -165,10 +190,10 @@ describe('createTwilioProvider', () => {
         message: () => Promise.reject(restError(31337)),
       });
 
-      const result = await createTwilioProvider({
-        client,
-        messagingServiceSid: 'MG1',
-      }).sendSms({ to: TO, body: 'hi' });
+      const result = await capabilityOf(
+        { client, messagingServiceSid: 'MG1' },
+        'sendSms',
+      )({ to: TO, body: 'hi' });
 
       expect(result).toEqual({
         status: 'rejected',
@@ -195,11 +220,10 @@ describe('createTwilioProvider', () => {
     it('starts an SMS verification against the configured service', async () => {
       const { client, verificationCreate, services } = fakeClient();
 
-      const result = await createTwilioProvider({
-        client,
-        messagingServiceSid: 'MG1',
-        verifyServiceSid: 'VA1',
-      }).startVerification!({ to: TO, locale: 'ar' });
+      const result = await capabilityOf(
+        { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
+        'startVerification',
+      )({ to: TO, locale: 'ar' });
 
       expect(services).toHaveBeenCalledWith('VA1');
       expect(verificationCreate).toHaveBeenCalledWith({
@@ -213,11 +237,10 @@ describe('createTwilioProvider', () => {
     it('omits locale entirely when the caller gives none', async () => {
       const { client, verificationCreate } = fakeClient();
 
-      await createTwilioProvider({
-        client,
-        messagingServiceSid: 'MG1',
-        verifyServiceSid: 'VA1',
-      }).startVerification!({ to: TO });
+      await capabilityOf(
+        { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
+        'startVerification',
+      )({ to: TO });
 
       // Sending `locale: undefined` would override Twilio's own
       // country-code-based resolution with nothing.
@@ -232,11 +255,10 @@ describe('createTwilioProvider', () => {
       });
 
       await expect(
-        createTwilioProvider({
-          client,
-          messagingServiceSid: 'MG1',
-          verifyServiceSid: 'VA1',
-        }).checkVerification!({ to: TO, code: '123456' }),
+        capabilityOf(
+          { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
+          'checkVerification',
+        )({ to: TO, code: '123456' }),
       ).resolves.toEqual({ status: 'approved' });
     });
 
@@ -248,11 +270,10 @@ describe('createTwilioProvider', () => {
         });
 
         await expect(
-          createTwilioProvider({
-            client,
-            messagingServiceSid: 'MG1',
-            verifyServiceSid: 'VA1',
-          }).checkVerification!({ to: TO, code: '000000' }),
+          capabilityOf(
+            { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
+            'checkVerification',
+          )({ to: TO, code: '000000' }),
         ).resolves.toEqual({ status: 'rejected' });
       },
     );
@@ -265,11 +286,10 @@ describe('createTwilioProvider', () => {
       // Telling a participant their code was wrong, when the verification had
       // expired, sends them back to retyping a code that can never work.
       await expect(
-        createTwilioProvider({
-          client,
-          messagingServiceSid: 'MG1',
-          verifyServiceSid: 'VA1',
-        }).checkVerification!({ to: TO, code: '123456' }),
+        capabilityOf(
+          { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
+          'checkVerification',
+        )({ to: TO, code: '123456' }),
       ).resolves.toEqual({ status: 'expired' });
     });
   });

@@ -239,23 +239,27 @@ const toRejection = (
  * The returned provider speaks only our vocabulary. A caller never sees a
  * Twilio error code, a SID, or an exception from the SDK.
  *
+ * Each service SID switches on its own capability, and both are optional. A
+ * deployment configures them at different times: Twilio exempts verification
+ * traffic from A2P 10DLC registration, so a Verify service works immediately,
+ * while a Messaging Service waits on a campaign review of ten to fifteen days.
+ *
  * @param options.client - The Twilio client to call. See
  *   {@link TwilioRestClient}.
- * @param options.messagingServiceSid - The `MG...` Messaging Service every
- *   send goes through. A2P 10DLC requires one, and sticky sender and geomatch
- *   are Messaging Service features, so the adapter never sends from a bare
- *   number.
- * @param options.verifyServiceSid - The `VA...` Verify service. Omit it and
- *   the returned provider omits `startVerification` and `checkVerification`,
- *   so a deployment that only sends notifications needs no Verify service.
- * @returns A provider whose `sendSms` is always present, and whose
- *   verification pair is present only with `verifyServiceSid`.
+ * @param options.messagingServiceSid - The `MG...` Messaging Service every send
+ *   goes through. Omit it and the provider omits `sendSms`. A2P 10DLC requires
+ *   a Messaging Service, and sticky sender and geomatch are its features, so
+ *   the adapter never sends from a bare number.
+ * @param options.verifyServiceSid - The `VA...` Verify service. Omit it and the
+ *   provider omits `startVerification` and `checkVerification`.
+ * @returns A provider carrying one capability per SID supplied. Passing neither
+ *   returns a provider with no methods, which no caller can use.
  *
- * @example Send one message
+ * @example Send one message, when the deployment can send
  * ```ts
  * const provider = createTwilioProvider({ client, messagingServiceSid });
- * const result = await provider.sendSms({ to, body: 'Voting closes today.' });
- * if (result.status === 'rejected' && result.retryable) {
+ * const result = await provider.sendSms?.({ to, body: 'Voting closes today.' });
+ * if (result?.status === 'rejected' && result.retryable) {
  *   // Only a throttled send reaches here. See FAILURE_BY_CODE.
  * }
  * ```
@@ -266,44 +270,53 @@ export const createTwilioProvider = ({
   verifyServiceSid,
 }: {
   client: TwilioRestClient;
-  messagingServiceSid: string;
+  messagingServiceSid?: string;
   verifyServiceSid?: string;
 }): SmsProvider => {
   /**
    * Implements {@link SmsProvider.sendSms} against Twilio's Message resource.
    *
+   * Built only with a Messaging Service, and bound to it here, so no send can
+   * reach Twilio without one.
+   *
    * Never retries. Twilio's message API carries no idempotency key, so a
    * retried timeout can deliver the message twice and bill for both. A caller
    * that wants a retry records the attempt first.
    */
-  const sendSms = async ({
-    to,
-    body,
-  }: {
-    to: PhoneNumber;
-    body: string;
-  }): Promise<SmsSendResult> => {
-    try {
-      const message = await client.messages.create({
-        to,
-        body,
-        messagingServiceSid,
-      });
-      return { status: 'accepted', providerMessageId: message.sid };
-    } catch (error) {
-      return { status: 'rejected', ...toRejection(error, 'sendSms') };
-    }
-  };
+  const buildSendSms =
+    (serviceSid: string) =>
+    async ({
+      to,
+      body,
+    }: {
+      to: PhoneNumber;
+      body: string;
+    }): Promise<SmsSendResult> => {
+      try {
+        const message = await client.messages.create({
+          to,
+          body,
+          messagingServiceSid: serviceSid,
+        });
+        return { status: 'accepted', providerMessageId: message.sid };
+      } catch (error) {
+        return { status: 'rejected', ...toRejection(error, 'sendSms') };
+      }
+    };
+
+  const sending: Pick<SmsProvider, 'sendSms'> = messagingServiceSid
+    ? { sendSms: buildSendSms(messagingServiceSid) }
+    : {};
 
   if (!verifyServiceSid) {
-    return { sendSms };
+    return sending;
   }
 
   /** Binds the configured Verify service, which both verification calls use. */
   const verifyService = () => client.verify.v2.services(verifyServiceSid);
 
   return {
-    sendSms,
+    ...sending,
 
     /**
      * Implements {@link SmsProvider.startVerification} against Twilio Verify.

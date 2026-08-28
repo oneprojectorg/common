@@ -97,11 +97,14 @@ export type VerificationStart =
  * procedure or a workflow function, and passes it in. A service that resolves
  * its own provider reads the environment, which makes it hard to test.
  *
- * `sendSms` is required, because every SMS vendor delivers a message we wrote.
- * The verification pair is optional, because it models a vendor-owned code
- * lifecycle such as Twilio Verify. A vendor without that product omits the
- * pair, and the caller then owns generating the code. `ModerationProvider`
- * marks its own capabilities optional for the same reason.
+ * Every method is optional, and each one answers for a capability the
+ * deployment configured separately. Check for a method before you call it.
+ * `ModerationProvider` marks its own capabilities optional for the same reason.
+ *
+ * Sending and verifying are genuinely independent. Twilio exempts verification
+ * traffic from A2P 10DLC registration, and registration takes weeks, so a
+ * deployment can confirm phone numbers long before it can send a notification.
+ * A provider that verifies but cannot send is a normal state, not a broken one.
  *
  * @interface
  * @example Take a provider rather than resolving one
@@ -121,6 +124,10 @@ export interface SmsProvider {
   /**
    * Hands one message to the vendor.
    *
+   * Present only once the deployment can send. A Messaging Service is what
+   * carries an A2P 10DLC registration, so this method is absent until one is
+   * configured. Check for it before calling.
+   *
    * Never retries. Vendor message APIs carry no idempotency key, so a retried
    * timeout can deliver twice and bill twice. A caller that wants a retry
    * records the attempt first.
@@ -131,7 +138,7 @@ export interface SmsProvider {
    * @returns Acceptance and a vendor message id, or a rejection. See
    *   {@link SmsSendResult} on why acceptance is not delivery.
    */
-  sendSms(input: { to: PhoneNumber; body: string }): Promise<SmsSendResult>;
+  sendSms?(input: { to: PhoneNumber; body: string }): Promise<SmsSendResult>;
 
   /**
    * Asks the vendor to generate a code and text it to `to`.
