@@ -168,16 +168,25 @@ const asRestError = (
   if (typeof error !== 'object' || error === null) {
     return null;
   }
-  const { code, status } = error as { code?: unknown; status?: unknown };
-  const hasCode = typeof code === 'number';
-  const hasStatus = typeof status === 'number';
-  if (!hasCode && !hasStatus) {
+  const code = numericProperty(error, 'code');
+  const status = numericProperty(error, 'status');
+  if (code === undefined && status === undefined) {
     return null;
   }
-  return {
-    code: hasCode ? code : undefined,
-    status: hasStatus ? status : undefined,
-  };
+  return { code, status };
+};
+
+/**
+ * Reads one numeric property off an object of unknown shape.
+ *
+ * `Reflect.get` keeps the read honest: the result is typed `unknown` and is
+ * narrowed by the check, so no cast claims a shape the value may not have.
+ *
+ * @returns The value when it is a number, and `undefined` otherwise.
+ */
+const numericProperty = (value: object, key: string): number | undefined => {
+  const raw: unknown = Reflect.get(value, key);
+  return typeof raw === 'number' ? raw : undefined;
 };
 
 /**
