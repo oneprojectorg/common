@@ -28,13 +28,16 @@ import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
+import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
 import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
-const REVIEW_TABS = ['to-review', 'other-proposals'] as const;
+// The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
+// list, so one parser covers every `?tab=` value.
+const REVIEW_TABS = ['to-review', 'other-proposals', 'assignments'] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
@@ -75,10 +78,18 @@ export function ReviewPage({
   const t = useTranslations();
 
   // In the URL so a reload or shared link lands on the same tab.
-  const [activeTab, setTab] = useQueryState(
+  const [tab, setTab] = useQueryState(
     'tab',
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
+
+  // A `?tab=assignments` link opened by a non-admin has no panel.
+  const activeTab =
+    tab === 'assignments' && !isAdmin ? DEFAULT_REVIEW_TAB : tab;
+
+  // The admin variant has no 'other-proposals' panel to land on.
+  const adminActiveTab =
+    activeTab === 'assignments' ? 'assignments' : DEFAULT_REVIEW_TAB;
 
   const handleTabChange = (next: string) => {
     const parsed = reviewTabParser.parse(next);
@@ -116,6 +127,23 @@ export function ReviewPage({
     [currentPhase.headline, currentPhase.description],
   );
   useRegisterTranslationSamples('review-phase', phaseSamples);
+
+  const assignmentsTabTrigger = (
+    <TabsTrigger value="assignments">{t('Assignments')}</TabsTrigger>
+  );
+
+  // Same table as /decisions/[slug]/assignments — the tab and the dedicated
+  // screen are two entry points onto one surface, and reviewer rows link into
+  // the dedicated per-reviewer route from both.
+  const assignmentsTabContent = (
+    <TabsContent value="assignments" className="grow sm:p-0">
+      <ReviewersTableSection
+        decisionSlug={decisionSlug}
+        processInstanceId={instance.id}
+        phaseId={currentPhase.phaseId}
+      />
+    </TabsContent>
+  );
 
   const adminProgressList = (
     <AdminReviewProposalsList
@@ -200,6 +228,7 @@ export function ReviewPage({
                   <TabsTrigger value="other-proposals">
                     {t('Other proposals')}
                   </TabsTrigger>
+                  {isAdmin ? assignmentsTabTrigger : null}
                 </TabsList>
               </div>
 
@@ -243,9 +272,32 @@ export function ReviewPage({
                   </ProposalReviewDecorationProvider>
                 </APIErrorBoundary>
               </TabsContent>
+
+              {isAdmin ? assignmentsTabContent : null}
             </Tabs>
           ) : isAdmin ? (
-            adminProgressList
+            // Admin without review capability: the progress list plus the
+            // assignments desk.
+            <Tabs
+              className="gap-6"
+              value={adminActiveTab}
+              onValueChange={handleTabChange}
+            >
+              <div className="w-full border-b">
+                <TabsList variant="line" className="flex gap-6">
+                  <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                    {t('Review progress')}
+                  </TabsTrigger>
+                  {assignmentsTabTrigger}
+                </TabsList>
+              </div>
+
+              <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
+                {adminProgressList}
+              </TabsContent>
+
+              {assignmentsTabContent}
+            </Tabs>
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
               <Suspense fallback={<ProposalListSkeleton />}>
