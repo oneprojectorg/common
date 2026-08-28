@@ -39,7 +39,6 @@
     "@tiptap/extension-image": "catalog:",
     "@tiptap/extension-link": "catalog:",
     "@tiptap/extension-text-align": "catalog:",
-    "@tiptap/extension-underline": "catalog:",
     "@tiptap/html": "catalog:",
     "@tiptap/starter-kit": "catalog:",
     "@tiptap/static-renderer": "catalog:",
