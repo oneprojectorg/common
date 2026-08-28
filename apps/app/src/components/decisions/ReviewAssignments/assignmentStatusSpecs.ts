@@ -1,44 +1,12 @@
-'use client';
-
 import type { AdminReviewAssignment } from '@op/common/client';
-import { StatusBadge } from '@op/sense/StatusBadge';
 import type { StatusDotIntent } from '@op/sense/StatusDot';
-import { LuCircleCheck, LuPencilLine } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
-
-import { ReviewStatusBadge } from '../ReviewStatusBadge';
 
 /** The merged status vocabulary: `reviewState ?? status` at every call site. */
 export type AssignmentStatusValue =
   | AdminReviewAssignment['status']
   | NonNullable<AdminReviewAssignment['reviewState']>;
-
-/**
- * The shared `ReviewStatusBadge` for the five statuses; the two review
- * states get the same StatusBadge treatment so all seven read as one set.
- */
-export function AssignmentStatusBadge({
-  status,
-}: {
-  status: AssignmentStatusValue;
-}) {
-  const t = useTranslations();
-
-  if (status === 'draft' || status === 'submitted') {
-    return (
-      <StatusBadge
-        variant={status === 'submitted' ? 'success' : 'warning'}
-        icon={status === 'submitted' ? LuCircleCheck : LuPencilLine}
-      >
-        {t(assignmentStatusSpecs[status].label)}
-      </StatusBadge>
-    );
-  }
-
-  return <ReviewStatusBadge status={status} />;
-}
 
 /** Label + StatusDot intent for the whole vocabulary — the progress rail's breakdown. */
 export const assignmentStatusSpecs: Record<

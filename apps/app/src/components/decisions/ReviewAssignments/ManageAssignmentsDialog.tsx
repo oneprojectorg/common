@@ -29,8 +29,8 @@ import { useId, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
-import { AssignmentStatusBadge } from './AssignmentStatusBadge';
 import type { ReviewerRow } from './buildReviewerRows';
 
 /** How a proposal row behaves for this reviewer. */
@@ -396,7 +396,7 @@ function ProposalCheckRow({
             <Badge variant="outline">{t("Reviewer's own proposal")}</Badge>
           ) : null}
           {kind === 'locked' && assignment ? (
-            <AssignmentStatusBadge
+            <ReviewStatusBadge
               status={assignment.reviewState ?? assignment.status}
             />
           ) : null}
