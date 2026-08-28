@@ -45,7 +45,7 @@ export default async function ReviewerAssignmentsPage({
 
   return (
     <AssignmentsPageShell
-      backHref={`/decisions/${slug}/assignments`}
+      backHref={`/decisions/${slug}/current?tab=assignments`}
       action={
         <HydrationBoundary state={dehydrate(queryClient)}>
           <ManageAssignmentsAction

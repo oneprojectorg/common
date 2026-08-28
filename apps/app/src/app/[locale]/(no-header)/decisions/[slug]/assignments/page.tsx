@@ -51,7 +51,9 @@ export default async function ReviewAssignmentsPage({
   }
 
   return (
-    <AssignmentsPageShell backHref={`/decisions/${slug}`}>
+    <AssignmentsPageShell
+      backHref={`/decisions/${slug}/current?tab=assignments`}
+    >
       <Header1 className="text-headline">
         <TranslatedText text="Review assignments" />
       </Header1>
