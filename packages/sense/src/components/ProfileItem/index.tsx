@@ -38,7 +38,9 @@ function ProfileItem({
   children,
 }: ProfileItemProps) {
   return (
-    <div className={cn('flex min-w-0 gap-3 text-start', className)}>
+    <div
+      className={cn('flex min-w-0 items-center gap-3 text-start', className)}
+    >
       {avatar}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div
