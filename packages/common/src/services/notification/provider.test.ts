@@ -50,21 +50,22 @@ describe('getSmsProvider', () => {
     expect(() => getSmsProvider()).toThrow(CommonError);
   });
 
-  it('throws when no Messaging Service is configured', () => {
+  it('throws when the account has no service at all', () => {
     setEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_AUTH_TOKEN: 'token' });
 
-    // A2P 10DLC registration attaches to a Messaging Service, so a send
-    // without one would be rejected by Twilio per message.
+    // An account with neither service can do nothing. Returning a provider
+    // with no methods would push the failure to the first caller.
     expect(() => getSmsProvider()).toThrow(CommonError);
   });
 
-  it('names the missing variable so an operator can act on the message', () => {
+  it('names both service variables so an operator can act on the message', () => {
     setEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_AUTH_TOKEN: 'token' });
 
     expect(() => getSmsProvider()).toThrow(/TWILIO_MESSAGING_SERVICE_SID/);
+    expect(() => getSmsProvider()).toThrow(/TWILIO_VERIFY_SERVICE_SID/);
   });
 
-  it('omits the verification pair without a Verify service', () => {
+  it('sends but does not verify with only a Messaging Service', () => {
     setEnv({
       TWILIO_ACCOUNT_SID: 'AC1',
       TWILIO_AUTH_TOKEN: 'token',
@@ -75,9 +76,26 @@ describe('getSmsProvider', () => {
 
     expect(provider?.sendSms).toBeDefined();
     expect(provider?.startVerification).toBeUndefined();
+    expect(provider?.checkVerification).toBeUndefined();
   });
 
-  it('offers verification once a Verify service is configured', () => {
+  it('verifies but does not send with only a Verify service', () => {
+    setEnv({
+      TWILIO_ACCOUNT_SID: 'AC1',
+      TWILIO_AUTH_TOKEN: 'token',
+      TWILIO_VERIFY_SERVICE_SID: 'VA1',
+    });
+
+    const provider = getSmsProvider();
+
+    // This is the phase-1 shape. Twilio exempts Verify traffic from A2P 10DLC,
+    // so signup works weeks before a Messaging Service campaign is approved.
+    expect(provider?.startVerification).toBeDefined();
+    expect(provider?.checkVerification).toBeDefined();
+    expect(provider?.sendSms).toBeUndefined();
+  });
+
+  it('offers every capability with both services', () => {
     setEnv({
       TWILIO_ACCOUNT_SID: 'AC1',
       TWILIO_AUTH_TOKEN: 'token',
@@ -87,6 +105,7 @@ describe('getSmsProvider', () => {
 
     const provider = getSmsProvider();
 
+    expect(provider?.sendSms).toBeDefined();
     expect(provider?.startVerification).toBeDefined();
     expect(provider?.checkVerification).toBeDefined();
   });
