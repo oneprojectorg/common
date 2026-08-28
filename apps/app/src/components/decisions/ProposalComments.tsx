@@ -4,16 +4,19 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
 import {
   Empty,
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
+  EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
-import { type ReactNode, useCallback, useRef } from 'react';
-import { LuUserRoundPlus } from 'react-icons/lu';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { LuTriangleAlert, LuUserRoundPlus } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -43,11 +46,21 @@ export function ProposalComments({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Also carries the comments of every proposal merged into this one.
-  const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.listProposalComments.useQuery({
-      profileId: proposal.profileId,
-      limit: 50,
-    });
+  const {
+    data: commentsData,
+    isLoading: commentsLoading,
+    error: commentsError,
+    refetch: refetchComments,
+  } = trpc.posts.listProposalComments.useQuery({
+    profileId: proposal.profileId,
+    // TODO(followup): paginate. `next` is discarded and there is no load-more,
+    // so anything past the first page is unreachable — and the window now
+    // spans the target plus every proposal merged into it, so the target's own
+    // older comments can be pushed out by carried-over ones with no
+    // indication. The header count below reads from the loaded page, so it
+    // reports 50 rather than the true total once truncated.
+    limit: 50,
+  });
 
   const comments = commentsData?.items ?? [];
   const { handleLikeClick } = usePostFeedActions();
@@ -116,12 +129,19 @@ export function ProposalComments({
           <div
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
-            aria-label={t('Loading comments')}
           >
             {t('Loading comments...')}
           </div>
+        ) : commentsError ? (
+          <CommentsUnavailable
+            error={commentsError}
+            onRetry={() => void refetchComments()}
+          />
         ) : comments.length > 0 ? (
-          <div role="feed" aria-label={`${comments.length} comments`}>
+          <div
+            role="feed"
+            aria-label={t('{count} comments', { count: comments.length })}
+          >
             <PostFeed>
               {comments.map(({ post, originProposal }, i) => (
                 <div key={post.id}>
@@ -150,7 +170,6 @@ export function ProposalComments({
           <div
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
-            aria-label={t('No comments')}
           >
             {readOnly
               ? t('No comments yet.')
@@ -159,6 +178,41 @@ export function ProposalComments({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Shown when the comments read fails. Without it the failure falls through to
+ * the empty state, which tells the user to be the first to comment on a
+ * proposal that may already have comments.
+ */
+function CommentsUnavailable({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const t = useTranslations();
+
+  useEffect(() => {
+    logger.error('Could not load proposal comments', { error });
+  }, [error]);
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuTriangleAlert className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('Comments could not be loaded')}</EmptyTitle>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          {t('Try again')}
+        </Button>
+      </EmptyContent>
+    </Empty>
   );
 }
 
@@ -176,7 +230,7 @@ function MergedCommentOrigin({
   const t = useTranslations();
 
   return (
-    <p className="text-sm text-muted-foreground">
+    <p className="text-base text-muted-foreground">
       {t.rich('Comment originally appeared in <proposal>{name}</proposal>', {
         name: origin.name,
         proposal: (chunks: ReactNode) => (

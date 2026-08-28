@@ -500,8 +500,6 @@
   "Add Image": "Adicionar imagem",
   "Add Horizontal Rule": "Adicionar linha horizontal",
   "Content could not be loaded": "Não foi possível carregar o conteúdo",
-  "Loading comments": "Carregando comentários",
-  "No comments": "Sem comentários",
   "Filter proposals by category": "Filtrar propostas por categoria",
   "Filter proposals by district": "Filtrar propostas por distrito",
   "Filter proposals": "Filtrar propostas",
@@ -1720,4 +1718,6 @@
   "No proposal IDs found in what you pasted.": "Não foi encontrado nenhum ID de proposta no que colou.",
   "Add to selection": "Adicionar à seleção",
   "Check all that apply": "Marque todas as opções aplicáveis",
-  "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções"}
+  "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
+  "Comments could not be loaded": "Não foi possível carregar os comentários"
+}

@@ -446,8 +446,6 @@
   "Add Image": "Ku dar Sawir",
   "Add Horizontal Rule": "Ku dar Xariiq Toosan",
   "Content could not be loaded": "Waxa ku jira lama soo dejin karin",
-  "Loading comments": "Waa la soo rarayaa faallooyinka",
-  "No comments": "Faallo ma jirto",
   "Filter proposals by category": "Shaandhee soo jeedimaha qaybta",
   "Filter proposals by district": "Shaandhee soo jeedimaha degmada",
   "Filter proposals": "Shaandhee soo jeedimaha",
@@ -1720,4 +1718,6 @@
   "No proposal IDs found in what you pasted.": "Lagama helin wax aqoonsi soo jeedin ah wixii aad dhejisay.",
   "Add to selection": "Ku dar xulashada",
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
-  "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan"}
+  "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
+  "Comments could not be loaded": "Faallooyinka lama soo bixin karin"
+}

@@ -601,6 +601,9 @@ export const usePostFeedActions = () => {
       void utils.organization.listAllPosts.invalidate();
       void utils.posts.getPosts.invalidate();
       void utils.posts.listProfilePosts.invalidate();
+      // Proposal comment feeds moved off listProfilePosts; without this a
+      // reaction on a proposal comment leaves the feed stale.
+      void utils.posts.listProposalComments.invalidate();
     },
     onError: (err) => {
       toast.error(err.message || t('Failed to update like'));

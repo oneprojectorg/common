@@ -431,8 +431,6 @@
   "Add Image": "إضافة صورة",
   "Add Horizontal Rule": "إضافة خط أفقي",
   "Content could not be loaded": "تعذر تحميل المحتوى",
-  "Loading comments": "جارٍ تحميل التعليقات",
-  "No comments": "لا توجد تعليقات",
   "Filter proposals by category": "تصفية المقترحات حسب الفئة",
   "Filter proposals by district": "تصفية المقترحات حسب المنطقة",
   "Filter proposals": "تصفية المقترحات",
@@ -943,7 +941,7 @@
   "Both organizations provide financial support to each other.": "تقدم كلتا المؤسستين دعمًا ماليًا لبعضهما البعض.",
   "Remove preview": "إزالة المعاينة",
   "Select language": "اختر اللغة",
-  "{count} comments": "{count} تعليقات",
+  "{count} comments": "{count} تعليق",
   "{count} likes": "{count, plural, one {إعجاب واحد} other {# إعجاب}}",
   "{count} others": "{count, plural, one {شخص آخر} other {# أشخاص آخرين}}",
   "Comment as {name}...": "علّق باسم {name}...",
@@ -1720,4 +1718,6 @@
   "No proposal IDs found in what you pasted.": "لم يُعثر على أي معرّف مقترح في ما ألصقته.",
   "Add to selection": "إضافة إلى التحديد",
   "Check all that apply": "اختر كل ما ينطبق",
-  "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر"}
+  "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر",
+  "Comments could not be loaded": "تعذّر تحميل التعليقات"
+}

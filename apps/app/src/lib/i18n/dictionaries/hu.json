@@ -475,8 +475,6 @@
   "Add Image": "Kép beszúrása",
   "Add Horizontal Rule": "Vízszintes vonal beszúrása",
   "Content could not be loaded": "A tartalmat nem sikerült betölteni",
-  "Loading comments": "Hozzászólások betöltése",
-  "No comments": "Nincsenek hozzászólások",
   "Filter proposals by category": "Javaslatok szűrése kategória szerint",
   "Filter proposals by district": "Javaslatok szűrése körzet szerint",
   "Filter proposals": "Javaslatok szűrése",
@@ -1720,4 +1718,6 @@
   "No proposal IDs found in what you pasted.": "A beillesztett tartalomban nem található javaslatazonosító.",
   "Add to selection": "Hozzáadás a kijelöléshez",
   "Check all that apply": "Jelöld be az összes megfelelőt",
-  "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak"}
+  "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak",
+  "Comments could not be loaded": "A hozzászólásokat nem sikerült betölteni"
+}
