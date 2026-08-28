@@ -1026,7 +1026,7 @@
   "Both organizations provide financial support to each other.": "উভয় সংস্থা একে অপরকে আর্থিক সহায়তা প্রদান করে।",
   "Remove preview": "প্রিভিউ সরান",
   "Select language": "ভাষা নির্বাচন করুন",
-  "{count} comments": "{count} মন্তব্য",
+  "{count} comments": "{count}টি মন্তব্য",
   "{count} likes": "{count, plural, one {# পছন্দ} other {# পছন্দ}}",
   "{count} others": "{count, plural, one {আরও # জন} other {আরও # জন}}",
   "Comment as {name}...": "{name} হিসেবে মন্তব্য করুন...",
@@ -1719,5 +1719,6 @@
   "Add to selection": "নির্বাচনে যোগ করুন",
   "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
   "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন",
-  "Comments could not be loaded": "মন্তব্য লোড করা যায়নি"
+  "Comments could not be loaded": "মন্তব্য লোড করা যায়নি",
+  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)"
 }

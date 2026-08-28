@@ -234,11 +234,18 @@ function MergedCommentOrigin({
       {t.rich('Comment originally appeared in <proposal>{name}</proposal>', {
         name: origin.name,
         proposal: (chunks: ReactNode) => (
+          // New tab on purpose: this component also mounts inside the
+          // reviewer's split-pane review form, which saves solely via "Update
+          // review" and has no beforeunload guard — navigating away in place
+          // would silently drop an in-progress review.
           <Link
             href={`${decisionRoot}/proposal/${origin.profileId}`}
             className="text-primary underline"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             {chunks}
+            <span className="sr-only"> {t('(opens in a new tab)')}</span>
           </Link>
         ),
       })}

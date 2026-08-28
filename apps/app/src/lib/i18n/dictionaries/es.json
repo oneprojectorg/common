@@ -1719,5 +1719,6 @@
   "Add to selection": "Añadir a la selección",
   "Check all that apply": "Marca todas las opciones que correspondan",
   "Reviewers select one or more options": "Los revisores seleccionan una o varias opciones",
-  "Comments could not be loaded": "No se pudieron cargar los comentarios"
+  "Comments could not be loaded": "No se pudieron cargar los comentarios",
+  "(opens in a new tab)": "(se abre en una pestaña nueva)"
 }
