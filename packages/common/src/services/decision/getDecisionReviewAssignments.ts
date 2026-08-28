@@ -4,8 +4,12 @@ import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
+import { type BudgetData, parseProposalData } from './proposalDataSchema';
+import { buildProposalListPreview } from './proposalListPreview';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
@@ -42,6 +46,8 @@ interface ReviewerRollup {
     submittedAt: string | null;
     categories: ProposalCategoryItem[];
     author: { id: string; name: string | null; slug: string | null } | null;
+    previewText: string | null;
+    budget: BudgetData | null;
   }>;
 }
 
@@ -62,6 +68,7 @@ export async function getDecisionReviewAssignments({
     columns: {
       id: true,
       profileId: true,
+      processId: true,
       instanceData: true,
       currentStateId: true,
     },
@@ -70,6 +77,13 @@ export async function getDecisionReviewAssignments({
   if (!instance) {
     throw new NotFoundError('Decision instance not found');
   }
+
+  // Needed to read preview text out of the document fragments, exactly like
+  // the proposal list reads. Started now, awaited after the assignment query.
+  const proposalTemplatePromise = resolveProposalTemplate(
+    instance.instanceData as Record<string, unknown> | null,
+    instance.processId,
+  );
 
   // Not paginated: bounded by reviewers × proposals of a single process.
   const [assignments, eligibleProfileIds, phaseProposalIds] = await Promise.all(
@@ -152,14 +166,65 @@ export async function getDecisionReviewAssignments({
           .where(inArray(profiles.id, eligibleProfileIds))
       : Promise.resolve([]);
 
-  const [assignableProposals, eligibleReviewers, categoriesByProposalId] =
-    await Promise.all([
-      assignableProposalsPromise,
-      eligibleReviewersPromise,
-      getCategoriesByProposalIds(categorizedProposalIds),
-    ]);
+  const proposalTemplate = await proposalTemplatePromise;
+
+  // Reviewers share proposals, so fetch and parse each snapshot once.
+  const assignedProposals = [
+    ...new Map(
+      assignments.map((assignment) => [
+        assignment.proposal.id,
+        assignment.proposal,
+      ]),
+    ).values(),
+  ];
+
+  const [
+    assignableProposals,
+    eligibleReviewers,
+    categoriesByProposalId,
+    documentContentMap,
+  ] = await Promise.all([
+    assignableProposalsPromise,
+    eligibleReviewersPromise,
+    getCategoriesByProposalIds(categorizedProposalIds),
+    getProposalDocumentsContent(
+      assignedProposals.map((proposal) => ({
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        proposalTemplate,
+        collaborationDocVersionId: parseProposalData(proposal.proposalData)
+          .collaborationDocVersionId,
+      })),
+      // A single unavailable document must not break the whole read.
+      { onFetchError: 'omit' },
+    ),
+  ]);
 
   const byReviewer = new Map<string, ReviewerRollup>();
+  const cardFieldsByProposalId = new Map<
+    string,
+    { previewText: string | null; budget: BudgetData | null }
+  >();
+
+  // Same preview + budget resolution as the proposal list rows: body text and
+  // budget come from the pinned document fragments, falling back to the
+  // proposalData snapshot (and legacy HTML descriptions).
+  const buildCardFields = (proposal: {
+    id: string;
+    proposalData: unknown;
+  }): { previewText: string | null; budget: BudgetData | null } => {
+    const parsed = parseProposalData(proposal.proposalData);
+    const { previewText, systemFieldOverrides } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate,
+      existingBudget: parsed.budget,
+    });
+
+    return {
+      previewText,
+      budget: systemFieldOverrides.budget ?? parsed.budget ?? null,
+    };
+  };
 
   for (const assignment of assignments) {
     // assignmentId is UNIQUE on reviews, so there is 0 or 1 row.
@@ -193,6 +258,12 @@ export async function getDecisionReviewAssignments({
       reviewer.draftCount += 1;
     }
 
+    let cardFields = cardFieldsByProposalId.get(assignment.proposal.id);
+    if (!cardFields) {
+      cardFields = buildCardFields(assignment.proposal);
+      cardFieldsByProposalId.set(assignment.proposal.id, cardFields);
+    }
+
     reviewer.assignments.push({
       id: assignment.id,
       proposalId: assignment.proposal.id,
@@ -213,6 +284,8 @@ export async function getDecisionReviewAssignments({
             slug: assignment.proposal.submittedBy.slug,
           }
         : null,
+      previewText: cardFields.previewText,
+      budget: cardFields.budget,
     });
 
     byReviewer.set(assignment.reviewerProfileId, reviewer);
