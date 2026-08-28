@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm/_relations';
 import {
   boolean,
   index,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -10,13 +11,35 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import {
+  autoId,
+  enumToPgEnum,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 import { authUsers } from './authUsers.sql';
 import { organizationUsers } from './organizationUsers.sql';
 import { organizations } from './organizations.sql';
 import { profileUsers } from './profileUsers.sql';
 import { profiles } from './profiles.sql';
 import { objectsInStorage } from './storage.sql';
+
+/**
+ * Which channel a person wants their notifications on.
+ *
+ * The preference is per account, not per decision process. `whatsapp` is
+ * absent on purpose: nothing sends over it yet, and an unused member invites a
+ * branch that no code path can reach.
+ */
+export enum NotificationChannel {
+  EMAIL = 'email',
+  SMS = 'sms',
+}
+
+export const notificationChannelEnum = pgEnum(
+  'notification_channel',
+  enumToPgEnum(NotificationChannel),
+);
 
 export const users = pgTable(
   'users',
@@ -54,6 +77,13 @@ export const users = pgTable(
     privacyAcceptedOn: timestamp({ withTimezone: true, mode: 'string' }),
     // Used for measuring when a user completed onboarding
     onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    // Which channel this person's notifications go out on. The default keeps
+    // every existing row on email, so the column changes no one's delivery
+    // until they choose otherwise. A phone number lives on `auth.users`, which
+    // Supabase verifies; this column only records the preference.
+    notificationChannel: notificationChannelEnum('notification_channel')
+      .default(NotificationChannel.EMAIL)
+      .notNull(),
     ...timestamps,
   },
   (table) => [

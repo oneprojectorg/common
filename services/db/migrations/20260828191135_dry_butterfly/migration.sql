@@ -1,0 +1,2 @@
+CREATE TYPE "notification_channel" AS ENUM('email', 'sms');--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "notification_channel" "notification_channel" DEFAULT 'email'::"notification_channel" NOT NULL;

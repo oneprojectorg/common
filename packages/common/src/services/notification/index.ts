@@ -9,6 +9,7 @@
  * `createTwilioProvider` and `TwilioRestClient` are exported for tests and for
  * `getSmsProvider`. A service should not name either one.
  */
+export * from './getNotificationRecipients';
 export * from './provider';
 export * from './providers/twilio';
 export * from './schemas';
