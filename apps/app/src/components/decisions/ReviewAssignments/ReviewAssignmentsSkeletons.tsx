@@ -18,7 +18,7 @@ export function ReviewersTableSkeleton() {
 
 export function ReviewerHeaderSkeleton() {
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex gap-3">
       <Skeleton className="size-12 rounded-full" />
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-48" />

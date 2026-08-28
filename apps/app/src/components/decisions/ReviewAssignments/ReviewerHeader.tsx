@@ -1,7 +1,7 @@
-import { Header1 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { ProfileItem } from '@op/sense/ProfileItem';
 
-/** Server-rendered when the seeding fetch succeeded; else the client section renders it. */
+/** Server-rendered when the preload fetch succeeded; else the client section renders it. */
 export function ReviewerHeader({
   name,
   email,
@@ -10,16 +10,11 @@ export function ReviewerHeader({
   email: string | null;
 }) {
   return (
-    <div className="flex items-center gap-4">
-      <ProfileAvatar name={name} alt={name} size="lg" />
-      <div className="flex min-w-0 flex-col">
-        <Header1 className="text-headline">{name}</Header1>
-        {email ? (
-          <span className="truncate text-sm text-muted-foreground">
-            {email}
-          </span>
-        ) : null}
-      </div>
-    </div>
+    <ProfileItem
+      avatar={<ProfileAvatar name={name} alt={name} size="lg" />}
+      title={name}
+      titleClassName="font-serif text-headline font-light"
+      description={email ?? undefined}
+    />
   );
 }
