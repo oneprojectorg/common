@@ -1,11 +1,9 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
 import {
   Empty,
   EmptyDescription,
@@ -29,7 +27,6 @@ import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
-import { ReviewAssignmentsPanel } from '../Review/ReviewAssignmentsPanel';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
@@ -37,9 +34,7 @@ import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
-// The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
-// list, so one parser covers every `?tab=` value.
-const REVIEW_TABS = ['to-review', 'other-proposals', 'assignments'] as const;
+const REVIEW_TABS = ['to-review', 'other-proposals'] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
@@ -71,10 +66,6 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
-  // Instance admins only; the flag fails closed in prod.
-  const manualAssignmentsEnabled = useFeatureFlag('manual_review_assignments');
-  const showAssignmentsTab = isAdmin && Boolean(manualAssignmentsEnabled);
-
   // Client-side mirror of the service's `canReadPhaseReviews` gate.
   const canSeeReviewCounts =
     isAdmin ||
@@ -84,18 +75,10 @@ export function ReviewPage({
   const t = useTranslations();
 
   // In the URL so a reload or shared link lands on the same tab.
-  const [tab, setTab] = useQueryState(
+  const [activeTab, setTab] = useQueryState(
     'tab',
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
-
-  // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
-  const activeTab =
-    tab === 'assignments' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
-
-  // The admin variant has no 'other-proposals' panel to land on.
-  const adminActiveTab =
-    activeTab === 'assignments' ? 'assignments' : DEFAULT_REVIEW_TAB;
 
   const handleTabChange = (next: string) => {
     const parsed = reviewTabParser.parse(next);
@@ -133,24 +116,6 @@ export function ReviewPage({
     [currentPhase.headline, currentPhase.description],
   );
   useRegisterTranslationSamples('review-phase', phaseSamples);
-
-  const assignmentsTabTrigger = (
-    <TabsTrigger value="assignments">
-      {t('Assignments')}
-      <Badge variant="secondary" className="ms-2">
-        {t('Alpha')}
-      </Badge>
-    </TabsTrigger>
-  );
-
-  const assignmentsTabContent = (
-    <TabsContent value="assignments" className="grow sm:p-0">
-      <ReviewAssignmentsPanel
-        processInstanceId={instance.id}
-        phaseId={currentPhase.phaseId}
-      />
-    </TabsContent>
-  );
 
   const adminProgressList = (
     <AdminReviewProposalsList
@@ -235,7 +200,6 @@ export function ReviewPage({
                   <TabsTrigger value="other-proposals">
                     {t('Other proposals')}
                   </TabsTrigger>
-                  {showAssignmentsTab ? assignmentsTabTrigger : null}
                 </TabsList>
               </div>
 
@@ -279,36 +243,9 @@ export function ReviewPage({
                   </ProposalReviewDecorationProvider>
                 </APIErrorBoundary>
               </TabsContent>
-
-              {showAssignmentsTab ? assignmentsTabContent : null}
             </Tabs>
           ) : isAdmin ? (
-            // Admin without review capability: the progress list is the whole
-            // surface, gaining a sibling tab only when the desk is on.
-            showAssignmentsTab ? (
-              <Tabs
-                className="gap-6"
-                value={adminActiveTab}
-                onValueChange={handleTabChange}
-              >
-                <div className="w-full border-b">
-                  <TabsList variant="line" className="flex gap-6">
-                    <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                      {t('Review progress')}
-                    </TabsTrigger>
-                    {assignmentsTabTrigger}
-                  </TabsList>
-                </div>
-
-                <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
-                  {adminProgressList}
-                </TabsContent>
-
-                {assignmentsTabContent}
-              </Tabs>
-            ) : (
-              adminProgressList
-            )
+            adminProgressList
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
               <Suspense fallback={<ProposalListSkeleton />}>
