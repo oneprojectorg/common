@@ -24,19 +24,14 @@ interface ServerReviewer {
   email: string | null;
 }
 
+// Tab title only — the page is admin-only, so no crawlable metadata is needed.
 export async function generateMetadata({
   params,
 }: ReviewerAssignmentsPageProps): Promise<Metadata> {
-  const { slug, locale } = await params;
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
 
-  const [{ decisionName }, t] = await Promise.all([
-    loadReviewAssignmentsPage(slug),
-    getTranslations({ locale }),
-  ]);
-
-  const title = t('Review assignments');
-
-  return { title: decisionName ? `${title} | ${decisionName}` : title };
+  return { title: t('Review assignments') };
 }
 
 /** One reviewer's assignments — admin only, behind `manual_review_assignments`. */

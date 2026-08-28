@@ -65,7 +65,7 @@ export function ReviewerAssignmentsPageSkeleton() {
 
 function PageShellSkeleton({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
+    <div className="flex min-h-dvh flex-col bg-background">
       <AssignmentsMain>
         <div className="flex h-9 items-center">
           <Skeleton className="h-5 w-16" />

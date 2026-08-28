@@ -11,6 +11,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
+import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
 import { ProposalCard } from '@op/sense/ProposalCard';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useFormatter } from 'next-intl';
@@ -117,7 +118,7 @@ function ReviewerAssignmentsContent({
       )}
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
-        <section className="flex min-w-0 flex-1 flex-col gap-5">
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
           <Header3 className="font-light">
             {t('Assigned proposals ({count})', {
               count: reviewer.assignments.length,
@@ -142,7 +143,7 @@ function ReviewerAssignmentsContent({
               ))}
             </ul>
           )}
-        </section>
+        </div>
 
         <ReviewProgressRail reviewer={reviewer} />
       </div>
@@ -195,7 +196,7 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerRow }) {
     : null;
 
   return (
-    <aside className="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0">
+    <div className="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0">
       <Header3 className="font-light">{t('Review progress')}</Header3>
       <p aria-live="polite" className="text-sm text-muted-foreground">
         {t('{submitted} out of {assigned} assigned reviews are submitted', {
@@ -233,16 +234,18 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerRow }) {
             : '—'
         }
       />
-    </aside>
+    </div>
   );
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted px-4 py-3 text-sm">
-      <span>{label}</span>
+    <Item variant="muted" className="gap-3 border-border px-4 py-3 text-sm">
+      <ItemContent>
+        <ItemTitle className="text-sm font-normal">{label}</ItemTitle>
+      </ItemContent>
       <span className="font-strong">{value}</span>
-    </div>
+    </Item>
   );
 }
 

@@ -15,7 +15,7 @@ export function AssignmentsPageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
+    <div className="flex min-h-dvh flex-col bg-background">
       <AssignmentsMain>
         <div className="flex items-center justify-between gap-4">
           <ButtonLink

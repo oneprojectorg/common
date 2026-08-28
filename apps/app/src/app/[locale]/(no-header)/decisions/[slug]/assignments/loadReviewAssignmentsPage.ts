@@ -5,7 +5,6 @@ import { forbidden, notFound } from 'next/navigation';
 import { getServerFeatureFlag } from '@/lib/getServerFeatureFlag';
 
 export interface ReviewAssignmentsPageContext {
-  decisionName: string | null;
   processInstanceId: string;
   phaseId: string;
 }
@@ -49,7 +48,6 @@ export async function loadReviewAssignmentsPage(
   }
 
   return {
-    decisionName: decisionProfile.name ?? null,
     processInstanceId: decisionProfile.processInstance.id,
     phaseId,
   };
