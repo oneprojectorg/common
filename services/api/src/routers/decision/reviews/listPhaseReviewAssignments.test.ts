@@ -243,8 +243,8 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     const context = created.context;
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // Legacy HTML description: the only body the unpaginated read model can
-    // preview without a per-proposal TipTap fetch.
+    // Legacy HTML description — the no-fetch branch of the same preview
+    // resolution the proposal list rows use.
     await db
       .update(proposals)
       .set({

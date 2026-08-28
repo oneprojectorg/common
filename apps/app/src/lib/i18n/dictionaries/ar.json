@@ -1696,6 +1696,7 @@
   "Assigned proposals ({count})": "المقترحات المعيّنة ({count})",
   "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "حدِّد مقترحًا لتعيينه؛ وأزل التحديد عن مقترح معلّق لإلغاء تعيينه. لا يمكن إزالة المراجعات التي بدأت.",
   "Could not save the changes. Please try again.": "لم نتمكن من حفظ التغييرات. يُرجى المحاولة مرة أخرى.",
+  "Assignments were saved, but unassigning failed — try again.": "تم حفظ التعيينات، لكن إلغاء التعيين فشل — حاول مرة أخرى.",
   "Manage assignments": "إدارة التعيينات",
   "Manage {name}'s assignments": "إدارة تعيينات {name}",
   "No changes yet": "لا تغييرات بعد",

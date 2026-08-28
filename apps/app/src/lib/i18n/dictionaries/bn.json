@@ -1696,6 +1696,7 @@
   "Assigned proposals ({count})": "নির্ধারিত প্রস্তাব ({count})",
   "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "একটি প্রস্তাব নির্ধারণ করতে টিক দিন; অপেক্ষমাণ একটির টিক তুলে নিলে নির্ধারণ বাতিল হবে। শুরু হয়ে যাওয়া পর্যালোচনা সরানো যায় না।",
   "Could not save the changes. Please try again.": "পরিবর্তনগুলি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
+  "Assignments were saved, but unassigning failed — try again.": "অ্যাসাইনমেন্টগুলি সংরক্ষণ করা হয়েছে, কিন্তু আনঅ্যাসাইন ব্যর্থ হয়েছে — আবার চেষ্টা করুন।",
   "Manage assignments": "নির্ধারণ পরিচালনা করুন",
   "Manage {name}'s assignments": "{name}-এর নির্ধারণ পরিচালনা করুন",
   "No changes yet": "এখনও কোনও পরিবর্তন নেই",

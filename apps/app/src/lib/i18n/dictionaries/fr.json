@@ -1696,6 +1696,7 @@
   "Assigned proposals ({count})": "Propositions attribuées ({count})",
   "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Cochez une proposition pour l’attribuer ; décochez une proposition en attente pour retirer l’attribution. Les évaluations commencées ne peuvent pas être retirées.",
   "Could not save the changes. Please try again.": "Impossible d’enregistrer les modifications. Veuillez réessayer.",
+  "Assignments were saved, but unassigning failed — try again.": "Les attributions ont été enregistrées, mais la désattribution a échoué — réessayez.",
   "Manage assignments": "Gérer les attributions",
   "Manage {name}'s assignments": "Gérer les attributions de {name}",
   "No changes yet": "Aucune modification pour l’instant",

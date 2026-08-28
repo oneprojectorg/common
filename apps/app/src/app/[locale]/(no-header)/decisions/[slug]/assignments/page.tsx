@@ -28,7 +28,7 @@ export async function generateMetadata({
   return { title: t('Review assignments') };
 }
 
-/** The reviewers table — admin only, behind `manual_review_assignments`. */
+/** The reviewers table — admin only. */
 export default async function ReviewAssignmentsPage({
   params,
 }: ReviewAssignmentsPageProps) {
@@ -43,7 +43,7 @@ export default async function ReviewAssignmentsPage({
       phaseId,
     });
   } catch (error) {
-    logger.warn('Failed to seed phase review assignments', {
+    logger.warn('Failed to preload phase review assignments', {
       processInstanceId,
       phaseId,
       error: error instanceof Error ? error.message : String(error),

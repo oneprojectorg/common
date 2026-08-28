@@ -1696,6 +1696,7 @@
   "Assigned proposals ({count})": "Soo-jeedinnada loo qoondeeyay ({count})",
   "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Calaamadee soo-jeedin si loo qoondeeyo; ka saar calaamadda mid sugaya si qoondaynta laga qaado. Dib-u-eegisyada la bilaabay lama saari karo.",
   "Could not save the changes. Please try again.": "Isbeddellada lama kaydin karin. Fadlan isku day mar kale.",
+  "Assignments were saved, but unassigning failed — try again.": "Hawlgelinta waa la keydiyay, laakiin ka-saaristu way fashilantay — isku day mar kale.",
   "Manage assignments": "Maamul qoondaynta",
   "Manage {name}'s assignments": "Maamul qoondaynta {name}",
   "No changes yet": "Weli isbeddel ma jiro",

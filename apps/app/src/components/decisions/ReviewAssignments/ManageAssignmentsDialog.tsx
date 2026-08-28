@@ -148,13 +148,13 @@ export function ManageAssignmentsDialog({
   };
 
   // The `reviewAssignments` channel refetches the list; nothing invalidates.
+  // The two halves are separate mutations, so each reports its own failure —
+  // one "could not save" toast after the assign half committed would lie.
   const save = async () => {
-    try {
-      let createdCount = 0;
-      let removedCount = 0;
-      let skippedIds: string[] = [];
+    let createdCount = 0;
 
-      if (assignIds.length > 0) {
+    if (assignIds.length > 0) {
+      try {
         const result = await assignReviews.mutateAsync({
           processInstanceId,
           phaseId,
@@ -162,9 +162,23 @@ export function ManageAssignmentsDialog({
           proposalIds: assignIds,
         });
         createdCount = result.createdCount;
+      } catch (error) {
+        logger.error('Failed to save review assignment changes', {
+          error,
+          context: 'ManageAssignmentsDialog',
+          reviewerProfileId: reviewer.profile.id,
+        });
+        // Nothing committed yet — every selection is still worth retrying.
+        toast.error(t('Could not save the changes. Please try again.'));
+        return;
       }
+    }
 
-      if (unassignAssignmentIds.length > 0) {
+    let removedCount = 0;
+    let skippedIds: string[] = [];
+
+    if (unassignAssignmentIds.length > 0) {
+      try {
         const result = await removeAssignments.mutateAsync({
           processInstanceId,
           phaseId,
@@ -172,30 +186,39 @@ export function ManageAssignmentsDialog({
         });
         skippedIds = result.skippedIds;
         removedCount = unassignAssignmentIds.length - skippedIds.length;
+      } catch (error) {
+        logger.error('Failed to save review assignment changes', {
+          error,
+          context: 'ManageAssignmentsDialog',
+          reviewerProfileId: reviewer.profile.id,
+        });
+        if (createdCount > 0) {
+          // The assign half committed — drop it so a retry only re-sends the removals.
+          setToAssign(new Set());
+          toast.error(
+            t('Assignments were saved, but unassigning failed — try again.'),
+          );
+        } else {
+          toast.error(t('Could not save the changes. Please try again.'));
+        }
+        return;
       }
-
-      if (createdCount > 0 || removedCount > 0) {
-        toast.success(summaryMessage(t, createdCount, removedCount));
-      } else if (skippedIds.length === 0) {
-        // Server deduped every pick; "0 unassigned" would read as a failure.
-        toast.info(t('No changes were needed.'));
-      }
-
-      // Skipped = no longer pending, for a reason the API doesn't report.
-      if (skippedIds.length > 0) {
-        toast.error(t('Could not unassign — the assignment has changed.'));
-      }
-
-      reset();
-      setIsOpen(false);
-    } catch (error) {
-      logger.error('Failed to save review assignment changes', {
-        error,
-        context: 'ManageAssignmentsDialog',
-        reviewerProfileId: reviewer.profile.id,
-      });
-      toast.error(t('Could not save the changes. Please try again.'));
     }
+
+    if (createdCount > 0 || removedCount > 0) {
+      toast.success(summaryMessage(t, createdCount, removedCount));
+    } else if (skippedIds.length === 0) {
+      // Server deduped every pick; "0 unassigned" would read as a failure.
+      toast.info(t('No changes were needed.'));
+    }
+
+    // Skipped = no longer pending, for a reason the API doesn't report.
+    if (skippedIds.length > 0) {
+      toast.error(t('Could not unassign — the assignment has changed.'));
+    }
+
+    reset();
+    setIsOpen(false);
   };
 
   return (
@@ -212,7 +235,8 @@ export function ManageAssignmentsDialog({
         {t('Manage assignments')}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl sm:overflow-hidden">
+      {/* 34rem × 38rem — the size the design's dialog was composed at. */}
+      <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {t("Manage {name}'s assignments", { name })}

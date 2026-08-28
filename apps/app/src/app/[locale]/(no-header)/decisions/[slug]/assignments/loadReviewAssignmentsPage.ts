@@ -2,28 +2,16 @@ import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import { forbidden, notFound } from 'next/navigation';
 
-import { getServerFeatureFlag } from '@/lib/getServerFeatureFlag';
-
 export interface ReviewAssignmentsPageContext {
   processInstanceId: string;
   phaseId: string;
 }
 
-/**
- * The gate both screens share. Flag off is a 404, not a 403 — while it is off
- * the route does not exist for anyone.
- */
+/** The admin gate both screens share. */
 export async function loadReviewAssignmentsPage(
   slug: string,
 ): Promise<ReviewAssignmentsPageContext> {
-  const [client, isFlagEnabled] = await Promise.all([
-    createClient(),
-    getServerFeatureFlag('manual_review_assignments'),
-  ]);
-
-  if (!isFlagEnabled) {
-    notFound();
-  }
+  const client = await createClient();
 
   let decisionProfile;
   try {

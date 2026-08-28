@@ -19,11 +19,6 @@ interface ReviewerAssignmentsPageProps {
   params: Promise<{ slug: string; profileId: string; locale: string }>;
 }
 
-interface ServerReviewer {
-  name: string;
-  email: string | null;
-}
-
 // Tab title only — the page is admin-only, so no crawlable metadata is needed.
 export async function generateMetadata({
   params,
@@ -34,7 +29,7 @@ export async function generateMetadata({
   return { title: t('Review assignments') };
 }
 
-/** One reviewer's assignments — admin only, behind `manual_review_assignments`. */
+/** One reviewer's assignments — admin only. */
 export default async function ReviewerAssignmentsPage({
   params,
 }: ReviewerAssignmentsPageProps) {
@@ -42,7 +37,7 @@ export default async function ReviewerAssignmentsPage({
   const { processInstanceId, phaseId } = await loadReviewAssignmentsPage(slug);
 
   const { utils, queryClient } = await createServerUtils();
-  const reviewer = await seedReviewer(utils, {
+  const reviewer = await loadReviewer(utils, {
     processInstanceId,
     phaseId,
     profileId,
@@ -77,15 +72,15 @@ export default async function ReviewerAssignmentsPage({
   );
 }
 
-/** Seeds the query cache and resolves the reviewer. Best effort — the client recovers. */
-async function seedReviewer(
+/** Loads the reviewer, warming the query cache. Best effort — the client recovers. */
+async function loadReviewer(
   utils: Awaited<ReturnType<typeof createServerUtils>>['utils'],
   {
     processInstanceId,
     phaseId,
     profileId,
   }: { processInstanceId: string; phaseId: string; profileId: string },
-): Promise<ServerReviewer | null> {
+) {
   try {
     const data = await utils.decision.listPhaseReviewAssignments.fetch({
       processInstanceId,
@@ -100,7 +95,7 @@ async function seedReviewer(
 
     return row ? { name: row.label, email: row.email } : null;
   } catch (error) {
-    logger.warn('Failed to seed phase review assignments', {
+    logger.warn('Failed to preload phase review assignments', {
       processInstanceId,
       phaseId,
       error: error instanceof Error ? error.message : String(error),

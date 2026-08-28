@@ -115,9 +115,9 @@ export const adminReviewAssignmentSchema = z.object({
   submittedAt: z.string().nullable(),
   categories: z.array(proposalCategorySchema),
   author: adminProfileRefSchema.nullable(),
-  /** Plain-text preview; null when there is no cheaply previewable body — including every collaboration-doc proposal. */
+  /** Plain-text body preview, resolved like the proposal list rows'; null when there is nothing to preview. */
   previewText: z.string().nullable(),
-  /** Budget from the proposalData snapshot, as the shared money shape. */
+  /** Budget from the document fragments, falling back to the proposalData snapshot. */
   budget: moneyAmountSchema.nullable(),
 });
 

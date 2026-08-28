@@ -4,10 +4,12 @@ import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
@@ -50,30 +52,6 @@ interface ReviewerRollup {
 }
 
 /**
- * Card fields without a network call: this read model is unpaginated, so the
- * per-proposal TipTap fetch the list reads run is unaffordable here. Budget
- * comes from the proposalData snapshot; only a legacy HTML description yields
- * a preview (collaboration-doc proposals get null).
- */
-function buildAssignmentCardFields(proposalData: unknown): {
-  previewText: string | null;
-  budget: BudgetData | null;
-} {
-  const parsed = parseProposalData(proposalData);
-
-  const { previewText } = buildProposalListPreview({
-    // No fragments: the html branch is the only one reachable without a fetch.
-    documentContent: parsed.description
-      ? { type: 'html', content: parsed.description }
-      : undefined,
-    proposalTemplate: null,
-    existingBudget: parsed.budget,
-  });
-
-  return { previewText, budget: parsed.budget ?? null };
-}
-
-/**
  * Per-reviewer rollups for one phase plus the manual-assignment dialog's
  * candidate lists. Carries no authorization of its own — callers gate it.
  */
@@ -90,6 +68,7 @@ export async function getDecisionReviewAssignments({
     columns: {
       id: true,
       profileId: true,
+      processId: true,
       instanceData: true,
       currentStateId: true,
     },
@@ -98,6 +77,13 @@ export async function getDecisionReviewAssignments({
   if (!instance) {
     throw new NotFoundError('Decision instance not found');
   }
+
+  // Needed to read preview text out of the document fragments, exactly like
+  // the proposal list reads. Started now, awaited after the assignment query.
+  const proposalTemplatePromise = resolveProposalTemplate(
+    instance.instanceData as Record<string, unknown> | null,
+    instance.processId,
+  );
 
   // Not paginated: bounded by reviewers × proposals of a single process.
   const [assignments, eligibleProfileIds, phaseProposalIds] = await Promise.all(
@@ -180,19 +166,65 @@ export async function getDecisionReviewAssignments({
           .where(inArray(profiles.id, eligibleProfileIds))
       : Promise.resolve([]);
 
-  const [assignableProposals, eligibleReviewers, categoriesByProposalId] =
-    await Promise.all([
-      assignableProposalsPromise,
-      eligibleReviewersPromise,
-      getCategoriesByProposalIds(categorizedProposalIds),
-    ]);
+  const proposalTemplate = await proposalTemplatePromise;
+
+  // Reviewers share proposals, so fetch and parse each snapshot once.
+  const assignedProposals = [
+    ...new Map(
+      assignments.map((assignment) => [
+        assignment.proposal.id,
+        assignment.proposal,
+      ]),
+    ).values(),
+  ];
+
+  const [
+    assignableProposals,
+    eligibleReviewers,
+    categoriesByProposalId,
+    documentContentMap,
+  ] = await Promise.all([
+    assignableProposalsPromise,
+    eligibleReviewersPromise,
+    getCategoriesByProposalIds(categorizedProposalIds),
+    getProposalDocumentsContent(
+      assignedProposals.map((proposal) => ({
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        proposalTemplate,
+        collaborationDocVersionId: parseProposalData(proposal.proposalData)
+          .collaborationDocVersionId,
+      })),
+      // A single unavailable document must not break the whole read.
+      { onFetchError: 'omit' },
+    ),
+  ]);
 
   const byReviewer = new Map<string, ReviewerRollup>();
-  // Reviewers share proposals, so parse each proposalData once.
   const cardFieldsByProposalId = new Map<
     string,
-    ReturnType<typeof buildAssignmentCardFields>
+    { previewText: string | null; budget: BudgetData | null }
   >();
+
+  // Same preview + budget resolution as the proposal list rows: body text and
+  // budget come from the pinned document fragments, falling back to the
+  // proposalData snapshot (and legacy HTML descriptions).
+  const buildCardFields = (proposal: {
+    id: string;
+    proposalData: unknown;
+  }): { previewText: string | null; budget: BudgetData | null } => {
+    const parsed = parseProposalData(proposal.proposalData);
+    const { previewText, systemFieldOverrides } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate,
+      existingBudget: parsed.budget,
+    });
+
+    return {
+      previewText,
+      budget: systemFieldOverrides.budget ?? parsed.budget ?? null,
+    };
+  };
 
   for (const assignment of assignments) {
     // assignmentId is UNIQUE on reviews, so there is 0 or 1 row.
@@ -228,7 +260,7 @@ export async function getDecisionReviewAssignments({
 
     let cardFields = cardFieldsByProposalId.get(assignment.proposal.id);
     if (!cardFields) {
-      cardFields = buildAssignmentCardFields(assignment.proposal.proposalData);
+      cardFields = buildCardFields(assignment.proposal);
       cardFieldsByProposalId.set(assignment.proposal.id, cardFields);
     }
 

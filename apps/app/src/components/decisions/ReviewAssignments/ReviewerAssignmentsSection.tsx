@@ -170,7 +170,6 @@ function AssignmentCard({
       budget={formatBudget(assignment.budget) ?? undefined}
       tags={assignment.categories.map((category) => category.label)}
       authors={authorName ? [{ name: authorName }] : undefined}
-      // Null for collab-doc proposals — the card just drops the paragraph.
       description={assignment.previewText ?? undefined}
       status={
         <AssignmentStatusBadge

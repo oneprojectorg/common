@@ -1696,6 +1696,7 @@
   "Assigned proposals ({count})": "Assigned proposals ({count})",
   "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
   "Could not save the changes. Please try again.": "Could not save the changes. Please try again.",
+  "Assignments were saved, but unassigning failed — try again.": "Assignments were saved, but unassigning failed — try again.",
   "Manage assignments": "Manage assignments",
   "Manage {name}'s assignments": "Manage {name}'s assignments",
   "No changes yet": "No changes yet",
