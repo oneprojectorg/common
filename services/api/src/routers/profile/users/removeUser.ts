@@ -1,4 +1,4 @@
-import { removeProfileUser } from '@op/common';
+import { Channels, removeProfileUser } from '@op/common';
 import { profileUserSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -12,9 +12,15 @@ export const removeUserRouter = router({
       const { user } = ctx;
       const { profileUserId } = input;
 
-      return removeProfileUser({
+      const removedUser = await removeProfileUser({
         profileUserId,
         user,
       });
+
+      ctx.registerMutationChannels([
+        Channels.profileMembers(removedUser.profileId),
+      ]);
+
+      return removedUser;
     }),
 });

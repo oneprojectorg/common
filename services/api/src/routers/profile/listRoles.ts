@@ -1,4 +1,4 @@
-import { getRoles } from '@op/common';
+import { Channels, getRoles } from '@op/common';
 import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
@@ -24,11 +24,11 @@ export const listRolesRouter = router({
   listRoles: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(createPaginatedOutput(roleEncoder))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const { profileId, zoneName, includeMemberCounts, cursor, limit, dir } =
         input;
 
-      return getRoles({
+      const result = await getRoles({
         profileId,
         zoneName,
         includeMemberCounts,
@@ -36,5 +36,11 @@ export const listRolesRouter = router({
         limit,
         dir,
       });
+
+      if (profileId) {
+        ctx.registerQueryChannels([Channels.profileMembers(profileId)]);
+      }
+
+      return result;
     }),
 });

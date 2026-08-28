@@ -400,50 +400,16 @@ function ProfileInviteModalContent({
     });
   };
 
-  const handleRemoveUser = ({
-    id,
-    roles: memberRoles,
-  }: {
-    id: string;
-    roles: Array<{ id: string }>;
-  }) => {
+  const handleRemoveUser = ({ id }: { id: string }) => {
     startOptimisticTransition(async () => {
       dispatchRemoveUser(id);
-      const removedRoleIds = new Set(memberRoles.map((role) => role.id));
-      const updateMemberCounts = (delta: number) =>
-        utils.profile.listRoles.setData(rolesQueryInput, (rolesData) =>
-          rolesData
-            ? {
-                ...rolesData,
-                items: rolesData.items.map((role) =>
-                  removedRoleIds.has(role.id)
-                    ? {
-                        ...role,
-                        memberCount: Math.max(
-                          0,
-                          (role.memberCount ?? 0) + delta,
-                        ),
-                      }
-                    : role,
-                ),
-              }
-            : rolesData,
-        );
-      updateMemberCounts(-1);
       try {
+        // Server broadcasts on the profileMembers channel, which listRoles
+        // and listUsers both subscribe to — their caches refresh from that,
+        // no manual cache patching needed here.
         await removeUserMutation.mutateAsync({ profileUserId: id });
-        // The optimistic decrement above already holds the correct count;
-        // listUsers still needs a refetch to drop the member from its pages.
-        await utils.profile.listUsers.invalidate({ profileId });
       } catch {
-        updateMemberCounts(1);
         toast.error(t('Failed to remove user'));
-        // Partial input matching also invalidates the per-role infinite
-        // queries; listRoles reconciles the rollback with server truth.
-        await Promise.all([
-          utils.profile.listUsers.invalidate({ profileId }),
-          utils.profile.listRoles.invalidate({ profileId }),
-        ]);
       }
     });
   };

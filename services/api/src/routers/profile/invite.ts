@@ -1,5 +1,9 @@
 import { invalidateMultiple } from '@op/cache';
-import { getIndividualProfileId, inviteUsersToProfile } from '@op/common';
+import {
+  Channels,
+  getIndividualProfileId,
+  inviteUsersToProfile,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -59,6 +63,15 @@ export const inviteProfileUserRouter = router({
             paramsList: result.details.existingUserAuthIds.map((id) => [id]),
           }),
         );
+      }
+
+      // Pending invites feed the per-role counts in the invite modal, so a
+      // successful invite has to refresh every viewer's listProfileInvites
+      // and listRoles, not just the sender's.
+      if (result.details.successful.length > 0) {
+        ctx.registerMutationChannels([
+          Channels.profileMembers(input.profileId),
+        ]);
       }
 
       return result;

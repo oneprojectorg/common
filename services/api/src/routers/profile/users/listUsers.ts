@@ -1,4 +1,4 @@
-import { listProfileUsers } from '@op/common';
+import { Channels, listProfileUsers } from '@op/common';
 import { profileUserWithRolesSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -30,7 +30,7 @@ export const listUsersRouter = router({
       const { user } = ctx;
       const { profileId, orderBy, dir, query, roleId, cursor, limit } = input;
 
-      return listProfileUsers({
+      const result = await listProfileUsers({
         profileId,
         user,
         orderBy,
@@ -40,5 +40,9 @@ export const listUsersRouter = router({
         cursor,
         limit,
       });
+
+      ctx.registerQueryChannels([Channels.profileMembers(profileId)]);
+
+      return result;
     }),
 });

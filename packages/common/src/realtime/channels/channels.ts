@@ -79,6 +79,14 @@ export const Channels = {
     `profileCollections:${profileId}` as const,
 
   /**
+   * Channel for a profile's membership — the per-role member list
+   * (profile.users.listUsers) and role member counts (profile.listRoles).
+   * Subscribed to by both queries, broadcast to by membership mutations
+   * (e.g. removeUser).
+   */
+  profileMembers: (profileId: string) => `profileMembers:${profileId}` as const,
+
+  /**
    * Channel for a single proposals-export run. Subscribed to by
    * decision.getExportStatus, broadcast to by the `exportProposals` workflow
    * when the run reaches `completed` or `failed`.
@@ -132,6 +140,7 @@ export type CollectionResourcesChannel = ReturnType<
 export type ProfileCollectionsChannel = ReturnType<
   typeof Channels.profileCollections
 >;
+export type ProfileMembersChannel = ReturnType<typeof Channels.profileMembers>;
 export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
 
 /**
@@ -153,4 +162,5 @@ export type ChannelName =
   | ProfileResourcesChannel
   | CollectionResourcesChannel
   | ProfileCollectionsChannel
+  | ProfileMembersChannel
   | ProposalExportChannel;
