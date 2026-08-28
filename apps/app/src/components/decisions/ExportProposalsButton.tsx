@@ -472,13 +472,19 @@ const ExportProposalsButtonContent = ({
 };
 
 /**
- * Says that a completed export is short of the instance's row count.
+ * Warning line under a completed export's download control, naming how many of
+ * the instance's proposals the file actually holds.
  *
  * A truncated export is the one case where the file cannot speak for itself: it
  * is well-formed, it reports success, and nothing in it marks where the rows
  * stop. Rendered beside the download rather than raised as a toast, because a
  * toast is gone by the time the admin opens the CSV and it is the person
  * holding the file who needs to know it is incomplete.
+ *
+ * @param rowCount - Proposals the file holds. The export's `EXPORT_MAX_ROWS`
+ *   ceiling caps the read, so this stops there whenever the instance holds more.
+ * @param total - Proposals the instance held when the read started. A complete
+ *   file would carry this many.
  */
 const ExportTruncationNotice = ({
   rowCount,
