@@ -1,21 +1,9 @@
+import { RejectionReason } from '@op/core/decisions';
 import { z } from 'zod';
 
 // Mirrors the db `moderation_item_type` enum values; kept as a plain string
 // union so it flows cleanly through the service layer without enum coercion.
 const moderationItemType = z.enum(['proposal', 'post', 'user']);
-
-// Mirrors the `RejectionReason` enum in `@op/common`, which stays the source of
-// truth for the dialog and the mutation. Importing it here would invert the
-// existing `@op/common` → `@op/events` dependency, and re-exporting this file
-// from `@op/common/client` would put inngest in the browser bundle. Adding a
-// reason there without adding it here fails this schema's `parse` in the
-// workflow, so the author is never mailed — see the PR for the alternatives.
-const rejectionReason = z.enum([
-  'ineligible',
-  'duplicate',
-  'off-topic',
-  'infeasible',
-]);
 
 export const Events = {
   // Carries only the item ref: the workflow resolves the item's current text
@@ -170,7 +158,7 @@ export const Events = {
     name: 'proposal/rejected' as const,
     schema: z.object({
       proposalId: z.string().uuid(),
-      reason: rejectionReason,
+      reason: z.enum(RejectionReason),
       note: z.string().optional(),
       // Dropped from the recipient list.
       actorAuthUserId: z.string().uuid(),

@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./decisions": "./src/decisions.ts",
     "./fulog": "./src/fulog.ts",
     "./previews": "./previews.mjs",
     "./utils": "./src/utils.ts"

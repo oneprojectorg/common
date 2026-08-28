@@ -1,3 +1,4 @@
+import { RejectionReason } from '@op/core/decisions';
 import { Text } from 'react-email';
 
 import { CtaButton } from '../components/CtaButton';
@@ -8,18 +9,16 @@ import { InlineLink } from '../components/InlineLink';
 import { QuotedNote } from '../components/QuotedNote';
 
 /**
- * Emails are English-only, so `RejectionReason`'s reader-facing copy lives here
- * rather than in the dictionaries. `@op/common` depends on this package, so the
- * enum itself can't be imported without a cycle.
+ * Emails are English-only, so the reader-facing copy lives here rather than in
+ * the dictionaries. `satisfies` is what makes a new reason fail to compile
+ * until it has one.
  */
 const reasonLabels = {
-  ineligible: 'Ineligible',
-  duplicate: 'Duplicate',
-  'off-topic': 'Off-topic',
-  infeasible: 'Infeasible',
-} as const;
-
-export type ProposalRejectionReason = keyof typeof reasonLabels;
+  [RejectionReason.INELIGIBLE]: 'Ineligible',
+  [RejectionReason.DUPLICATE]: 'Duplicate',
+  [RejectionReason.OFF_TOPIC]: 'Off-topic',
+  [RejectionReason.INFEASIBLE]: 'Infeasible',
+} as const satisfies Record<RejectionReason, string>;
 
 export const ProposalRejectedEmail = ({
   proposalName,
@@ -31,7 +30,7 @@ export const ProposalRejectedEmail = ({
   proposalName: string;
   processTitle: string;
   proposalUrl: string;
-  reason: ProposalRejectionReason;
+  reason: RejectionReason;
   /** The admin's note to the author. Absent when they wrote none. */
   note?: string;
 }) => {
@@ -62,7 +61,7 @@ ProposalRejectedEmail.PreviewProps = {
   proposalName: 'Community Garden Revamp',
   processTitle: 'Participatory Budgeting 2026',
   proposalUrl: 'https://common.oneproject.org/',
-  reason: 'off-topic',
+  reason: RejectionReason.OFF_TOPIC,
   note: 'This one is about transit funding rather than the park budget this round covers. Resubmit it when the mobility process opens in the spring — the site research is solid.',
 } satisfies Parameters<typeof ProposalRejectedEmail>[0];
 
