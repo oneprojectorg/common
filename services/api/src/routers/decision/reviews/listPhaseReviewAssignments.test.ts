@@ -230,6 +230,80 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
+
+  it('carries the budget and a description preview on assignment cards', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Budgeted proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = created.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Legacy HTML description: the only body the unpaginated read model can
+    // preview without a per-proposal TipTap fetch.
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: `Budgeted proposal ${task.id}`,
+          description: '<p>A shared garden for the whole block.</p>',
+          budget: { amount: 25000, currency: 'EUR' },
+        },
+      })
+      .where(eq(proposals.id, created.proposal.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listPhaseReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    const assignment = result.reviewers[0]?.assignments[0];
+    expect(assignment?.proposalId).toBe(created.proposal.id);
+    expect(assignment?.budget).toEqual({ amount: 25000, currency: 'EUR' });
+    expect(assignment?.previewText).toBe(
+      'A shared garden for the whole block.',
+    );
+  });
+
+  it('nulls the budget and preview for a proposal that has neither', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Bare proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = created.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    await db
+      .update(proposals)
+      .set({ proposalData: { title: `Bare proposal ${task.id}` } })
+      .where(eq(proposals.id, created.proposal.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listPhaseReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    const assignment = result.reviewers[0]?.assignments[0];
+    expect(assignment?.proposalId).toBe(created.proposal.id);
+    expect(assignment?.budget).toBeNull();
+    expect(assignment?.previewText).toBeNull();
+  });
 });
 
 describeDecisionAccessTierGating('decision.listPhaseReviewAssignments', {

@@ -6,6 +6,8 @@ import { NotFoundError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
+import { type BudgetData, parseProposalData } from './proposalDataSchema';
+import { buildProposalListPreview } from './proposalListPreview';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
@@ -42,7 +44,33 @@ interface ReviewerRollup {
     submittedAt: string | null;
     categories: ProposalCategoryItem[];
     author: { id: string; name: string | null; slug: string | null } | null;
+    previewText: string | null;
+    budget: BudgetData | null;
   }>;
+}
+
+/**
+ * Card fields without a network call: this read model is unpaginated, so the
+ * per-proposal TipTap fetch the list reads run is unaffordable here. Budget
+ * comes from the proposalData snapshot; only a legacy HTML description yields
+ * a preview (collaboration-doc proposals get null).
+ */
+function buildAssignmentCardFields(proposalData: unknown): {
+  previewText: string | null;
+  budget: BudgetData | null;
+} {
+  const parsed = parseProposalData(proposalData);
+
+  const { previewText } = buildProposalListPreview({
+    // No fragments: the html branch is the only one reachable without a fetch.
+    documentContent: parsed.description
+      ? { type: 'html', content: parsed.description }
+      : undefined,
+    proposalTemplate: null,
+    existingBudget: parsed.budget,
+  });
+
+  return { previewText, budget: parsed.budget ?? null };
 }
 
 /**
@@ -160,6 +188,11 @@ export async function getDecisionReviewAssignments({
     ]);
 
   const byReviewer = new Map<string, ReviewerRollup>();
+  // Reviewers share proposals, so parse each proposalData once.
+  const cardFieldsByProposalId = new Map<
+    string,
+    ReturnType<typeof buildAssignmentCardFields>
+  >();
 
   for (const assignment of assignments) {
     // assignmentId is UNIQUE on reviews, so there is 0 or 1 row.
@@ -193,6 +226,12 @@ export async function getDecisionReviewAssignments({
       reviewer.draftCount += 1;
     }
 
+    let cardFields = cardFieldsByProposalId.get(assignment.proposal.id);
+    if (!cardFields) {
+      cardFields = buildAssignmentCardFields(assignment.proposal.proposalData);
+      cardFieldsByProposalId.set(assignment.proposal.id, cardFields);
+    }
+
     reviewer.assignments.push({
       id: assignment.id,
       proposalId: assignment.proposal.id,
@@ -213,6 +252,8 @@ export async function getDecisionReviewAssignments({
             slug: assignment.proposal.submittedBy.slug,
           }
         : null,
+      previewText: cardFields.previewText,
+      budget: cardFields.budget,
     });
 
     byReviewer.set(assignment.reviewerProfileId, reviewer);

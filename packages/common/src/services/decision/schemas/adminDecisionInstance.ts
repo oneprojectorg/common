@@ -5,6 +5,7 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
+import { moneyAmountSchema } from '../../../money';
 import { proposalCategorySchema } from './proposalCategory';
 
 const adminDecisionCurrentPhaseSchema = z.object({
@@ -114,6 +115,10 @@ export const adminReviewAssignmentSchema = z.object({
   submittedAt: z.string().nullable(),
   categories: z.array(proposalCategorySchema),
   author: adminProfileRefSchema.nullable(),
+  /** Plain-text preview; null when there is no cheaply previewable body — including every collaboration-doc proposal. */
+  previewText: z.string().nullable(),
+  /** Budget from the proposalData snapshot, as the shared money shape. */
+  budget: moneyAmountSchema.nullable(),
 });
 
 export type AdminReviewAssignment = z.infer<typeof adminReviewAssignmentSchema>;
