@@ -24,16 +24,15 @@ import { useTranslations } from '@/lib/i18n';
 import { LabeledFieldSet } from './forms/LabeledFieldSet';
 
 /**
- * Keyed on the enum rather than on the English label: the plain `Duplicate` key
- * is already the decision list's *verb* ("make a copy"), which every
- * non-English dictionary translates as one. `satisfies` is what makes a new
- * reason fail to compile until it has copy.
+ * The enum values are wire constants, so the chips need their English copy
+ * looked up. `satisfies` is what makes a new reason fail to compile until it
+ * has one.
  */
 const REJECTION_REASON_LABEL_KEYS = {
-  [RejectionReason.INELIGIBLE]: 'rejectionReason_ineligible',
-  [RejectionReason.DUPLICATE]: 'rejectionReason_duplicate',
-  [RejectionReason.OFF_TOPIC]: 'rejectionReason_offTopic',
-  [RejectionReason.INFEASIBLE]: 'rejectionReason_infeasible',
+  [RejectionReason.INELIGIBLE]: 'Ineligible',
+  [RejectionReason.DUPLICATE]: 'Duplicate',
+  [RejectionReason.OFF_TOPIC]: 'Off-topic',
+  [RejectionReason.INFEASIBLE]: 'Infeasible',
 } as const satisfies Record<RejectionReason, string>;
 
 /**
