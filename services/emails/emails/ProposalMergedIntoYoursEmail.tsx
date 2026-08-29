@@ -1,11 +1,10 @@
-import { Link, Text } from 'react-email';
+import { Text } from 'react-email';
 
 import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
 import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
-
-const inlineLinkClassName = 'font-bold text-primary-teal underline';
+import { InlineLink } from '../components/InlineLink';
 
 /** Goes to the authors of the proposal that survived; nobody receives both. */
 export const ProposalMergedIntoYoursEmail = ({
@@ -26,15 +25,11 @@ export const ProposalMergedIntoYoursEmail = ({
     <EmailTemplate previewText={`A proposal was merged into "${proposalName}"`}>
       <Header>Proposal Merged</Header>
       <Text className="my-8 text-lg">
-        <Link href={sourceProposalUrl} className={inlineLinkClassName}>
-          {sourceProposalName}
-        </Link>{' '}
+        <InlineLink href={sourceProposalUrl}>{sourceProposalName}</InlineLink>{' '}
         was merged into your proposal{' '}
-        <Link href={proposalUrl} className={inlineLinkClassName}>
-          {proposalName}
-        </Link>{' '}
-        in <strong>{processTitle}</strong>. Open your proposal to review what
-        was added.
+        <InlineLink href={proposalUrl}>{proposalName}</InlineLink> in{' '}
+        <strong>{processTitle}</strong>. Open your proposal to review what was
+        added.
       </Text>
 
       <CtaButton href={proposalUrl}>View proposal</CtaButton>

@@ -1,5 +1,7 @@
 import { Channels, rejectProposal } from '@op/common';
 import { rejectProposalInputSchema } from '@op/common/client';
+import { Events, inngest } from '@op/events';
+import { waitUntil } from '@vercel/functions';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
@@ -10,9 +12,6 @@ export const rejectProposalRouter = router({
    * The status change stops the proposal advancing through phases, being
    * reviewed, and being votable; it stays listed and readable, badged with its
    * status.
-   *
-   * `reason` and `note` are collected and validated here but go nowhere yet —
-   * the stacked follow-up carries them to the author's rejection email.
    */
   rejectProposal: networkAuthenticatedProcedure()
     .input(rejectProposalInputSchema)
@@ -27,5 +26,19 @@ export const rejectProposalRouter = router({
         Channels.decisionProposals(processInstanceId),
         Channels.decisionProposal(processInstanceId, proposalId),
       ]);
+
+      // Nothing stores the reason or the note, so the event carries both. The
+      // workflow re-checks the rejection still stands, so an undo cancels it.
+      waitUntil(
+        inngest.send({
+          name: Events.proposalRejected.name,
+          data: {
+            proposalId,
+            reason: input.reason,
+            note: input.note,
+            actorAuthUserId: ctx.user.id,
+          },
+        }),
+      );
     }),
 });

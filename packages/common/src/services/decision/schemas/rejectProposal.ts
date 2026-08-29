@@ -1,19 +1,13 @@
+import { RejectionReason } from '@op/core/decisions';
 import { z } from 'zod';
 
 /** Nothing stores the note, so this only bounds what the email can carry. */
 export const REJECTION_NOTE_MAX_LENGTH = 2000;
 
-/**
- * Why an admin rejected a proposal. Declaration order is the order the reject
- * dialog offers them in. No pg enum behind it: neither the reason nor the note
- * is persisted yet — both exist to be delivered in the rejection email.
- */
-export enum RejectionReason {
-  INELIGIBLE = 'ineligible',
-  DUPLICATE = 'duplicate',
-  OFF_TOPIC = 'off-topic',
-  INFEASIBLE = 'infeasible',
-}
+// The values live in `@op/core` because `@op/events` and `@op/emails` need them
+// too and neither can depend on this package. Re-exported so the dialog and the
+// mutation still reach the reason and its schema through one import.
+export { RejectionReason };
 
 export const rejectionReasonSchema = z.enum(RejectionReason);
 
