@@ -173,6 +173,7 @@ export * from './emails/ProposalSubmittedEmail';
 export * from './emails/PhaseTransitionEmail';
 export * from './emails/VoteSubmittedEmail';
 export * from './emails/RevisionResubmittedEmail';
+export * from './emails/ReviewSubmittedEmail';
 export * from './emails/RevisionRequestedEmail';
 export * from './emails/DecisionUpdateNotificationEmail';
 export * from './emails/ContentFlaggedEmail';
