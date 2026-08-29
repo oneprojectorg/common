@@ -52,10 +52,10 @@ const DecisionsListSkeleton = () => (
 
 const DecisionsListSuspense = ({
   status,
-  ownerProfileId,
+  stewardProfileId,
 }: {
   status: ProcessStatus[];
-  ownerProfileId?: string;
+  stewardProfileId?: string;
 }) => {
   const t = useTranslations();
   const {
@@ -67,7 +67,7 @@ const DecisionsListSuspense = ({
     {
       limit: 20,
       status,
-      ownerProfileId,
+      stewardProfileId,
     },
     {
       getNextPageParam: (lastPage) => lastPage.next,
@@ -115,12 +115,12 @@ const AllDecisionsTabs = () => {
   const t = useTranslations();
   const { user } = useRequiredUser();
   const [tab, setTab] = useQueryState('tab');
-  const ownerProfileId = user.currentProfile?.id;
+  const stewardProfileId = user.currentProfile?.id;
 
   const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     limit: 1,
     status: [ProcessStatus.DRAFT],
-    ownerProfileId,
+    stewardProfileId,
   });
 
   const hasDrafts = draftsCheck.items.length > 0;
@@ -160,7 +160,7 @@ const AllDecisionsTabs = () => {
           <Suspense fallback={<DecisionsListSkeleton />}>
             <DecisionsListSuspense
               status={[ProcessStatus.DRAFT]}
-              ownerProfileId={ownerProfileId}
+              stewardProfileId={stewardProfileId}
             />
           </Suspense>
         </TabsContent>

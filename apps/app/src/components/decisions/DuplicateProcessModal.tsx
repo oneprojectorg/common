@@ -1,5 +1,6 @@
 'use client';
 
+import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
@@ -231,6 +232,7 @@ const StewardSelect = ({
   currentSteward?: { id: string; name: string | null } | null;
 }) => {
   const t = useTranslations();
+  const user = useMaybeUser();
   const [userProfiles] = trpc.account.getUserProfiles.useSuspenseQuery();
 
   const profileItems = useMemo(() => {
@@ -244,8 +246,14 @@ const StewardSelect = ({
     return items;
   }, [userProfiles, currentSteward]);
 
-  // Set steward to current user on mount if not already set
-  const defaultProfileId = userProfiles?.[0]?.id;
+  // Default to the profile the user is acting as (matching the create flow), so
+  // a duplicate lands under that profile's processes rather than defaulting to
+  // the individual. Fall back to the first available profile.
+  const currentProfileId = user?.currentProfile?.id;
+  const defaultProfileId =
+    currentProfileId && profileItems.some((p) => p.id === currentProfileId)
+      ? currentProfileId
+      : profileItems[0]?.id;
   useEffect(() => {
     if (defaultProfileId && !stewardProfileId) {
       onSelectionChange(defaultProfileId);
