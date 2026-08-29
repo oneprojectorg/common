@@ -445,6 +445,17 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
     await expect(authenticatedPage.getByText('$8,000').first()).toBeVisible();
 
+    // The heading already says these proposals were selected, so no card in
+    // the funded panel repeats it as a status badge. Only the active panel is
+    // mounted; assert it resolves first, or the negative below passes
+    // vacuously whenever the panel is missing (e.g. still behind the survey
+    // modal's aria-hidden backdrop).
+    const fundedPanel = authenticatedPage.getByRole('tabpanel');
+    await expect(fundedPanel).toHaveCount(1);
+    await expect(
+      fundedPanel.getByText('Selected', { exact: true }),
+    ).toHaveCount(0);
+
     // Selected proposal — last phase, in selection: view page shows both
     // the allocated amount and the "$X requested" secondary label.
     await authenticatedPage.goto(
