@@ -21,7 +21,17 @@ const { contentSubmitted } = Events;
  * created. No-op when no provider or webhook secret is configured.
  */
 export const moderateContentAsync = inngest.createFunction(
-  { id: 'moderateContentAsync' },
+  {
+    id: 'moderateContentAsync',
+    // One active provider per env (getModerationProvider picks by
+    // MODERATION_PROVIDER, not the event payload), so a function-level
+    // throttle is effectively per-provider. Caps content bursts before
+    // they reach the provider's own rate limiter.
+    throttle: {
+      limit: 5,
+      period: '1s',
+    },
+  },
   { event: contentSubmitted.name },
   async ({ event, step }) => {
     const { itemType, itemId } = contentSubmitted.schema.parse(event.data);

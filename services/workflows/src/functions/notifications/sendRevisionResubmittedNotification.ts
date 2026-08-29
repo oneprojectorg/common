@@ -14,6 +14,12 @@ const { reviewRevisionResubmitted } = Events;
 export const sendRevisionResubmittedNotification = inngest.createFunction(
   {
     id: 'sendRevisionResubmittedNotification',
+    // Symmetric with sendRevisionRequestedNotification: cap per revision
+    // request so one busy proposal can't crowd the pool.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.revisionRequestId',
+    },
     debounce: {
       key: 'event.data.revisionRequestId',
       period: '1m',

@@ -69,6 +69,13 @@ const { proposalExportRequested } = Events;
 export const exportProposals = inngest.createFunction(
   {
     id: 'exportProposals',
+    // Each export loads up to 1000 proposals, generates a CSV, and uploads
+    // to Supabase storage — long-running and DB-heavy. Cap per process so
+    // one decision can't queue-jump everyone else's exports.
+    concurrency: {
+      limit: 2,
+      key: 'event.data.processInstanceId',
+    },
   },
   { event: proposalExportRequested.name },
   async ({ event, step }) => {

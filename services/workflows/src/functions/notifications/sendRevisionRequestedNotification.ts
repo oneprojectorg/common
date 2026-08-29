@@ -14,6 +14,12 @@ const { reviewRevisionRequested } = Events;
 export const sendRevisionRequestedNotification = inngest.createFunction(
   {
     id: 'sendRevisionRequestedNotification',
+    // Cap per revision request so a single proposal's reviewer fan-out can
+    // never block the pool indefinitely.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.revisionRequestId',
+    },
     debounce: {
       key: 'event.data.revisionRequestId',
       period: '1m',

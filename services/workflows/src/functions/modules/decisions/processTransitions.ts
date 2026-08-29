@@ -10,6 +10,9 @@ export const processTransitions = inngest.createFunction(
   {
     id: 'decisions-process-transitions',
     name: 'Process Decision Making Phases Transitions',
+    // Cron runs once daily; if a previous run hangs into the next day, we
+    // do NOT want a second run racing it through the same transitions.
+    concurrency: { limit: 1 },
   },
   // Run every day at midnight. This supports our tier of Inngest which only supports up to
   // 7 days advance scheduling. In the future we can specifically schedule these.

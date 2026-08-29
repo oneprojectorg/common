@@ -10,6 +10,12 @@ const { profileInviteSent } = Events;
 export const sendProfileInviteEmails = inngest.createFunction(
   {
     id: 'sendProfileInviteEmails',
+    // Each event batches many invites; cap per sender so one user's bulk
+    // import can't monopolize the pool.
+    concurrency: {
+      limit: 3,
+      key: 'event.data.senderProfileId',
+    },
   },
   { event: profileInviteSent.name },
   async ({ event, step }) => {

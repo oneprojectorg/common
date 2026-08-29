@@ -12,6 +12,12 @@ const { proposalCommentPosted } = Events;
 export const sendProposalCommentNotification = inngest.createFunction(
   {
     id: 'sendProposalCommentNotification',
+    // Cap per proposal so a heavily-commented proposal doesn't monopolize
+    // the pool while other proposals' comments queue behind it.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.proposalId',
+    },
     debounce: {
       key,
       period: '1m',

@@ -72,7 +72,12 @@ const resolveRecipient = async (
  * Emails the author when their content is flagged.
  */
 export const sendContentFlaggedNotification = inngest.createFunction(
-  { id: 'sendContentFlaggedNotification' },
+  {
+    id: 'sendContentFlaggedNotification',
+    // One flag → one recipient, so cap is a defensive function-level
+    // guardrail rather than a per-key fairness control.
+    concurrency: { limit: 5 },
+  },
   { event: contentFlagged.name },
   async ({ event, step }) => {
     const { itemType, itemId } = contentFlagged.schema.parse(event.data);

@@ -19,6 +19,13 @@ const { decisionUpdatePosted } = Events;
 export const sendDecisionUpdateNotification = inngest.createFunction(
   {
     id: 'sendDecisionUpdateNotification',
+    // Fan-out per target profile: an update posted to a popular profile
+    // scans every participant and batches an email each. Cap per target so
+    // one big org's update can't crowd out everyone else's notifications.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.targetProfileId',
+    },
     debounce: {
       key,
       period: '1m',

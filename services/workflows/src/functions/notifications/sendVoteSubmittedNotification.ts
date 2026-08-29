@@ -44,6 +44,12 @@ function getNextSteps(
 export const sendVoteSubmittedNotification = inngest.createFunction(
   {
     id: 'sendVoteSubmittedNotification',
+    // Votes burst during a decision's voting phase; cap per process so one
+    // popular decision can't monopolize the shared DB pool.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.processInstanceId',
+    },
     debounce: {
       key: 'event.data.voteSubmissionId',
       period: '1m',
