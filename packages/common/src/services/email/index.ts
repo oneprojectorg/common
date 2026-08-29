@@ -107,7 +107,7 @@ export const sendRelationshipRequestEmail = async ({
   requesterMessage,
 }: SendRelationshipRequestEmailParams): Promise<void> => {
   // Use dynamic imports to avoid build issues with workspace dependencies
-  const { OPNodemailer } = await import('@op/emails');
+  const { OPBatchSend } = await import('@op/emails');
   const { OPRelationshipRequestEmail } = await import('@op/emails');
   const relationshipLabels = relationshipTypes.map(
     (type) => relationshipMap[type]?.noun || type,
@@ -120,17 +120,23 @@ export const sendRelationshipRequestEmail = async ({
       ? relationshipLabels[0]
       : relationshipLabels.join('/');
 
-  await OPNodemailer({
-    to,
-    from: `${requesterOrgName} via Common`,
-    subject: `Action Required: Accept request for ${targetOrgName} to add ${requesterOrgName} as a ${relationshipText} on Common`,
-    component: () =>
-      OPRelationshipRequestEmail({
-        requesterOrgName,
-        targetOrgName,
-        relationshipTypes: inverseRelationshipLabels,
-        approvalUrl,
-        requesterMessage,
-      }),
-  });
+  const { errors } = await OPBatchSend([
+    {
+      to,
+      from: `${requesterOrgName} via Common`,
+      subject: `Action Required: Accept request for ${targetOrgName} to add ${requesterOrgName} as a ${relationshipText} on Common`,
+      component: () =>
+        OPRelationshipRequestEmail({
+          requesterOrgName,
+          targetOrgName,
+          relationshipTypes: inverseRelationshipLabels,
+          approvalUrl,
+          requesterMessage,
+        }),
+    },
+  ]);
+
+  if (errors.length > 0) {
+    throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+  }
 };
