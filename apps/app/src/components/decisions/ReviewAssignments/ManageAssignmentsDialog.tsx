@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import type {
   AdminAssignableProposal,
@@ -31,6 +32,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
+import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
 import type { ReviewerRow } from './buildReviewerRows';
 
 /** How a proposal row behaves for this reviewer. */
@@ -60,6 +62,7 @@ export function ManageAssignmentsDialog({
 }: ManageAssignmentsDialogProps) {
   const t = useTranslations();
   const filterId = useId();
+  const importEnabled = useFeatureFlag('bulk_assign_import') ?? false;
 
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -113,6 +116,25 @@ export function ManageAssignmentsDialog({
     : [];
   const allVisibleFreeSelected =
     visibleFreeIds.length > 0 && visibleFreeIds.every((id) => toAssign.has(id));
+
+  // Sets, not lists: the spreadsheet import looks IDs up by membership.
+  const poolIds = useMemo(
+    () => new Set(proposals.map((proposal) => proposal.id)),
+    [proposals],
+  );
+  const importableIds = useMemo(
+    () =>
+      new Set(
+        rows.flatMap((row) => (row.kind === 'free' ? [row.proposal.id] : [])),
+      ),
+    [rows],
+  );
+
+  // Additive, like every other selection gesture here: an import never drops
+  // rows the admin ticked by hand.
+  const importProposals = (proposalIds: Array<string>) => {
+    setToAssign((current) => new Set([...current, ...proposalIds]));
+  };
 
   const reset = () => {
     setQuery('');
@@ -255,13 +277,26 @@ export function ManageAssignmentsDialog({
             <Header3 aria-live="polite" className="font-light">
               {t('Proposals ({count} assigned)', { count: assignedCount })}
             </Header3>
-            <Button
-              variant="link"
-              onClick={toggleVisibleFree}
-              disabled={visibleFreeIds.length === 0}
-            >
-              {allVisibleFreeSelected ? t('Clear') : t('Select all')}
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Import builds the selection like Select all does, so it lives
+                  beside it. Stacked on this dialog, which stays mounted
+                  underneath. A frozen reviewer takes no new proposals, so
+                  there is nothing to import into. */}
+              {importEnabled && canAssign ? (
+                <ImportProposalIdsDialog
+                  poolIds={poolIds}
+                  assignableIds={importableIds}
+                  onImport={importProposals}
+                />
+              ) : null}
+              <Button
+                variant="link"
+                onClick={toggleVisibleFree}
+                disabled={visibleFreeIds.length === 0}
+              >
+                {allVisibleFreeSelected ? t('Clear') : t('Select all')}
+              </Button>
+            </div>
           </div>
 
           {canAssign ? null : (
