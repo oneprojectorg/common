@@ -683,6 +683,187 @@ describe.concurrent('updateProposal checkpointVersion', () => {
   });
 });
 
+/** The rule and its rationale live on the gate in `updateProposal`. */
+describe.concurrent('updateProposal data authorization', () => {
+  it('should allow the author to update their own proposal data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const [proposal, authorCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Author Proposal' },
+      }),
+      createAuthenticatedCaller(author.email),
+    ]);
+
+    const result = await authorCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { proposalData: { title: 'Edited by author' } },
+    });
+
+    expect(result.proposalData).toMatchObject({ title: 'Edited by author' });
+  });
+
+  it('should allow an invited collaborator to update the proposal data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [author, collaborator] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Shared Proposal' },
+    });
+
+    // Mirrors an accepted share invite: the Member role on the proposal's own
+    // profile (profile READ only) plus membership of the parent process.
+    const [, collaboratorCaller] = await Promise.all([
+      testData.grantProfileAccess(
+        proposal.profileId,
+        collaborator.authUserId,
+        collaborator.email,
+        false,
+      ),
+      createAuthenticatedCaller(collaborator.email),
+    ]);
+
+    const result = await collaboratorCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        title: 'Edited by collaborator',
+        proposalData: { title: 'Edited by collaborator' },
+      },
+    });
+
+    expect(result.proposalData).toMatchObject({
+      title: 'Edited by collaborator',
+    });
+    // The same gate guards the `profiles.name` write.
+    expect(result.profile.name).toBe('Edited by collaborator');
+  });
+
+  it('should allow a decision admin to update the proposal data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [author, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Admin Reviewed Proposal' },
+    });
+
+    const result = await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { proposalData: { title: 'Edited by admin' } },
+    });
+
+    expect(result.proposalData).toMatchObject({ title: 'Edited by admin' });
+  });
+
+  it('should not allow another process member to edit or rename a draft they did not author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    // A second member of the same process: no grant on the proposal profile,
+    // no admin rights on the decision.
+    const [author, otherMember] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    // Drafts carry the sharper end of the gap: unlisted, reachable only by id,
+    // and exempt from template validation, so a missing gate shows up here as
+    // a clean write rather than a 400 from somewhere else.
+    const [draft, otherMemberCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Private Draft' },
+      }),
+      createAuthenticatedCaller(otherMember.email),
+    ]);
+
+    await expect(
+      otherMemberCaller.decision.updateProposal({
+        proposalId: draft.id,
+        data: {
+          title: 'Hijacked Draft',
+          proposalData: { title: 'Hijacked Draft' },
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { statusCode: 403 },
+    });
+  });
+});
+
 describeDecisionAccessTierGating('updateProposal', {
   noJwtNonPublic: accessTierGatingCell(
     'rejects no-JWT caller on non-public instance',

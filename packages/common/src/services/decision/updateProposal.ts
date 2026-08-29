@@ -94,22 +94,33 @@ export const updateProposal = async ({
       orgFallbackPermissions: [{ decisions: permission.ADMIN }],
     });
   } else {
-    // Data updates require profile-level update permission on the proposal's profile
+    // Standing on the proposal's own profile (author or invited collaborator),
+    // with decision admins as the override. Not `decisions` UPDATE — every
+    // process Member holds it, so gating there lets any participant rewrite
+    // every other proposal, unpublished drafts included.
+    //
+    // `getProfileAccessRoles` unions the caller's grants with the public
+    // sentinel's, so test the READ bit rather than `roles.length > 0`: the
+    // Public role seeds with no permission rows, so the bit form fails closed
+    // on a public grant while a length check would not. Siblings that ask the
+    // same question (getProposal, reviewHelpers, assertModerationItemAccess)
+    // still use the length form; this is the canonical spelling, and folding
+    // them onto one shared helper is tracked separately.
     const proposalRoles = await getProfileAccessRoles({
       user: { id: user.id },
       profileId: existingProposal.profileId,
     });
 
-    const hasProposalUpdate = checkPermission(
-      { profile: permission.UPDATE },
+    const hasProposalStanding = checkPermission(
+      { profile: permission.READ },
       proposalRoles,
     );
 
-    if (!hasProposalUpdate) {
+    if (!hasProposalStanding) {
       await assertInstanceProfileAccess({
         user: { id: user.id },
         instance: processInstance,
-        profilePermissions: { decisions: permission.UPDATE },
+        profilePermissions: { decisions: permission.ADMIN },
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
     }
