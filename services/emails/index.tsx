@@ -174,6 +174,7 @@ export * from './emails/PhaseTransitionEmail';
 export * from './emails/VoteSubmittedEmail';
 export * from './emails/RevisionResubmittedEmail';
 export * from './emails/RevisionRequestedEmail';
+export * from './emails/SelectionDecisionEmail';
 export * from './emails/DecisionUpdateNotificationEmail';
 export * from './emails/ContentFlaggedEmail';
 export * from './emails/ProposalMergedEmail';
