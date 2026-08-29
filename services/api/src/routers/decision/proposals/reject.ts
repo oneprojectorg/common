@@ -7,9 +7,12 @@ export const rejectProposalRouter = router({
   /**
    * Move a proposal to `REJECTED`. Closed-network + `decisions: ADMIN`.
    *
-   * The status change drops the proposal from every read (phases, review,
-   * voting, the default list) — it only stays visible to admins on the proposal
-   * list, like a flagged proposal.
+   * The status change stops the proposal advancing through phases, being
+   * reviewed, and being votable; it stays listed and readable, badged with its
+   * status.
+   *
+   * `reason` and `note` are collected and validated here but go nowhere yet —
+   * the stacked follow-up carries them to the author's rejection email.
    */
   rejectProposal: networkAuthenticatedProcedure()
     .input(rejectProposalInputSchema)
@@ -19,7 +22,7 @@ export const rejectProposalRouter = router({
         user: ctx.user,
       });
 
-      // The status change moves it out of every list and off the ballot.
+      // The status change moves it off the ballot and out of review.
       ctx.registerMutationChannels([
         Channels.decisionProposals(processInstanceId),
         Channels.decisionProposal(processInstanceId, proposalId),

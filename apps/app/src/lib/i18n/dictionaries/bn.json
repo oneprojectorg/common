@@ -1579,7 +1579,6 @@
   "{source} has now been merged with {target}": "{source} এখন {target}-এর সঙ্গে একত্র করা হয়েছে",
   "Reject proposal": "প্রস্তাব প্রত্যাখ্যান করুন",
   "Rejecting...": "প্রত্যাখ্যান করা হচ্ছে...",
-  "This removes the proposal from voting, review, and the proposal list. Only admins will still see it. You can undo this afterwards.": "এটি প্রস্তাবটিকে ভোটদান, পর্যালোচনা এবং প্রস্তাব তালিকা থেকে সরিয়ে দেয়। শুধুমাত্র প্রশাসকরাই এটি দেখতে পাবেন। আপনি পরে এটি পূর্বাবস্থায় ফেরাতে পারেন।",
   "Proposal rejected": "প্রস্তাব প্রত্যাখ্যান করা হয়েছে",
   "Could not reject this proposal. Please try again.": "এই প্রস্তাবটি প্রত্যাখ্যান করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
   "Rejected": "প্রত্যাখ্যাত",
@@ -1698,5 +1697,14 @@
   "{submitted} out of {assigned} assigned reviews are submitted": "নির্ধারিত {assigned}টির মধ্যে {submitted}টি পর্যালোচনা জমা দেওয়া হয়েছে",
   "{submitted}/{assigned} reviews": "{submitted}/{assigned} পর্যালোচনা",
   "{created, plural, one {# review assignment created} other {# review assignments created}} · {removed, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{created, plural, one {#টি পর্যালোচনা নিয়োগ তৈরি হয়েছে} other {#টি পর্যালোচনা নিয়োগ তৈরি হয়েছে}} · {removed, plural, one {#টি প্রস্তাবের নির্ধারণ বাতিল} other {#টি প্রস্তাবের নির্ধারণ বাতিল}}",
-  "No changes were needed.": "কোনও পরিবর্তনের প্রয়োজন ছিল না।"
+  "No changes were needed.": "কোনও পরিবর্তনের প্রয়োজন ছিল না।",
+  "Reason": "কারণ",
+  "Ineligible": "অযোগ্য",
+  "Duplicate_noun": "সদৃশ",
+  "Off-topic": "বিষয়বহির্ভূত",
+  "Infeasible": "অবাস্তবায়নযোগ্য",
+  "Note to proposal author": "প্রস্তাবের লেখকের জন্য নোট",
+  "Write an optional note to the proposal author here": "প্রস্তাবের লেখকের জন্য এখানে একটি ঐচ্ছিক নোট লিখুন",
+  "The author will receive this note as soon as you reject.": "আপনি প্রত্যাখ্যান করার সঙ্গে সঙ্গেই লেখক এই নোটটি পাবেন।",
+  "Reject & send note": "প্রত্যাখ্যান করুন ও নোট পাঠান"
 }

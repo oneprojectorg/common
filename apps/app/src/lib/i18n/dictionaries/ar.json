@@ -1578,7 +1578,6 @@
   "{source} has now been merged with {target}": "تم الآن دمج {source} مع {target}",
   "Reject proposal": "رفض المقترح",
   "Rejecting...": "جارٍ الرفض...",
-  "This removes the proposal from voting, review, and the proposal list. Only admins will still see it. You can undo this afterwards.": "سيؤدي هذا إلى إزالة المقترح من التصويت والمراجعة وقائمة المقترحات. لن يتمكن سوى المشرفين من رؤيته. يمكنك التراجع عن ذلك لاحقًا.",
   "Proposal rejected": "تم رفض المقترح",
   "Could not reject this proposal. Please try again.": "تعذّر رفض هذا المقترح. يرجى المحاولة مرة أخرى.",
   "Rejected": "مرفوض",
@@ -1698,5 +1697,14 @@
   "{submitted} out of {assigned} assigned reviews are submitted": "تم إرسال {submitted} من {assigned} مراجعة معيّنة",
   "{submitted}/{assigned} reviews": "{submitted}/{assigned} مراجعة",
   "{created, plural, one {# review assignment created} other {# review assignments created}} · {removed, plural, one {# proposal unassigned} other {# proposals unassigned}}": "{created, plural, one {تم إنشاء تعيين مراجعة واحد} other {تم إنشاء # تعيينات مراجعة}} · {removed, plural, one {# مقترح أُلغي تعيينه} other {# مقترحات أُلغي تعيينها}}",
-  "No changes were needed.": "لم تكن هناك حاجة إلى أي تغييرات."
+  "No changes were needed.": "لم تكن هناك حاجة إلى أي تغييرات.",
+  "Reason": "السبب",
+  "Ineligible": "غير مؤهل",
+  "Duplicate_noun": "مكرر",
+  "Off-topic": "خارج الموضوع",
+  "Infeasible": "غير قابل للتنفيذ",
+  "Note to proposal author": "ملاحظة إلى مؤلف المقترح",
+  "Write an optional note to the proposal author here": "اكتب هنا ملاحظة اختيارية إلى مؤلف المقترح",
+  "The author will receive this note as soon as you reject.": "سيتلقى المؤلف هذه الملاحظة فور رفضك للمقترح.",
+  "Reject & send note": "رفض وإرسال الملاحظة"
 }

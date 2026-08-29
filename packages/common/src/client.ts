@@ -94,6 +94,9 @@ export {
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
+  REJECTION_NOTE_MAX_LENGTH,
+  RejectionReason,
+  rejectionReasonSchema,
   rejectProposalInputSchema,
   unrejectProposalInputSchema,
   type RejectProposalInput,
