@@ -181,6 +181,34 @@ describe('cache() — Redis tier metrics', () => {
     ]);
   });
 
+  it('does not collapse "/" in allow-list keys (email local-part aliasing)', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+    fakeRedis.setEx.mockResolvedValue('OK');
+
+    const fetcher = vi.fn().mockResolvedValue('row');
+    // An allow-list entry decides which organization its email may join, and
+    // '/' is legal in an address local part. "a/victim@x.com" must not read
+    // the entry belonging to "victim@x.com".
+    await cache({
+      type: 'allowList',
+      params: ['a/victim@x.com'],
+      options: { skipMemCache: true },
+      fetch: fetcher,
+    });
+    await cache({
+      type: 'allowList',
+      params: ['victim@x.com'],
+      options: { skipMemCache: true },
+      fetch: fetcher,
+    });
+
+    const requestedKeys = fakeRedis.get.mock.calls.map(([key]) => key);
+    expect(requestedKeys).toEqual([
+      'dev/v1/common/allowList/a/victim@x.com',
+      'dev/v1/common/allowList/victim@x.com',
+    ]);
+  });
+
   it('records a command timeout (not a miss) when Redis is too slow', async () => {
     // A redis.get that never resolves forces the per-command AbortSignal
     // (REDIS_COMMAND_TIMEOUT_MS = 50ms) to fire. The cache layer should
