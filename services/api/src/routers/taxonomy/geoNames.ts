@@ -41,100 +41,111 @@ const roundCenterCoord = (value: number): number => {
   return Math.round(value * factor) / factor;
 };
 
-const getGeonames = async ({
+/**
+ * Normalizes a free-text query for use as a cache key — trim surrounding
+ * whitespace and lowercase. Collapses "Main Street", "main street", and
+ * " MAIN STREET " onto one cache entry instead of paying three billable Google
+ * calls. The original query is still sent to Google verbatim so the API sees
+ * exactly what the user typed.
+ */
+export const normalizeQueryForCacheKey = (q: string): string =>
+  q.trim().toLowerCase();
+
+/**
+ * Calls Google Places searchText for a free-text query, optionally biased
+ * toward a map center. Returns the mapped places (empty array when Google
+ * returns no results) and THROWS on Google API errors or network failures, so
+ * the {@link cache} wrapper does not store the failure as an empty result —
+ * which would poison the cache for 72h and surface "No results" to subsequent
+ * users even after Google recovers.
+ */
+export const fetchPlacesFromGoogle = async ({
   q,
   center,
 }: {
   q: string;
   center?: { lat: number; lng: number };
-}) => {
+}): Promise<GeoName[]> => {
   if (!process.env.GOOGLE_MAPS_API_KEY) {
     throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
   }
 
   const url = `https://places.googleapis.com/v1/places:searchText`;
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-        'X-Goog-FieldMask':
-          'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.generativeSummary',
-      },
-      body: JSON.stringify({
-        textQuery: q,
-        // Bias toward the caller-supplied map center so a participant in
-        // Stockholm searching a Columbus, OH process still gets Columbus
-        // results. Bias (not restriction) — distant matches are still allowed
-        // when nothing nearby fits the query.
-        ...(center
-          ? {
-              locationBias: {
-                circle: {
-                  center: {
-                    latitude: center.lat,
-                    longitude: center.lng,
-                  },
-                  radius: LOCATION_BIAS_RADIUS_METERS,
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+      'X-Goog-FieldMask':
+        'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.generativeSummary',
+    },
+    body: JSON.stringify({
+      textQuery: q,
+      // Bias toward the caller-supplied map center so a participant in
+      // Stockholm searching a Columbus, OH process still gets Columbus
+      // results. Bias (not restriction) — distant matches are still allowed
+      // when nothing nearby fits the query.
+      ...(center
+        ? {
+            locationBias: {
+              circle: {
+                center: {
+                  latitude: center.lat,
+                  longitude: center.lng,
                 },
+                radius: LOCATION_BIAS_RADIUS_METERS,
               },
-            }
-          : {}),
-      }),
-    });
+            },
+          }
+        : {}),
+    }),
+  });
 
-    const data = await response.json();
+  const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        `Google Maps API error: ${data.error_message || response.statusText}`,
-      );
-    }
+  if (!response.ok) {
+    throw new Error(
+      `Google Maps API error: ${data.error_message || response.statusText}`,
+    );
+  }
 
-    const geoNameMap = new Map();
+  const geoNameMap = new Map<string, GeoName>();
 
-    if (data.places) {
-      for (const place of data.places) {
-        if (place.location && place.formattedAddress) {
-          const countryComponent = place.addressComponents?.find(
-            (component: any) => component.types.includes('country'),
-          );
+  if (data.places) {
+    for (const place of data.places) {
+      if (place.location && place.formattedAddress) {
+        const countryComponent = place.addressComponents?.find(
+          (component: any) => component.types.includes('country'),
+        );
 
-          const countryCode = countryComponent?.shortText || '';
-          const countryName = countryComponent?.longText || '';
+        const countryCode = countryComponent?.shortText || '';
+        const countryName = countryComponent?.longText || '';
 
-          const geoName: GeoName = {
-            address: place.formattedAddress,
-            name: place.displayName.text ?? place.formattedAddress,
-            plusCode: place.plusCode?.compoundCode,
-            lat: place.location.latitude,
-            lng: place.location.longitude,
-            id: place.id ?? Math.floor(Math.random() * 1000000),
-            placeId: place.id ?? Math.floor(Math.random() * 1000000),
-            countryCode,
-            countryName,
-            metadata: place,
-          };
+        const geoName: GeoName = {
+          address: place.formattedAddress,
+          name: place.displayName.text ?? place.formattedAddress,
+          plusCode: place.plusCode?.compoundCode,
+          lat: place.location.latitude,
+          lng: place.location.longitude,
+          id: place.id ?? Math.floor(Math.random() * 1000000),
+          placeId: place.id ?? Math.floor(Math.random() * 1000000),
+          countryCode,
+          countryName,
+          metadata: place,
+        };
 
-          // Key on the Google place id, not the display name: a query like
-          // "Starbucks" returns many distinct Starbucks locations that all
-          // share the same name, and a name-keyed map would collapse them into
-          // one entry — so the user only sees a single business instead of the
-          // list of nearby branches.
-          geoNameMap.set(geoName.placeId, geoName);
-        }
+        // Key on the Google place id, not the display name: a query like
+        // "Starbucks" returns many distinct Starbucks locations that all
+        // share the same name, and a name-keyed map would collapse them into
+        // one entry — so the user only sees a single business instead of the
+        // list of nearby branches.
+        geoNameMap.set(geoName.placeId, geoName);
       }
     }
-
-    const geonames = Array.from(geoNameMap).map((item) => item[1]);
-
-    return geonames;
-  } catch (e) {
-    logger.error('Maps API error', { error: e });
-    return [];
   }
+
+  return Array.from(geoNameMap.values());
 };
 
 export const getGeoNames = router({
@@ -163,6 +174,7 @@ export const getGeoNames = router({
     )
     .query(async ({ input }) => {
       const { q, center } = input;
+      const normalizedQ = normalizeQueryForCacheKey(q);
 
       // Round the bias center for the cache key so small map nudges share a
       // cache entry; pass the raw center on to Google for the actual call.
@@ -171,14 +183,28 @@ export const getGeoNames = router({
       const roundedLng =
         center !== undefined ? roundCenterCoord(center.lng) : undefined;
 
-      const geonames = await cache({
-        type: 'geonames',
-        params: [q, roundedLat, roundedLng],
-        fetch: () => getGeonames({ q, center }),
-      });
+      try {
+        const geonames = await cache({
+          type: 'geonames',
+          // Use the normalized query for the cache key only — pass the raw
+          // query to Google so the API sees exactly what the user typed.
+          params: [normalizedQ, roundedLat, roundedLng],
+          fetch: () => fetchPlacesFromGoogle({ q, center }),
+        });
 
-      return {
-        geonames,
-      };
+        return { geonames };
+      } catch (e) {
+        // `fetchPlacesFromGoogle` throws on Google API errors / network
+        // failures, which propagates through `cache()` without writing —
+        // so the empty-result fallback stays in this request only and the
+        // next call retries Google instead of serving a poisoned cache.
+        // The user-facing behavior matches the pre-change "show no results"
+        // experience; the logged error keeps the outage visible in metrics.
+        logger.error('getGeoNames: Places search failed', {
+          error: e,
+          query: normalizedQ,
+        });
+        return { geonames: [] };
+      }
     }),
 });
