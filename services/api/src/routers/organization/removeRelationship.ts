@@ -14,9 +14,11 @@ export const removeRelationshipRouter = router({
     .input(inputSchema)
     .mutation(async ({ ctx, input }) => {
       const { id } = input;
+      const { user } = ctx;
 
       const relationshipRemoved = await removeRelationship({
         id,
+        user,
       });
 
       const sourceOrgId = relationshipRemoved.sourceOrganizationId;
