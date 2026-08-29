@@ -158,7 +158,7 @@ export const DecisionListItem = ({
                 )}
                 {canManage && (
                   <DropdownMenuItem onClick={() => setShowDuplicateModal(true)}>
-                    {t('Duplicate decision')}
+                    {t('Duplicate')}
                   </DropdownMenuItem>
                 )}
                 {canDelete && (

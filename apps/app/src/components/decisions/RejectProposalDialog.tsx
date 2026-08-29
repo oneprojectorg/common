@@ -27,10 +27,14 @@ import { LabeledFieldSet } from './forms/LabeledFieldSet';
  * The enum values are wire constants, so the chips need their English copy
  * looked up. `satisfies` is what makes a new reason fail to compile until it
  * has one.
+ *
+ * `Duplicate_noun` is deliberately not the English string: `Duplicate` is
+ * already taken by the verb on the decision menu, and the two senses translate
+ * differently (Spanish: `Duplicada` vs `Duplicar`).
  */
 const REJECTION_REASON_LABEL_KEYS = {
   [RejectionReason.INELIGIBLE]: 'Ineligible',
-  [RejectionReason.DUPLICATE]: 'Duplicate',
+  [RejectionReason.DUPLICATE]: 'Duplicate_noun',
   [RejectionReason.OFF_TOPIC]: 'Off-topic',
   [RejectionReason.INFEASIBLE]: 'Infeasible',
 } as const satisfies Record<RejectionReason, string>;
