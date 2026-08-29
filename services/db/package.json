@@ -7,6 +7,7 @@
   "exports": {
     ".": "./index.ts",
     "./client": "./client.ts",
+    "./errors": "./errors.ts",
     "./test": "./test.ts",
     "./schema": "./schema/index.ts",
     "./tables": "./tables.ts",
@@ -28,6 +29,7 @@
     "status": "pnpm --dir ../.. exec supabase status",
     "stop": "pnpm --dir ../.. exec supabase stop",
     "studio": "pnpm drizzle-kit studio",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -48,6 +50,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "drizzle-kit": "1.0.0-beta.11-05230d9",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "catalog:"
   }
 }
