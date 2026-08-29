@@ -57,6 +57,54 @@ describe.concurrent('submitProposal', () => {
     });
 
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(
+      (result.proposalData as Record<string, unknown>)
+        .collaborationDocVersionId,
+    ).toBe(1);
+  });
+
+  it('should reject submission when the collaboration doc version cannot be stamped', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal submitted while TipTap is down' },
+    });
+
+    mockCollab.setVersionCreateError(
+      `proposal-${proposal.id}`,
+      new Error('503 Service Unavailable'),
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitProposal({ proposalId: proposal.id }),
+    ).rejects.toThrow(/could not submit your proposal/i);
+
+    // The proposal must stay a draft rather than land as submitted with no
+    // version stamp — the state this task exists to stop producing.
+    const [stored] = await db
+      .select()
+      .from(proposals)
+      .where(eq(proposals.id, proposal.id));
+
+    expect(stored?.status).toBe(ProposalStatus.DRAFT);
+    expect(
+      (stored?.proposalData as Record<string, unknown>)
+        .collaborationDocVersionId,
+    ).toBeUndefined();
   });
 
   it('should reject submitting an already-submitted proposal', async ({
