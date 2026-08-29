@@ -405,6 +405,7 @@ describe('translation.translateDecision', () => {
       translatedText: '[ES-CACHED] Share Your Vision',
       sourceLocale: 'EN',
       targetLocale: 'ES',
+      format: 'text',
     });
 
     onTestFinished(async () => {
