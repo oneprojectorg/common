@@ -21,16 +21,6 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
-  assignedProposalHistory: {
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-      profile: true,
-    },
-  },
   proposal: {
     with: {
       submittedBy: {
@@ -368,13 +358,14 @@ export async function assertReviewAssignmentContext({
 }
 
 /**
- * Resolves the effective proposal snapshot from a review assignment
- * and parses/validates its proposal data.
+ * Resolves the proposal a review assignment is about — always the LIVE
+ * proposal, for every assignment status — and parses/validates its proposal
+ * data. The assignment's `assignedProposalHistoryId` pin records the version
+ * the reviewer last reviewed (see `isReviewOutOfDate`); it is deliberately not
+ * used to pick the content shown, so a reviewer always reads what the author
+ * has now.
  */
 export function resolveAssignmentProposal(assignment: {
-  assignedProposalHistory: {
-    proposalData: unknown;
-  } | null;
   proposal: {
     id: string;
     proposalData: unknown;
@@ -383,8 +374,8 @@ export function resolveAssignmentProposal(assignment: {
   id: string;
   proposalData: ProposalData;
 } {
-  const snapshot = assignment.assignedProposalHistory ?? assignment.proposal;
-  const id = assignment.proposal.id;
+  const snapshot = assignment.proposal;
+  const id = snapshot.id;
 
   const proposalData = parseProposalData(snapshot.proposalData);
 

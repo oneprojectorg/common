@@ -470,6 +470,28 @@ export async function trackReviewSubmitted(
 }
 
 /**
+ * Track when a reviewer edits a review they had already submitted. `was_stale`
+ * marks a re-affirm: the proposal had changed since the reviewer last reviewed
+ * it, so the edit re-anchors the review to the current version.
+ */
+export async function trackReviewUpdated(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'review_updated',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
+  );
+}
+
+/**
  * Track when a reviewer finishes their entire review assignment list for a process
  */
 export async function trackReviewQueueCompleted(

@@ -18,6 +18,7 @@ import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
 } from './reviewHelpers';
+import { getCurrentProposalHistoryId } from './reviewStaleness';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 
@@ -83,11 +84,23 @@ export async function submitReview({
       throw new CommonError('Failed to submit review');
     }
 
+    // Stamp the version pin to what the reviewer just reviewed: the proposal's
+    // current history row. Reads derive staleness by comparing this pin against
+    // the proposal's current row later on. A proposal with no open history row
+    // leaves the pin as-is rather than failing the submission.
+    const currentProposalHistoryId = await getCurrentProposalHistoryId(
+      context.assignment.proposalId,
+      tx,
+    );
+
     await tx
       .update(proposalReviewAssignments)
       .set({
         status: ProposalReviewAssignmentStatus.COMPLETED,
         completedAt: submittedAt,
+        ...(currentProposalHistoryId && {
+          assignedProposalHistoryId: currentProposalHistoryId,
+        }),
       })
       .where(eq(proposalReviewAssignments.id, assignmentId));
 

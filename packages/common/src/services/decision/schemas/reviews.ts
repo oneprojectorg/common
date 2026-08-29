@@ -133,6 +133,12 @@ export const reviewAssignmentExtendedSchema = z.object({
   review: proposalReviewSchema.nullable(),
   revisionRequest: proposalReviewRequestSchema.nullable(),
   canEditReview: z.boolean(),
+  /**
+   * The reviewer submitted a review and the proposal has changed since — the
+   * assignment's version pin no longer matches the proposal's current history
+   * row. Derived at read time; a stale review is still `completed` underneath.
+   */
+  isReviewOutOfDate: z.boolean(),
 });
 
 export const reviewAssignmentListSchema = z.object({

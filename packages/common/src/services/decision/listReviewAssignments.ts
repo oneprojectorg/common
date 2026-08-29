@@ -19,6 +19,10 @@ import {
   reviewAssignmentWithConfig,
 } from './reviewHelpers';
 import {
+  getCurrentProposalHistoryIds,
+  isReviewOutOfDate,
+} from './reviewStaleness';
+import {
   type ReviewAssignmentList,
   type ReviewAssignmentSort,
   reviewAssignmentListSchema,
@@ -199,11 +203,18 @@ export async function listReviewAssignments({
     });
   }
 
-  const documentContentMap = await getProposalDocumentsContent(
-    docContentInputs,
-    // A single unavailable document must not break the whole list.
-    { onFetchError: 'omit' },
-  );
+  const [documentContentMap, currentHistoryIdByProposal] = await Promise.all([
+    getProposalDocumentsContent(
+      docContentInputs,
+      // A single unavailable document must not break the whole list.
+      { onFetchError: 'omit' },
+    ),
+    // One query for the whole page, so staleness costs no per-assignment read.
+    getCurrentProposalHistoryIds(
+      Array.from(new Set(assignments.map((a) => a.proposalId))),
+      db,
+    ),
+  ]);
 
   const assignmentList = assignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
@@ -237,6 +248,13 @@ export async function listReviewAssignments({
       review,
       revisionRequest: getActiveRevisionRequest(assignment.requests),
       canEditReview: canEditSubmittedReview({ assignment, instance, review }),
+      isReviewOutOfDate: isReviewOutOfDate({
+        assignment,
+        review,
+        currentProposalHistoryId: currentHistoryIdByProposal.get(
+          assignment.proposalId,
+        ),
+      }),
     };
   });
 
