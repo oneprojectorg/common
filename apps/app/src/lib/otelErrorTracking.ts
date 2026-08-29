@@ -73,7 +73,7 @@ function recordExceptionOnTrace(
   return { trace_id: spanContext.traceId, span_id: spanContext.spanId };
 }
 
-function extractException(event: CaptureResult): {
+export function extractException(event: CaptureResult): {
   name: string;
   message: string;
 } {
