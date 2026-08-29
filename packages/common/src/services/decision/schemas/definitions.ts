@@ -95,7 +95,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       name: 'Review & Shortlist',
       description: 'Reviewers evaluate and shortlist proposals.',
       rules: {
-        proposals: { submit: false },
+        proposals: { submit: false, review: true },
         voting: { submit: false },
         advancement: { method: 'manual', endDate: '2026-01-02' },
       },
