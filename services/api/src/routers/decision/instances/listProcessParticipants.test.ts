@@ -14,10 +14,9 @@ import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDat
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 
 /**
- * Reproduces a public submitter: someone who authored a proposal but never
- * appeared in the process Members panel. Production grants them submit rights
- * through a public participant role rather than a profileUsers row, which is
- * exactly why the members-only query missed them.
+ * Reproduces a public submitter: production grants them submit rights through
+ * a role rather than a profileUsers row on the process profile, which is why
+ * the members-only query missed them.
  */
 async function detachFromMembersPanel({
   processProfileId,
@@ -88,8 +87,7 @@ describe.concurrent('listProcessParticipants', () => {
       status: ProposalStatus.SUBMITTED,
     });
 
-    // Only after the proposal exists, so the submitter's remaining tie to the
-    // process is the proposal itself.
+    // After the proposal exists, so its author's only tie is the proposal.
     await detachFromMembersPanel({
       processProfileId,
       authUserId: submitter.authUserId,
@@ -253,8 +251,6 @@ describe.concurrent('listProcessParticipants', () => {
       })
     ).map(({ email }) => email);
 
-    // Moderation hides the proposal from readers; it does not un-enroll its
-    // author from the process.
     expect(emails).toContain(hiddenAuthor.email);
   });
 
@@ -272,9 +268,8 @@ describe.concurrent('listProcessParticipants', () => {
       status: ProposalStatus.SUBMITTED,
     });
 
-    // Anonymous accounts carry a profileUsers row with a NULL email. They stay
-    // in the participant set — a future SMS channel can still reach them — so
-    // the address filter belongs to the sender, not to this service.
+    // Anonymous accounts carry a NULL email but stay in the participant set;
+    // the address filter belongs to the sender.
     const anonymous = await testData.createMemberUser({
       organization: setup.organization,
     });
@@ -294,9 +289,7 @@ describe.concurrent('listProcessParticipants', () => {
       ),
     ).toEqual({ authUserId: anonymous.authUserId, email: null });
 
-    // Not a local re-implementation: this is the same helper
-    // sendPhaseTransitionNotification calls to build its `to:` list, so
-    // dropping the filter from the sender breaks this assertion.
+    // The same helper the sender calls, so dropping its filter breaks this.
     const recipients = selectEmailRecipients(participants);
 
     expect(recipients).toContain(setup.userEmail);

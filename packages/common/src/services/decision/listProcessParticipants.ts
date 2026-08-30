@@ -4,26 +4,17 @@ import { union } from 'drizzle-orm/pg-core';
 
 export type ProcessParticipant = {
   authUserId: string;
-  /** Null for anonymous accounts, which are participants with no address. */
+  /** Null for anonymous accounts. */
   email: string | null;
 };
 
 /**
- * Everyone taking part in a decision instance: the people listed in the
- * Members panel (profileUsers on the process profile) plus everyone attached
- * to a proposal in the instance — creators and the collaborators they invited.
+ * Everyone taking part in a decision instance: process-profile members plus
+ * everyone attached to a non-draft, non-deleted proposal in it.
  *
- * Deliberately blind to proposal visibility: a hidden proposal still has an
- * author who is a participant. Draft and soft-deleted proposals are the only
- * ones that carry no participation.
- *
- * Channel-agnostic on purpose. Anonymous participants are returned with a null
- * email rather than dropped, so a caller that later reaches them by another
- * channel still sees them; an email sender filters with `hasEmail`.
- *
- * Uncached and unauthorized: the audience is derived from the instance, never
- * requested by a caller, and a stale cache here means someone silently misses
- * a notification.
+ * Blind to proposal visibility — hiding a proposal is moderation, not
+ * un-enrolment. Uncached: a stale audience means someone misses a
+ * notification.
  */
 export async function listProcessParticipants({
   processInstanceId,
@@ -66,10 +57,8 @@ export async function listProcessParticipants({
 
   const rows = await union(members, proposalAuthors);
 
-  // UNION already collapses identical rows, but the same person can hold
-  // profileUsers rows carrying different emails (process profile vs proposal
-  // profile), so the identity dedupe has to be on authUserId. The set is
-  // whole-instance and never paginated, so folding it here is safe.
+  // UNION collapses identical rows, but one person can hold profileUsers rows
+  // carrying different emails, so identity dedupe has to be on authUserId.
   const byAuthUserId = new Map<string, ProcessParticipant>();
 
   for (const row of rows) {

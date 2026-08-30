@@ -58,8 +58,6 @@ describe('selectEmailRecipients', () => {
   });
 
   it('collapses addresses that differ only in case', () => {
-    // One inbox, so one message — a bulk send that treated these as two
-    // recipients would mail the same person twice.
     expect(
       selectEmailRecipients([
         { email: 'Ada@Example.com' },
@@ -70,8 +68,6 @@ describe('selectEmailRecipients', () => {
   });
 
   it('keeps the first occurrence with its original casing', () => {
-    // The lowercasing is a dedup key only; the address handed to the mailer
-    // stays exactly as it was stored.
     expect(
       selectEmailRecipients([
         { email: 'Grace.Hopper@Example.com' },

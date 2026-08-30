@@ -92,15 +92,14 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;
     const totalPhases = phases.length;
 
-    // Members panel ∪ everyone attached to a proposal. The Members panel alone
-    // misses public submitters, who are the majority of an open process.
+    // The Members panel alone misses public submitters, who are the majority
+    // of an open process.
     const participants = await step.run('get-participants', async () =>
       listProcessParticipants({ processInstanceId }),
     );
 
-    // The service is channel-agnostic, so email is this sender's own concern:
-    // drop the anonymous (address-less) participants, then collapse addresses
-    // so someone holding two profileUsers rows gets one message.
+    // The service is channel-agnostic, so address filtering is this sender's
+    // own concern.
     const recipientEmails = selectEmailRecipients(participants);
 
     if (recipientEmails.length === 0) {
@@ -130,9 +129,8 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
 
         const { errors } = await OPBatchSend(emails);
 
-        // A partial failure must not throw: Inngest would retry the whole step
-        // and re-blast everyone whose batch already succeeded. Record who
-        // missed out and let the run finish.
+        // Throwing would make Inngest retry the step and re-blast everyone
+        // whose batch already succeeded.
         if (errors.length > 0) {
           logger.error('Some phase transition notifications failed to send', {
             processInstanceId,
@@ -141,9 +139,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           });
         }
 
-        // Not `data.length`: under Resend that counts 100-email batches, not
-        // people. `errors` carries one entry per address that failed, so the
-        // delivered count is what we attempted minus those.
+        // Not `data.length` — under Resend that counts 100-email batches.
         return {
           sent: emails.length - errors.length,
           failed: errors.length,
