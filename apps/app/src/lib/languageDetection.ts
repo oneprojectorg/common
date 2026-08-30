@@ -18,6 +18,31 @@ const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
 
 const FRANC_ONLY = Object.keys(SUPPORTED_LANGUAGE_CODES);
 
+/**
+ * How many letters a sample needs before its verdict is worth anything.
+ *
+ * `only` makes franc a forced choice: it scores the eight candidates against
+ * each other and returns the closest, so it never reports "unsure" the way an
+ * unrestricted run does. On a short sample the trigram evidence is noise and
+ * that closest-of-eight is arbitrary — measured over a corpus of real proposal
+ * titles, phase headlines and author names, roughly two in five English
+ * strings came back as Spanish, French, Portuguese, Somali or Hungarian. The
+ * badge ORs its verdict over every sample on the screen, so at list scale one
+ * bad title was enough to show it on decisions with nothing to translate.
+ *
+ * 40 letters is where the false positives stop across that corpus (the last
+ * one falls out at 35) while full proposal bodies, which are what carries a
+ * real foreign-language signal, stay well clear of the floor.
+ *
+ * Letters rather than characters: digits, punctuation and whitespace pad the
+ * length without telling franc anything, and franc's own `minLength` counts
+ * them, which is part of why its 10-character default lets noise through.
+ */
+const MIN_DETECTION_LETTERS = 40;
+
+const countLetters = (text: string): number =>
+  text.match(/\p{L}/gu)?.length ?? 0;
+
 /** The base language subtag, lowercased — e.g. `en` from `en-US`. */
 export const baseLanguage = (code: string): string =>
   code.toLowerCase().split('-')[0] ?? code;
@@ -30,7 +55,7 @@ export const baseLanguage = (code: string): string =>
  */
 export const detectLanguages = (text: string): string[] => {
   const trimmed = text.trim();
-  if (!trimmed) {
+  if (countLetters(trimmed) < MIN_DETECTION_LETTERS) {
     return [];
   }
 
