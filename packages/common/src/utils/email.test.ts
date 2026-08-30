@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hasEmail } from './email';
+import { hasEmail, selectEmailRecipients } from './email';
 
 describe('hasEmail', () => {
   it('returns true for a non-empty email', () => {
@@ -41,5 +41,46 @@ describe('hasEmail', () => {
       'grace@example.com',
     ]);
     expect(withEmail.map((r) => r.id)).toEqual(['1', '4']);
+  });
+});
+
+describe('selectEmailRecipients', () => {
+  it('drops rows with no usable email', () => {
+    expect(
+      selectEmailRecipients([
+        { email: 'ada@example.com' },
+        { email: null },
+        { email: undefined },
+        { email: '' },
+        { email: 'grace@example.com' },
+      ]),
+    ).toEqual(['ada@example.com', 'grace@example.com']);
+  });
+
+  it('collapses addresses that differ only in case', () => {
+    // One inbox, so one message — a bulk send that treated these as two
+    // recipients would mail the same person twice.
+    expect(
+      selectEmailRecipients([
+        { email: 'Ada@Example.com' },
+        { email: 'ada@example.com' },
+        { email: 'ADA@EXAMPLE.COM' },
+      ]),
+    ).toEqual(['Ada@Example.com']);
+  });
+
+  it('keeps the first occurrence with its original casing', () => {
+    // The lowercasing is a dedup key only; the address handed to the mailer
+    // stays exactly as it was stored.
+    expect(
+      selectEmailRecipients([
+        { email: 'Grace.Hopper@Example.com' },
+        { email: 'grace.hopper@example.com' },
+      ]),
+    ).toEqual(['Grace.Hopper@Example.com']);
+  });
+
+  it('returns an empty list when no row has an address', () => {
+    expect(selectEmailRecipients([{ email: null }, {}])).toEqual([]);
   });
 });

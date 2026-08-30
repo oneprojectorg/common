@@ -1,5 +1,5 @@
 import { listProcessParticipants } from '@op/common';
-import { hasEmail } from '@op/common/client';
+import { selectEmailRecipients } from '@op/common/client';
 import { and, db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -294,12 +294,12 @@ describe.concurrent('listProcessParticipants', () => {
       ),
     ).toEqual({ authUserId: anonymous.authUserId, email: null });
 
-    // The exact filter sendPhaseTransitionNotification applies before batching.
-    const recipients = participants.filter(hasEmail);
+    // Not a local re-implementation: this is the same helper
+    // sendPhaseTransitionNotification calls to build its `to:` list, so
+    // dropping the filter from the sender breaks this assertion.
+    const recipients = selectEmailRecipients(participants);
 
-    expect(
-      recipients.some(({ authUserId }) => authUserId === anonymous.authUserId),
-    ).toBe(false);
-    expect(recipients.every(({ email }) => email.length > 0)).toBe(true);
+    expect(recipients).toContain(setup.userEmail);
+    expect(recipients.every((email) => email.length > 0)).toBe(true);
   });
 });

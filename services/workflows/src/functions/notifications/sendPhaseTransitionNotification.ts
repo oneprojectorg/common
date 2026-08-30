@@ -3,7 +3,7 @@ import {
   listProcessParticipants,
   resolveManualSelectionStatus,
 } from '@op/common';
-import { hasEmail } from '@op/common/client';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { processInstances, profiles } from '@op/db/schema';
@@ -101,9 +101,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     // The service is channel-agnostic, so email is this sender's own concern:
     // drop the anonymous (address-less) participants, then collapse addresses
     // so someone holding two profileUsers rows gets one message.
-    const recipientEmails = [
-      ...new Set(participants.filter(hasEmail).map(({ email }) => email)),
-    ];
+    const recipientEmails = selectEmailRecipients(participants);
 
     if (recipientEmails.length === 0) {
       logger.warn('No participants found for process instance', {
@@ -130,7 +128,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
             }),
         }));
 
-        const { data, errors } = await OPBatchSend(emails);
+        const { errors } = await OPBatchSend(emails);
 
         // A partial failure must not throw: Inngest would retry the whole step
         // and re-blast everyone whose batch already succeeded. Record who
@@ -143,8 +141,11 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           });
         }
 
+        // Not `data.length`: under Resend that counts 100-email batches, not
+        // people. `errors` carries one entry per address that failed, so the
+        // delivered count is what we attempted minus those.
         return {
-          sent: data.length,
+          sent: emails.length - errors.length,
           failed: errors.length,
         };
       } catch (error) {
@@ -157,6 +158,8 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     });
 
     return {
+      sent: result.sent,
+      failed: result.failed,
       message: `${result.sent} phase transition notification(s) sent, ${result.failed} failed`,
     };
   },
