@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getOverviewDetectionText,
+  getPhaseDetectionSamples,
   getProposalDetectionText,
+  getResourceDetectionSamples,
   getRubricDetectionText,
 } from './translationDetectionText';
 
@@ -155,5 +157,58 @@ describe('getOverviewDetectionText', () => {
 
   it('returns an empty string when nothing is provided', () => {
     expect(getOverviewDetectionText({})).toBe('');
+  });
+});
+
+describe('getResourceDetectionSamples', () => {
+  it('leads with the joined text so the pair is judged together', () => {
+    expect(
+      getResourceDetectionSamples({
+        title: 'Guía vecinal',
+        description: 'Cómo participar en el presupuesto',
+      }),
+    ).toEqual([
+      'Guía vecinal\nCómo participar en el presupuesto',
+      'Guía vecinal',
+      'Cómo participar en el presupuesto',
+    ]);
+  });
+
+  it('returns the single field on its own when the other is absent', () => {
+    expect(getResourceDetectionSamples({ title: 'Guía vecinal' })).toEqual([
+      'Guía vecinal',
+    ]);
+    expect(
+      getResourceDetectionSamples({
+        title: 'Guía vecinal',
+        description: null,
+      }),
+    ).toEqual(['Guía vecinal']);
+  });
+
+  it('returns nothing when the resource has no text', () => {
+    expect(getResourceDetectionSamples({})).toEqual([]);
+    expect(
+      getResourceDetectionSamples({ title: '   ', description: null }),
+    ).toEqual([]);
+  });
+});
+
+describe('getPhaseDetectionSamples', () => {
+  it('joins the phase headline and description', () => {
+    expect(
+      getPhaseDetectionSamples({
+        headline: 'Revisión de propuestas',
+        description: 'Las personas revisoras leen cada propuesta.',
+      })[0],
+    ).toBe(
+      'Revisión de propuestas\nLas personas revisoras leen cada propuesta.',
+    );
+  });
+
+  it('returns nothing for a phase with no authored copy', () => {
+    expect(
+      getPhaseDetectionSamples({ headline: null, description: null }),
+    ).toEqual([]);
   });
 });

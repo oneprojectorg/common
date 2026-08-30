@@ -11,7 +11,7 @@ import { useTranslations } from '@/lib/i18n';
 import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
 
 import { useRegisterTranslationSamples } from './TranslationDetectionContext';
-import { getResourceDetectionText } from './translationDetectionText';
+import { getResourceDetectionSamples } from './translationDetectionText';
 
 /**
  * Read-only "Pinned Resources" list for the decision overview sidebar. There is
@@ -36,7 +36,7 @@ export const OverviewPinnedResourcesSuspense = ({
   // list, so it has to register its own samples — a reader who never opens the
   // panel would otherwise have no way to translate the text shown here.
   const resourceSamples = useMemo(
-    () => items.map(getResourceDetectionText),
+    () => items.flatMap(getResourceDetectionSamples),
     [items],
   );
   useRegisterTranslationSamples('overview-resources', resourceSamples);

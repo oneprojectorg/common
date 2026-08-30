@@ -5,6 +5,10 @@ import { francAll } from 'franc';
 // app's locale codes (ISO 639-1). Restricting franc to just these via `only`
 // is important: unconstrained, it likes to pick near-neighbours (e.g. Scots
 // for English), which would wrongly flag same-language content as translatable.
+//
+// Adding a locale that shares a script with one already here (Urdu or Persian
+// with Arabic, Assamese with Bengali) turns that script's verdict from settled
+// into contested, which puts it behind the letter floor — see `detectLanguages`.
 const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
   eng: 'en',
   spa: 'es',
@@ -42,6 +46,9 @@ const FRANC_ONLY = Object.keys(SUPPORTED_LANGUAGE_CODES);
  */
 const MIN_DETECTION_LETTERS = 40;
 
+/** franc's own `MAX_LENGTH` — it ignores anything past this, so we do too. */
+const MAX_FRANC_LENGTH = 2048;
+
 /**
  * Whether `text` carries at least {@link MIN_DETECTION_LETTERS} letters.
  * Stops at the threshold rather than counting every letter in a 2000-character
@@ -78,7 +85,14 @@ export const baseLanguage = (code: string): string =>
  * that choice is worthless until there is enough text to base it on.
  */
 export const detectLanguages = (text: string): string[] => {
-  const candidates = francAll(text, { only: FRANC_ONLY });
+  // Trimmed and capped once, so franc and the letter floor judge the same
+  // string. franc's own `minLength` counts raw characters and it only reads
+  // the first `MAX_FRANC_LENGTH`, so untrimmed padding would otherwise buy a
+  // sample past that floor on a handful of letters, and letters past the cap
+  // would count toward ours without ever reaching franc.
+  const sample = text.trim().slice(0, MAX_FRANC_LENGTH);
+
+  const candidates = francAll(sample, { only: FRANC_ONLY });
   const winner = candidates[0];
   if (!winner) {
     return [];
@@ -91,7 +105,7 @@ export const detectLanguages = (text: string): string[] => {
     return [];
   }
 
-  if (candidates.length > 1 && !hasEnoughLetters(text)) {
+  if (candidates.length > 1 && !hasEnoughLetters(sample)) {
     return [];
   }
 

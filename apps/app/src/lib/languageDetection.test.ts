@@ -96,6 +96,37 @@ describe('detectLanguages', () => {
     expect(detectLanguages('কমিউনিটি বাগান প্রকল্প')).toEqual(['bn']);
   });
 
+  // The script bypass skips the letter floor, so franc's own character
+  // minimum is all that stands under it. Padding must not buy a sample past
+  // it — the text is trimmed and capped before franc ever measures it.
+  it('withholds a script verdict from text that is too short even padded', () => {
+    expect(detectLanguages('حديقة')).toEqual([]);
+    expect(detectLanguages('      حديقة      ')).toEqual([]);
+    expect(detectLanguages('\n\n\n\n\n\n\nবাগান')).toEqual([]);
+  });
+
+  it('ignores letters past the window franc reads', () => {
+    // franc stops at 2048 characters. Only six letters fall inside that
+    // window here, so the verdict rests on them; the 49 letters after it must
+    // not count toward the floor and vouch for prose franc never saw.
+    const insideWindow = `${'1'.repeat(2040)} the `;
+    const pastWindow = 'community centre roof has leaked for three winters.';
+
+    expect(detectLanguages(insideWindow + pastWindow)).toEqual([]);
+  });
+
+  // Why the sample builders join a title to its description: neither field
+  // carries a verdict alone, and together they do. This is the pair that
+  // `getResourceDetectionSamples` produces for a Spanish resource.
+  it('detects a foreign pair that neither of its halves could carry', () => {
+    const title = 'Guía vecinal para el barrio';
+    const description = 'Cómo participar hoy mismo';
+
+    expect(detectLanguages(title)).toEqual([]);
+    expect(detectLanguages(description)).toEqual([]);
+    expect(detectLanguages(`${title}\n${description}`)).toEqual(['es']);
+  });
+
   it('still detects a foreign proposal once its body is included', () => {
     expect(
       detectLanguages(

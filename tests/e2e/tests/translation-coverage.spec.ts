@@ -67,9 +67,13 @@ import {
  * the control unconditionally — verified by forcing the gate open and watching
  * only that test fail.
  *
- * The Spanish samples below are long enough for franc (used by
- * `lib/languageDetection.ts`) to resolve a language. Short strings return
- * `und`, which the app reads as "no translation needed".
+ * The Spanish samples below are deliberately long. Between the Latin-script
+ * locales `lib/languageDetection.ts` withholds a verdict until a sample has
+ * MIN_DETECTION_LETTERS (40) letters, because franc cannot tell them apart on
+ * a bare label. Shortening a fixture past that floor makes the app read it as
+ * "nothing to translate" and the test fails for a reason that has nothing to
+ * do with the surface it covers — `PROPOSAL_TITLE_ES` is the one to watch,
+ * since the title-only test registers it as the only sample.
  */
 
 const OVERVIEW_HEADLINE_ES = 'Presupuesto participativo para el barrio';

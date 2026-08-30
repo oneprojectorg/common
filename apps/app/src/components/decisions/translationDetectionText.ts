@@ -113,30 +113,51 @@ export const getRubricDetectionText = (
 };
 
 /**
- * Plain-text sample of a resource (title + description).
+ * Detection samples for one title/description pair — the joined text first,
+ * then each field on its own.
  *
- * Joined rather than registered as two samples: detection needs a run of prose
- * to work on, and a resource title on its own is a bare label. Split apart,
- * the title is too short to carry a verdict and its words are lost to the
- * description's; together they are one sample the detector can read.
+ * The join is what detection usually reads: a title alone is a bare label,
+ * too short for a verdict, and registering the two fields separately leaves
+ * neither with enough prose. Joining them makes one sample the detector can
+ * actually judge.
+ *
+ * The fields follow it because the join answers with one language, and an item
+ * whose title and description are in different languages has the shorter one's
+ * verdict swallowed by the longer one's. That is the half-translated case, and
+ * the reader still needs the badge for it. Registering both costs a cached
+ * detection per field and can only add verdicts, never remove one.
  */
-export const getResourceDetectionText = ({
+const getPairDetectionSamples = (
+  first?: string | null,
+  second?: string | null,
+): string[] => {
+  const parts = [first?.trim() ?? '', second?.trim() ?? ''].filter(Boolean);
+
+  return parts.length > 1 ? [joinSample(parts), ...parts] : parts;
+};
+
+/** Detection samples for a resource (title + description). */
+export const getResourceDetectionSamples = ({
   title,
   description,
 }: {
   title?: string | null;
   description?: string | null;
-}): string => joinSample([title?.trim() ?? '', description?.trim() ?? '']);
+}): string[] => getPairDetectionSamples(title, description);
 
-/** Plain-text sample of a decision overview (headline + description + body). */
+/**
+ * Plain-text sample of authored headline/description/body copy — the decision
+ * overview and, without a body, the phase copy (see
+ * {@link getPhaseDetectionText}).
+ */
 export const getOverviewDetectionText = ({
   headline,
   description,
   body,
 }: {
-  headline?: string;
-  description?: string;
-  body?: string | JSONContent;
+  headline?: string | null;
+  description?: string | null;
+  body?: string | JSONContent | null;
 }): string => {
   const parts: string[] = [];
   if (headline) {
@@ -156,3 +177,13 @@ export const getOverviewDetectionText = ({
   }
   return joinSample(parts);
 };
+
+/**
+ * Detection samples for a phase's authored copy. Both the proposals list and
+ * the review page render it and register it, so the mapping lives here rather
+ * than being spelled out at each of them.
+ */
+export const getPhaseDetectionSamples = (phase: {
+  headline?: string | null;
+  description?: string | null;
+}): string[] => getPairDetectionSamples(phase.headline, phase.description);
