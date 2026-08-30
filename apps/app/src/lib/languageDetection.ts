@@ -6,9 +6,10 @@ import { francAll } from 'franc';
 // is important: unconstrained, it likes to pick near-neighbours (e.g. Scots
 // for English), which would wrongly flag same-language content as translatable.
 //
-// Adding a locale that shares a script with one already here (Urdu or Persian
-// with Arabic, Assamese with Bengali) turns that script's verdict from settled
-// into contested, which puts it behind the letter floor — see `detectLanguages`.
+// Adding a locale franc scores against one already here — Urdu or Persian
+// against Arabic — turns that script's verdict from settled into contested,
+// which puts it behind the letter floor; see `detectLanguages`. Bengali is the
+// only language franc knows in its script, so it stays settled regardless.
 const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
   eng: 'en',
   spa: 'es',
