@@ -51,8 +51,9 @@ const MAX_FRANC_LENGTH = 2048;
 
 /**
  * Whether `text` carries at least {@link MIN_DETECTION_LETTERS} letters.
- * Stops at the threshold rather than counting every letter in a 2000-character
- * body, since all the caller needs is the comparison.
+ * Stops at the threshold rather than counting every letter of a sample that
+ * runs to {@link MAX_FRANC_LENGTH}, since all the caller needs is the
+ * comparison.
  */
 const hasEnoughLetters = (text: string): boolean => {
   const letter = /\p{L}/gu;
@@ -86,7 +87,8 @@ export const baseLanguage = (code: string): string =>
  * franc narrows by script before it scores trigrams, so `only` leaves it with
  * either one candidate or several. One candidate means the script settled it —
  * Arabic and Bengali text can only be `ar` and `bn` here — and a verdict with
- * nothing to compete against holds however short the sample is. Several
+ * nothing to compete against holds on a far shorter sample: it needs a letter
+ * in it, and franc's own 10-character minimum, and nothing more. Several
  * candidates means it is choosing between the Latin-script locales on trigram
  * evidence alone, and since `only` gives it no way to answer "none of these",
  * that choice is worthless until there is enough text to base it on.
@@ -113,7 +115,8 @@ export const detectLanguages = (text: string): string[] => {
   }
 
   // A contested verdict needs enough prose to be worth anything. A settled one
-  // rides on the script, so it only has to be text at all.
+  // rides on the script, so a single letter is evidence enough — franc's own
+  // character minimum has already turned the shortest samples away.
   const isSettledByScript = candidates.length === 1;
   const hasEvidence = isSettledByScript
     ? hasAnyLetter(sample)

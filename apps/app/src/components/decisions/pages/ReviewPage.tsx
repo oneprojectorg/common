@@ -131,7 +131,7 @@ export function ReviewPage({
   // register it from the screen that actually shows it.
   const phaseSamples = useMemo(
     () => [getPhaseDetectionText(currentPhase)],
-    [currentPhase],
+    [currentPhase.headline, currentPhase.description],
   );
   useRegisterTranslationSamples('review-phase', phaseSamples);
 

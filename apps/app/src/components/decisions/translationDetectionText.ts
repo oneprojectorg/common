@@ -172,9 +172,14 @@ export const getOverviewDetectionText = ({
 };
 
 /**
- * Plain-text sample of a phase's authored copy. Both the proposals list and
- * the review page render it and register it, so the mapping lives here rather
- * than being spelled out at each of them.
+ * Plain-text sample of a phase's headline and description. Both the proposals
+ * list and the review page render them and register them, so the mapping lives
+ * here rather than being spelled out at each of them.
+ *
+ * The phase's `additionalInfo` is authored and translated too but is not
+ * sampled, so a phase whose only foreign copy lives there offers no badge.
+ * That gap predates this helper and outlives it — folding the field in means
+ * running it through `htmlToText` first, since it is markup.
  */
 export const getPhaseDetectionText = (phase: {
   headline?: string | null;
