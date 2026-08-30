@@ -62,7 +62,7 @@ export function ManageAssignmentsDialog({
 }: ManageAssignmentsDialogProps) {
   const t = useTranslations();
   const filterId = useId();
-  const importEnabled = useFeatureFlag('bulk_assign_import') ?? false;
+  const importEnabled = useFeatureFlag('bulk_assign_import');
 
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
