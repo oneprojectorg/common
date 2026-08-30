@@ -58,7 +58,10 @@ import {
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
-import { getProposalDetectionText } from './translationDetectionText';
+import {
+  getOverviewDetectionText,
+  getProposalDetectionText,
+} from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -598,8 +601,10 @@ const ProposalsListContent = ({
   const detectionSamples = useMemo(
     () => [
       ...allProposals.map(getProposalDetectionText),
-      currentPhase?.headline ?? '',
-      currentPhase?.description ?? '',
+      getOverviewDetectionText({
+        headline: currentPhase?.headline ?? undefined,
+        description: currentPhase?.description ?? undefined,
+      }),
     ],
     [allProposals, currentPhase?.headline, currentPhase?.description],
   );

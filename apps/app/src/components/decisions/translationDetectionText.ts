@@ -112,6 +112,22 @@ export const getRubricDetectionText = (
   return joinSample(parts);
 };
 
+/**
+ * Plain-text sample of a resource (title + description).
+ *
+ * Joined rather than registered as two samples: detection needs a run of prose
+ * to work on, and a resource title on its own is a bare label. Split apart,
+ * the title is too short to carry a verdict and its words are lost to the
+ * description's; together they are one sample the detector can read.
+ */
+export const getResourceDetectionText = ({
+  title,
+  description,
+}: {
+  title?: string | null;
+  description?: string | null;
+}): string => joinSample([title?.trim() ?? '', description?.trim() ?? '']);
+
 /** Plain-text sample of a decision overview (headline + description + body). */
 export const getOverviewDetectionText = ({
   headline,

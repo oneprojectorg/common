@@ -12,6 +12,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 import { useRegisterTranslationSamples } from '@/components/decisions/TranslationDetectionContext';
+import { getResourceDetectionText } from '@/components/decisions/translationDetectionText';
 
 import { ResourceCard } from './ResourceCard';
 import { ResourceDropZone } from './ResourceDropZone';
@@ -55,7 +56,7 @@ export const ResourcesList = ({
   // would let the last one registered drop every other collection's samples,
   // hiding the control on a foreign-language resource in an earlier section.
   const resourceSamples = useMemo(
-    () => items.flatMap((item) => [item.title, item.description ?? '']),
+    () => items.map(getResourceDetectionText),
     [items],
   );
   useRegisterTranslationSamples(

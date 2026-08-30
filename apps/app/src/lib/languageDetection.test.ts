@@ -39,24 +39,17 @@ describe('detectLanguages', () => {
     ).toEqual(['hu']);
   });
 
-  // Restricted to the supported languages, franc always names one of them —
-  // it has no "unsure" verdict. On a short sample the trigram evidence is
-  // noise, so it used to hand back an arbitrary foreign language and light up
-  // the translate badge on an all-English screen.
+  // Between the Latin-script locales franc has to name one of them — `only`
+  // gives it no way to answer "none of these". On a bare label there is no
+  // prose for it to go on, so it used to return an arbitrary foreign language
+  // and light up the translate badge on an all-English screen. These three are
+  // the worst of a larger corpus: each resolved to a different wrong language
+  // (Portuguese, French, Somali).
   it.each([
-    'Community Garden Project',
-    'Youth Mentorship Program',
-    'Food Bank Expansion',
-    'Submit your ideas',
-    'Bike Lane Improvements',
-    'Senior Center Meals',
-    'Mental Health Support',
-    'Solar Panels for Schools',
-    'Test proposal',
     'Translate City Documents into Spanish',
     'Youth Sports League Equipment Grant',
     'Neighborhood Watch Radio Network',
-  ])('returns no verdict for the short English title %j', (title) => {
+  ])('returns no verdict for the English title %j', (title) => {
     expect(detectLanguages(title)).toEqual([]);
   });
 
@@ -65,12 +58,42 @@ describe('detectLanguages', () => {
     expect(detectLanguages('Scott Cazan')).toEqual([]);
   });
 
-  it('ignores digits and punctuation when measuring how much text there is', () => {
-    // Long enough to pass franc's own 10-character floor, but only a handful
-    // of letters actually carry a language signal.
+  // Pins the 40-letter threshold. Both halves are English prose that franc
+  // reads correctly, so only the letter count decides the verdict — raising or
+  // lowering the floor breaks one of them. The strings are truncated
+  // mid-sentence to land on the exact counts.
+  it('withholds a contested verdict at 39 letters', () => {
     expect(
-      detectLanguages('1 (2) 3, 4. 5; 6: 7 - 8 / 9 [10] 11 {12} 13!'),
+      detectLanguages('The community centre roof has leaked for three'),
     ).toEqual([]);
+  });
+
+  it('returns a contested verdict at 40 letters', () => {
+    expect(
+      detectLanguages('The community centre roof has leaked for three w'),
+    ).toEqual(['en']);
+  });
+
+  it('counts letters rather than characters', () => {
+    // 60 characters but only six letters — the padding tells franc nothing,
+    // and franc's own `minLength` would have counted all of it.
+    expect(
+      detectLanguages(
+        'Budget 2026 100 250 500 1000 2500 5000 7500 9000 12500 15000',
+      ),
+    ).toEqual([]);
+  });
+
+  // Arabic and Bengali are the only candidates in their scripts here, so franc
+  // settles them before it ever scores trigrams. A verdict with nothing to
+  // compete against holds at any length — gating these on the letter floor
+  // would hide the badge from the readers translation exists for.
+  it('detects short Arabic text', () => {
+    expect(detectLanguages('حديقة المجتمع للجميع')).toEqual(['ar']);
+  });
+
+  it('detects short Bengali text', () => {
+    expect(detectLanguages('কমিউনিটি বাগান প্রকল্প')).toEqual(['bn']);
   });
 
   it('still detects a foreign proposal once its body is included', () => {

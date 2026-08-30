@@ -34,6 +34,7 @@ import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSectio
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
 import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
+import { getOverviewDetectionText } from '../translationDetectionText';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
@@ -129,7 +130,12 @@ export function ReviewPage({
   // ProposalsList also samples this copy but can render unmounted here, so
   // register it from the screen that actually shows it.
   const phaseSamples = useMemo(
-    () => [currentPhase.headline ?? '', currentPhase.description ?? ''],
+    () => [
+      getOverviewDetectionText({
+        headline: currentPhase.headline ?? undefined,
+        description: currentPhase.description ?? undefined,
+      }),
+    ],
     [currentPhase.headline, currentPhase.description],
   );
   useRegisterTranslationSamples('review-phase', phaseSamples);

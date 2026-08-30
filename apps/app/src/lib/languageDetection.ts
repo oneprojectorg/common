@@ -1,5 +1,5 @@
 import { type SupportedLocale } from '@op/common/client';
-import { franc } from 'franc';
+import { francAll } from 'franc';
 
 // franc reports languages as ISO 639-3; map the ones we support back to the
 // app's locale codes (ISO 639-1). Restricting franc to just these via `only`
@@ -19,29 +19,45 @@ const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
 const FRANC_ONLY = Object.keys(SUPPORTED_LANGUAGE_CODES);
 
 /**
- * How many letters a sample needs before its verdict is worth anything.
+ * How many letters a sample needs before a *contested* verdict is worth
+ * anything (see `detectLanguages` for when a verdict is contested).
  *
- * `only` makes franc a forced choice: it scores the eight candidates against
- * each other and returns the closest, so it never reports "unsure" the way an
- * unrestricted run does. On a short sample the trigram evidence is noise and
- * that closest-of-eight is arbitrary — measured over a corpus of real proposal
- * titles, phase headlines and author names, roughly two in five English
- * strings came back as Spanish, French, Portuguese, Somali or Hungarian. The
- * badge ORs its verdict over every sample on the screen, so at list scale one
- * bad title was enough to show it on decisions with nothing to translate.
+ * Trigrams need prose to work on. Below this, franc is picking between
+ * languages on the evidence of a few words: across a corpus of realistic
+ * proposal titles, phase headlines and author names, roughly two in five
+ * English strings came back as Spanish, French, Portuguese, Somali or
+ * Hungarian, the last of them at 35 letters. The badge ORs its verdict over
+ * every sample on the screen, so at list scale one bad title was enough to
+ * show it on a decision with nothing to translate.
  *
- * 40 letters is where the false positives stop across that corpus (the last
- * one falls out at 35) while full proposal bodies, which are what carries a
- * real foreign-language signal, stay well clear of the floor.
+ * 40 is a floor on that noise, not a guarantee: a long enough English
+ * noun-phrase title with no function words in it ("Public Restroom Facilities
+ * at Downtown Transit Center") can still be misread. Prose clears the floor
+ * comfortably, which is why the sample builders feed whole items rather than
+ * bare labels.
  *
  * Letters rather than characters: digits, punctuation and whitespace pad the
  * length without telling franc anything, and franc's own `minLength` counts
- * them, which is part of why its 10-character default lets noise through.
+ * them, which is why its 10-character default lets noise through.
  */
 const MIN_DETECTION_LETTERS = 40;
 
-const countLetters = (text: string): number =>
-  text.match(/\p{L}/gu)?.length ?? 0;
+/**
+ * Whether `text` carries at least {@link MIN_DETECTION_LETTERS} letters.
+ * Stops at the threshold rather than counting every letter in a 2000-character
+ * body, since all the caller needs is the comparison.
+ */
+const hasEnoughLetters = (text: string): boolean => {
+  const letter = /\p{L}/gu;
+
+  for (let found = 0; found < MIN_DETECTION_LETTERS; found++) {
+    if (!letter.exec(text)) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 /** The base language subtag, lowercased — e.g. `en` from `en-US`. */
 export const baseLanguage = (code: string): string =>
@@ -52,15 +68,32 @@ export const baseLanguage = (code: string): string =>
  * restricted to the platform's supported locales. Returns the matching locale
  * code, or an empty array when the text is too short to judge or its language
  * isn't one we support.
+ *
+ * franc narrows by script before it scores trigrams, so `only` leaves it with
+ * either one candidate or several. One candidate means the script settled it —
+ * Arabic and Bengali text can only be `ar` and `bn` here — and a verdict with
+ * nothing to compete against holds however short the sample is. Several
+ * candidates means it is choosing between the Latin-script locales on trigram
+ * evidence alone, and since `only` gives it no way to answer "none of these",
+ * that choice is worthless until there is enough text to base it on.
  */
 export const detectLanguages = (text: string): string[] => {
-  const trimmed = text.trim();
-  if (countLetters(trimmed) < MIN_DETECTION_LETTERS) {
+  const candidates = francAll(text, { only: FRANC_ONLY });
+  const winner = candidates[0];
+  if (!winner) {
     return [];
   }
 
-  const code = franc(trimmed, { only: FRANC_ONLY });
-  const locale = SUPPORTED_LANGUAGE_CODES[code];
+  // `und` when franc found nothing to go on; anything unmapped is a language
+  // we can't translate into anyway.
+  const locale = SUPPORTED_LANGUAGE_CODES[winner[0]];
+  if (!locale) {
+    return [];
+  }
 
-  return locale ? [locale] : [];
+  if (candidates.length > 1 && !hasEnoughLetters(text)) {
+    return [];
+  }
+
+  return [locale];
 };
