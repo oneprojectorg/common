@@ -66,6 +66,13 @@ const hasEnoughLetters = (text: string): boolean => {
   return true;
 };
 
+/**
+ * franc picks a script from the character ranges it sees, and those ranges
+ * include the script's own digits — a run of Arabic-Indic numerals resolves to
+ * Arabic on no letters at all. A verdict needs at least one.
+ */
+const hasAnyLetter = (text: string): boolean => /\p{L}/u.test(text);
+
 /** The base language subtag, lowercased — e.g. `en` from `en-US`. */
 export const baseLanguage = (code: string): string =>
   code.toLowerCase().split('-')[0] ?? code;
@@ -105,9 +112,12 @@ export const detectLanguages = (text: string): string[] => {
     return [];
   }
 
-  if (candidates.length > 1 && !hasEnoughLetters(sample)) {
-    return [];
-  }
+  // A contested verdict needs enough prose to be worth anything. A settled one
+  // rides on the script, so it only has to be text at all.
+  const isSettledByScript = candidates.length === 1;
+  const hasEvidence = isSettledByScript
+    ? hasAnyLetter(sample)
+    : hasEnoughLetters(sample);
 
-  return [locale];
+  return hasEvidence ? [locale] : [];
 };

@@ -113,51 +113,44 @@ export const getRubricDetectionText = (
 };
 
 /**
- * Detection samples for one title/description pair — the joined text first,
- * then each field on its own.
+ * Joins a heading to the text under it — one sample rather than two.
  *
- * The join is what detection usually reads: a title alone is a bare label,
- * too short for a verdict, and registering the two fields separately leaves
- * neither with enough prose. Joining them makes one sample the detector can
- * actually judge.
+ * A heading on its own is a bare label: too short to carry a verdict, and long
+ * enough to be misread when it does clear the floor, since a noun phrase with
+ * no function words in it looks like nothing in particular. The text under it
+ * is prose, which is what detection can actually read. Joined, the prose
+ * carries the pair.
  *
- * The fields follow it because the join answers with one language, and an item
- * whose title and description are in different languages has the shorter one's
- * verdict swallowed by the longer one's. That is the half-translated case, and
- * the reader still needs the badge for it. Registering both costs a cached
- * detection per field and can only add verdicts, never remove one.
+ * The cost is that one verdict now answers for both fields, so an item whose
+ * heading and body are in different languages reports only the longer one's.
+ * Registering the fields separately as well would surface the other language,
+ * but it also puts every bare heading back in front of the detector, and
+ * measured over realistic English titles that misreads far more often than the
+ * half-translated case it would rescue.
  */
-const getPairDetectionSamples = (
-  first?: string | null,
-  second?: string | null,
-): string[] => {
-  const parts = [first?.trim() ?? '', second?.trim() ?? ''].filter(Boolean);
+const joinHeadingAndText = (
+  heading?: string | null,
+  text?: string | null,
+): string => joinSample([heading?.trim() ?? '', text?.trim() ?? '']);
 
-  return parts.length > 1 ? [joinSample(parts), ...parts] : parts;
-};
-
-/** Detection samples for a resource (title + description). */
-export const getResourceDetectionSamples = ({
+/** Plain-text sample of a resource (title + description). */
+export const getResourceDetectionText = ({
   title,
   description,
 }: {
   title?: string | null;
   description?: string | null;
-}): string[] => getPairDetectionSamples(title, description);
+}): string => joinHeadingAndText(title, description);
 
-/**
- * Plain-text sample of authored headline/description/body copy — the decision
- * overview and, without a body, the phase copy (see
- * {@link getPhaseDetectionText}).
- */
+/** Plain-text sample of a decision overview (headline + description + body). */
 export const getOverviewDetectionText = ({
   headline,
   description,
   body,
 }: {
-  headline?: string | null;
-  description?: string | null;
-  body?: string | JSONContent | null;
+  headline?: string;
+  description?: string;
+  body?: string | JSONContent;
 }): string => {
   const parts: string[] = [];
   if (headline) {
@@ -179,11 +172,11 @@ export const getOverviewDetectionText = ({
 };
 
 /**
- * Detection samples for a phase's authored copy. Both the proposals list and
+ * Plain-text sample of a phase's authored copy. Both the proposals list and
  * the review page render it and register it, so the mapping lives here rather
  * than being spelled out at each of them.
  */
-export const getPhaseDetectionSamples = (phase: {
+export const getPhaseDetectionText = (phase: {
   headline?: string | null;
   description?: string | null;
-}): string[] => getPairDetectionSamples(phase.headline, phase.description);
+}): string => joinHeadingAndText(phase.headline, phase.description);

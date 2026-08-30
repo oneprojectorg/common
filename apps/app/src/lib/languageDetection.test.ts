@@ -105,6 +105,14 @@ describe('detectLanguages', () => {
     expect(detectLanguages('\n\n\n\n\n\n\nবাগান')).toEqual([]);
   });
 
+  // franc reads the script off character ranges, and those ranges cover the
+  // script's digits, so a budget figure written in Arabic-Indic numerals used
+  // to resolve to Arabic on no letters at all.
+  it('withholds a script verdict from digits alone', () => {
+    expect(detectLanguages('٢٠٢٦ ٢٠٢٧ ٢٠٢٨ ١٥٠٠ ٣٠٠٠')).toEqual([]);
+    expect(detectLanguages('২০২৬ ২০২৭ ২০২৮ ১৫০০ ৩০০০')).toEqual([]);
+  });
+
   it('ignores letters past the window franc reads', () => {
     // franc stops at 2048 characters. Only six letters fall inside that
     // window here, so the verdict rests on them; the 49 letters after it must
@@ -117,7 +125,7 @@ describe('detectLanguages', () => {
 
   // Why the sample builders join a title to its description: neither field
   // carries a verdict alone, and together they do. This is the pair that
-  // `getResourceDetectionSamples` produces for a Spanish resource.
+  // `getResourceDetectionText` produces for a Spanish resource.
   it('detects a foreign pair that neither of its halves could carry', () => {
     const title = 'Guía vecinal para el barrio';
     const description = 'Cómo participar hoy mismo';

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getOverviewDetectionText,
-  getPhaseDetectionSamples,
+  getPhaseDetectionText,
   getProposalDetectionText,
-  getResourceDetectionSamples,
+  getResourceDetectionText,
   getRubricDetectionText,
 } from './translationDetectionText';
 
@@ -160,55 +160,48 @@ describe('getOverviewDetectionText', () => {
   });
 });
 
-describe('getResourceDetectionSamples', () => {
-  it('leads with the joined text so the pair is judged together', () => {
+describe('getResourceDetectionText', () => {
+  it('joins the title to its description so the pair is judged together', () => {
     expect(
-      getResourceDetectionSamples({
+      getResourceDetectionText({
         title: 'Guía vecinal',
         description: 'Cómo participar en el presupuesto',
       }),
-    ).toEqual([
-      'Guía vecinal\nCómo participar en el presupuesto',
-      'Guía vecinal',
-      'Cómo participar en el presupuesto',
-    ]);
+    ).toBe('Guía vecinal\nCómo participar en el presupuesto');
   });
 
   it('returns the single field on its own when the other is absent', () => {
-    expect(getResourceDetectionSamples({ title: 'Guía vecinal' })).toEqual([
+    expect(getResourceDetectionText({ title: 'Guía vecinal' })).toBe(
       'Guía vecinal',
-    ]);
+    );
     expect(
-      getResourceDetectionSamples({
-        title: 'Guía vecinal',
-        description: null,
-      }),
-    ).toEqual(['Guía vecinal']);
+      getResourceDetectionText({ title: 'Guía vecinal', description: null }),
+    ).toBe('Guía vecinal');
   });
 
-  it('returns nothing when the resource has no text', () => {
-    expect(getResourceDetectionSamples({})).toEqual([]);
-    expect(
-      getResourceDetectionSamples({ title: '   ', description: null }),
-    ).toEqual([]);
+  it('returns an empty string when the resource has no text', () => {
+    expect(getResourceDetectionText({})).toBe('');
+    expect(getResourceDetectionText({ title: '   ', description: null })).toBe(
+      '',
+    );
   });
 });
 
-describe('getPhaseDetectionSamples', () => {
+describe('getPhaseDetectionText', () => {
   it('joins the phase headline and description', () => {
     expect(
-      getPhaseDetectionSamples({
+      getPhaseDetectionText({
         headline: 'Revisión de propuestas',
         description: 'Las personas revisoras leen cada propuesta.',
-      })[0],
+      }),
     ).toBe(
       'Revisión de propuestas\nLas personas revisoras leen cada propuesta.',
     );
   });
 
-  it('returns nothing for a phase with no authored copy', () => {
-    expect(
-      getPhaseDetectionSamples({ headline: null, description: null }),
-    ).toEqual([]);
+  it('returns an empty string for a phase with no authored copy', () => {
+    expect(getPhaseDetectionText({ headline: null, description: null })).toBe(
+      '',
+    );
   });
 });
