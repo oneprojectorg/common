@@ -1,13 +1,10 @@
 'use client';
 
-import { ProposalFilter } from '@op/api/encoders';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCount } from './ProposalCount';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { StickyFilterBar } from './StickyFilterBar';
-import { useProposalFilterItems } from './useProposalFilters';
 
 interface Category {
   id: string;
@@ -17,15 +14,12 @@ interface Category {
 export type SortOrder = 'votes' | 'newest' | 'oldest';
 
 export interface SelectionFilters {
-  proposalFilter: ProposalFilter;
   selectedCategory: string;
   sortOrder: SortOrder;
 }
 
 interface ManualSelectionToolbarProps {
   count: number;
-  total: number;
-  currentProfileId: string | undefined;
   categories: Category[];
   filters: SelectionFilters;
   onChange: (patch: Partial<SelectionFilters>) => void;
@@ -35,37 +29,18 @@ interface ManualSelectionToolbarProps {
 
 export const ManualSelectionToolbar = ({
   count,
-  total,
-  currentProfileId,
   categories,
   filters,
   onChange,
   pinOffset,
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
-  const { proposalFilter, selectedCategory, sortOrder } = filters;
-  // hasVoted=false: the toolbar never surfaces "My ballot" (only the live list does).
-  const filterItems = useProposalFilterItems({
-    hasVoted: false,
-    currentProfileId,
-  });
+  const { selectedCategory, sortOrder } = filters;
 
   return (
     <StickyFilterBar pinOffset={pinOffset}>
-      <ProposalCount count={count} total={total} />
+      <ProposalCount count={count} />
       <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
-        <ResponsiveSelect
-          selectedKey={proposalFilter}
-          onSelectionChange={(key) => {
-            if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-              return;
-            }
-            onChange({ proposalFilter: key });
-          }}
-          aria-label={t('Filter proposals')}
-          className="min-w-40"
-          items={filterItems}
-        />
         <ResponsiveSelect
           selectedKey={selectedCategory}
           onSelectionChange={(key) => onChange({ selectedCategory: key })}
