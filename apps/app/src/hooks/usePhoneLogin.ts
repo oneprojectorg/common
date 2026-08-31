@@ -1,97 +1,93 @@
 import { trpc } from '@op/api/client';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
-/** What `requestCode` reports back to the panel. */
-export type PhoneCodeResult = { ok: true } | { ok: false; message?: string };
+import { createSupabaseOtpStrategy } from './phoneAuth/supabaseOtp';
+import { createTwilioDirectStrategy } from './phoneAuth/twilioDirect';
+import type { PhoneCodeResult, PhoneVerifyResult } from './phoneAuth/types';
 
-/** What `verifyCode` reports back to the panel. */
-export type PhoneVerifyResult =
-  | { ok: true }
-  | { ok: false; expired: boolean; message?: string };
+export type {
+  PhoneAuthStrategy,
+  PhoneCodeResult,
+  PhoneVerifyResult,
+} from './phoneAuth/types';
+
+/**
+ * Which strategy signs a person in.
+ *
+ * A deployment setting rather than a rollout. Two people in one release must
+ * take the same path, or an incident report cannot say which code ran.
+ *
+ * `supabase` is the default: fewer moving parts, and GoTrue owns the session
+ * it already understands. Set `twilio-direct` to keep the server in the loop,
+ * which buys a server-side flag, our own rate limit, and a display name on a
+ * new account.
+ */
+const strategyName =
+  process.env.NEXT_PUBLIC_PHONE_AUTH_STRATEGY === 'twilio-direct'
+    ? 'twilio-direct'
+    : 'supabase';
 
 /**
  * Signs a person in with a phone number and an SMS code.
  *
- * Twilio Verify owns the code. The server asks Twilio to send one, and asks
- * Twilio to check it, so this hook never sees a code beyond passing it on.
+ * Selects a strategy and reports progress. The strategies are factories rather
+ * than hooks, so this stays the only hook and the choice stays a plain
+ * conditional. Both tRPC mutations are created either way and cost nothing
+ * until called, which keeps the hook order stable.
  *
- * The server returns tokens rather than setting a cookie, so this hook adopts
- * them with `setSession`. That writes the session through the same storage the
- * rest of the app reads, and no page works until it does.
- *
- * Mirrors {@link useClaimAccount}, which pairs a request step with a verify
- * step for email.
+ * Progress lives here rather than in a strategy, so both report it the same
+ * way whether the work happens on our server or in the browser.
  */
 export const usePhoneLogin = () => {
-  const supabase = createSBBrowserClient();
+  const supabase = useMemo(() => createSBBrowserClient(), []);
   const start = trpc.account.startPhoneLogin.useMutation();
   const verify = trpc.account.verifyPhoneLogin.useMutation();
 
-  /** Asks Twilio to text a code to `phone`. */
-  const requestCode = useCallback(
-    async (phone: string): Promise<PhoneCodeResult> => {
-      try {
-        const result = await start.mutateAsync({ phone });
-        return result.status === 'pending'
-          ? { ok: true }
-          : { ok: false, message: 'That number could not be reached.' };
-      } catch (error) {
-        return {
-          ok: false,
-          message: error instanceof Error ? error.message : undefined,
-        };
-      }
-    },
-    [start],
+  const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const strategy = useMemo(
+    () =>
+      strategyName === 'twilio-direct'
+        ? createTwilioDirectStrategy({
+            supabase,
+            calls: {
+              startPhoneLogin: (input) => start.mutateAsync(input),
+              verifyPhoneLogin: (input) => verify.mutateAsync(input),
+            },
+          })
+        : createSupabaseOtpStrategy({ supabase }),
+    [supabase, start, verify],
   );
 
-  /**
-   * Checks the code and adopts the session.
-   *
-   * Separates a wrong code from an expired verification, because the two need
-   * opposite instructions: type it again, or request a new one.
-   */
+  const requestCode = useCallback(
+    async (phone: string): Promise<PhoneCodeResult> => {
+      setIsSending(true);
+      try {
+        return await strategy.requestCode(phone);
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [strategy],
+  );
+
   const verifyCode = useCallback(
-    async ({
-      phone,
-      code,
-      displayName,
-    }: {
+    async (input: {
       phone: string;
       code: string;
       displayName?: string;
     }): Promise<PhoneVerifyResult> => {
+      setIsVerifying(true);
       try {
-        const result = await verify.mutateAsync({ phone, code, displayName });
-
-        if (result.status !== 'approved') {
-          return { ok: false, expired: result.status === 'expired' };
-        }
-
-        const { error } = await supabase.auth.setSession({
-          access_token: result.accessToken,
-          refresh_token: result.refreshToken,
-        });
-
-        return error
-          ? { ok: false, expired: false, message: error.message }
-          : { ok: true };
-      } catch (error) {
-        return {
-          ok: false,
-          expired: false,
-          message: error instanceof Error ? error.message : undefined,
-        };
+        return await strategy.verifyCode(input);
+      } finally {
+        setIsVerifying(false);
       }
     },
-    [verify, supabase],
+    [strategy],
   );
 
-  return {
-    requestCode,
-    verifyCode,
-    isSending: start.isPending,
-    isVerifying: verify.isPending,
-  };
+  return { requestCode, verifyCode, isSending, isVerifying };
 };

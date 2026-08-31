@@ -1,5 +1,9 @@
 import { PostHogClient } from '@op/analytics';
+import { cache } from '@op/cache';
 import { logger } from '@op/logging';
+
+/** The flag that gates signing in with a phone number. */
+export const SMS_LOGIN_FLAG = 'sms-login';
 
 /**
  * The identity the server evaluates a flag against.
@@ -9,6 +13,9 @@ import { logger } from '@op/logging';
  * become a PostHog identity.
  */
 const SERVER_DISTINCT_ID = 'op-server';
+
+/** How long an answer is reused. A kill switch tolerates this much delay. */
+const TTL = 60 * 1000;
 
 /**
  * Whether a feature is on for the server.
@@ -22,6 +29,10 @@ const SERVER_DISTINCT_ID = 'op-server';
  * asks for one fixed identity, so a partial rollout reads here as whatever
  * that identity happens to get. Treat this as a kill switch, and let the
  * browser handle a staged rollout.
+ *
+ * Answers are cached, because this is now read on the path that authorizes a
+ * request rather than only when someone signs in. Turning a flag off takes up
+ * to a minute to take effect everywhere.
  *
  * Development answers `true`, matching `useFeatureFlag` in the app. Without
  * that, a local run would show a control the server then refuses.
@@ -38,15 +49,22 @@ export const isServerFeatureEnabled = async (key: string): Promise<boolean> => {
     return true;
   }
 
-  try {
-    return Boolean(
-      await PostHogClient().isFeatureEnabled(key, SERVER_DISTINCT_ID),
-    );
-  } catch (error) {
-    logger.warn('Feature flag lookup failed; treating the flag as off', {
-      key,
-      error,
-    });
-    return false;
-  }
+  return cache({
+    type: 'featureFlag',
+    params: [key],
+    fetch: async () => {
+      try {
+        return Boolean(
+          await PostHogClient().isFeatureEnabled(key, SERVER_DISTINCT_ID),
+        );
+      } catch (error) {
+        logger.warn('Feature flag lookup failed; treating the flag as off', {
+          key,
+          error,
+        });
+        return false;
+      }
+    },
+    options: { ttl: TTL },
+  });
 };

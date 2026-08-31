@@ -70,15 +70,21 @@ enable_confirmations = false
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
 
-# GoTrue refuses every phone-identified grant unless a provider is enabled,
-# including the password grant `mintPhoneSession` uses. Twilio Verify sends our
-# codes, so GoTrue never calls this provider. The block opens the phone identity
-# path and nothing else, which is why the credentials below are placeholders.
-[auth.sms.twilio]
+# GoTrue delegates the whole code lifecycle to Twilio Verify: Twilio generates
+# the code, sends it, and checks it. Verify is exempt from A2P 10DLC, so this
+# works before a campaign is approved, unlike plain `twilio`, which sends over
+# Programmable Messaging and fails with error 30034 until then.
+#
+# `message_service_sid` holds the VA... Verify service in this mode. The name
+# comes from the shared provider shape, not from a Messaging Service.
+#
+# Verify owns the copy and the expiry here, so `template` and `sms_otp_exp`
+# above do not reach the participant.
+[auth.sms.twilio_verify]
 enabled = true
-account_sid = "AC00000000000000000000000000000000"
-message_service_sid = "MG00000000000000000000000000000000"
-auth_token = "00000000000000000000000000000000"
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
+message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
 
 # A listed number skips the provider entirely, so no test needs a credential.
 [auth.sms.test_otp]
