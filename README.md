@@ -8,8 +8,8 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 1.  **Prerequisites**:
     - Ensure you have **Node.js v24** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
     - Enable [Corepack](https://nodejs.org/api/corepack.html) (Node.js's built-in package manager manager) by running: `corepack enable` (This ensures you use the `pnpm` version specified in the root `package.json`).
-2.  **Install Dependencies**: Run `pnpm install` in the project root. This will install dependencies for all workspaces.
-3.  **Environment Variables**: install the [1Password CLI](https://developer.1password.com/docs/cli/get-started/) (`brew install --cask 1password-cli`), turn on _Settings → Developer → Integrate with 1Password CLI_ in the desktop app, then run `pnpm env:pull`. That writes `.env.local` from `env/local.env.tpl`. See [Environments and secrets](#environments-and-secrets) for what lives where.
+2.  **Environment Variables**: install the [1Password CLI](https://developer.1password.com/docs/cli/get-started/) (`brew install --cask 1password-cli`), turn on _Settings → Developer → Integrate with 1Password CLI_ in the desktop app, then run `pnpm env:pull`. That writes `.env.local` from `env/local.env.tpl`. See [Environments and secrets](#environments-and-secrets) for what lives where. This comes before install because `.npmrc` authenticates against the Tiptap Pro registry with `TIPTAP_PRO_TOKEN`.
+3.  **Install Dependencies**: put the token in your shell (`set -a; source .env.local; set +a`), then run `pnpm install` in the project root. This will install dependencies for all workspaces.
 4.  **Local Development Database**:
     - Start the local Supabase stack (PostgreSQL database, etc.): `pnpm w:db start`. This uses the Supabase CLI, make sure Docker is running.
     - Apply database migrations: `pnpm w:db migrate`.
