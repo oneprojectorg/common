@@ -1,6 +1,6 @@
 'use client';
 
-import { ProposalFilter } from '@op/api/encoders';
+import { ProposalFilter, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -11,9 +11,16 @@ import { useTranslations } from '@/lib/i18n';
 export const useProposalFilterItems = ({
   hasVoted,
   currentProfileId,
+  includeRejected = false,
 }: {
   hasVoted: boolean;
   currentProfileId: string | undefined;
+  /**
+   * Offer the "Rejected" status filter. Off for the manual-selection toolbar:
+   * its candidate pool already excludes rejected proposals, so the option
+   * could only ever show an empty list there.
+   */
+  includeRejected?: boolean;
 }) => {
   const t = useTranslations();
   return [
@@ -25,6 +32,9 @@ export const useProposalFilterItems = ({
     },
     ...(hasVoted
       ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
+      : []),
+    ...(includeRejected
+      ? [{ id: ProposalFilter.REJECTED, label: t('Rejected') }]
       : []),
   ];
 };
@@ -97,6 +107,11 @@ export function useProposalFilters({
         // Show only proposals submitted by the current user
         return proposals.filter(
           (proposal) => proposal.submittedBy?.id === currentProfileId,
+        );
+
+      case ProposalFilter.REJECTED:
+        return proposals.filter(
+          (proposal) => proposal.status === ProposalStatus.REJECTED,
         );
 
       case ProposalFilter.ALL:
