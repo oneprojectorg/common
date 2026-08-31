@@ -75,6 +75,16 @@ enable_confirmations = false
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
 
+# GoTrue refuses every phone-identified grant unless a provider is enabled,
+# including the password grant `mintPhoneSession` uses. Twilio Verify sends our
+# codes, so GoTrue never calls this provider. The block opens the phone identity
+# path and nothing else, which is why the credentials below are placeholders.
+[auth.sms.twilio]
+enabled = true
+account_sid = "AC00000000000000000000000000000000"
+message_service_sid = "MG00000000000000000000000000000000"
+auth_token = "00000000000000000000000000000000"
+
 [auth.mfa]
 max_enrolled_factors = 10
 

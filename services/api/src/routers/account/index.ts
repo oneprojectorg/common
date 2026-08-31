@@ -5,6 +5,7 @@ import { getUserProfiles } from './getUserProfiles';
 import { listUserInvitesRouter } from './listUserInvites';
 import login from './login';
 import { matchingDomainOrganizations } from './matchingDomainOrganizations';
+import phoneLogin from './phoneLogin';
 import { switchProfile } from './switchProfile';
 import { switchOrganization } from './updateLastOrgId';
 import updateUserProfile from './updateUserProfile';
@@ -19,6 +20,7 @@ const accountRouter = mergeRouters(
   switchOrganization,
   switchProfile,
   matchingDomainOrganizations,
+  phoneLogin,
 );
 
 export default accountRouter;

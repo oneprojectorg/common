@@ -1721,5 +1721,14 @@
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
   "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
   "Comments could not be loaded": "Faallooyinka lama soo bixin karin",
-  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)"
+  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
+  "Phone number": "Phone number",
+  "We text you a code. Standard message and data rates may apply.": "We text you a code. Standard message and data rates may apply.",
+  "Use a phone number instead": "Use a phone number instead",
+  "Use an email address instead": "Use an email address instead",
+  "We could not send a code.": "We could not send a code.",
+  "That code expired. Request a new one.": "That code expired. Request a new one.",
+  "That code was wrong. Try again.": "That code was wrong. Try again.",
+  "Send the code again": "Send the code again",
+  "Use a different number": "Use a different number"
 }

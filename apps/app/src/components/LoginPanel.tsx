@@ -1,7 +1,12 @@
 'use client';
 
+import { usePhoneLogin } from '@/hooks/usePhoneLogin';
 import { trpc } from '@op/api/client';
-import { getSafeRedirectPath } from '@op/common/client';
+import {
+  getSafeRedirectPath,
+  normalizePhoneNumber,
+  phoneNumberSchema,
+} from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -11,7 +16,7 @@ import { CheckIcon } from '@op/sense/icons';
 import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -24,6 +29,7 @@ import {
   AuthEmailField,
   AuthGoogleButton,
   AuthPanelShell,
+  AuthPhoneField,
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
@@ -57,7 +63,82 @@ export const LoginPanel = () => {
     setTokenError,
     loginSuccess,
     setLoginSuccess,
+    channel,
+    setChannel,
+    phone,
+    setPhone,
+    phoneCodeSent,
+    setPhoneCodeSent,
   } = useAuthPanelStore();
+
+  // Only the error stays local. It describes the last attempt, and a stale one
+  // after a reload would explain a failure the visitor never saw.
+  const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
+  const phoneLogin = usePhoneLogin();
+
+  // The submit button below is shared by both channels, so each one has to
+  // say when it is ready. The server re-validates with this same schema.
+  // People type `(818) 212-4554`. Validate and send what they meant.
+  const normalizedPhone = normalizePhoneNumber(phone);
+  const phoneIsValid = phoneNumberSchema.safeParse(normalizedPhone).success;
+  const phoneBusy = phoneLogin.isSending || phoneLogin.isVerifying;
+
+  /** Lands the visitor wherever the email flow would have landed them. */
+  const finishSignIn = useCallback(() => {
+    if (redirectParam !== null) {
+      window.location.href = redirectParam;
+    } else {
+      window.location.reload();
+    }
+  }, [redirectParam]);
+
+  const requestPhoneCode = useCallback(async () => {
+    setPhoneError(undefined);
+    const result = await phoneLogin.requestCode(normalizedPhone);
+    if (result.ok) {
+      setPhoneCodeSent(true);
+      return;
+    }
+    setPhoneError(result.message ?? t('We could not send a code.'));
+  }, [normalizedPhone, phoneLogin, t]);
+
+  /**
+   * Asks Twilio for another code.
+   *
+   * Twilio returns the same code when the current one is still valid, and a
+   * new one once it expired. The label says "again" rather than "new" so it is
+   * true in both cases.
+   */
+  const resendPhoneCode = useCallback(async () => {
+    setToken(undefined);
+    setPhoneError(undefined);
+    await requestPhoneCode();
+  }, [requestPhoneCode, setToken]);
+
+  /** Returns to the number field, so a wrong number is correctable. */
+  const changePhoneNumber = useCallback(() => {
+    setPhoneCodeSent(false);
+    setToken(undefined);
+    setPhoneError(undefined);
+  }, [setPhoneCodeSent, setToken]);
+
+  const submitPhoneCode = useCallback(async () => {
+    setPhoneError(undefined);
+    const result = await phoneLogin.verifyCode({
+      phone: normalizedPhone,
+      code: token ?? '',
+    });
+    if (result.ok) {
+      finishSignIn();
+      return;
+    }
+    // An expired verification and a wrong code need opposite instructions.
+    setPhoneError(
+      result.expired
+        ? t('That code expired. Request a new one.')
+        : t('That code was wrong. Try again.'),
+    );
+  }, [normalizedPhone, token, phoneLogin, finishSignIn, t]);
 
   const handleLogin = async () => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
@@ -213,20 +294,82 @@ export const LoginPanel = () => {
             </>
           )}
 
-          {!loginSuccess ? (
-            <AuthEmailField
-              label={t('Email')}
-              description={t(
-                'Use the email address associated with your organization',
+          {phoneCodeSent ? (
+            <div className="flex flex-col gap-4">
+              <AuthCodeField
+                value={token}
+                isDisabled={phoneLogin.isVerifying}
+                onChange={setToken}
+                onSubmit={submitPhoneCode}
+              />
+              {phoneError && (
+                <span aria-live="polite" className="text-destructive">
+                  {phoneError}
+                </span>
               )}
-              value={email}
-              isDisabled={login.isFetching || loginSuccess || !!combinedError}
-              onChange={(val) => {
-                setEmailIsValid(emailParser.safeParse(val).success);
-                setEmail(val);
-              }}
-              onSubmit={requestEmailCode}
-            />
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="link"
+                  disabled={phoneBusy}
+                  onClick={resendPhoneCode}
+                >
+                  {t('Send the code again')}
+                </Button>
+                <Button
+                  variant="link"
+                  disabled={phoneBusy}
+                  onClick={changePhoneNumber}
+                >
+                  {t('Use a different number')}
+                </Button>
+              </div>
+            </div>
+          ) : channel === 'phone' ? (
+            <div className="flex flex-col gap-4">
+              <AuthPhoneField
+                label={t('Phone number')}
+                description={t(
+                  'We text you a code. Standard message and data rates may apply.',
+                )}
+                value={phone}
+                isDisabled={phoneLogin.isSending}
+                onChange={setPhone}
+                onSubmit={requestPhoneCode}
+              />
+              {phoneError && (
+                <span aria-live="polite" className="text-destructive">
+                  {phoneError}
+                </span>
+              )}
+              <Button
+                variant="link"
+                onClick={() => {
+                  setPhoneError(undefined);
+                  setChannel('email');
+                }}
+              >
+                {t('Use an email address instead')}
+              </Button>
+            </div>
+          ) : !loginSuccess ? (
+            <div className="flex flex-col gap-4">
+              <AuthEmailField
+                label={t('Email')}
+                description={t(
+                  'Use the email address associated with your organization',
+                )}
+                value={email}
+                isDisabled={login.isFetching || loginSuccess || !!combinedError}
+                onChange={(val) => {
+                  setEmailIsValid(emailParser.safeParse(val).success);
+                  setEmail(val);
+                }}
+                onSubmit={requestEmailCode}
+              />
+              <Button variant="link" onClick={() => setChannel('phone')}>
+                {t('Use a phone number instead')}
+              </Button>
+            </div>
           ) : (
             <AuthCodeField
               value={token}
@@ -261,11 +404,22 @@ export const LoginPanel = () => {
               type="button"
               className="flex w-full items-center justify-center"
               disabled={
-                !emailIsValid ||
-                login.isFetching ||
-                (!!token && !isValidOtpLength(token))
+                channel === 'phone'
+                  ? phoneBusy ||
+                    (phoneCodeSent ? !isValidOtpLength(token) : !phoneIsValid)
+                  : !emailIsValid ||
+                    login.isFetching ||
+                    (!!token && !isValidOtpLength(token))
               }
               onClick={async () => {
+                if (channel === 'phone') {
+                  if (phoneCodeSent) {
+                    await submitPhoneCode();
+                  } else {
+                    await requestPhoneCode();
+                  }
+                  return;
+                }
                 if (!loginSuccess) {
                   requestEmailCode();
                 } else if (loginSuccess && isValidOtpLength(token)) {
@@ -273,9 +427,9 @@ export const LoginPanel = () => {
                 }
               }}
             >
-              {login.isFetching ? (
+              {login.isFetching || phoneBusy ? (
                 <Spinner className="size-6" />
-              ) : loginSuccess ? (
+              ) : loginSuccess || (channel === 'phone' && phoneCodeSent) ? (
                 isSignup ? (
                   t('Sign up')
                 ) : (
