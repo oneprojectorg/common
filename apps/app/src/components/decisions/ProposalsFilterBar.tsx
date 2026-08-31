@@ -9,7 +9,6 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import { useProposalFilterItems } from './useProposalFilterItems';
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -93,10 +92,20 @@ export const ProposalsFilterBar = ({
   exportControl?: React.ReactNode;
 }) => {
   const t = useTranslations();
-  const filterItems = useProposalFilterItems({
-    hasVoted: controls.hasVoted,
-    currentProfileId: controls.currentProfileId,
-  });
+  // Every option maps to a server-side query param in ProposalsList's
+  // queryParams, so pagination and counts stay accurate.
+  const filterItems = [
+    { id: ProposalFilter.ALL, label: t('All proposals') },
+    {
+      id: ProposalFilter.MY_PROPOSALS,
+      label: t('My proposals'),
+      isDisabled: !controls.currentProfileId,
+    },
+    ...(controls.hasVoted
+      ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
+      : []),
+    { id: ProposalFilter.REJECTED, label: t('Rejected') },
+  ];
 
   return (
     <>
