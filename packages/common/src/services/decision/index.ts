@@ -4,6 +4,9 @@ export * from './updateProcess';
 export * from './getTemplate';
 export * from './listProcesses';
 
+// Notification audiences
+export * from './listProcessParticipants';
+
 // Instance cache invalidation
 export * from './decisionCache';
 
