@@ -1,5 +1,6 @@
 import {
   CommonError,
+  UnauthorizedError,
   getSmsProvider,
   normalizePhoneNumber,
   parsePhoneNumber,
@@ -9,6 +10,7 @@ import { z } from 'zod';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { mintPhoneSession } from '../../supabase/mintPhoneSession';
 import { commonProcedure, router } from '../../trpcFactory';
+import { isServerFeatureEnabled } from '../../utils/featureFlags';
 
 /**
  * Signing in with a phone number and an SMS code.
@@ -23,6 +25,9 @@ import { commonProcedure, router } from '../../trpcFactory';
  * anyone outside the team: without it, a phone number is a way into an
  * invite-only product.
  */
+/** The PostHog flag gating this whole router. */
+const SMS_LOGIN_FLAG = 'sms-login';
+
 const phoneLogin = router({
   /**
    * Asks Twilio to text a code to `phone`.
@@ -35,7 +40,7 @@ const phoneLogin = router({
     .input(z.object({ phone: z.string() }))
     .output(z.object({ status: z.enum(['pending', 'rejected']) }))
     .mutation(async ({ input, ctx }) => {
-      const provider = requireVerification();
+      const provider = await requireVerification();
       const to = parsePhoneNumber(normalizePhoneNumber(input.phone));
 
       const result = await provider.startVerification({ to });
@@ -77,7 +82,7 @@ const phoneLogin = router({
       ]),
     )
     .mutation(async ({ input, ctx }) => {
-      const provider = requireVerification();
+      const provider = await requireVerification();
       const to = parsePhoneNumber(normalizePhoneNumber(input.phone));
 
       const check = await provider.checkVerification({ to, code: input.code });
@@ -109,7 +114,13 @@ const phoneLogin = router({
  * pair when no Verify service is configured. Both mean this route cannot work,
  * and both are operator mistakes rather than caller mistakes.
  */
-const requireVerification = () => {
+const requireVerification = async () => {
+  // The panel hides the option when the flag is off. This refuses the call,
+  // which is what actually keeps the feature closed.
+  if (!(await isServerFeatureEnabled(SMS_LOGIN_FLAG))) {
+    throw new UnauthorizedError('Phone sign-in is not available.');
+  }
+
   const provider = getSmsProvider();
   if (!provider?.startVerification || !provider.checkVerification) {
     throw new CommonError(
