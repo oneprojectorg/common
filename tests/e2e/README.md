@@ -24,7 +24,7 @@ This runs: `supabase:start` + `supabase:migrate` + `supabase:seed`
 ### Prerequisites
 
 - Docker running (for Supabase)
-- `.env.local` at repo root (copied from `.env.example`)
+- `.env.local` at repo root (`pnpm env:pull`)
 
 ## Running Tests
 

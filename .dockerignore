@@ -43,7 +43,6 @@ pnpm-debug.log*
 .env.*
 !.env.docker
 !.env.docker.example
-!.env.local.example
 
 # Docker-related files not needed in context
 docker-compose*.yml

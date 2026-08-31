@@ -114,9 +114,11 @@ ${BOLD}Next steps:${RESET}
      OrbStack → Settings → System → Memory limit.
    - Docker Desktop: Settings → Resources → Memory ≥ 8 GB.
 
-2. Create .env.local if you don't already have one:
-     cp ${REPO_ROOT}/.env.local.example ${REPO_ROOT}/.env.local
-   Then edit it and set TIPTAP_PRO_TOKEN (required — ask a teammate).
+2. Create .env.local from 1Password (this is where TIPTAP_PRO_TOKEN comes from):
+     brew install --cask 1password-cli
+   Turn on Settings > Developer > "Integrate with 1Password CLI" in the
+   1Password app, then:
+     cd ${REPO_ROOT} && pnpm env:pull
 
 3. Source .env.local so TIPTAP_PRO_TOKEN reaches the docker build:
      set -a; source ${REPO_ROOT}/.env.local; set +a
