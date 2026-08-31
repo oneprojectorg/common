@@ -1,7 +1,9 @@
 import {
   CommonError,
+  SMS_LOGIN_FLAG,
   UnauthorizedError,
   getSmsProvider,
+  isServerFeatureEnabled,
   normalizePhoneNumber,
   parsePhoneNumber,
 } from '@op/common';
@@ -10,7 +12,6 @@ import { z } from 'zod';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { mintPhoneSession } from '../../supabase/mintPhoneSession';
 import { commonProcedure, router } from '../../trpcFactory';
-import { isServerFeatureEnabled } from '../../utils/featureFlags';
 
 /**
  * Signing in with a phone number and an SMS code.
@@ -20,14 +21,11 @@ import { isServerFeatureEnabled } from '../../utils/featureFlags';
  * Supabase session, because the rest of the application reads one.
  *
  * The email flow in `login.ts` gates account creation on the allow list, the
- * permitted domains, and the admin list. None of those reads a phone number, so
- * this router carries no equivalent gate yet. Decide that before this reaches
- * anyone outside the team: without it, a phone number is a way into an
- * invite-only product.
+ * permitted domains, and the admin list. None of those reads a phone number.
+ * The flag below stands in for them: a confirmed phone number admits someone
+ * to the closed network only while SMS sign-in is switched on. See
+ * `getNetworkMembership`.
  */
-/** The PostHog flag gating this whole router. */
-const SMS_LOGIN_FLAG = 'sms-login';
-
 const phoneLogin = router({
   /**
    * Asks Twilio to text a code to `phone`.
