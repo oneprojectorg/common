@@ -56,4 +56,7 @@ admin who triggered the notification.
   recording visits and revising this decision.
 - The definition identifies people, not addresses. Each notification channel
   reaches the participants for whom it has the required contact information.
+  For email, the authoritative address is the account's sign-in email
+  (`auth.users.email`), not the per-profile snapshot taken at membership
+  creation, which is never updated afterwards.
 - There is no opt-out. Adding one is a separate future decision.

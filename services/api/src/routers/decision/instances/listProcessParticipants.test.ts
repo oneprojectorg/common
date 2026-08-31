@@ -5,6 +5,7 @@ import {
   ProcessStatus,
   ProposalStatus,
   Visibility,
+  authUsers,
   profileUsers,
   proposals,
 } from '@op/db/schema';
@@ -103,7 +104,7 @@ describe.concurrent('listProcessParticipants', () => {
     expect(emails).toContain(submitter.email);
   });
 
-  it('includes a collaborator invited onto a proposal', async ({
+  it('includes a collaborator invited onto a proposal, under their sign-in email', async ({
     task,
     onTestFinished,
   }) => {
@@ -121,19 +122,23 @@ describe.concurrent('listProcessParticipants', () => {
       organization: setup.organization,
     });
 
+    // The snapshot column is stale by design (nothing syncs it after an email
+    // change); the participant list must ignore it in favor of auth.users.
+    const staleEmail = `stale-${collaborator.email}`;
     await addProposalCollaborator({
       proposalProfileId: proposal.profileId,
       authUserId: collaborator.authUserId,
-      email: collaborator.email,
+      email: staleEmail,
     });
 
-    const participants = await listProcessParticipants({
-      processInstanceId: instanceId,
-    });
+    const emails = (
+      await listProcessParticipants({
+        processInstanceId: instanceId,
+      })
+    ).map(({ email }) => email);
 
-    expect(participants.map(({ email }) => email)).toContain(
-      collaborator.email,
-    );
+    expect(emails).toContain(collaborator.email);
+    expect(emails).not.toContain(staleEmail);
   });
 
   it('returns a member who also submitted exactly once', async ({
@@ -268,11 +273,15 @@ describe.concurrent('listProcessParticipants', () => {
       status: ProposalStatus.SUBMITTED,
     });
 
-    // Anonymous accounts carry a NULL email but stay in the participant set;
-    // the address filter belongs to the sender.
+    // Anonymous accounts carry a NULL email in auth.users but stay in the
+    // participant set; the address filter belongs to the sender.
     const anonymous = await testData.createMemberUser({
       organization: setup.organization,
     });
+    await db
+      .update(authUsers)
+      .set({ email: null, isAnonymous: true })
+      .where(eq(authUsers.id, anonymous.authUserId));
     await addProposalCollaborator({
       proposalProfileId: proposal.profileId,
       authUserId: anonymous.authUserId,

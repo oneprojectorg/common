@@ -1,5 +1,10 @@
 import { and, db, eq, isNull, ne } from '@op/db/client';
-import { ProposalStatus, profileUsers, proposals } from '@op/db/schema';
+import {
+  ProposalStatus,
+  authUsers,
+  profileUsers,
+  proposals,
+} from '@op/db/schema';
 import { union } from 'drizzle-orm/pg-core';
 
 export type ProcessParticipant = {
@@ -32,20 +37,24 @@ export async function listProcessParticipants({
     return [];
   }
 
+  // Email comes from auth.users, not profileUsers: the profileUsers copy is a
+  // snapshot taken at insert time and nothing syncs it after an email change.
   const members = db
     .select({
       authUserId: profileUsers.authUserId,
-      email: profileUsers.email,
+      email: authUsers.email,
     })
     .from(profileUsers)
+    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
     .where(eq(profileUsers.profileId, processProfileId));
 
   const proposalAuthors = db
     .select({
       authUserId: profileUsers.authUserId,
-      email: profileUsers.email,
+      email: authUsers.email,
     })
     .from(profileUsers)
+    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
     .innerJoin(proposals, eq(proposals.profileId, profileUsers.profileId))
     .where(
       and(
@@ -55,22 +64,7 @@ export async function listProcessParticipants({
       ),
     );
 
-  const rows = await union(members, proposalAuthors);
-
-  // UNION collapses identical rows, but one person can hold profileUsers rows
-  // carrying different emails, so identity dedupe has to be on authUserId.
-  const byAuthUserId = new Map<string, ProcessParticipant>();
-
-  for (const row of rows) {
-    const existing = byAuthUserId.get(row.authUserId);
-
-    // First row wins, except that an address beats no address.
-    if (!existing) {
-      byAuthUserId.set(row.authUserId, row);
-    } else if (!existing.email && row.email) {
-      byAuthUserId.set(row.authUserId, row);
-    }
-  }
-
-  return [...byAuthUserId.values()];
+  // With the email sourced per authUserId, UNION's row dedupe is the identity
+  // dedupe — one person can no longer surface under two different addresses.
+  return union(members, proposalAuthors);
 }
