@@ -135,7 +135,6 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           logger.error('Some phase transition notifications failed to send', {
             processInstanceId,
             failedCount: errors.length,
-            failedEmails: errors.map(({ email }) => email),
           });
         }
 
