@@ -11,16 +11,9 @@ import { useTranslations } from '@/lib/i18n';
 export const useProposalFilterItems = ({
   hasVoted,
   currentProfileId,
-  includeRejected = false,
 }: {
   hasVoted: boolean;
   currentProfileId: string | undefined;
-  /**
-   * Offer the "Rejected" status filter. Off for the manual-selection toolbar:
-   * its candidate pool already excludes rejected proposals, so the option
-   * could only ever show an empty list there.
-   */
-  includeRejected?: boolean;
 }) => {
   const t = useTranslations();
   return [
@@ -33,9 +26,7 @@ export const useProposalFilterItems = ({
     ...(hasVoted
       ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
       : []),
-    ...(includeRejected
-      ? [{ id: ProposalFilter.REJECTED, label: t('Rejected') }]
-      : []),
+    { id: ProposalFilter.REJECTED, label: t('Rejected') },
   ];
 };
 

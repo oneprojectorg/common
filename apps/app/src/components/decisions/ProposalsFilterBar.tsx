@@ -96,7 +96,6 @@ export const ProposalsFilterBar = ({
   const filterItems = useProposalFilterItems({
     hasVoted: controls.hasVoted,
     currentProfileId: controls.currentProfileId,
-    includeRejected: true,
   });
 
   return (
