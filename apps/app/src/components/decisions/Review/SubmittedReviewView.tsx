@@ -16,7 +16,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import { YES_NO_VALUES, inferCriterionType } from '../rubricTemplate';
+import {
+  YES_NO_VALUES,
+  getSelectedOptionValues,
+  inferCriterionType,
+} from '../rubricTemplate';
 
 /**
  * A submitted review, read-only: each criterion's prompt above a bordered card
@@ -103,6 +107,14 @@ function ResultSection({
   );
 }
 
+/** One answer in a `ResultCard`: the value, with its explanation below it. */
+interface ResultCardRow {
+  /** Stable key — an option id, or `value` for a single-answer card. */
+  id: string;
+  value?: ReactNode;
+  description?: ReactNode;
+}
+
 /**
  * The answer, with the reviewer's note below a rule. Bordered, not filled —
  * the total score is the only filled row in this panel.
@@ -111,26 +123,34 @@ function ResultCard({
   value,
   description,
   rationale,
+  rows,
 }: {
   value?: ReactNode;
   description?: ReactNode;
   rationale?: ReactNode;
+  /**
+   * Several answers stacked in one card — a multi-select, where every selected
+   * option is a row of its own. Takes the place of `value`/`description`.
+   */
+  rows?: ResultCardRow[];
 }) {
-  const hasValue = value !== undefined && value !== null && value !== '';
-  const hasDescription = !!description;
+  const topRows = (rows ?? [{ id: 'value', value, description }]).filter(
+    (row) => hasRowContent(row),
+  );
   const hasRationale = !!rationale;
-  const hasTopRow = hasValue || hasDescription;
+  const hasTopRow = topRows.length > 0;
 
   return (
     <div className="mt-1 flex flex-col gap-3 rounded-lg border p-6">
       {hasTopRow && (
-        <div className="flex items-start gap-4">
-          {hasValue && <span className="font-serif text-title">{value}</span>}
-          {hasDescription && (
-            <div className="mt-0.75 min-w-0 flex-1 text-base whitespace-pre-wrap">
-              {description}
-            </div>
-          )}
+        <div className="flex flex-col gap-3">
+          {topRows.map((row) => (
+            <ResultCardTopRow
+              key={row.id}
+              value={row.value}
+              description={row.description}
+            />
+          ))}
         </div>
       )}
       {hasRationale && hasTopRow && <Separator />}
@@ -139,6 +159,40 @@ function ResultCard({
       )}
     </div>
   );
+}
+
+/**
+ * The value, with its explanation stacked below it — vertical on the designer's
+ * direct direction, which supersedes the side-by-side "Answer" frame in Figma.
+ * Don't restore the horizontal row from that frame without asking them again.
+ *
+ * The explanation goes through `FieldDescription` (muted, `text-sm`) because
+ * `text-label` puts the value at 1rem, the same size as body copy: stacked
+ * same-size text in one colour reads as one paragraph, so the hierarchy has to
+ * come from colour and size on the description instead.
+ */
+function ResultCardTopRow({ value, description }: Omit<ResultCardRow, 'id'>) {
+  return (
+    <div className="flex flex-col gap-1">
+      {hasRowValue(value) && (
+        <span className="font-serif text-label">{value}</span>
+      )}
+      {description ? (
+        // Authored copy, so its line breaks are meant.
+        <FieldDescription className="whitespace-pre-wrap">
+          {description}
+        </FieldDescription>
+      ) : null}
+    </div>
+  );
+}
+
+function hasRowValue(value: ReactNode): boolean {
+  return value !== undefined && value !== null && value !== '';
+}
+
+function hasRowContent(row: ResultCardRow): boolean {
+  return hasRowValue(row.value) || !!row.description;
 }
 
 function RubricFieldResult({
@@ -179,6 +233,31 @@ function RubricFieldResult({
             ? t('No')
             : undefined;
       return <ResultCard value={label} rationale={rationale} />;
+    }
+
+    // Multi-select stores an array of opaque option ids. Each selected option
+    // gets the same row a single-select answer gets — title, then its own
+    // explanation beside it — stacked inside the one card.
+    if (inferCriterionType(field.schema) === 'multi_select') {
+      const selectedRows = getSelectedOptionValues(value).map((id) => {
+        const option = findSchemaOption(field.schema, id);
+        return {
+          id,
+          value: option?.title || id,
+          description: option?.description,
+        };
+      });
+
+      return (
+        <ResultCard
+          rows={
+            selectedRows.length > 0
+              ? selectedRows
+              : [{ id: 'unanswered', value: '—' }]
+          }
+          rationale={rationale}
+        />
+      );
     }
 
     const selected = findSchemaOption(field.schema, value);

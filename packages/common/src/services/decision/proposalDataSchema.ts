@@ -367,17 +367,33 @@ export function parseSchemaOptions(
       : undefined;
 
   if (Array.isArray(itemSchema?.oneOf)) {
-    return itemSchema.oneOf
-      .filter(
-        (entry): entry is { const: string; title: string } =>
-          typeof entry === 'object' &&
-          entry !== null &&
-          'const' in entry &&
-          typeof (entry as Record<string, unknown>).const === 'string' &&
-          'title' in entry &&
-          typeof (entry as Record<string, unknown>).title === 'string',
-      )
-      .map((entry) => ({ value: entry.const, title: entry.title }));
+    return (
+      itemSchema.oneOf
+        .filter(
+          (
+            entry,
+          ): entry is {
+            const: string;
+            title: string;
+            description?: string;
+          } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            'const' in entry &&
+            typeof (entry as Record<string, unknown>).const === 'string' &&
+            'title' in entry &&
+            typeof (entry as Record<string, unknown>).title === 'string',
+        )
+        // Descriptions carry through like the single-value branch above: a
+        // multi-select rubric criterion explains its options the same way.
+        .map((entry) => ({
+          value: entry.const,
+          title: entry.title,
+          ...(typeof entry.description === 'string'
+            ? { description: entry.description }
+            : {}),
+        }))
+    );
   }
 
   if (Array.isArray(itemSchema?.enum)) {

@@ -16,6 +16,7 @@ import {
   getCriterionErrors,
   getCriterionOptions,
   getCriterionType,
+  getSelectedOptionValues,
   inferCriterionType,
   reorderCriteria,
   setCriterionRequired,
@@ -25,7 +26,9 @@ import {
   withYesNoDefaults,
 } from './rubricTemplate';
 
-// Every builder-creatable type; money is template-authored and covered below.
+// Every builder-creatable type. `money` and `multi_select` are
+// template-authored — `createCriterionJsonSchema` throws for both — so they are
+// excluded here and covered separately below.
 const ALL_TYPES: RubricCriterionType[] = [
   'scored',
   'yes_no',
@@ -490,5 +493,103 @@ describe('withYesNoDefaults', () => {
     const answers = {};
     withYesNoDefaults(template(), answers);
     expect(answers).toEqual({});
+  });
+});
+
+// `multi_select` is template-authored — the builder never offers it — so these
+// exercise the shape a seed writes and the readers the renderer runs on it.
+describe('multi_select', () => {
+  /**
+   * The canonical array shape, hand-written the way a template author (or a
+   * seed) writes it — `x-format` on the property, options on `items`. This is
+   * the only place it is spelled out, since nothing builds it from a type.
+   */
+  const MULTI_SELECT_CRITERION: XFormatPropertySchema = {
+    type: 'array',
+    title: 'Which departments would this fall under?',
+    'x-format': 'dropdown',
+    minItems: 1,
+    items: {
+      type: 'string',
+      oneOf: [
+        { const: 'parks', title: 'Parks', description: 'Green space' },
+        { const: 'transit', title: 'Transportation' },
+      ],
+    },
+  };
+
+  function multiSelectTemplate(): RubricTemplateSchema {
+    return {
+      type: 'object',
+      'x-field-order': ['department'],
+      properties: { department: MULTI_SELECT_CRITERION },
+    };
+  }
+
+  it('is inferred from the authored array shape', () => {
+    expect(inferCriterionType(MULTI_SELECT_CRITERION)).toBe('multi_select');
+  });
+
+  it('is never built from a type alone, like money', () => {
+    expect(() => createCriterionJsonSchema('multi_select')).toThrow(
+      'Multi-select criteria are template-authored',
+    );
+    expect(() => createCriterionJsonSchema('money')).toThrow(
+      'Money criteria are template-authored',
+    );
+  });
+
+  it('reads options off items, descriptions included', () => {
+    expect(getCriterionOptions(multiSelectTemplate(), 'department')).toEqual([
+      { value: 'parks', title: 'Parks', description: 'Green space' },
+      { value: 'transit', title: 'Transportation' },
+    ]);
+  });
+
+  it('is not mistaken for a single-select or a scored criterion', () => {
+    expect(getCriterionType(multiSelectTemplate(), 'department')).toBe(
+      'multi_select',
+    );
+    expect(inferCriterionType(createCriterionJsonSchema('single_select'))).toBe(
+      'single_select',
+    );
+  });
+
+  it('yields no builder errors — its options are unfixable there', () => {
+    const criterion = getCriterion(multiSelectTemplate(), 'department');
+    if (!criterion) {
+      throw new Error('expected the criterion to be read back');
+    }
+
+    expect(getCriterionErrors(criterion)).toEqual([]);
+  });
+
+  it('translates option copy on items without touching option values', () => {
+    const translated = translateRubricTemplate(multiSelectTemplate(), {
+      fieldTitles: { department: '¿Qué departamentos?' },
+      fieldDescriptions: {},
+      optionLabels: { department: { parks: 'Parques' } },
+      optionDescriptions: { department: { parks: 'Zonas verdes' } },
+    });
+    const criterion = getCriterion(translated, 'department');
+
+    expect(criterion?.label).toBe('¿Qué departamentos?');
+    expect(criterion?.options).toEqual([
+      { value: 'parks', title: 'Parques', description: 'Zonas verdes' },
+      { value: 'transit', title: 'Transportation' },
+    ]);
+  });
+
+  it('reads the selected option ids off a stored array answer', () => {
+    expect(getSelectedOptionValues(['parks', 'transit'])).toEqual([
+      'parks',
+      'transit',
+    ]);
+  });
+
+  it('reads nothing off a value the criterion cannot have produced', () => {
+    expect(getSelectedOptionValues(undefined)).toEqual([]);
+    expect(getSelectedOptionValues('parks')).toEqual([]);
+    expect(getSelectedOptionValues([1, null, 'parks'])).toEqual(['parks']);
   });
 });

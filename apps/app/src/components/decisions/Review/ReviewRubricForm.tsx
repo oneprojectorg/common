@@ -16,6 +16,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
 import {
   Field,
   FieldDescription,
@@ -47,6 +48,7 @@ import type { FieldDescriptor } from '../forms/types';
 import {
   YES_NO_VALUES,
   getCriterionMaxPoints,
+  getSelectedOptionValues,
   inferCriterionType,
   translateRubricTemplate,
 } from '../rubricTemplate';
@@ -562,6 +564,58 @@ function RubricFieldInput({
               );
             })}
           </RadioGroup>
+        );
+      }
+
+      if (criterionType === 'multi_select') {
+        const options = parseSchemaOptions(field.schema);
+        const selected = getSelectedOptionValues(value);
+
+        // No `CheckboxGroup` in Base UI, so the group role and its name are
+        // wired by hand — without them each box announces on its own and the
+        // criterion prompt never reaches the reviewer.
+        return (
+          <div
+            role="group"
+            aria-labelledby={labelledBy}
+            aria-describedby={describedBy}
+            className="flex flex-col gap-2"
+          >
+            {options.map((option) => {
+              const optionValue = String(option.value);
+              const optionId = `${controlId}-${optionValue}`;
+
+              return (
+                <OptionBox
+                  key={optionValue}
+                  htmlFor={optionId}
+                  control={
+                    <Checkbox
+                      id={optionId}
+                      checked={selected.includes(optionValue)}
+                      onCheckedChange={(checked) => {
+                        // Rebuilt from the schema's option order, not from
+                        // click order, so a stored answer reads back in the
+                        // same order the reviewer saw.
+                        const next = options
+                          .map((o) => String(o.value))
+                          .filter((v) =>
+                            v === optionValue ? checked : selected.includes(v),
+                          );
+                        // `undefined`, not `[]`: an empty selection is
+                        // unanswered, and the form drops unanswered keys so a
+                        // required criterion stays invalid.
+                        onChange(next.length > 0 ? next : undefined);
+                      }}
+                    />
+                  }
+                  dir="auto"
+                  label={option.title || optionValue}
+                  description={option.description}
+                />
+              );
+            })}
+          </div>
         );
       }
 

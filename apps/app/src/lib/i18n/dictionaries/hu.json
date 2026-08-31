@@ -1716,4 +1716,6 @@
   "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# azonosító nem található} other {# azonosító nem található}}",
   "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# javaslat kihagyva (már hozzárendelt vagy az értékelő sajátja)} other {# javaslat kihagyva (már hozzárendelt vagy az értékelő sajátja)}}",
   "No proposal IDs found in what you pasted.": "A beillesztett tartalomban nem található javaslatazonosító.",
-  "Add to selection": "Hozzáadás a kijelöléshez"}
+  "Add to selection": "Hozzáadás a kijelöléshez",
+  "Check all that apply": "Jelöld be az összes megfelelőt",
+  "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak"}

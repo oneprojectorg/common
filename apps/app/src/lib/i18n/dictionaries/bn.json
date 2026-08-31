@@ -1716,4 +1716,6 @@
   "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {#টি আইডি পাওয়া যায়নি} other {#টি আইডি পাওয়া যায়নি}}",
   "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {#টি প্রস্তাবনা বাদ দেওয়া হয়েছে (আগেই নিয়োগ করা বা পর্যালোচকের নিজের)} other {#টি প্রস্তাবনা বাদ দেওয়া হয়েছে (আগেই নিয়োগ করা বা পর্যালোচকের নিজের)}}",
   "No proposal IDs found in what you pasted.": "আপনি যা পেস্ট করেছেন তাতে কোনো প্রস্তাবনার আইডি পাওয়া যায়নি।",
-  "Add to selection": "নির্বাচনে যোগ করুন"}
+  "Add to selection": "নির্বাচনে যোগ করুন",
+  "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
+  "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন"}

@@ -1716,4 +1716,6 @@
   "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# ID não encontrado} other {# IDs não encontrados}}",
   "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# proposta ignorada (já atribuída ou do próprio revisor)} other {# propostas ignoradas (já atribuídas ou do próprio revisor)}}",
   "No proposal IDs found in what you pasted.": "Não foi encontrado nenhum ID de proposta no que colou.",
-  "Add to selection": "Adicionar à seleção"}
+  "Add to selection": "Adicionar à seleção",
+  "Check all that apply": "Marque todas as opções aplicáveis",
+  "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções"}

@@ -46,13 +46,16 @@ export type { RubricTemplateSchema };
 // ---------------------------------------------------------------------------
 
 /**
- * Every criterion type the renderer understands. `money` is template-authored
- * for now; TODO: make it builder-editable (see `CRITERION_TYPES`).
+ * Every criterion type the renderer understands. `money` and `multi_select`
+ * are template-authored for now — the renderer reads and writes them, but the
+ * builder doesn't offer them (see `CRITERION_TYPES`).
+ * TODO: make money builder-editable.
  */
 export type RubricCriterionType =
   | 'scored'
   | 'yes_no'
   | 'single_select'
+  | 'multi_select'
   | 'long_text'
   | 'money';
 
@@ -63,7 +66,7 @@ export type RubricCriterionType =
  */
 export const YES_NO_VALUES = { yes: 'yes', no: 'no' } as const;
 
-/** A single admin-defined option on a single-select criterion. */
+/** A single admin-defined option on a single- or multi-select criterion. */
 export interface SelectOption {
   /** Stable generated id stored as the answer value. */
   value: string;
@@ -91,7 +94,7 @@ export interface CriterionView {
   maxPoints?: number;
   /** Labels for each score level (index 0 = score 1, ascending). Scored criteria only. */
   scoreLabels: string[];
-  /** Admin-defined options. Single-select criteria only (empty for other types). */
+  /** Admin-defined options. Select criteria only (empty for other types). */
   options: SelectOption[];
 }
 
@@ -102,19 +105,38 @@ export interface CriterionView {
 const DEFAULT_MAX_POINTS = 5;
 
 /**
+ * The sub-schema that carries a criterion's `oneOf` options. Single-value
+ * criteria hold it on the property itself; a multi-select is an array, so its
+ * options live on `items` — one option list either way, at one of two depths.
+ */
+function getOptionCarrier(schema: XFormatPropertySchema): JSONSchema7 {
+  const items = schema.items;
+  if (
+    schema.type === 'array' &&
+    typeof items === 'object' &&
+    items !== null &&
+    !Array.isArray(items)
+  ) {
+    return items;
+  }
+  return schema;
+}
+
+/**
  * Extract oneOf entries as typed `JSONSchema7[]`, filtering out boolean
  * definitions.
  */
 function getOneOfEntries(schema: XFormatPropertySchema): JSONSchema7[] {
-  if (!Array.isArray(schema.oneOf)) {
+  const oneOf = getOptionCarrier(schema).oneOf;
+  if (!Array.isArray(oneOf)) {
     return [];
   }
-  return schema.oneOf.filter(isSchemaObject);
+  return oneOf.filter(isSchemaObject);
 }
 
 /**
  * Extract `oneOf` option entries with string consts and string titles
- * (the single-select option encoding).
+ * (the select option encoding).
  */
 function getSelectOptionEntries(schema: XFormatPropertySchema): SelectOption[] {
   return getOneOfEntries(schema)
@@ -129,6 +151,18 @@ function getSelectOptionEntries(schema: XFormatPropertySchema): SelectOption[] {
         ? { description: e.description }
         : {}),
     }));
+}
+
+/**
+ * Build the `oneOf` option list for a single-select criterion — one entry per
+ * label, each keyed by a fresh opaque id so relabelling never invalidates a
+ * stored answer. Two blank options when the caller has no labels to seed.
+ */
+function buildSelectOneOf(labels: string[] | undefined): JSONSchema7[] {
+  return (labels ?? ['', '']).map((title) => ({
+    const: crypto.randomUUID().slice(0, 8),
+    title,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -147,9 +181,13 @@ export function createCriterionJsonSchema(
   selectOptionLabels?: string[],
 ): XFormatPropertySchema {
   switch (type) {
-    // TODO: buildable once money is builder-editable
+    // Template-authored: an author writes the schema, so building one here
+    // from a type alone would only ever emit blank labels.
+    // TODO: buildable once money is builder-editable.
     case 'money':
       throw new Error('Money criteria are template-authored');
+    case 'multi_select':
+      throw new Error('Multi-select criteria are template-authored');
     case 'scored': {
       const max = DEFAULT_MAX_POINTS;
       const oneOf = Array.from({ length: max }, (_, i) => ({
@@ -173,17 +211,12 @@ export function createCriterionJsonSchema(
           { const: YES_NO_VALUES.no, title: 'No' },
         ],
       };
-    case 'single_select': {
-      const labels = selectOptionLabels ?? ['', ''];
+    case 'single_select':
       return {
         type: 'string',
         'x-format': 'dropdown',
-        oneOf: labels.map((title) => ({
-          const: crypto.randomUUID().slice(0, 8),
-          title,
-        })),
+        oneOf: buildSelectOneOf(selectOptionLabels),
       };
-    }
     case 'long_text':
       return {
         type: 'string',
@@ -216,6 +249,20 @@ export function inferCriterionType(
   if (xFormat === 'dropdown') {
     if (schema.type === 'integer' && schema.maximum != null) {
       return 'scored';
+    }
+
+    // An array of option ids is the "check all that apply" criterion. Its
+    // options sit on `items`, which `getOneOfEntries` already resolves.
+    // Authored shape (see the `multi_select` tests): `type: 'array'` with
+    // `minItems: 1`, since an empty selection means unanswered and the review
+    // form drops the key rather than storing `[]`.
+    if (schema.type === 'array') {
+      if (
+        getOneOfEntries(schema).some((entry) => typeof entry.const === 'string')
+      ) {
+        return 'multi_select';
+      }
+      return undefined;
     }
 
     if (schema.type === 'string') {
@@ -339,7 +386,19 @@ export function getCriterionScoreLabels(
 }
 
 /**
- * Options of a single-select criterion, in stored order.
+ * The option ids a multi-select answer holds, in stored order. Non-string
+ * entries and non-array values are dropped rather than coerced — anything else
+ * is not an answer this criterion can have produced.
+ */
+export function getSelectedOptionValues(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+/**
+ * Options of a single- or multi-select criterion, in stored order.
  * Empty for other criterion types.
  */
 export function getCriterionOptions(
@@ -347,7 +406,11 @@ export function getCriterionOptions(
   criterionId: string,
 ): SelectOption[] {
   const schema = getCriterionSchema(template, criterionId);
-  if (!schema || inferCriterionType(schema) !== 'single_select') {
+  if (!schema) {
+    return [];
+  }
+  const criterionType = inferCriterionType(schema);
+  if (criterionType !== 'single_select' && criterionType !== 'multi_select') {
     return [];
   }
   return getSelectOptionEntries(schema);
@@ -402,8 +465,12 @@ export function getCriteria(template: RubricTemplateSchema): CriterionView[] {
 export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
   const errors: TranslationKey[] = [];
 
-  // Money criteria are inert in the builder — an error here would be unfixable.
-  if (criterion.criterionType === 'money') {
+  // Template-authored criteria are inert in the builder — an error here would
+  // be unfixable.
+  if (
+    criterion.criterionType === 'money' ||
+    criterion.criterionType === 'multi_select'
+  ) {
     return errors;
   }
 
@@ -579,7 +646,8 @@ export function updateScoreLabel(
  * additions, and removals in one call (mirrors the proposal template's
  * dropdown options editor). Callers pass existing option ids through
  * unchanged so stored answers keep matching; only relabels/reorders/removals
- * affect the schema. No-op when the criterion isn't a single-select.
+ * affect the schema. No-op when the criterion isn't a single-select — a
+ * multi-select is template-authored, so nothing edits its options here.
  */
 export function setSelectOptions(
   template: RubricTemplateSchema,
@@ -648,18 +716,32 @@ export function translateRubricTemplate(
       continue;
     }
 
-    translated = updateProperty(translated, criterionId, (schema) => ({
-      ...schema,
-      ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
-      ...(Array.isArray(schema.oneOf) && (optionLabels || optionDescriptions)
-        ? {
-            oneOf: schema.oneOf.map((entry) =>
-              translateOptionEntry(entry, optionLabels, optionDescriptions),
-            ),
-          }
-        : {}),
-    }));
+    translated = updateProperty(translated, criterionId, (schema) => {
+      const next: XFormatPropertySchema = {
+        ...schema,
+        ...(title ? { title } : {}),
+        ...(description ? { description } : {}),
+      };
+
+      // Options sit on `items` for a multi-select and on the property itself
+      // for every other select, so translate whichever carrier holds them.
+      const carrier = getOptionCarrier(schema);
+      if (
+        Array.isArray(carrier.oneOf) &&
+        (optionLabels || optionDescriptions)
+      ) {
+        const oneOf = carrier.oneOf.map((entry) =>
+          translateOptionEntry(entry, optionLabels, optionDescriptions),
+        );
+        if (carrier === schema) {
+          next.oneOf = oneOf;
+        } else {
+          next.items = { ...carrier, oneOf };
+        }
+      }
+
+      return next;
+    });
   }
 
   return translated;
