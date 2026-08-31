@@ -5,6 +5,31 @@ import { createTwilioProvider } from './providers/twilio';
 import type { SmsProvider } from './types';
 
 /**
+ * Rejects a Twilio identifier that was pasted into the wrong variable.
+ *
+ * Every Twilio SID carries a two-letter prefix naming its resource, so the
+ * mistake is detectable here rather than at the first call. An Account SID in
+ * the Messaging Service slot otherwise fails per message, and an API Key SID in
+ * the account slot fails inside the SDK constructor, both far from the cause.
+ *
+ * @param name - The variable, so the message names what to correct.
+ * @param value - The configured value. An unset variable passes.
+ * @param prefix - The two letters the resource always starts with.
+ * @throws {CommonError} When the value is set and carries another prefix.
+ */
+const assertSidPrefix = (
+  name: string,
+  value: string | undefined,
+  prefix: string,
+): void => {
+  if (value && !value.startsWith(prefix)) {
+    throw new CommonError(
+      `${name} must start with ${prefix}, but it starts with ${value.slice(0, 2)}. Check which value was pasted into it.`,
+    );
+  }
+};
+
+/**
  * Resolves the configured SMS vendor from the environment.
  *
  * Call this at the edge — a tRPC procedure, a workflow function, an API route
@@ -27,6 +52,11 @@ import type { SmsProvider } from './types';
  * is approved. Set both to do both. Setting neither throws, because an account
  * with no service can do nothing.
  *
+ * Two credentials work. An API key pair — `TWILIO_API_KEY_SID` with
+ * `TWILIO_API_KEY_SECRET` — is preferred, because a key is scoped and can be
+ * revoked on its own. `TWILIO_AUTH_TOKEN` is the account-wide fallback, and
+ * rotating it breaks everything that uses it. Set one pair or the other.
+ *
  * Note the import. `twilio` is CommonJS and publishes no `exports` map, so
  * `import { Twilio } from 'twilio'` throws `SyntaxError: Named export not
  * found` under native ESM, even though Twilio's README shows that form. Only
@@ -37,8 +67,9 @@ import type { SmsProvider } from './types';
  * @returns The configured provider, or `null` when SMS is off. Check for a
  *   method on the provider before calling it; which ones are present follows
  *   from which service SIDs the deployment set.
- * @throws {CommonError} When `TWILIO_ACCOUNT_SID` is set and `TWILIO_AUTH_TOKEN`
- *   is missing, or when neither service SID is set.
+ * @throws {CommonError} When a SID carries the wrong prefix, when no credential
+ *   is set, when `TWILIO_API_KEY_SID` has no secret, or when neither service SID
+ *   is set.
  *
  * @example Resolve at the edge, inject into the service
  * ```ts
@@ -53,6 +84,8 @@ import type { SmsProvider } from './types';
 export const getSmsProvider = (): SmsProvider | null => {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const apiKeySid = process.env.TWILIO_API_KEY_SID;
+  const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
   const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
   const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
@@ -60,9 +93,20 @@ export const getSmsProvider = (): SmsProvider | null => {
     return null;
   }
 
-  if (!authToken) {
+  assertSidPrefix('TWILIO_ACCOUNT_SID', accountSid, 'AC');
+  assertSidPrefix('TWILIO_API_KEY_SID', apiKeySid, 'SK');
+  assertSidPrefix('TWILIO_VERIFY_SERVICE_SID', verifyServiceSid, 'VA');
+  assertSidPrefix('TWILIO_MESSAGING_SERVICE_SID', messagingServiceSid, 'MG');
+
+  if (apiKeySid && !apiKeySecret) {
     throw new CommonError(
-      'TWILIO_ACCOUNT_SID is set but TWILIO_AUTH_TOKEN is missing.',
+      'TWILIO_API_KEY_SID is set but TWILIO_API_KEY_SECRET is missing.',
+    );
+  }
+
+  if (!apiKeySid && !authToken) {
+    throw new CommonError(
+      'TWILIO_ACCOUNT_SID is set but no credential is. Set TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET, or TWILIO_AUTH_TOKEN.',
     );
   }
 
@@ -73,7 +117,10 @@ export const getSmsProvider = (): SmsProvider | null => {
   }
 
   return createTwilioProvider({
-    client: new twilio.Twilio(accountSid, authToken),
+    client:
+      apiKeySid && apiKeySecret
+        ? new twilio.Twilio(apiKeySid, apiKeySecret, { accountSid })
+        : new twilio.Twilio(accountSid, authToken),
     messagingServiceSid,
     verifyServiceSid,
   });
