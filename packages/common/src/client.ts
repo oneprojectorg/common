@@ -316,3 +316,10 @@ export function getSafeRedirectPath(path: string | null): string | null {
 export function isSafeRedirectPath(path: string | null): path is string {
   return getSafeRedirectPath(path) !== null;
 }
+
+// The login panel validates a phone number before enabling its submit button.
+// The server re-validates with the same schema, which stays the authority.
+export {
+  normalizePhoneNumber,
+  phoneNumberSchema,
+} from './services/notification/schemas';
