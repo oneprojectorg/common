@@ -89,7 +89,9 @@ describe('createSupabaseOtpStrategy', () => {
 describe('createTwilioDirectStrategy', () => {
   const build = (
     calls: Partial<Parameters<typeof createTwilioDirectStrategy>[0]['calls']>,
-    auth: Record<string, unknown> = { setSession: async () => ({ error: null }) },
+    auth: Record<string, unknown> = {
+      setSession: async () => ({ error: null }),
+    },
   ) =>
     createTwilioDirectStrategy({
       supabase: stubClient(auth),
