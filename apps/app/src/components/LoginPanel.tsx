@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { usePhoneLogin } from '@/hooks/usePhoneLogin';
 import { trpc } from '@op/api/client';
 import {
@@ -75,6 +76,11 @@ export const LoginPanel = () => {
   // after a reload would explain a failure the visitor never saw.
   const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
   const phoneLogin = usePhoneLogin();
+
+  // Off hides the option entirely, so the panel is the email-only one it was
+  // before. The server refuses the call as well, so hiding the button is a
+  // courtesy rather than the control.
+  const smsLoginEnabled = useFeatureFlag('sms-login') ?? false;
 
   // The submit button below is shared by both channels, so each one has to
   // say when it is ready. The server re-validates with this same schema.
@@ -294,7 +300,7 @@ export const LoginPanel = () => {
             </>
           )}
 
-          {phoneCodeSent ? (
+          {smsLoginEnabled && phoneCodeSent ? (
             <div className="flex flex-col gap-4">
               <AuthCodeField
                 value={token}
@@ -324,7 +330,7 @@ export const LoginPanel = () => {
                 </Button>
               </div>
             </div>
-          ) : channel === 'phone' ? (
+          ) : smsLoginEnabled && channel === 'phone' ? (
             <div className="flex flex-col gap-4">
               <AuthPhoneField
                 label={t('Phone number')}
@@ -366,9 +372,11 @@ export const LoginPanel = () => {
                 }}
                 onSubmit={requestEmailCode}
               />
-              <Button variant="link" onClick={() => setChannel('phone')}>
-                {t('Use a phone number instead')}
-              </Button>
+              {smsLoginEnabled && (
+                <Button variant="link" onClick={() => setChannel('phone')}>
+                  {t('Use a phone number instead')}
+                </Button>
+              )}
             </div>
           ) : (
             <AuthCodeField
