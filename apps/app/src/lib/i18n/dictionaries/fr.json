@@ -1706,5 +1706,14 @@
   "Note to proposal author": "Note à l'auteur de la proposition",
   "Write an optional note to the proposal author here": "Écrivez ici une note facultative à l'auteur de la proposition",
   "The author will receive this note as soon as you reject.": "L'auteur recevra cette note dès que vous rejetterez la proposition.",
-  "Reject & send note": "Rejeter et envoyer la note"
-}
+  "Reject & send note": "Rejeter et envoyer la note",
+  "Import": "Importer",
+  "Import proposal IDs": "Importer des identifiants de propositions",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "Collez ce que vous avez copié depuis votre tableur. Nous repérons les identifiants des propositions et ignorons le reste.",
+  "Pasted spreadsheet content": "Contenu collé du tableur",
+  "Paste a column of proposal IDs, or whole rows": "Collez une colonne d’identifiants de propositions ou des lignes entières",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {# proposition trouvée} other {# propositions trouvées}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# ID introuvable} other {# ID introuvables}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# proposition ignorée (déjà attribuée ou celle de l’évaluateur)} other {# propositions ignorées (déjà attribuées ou celles de l’évaluateur)}}",
+  "No proposal IDs found in what you pasted.": "Aucun identifiant de proposition trouvé dans ce que vous avez collé.",
+  "Add to selection": "Ajouter à la sélection"}

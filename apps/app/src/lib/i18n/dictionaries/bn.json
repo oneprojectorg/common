@@ -1706,5 +1706,14 @@
   "Note to proposal author": "প্রস্তাবের লেখকের জন্য নোট",
   "Write an optional note to the proposal author here": "প্রস্তাবের লেখকের জন্য এখানে একটি ঐচ্ছিক নোট লিখুন",
   "The author will receive this note as soon as you reject.": "আপনি প্রত্যাখ্যান করার সঙ্গে সঙ্গেই লেখক এই নোটটি পাবেন।",
-  "Reject & send note": "প্রত্যাখ্যান করুন ও নোট পাঠান"
-}
+  "Reject & send note": "প্রত্যাখ্যান করুন ও নোট পাঠান",
+  "Import": "ইমপোর্ট করুন",
+  "Import proposal IDs": "প্রস্তাবনার আইডি ইমপোর্ট করুন",
+  "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.": "স্প্রেডশিট থেকে যা কপি করেছেন তা পেস্ট করুন। আমরা প্রস্তাবনার আইডিগুলো খুঁজে নেব এবং বাকি সব উপেক্ষা করব।",
+  "Pasted spreadsheet content": "পেস্ট করা স্প্রেডশিট বিষয়বস্তু",
+  "Paste a column of proposal IDs, or whole rows": "প্রস্তাবনার আইডির একটি কলাম বা পুরো সারি পেস্ট করুন",
+  "{count, plural, one {# proposal matched} other {# proposals matched}}": "{count, plural, one {#টি প্রস্তাবনা মিলেছে} other {#টি প্রস্তাবনা মিলেছে}}",
+  "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {#টি আইডি পাওয়া যায়নি} other {#টি আইডি পাওয়া যায়নি}}",
+  "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {#টি প্রস্তাবনা বাদ দেওয়া হয়েছে (আগেই নিয়োগ করা বা পর্যালোচকের নিজের)} other {#টি প্রস্তাবনা বাদ দেওয়া হয়েছে (আগেই নিয়োগ করা বা পর্যালোচকের নিজের)}}",
+  "No proposal IDs found in what you pasted.": "আপনি যা পেস্ট করেছেন তাতে কোনো প্রস্তাবনার আইডি পাওয়া যায়নি।",
+  "Add to selection": "নির্বাচনে যোগ করুন"}
