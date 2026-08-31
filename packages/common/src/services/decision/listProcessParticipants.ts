@@ -1,10 +1,5 @@
-import { and, db, eq, isNull, ne } from '@op/db/client';
-import {
-  ProposalStatus,
-  authUsers,
-  profileUsers,
-  proposals,
-} from '@op/db/schema';
+import { and, db, eq, isNull } from '@op/db/client';
+import { authUsers, profileUsers, proposals } from '@op/db/schema';
 import { union } from 'drizzle-orm/pg-core';
 
 export type ProcessParticipant = {
@@ -15,7 +10,9 @@ export type ProcessParticipant = {
 
 /**
  * Everyone taking part in a decision instance: process-profile members plus
- * everyone attached to a non-draft, non-deleted proposal in it.
+ * everyone attached to a non-deleted proposal in it, drafts included — a
+ * draft author has started taking part and phase changes affect them
+ * (notably the submission window closing).
  *
  * Blind to proposal visibility — hiding a proposal is moderation, not
  * un-enrolment. Uncached: a stale audience means someone misses a
@@ -59,7 +56,6 @@ export async function listProcessParticipants({
     .where(
       and(
         eq(proposals.processInstanceId, processInstanceId),
-        ne(proposals.status, ProposalStatus.DRAFT),
         isNull(proposals.deletedAt),
       ),
     );

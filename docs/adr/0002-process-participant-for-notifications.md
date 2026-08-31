@@ -24,15 +24,17 @@ leaves no record.
 
 For notification purposes, a process **Participant** is:
 
-> anyone who is a member of the process, or who submitted or was invited to
-> collaborate on any of its proposals.
+> anyone who is a member of the process, or who started, submitted, or was
+> invited to collaborate on any of its proposals.
 
 The following boundaries apply:
 
 - **Participation lasts for the life of the process.** It applies across all
   phases, even when a participant's proposal does not advance.
-- **Draft and deleted proposals do not confer participation.** A proposal must
-  be submitted to bring its submitter and invited collaborators into the set.
+- **Draft proposals confer participation; deleted proposals do not.** Starting
+  a proposal is taking part: process updates are system messages that affect
+  the draft author — most directly, the closing of the submission window.
+  Deleting a proposal is the withdrawal act that a draft lacks.
 - **Moderation does not remove participation.** Authors of hidden proposals
   remain participants.
 - **Anonymity does not reduce participation.** Anonymous participants may be
@@ -59,4 +61,6 @@ admin who triggered the notification.
   For email, the authoritative address is the account's sign-in email
   (`auth.users.email`), not the per-profile snapshot taken at membership
   creation, which is never updated afterwards.
-- There is no opt-out. Adding one is a separate future decision.
+- There is no opt-out yet. Including draft authors widens the audience to
+  people who never disclosed anything to the process, which makes an
+  unsubscribe mechanism necessary. It is deliberately deferred, not rejected.

@@ -167,7 +167,7 @@ describe.concurrent('listProcessParticipants', () => {
     ).toHaveLength(1);
   });
 
-  it('excludes authors whose only proposal is a draft or is deleted', async ({
+  it('includes a draft author but excludes an author whose only proposal is deleted', async ({
     task,
     onTestFinished,
   }) => {
@@ -184,6 +184,7 @@ describe.concurrent('listProcessParticipants', () => {
       instanceProfileIds: [processProfileId],
     });
 
+    // A draft author has started taking part, so they are in the audience.
     await testData.createProposal({
       userEmail: draftAuthor.email,
       processInstanceId: instanceId,
@@ -217,7 +218,7 @@ describe.concurrent('listProcessParticipants', () => {
       })
     ).map(({ email }) => email);
 
-    expect(emails).not.toContain(draftAuthor.email);
+    expect(emails).toContain(draftAuthor.email);
     expect(emails).not.toContain(deletedAuthor.email);
   });
 
