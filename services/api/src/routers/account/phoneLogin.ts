@@ -1,7 +1,9 @@
 import {
   CommonError,
+  RateLimitError,
   SMS_LOGIN_FLAG,
   UnauthorizedError,
+  allowPhoneSend,
   getSmsProvider,
   isServerFeatureEnabled,
   normalizePhoneNumber,
@@ -20,11 +22,13 @@ import { commonProcedure, router } from '../../trpcFactory';
  * neither this server nor GoTrue ever holds it. A successful check mints a
  * Supabase session, because the rest of the application reads one.
  *
- * The email flow in `login.ts` gates account creation on the allow list, the
- * permitted domains, and the admin list. None of those reads a phone number.
- * The flag below stands in for them: a confirmed phone number admits someone
- * to the closed network only while SMS sign-in is switched on. See
- * `getNetworkMembership`.
+ * Anyone may create an account here. The email flow in `login.ts` gates
+ * creation on the allow list, the permitted domains, and the admin list; this
+ * one gates nothing, because a phone number belongs to no domain and appears
+ * on no list.
+ *
+ * A session is all it grants. Network membership reads an email address, so
+ * an account created here signs in and stays outside the closed network.
  */
 const phoneLogin = router({
   /**
@@ -32,6 +36,11 @@ const phoneLogin = router({
    *
    * The rate limit is ours to enforce. This flow never calls GoTrue's OTP
    * endpoints, so nothing else throttles a caller.
+   *
+   * Two limits apply, because each send costs money and this endpoint answers
+   * the public internet before any identity exists. The middleware counts
+   * requests per address; `allowPhoneSend` counts codes per number, in Redis,
+   * so a deploy or a second instance does not reset it.
    */
   startPhoneLogin: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
@@ -40,6 +49,12 @@ const phoneLogin = router({
     .mutation(async ({ input, ctx }) => {
       const provider = await requireVerification();
       const to = parsePhoneNumber(normalizePhoneNumber(input.phone));
+
+      if (!(await allowPhoneSend(to))) {
+        throw new RateLimitError(
+          'Too many codes were sent to this number. Try again later.',
+        );
+      }
 
       const result = await provider.startVerification({ to });
 
@@ -86,10 +101,12 @@ const phoneLogin = router({
       const check = await provider.checkVerification({ to, code: input.code });
 
       if (check.status !== 'approved') {
+        ctx.logger.warn('Phone verification was not approved', {
+          status: check.status,
+        });
         return { status: check.status };
       }
 
-      // Only reached once Twilio confirmed the person holds this number.
       const session = await mintPhoneSession({
         phone: to,
         displayName: input.displayName,
@@ -113,8 +130,11 @@ const phoneLogin = router({
  * and both are operator mistakes rather than caller mistakes.
  */
 const requireVerification = async () => {
-  // The panel hides the option when the flag is off. This refuses the call,
-  // which is what actually keeps the feature closed.
+  // The panel hides the option when the flag is off. This refuses the call as
+  // well, which is what keeps the feature closed on this path. The `supabase`
+  // strategy never reaches here, so an account can still be created through
+  // GoTrue with the flag off — it just holds no verification record, and
+  // `getNetworkMembership` reads the same flag before admitting anyone.
   if (!(await isServerFeatureEnabled(SMS_LOGIN_FLAG))) {
     throw new UnauthorizedError('Phone sign-in is not available.');
   }

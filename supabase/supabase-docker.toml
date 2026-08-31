@@ -85,11 +85,38 @@ max_frequency = "5s"
 #
 # Verify owns the copy and the expiry here, so `template` and `sms_otp_exp`
 # above do not reach the participant.
+#
+# `enable_confirmations = false` above is GoTrue's SMS autoconfirm. It affects
+# only what GoTrue records on `auth.users`, and network membership does not
+# read that column — it reads `phone_verifications`, which only our own
+# procedures write after Twilio approves a number.
 [auth.sms.twilio_verify]
 enabled = true
 account_sid = "env(TWILIO_ACCOUNT_SID)"
 auth_token = "env(TWILIO_AUTH_TOKEN)"
 message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
+
+# Caps how many codes GoTrue itself sends in an hour, across all numbers.
+# `max_frequency` above only spaces out sends to one number, so it bounds
+# nothing when a caller rotates through many. Our own procedures add a
+# per-number count, but the `supabase` strategy reaches GoTrue directly and
+# never passes through them.
+#
+# This is not the control for premium-rate toll fraud. That one is Twilio's
+# geographic permissions, which decide the countries the account may text.
+[auth.rate_limit]
+sms_sent = 30
+
+# A listed number skips the provider entirely, so local work costs no text and
+# needs no Twilio account. GoTrue still creates the account, confirms the
+# phone, and issues a session, so its whole sign-in path is exercised — only
+# the delivery is bypassed. It does not exercise `twilio-direct`, where our own
+# procedures call Twilio Verify and this block never applies.
+#
+# Sign in as +1 500 555 0006 with the code 123456. The range is reserved by
+# Twilio for testing, so no real line can collide with it.
+[auth.sms.test_otp]
+15005550006 = "123456"
 
 [auth.mfa]
 max_enrolled_factors = 10

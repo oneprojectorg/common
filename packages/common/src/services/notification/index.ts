@@ -10,6 +10,7 @@
  * `getSmsProvider`. A service should not name either one.
  */
 export * from './provider';
+export * from './sendGuard';
 export * from './providers/twilio';
 export * from './schemas';
 export * from './types';

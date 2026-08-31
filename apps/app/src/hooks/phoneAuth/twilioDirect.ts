@@ -1,14 +1,18 @@
+import { logger } from '@op/logging/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
   PhoneAuthStrategy,
   PhoneCodeResult,
+  PhoneVerifyFailure,
   PhoneVerifyResult,
 } from './types';
 
 /** The two procedure calls this strategy needs, injected so it stays testable. */
 export interface TwilioDirectCalls {
-  startPhoneLogin(input: { phone: string }): Promise<{ status: string }>;
+  startPhoneLogin(input: {
+    phone: string;
+  }): Promise<{ status: 'pending' | 'rejected' }>;
   verifyPhoneLogin(input: {
     phone: string;
     code: string;
@@ -23,14 +27,17 @@ export interface TwilioDirectCalls {
 /**
  * Signs in through our own procedures, which call Twilio Verify.
  *
- * Twilio holds the code. The server checks it, mints a session, and returns
- * the tokens, which this adopts with `setSession`.
+ * Twilio holds the code. The server checks it, mints a session, records the
+ * verification, and returns the tokens, which this adopts with `setSession`.
  *
- * Slower to set up than the Supabase flow and more code to keep, but it keeps
- * three things that flow gives up: the server can refuse the call behind a
- * feature flag, our own rate limit applies, and a new account can carry a
- * display name. Verify is also exempt from A2P 10DLC, so this works before a
- * campaign is approved.
+ * This is the default. It costs more code than the Supabase flow and keeps four
+ * things that flow gives up. The server can refuse the call behind a feature
+ * flag. Our own rate limit applies. A new account can carry a display name.
+ * Above all, the server witnesses the approval, and the record it writes is
+ * what makes the account a network member.
+ *
+ * Verify is also exempt from A2P 10DLC, so this works before a campaign is
+ * approved.
  *
  * @param deps.supabase - The browser client, which stores the session.
  * @param deps.calls - The tRPC mutations, already bound by the hook.
@@ -47,12 +54,10 @@ export const createTwilioDirectStrategy = ({
       const result = await calls.startPhoneLogin({ phone });
       return result.status === 'pending'
         ? { ok: true }
-        : { ok: false, message: 'That number could not be reached.' };
+        : { ok: false, reason: 'unreachable' };
     } catch (error) {
-      return {
-        ok: false,
-        message: error instanceof Error ? error.message : undefined,
-      };
+      logger.error('Could not start a phone verification', { error });
+      return { ok: false, ...describe(error) };
     }
   },
 
@@ -69,7 +74,10 @@ export const createTwilioDirectStrategy = ({
       const result = await calls.verifyPhoneLogin({ phone, code, displayName });
 
       if (result.status !== 'approved') {
-        return { ok: false, expired: result.status === 'expired' };
+        return {
+          ok: false,
+          reason: result.status === 'expired' ? 'expired' : 'wrong_code',
+        };
       }
 
       const { error } = await supabase.auth.setSession({
@@ -77,15 +85,51 @@ export const createTwilioDirectStrategy = ({
         refresh_token: result.refreshToken,
       });
 
-      return error
-        ? { ok: false, expired: false, message: error.message }
-        : { ok: true };
+      if (error) {
+        // The code was right and the server issued a real session. Reporting a
+        // wrong code here would send the person retyping a correct one.
+        logger.error('Could not adopt the minted session', { error });
+        return {
+          ok: false,
+          reason: 'session_failed',
+          diagnostic: error.message,
+        };
+      }
+
+      return { ok: true };
     } catch (error) {
-      return {
-        ok: false,
-        expired: false,
-        message: error instanceof Error ? error.message : undefined,
-      };
+      logger.error('Could not check the phone verification', { error });
+      return { ok: false, ...describe(error) };
     }
   },
 });
+
+/**
+ * Sorts a thrown value into a reason the panel can act on.
+ *
+ * tRPC gives a rate limit and an unavailable feature the same shape as any
+ * other failure, so this reads the message rather than a code. A value that is
+ * not an `Error` keeps no identity at all, which is why `unknown` exists.
+ */
+const describe = (
+  error: unknown,
+): {
+  // The three reasons both result types share, so one reader serves the
+  // request path and the check path.
+  reason: Extract<
+    PhoneVerifyFailure,
+    'rate_limited' | 'unavailable' | 'unknown'
+  >;
+  diagnostic?: string;
+} => {
+  if (!(error instanceof Error)) {
+    return { reason: 'unknown' };
+  }
+  if (/rate|too many/i.test(error.message)) {
+    return { reason: 'rate_limited', diagnostic: error.message };
+  }
+  if (/not available|not configured/i.test(error.message)) {
+    return { reason: 'unavailable', diagnostic: error.message };
+  }
+  return { reason: 'unknown', diagnostic: error.message };
+};

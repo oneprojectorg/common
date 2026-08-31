@@ -8,14 +8,23 @@ export const SMS_LOGIN_FLAG = 'sms-login';
 /**
  * The identity the server evaluates a flag against.
  *
- * PostHog resolves a flag for a person. A sign-in request carries no person
- * yet, and the credential it does carry is a phone number, which must not
- * become a PostHog identity.
+ * PostHog resolves a flag for a person. This asks on behalf of the deployment
+ * rather than anyone in particular, and the credential a sign-in request
+ * carries is a phone number, which must not become a PostHog identity.
  */
 const SERVER_DISTINCT_ID = 'op-server';
 
 /** How long an answer is reused. A kill switch tolerates this much delay. */
 const TTL = 60 * 1000;
+
+/**
+ * What PostHog told us, including the case where it told us nothing.
+ *
+ * A string rather than a boolean for two reasons. "Off" and "unreadable" need
+ * different handling, and `cache()` writes only truthy values, so a `false`
+ * would never be stored and every request would call PostHog again.
+ */
+type FlagState = 'on' | 'off' | 'unreadable';
 
 /**
  * Whether a feature is on for the server.
@@ -30,41 +39,62 @@ const TTL = 60 * 1000;
  * that identity happens to get. Treat this as a kill switch, and let the
  * browser handle a staged rollout.
  *
- * Answers are cached, because this is now read on the path that authorizes a
- * request rather than only when someone signs in. Turning a flag off takes up
- * to a minute to take effect everywhere.
+ * Development and end-to-end runs answer `true`, matching `useFeatureFlag` in
+ * the app. Both are checked, because a run that matched on only one would show
+ * a control the server then refuses.
  *
- * Development answers `true`, matching `useFeatureFlag` in the app. Without
- * that, a local run would show a control the server then refuses.
- *
- * Fails closed. A PostHog outage disables the gated feature rather than
- * opening it, which is the safe direction for a feature that is off by
- * default.
+ * An unreadable flag answers `false`, and the reason reaches the log. Callers
+ * that guard access rather than a feature should prefer a credential they hold
+ * themselves, so an analytics outage cannot evict anyone.
  *
  * @param key - The flag key, as written in PostHog.
  * @returns Whether the server should serve the feature.
  */
 export const isServerFeatureEnabled = async (key: string): Promise<boolean> => {
-  if (process.env.NODE_ENV === 'development') {
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.NEXT_PUBLIC_E2E === 'true'
+  ) {
     return true;
   }
 
-  return cache({
+  const state = await cache({
     type: 'featureFlag',
     params: [key],
-    fetch: async () => {
-      try {
-        return Boolean(
-          await PostHogClient().isFeatureEnabled(key, SERVER_DISTINCT_ID),
-        );
-      } catch (error) {
-        logger.warn('Feature flag lookup failed; treating the flag as off', {
-          key,
-          error,
-        });
-        return false;
-      }
+    fetch: () => readFlag(key),
+    options: {
+      ttl: TTL,
+      // An outage must not overwrite a good answer. Leaving the entry alone
+      // keeps the last one serving until it expires on its own.
+      skipCacheWrite: (result) => result === 'unreadable',
     },
-    options: { ttl: TTL },
   });
+
+  return state === 'on';
+};
+
+/**
+ * Asks PostHog, and reports silence as its own answer.
+ *
+ * `isFeatureEnabled` resolves `undefined` on a request error, a timeout, or an
+ * unknown flag key. It does not throw, so a `catch` alone would let every one
+ * of those read as "off" with nothing written to the log.
+ */
+const readFlag = async (key: string): Promise<FlagState> => {
+  try {
+    const answer = await PostHogClient().isFeatureEnabled(
+      key,
+      SERVER_DISTINCT_ID,
+    );
+
+    if (answer === undefined) {
+      logger.error('PostHog returned no answer for a feature flag', { key });
+      return 'unreadable';
+    }
+
+    return answer ? 'on' : 'off';
+  } catch (error) {
+    logger.error('Feature flag lookup failed', { key, error });
+    return 'unreadable';
+  }
 };
