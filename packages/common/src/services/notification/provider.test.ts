@@ -13,9 +13,18 @@ import { getSmsProvider } from './provider';
 const ENV_KEYS = [
   'TWILIO_ACCOUNT_SID',
   'TWILIO_AUTH_TOKEN',
+  'TWILIO_API_KEY_SID',
+  'TWILIO_API_KEY_SECRET',
   'TWILIO_MESSAGING_SERVICE_SID',
   'TWILIO_VERIFY_SERVICE_SID',
 ] as const;
+
+/** A well-formed account, so a test varies only what it is about. */
+const ACCOUNT = {
+  TWILIO_ACCOUNT_SID: 'AC1',
+  TWILIO_AUTH_TOKEN: 'token',
+  TWILIO_VERIFY_SERVICE_SID: 'VA1',
+} as const;
 
 /** Sets exactly the given variables, and clears the rest. */
 const setEnv = (values: Partial<Record<(typeof ENV_KEYS)[number], string>>) => {
@@ -108,5 +117,46 @@ describe('getSmsProvider', () => {
     expect(provider?.sendSms).toBeDefined();
     expect(provider?.startVerification).toBeDefined();
     expect(provider?.checkVerification).toBeDefined();
+  });
+
+  describe('credentials', () => {
+    it('accepts an API key pair instead of the account token', () => {
+      setEnv({
+        TWILIO_ACCOUNT_SID: 'AC1',
+        TWILIO_API_KEY_SID: 'SK1',
+        TWILIO_API_KEY_SECRET: 'secret',
+        TWILIO_VERIFY_SERVICE_SID: 'VA1',
+      });
+
+      // A key is scoped and revocable on its own, unlike the account token.
+      expect(getSmsProvider()).not.toBeNull();
+    });
+
+    it('throws when an API key has no secret', () => {
+      setEnv({ ...ACCOUNT, TWILIO_API_KEY_SID: 'SK1' });
+
+      expect(() => getSmsProvider()).toThrow(/TWILIO_API_KEY_SECRET/);
+    });
+
+    it('throws when no credential of either kind is set', () => {
+      setEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_VERIFY_SERVICE_SID: 'VA1' });
+
+      expect(() => getSmsProvider()).toThrow(CommonError);
+    });
+  });
+
+  describe('SID prefixes', () => {
+    it.each([
+      ['TWILIO_ACCOUNT_SID', 'SK1', /must start with AC/],
+      ['TWILIO_API_KEY_SID', 'AC1', /must start with SK/],
+      ['TWILIO_VERIFY_SERVICE_SID', 'AC1', /must start with VA/],
+      ['TWILIO_MESSAGING_SERVICE_SID', 'AC1', /must start with MG/],
+    ] as const)('rejects %s holding %s', (key, value, message) => {
+      // Pasting the account SID into the Messaging slot is the mistake this
+      // catches. Without the guard it fails per message, far from the cause.
+      setEnv({ ...ACCOUNT, [key]: value });
+
+      expect(() => getSmsProvider()).toThrow(message);
+    });
   });
 });
