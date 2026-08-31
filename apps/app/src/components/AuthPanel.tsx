@@ -42,14 +42,22 @@ interface AuthPanelState {
   setTokenError: (tokenError: string | undefined) => void;
   loginSuccess: boolean;
   setLoginSuccess: (loginSuccess: boolean) => void;
+  /**
+   * Drops a pending phone verification.
+   *
+   * The persisted fields outlive the panel that started them, so a panel that
+   * does not own the flow calls this rather than showing a code field for a
+   * verification the visitor did not begin here.
+   */
+  clearPhoneFlow: () => void;
   reset: () => void;
 }
 
-// Single store shared by both panels. This is safe only because every
-// transition between them is a full navigation (login/page.tsx renders exactly
-// one, "Log in"/"Sign up" links are native anchors), which resets this
-// module-level singleton. A soft navigation between the panels would leak
-// state across flows — call `reset()` on mount if that ever becomes possible.
+// Single store shared by both panels. A full navigation between them once
+// reset it, because it is a module-level singleton — but the persisted fields
+// below survive that, deliberately, so a person can leave for their messages
+// and come back. A panel that does not own a pending phone verification must
+// therefore clear it on mount; `LoginPanel` calls `clearPhoneFlow` for that.
 /**
  * State for the login panel, shared by both channels.
  *
@@ -82,6 +90,8 @@ export const useAuthPanelStore = create<AuthPanelState>()(
       setTokenError: (tokenError) => set({ tokenError }),
       loginSuccess: false,
       setLoginSuccess: (loginSuccess) => set({ loginSuccess }),
+      clearPhoneFlow: () =>
+        set({ channel: 'email', phone: '', phoneCodeSent: false }),
       reset: () =>
         set({
           channel: 'email',
@@ -223,13 +233,12 @@ export const AuthEmailField = ({
   );
 };
 
-/** OTP entry field wrapped in a submit-on-enter form. */
 /**
  * The phone number field on the login panel.
  *
- * Mirrors {@link AuthEmailField}. The number goes to Twilio Verify, which
- * requires E.164, so the placeholder shows that shape and the server rejects
- * anything else by naming the field.
+ * Mirrors {@link AuthEmailField}. The number reaches Twilio Verify either way,
+ * and Verify requires E.164, so the placeholder shows that shape.
+ * `normalizePhoneNumber` accepts what people actually type and converts it.
  */
 export const AuthPhoneField = ({
   label,
@@ -285,6 +294,7 @@ export const AuthPhoneField = ({
   );
 };
 
+/** OTP entry field wrapped in a submit-on-enter form. */
 export const AuthCodeField = ({
   value,
   isDisabled,

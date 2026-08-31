@@ -1730,5 +1730,11 @@
   "That code expired. Request a new one.": "That code expired. Request a new one.",
   "That code was wrong. Try again.": "That code was wrong. Try again.",
   "Send the code again": "Send the code again",
-  "Use a different number": "Use a different number"
+  "Use a different number": "Use a different number",
+  "We could not finish signing you in. Try once more.": "We could not finish signing you in. Try once more.",
+  "Too many attempts. Wait a minute and try again.": "Too many attempts. Wait a minute and try again.",
+  "We could not reach that number.": "We could not reach that number.",
+  "Signing in by text is unavailable right now.": "Signing in by text is unavailable right now.",
+  "Code sent!": "Code sent!",
+  "A code was sent to {phone}. Type the code below to sign in.": "A code was sent to {phone}. Type the code below to sign in."
 }

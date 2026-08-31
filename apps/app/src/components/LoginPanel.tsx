@@ -1,13 +1,9 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { usePhoneLogin } from '@/hooks/usePhoneLogin';
+import { usePhoneLoginFlow } from '@/hooks/usePhoneLoginFlow';
 import { trpc } from '@op/api/client';
-import {
-  getSafeRedirectPath,
-  normalizePhoneNumber,
-  phoneNumberSchema,
-} from '@op/common/client';
+import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -17,7 +13,7 @@ import { CheckIcon } from '@op/sense/icons';
 import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -35,6 +31,9 @@ import {
   useAuthPanelStore,
 } from './AuthPanel';
 import { CommonLogo } from './CommonLogo';
+
+/** Which of the four screens the panel is showing. */
+type LoginStep = 'phone-code' | 'phone-number' | 'email-address' | 'email-code';
 
 /**
  * Standard login / signup panel.
@@ -69,82 +68,56 @@ export const LoginPanel = () => {
     phone,
     setPhone,
     phoneCodeSent,
-    setPhoneCodeSent,
+    clearPhoneFlow,
   } = useAuthPanelStore();
-
-  // Only the error stays local. It describes the last attempt, and a stale one
-  // after a reload would explain a failure the visitor never saw.
-  const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
-  const phoneLogin = usePhoneLogin();
-
-  // Off hides the option entirely, so the panel is the email-only one it was
-  // before. The server refuses the call as well, so hiding the button is a
-  // courtesy rather than the control.
-  const smsLoginEnabled = useFeatureFlag('sms-login') ?? false;
-
-  // The submit button below is shared by both channels, so each one has to
-  // say when it is ready. The server re-validates with this same schema.
-  // People type `(818) 212-4554`. Validate and send what they meant.
-  const normalizedPhone = normalizePhoneNumber(phone);
-  const phoneIsValid = phoneNumberSchema.safeParse(normalizedPhone).success;
-  const phoneBusy = phoneLogin.isSending || phoneLogin.isVerifying;
 
   /** Lands the visitor wherever the email flow would have landed them. */
   const finishSignIn = useCallback(() => {
+    // The phone fields persist, so without this the next visit to /login in
+    // this tab opens on a code field for a code already spent.
+    clearPhoneFlow();
+
     if (redirectParam !== null) {
       window.location.href = redirectParam;
     } else {
       window.location.reload();
     }
-  }, [redirectParam]);
+  }, [redirectParam, clearPhoneFlow]);
 
-  const requestPhoneCode = useCallback(async () => {
-    setPhoneError(undefined);
-    const result = await phoneLogin.requestCode(normalizedPhone);
-    if (result.ok) {
-      setPhoneCodeSent(true);
-      return;
-    }
-    setPhoneError(result.message ?? t('We could not send a code.'));
-  }, [normalizedPhone, phoneLogin, t]);
+  const phoneFlow = usePhoneLoginFlow({ onSignedIn: () => finishSignIn() });
 
-  /**
-   * Asks Twilio for another code.
-   *
-   * Twilio returns the same code when the current one is still valid, and a
-   * new one once it expired. The label says "again" rather than "new" so it is
-   * true in both cases.
-   */
-  const resendPhoneCode = useCallback(async () => {
-    setToken(undefined);
-    setPhoneError(undefined);
-    await requestPhoneCode();
-  }, [requestPhoneCode, setToken]);
+  // Off hides the option entirely, so the panel is the email-only one it was
+  // before. On the `twilio-direct` path the server refuses the call as well;
+  // on the `supabase` path GoTrue answers the browser and this is the only
+  // check, which is why an account created that way holds no verification
+  // record and reaches the product as a non-member.
+  const smsLoginEnabled = useFeatureFlag('sms-login') ?? false;
 
-  /** Returns to the number field, so a wrong number is correctable. */
-  const changePhoneNumber = useCallback(() => {
-    setPhoneCodeSent(false);
-    setToken(undefined);
-    setPhoneError(undefined);
-  }, [setPhoneCodeSent, setToken]);
+  // The channel every branch below agrees on.
+  //
+  // `channel` is restored from sessionStorage, and `useFeatureFlag` answers
+  // `undefined` until PostHog resolves — which `?? false` reads as off. So a
+  // returning phone visitor arrives with the flag off and the channel set to
+  // phone on every production reload. Deriving one value keeps the rendered
+  // field and the submit button from disagreeing; when they disagreed, the
+  // panel showed the email field behind a button that only a valid phone
+  // number could enable, and neither channel could sign in.
+  const activeChannel = smsLoginEnabled ? channel : 'email';
 
-  const submitPhoneCode = useCallback(async () => {
-    setPhoneError(undefined);
-    const result = await phoneLogin.verifyCode({
-      phone: normalizedPhone,
-      code: token ?? '',
-    });
-    if (result.ok) {
-      finishSignIn();
-      return;
-    }
-    // An expired verification and a wrong code need opposite instructions.
-    setPhoneError(
-      result.expired
-        ? t('That code expired. Request a new one.')
-        : t('That code was wrong. Try again.'),
-    );
-  }, [normalizedPhone, token, phoneLogin, finishSignIn, t]);
+  // Which of the four screens the panel is on.
+  //
+  // The same question was being asked in four places — the two render
+  // branches, the submit button's `disabled`, and its `onClick` — each with
+  // its own nesting. They disagreed once already, and the panel became
+  // unusable. Deriving it once means a disagreement is no longer expressible.
+  const step: LoginStep =
+    activeChannel === 'phone'
+      ? phoneCodeSent
+        ? 'phone-code'
+        : 'phone-number'
+      : loginSuccess
+        ? 'email-code'
+        : 'email-address';
 
   const handleLogin = async () => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
@@ -206,15 +179,55 @@ export const LoginPanel = () => {
     });
 
     if (data.user && data.session && data.user.role === 'authenticated') {
-      if (redirectParam !== null) {
-        window.location.href = redirectParam;
-      } else {
-        window.location.reload();
-      }
+      finishSignIn();
     } else {
       setTokenError(error?.message ?? t('Failed to verify code'));
     }
-  }, [email, token]);
+  }, [email, token, supabase, finishSignIn, setTokenError, t]);
+
+  // What the shared submit button does on this step.
+  const submit = ((): {
+    isDisabled: boolean;
+    run: () => void | Promise<void>;
+    isFinalStep: boolean;
+  } => {
+    switch (step) {
+      case 'phone-number':
+        return {
+          isDisabled: phoneFlow.isBusy || !phoneFlow.isValid,
+          run: phoneFlow.requestCode,
+          isFinalStep: false,
+        };
+      case 'phone-code':
+        return {
+          isDisabled: phoneFlow.isBusy || !isValidOtpLength(token),
+          run: phoneFlow.submitCode,
+          isFinalStep: true,
+        };
+      case 'email-address':
+        return {
+          isDisabled: !emailIsValid || login.isFetching,
+          run: requestEmailCode,
+          isFinalStep: false,
+        };
+      case 'email-code':
+        // Deliberately not `!isValidOtpLength(token)`: an empty field leaves
+        // the button enabled here, as it always has, and `handleTokenSubmit`
+        // returns early. Tightening it is a change to the email flow.
+        return {
+          isDisabled:
+            !emailIsValid ||
+            login.isFetching ||
+            (!!token && !isValidOtpLength(token)),
+          run: async () => {
+            if (isValidOtpLength(token)) {
+              await handleTokenSubmit();
+            }
+          },
+          isFinalStep: true,
+        };
+    }
+  })();
 
   if (!mounted) {
     return null;
@@ -235,6 +248,16 @@ export const LoginPanel = () => {
         return t('Stay tuned!');
       }
       return t('Oops!');
+    }
+    // The phone flow never sets `loginSuccess`, so without this branch the
+    // card still reads "Welcome to" while the person stares at a code field.
+    if (step === 'phone-code') {
+      return (
+        <div className="flex flex-col items-center justify-center gap-4">
+          <CheckIcon />
+          <span className="text-headline">{t('Code sent!')}</span>
+        </div>
+      );
     }
     if (!loginSuccess) {
       if (isSignup) {
@@ -275,6 +298,15 @@ export const LoginPanel = () => {
         </span>
       );
     }
+    if (step === 'phone-code') {
+      return (
+        <span>
+          {t('A code was sent to {phone}. Type the code below to sign in.', {
+            phone: phoneFlow.normalized,
+          })}
+        </span>
+      );
+    }
     if (!loginSuccess) {
       return t(
         'Connect with aligned organizations and funders building a new economy together',
@@ -300,37 +332,33 @@ export const LoginPanel = () => {
             </>
           )}
 
-          {smsLoginEnabled && phoneCodeSent ? (
+          {step === 'phone-code' ? (
             <div className="flex flex-col gap-4">
               <AuthCodeField
                 value={token}
-                isDisabled={phoneLogin.isVerifying}
+                isDisabled={phoneFlow.isVerifying}
                 onChange={setToken}
-                onSubmit={submitPhoneCode}
+                onSubmit={phoneFlow.submitCode}
               />
-              {phoneError && (
-                <span aria-live="polite" className="text-destructive">
-                  {phoneError}
-                </span>
-              )}
+              <PhoneError message={phoneFlow.error} />
               <div className="flex flex-col gap-2">
                 <Button
                   variant="link"
-                  disabled={phoneBusy}
-                  onClick={resendPhoneCode}
+                  disabled={phoneFlow.isBusy}
+                  onClick={phoneFlow.resend}
                 >
                   {t('Send the code again')}
                 </Button>
                 <Button
                   variant="link"
-                  disabled={phoneBusy}
-                  onClick={changePhoneNumber}
+                  disabled={phoneFlow.isBusy}
+                  onClick={phoneFlow.changeNumber}
                 >
                   {t('Use a different number')}
                 </Button>
               </div>
             </div>
-          ) : smsLoginEnabled && channel === 'phone' ? (
+          ) : step === 'phone-number' ? (
             <div className="flex flex-col gap-4">
               <AuthPhoneField
                 label={t('Phone number')}
@@ -338,19 +366,15 @@ export const LoginPanel = () => {
                   'We text you a code. Standard message and data rates may apply.',
                 )}
                 value={phone}
-                isDisabled={phoneLogin.isSending}
+                isDisabled={phoneFlow.isSending}
                 onChange={setPhone}
-                onSubmit={requestPhoneCode}
+                onSubmit={phoneFlow.requestCode}
               />
-              {phoneError && (
-                <span aria-live="polite" className="text-destructive">
-                  {phoneError}
-                </span>
-              )}
+              <PhoneError message={phoneFlow.error} />
               <Button
                 variant="link"
                 onClick={() => {
-                  setPhoneError(undefined);
+                  phoneFlow.changeNumber();
                   setChannel('email');
                 }}
               >
@@ -411,33 +435,12 @@ export const LoginPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              disabled={
-                channel === 'phone'
-                  ? phoneBusy ||
-                    (phoneCodeSent ? !isValidOtpLength(token) : !phoneIsValid)
-                  : !emailIsValid ||
-                    login.isFetching ||
-                    (!!token && !isValidOtpLength(token))
-              }
-              onClick={async () => {
-                if (channel === 'phone') {
-                  if (phoneCodeSent) {
-                    await submitPhoneCode();
-                  } else {
-                    await requestPhoneCode();
-                  }
-                  return;
-                }
-                if (!loginSuccess) {
-                  requestEmailCode();
-                } else if (loginSuccess && isValidOtpLength(token)) {
-                  await handleTokenSubmit();
-                }
-              }}
+              disabled={submit.isDisabled}
+              onClick={submit.run}
             >
-              {login.isFetching || phoneBusy ? (
+              {login.isFetching || phoneFlow.isBusy ? (
                 <Spinner className="size-6" />
-              ) : loginSuccess || (channel === 'phone' && phoneCodeSent) ? (
+              ) : submit.isFinalStep ? (
                 isSignup ? (
                   t('Sign up')
                 ) : (
@@ -486,5 +489,24 @@ export const LoginPanel = () => {
     </AuthPanelShell>
   );
 };
+
+/**
+ * The live region that announces a phone sign-in failure.
+ *
+ * Always rendered, and empty until there is something to say. A live region
+ * that appears at the same moment as its text is usually not announced: a
+ * screen reader watches a region it already knows about for changes, so the
+ * region has to exist first. `empty:hidden` keeps the blank one from taking
+ * space.
+ */
+const PhoneError = ({ message }: { message?: string }) => (
+  <span
+    aria-live="polite"
+    className="text-destructive empty:hidden"
+    role="status"
+  >
+    {message}
+  </span>
+);
 
 export default LoginPanel;

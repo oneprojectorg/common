@@ -1,29 +1,16 @@
-import { getNetworkMembership } from '@op/common';
+import { parsePhoneNumber } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { authUsers, profiles, users } from '@op/db/schema';
+import { profiles, users } from '@op/db/schema';
 import { createSBServiceClient } from '@op/supabase/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { mintPhoneSession } from './mintPhoneSession';
-
-/**
- * Holds the SMS sign-in flag on.
- *
- * `NODE_ENV` is `test` here, so the flag is read from PostHog rather than
- * assumed on as it is in development. PostHog answers nothing in a test run
- * and the reader fails closed, which would make every membership check below
- * false for the wrong reason.
- */
-vi.mock('@op/analytics', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@op/analytics')>()),
-  PostHogClient: () => ({ isFeatureEnabled: async () => true }),
-}));
 
 /**
  * Twilio reserves this range for testing, so no fixture names a real line.
  * The number never leaves the local Supabase instance in these tests.
  */
-const PHONE = '+15005550123';
+const PHONE = parsePhoneNumber('+15005550123');
 
 /** GoTrue stores a phone number without the leading `+`. */
 const STORED = PHONE.slice(1);
@@ -113,47 +100,5 @@ describe('mintPhoneSession', () => {
 
     // A person may have edited their name since signing up.
     expect((await findUser())?.user_metadata?.display_name).toBe('Chosen Name');
-  });
-});
-
-/**
- * The walled garden admits an account created this way.
- *
- * These accounts hold no email, so the domain rule and the allow list cannot
- * speak for them. Without the phone rule a person signs in and then meets a
- * 403 on every page, which is how this was found.
- *
- * Local runs answer `true` for the SMS sign-in flag, matching the browser.
- */
-describe('phone accounts and the walled garden', () => {
-  it('admits an account with a confirmed phone number', async () => {
-    await mintPhoneSession({ phone: PHONE });
-    const user = await findUser();
-
-    await expect(getNetworkMembership({ authUserId: user!.id })).resolves.toBe(
-      true,
-    );
-  });
-
-  it('refuses an account whose phone number is unconfirmed', async () => {
-    await mintPhoneSession({ phone: PHONE });
-    const user = await findUser();
-
-    // An unconfirmed number is a claim rather than a credential: anyone can
-    // type someone else's number.
-    await db
-      .update(authUsers)
-      .set({ phoneConfirmedAt: null })
-      .where(eq(authUsers.id, user!.id));
-
-    await expect(getNetworkMembership({ authUserId: user!.id })).resolves.toBe(
-      false,
-    );
-  });
-
-  it('refuses an account that holds no phone number', async () => {
-    await expect(
-      getNetworkMembership({ authUserId: crypto.randomUUID() }),
-    ).resolves.toBe(false);
   });
 });

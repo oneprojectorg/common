@@ -318,7 +318,9 @@ export function isSafeRedirectPath(path: string | null): path is string {
 }
 
 // The login panel validates a phone number before enabling its submit button.
-// The server re-validates with the same schema, which stays the authority.
+// On the default `twilio-direct` path our procedures re-validate with this
+// same schema, which stays the authority; the `supabase` path reaches GoTrue
+// directly, so this check is the only one before the vendor's own.
 export {
   normalizePhoneNumber,
   phoneNumberSchema,
