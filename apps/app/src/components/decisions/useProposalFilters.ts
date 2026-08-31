@@ -1,6 +1,6 @@
 'use client';
 
-import { ProposalFilter } from '@op/api/encoders';
+import { ProposalFilter, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -26,6 +26,7 @@ export const useProposalFilterItems = ({
     ...(hasVoted
       ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
       : []),
+    { id: ProposalFilter.REJECTED, label: t('Rejected') },
   ];
 };
 
@@ -97,6 +98,11 @@ export function useProposalFilters({
         // Show only proposals submitted by the current user
         return proposals.filter(
           (proposal) => proposal.submittedBy?.id === currentProfileId,
+        );
+
+      case ProposalFilter.REJECTED:
+        return proposals.filter(
+          (proposal) => proposal.status === ProposalStatus.REJECTED,
         );
 
       case ProposalFilter.ALL:

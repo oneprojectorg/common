@@ -354,6 +354,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
       params.submittedByProfileId = currentProfileId;
     } else if (appliedFilter === ProposalFilter.MY_BALLOT && currentProfileId) {
       params.votedByProfileId = currentProfileId;
+    } else if (appliedFilter === ProposalFilter.REJECTED) {
+      params.status = ProposalStatus.REJECTED;
     }
 
     return params;
