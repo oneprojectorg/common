@@ -5,13 +5,14 @@ node_modules
 .pnp
 .pnp.js
 
-# Local env files
+# Local env files. `pnpm env:pull` writes .env.local / .env.<environment> from
+# the templates in env/, so everything here is generated and holds real
+# credentials. The .env.docker pair is the exception: committed local-dev
+# defaults with no secrets in them.
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.seed
+.env.*
+!.env.docker
+!.env.docker.example
 
 # Testing
 coverage
@@ -59,7 +60,6 @@ __pycache__
 !.yarn/sdks
 !.yarn/versions
 .aider*
-.env*.local
 
 specs/
 

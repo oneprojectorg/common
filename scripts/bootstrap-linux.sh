@@ -79,9 +79,10 @@ cat <<EOF
 ${BOLD}Next steps:${RESET}
 
 $([[ "${NEEDS_RELOGIN:-0}" == "1" ]] && echo "0. Log out and back in (or run 'newgrp docker') so group changes apply.")
-1. Create .env.local if you don't already have one:
-     cp ${REPO_ROOT}/.env.local.example ${REPO_ROOT}/.env.local
-   Then edit it and set TIPTAP_PRO_TOKEN (required — ask a teammate).
+1. Create .env.local from 1Password (this is where TIPTAP_PRO_TOKEN comes from):
+   Install the 1Password CLI — https://developer.1password.com/docs/cli/get-started/
+   then sign in (eval \$(op signin)) and run:
+     cd ${REPO_ROOT} && pnpm env:pull
 
 2. Source .env.local so TIPTAP_PRO_TOKEN reaches the docker build:
      set -a; source ${REPO_ROOT}/.env.local; set +a

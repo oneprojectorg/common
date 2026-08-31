@@ -28,6 +28,7 @@
     "e2e": "pnpm -C ./tests/e2e e2e",
     "e2e:repeat": "node ./scripts/repeat-e2e.mjs",
     "e2e:ui": "pnpm -C ./tests/e2e e2e:ui",
+    "env:pull": "bash scripts/op-env.sh",
     "format": "oxfmt",
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx oxfmt",
     "format:check": "turbo format:check",

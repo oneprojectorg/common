@@ -8,10 +8,8 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 1.  **Prerequisites**:
     - Ensure you have **Node.js v24** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
     - Enable [Corepack](https://nodejs.org/api/corepack.html) (Node.js's built-in package manager manager) by running: `corepack enable` (This ensures you use the `pnpm` version specified in the root `package.json`).
-2.  **Install Dependencies**: Run `pnpm install` in the project root. This will install dependencies for all workspaces.
-3.  **Environment Variables**:
-    - Copy the example environment file: `cp .env.example .env.local`
-    - Fill in the necessary values in `.env.local`, especially for Supabase (URL, anon key, service role key) and Resend (API key for emails). You can get these from your Supabase project settings and Resend account.
+2.  **Environment Variables**: install the [1Password CLI](https://developer.1password.com/docs/cli/get-started/) (`brew install --cask 1password-cli`), turn on _Settings → Developer → Integrate with 1Password CLI_ in the desktop app, then run `pnpm env:pull`. That writes `.env.local` from `env/local.env.tpl`. See [Environments and secrets](#environments-and-secrets) for what lives where. This comes before install because `.npmrc` authenticates against the Tiptap Pro registry with `TIPTAP_PRO_TOKEN`.
+3.  **Install Dependencies**: put the token in your shell (`set -a; source .env.local; set +a`), then run `pnpm install` in the project root. This will install dependencies for all workspaces.
 4.  **Local Development Database**:
     - Start the local Supabase stack (PostgreSQL database, etc.): `pnpm w:db start`. This uses the Supabase CLI, make sure Docker is running.
     - Apply database migrations: `pnpm w:db migrate`.
@@ -20,6 +18,61 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
     - **API Server (`apps/api`)**: `pnpm w:api dev` (Usually runs on [http://localhost:3300](http://localhost:3300))
     - **Design System Storybook (`packages/sense`)**: `pnpm w:sense dev` (Usually runs on [http://localhost:3600](http://localhost:3600))
     - **Email Previews (`services/emails`)**: `pnpm w:emails dev` (Usually runs on [http://localhost:3883](http://localhost:3883))
+
+## Environments and secrets
+
+Credentials live in 1Password, not in files we pass around. `env/` holds one
+committed template per environment; each template is ordinary dotenv text where
+the secret values are [1Password secret
+references](https://developer.1password.com/docs/cli/secret-references/) of the
+form `op://Common/<environment>/<FIELD>` — vault `Common`, one item per
+environment, one field per variable. `pnpm env:pull` resolves a template through
+`op inject` and writes the result:
+
+```bash
+pnpm env:pull            # env/local.env.tpl   -> .env.local
+pnpm env:pull staging    # env/staging.env.tpl -> .env.staging
+```
+
+Re-run it whenever a credential rotates. The generated files are gitignored, and
+the script refuses to overwrite an env file it did not write itself unless you
+pass `--force`, so an existing hand-rolled `.env.local` is safe until you move it
+aside.
+
+Values that are not secret — localhost URLs, the well-known Supabase local dev
+keys — stay literal in the template, so `pnpm env:pull` needs 1Password for only
+a handful of fields. Optional integrations (DeepL, Iframely, moderation, …) are
+listed at the bottom of `env/local.env.tpl` and stay off until you add the field
+to the vault and a live line to the template. Note that `op inject` resolves
+every `op://` reference in the file, comments included, and one missing field
+fails the whole pull — which is why those lines are documented rather than
+commented out.
+
+`.env.staging` is for pointing a tool at staging deliberately:
+
+```bash
+pnpm exec dotenv -e .env.staging -- sh -c 'psql "$DATABASE_URL"'
+```
+
+Do not copy it over `.env.local`. `.env.local` is what the app and `services/db`
+read by default, and pointing those at staging is how staging data gets
+rewritten by a local run.
+
+### CI
+
+`op` reads a service account token from the environment, so the same command
+works unattended — no interactive sign-in, no secrets duplicated into GitHub
+Actions secrets:
+
+```yaml
+- uses: 1password/install-cli-action@v1
+- name: Pull staging environment
+  env:
+    OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+  run: pnpm env:pull staging
+```
+
+The service account needs read access to the `Common` vault, and nothing else.
 
 ## Docker Dev Environment
 
@@ -39,7 +92,7 @@ Otherwise, install these manually:
 - **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
 - **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
 - **Node.js 24** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
-- **`TIPTAP_PRO_TOKEN`** — set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
+- **`TIPTAP_PRO_TOKEN`** — comes from `pnpm env:pull` (see [Environments and secrets](#environments-and-secrets)); source `.env.local` into your shell before running so it reaches the docker build. `.env.docker` is tracked and must not contain the real token.
 - **Platform** — tested on arm64 macOS. amd64 Linux should work but isn't verified in CI.
 
 ### Starting the dev server
