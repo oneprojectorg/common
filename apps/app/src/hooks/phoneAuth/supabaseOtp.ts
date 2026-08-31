@@ -1,3 +1,4 @@
+import { logger } from '@op/logging/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
@@ -9,6 +10,9 @@ import type {
 /** GoTrue's code for a verification that is no longer valid. */
 const EXPIRED_CODE = 'otp_expired';
 
+/** GoTrue's code for its own per-number send throttle. */
+const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
+
 /**
  * Signs in through Supabase's own phone flow.
  *
@@ -16,13 +20,16 @@ const EXPIRED_CODE = 'otp_expired';
  * Supabase config names. It issues the session itself, so nothing here mints
  * one.
  *
- * Two consequences follow from the browser talking to GoTrue directly:
+ * Three consequences follow from the browser talking to GoTrue directly:
  *
  * - Our server never sees the request, so no server-side feature flag or rate
  *   limit applies. GoTrue's own limits are the only ones in force.
- * - `displayName` is dropped. GoTrue creates the account, and this flow cannot
- *   pass metadata to the signup trigger, so a new account is named `User`
- *   until the person edits it.
+ * - No verification record is written, so an account created this way signs in
+ *   and then reaches the product as a non-member. `twilio-direct` is the
+ *   default for that reason.
+ * - `displayName` is dropped. `signInWithOtp` does accept `options.data`, and
+ *   the signup trigger reads `display_name` from it, so carrying the name is a
+ *   gap someone could close rather than a limit of the API.
  *
  * @param deps.supabase - The browser client, which stores the session.
  */
@@ -33,7 +40,23 @@ export const createSupabaseOtpStrategy = ({
 }): PhoneAuthStrategy => ({
   requestCode: async (phone: string): Promise<PhoneCodeResult> => {
     const { error } = await supabase.auth.signInWithOtp({ phone });
-    return error ? { ok: false, message: error.message } : { ok: true };
+
+    if (!error) {
+      return { ok: true };
+    }
+
+    logger.error('GoTrue refused to send a code', { error });
+
+    return {
+      ok: false,
+      reason:
+        error.code === RATE_LIMITED_CODE
+          ? 'rate_limited'
+          : error.status === 422
+            ? 'unavailable'
+            : 'unknown',
+      diagnostic: error.message,
+    };
   },
 
   verifyCode: async ({
@@ -50,17 +73,24 @@ export const createSupabaseOtpStrategy = ({
     });
 
     if (error) {
+      // GoTrue reports an expired verification and a wrong code with the same
+      // code, so a wrong code can read as expired here. Asking for a new code
+      // still recovers, which a bare "wrong code" would not.
       return {
         ok: false,
-        expired: error.code === EXPIRED_CODE,
-        message: error.message,
+        reason: error.code === EXPIRED_CODE ? 'expired' : 'wrong_code',
+        diagnostic: error.message,
       };
     }
 
-    // GoTrue answers without an error and without a session when the code did
-    // not match. Treat a missing session as a refusal rather than a success.
-    return data.session
-      ? { ok: true }
-      : { ok: false, expired: false, message: undefined };
+    if (!data.session) {
+      // GoTrue answers without an error and without a session when the code did
+      // not match. Nothing else is known, so log it: any other cause reaching
+      // here would otherwise be invisible.
+      logger.error('GoTrue returned neither an error nor a session');
+      return { ok: false, reason: 'wrong_code' };
+    }
+
+    return { ok: true };
   },
 });

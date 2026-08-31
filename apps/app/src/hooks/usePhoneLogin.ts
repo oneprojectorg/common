@@ -18,15 +18,21 @@ export type {
  * A deployment setting rather than a rollout. Two people in one release must
  * take the same path, or an incident report cannot say which code ran.
  *
- * `supabase` is the default: fewer moving parts, and GoTrue owns the session
- * it already understands. Set `twilio-direct` to keep the server in the loop,
- * which buys a server-side flag, our own rate limit, and a display name on a
- * new account.
+ * `twilio-direct` is the default, because our server has to witness the
+ * verification. Network membership reads a row this server writes when a
+ * provider approves a number, and only this path produces one. It is also the
+ * only path where the SMS sign-in flag, our own rate limit, and a display name
+ * on a new account apply.
+ *
+ * `supabase` remains available and still signs a person in, but GoTrue answers
+ * the browser directly and our server never sees the call. An account created
+ * that way holds no verification record, so it reaches the product as a
+ * non-member.
  */
 const strategyName =
-  process.env.NEXT_PUBLIC_PHONE_AUTH_STRATEGY === 'twilio-direct'
-    ? 'twilio-direct'
-    : 'supabase';
+  process.env.NEXT_PUBLIC_PHONE_AUTH_STRATEGY === 'supabase'
+    ? 'supabase'
+    : 'twilio-direct';
 
 /**
  * Signs a person in with a phone number and an SMS code.

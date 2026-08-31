@@ -11,7 +11,7 @@ import { Button } from '@op/sense/Button';
 import { Spinner } from '@op/sense/Spinner';
 import { CheckIcon } from '@op/sense/icons';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -56,7 +56,16 @@ export const LinkAccountPanel = () => {
     setTokenError,
     loginSuccess,
     setLoginSuccess,
+    clearPhoneFlow,
   } = useAuthPanelStore();
+
+  // This panel links an email onto an anonymous account and offers no phone
+  // channel. The phone fields persist to session storage, so an abandoned
+  // login attempt in the same tab would otherwise leave this panel showing a
+  // code field for a verification that did not start here.
+  useEffect(() => {
+    clearPhoneFlow();
+  }, [clearPhoneFlow]);
 
   // "Already have an account? Log in" — a real full account can't be linked
   // onto the anon user, so that path drops link mode and goes to normal login.
