@@ -5,7 +5,6 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
 import {
   Empty,
   EmptyDescription,
@@ -135,12 +134,7 @@ export function ReviewPage({
   useRegisterTranslationSamples('review-phase', phaseSamples);
 
   const assignmentsTabTrigger = (
-    <TabsTrigger value="assignments">
-      {t('Assignments')}
-      <Badge variant="secondary" className="ms-2">
-        {t('Alpha')}
-      </Badge>
-    </TabsTrigger>
+    <TabsTrigger value="assignments">{t('Assignments')}</TabsTrigger>
   );
 
   // Same table as /decisions/[slug]/assignments — the tab and the dedicated
