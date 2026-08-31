@@ -173,7 +173,9 @@ describe('account.verifyPhoneLogin: admission rules', () => {
   it('mints no session for a wrong code', async () => {
     provider.checkVerification.mockResolvedValue({ status: 'rejected' });
 
-    await expect((await caller()).account.verifyPhoneLogin(input)).resolves.toEqual({
+    await expect(
+      (await caller()).account.verifyPhoneLogin(input),
+    ).resolves.toEqual({
       status: 'rejected',
     });
     expect(mintPhoneSession).not.toHaveBeenCalled();
@@ -184,14 +186,18 @@ describe('account.verifyPhoneLogin: admission rules', () => {
 
     // Kept apart from a wrong code on purpose: the two need opposite
     // instructions, and collapsing them sends a person retyping a dead code.
-    await expect((await caller()).account.verifyPhoneLogin(input)).resolves.toEqual({
+    await expect(
+      (await caller()).account.verifyPhoneLogin(input),
+    ).resolves.toEqual({
       status: 'expired',
     });
     expect(mintPhoneSession).not.toHaveBeenCalled();
   });
 
   it('issues a session once the provider approves', async () => {
-    await expect((await caller()).account.verifyPhoneLogin(input)).resolves.toEqual({
+    await expect(
+      (await caller()).account.verifyPhoneLogin(input),
+    ).resolves.toEqual({
       status: 'approved',
       accessToken: 'access',
       refreshToken: 'refresh',

@@ -8,10 +8,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useAuthPanelStore } from '@/components/AuthPanel';
 
-import type {
-  PhoneCodeFailure,
-  PhoneVerifyFailure,
-} from './phoneAuth/types';
+import type { PhoneCodeFailure, PhoneVerifyFailure } from './phoneAuth/types';
 
 /**
  * The phone half of the login panel.
