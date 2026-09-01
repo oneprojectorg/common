@@ -262,7 +262,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items).toEqual([]);
   });
 
-  it('paginates by createdAt across pages', async ({
+  it('returns every proposal in the phase, past the old 50 cap', async ({
     task,
     onTestFinished,
   }) => {
@@ -270,38 +270,34 @@ describe.concurrent('listWithReviewAggregates', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    const proposals = [];
-    for (const title of ['First', 'Second', 'Third']) {
-      proposals.push(await testData.createReviewAssignment({ context, title }));
+    // 51 > the 50-row default the deleted paginated branch capped this at.
+    const created = [];
+    for (let i = 0; i < 51; i++) {
+      created.push(
+        await testData.createReviewAssignment({
+          context,
+          title: `Proposal ${i}`,
+        }),
+      );
     }
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    const page1 = await adminCaller.decision.listWithReviewAggregates({
+    const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
-      limit: 2,
     });
 
-    expect(page1.total).toBe(3);
-    expect(page1.items).toHaveLength(2);
-    expect(page1.next).not.toBeNull();
+    expect(result.items).toHaveLength(created.length);
+    expect(result.total).toBe(result.items.length);
+    expect(result.next).toBeNull();
+    expect(result.items.map((i) => i.proposal.id).sort()).toEqual(
+      created.map((p) => p.proposal.id).sort(),
+    );
 
-    const page2 = await adminCaller.decision.listWithReviewAggregates({
-      processInstanceId: context.instance.instance.id,
-      limit: 2,
-      cursor: page1.next!,
-    });
-
-    expect(page2.items).toHaveLength(1);
-    expect(page2.next).toBeNull();
-
-    // All three proposals appear exactly once across the two pages.
-    const allIds = [...page1.items, ...page2.items]
-      .map((i) => i.proposal.id)
-      .sort();
-    expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
+    const createdAts = result.items.map((i) => i.proposal.createdAt ?? '');
+    expect(createdAts).toEqual([...createdAts].sort().reverse());
   });
 
   it('attaches categories to response items', async ({
@@ -486,7 +482,7 @@ describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('keeps the paginated mode admin-only for a reviewer on an open phase', async ({
+  it('keeps the phase-scoped mode admin-only for a reviewer on an open phase', async ({
     task,
     onTestFinished,
   }) => {

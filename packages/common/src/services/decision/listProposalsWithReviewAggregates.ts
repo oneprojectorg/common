@@ -2,19 +2,12 @@ import { and, db, eq, inArray, isNull } from '@op/db/client';
 import {
   ProposalReviewState,
   proposalCategories,
-  proposals,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
 import { z } from 'zod';
 
-import {
-  UnauthorizedError,
-  decodeCursor,
-  encodeCursor,
-  getCursorCondition,
-} from '../../utils';
+import { UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
@@ -35,17 +28,17 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /**
  * Single union schema for both dispatch modes:
- *   - filtered: caller passes `proposalIds`, no pagination.
- *   - paginated: phase-scoped, cursor-paginated.
+ *   - filtered: caller passes `proposalIds`.
+ *   - phase-scoped: no `proposalIds`, returns the whole phase.
+ *
+ * The two branches stay separate because they authorize differently; see the
+ * dispatch note on `listProposalsWithReviewAggregates`.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
   }),
-  instanceOptionalPhaseRefSchema.extend({
-    limit: z.number().int().min(1).max(100).default(50),
-    cursor: z.string().optional(),
-  }),
+  instanceOptionalPhaseRefSchema,
 ]);
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<
@@ -58,10 +51,10 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
  * Proposal list with per-proposal review aggregates. Two dispatch modes
  * determined by input shape:
  *
- *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
+ *   - filtered (`proposalIds` present): caller-owned ID list.
  *     Gated by `canReadPhaseReviews` — admins always, reviewers on a named
  *     `openReviews` phase (the same gate as the per-proposal review set).
- *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated. Admin-only.
+ *   - phase-scoped: every proposal in the phase, `createdAt DESC`. Admin-only.
  */
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
@@ -105,12 +98,10 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
-  return listProposalsPaginated({
+  return listProposalsForPhase({
     processInstanceId,
     phaseId,
     phaseProposalIds,
-    limit: input.limit,
-    cursor: input.cursor,
     scoredCriterionKeys,
     rubricTemplate,
   });
@@ -176,22 +167,23 @@ async function listProposalsFiltered({
   });
 }
 
-// ── Paginated mode (phase-scoped, cursor) ──────────────────────────────
+// ── Phase-scoped mode (whole phase) ───────────────────────────────────
 
-async function listProposalsPaginated({
+/**
+ * Unbounded by construction, like `listSelectionCandidates`: a phase is a
+ * bounded set that an admin has to see whole to act on it. A page limit here
+ * silently hid every proposal past the first 50 from the advance screen.
+ */
+async function listProposalsForPhase({
   processInstanceId,
   phaseId,
   phaseProposalIds,
-  limit,
-  cursor,
   scoredCriterionKeys,
   rubricTemplate,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
   phaseProposalIds: string[];
-  limit: number;
-  cursor: string | undefined;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
@@ -199,57 +191,30 @@ async function listProposalsPaginated({
     return { items: [], total: 0, next: null, rubricTemplate };
   }
 
-  const decodedCursor = cursor
-    ? decodeCursor<{ value: string; id: string }>(cursor)
-    : undefined;
-
-  const [pageRowsRaw, totalRows] = await Promise.all([
-    db.query.proposals.findMany({
-      // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
-      // getProposalsForPhase, but the extra `moderationDetachedAt IS NULL`
-      // guards against a future caller / bug slipping a detached ID in.
-      where: {
-        RAW: (table) =>
-          and(
-            inArray(table.id, phaseProposalIds),
-            isNull(table.moderationDetachedAt),
-            decodedCursor
-              ? getCursorCondition({
-                  column: table.createdAt,
-                  tieBreakerColumn: table.id,
-                  cursor: decodedCursor,
-                  direction: 'desc',
-                })
-              : undefined,
-          )!,
-      },
-      with: proposalRelations({ processInstanceId, phaseId }),
-      orderBy: { createdAt: 'desc', id: 'desc' },
-      limit: limit + 1,
-    }),
-    db
-      .select({ count: countFn() })
-      .from(proposals)
-      .where(
+  const rows = await db.query.proposals.findMany({
+    // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
+    // getProposalsForPhase, but the extra `moderationDetachedAt IS NULL`
+    // guards against a future caller / bug slipping a detached ID in.
+    where: {
+      RAW: (table) =>
         and(
-          inArray(proposals.id, phaseProposalIds),
-          isNull(proposals.moderationDetachedAt),
-        ),
-      ),
-  ]);
+          inArray(table.id, phaseProposalIds),
+          isNull(table.moderationDetachedAt),
+        )!,
+    },
+    with: proposalRelations({ processInstanceId, phaseId }),
+    orderBy: { createdAt: 'desc', id: 'desc' },
+  });
 
-  const hasMore = pageRowsRaw.length > limit;
-  const pageRows = hasMore ? pageRowsRaw.slice(0, limit) : pageRowsRaw;
-  const total = Number(totalRows[0]?.count ?? 0);
-
-  if (pageRows.length === 0) {
-    return { items: [], total, next: null, rubricTemplate };
+  if (rows.length === 0) {
+    return { items: [], total: 0, next: null, rubricTemplate };
   }
 
-  const pageIds = pageRows.map((p) => p.id);
-  const categoriesByProposalId = await getCategoriesByProposalIds(pageIds);
+  const categoriesByProposalId = await getCategoriesByProposalIds(
+    rows.map((p) => p.id),
+  );
 
-  const items = pageRows.map((proposal) => ({
+  const items = rows.map((proposal) => ({
     proposal,
     aggregates: getComputedReviewAggregates(
       proposal.reviewAssignments,
@@ -258,19 +223,10 @@ async function listProposalsPaginated({
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
 
-  let next: string | null = null;
-  if (hasMore) {
-    const lastRow = pageRows[pageRows.length - 1]!;
-    next = encodeCursor<{ value: string; id: string }>({
-      value: lastRow.createdAt ?? '',
-      id: lastRow.id,
-    });
-  }
-
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
-    total,
-    next,
+    total: items.length,
+    next: null,
     rubricTemplate,
   });
 }
@@ -279,7 +235,7 @@ async function listProposalsPaginated({
 
 /**
  * `with` block for the proposal relational query — shared by filtered and
- * paginated.
+ * phase-scoped.
  */
 export function proposalRelations({
   processInstanceId,
