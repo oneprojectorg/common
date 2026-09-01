@@ -12,6 +12,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
+import { invalidateProfileUserAccessCache } from '../access';
 import { assertGlobalRole } from '../assert';
 import { emitDecisionMemberRolesChanged } from './events/emitDecisionMemberRolesChanged';
 
@@ -164,6 +165,24 @@ export const acceptProposalInvite = async ({
 
     return proposalProfileUser;
   });
+
+  // The invitee may already carry a cached (e.g. visitor) role set for these
+  // profiles from browsing them before accepting — drop it or the new roles
+  // don't take effect until the cache TTL expires. The decision-profile entry
+  // is the critical one: a stale visitor role there blocks reviewer/admin
+  // screens on the whole process.
+  await Promise.all([
+    invalidateProfileUserAccessCache({
+      authUserId: user.id,
+      profileId: invite.profileId,
+    }),
+    decisionProfileIdToAdd
+      ? invalidateProfileUserAccessCache({
+          authUserId: user.id,
+          profileId: decisionProfileIdToAdd,
+        })
+      : null,
+  ]);
 
   // Only the decision-profile grant is relevant to decision-side consumers.
   if (decisionProfileIdToAdd) {
