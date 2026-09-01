@@ -85,7 +85,7 @@ export function ProposalCardMenu({
         buildRejectMenuItem({
           isDisabled: isLoading || isRejecting || isUnrejecting,
           isRejected,
-          rejectLabel: t('Reject proposal'),
+          rejectLabel: t('Do not advance'),
           undoLabel: t('Undo rejection'),
           onReject: () => setIsRejectModalOpen(true),
           onUndo: unreject,

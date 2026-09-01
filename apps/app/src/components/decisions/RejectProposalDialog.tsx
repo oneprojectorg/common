@@ -86,7 +86,7 @@ export const RejectProposalDialog = ({
       {/* Wide enough for the four reasons to sit on one row, as in Figma. */}
       <DialogContent className="sm:max-w-144">
         <DialogHeader>
-          <DialogTitle>{t('Reject proposal')}</DialogTitle>
+          <DialogTitle>{t('Do not advance')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">

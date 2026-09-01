@@ -113,7 +113,7 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
     ),
     [ProposalStatus.REJECTED]: (
       <StatusBadge variant="alert" icon={LuCircleX}>
-        {t('Rejected')}
+        {t('Not advanced')}
       </StatusBadge>
     ),
     _: null,

@@ -104,7 +104,7 @@ export const ProposalsFilterBar = ({
     ...(controls.hasVoted
       ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
       : []),
-    { id: ProposalFilter.REJECTED, label: t('Rejected') },
+    { id: ProposalFilter.REJECTED, label: t('Not advanced') },
   ];
 
   return (
