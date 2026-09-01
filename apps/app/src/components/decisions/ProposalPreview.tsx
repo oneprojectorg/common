@@ -161,7 +161,7 @@ export function ProposalPreview({
             <div className="flex flex-wrap gap-2">
               {isRejected && (
                 <StatusBadge variant="alert" icon={LuCircleX}>
-                  {t('Rejected')}
+                  {t('Not advanced')}
                 </StatusBadge>
               )}
               {isHidden && (
