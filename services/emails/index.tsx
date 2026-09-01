@@ -1,4 +1,4 @@
-import { APP_NAME, genericEmail } from '@op/core';
+import { APP_NAME, noReplyEmail } from '@op/core';
 import nodemailer from 'nodemailer';
 import { render } from 'react-email';
 import { Resend } from 'resend';
@@ -9,9 +9,25 @@ type RenderParameter = Parameters<typeof render>;
 export interface BatchEmailItem {
   to: string;
   subject: string;
+  /**
+   * Display name only — the recipient-facing sender ("<admin> via Common").
+   * The mailbox is not caller-controlled; see `formatFromAddress`.
+   */
   from?: string;
   component: () => React.JSX.Element;
 }
+
+/**
+ * Builds the From header for every outbound email. The display name is the
+ * sender we want the recipient to recognise ("<admin> via Common"), which
+ * reads enough like a direct message that recipients reply to it. The mailbox
+ * therefore has to be the unmonitored no-reply address: sending from support
+ * routed those replies to staff who could not answer them, while the admin the
+ * recipient meant to reach never saw them. A no-reply mailbox bounces instead,
+ * telling the recipient to contact the admin directly.
+ */
+export const formatFromAddress = (displayName?: string) =>
+  `${displayName ?? APP_NAME} <${noReplyEmail}>`;
 
 // Reject CR/LF before passing addresses to nodemailer/Resend — prevents
 // SMTP header injection (extra Bcc:, Subject:, etc.) since z.string().email()
@@ -69,7 +85,7 @@ const sendSmtpEmail = async ({
   const html = await render(component(), renderOptions);
 
   return getTransporter().sendMail({
-    from: `${from ?? APP_NAME} <${genericEmail}>`,
+    from: formatFromAddress(from),
     to: safeEmailSchema.parse(to),
     subject,
     html,
@@ -150,7 +166,7 @@ export const OPBatchSend = async (
 
     try {
       const batchPayload = batch.map(({ to, subject, from, component }) => ({
-        from: `${from ?? APP_NAME} <${genericEmail}>`,
+        from: formatFromAddress(from),
         to: safeEmailSchema.parse(to),
         subject,
         react: component(),
