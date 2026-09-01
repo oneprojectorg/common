@@ -5,7 +5,6 @@ import { inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import { appRouter } from '../../../routers';
-import { mintPhoneSession } from '../../../supabase/mintPhoneSession';
 import { createCallerFactory } from '../../../trpcFactory';
 import {
   createIsolatedSession,
@@ -145,22 +144,17 @@ export const createGatingCallers = (
       email ? existingCaller(email) : freshCaller('oneproject.org'),
 
     phoneJwt: async () => {
-      const session = await createPhoneSession();
-      createdAuthUserIds.push(session.authUserId);
+      const { session, authUserId } = await createPhoneAccount();
+      createdAuthUserIds.push(authUserId);
 
       const userRecord = await db.query.users.findFirst({
-        where: { authUserId: session.authUserId },
+        where: { authUserId },
       });
       if (userRecord?.profileId) {
         createdProfileIds.push(userRecord.profileId);
       }
 
-      return createCaller(
-        await createTestContextWithSession({
-          access_token: session.accessToken,
-          refresh_token: session.refreshToken,
-        } as never),
-      );
+      return createCaller(await createTestContextWithSession(session));
     },
   };
 };
@@ -168,15 +162,39 @@ export const createGatingCallers = (
 /**
  * Builds a real phone-only account and signs in as it.
  *
- * Goes through `mintPhoneSession`, the same code the verify procedure runs, so
- * the fixture carries whatever shape production gives a phone account rather
- * than one assembled by hand.
+ * The account holds a confirmed number and no email, which is the shape GoTrue
+ * gives someone who signs in by phone. The network gate has to refuse it.
+ *
+ * A password exists only so the fixture can sign in. Nothing in the product
+ * sets one: a person signs in with a texted code, and GoTrue issues the
+ * session.
  */
-const createPhoneSession = async () => {
+const createPhoneAccount = async () => {
   // Twilio reserves 500 555 01xx for testing, so no fixture names a real line.
   const suffix = String(Math.floor(Math.random() * 90) + 10);
   const phone = parsePhoneNumber(`+15005550${suffix}0`);
-  return mintPhoneSession({ phone });
+  const password = randomUUID();
+
+  const { data, error } = await supabaseTestAdminClient.auth.admin.createUser({
+    phone,
+    password,
+    phone_confirm: true,
+  });
+  if (error || !data.user) {
+    throw new Error(
+      `Failed to create a phone account: ${error?.message ?? 'no user'}`,
+    );
+  }
+
+  const client = createIsolatedTestClient();
+  const signIn = await client.auth.signInWithPassword({ phone, password });
+  if (signIn.error || !signIn.data.session) {
+    throw new Error(
+      `Failed to sign in by phone: ${signIn.error?.message ?? 'no session'}`,
+    );
+  }
+
+  return { session: signIn.data.session, authUserId: data.user.id };
 };
 
 export type GatingTestCtx = {

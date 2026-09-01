@@ -117,12 +117,8 @@ const phoneFailureMessage = (
       return t('That code expired. Request a new one.');
     case 'wrong_code':
       return t('That code was wrong. Try again.');
-    case 'session_failed':
-      return t('We could not finish signing you in. Try once more.');
     case 'rate_limited':
       return t('Too many attempts. Wait a minute and try again.');
-    case 'unreachable':
-      return t('We could not reach that number.');
     case 'unavailable':
       return t('Signing in by text is unavailable right now.');
     case 'unknown':
