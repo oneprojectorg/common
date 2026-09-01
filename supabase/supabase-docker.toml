@@ -86,10 +86,16 @@ max_frequency = "5s"
 # Verify owns the copy and the expiry here, so `template` and `sms_otp_exp`
 # above do not reach the participant.
 #
-# `enable_confirmations = false` above is GoTrue's SMS autoconfirm. It affects
-# only what GoTrue records on `auth.users`, and network membership does not
-# read that column — it reads `phone_verifications`, which only our own
-# procedures write after Twilio approves a number.
+# `enable_confirmations = false` above is GoTrue's SMS autoconfirm.
+#
+# GoTrue owns verification: it generates the code, sends it through Verify,
+# checks the reply, and issues the session. Our server never sees any of it.
+# The `record_phone_verification` trigger on `auth.users` turns a confirmed
+# number into the `phone_verifications` row that network membership reads.
+#
+# The cost of autoconfirm is that GoTrue can set `phone_confirmed_at` on a
+# phone *change* without checking a code, and the trigger cannot tell that
+# apart from a real verification.
 [auth.sms.twilio_verify]
 enabled = true
 account_sid = "env(TWILIO_ACCOUNT_SID)"
@@ -110,8 +116,7 @@ sms_sent = 30
 # A listed number skips the provider entirely, so local work costs no text and
 # needs no Twilio account. GoTrue still creates the account, confirms the
 # phone, and issues a session, so its whole sign-in path is exercised — only
-# the delivery is bypassed. It does not exercise `twilio-direct`, where our own
-# procedures call Twilio Verify and this block never applies.
+# the delivery is bypassed.
 #
 # Sign in as +1 500 555 0006 with the code 123456. The range is reserved by
 # Twilio for testing, so no real line can collide with it.

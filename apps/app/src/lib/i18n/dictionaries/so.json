@@ -1731,9 +1731,7 @@
   "That code was wrong. Try again.": "Koodhkaas waa khalad. Mar kale isku day.",
   "Send the code again": "Mar kale dir koodhka",
   "Use a different number": "Isticmaal lambar kale",
-  "We could not finish signing you in. Try once more.": "Ma aanan dhammayn karin gelitaankaaga. Mar kale isku day.",
   "Too many attempts. Wait a minute and try again.": "Isku dayo badan. Hal daqiiqo sug oo mar kale isku day.",
-  "We could not reach that number.": "Ma aanan gaadhi karin lambarkaas.",
   "Signing in by text is unavailable right now.": "Gelitaanka fariinta ayaa hadda la heli karin.",
   "Code sent!": "Koodhka waa la diray!",
   "A code was sent to {phone}. Type the code below to sign in.": "Kood ayaa loo diray {phone}. Hoosta ku qor koodhka si aad u gasho."

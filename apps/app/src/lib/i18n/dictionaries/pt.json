@@ -1731,9 +1731,7 @@
   "That code was wrong. Try again.": "Esse código está incorreto. Tente novamente.",
   "Send the code again": "Enviar o código novamente",
   "Use a different number": "Usar outro número",
-  "We could not finish signing you in. Try once more.": "Não conseguimos concluir o seu início de sessão. Tente mais uma vez.",
   "Too many attempts. Wait a minute and try again.": "Demasiadas tentativas. Aguarde um minuto e tente novamente.",
-  "We could not reach that number.": "Não conseguimos contactar esse número.",
   "Signing in by text is unavailable right now.": "O início de sessão por SMS não está disponível de momento.",
   "Code sent!": "Código enviado!",
   "A code was sent to {phone}. Type the code below to sign in.": "Foi enviado um código para {phone}. Escreva o código abaixo para iniciar sessão."
