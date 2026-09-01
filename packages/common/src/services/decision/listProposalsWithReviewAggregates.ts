@@ -33,12 +33,17 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
  *
  * The two branches stay separate because they authorize differently; see the
  * dispatch note on `listProposalsWithReviewAggregates`.
+ *
+ * The phase-scoped branch is strict so a filtered read that fails validation
+ * (empty `proposalIds`, a malformed uuid) is rejected instead of falling
+ * through to it with the key stripped — that fallthrough would hand a caller
+ * who asked for a few proposals the entire phase.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
   }),
-  instanceOptionalPhaseRefSchema,
+  z.strictObject(instanceOptionalPhaseRefSchema.shape),
 ]);
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<

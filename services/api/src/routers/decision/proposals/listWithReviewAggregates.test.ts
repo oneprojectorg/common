@@ -94,7 +94,7 @@ async function attachCategoryToProposal({
 }
 
 describe.concurrent('listWithReviewAggregates', () => {
-  it('rejects callers without admin access on the instance (paginated)', async ({
+  it('rejects callers without admin access on the instance (phase-scoped)', async ({
     task,
     onTestFinished,
   }) => {
@@ -262,6 +262,34 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items).toEqual([]);
   });
 
+  it('rejects an invalid filtered read instead of returning the whole phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Strict Branch',
+    });
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'review',
+    );
+
+    const adminCaller = await createAuthenticatedCaller(
+      created.context.defaultReviewer.email,
+    );
+
+    // An empty array fails the filtered branch. Without the strict phase-scoped
+    // branch it would fall through with `proposalIds` stripped, handing a
+    // caller who asked for nothing every proposal in the phase.
+    await expect(
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: created.context.instance.instance.id,
+        proposalIds: [],
+      }),
+    ).rejects.toThrow();
+  });
+
   it('returns every proposal in the phase, past the old 50 cap', async ({
     task,
     onTestFinished,
@@ -374,7 +402,7 @@ describe.concurrent('listWithReviewAggregates', () => {
 
 /**
  * Filtered mode is gated on `canReadPhaseReviews`: reviewers need a named
- * `openReviews` phase, admins need nothing. Paginated mode stays admin-only.
+ * `openReviews` phase, admins need nothing. Phase-scoped mode stays admin-only.
  */
 describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
   /** A phase-`review` proposal carrying one COMPLETED assignment + submitted review. */
