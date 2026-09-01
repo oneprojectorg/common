@@ -108,7 +108,19 @@ const getResendClient = () => {
   return resendClient;
 };
 
-export const OPBatchSend = async (emails: BatchEmailItem[]) => {
+export const OPBatchSend = async (
+  emails: BatchEmailItem[],
+  {
+    idempotencyKeyPrefix,
+  }: {
+    /**
+     * Makes a retry replay instead of re-deliver. Scope it to one attempt-set
+     * (an Inngest run id): Resend keeps a key for 24h and answers a reused key
+     * with a different payload with a 409.
+     */
+    idempotencyKeyPrefix?: string;
+  } = {},
+) => {
   if (emails.length === 0) {
     return { data: [], errors: [] };
   }
@@ -144,7 +156,12 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
         react: component(),
       }));
 
-      const { data, error } = await resend.batch.send(batchPayload);
+      const { data, error } = await resend.batch.send(
+        batchPayload,
+        idempotencyKeyPrefix
+          ? { idempotencyKey: `${idempotencyKeyPrefix}/chunk-${i / batchSize}` }
+          : {},
+      );
 
       if (error) {
         // If batch fails, mark all emails in this batch as failed

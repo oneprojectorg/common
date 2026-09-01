@@ -26,7 +26,7 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
     },
   },
   { event: decisionUpdatePosted.name },
-  async ({ event, step }) => {
+  async ({ event, step, runId }) => {
     const { postId, targetProfileId } = decisionUpdatePosted.schema.parse(
       event.data,
     );
@@ -122,7 +122,11 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
           }),
       }));
 
-      const { data, errors } = await OPBatchSend(emails);
+      const { data, errors } = await OPBatchSend(emails, {
+        // Stable across retries, unique per run: a retry replays delivered
+        // chunks instead of re-sending them.
+        idempotencyKeyPrefix: `decision-update/${runId}`,
+      });
 
       if (errors.length > 0) {
         throw new Error(`Email batch failed: ${JSON.stringify(errors)}`);
