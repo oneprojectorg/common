@@ -8,7 +8,12 @@ import {
 } from '@op/common/client';
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
-import { Separator } from '@op/sense/Separator';
+import {
+  ReviewResultCard,
+  ReviewResultNote,
+  ReviewResultOption,
+  ReviewResultText,
+} from '@op/sense/ReviewResultCard';
 import { useFormatter } from 'next-intl';
 import type { ReactNode } from 'react';
 
@@ -72,12 +77,17 @@ export function SubmittedReviewView({
             'Shared anonymously with the author after the review phase',
           )}
         >
-          <ResultCard description={review.overallComment} />
+          <ReviewResultCard className="mt-1">
+            <ReviewResultText>{review.overallComment}</ReviewResultText>
+          </ReviewResultCard>
         </ResultSection>
       )}
     </div>
   );
 }
+
+/** Stands in for an answer the reviewer left blank. */
+const EMPTY_ANSWER = '—';
 
 function ResultSection({
   title,
@@ -107,94 +117,6 @@ function ResultSection({
   );
 }
 
-/** One answer in a `ResultCard`: the value, with its explanation below it. */
-interface ResultCardRow {
-  /** Stable key — an option id, or `value` for a single-answer card. */
-  id: string;
-  value?: ReactNode;
-  description?: ReactNode;
-}
-
-/**
- * The answer, with the reviewer's note below a rule. Bordered, not filled —
- * the total score is the only filled row in this panel.
- */
-function ResultCard({
-  value,
-  description,
-  rationale,
-  rows,
-}: {
-  value?: ReactNode;
-  description?: ReactNode;
-  rationale?: ReactNode;
-  /**
-   * Several answers stacked in one card — a multi-select, where every selected
-   * option is a row of its own. Takes the place of `value`/`description`.
-   */
-  rows?: ResultCardRow[];
-}) {
-  const topRows = (rows ?? [{ id: 'value', value, description }]).filter(
-    (row) => hasRowContent(row),
-  );
-  const hasRationale = !!rationale;
-  const hasTopRow = topRows.length > 0;
-
-  return (
-    <div className="mt-1 flex flex-col gap-3 rounded-lg border p-6">
-      {hasTopRow && (
-        <div className="flex flex-col gap-3">
-          {topRows.map((row) => (
-            <ResultCardTopRow
-              key={row.id}
-              value={row.value}
-              description={row.description}
-            />
-          ))}
-        </div>
-      )}
-      {hasRationale && hasTopRow && <Separator />}
-      {hasRationale && (
-        <div className="text-base text-muted-foreground">{rationale}</div>
-      )}
-    </div>
-  );
-}
-
-/**
- * The value, with its explanation stacked below it — vertical on the designer's
- * direct direction, which supersedes the side-by-side "Answer" frame in Figma.
- * Don't restore the horizontal row from that frame without asking them again.
- *
- * The explanation reads as body text — `text-base`, full foreground — per the
- * Figma. The hierarchy against the value above it comes from the serif face
- * alone, not from a muted, smaller description (an earlier direction this
- * supersedes).
- */
-function ResultCardTopRow({ value, description }: Omit<ResultCardRow, 'id'>) {
-  return (
-    <div className="flex flex-col gap-1">
-      {hasRowValue(value) && (
-        <span className="font-serif text-label">{value}</span>
-      )}
-      {description ? (
-        // Authored copy, so its line breaks are meant.
-        <FieldDescription className="text-base whitespace-pre-wrap text-foreground">
-          {description}
-        </FieldDescription>
-      ) : null}
-    </div>
-  );
-}
-
-function hasRowValue(value: ReactNode): boolean {
-  return value !== undefined && value !== null && value !== '';
-}
-
-function hasRowContent(row: ResultCardRow): boolean {
-  return hasRowValue(row.value) || !!row.description;
-}
-
 function RubricFieldResult({
   field,
   value,
@@ -207,20 +129,27 @@ function RubricFieldResult({
   const t = useTranslations();
   const format = useFormatter();
 
+  const note = rationale ? (
+    <ReviewResultNote>{rationale}</ReviewResultNote>
+  ) : null;
+
   if (inferCriterionType(field.schema) === 'money') {
     const amount = getMoneyAmount(value);
+
     return (
-      <ResultCard
-        value={
-          amount === null
-            ? '—'
-            : format.number(amount, {
-                style: 'currency',
-                currency: resolveMoneyDisplayCurrency(value, field.schema),
-              })
-        }
-        rationale={rationale}
-      />
+      <ReviewResultCard className="mt-1">
+        <ReviewResultOption
+          title={
+            amount === null
+              ? EMPTY_ANSWER
+              : format.number(amount, {
+                  style: 'currency',
+                  currency: resolveMoneyDisplayCurrency(value, field.schema),
+                })
+          }
+        />
+        {note}
+      </ReviewResultCard>
     );
   }
 
@@ -232,42 +161,55 @@ function RubricFieldResult({
           : value === YES_NO_VALUES.no
             ? t('No')
             : undefined;
-      return <ResultCard value={label} rationale={rationale} />;
+
+      return (
+        <ReviewResultCard className="mt-1">
+          {label ? <ReviewResultOption title={label} /> : null}
+          {note}
+        </ReviewResultCard>
+      );
     }
 
     // Multi-select stores an array of opaque option ids. Each selected option
     // gets the same row a single-select answer gets — title, then its own
-    // explanation beside it — stacked inside the one card.
+    // explanation below it — stacked inside the one card.
     if (inferCriterionType(field.schema) === 'multi_select') {
-      const selectedRows = getSelectedOptionValues(value).map((id) => {
-        const option = findSchemaOption(field.schema, id);
-        return {
-          id,
-          value: option?.title || id,
-          description: option?.description,
-        };
-      });
+      const selectedIds = getSelectedOptionValues(value);
 
       return (
-        <ResultCard
-          rows={
-            selectedRows.length > 0
-              ? selectedRows
-              : [{ id: 'unanswered', value: '—' }]
-          }
-          rationale={rationale}
-        />
+        <ReviewResultCard className="mt-1">
+          {selectedIds.length > 0 ? (
+            selectedIds.map((id) => {
+              const option = findSchemaOption(field.schema, id);
+
+              return (
+                <ReviewResultOption
+                  key={id}
+                  title={option?.title || id}
+                  description={option?.description}
+                />
+              );
+            })
+          ) : (
+            <ReviewResultOption title={EMPTY_ANSWER} />
+          )}
+          {note}
+        </ReviewResultCard>
       );
     }
 
     const selected = findSchemaOption(field.schema, value);
 
     if (isOverallRecommendationField(field.key)) {
+      const label = selected
+        ? (selected.title ?? String(selected.value))
+        : null;
+
       return (
-        <ResultCard
-          value={selected?.title ?? selected?.value}
-          rationale={rationale}
-        />
+        <ReviewResultCard className="mt-1">
+          {label ? <ReviewResultOption title={label} /> : null}
+          {note}
+        </ReviewResultCard>
       );
     }
 
@@ -275,26 +217,41 @@ function RubricFieldResult({
     // option's title instead.
     if (inferCriterionType(field.schema) === 'single_select') {
       return (
-        <ResultCard
-          value={selected ? selected.title || String(selected.value) : '—'}
-          description={selected?.description}
-          rationale={rationale}
-        />
+        <ReviewResultCard className="mt-1">
+          <ReviewResultOption
+            title={
+              selected ? selected.title || String(selected.value) : EMPTY_ANSWER
+            }
+            description={selected?.description}
+          />
+          {note}
+        </ReviewResultCard>
       );
     }
 
+    // Scored: the number is the answer, the scale label explains it.
     return (
-      <ResultCard
-        value={selected?.value}
-        description={selected?.title}
-        rationale={rationale}
-      />
+      <ReviewResultCard className="mt-1">
+        {selected ? (
+          <ReviewResultOption
+            title={String(selected.value)}
+            description={selected.title}
+          />
+        ) : null}
+        {note}
+      </ReviewResultCard>
     );
   }
 
   if (field.format === 'long-text' || field.format === 'short-text') {
     const text = typeof value === 'string' ? value.trim() : '';
-    return <ResultCard description={text || '—'} />;
+
+    return (
+      <ReviewResultCard className="mt-1">
+        <ReviewResultText>{text || EMPTY_ANSWER}</ReviewResultText>
+        {note}
+      </ReviewResultCard>
+    );
   }
 
   return null;

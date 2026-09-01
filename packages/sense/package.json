@@ -78,6 +78,7 @@
     "./ReactionsButton": "./src/components/ReactionsButton/index.tsx",
     "./RequiredAsterisk": "./src/components/RequiredAsterisk/index.tsx",
     "./Resizable": "./src/components/ui/resizable.tsx",
+    "./ReviewResultCard": "./src/components/ReviewResultCard/index.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
     "./RichTextEditor/viewerStyles": "./src/components/RichTextEditor/viewerStyles.ts",
     "./ScrollArea": "./src/components/ui/scroll-area.tsx",
