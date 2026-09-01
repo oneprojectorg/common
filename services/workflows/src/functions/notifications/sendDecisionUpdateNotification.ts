@@ -122,7 +122,7 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
           }),
       }));
 
-      const { data, errors } = await OPBatchSend(emails, {
+      const { errors } = await OPBatchSend(emails, {
         // Stable across retries, unique per run: a retry replays delivered
         // chunks instead of re-sending them.
         idempotencyKeyPrefix: `decision-update/${runId}`,
@@ -132,7 +132,14 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
         throw new Error(`Email batch failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: data.length };
+      logger.info('Decision update notifications sent', {
+        postId,
+        targetProfileId,
+        sent: emails.length,
+        idempotencyKeyPrefix: `decision-update/${runId}`,
+      });
+      // Not `data.length` — under Resend that counts 100-email batches.
+      return { sent: emails.length };
     });
 
     return {

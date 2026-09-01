@@ -143,6 +143,12 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           );
         }
 
+        logger.info('Phase transition notifications sent', {
+          processInstanceId,
+          toPhaseId,
+          sent: emails.length,
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
+        });
         return { sent: emails.length };
       } catch (error) {
         logger.error('Failed to send phase transition notifications', {
