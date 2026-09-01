@@ -38,13 +38,28 @@ flowchart TD
 The team has experience with Twilio, and Twilio has the features we
 need for both SMS and WhatsApp.
 
+Twilio splits those features across two products, and they carry
+different obligations. Twilio Verify sends verification codes and is
+exempt from A2P 10DLC registration. Programmable Messaging sends free
+text and is not; its campaign review runs ten to fifteen days.
+
+Signup needs only verification codes. Notifications need free text. The
+signup flow can therefore ship before any campaign is approved, and the
+notification work cannot.
+
 ## Decision
 
 We will use Twilio as our WhatsApp and SMS provider. We will use the
 existing Inngest steps for sending and retrying notifications.
 
-For signups and phone number confirmations we will use Twilio's
-outgoing webhook.
+For signups and phone number confirmations we will use GoTrue's
+`[auth.sms.twilio_verify]` mode. GoTrue generates the code, sends it
+through Twilio Verify, checks the reply, and issues the session. The
+browser calls GoTrue directly.
+
+We considered Twilio's outgoing webhook and did not use it. The webhook
+would put our API host in the middle of a flow GoTrue already performs,
+and would add a public route that mints sessions.
 
 After this work, the Workflow functions will determine the user's
 notification preference and send the correct notification. We will
@@ -73,10 +88,18 @@ preference"}
   tbatch --> twilio["Twilio"]
   resend --> inbox["Participant email"]
   twilio --> phone["Participant phone"]
-  twilio -.->|"outgoing webhook:
-signup and phone confirmation"| api["API route"]
-  api --> db[("Postgres")]
 ```
+
+Our server never observes a verification, so it cannot record one. A
+trigger on `auth.users` writes a `phone_verifications` row when a number
+becomes confirmed, and network membership reads that row.
+
+Membership does not read `auth.users.phone_confirmed_at`. An account
+holder can set that column on their own row through GoTrue, so an
+account that could already sign in would be able to admit itself.
+
+GoTrue offers seven auth hooks. None of them reports a phone
+verification, which is why this is a trigger and not a hook.
 
 We will need to store the notification preference for a user in the
 database.
@@ -88,3 +111,9 @@ phone number.
 We will reuse the existing Inngest Workflow system, so a failed
 notification retries the same way it does today. An SMS or WhatsApp
 retry costs money for each attempt. An email retry does not.
+
+Two costs come with GoTrue owning the code. SMS autoconfirm is on, so
+GoTrue can confirm a number on a change without checking a code, and the
+trigger cannot tell that apart from a real verification. No per-number
+send limit of ours applies either, because no request of ours carries the
+send; Twilio's geographic permissions are the remaining control.
