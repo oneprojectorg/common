@@ -31,15 +31,15 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
  *   - filtered: caller passes `proposalIds`.
  *   - phase-scoped: no `proposalIds`, returns the whole phase.
  *
- * Strict on the second branch: without it a filtered read that fails
- * validation falls through with `proposalIds` stripped, handing a caller who
- * asked for a few proposals the entire phase.
+ * The second branch is `.strict()` so it rejects a `proposalIds` it cannot
+ * use. Left open it would accept an invalid filtered read, drop the key, and
+ * hand a caller who asked for a few proposals the entire phase.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
   }),
-  z.strictObject(instanceOptionalPhaseRefSchema.shape),
+  instanceOptionalPhaseRefSchema.strict(),
 ]);
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<

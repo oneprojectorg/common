@@ -288,7 +288,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toThrow();
   });
 
-  it('returns every proposal in the phase, past the old 50 cap', async ({
+  it('returns every proposal in the phase, well past 50', async ({
     task,
     onTestFinished,
   }) => {
@@ -296,7 +296,6 @@ describe.concurrent('listWithReviewAggregates', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // 51 > the 50-row default the deleted paginated branch capped this at.
     const created = [];
     for (let i = 0; i < 51; i++) {
       created.push(
