@@ -59,7 +59,7 @@ export const parsePhoneNumber = (value: string): PhoneNumber => {
 /**
  * Turns a number as a person types it into E.164.
  *
- * People type `(818) 212-4554`, not `+18182124554`. This strips the formatting
+ * People type `(415) 555-0132`, not `+14155550132`. This strips the formatting
  * and adds a country code when the input leaves no doubt, so a caller can
  * validate what a person meant rather than what they typed.
  *
@@ -76,8 +76,8 @@ export const parsePhoneNumber = (value: string): PhoneNumber => {
  *
  * @example
  * ```ts
- * normalizePhoneNumber('(818) 212-4554'); // '+18182124554'
- * normalizePhoneNumber('+44 20 7183 8750'); // '+442071838750'
+ * normalizePhoneNumber('(415) 555-0132'); // '+14155550132'
+ * normalizePhoneNumber('+44 20 7946 0958'); // '+442079460958'
  * ```
  */
 export const normalizePhoneNumber = (value: string): string => {
